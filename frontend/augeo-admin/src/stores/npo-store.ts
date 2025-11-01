@@ -3,29 +3,29 @@
  * Manages NPO state, members, applications, and branding
  */
 
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import npoService from '@/services/npo-service'
 import type {
-  NPO,
-  NPODetail,
-  NPOCreateRequest,
-  NPOUpdateRequest,
-  NPOListParams,
-  NPOApplication,
-  ApplicationReviewRequest,
   ApplicationListParams,
-  NPOMember,
-  MemberInviteRequest,
-  MemberAddRequest,
-  MemberRoleUpdateRequest,
-  MemberStatusUpdateRequest,
-  MemberListParams,
-  NPOBranding,
+  ApplicationReviewRequest,
   BrandingCreateRequest,
   BrandingUpdateRequest,
   LogoUploadRequest,
+  MemberAddRequest,
+  MemberInviteRequest,
+  MemberListParams,
+  MemberRoleUpdateRequest,
+  MemberStatusUpdateRequest,
+  NPO,
+  NPOApplication,
+  NPOBranding,
+  NPOCreateRequest,
+  NPODetail,
+  NPOListParams,
+  NPOMember,
+  NPOUpdateRequest,
 } from '@/types/npo'
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 // Helper function to extract error message from unknown error
 function getErrorMessage(error: unknown): string {

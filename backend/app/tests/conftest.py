@@ -1030,3 +1030,53 @@ async def superadmin_user(db_session: AsyncSession) -> Any:
     user.role_name = "super_admin"  # type: ignore[attr-defined]
 
     return user
+
+
+@pytest.fixture(autouse=True)
+def mock_azure_storage(monkeypatch):
+    """Mock Azure Blob Storage for tests that don't need actual storage."""
+    from unittest.mock import MagicMock
+
+    from app.core.config import get_settings
+
+    # Set environment variables for Azure Storage
+    monkeypatch.setenv(
+        "AZURE_STORAGE_CONNECTION_STRING",
+        "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net",
+    )
+    monkeypatch.setenv("AZURE_STORAGE_ACCOUNT_NAME", "teststorage")
+    monkeypatch.setenv("AZURE_STORAGE_CONTAINER_NAME", "test-container")
+
+    # Clear settings cache to force reload with new env vars
+    get_settings.cache_clear()
+
+    # Mock the BlobServiceClient with unique URLs per blob
+    mock_blob_service = MagicMock()
+
+    def mock_get_blob_client(container, blob):
+        """Return a mock blob client with unique URL based on blob name."""
+        mock_blob_client = MagicMock()
+        mock_blob_client.url = f"https://teststorage.blob.core.windows.net/{container}/{blob}"
+        return mock_blob_client
+
+    mock_blob_service.get_blob_client = mock_get_blob_client
+
+    # Mock the generate_blob_sas function
+    def mock_generate_sas(*args, **kwargs):
+        # Use timestamp to ensure unique tokens for each call
+        import time
+
+        timestamp = str(time.time())
+        blob_name = kwargs.get("blob_name", "test-blob")
+        return f"mock_sas_token=test&sig=mocksignature-{blob_name[:8]}-{timestamp}"
+
+    monkeypatch.setattr(
+        "app.services.file_upload_service.BlobServiceClient.from_connection_string",
+        lambda *args, **kwargs: mock_blob_service,
+    )
+    monkeypatch.setattr(
+        "app.services.file_upload_service.generate_blob_sas",
+        mock_generate_sas,
+    )
+
+    return mock_blob_service

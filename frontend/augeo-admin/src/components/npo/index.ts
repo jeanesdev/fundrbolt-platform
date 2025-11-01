@@ -1,1 +1,1 @@
-export { NPOCreationForm } from './npo-creation-form'
+export { NPOCreationForm } from './npo-creation-form';

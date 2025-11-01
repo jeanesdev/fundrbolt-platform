@@ -104,6 +104,8 @@ app = FastAPI(
     openapi_tags=[
         {"name": "auth", "description": "Authentication and authorization operations"},
         {"name": "users", "description": "User management operations"},
+        {"name": "npos", "description": "Nonprofit organization management"},
+        {"name": "branding", "description": "NPO branding and visual identity customization"},
         {"name": "legal", "description": "Legal documents (Terms of Service, Privacy Policy)"},
         {"name": "consent", "description": "User consent management and GDPR compliance"},
         {"name": "cookies", "description": "Cookie consent management (EU Cookie Law)"},

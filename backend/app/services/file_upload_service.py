@@ -197,6 +197,60 @@ class FileUploadService:
 
         return sas_url, public_url
 
+    def generate_upload_url(
+        self, npo_id: uuid.UUID, file_name: str, content_type: str, file_size: int
+    ) -> dict[str, str | int]:
+        """Generate upload URL for logo with validation.
+
+        Convenience wrapper around generate_upload_sas_url that includes
+        validation and returns a dict format expected by the API.
+
+        Args:
+            npo_id: NPO ID
+            file_name: Original file name
+            content_type: MIME type
+            file_size: File size in bytes
+
+        Returns:
+            Dict with upload_url, logo_url, and expires_in
+
+        Raises:
+            ValueError: If validation fails or storage not configured
+        """
+        # Validate content type
+        if content_type not in self.ALLOWED_IMAGE_TYPES:
+            raise ValueError(
+                f"Invalid content type: {content_type}. "
+                f"Allowed: {', '.join(self.ALLOWED_IMAGE_TYPES)}"
+            )
+
+        # Validate file size
+        if file_size > self.MAX_FILE_SIZE:
+            max_mb = self.MAX_FILE_SIZE / (1024 * 1024)
+            raise ValueError(f"File size {file_size} bytes exceeds {max_mb}MB limit")
+
+        if file_size <= 0:
+            raise ValueError("File size must be greater than 0")
+
+        # Validate file extension
+        file_ext = "." + file_name.lower().split(".")[-1] if "." in file_name else ""
+        if file_ext not in self.ALLOWED_EXTENSIONS:
+            raise ValueError(
+                f"Invalid file extension: {file_ext}. Allowed: {', '.join(self.ALLOWED_EXTENSIONS)}"
+            )
+
+        # Generate SAS URL
+        upload_url, logo_url = self.generate_upload_sas_url(npo_id, file_name, content_type)
+
+        # Calculate expiry time in seconds
+        expires_in = int(self.SAS_EXPIRY_HOURS * 3600)  # Convert hours to seconds
+
+        return {
+            "upload_url": upload_url,
+            "logo_url": logo_url,
+            "expires_in": expires_in,
+        }
+
     def _get_account_key(self) -> str:
         """Extract account key from connection string.
 

@@ -3,13 +3,13 @@
  * Page for creating a new non-profit organization
  */
 
-import { useNavigate } from '@tanstack/react-router'
-import { toast } from 'sonner'
 import { NPOCreationForm } from '@/components/npo/npo-creation-form'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useNPOStore } from '@/stores/npo-store'
 import type { NPOCreateRequest } from '@/types/npo'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useNavigate } from '@tanstack/react-router'
 import { Building2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function CreateNPOPage() {
   const navigate = useNavigate()
