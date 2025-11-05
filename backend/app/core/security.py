@@ -170,7 +170,7 @@ def create_invitation_token(
             "Example NPO", "staff", "John Doe", "Jane", "Smith"
         )
     """
-    to_encode = {
+    to_encode: dict[str, str | datetime] = {
         "sub": invitation_id,
         "npo_id": npo_id,
         "email": email,
