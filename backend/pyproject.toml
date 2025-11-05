@@ -65,6 +65,14 @@ ignore = [
     "B904",  # raise without from in exception handler (FastAPI pattern)
 ]
 
+[tool.ruff.format]
+# Prevent aggressive line collapsing for readability
+# Keep multi-line constructs on multiple lines even if they could fit on one line
+skip-magic-trailing-comma = false
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]
 

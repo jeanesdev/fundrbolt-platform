@@ -366,12 +366,47 @@ export const brandingApi = {
   },
 }
 
+// ============================================
+// Admin Operations (SuperAdmin only)
+// ============================================
+
+export const adminApi = {
+  /**
+   * List pending NPO applications (SuperAdmin only)
+   */
+  async listApplications(
+    params?: ApplicationListParams
+  ): Promise<ApplicationListResponse> {
+    const response = await apiClient.get<ApplicationListResponse>(
+      '/admin/npos/applications',
+      { params }
+    )
+    return response.data
+  },
+
+  /**
+   * Review NPO application (SuperAdmin only)
+   */
+  async reviewApplication(
+    npoId: string,
+    decision: 'approved' | 'rejected',
+    notes?: string
+  ): Promise<NPO> {
+    const response = await apiClient.post<NPO>(
+      `/admin/npos/${npoId}/review`,
+      { decision, notes }
+    )
+    return response.data
+  },
+}
+
 // Export unified API object
 export const npoService = {
   ...npoApi,
   application: applicationApi,
   member: memberApi,
   branding: brandingApi,
+  admin: adminApi,
 }
 
 export default npoService

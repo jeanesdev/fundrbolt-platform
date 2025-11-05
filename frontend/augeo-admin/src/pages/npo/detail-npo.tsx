@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ApplicationStatusBadge } from '@/components/npo/application-status-badge'
 import { MemberList } from '@/features/npo-management/components/MemberList'
 import { PendingInvitations } from '@/features/npo-management/components/PendingInvitations'
 import { StaffInvitation } from '@/features/npo-management/components/StaffInvitation'
@@ -177,6 +178,11 @@ export default function NpoDetailPage() {
           <CardDescription>Core organization details</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Application Status Badge (only for draft NPOs) */}
+          <ApplicationStatusBadge npo={npo} onApplicationSubmitted={() => loadNPOById(npoId)} />
+
+          {npo.status === 'draft' && <Separator />}
+
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">

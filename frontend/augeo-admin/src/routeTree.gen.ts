@@ -48,6 +48,7 @@ import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedNposCreateRouteImport } from './routes/_authenticated/npos/create'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+import { Route as AuthenticatedAdminNpoApplicationsRouteImport } from './routes/_authenticated/admin/npo-applications'
 import { Route as AuthenticatedNposNpoIdIndexRouteImport } from './routes/_authenticated/npos/$npoId.index'
 import { Route as AuthenticatedNposNpoIdEditRouteImport } from './routes/_authenticated/npos/$npoId/edit'
 
@@ -254,6 +255,12 @@ const AuthenticatedErrorsErrorRoute =
     path: '/errors/$error',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminNpoApplicationsRoute =
+  AuthenticatedAdminNpoApplicationsRouteImport.update({
+    id: '/admin/npo-applications',
+    path: '/admin/npo-applications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedNposNpoIdIndexRoute =
   AuthenticatedNposNpoIdIndexRouteImport.update({
     id: '/npos/$npoId/',
@@ -288,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/503': typeof errors503Route
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/': typeof AuthenticatedIndexRoute
+  '/admin/npo-applications': typeof AuthenticatedAdminNpoApplicationsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/npos/create': typeof AuthenticatedNposCreateRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -327,6 +335,7 @@ export interface FileRoutesByTo {
   '/503': typeof errors503Route
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/': typeof AuthenticatedIndexRoute
+  '/admin/npo-applications': typeof AuthenticatedAdminNpoApplicationsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/npos/create': typeof AuthenticatedNposCreateRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -371,6 +380,7 @@ export interface FileRoutesById {
   '/(errors)/503': typeof errors503Route
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/admin/npo-applications': typeof AuthenticatedAdminNpoApplicationsRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/npos/create': typeof AuthenticatedNposCreateRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -414,6 +424,7 @@ export interface FileRouteTypes {
     | '/503'
     | '/invitations/accept'
     | '/'
+    | '/admin/npo-applications'
     | '/errors/$error'
     | '/npos/create'
     | '/settings/account'
@@ -453,6 +464,7 @@ export interface FileRouteTypes {
     | '/503'
     | '/invitations/accept'
     | '/'
+    | '/admin/npo-applications'
     | '/errors/$error'
     | '/npos/create'
     | '/settings/account'
@@ -496,6 +508,7 @@ export interface FileRouteTypes {
     | '/(errors)/503'
     | '/invitations/accept'
     | '/_authenticated/'
+    | '/_authenticated/admin/npo-applications'
     | '/_authenticated/errors/$error'
     | '/_authenticated/npos/create'
     | '/_authenticated/settings/account'
@@ -813,6 +826,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/npo-applications': {
+      id: '/_authenticated/admin/npo-applications'
+      path: '/admin/npo-applications'
+      fullPath: '/admin/npo-applications'
+      preLoaderRoute: typeof AuthenticatedAdminNpoApplicationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/npos/$npoId/': {
       id: '/_authenticated/npos/$npoId/'
       path: '/npos/$npoId'
@@ -858,6 +878,7 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAdminNpoApplicationsRoute: typeof AuthenticatedAdminNpoApplicationsRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedNposCreateRoute: typeof AuthenticatedNposCreateRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
@@ -873,6 +894,8 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAdminNpoApplicationsRoute:
+    AuthenticatedAdminNpoApplicationsRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedNposCreateRoute: AuthenticatedNposCreateRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
