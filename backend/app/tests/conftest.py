@@ -1148,7 +1148,7 @@ async def test_invitation_token(db_session: AsyncSession, test_npo: Any) -> str:
 
     Returns invitation ID as token string for acceptance.
     """
-    from datetime import datetime, timedelta
+    from datetime import UTC, datetime, timedelta
 
     from app.models.invitation import Invitation, InvitationStatus
 
@@ -1158,7 +1158,7 @@ async def test_invitation_token(db_session: AsyncSession, test_npo: Any) -> str:
         email="invited@example.com",
         role="staff",
         status=InvitationStatus.PENDING,
-        expires_at=datetime.now(datetime.UTC) + timedelta(days=7),
+        expires_at=datetime.now(UTC) + timedelta(days=7),
     )
     db_session.add(invitation)
     await db_session.commit()
@@ -1174,7 +1174,7 @@ async def test_expired_invitation_token(db_session: AsyncSession, test_npo: Any)
 
     Returns invitation ID as token string for expired invitation.
     """
-    from datetime import datetime, timedelta
+    from datetime import UTC, datetime, timedelta
 
     from app.models.invitation import Invitation, InvitationStatus
 
@@ -1184,7 +1184,7 @@ async def test_expired_invitation_token(db_session: AsyncSession, test_npo: Any)
         email="expired@example.com",
         role="staff",
         status=InvitationStatus.PENDING,
-        expires_at=datetime.now(datetime.UTC) - timedelta(days=1),
+        expires_at=datetime.now(UTC) - timedelta(days=1),
     )
     db_session.add(invitation)
     await db_session.commit()
@@ -1200,7 +1200,7 @@ async def test_accepted_invitation_token(db_session: AsyncSession, test_npo: Any
 
     Returns invitation ID as token string for already accepted invitation.
     """
-    from datetime import datetime, timedelta
+    from datetime import UTC, datetime, timedelta
 
     from app.models.invitation import Invitation, InvitationStatus
 
@@ -1210,7 +1210,7 @@ async def test_accepted_invitation_token(db_session: AsyncSession, test_npo: Any
         email="accepted@example.com",
         role="staff",
         status=InvitationStatus.ACCEPTED,
-        expires_at=datetime.now(datetime.UTC) + timedelta(days=7),
+        expires_at=datetime.now(UTC) + timedelta(days=7),
     )
     db_session.add(invitation)
     await db_session.commit()
@@ -1226,7 +1226,7 @@ async def test_revoked_invitation_token(db_session: AsyncSession, test_npo: Any)
 
     Returns invitation ID as token string for revoked invitation.
     """
-    from datetime import datetime, timedelta
+    from datetime import UTC, datetime, timedelta
 
     from app.models.invitation import Invitation, InvitationStatus
 
@@ -1236,7 +1236,7 @@ async def test_revoked_invitation_token(db_session: AsyncSession, test_npo: Any)
         email="revoked@example.com",
         role="staff",
         status=InvitationStatus.REVOKED,
-        expires_at=datetime.now(datetime.UTC) + timedelta(days=7),
+        expires_at=datetime.now(UTC) + timedelta(days=7),
     )
     db_session.add(invitation)
     await db_session.commit()
@@ -1254,7 +1254,7 @@ async def test_invitation_token_existing_member(
 
     Returns invitation ID as token string for invitation to existing member.
     """
-    from datetime import datetime, timedelta
+    from datetime import UTC, datetime, timedelta
 
     from app.models.invitation import Invitation, InvitationStatus
 
@@ -1264,7 +1264,7 @@ async def test_invitation_token_existing_member(
         email=test_user.email,  # User who is already a member
         role="staff",
         status=InvitationStatus.PENDING,
-        expires_at=datetime.now(datetime.UTC) + timedelta(days=7),
+        expires_at=datetime.now(UTC) + timedelta(days=7),
     )
     db_session.add(invitation)
     await db_session.commit()
