@@ -78,9 +78,12 @@ async def list_members(
                 status=member.status,
                 joined_at=member.joined_at,
                 created_at=member.created_at,
-                email=member.user.email,
-                first_name=member.user.first_name,
-                last_name=member.user.last_name,
+                user_email=member.user.email,
+                user_first_name=member.user.first_name,
+                user_last_name=member.user.last_name,
+                user_full_name=f"{member.user.first_name} {member.user.last_name}".strip()
+                if member.user.first_name or member.user.last_name
+                else None,
             )
             for member in members
         ]
@@ -380,9 +383,12 @@ async def update_member_role(
             status=updated_member.status,
             joined_at=updated_member.joined_at,
             created_at=updated_member.created_at,
-            email=updated_member.user.email,
-            first_name=updated_member.user.first_name,
-            last_name=updated_member.user.last_name,
+            user_email=updated_member.user.email,
+            user_first_name=updated_member.user.first_name,
+            user_last_name=updated_member.user.last_name,
+            user_full_name=f"{updated_member.user.first_name} {updated_member.user.last_name}".strip()
+            if updated_member.user.first_name or updated_member.user.last_name
+            else None,
         )
     }
 

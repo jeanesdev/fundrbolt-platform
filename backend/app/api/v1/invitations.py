@@ -68,9 +68,12 @@ async def accept_invitation(
             status=member.status,
             joined_at=member.joined_at,
             created_at=member.created_at,
-            email=member.user.email,
-            first_name=member.user.first_name,
-            last_name=member.user.last_name,
+            user_email=member.user.email,
+            user_first_name=member.user.first_name,
+            user_last_name=member.user.last_name,
+            user_full_name=f"{member.user.first_name} {member.user.last_name}".strip()
+            if member.user.first_name or member.user.last_name
+            else None,
         ),
         "message": "Successfully joined the NPO team",
     }

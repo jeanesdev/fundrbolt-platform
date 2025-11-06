@@ -621,7 +621,7 @@ export function NPOCreationForm({
                     />
                   </FormControl>
                   <FormDescription>
-                    Tax identification number or EIN (optional)
+                    Tax identification number or EIN
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -642,7 +642,7 @@ export function NPOCreationForm({
                     />
                   </FormControl>
                   <FormDescription>
-                    Official registration number with governing body (optional)
+                    Official registration number with governing body
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

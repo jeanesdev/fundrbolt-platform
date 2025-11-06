@@ -48,10 +48,11 @@ class MemberResponse(MemberBase):
     joined_at: datetime | None
     created_at: datetime
 
-    # Related user data
-    email: str
-    first_name: str
-    last_name: str
+    # Related user data (prefixed with user_ for clarity)
+    user_email: str
+    user_first_name: str
+    user_last_name: str
+    user_full_name: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -163,7 +163,10 @@ export function MemberList({ npoId, canManageMembers = false }: MemberListProps)
             {members.map((member) => (
               <TableRow key={member.id}>
                 <TableCell className="font-medium">
-                  {member.user_full_name || 'N/A'}
+                  {member.user_full_name ||
+                    (member.user_first_name && member.user_last_name
+                      ? `${member.user_first_name} ${member.user_last_name}`
+                      : member.user_first_name || member.user_last_name || 'N/A')}
                 </TableCell>
                 <TableCell>{member.user_email}</TableCell>
                 <TableCell>

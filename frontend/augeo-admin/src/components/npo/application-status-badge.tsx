@@ -19,7 +19,7 @@ import { npoService } from '@/services/npo-service'
 import { useNPOStore } from '@/stores/npo-store'
 import type { NPODetail } from '@/types/npo'
 import { AlertCircle, Send } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 interface ApplicationStatusBadgeProps {
@@ -49,10 +49,9 @@ export function ApplicationStatusBadge({
 }: ApplicationStatusBadgeProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [showErrorDialog, setShowErrorDialog] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
-  // Validate required fields before submission
+  // Validate required fields
   const validateRequiredFields = (): { valid: boolean; error?: string } => {
     const fieldLabels: Record<string, string> = {
       name: 'Organization Name',
@@ -83,15 +82,28 @@ export function ApplicationStatusBadge({
     return { valid: true }
   }
 
-  // Handle click on submit button - validate before showing confirmation
+  // Run validation on mount and whenever NPO data changes
+  useEffect(() => {
+    const validation = validateRequiredFields()
+    if (!validation.valid) {
+      setErrorMessage(validation.error!)
+    } else {
+      setErrorMessage(null)
+    }
+  }, [npo.name, npo.description, npo.email, npo.phone, npo.address, npo.tax_id])
+
+  // Check if submit button should be disabled
+  const isSubmitDisabled = isSubmitting || !!errorMessage
+
+  // Handle click on submit button - show confirmation if valid
   const handleSubmitClick = () => {
     const validation = validateRequiredFields()
     if (!validation.valid) {
       setErrorMessage(validation.error!)
-      setShowErrorDialog(true)
       return
     }
-    // Validation passed, show confirmation dialog
+    // Validation passed, clear any errors and show confirmation dialog
+    setErrorMessage(null)
     setShowConfirmDialog(true)
   }
 
@@ -140,8 +152,6 @@ export function ApplicationStatusBadge({
   // No application yet - show submit button
   const handleSubmit = async () => {
     setIsSubmitting(true)
-    setErrorMessage(null) // Clear any previous errors
-    setShowErrorDialog(false) // Close any open error dialog
     try {
       // Call API directly to avoid setting global store error
       const updatedNpo = await npoService.application.submitApplication(npo.id)
@@ -158,11 +168,6 @@ export function ApplicationStatusBadge({
       toast.success('Application submitted successfully')
       onApplicationSubmitted?.()
     } catch (error: unknown) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to submit application:', error)
-      // eslint-disable-next-line no-console
-      console.log('Setting error dialog state...')
-
       // Extract user-friendly error message
       let message = 'Failed to submit application. Please try again.'
 
@@ -170,26 +175,17 @@ export function ApplicationStatusBadge({
         const response = error.response as { data?: { detail?: string | { message?: string } } }
         if (response?.data?.detail) {
           const detail = response.data.detail
-          // Handle string detail
           if (typeof detail === 'string') {
             message = detail
-          }
-          // Handle object detail with message
-          else if (detail && typeof detail === 'object' && 'message' in detail) {
+          } else if (detail && typeof detail === 'object' && 'message' in detail) {
             message = detail.message as string
           }
         }
       }
 
-      // eslint-disable-next-line no-console
-      console.log('Error message extracted:', message)
       setShowConfirmDialog(false) // Close confirmation dialog on error
       setErrorMessage(message)
-      setShowErrorDialog(true)
-      // eslint-disable-next-line no-console
-      console.log('Error dialog should now be visible')
-
-      // DO NOT set nposError - this would cause the page to show error state
+      toast.error(message)
     } finally {
       setIsSubmitting(false)
     }
@@ -197,6 +193,16 @@ export function ApplicationStatusBadge({
 
   return (
     <div className="space-y-3">
+      {/* Validation Error Message */}
+      {errorMessage && (
+        <div className="rounded-md border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950/20">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5" />
+            <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-muted-foreground">
           Application Status:
@@ -207,8 +213,8 @@ export function ApplicationStatusBadge({
         Your organization profile is in draft status. Submit an application for approval.
       </p>
 
-      {/* Submit Button - validates before showing confirmation */}
-      <Button size="sm" disabled={isSubmitting} onClick={handleSubmitClick}>
+      {/* Submit Button - disabled until all required fields are complete */}
+      <Button size="sm" disabled={isSubmitDisabled} onClick={handleSubmitClick}>
         <Send className="mr-2 h-4 w-4" />
         Submit for Approval
       </Button>
@@ -236,26 +242,6 @@ export function ApplicationStatusBadge({
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Submitting...' : 'Submit Application'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Error Dialog */}
-      <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertCircle className="h-5 w-5" />
-              Unable to Submit Application
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-base">
-              {errorMessage}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowErrorDialog(false)}>
-              OK
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

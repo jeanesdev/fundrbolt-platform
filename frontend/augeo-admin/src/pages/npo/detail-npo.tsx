@@ -40,6 +40,25 @@ function getLogoUrl(logoPath: string | null): string | null {
   return `${baseUrl}${logoPath}`
 }
 
+// Helper to format phone number
+function formatPhoneNumber(phone: string): string {
+  // Remove all non-digit characters
+  const cleaned = phone.replace(/\D/g, '')
+
+  // Format as (XXX) XXX-XXXX for 10-digit US numbers
+  if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`
+  }
+
+  // Format as +X (XXX) XXX-XXXX for 11-digit numbers (with country code)
+  if (cleaned.length === 11 && cleaned[0] === '1') {
+    return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`
+  }
+
+  // Return original if doesn't match expected formats
+  return phone
+}
+
 // Status color mapping
 const statusColors = {
   draft: 'bg-gray-500',
@@ -206,7 +225,27 @@ export default function NpoDetailPage() {
                   <Phone className="h-4 w-4" />
                   Phone
                 </div>
-                <p className="text-sm">{npo.phone}</p>
+                <p className="text-sm">{formatPhoneNumber(npo.phone)}</p>
+              </div>
+            )}
+
+            {npo.tax_id && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Building2 className="h-4 w-4" />
+                  Tax ID (EIN)
+                </div>
+                <p className="text-sm">{npo.tax_id}</p>
+              </div>
+            )}
+
+            {npo.registration_number && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Building2 className="h-4 w-4" />
+                  Registration Number
+                </div>
+                <p className="text-sm">{npo.registration_number}</p>
               </div>
             )}
 
