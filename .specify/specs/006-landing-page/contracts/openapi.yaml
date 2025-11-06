@@ -1,0 +1,541 @@
+openapi: 3.1.0
+info:
+  title: Augeo Landing Page API
+  description: Public API endpoints for landing page contact form and testimonials
+  version: 1.0.0
+  contact:
+    name: Augeo Platform Team
+    email: engineering@augeo.app
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Development server
+  - url: https://augeo-dev.azurewebsites.net/api/v1
+    description: Development environment
+  - url: https://augeo-staging.azurewebsites.net/api/v1
+    description: Staging environment
+  - url: https://api.augeo.app/api/v1
+    description: Production server
+
+tags:
+  - name: public
+    description: Public endpoints (no authentication required)
+  - name: admin
+    description: Admin-only endpoints (authentication required)
+
+paths:
+  /public/contact/submit:
+    post:
+      tags:
+        - public
+      summary: Submit contact form
+      description: |
+        Submit a contact form message. Rate limited to 5 submissions per hour per IP address.
+        Email notification sent to platform team asynchronously.
+      operationId: submitContactForm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactSubmissionCreate'
+            examples:
+              general_inquiry:
+                summary: General inquiry
+                value:
+                  sender_name: "John Doe"
+                  sender_email: "john.doe@example.com"
+                  subject: "Question about pricing"
+                  message: "I'm interested in learning more about your pricing plans for nonprofits."
+              support_request:
+                summary: Support request
+                value:
+                  sender_name: "Jane Smith"
+                  sender_email: "jane@nonprofit.org"
+                  subject: "Technical support needed"
+                  message: "We're experiencing an issue with bid processing during our event."
+      responses:
+        '201':
+          description: Contact form submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactSubmissionResponse'
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                sender_name: "John Doe"
+                sender_email: "john.doe@example.com"
+                subject: "Question about pricing"
+                status: "pending"
+                created_at: "2025-11-06T14:30:00Z"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                detail:
+                  - loc: ["body", "sender_email"]
+                    msg: "value is not a valid email address"
+                    type: "value_error.email"
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Rate limit exceeded. Maximum 5 submissions per hour."
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Failed to process contact form submission"
+
+  /public/testimonials:
+    get:
+      tags:
+        - public
+      summary: List published testimonials
+      description: Get all published testimonials ordered by display_order
+      operationId: listTestimonials
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of testimonials to return
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          description: Number of testimonials to skip
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: role
+          in: query
+          description: Filter by author role
+          schema:
+            type: string
+            enum: [donor, auctioneer, npo_admin]
+      responses:
+        '200':
+          description: List of published testimonials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TestimonialResponse'
+              example:
+                - id: "660e8400-e29b-41d4-a716-446655440000"
+                  quote_text: "Augeo helped us raise 40% more than last year's gala!"
+                  author_name: "Sarah J."
+                  author_role: "donor"
+                  organization_name: "Community Arts Foundation"
+                  photo_url: null
+                  display_order: 1
+                  is_published: true
+                  created_at: "2025-11-01T10:00:00Z"
+                - id: "770e8400-e29b-41d4-a716-446655440000"
+                  quote_text: "The real-time controls gave me confidence as an auctioneer."
+                  author_name: "Michael Chen"
+                  author_role: "auctioneer"
+                  organization_name: "Elite Auctioneers"
+                  photo_url: "https://augeo.blob.core.windows.net/photos/michael-chen.jpg"
+                  display_order: 2
+                  is_published: true
+                  created_at: "2025-11-02T11:00:00Z"
+
+  /admin/testimonials:
+    get:
+      tags:
+        - admin
+      summary: List all testimonials (admin only)
+      description: Get all testimonials including drafts and deleted (requires superadmin role)
+      operationId: listAllTestimonials
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: include_deleted
+          in: query
+          description: Include soft-deleted testimonials
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: List of all testimonials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TestimonialDetail'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Insufficient permissions (requires superadmin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - admin
+      summary: Create testimonial (admin only)
+      description: Create a new testimonial (requires superadmin role)
+      operationId: createTestimonial
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestimonialCreate'
+            example:
+              quote_text: "Augeo transformed our fundraising events!"
+              author_name: "Emily R."
+              author_role: "npo_admin"
+              organization_name: "Hope Shelter"
+              photo_url: null
+              display_order: 4
+              is_published: true
+      responses:
+        '201':
+          description: Testimonial created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestimonialResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          description: Not authenticated
+        '403':
+          description: Insufficient permissions
+
+  /admin/testimonials/{testimonial_id}:
+    get:
+      tags:
+        - admin
+      summary: Get testimonial details (admin only)
+      operationId: getTestimonial
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: testimonial_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Testimonial details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestimonialDetail'
+        '404':
+          description: Testimonial not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      tags:
+        - admin
+      summary: Update testimonial (admin only)
+      operationId: updateTestimonial
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: testimonial_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestimonialUpdate'
+            example:
+              is_published: false
+              display_order: 10
+      responses:
+        '200':
+          description: Testimonial updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestimonialResponse'
+        '404':
+          description: Testimonial not found
+        '400':
+          description: Validation error
+
+    delete:
+      tags:
+        - admin
+      summary: Delete testimonial (admin only)
+      description: Soft delete a testimonial (sets deleted_at timestamp)
+      operationId: deleteTestimonial
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: testimonial_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Testimonial deleted successfully
+        '404':
+          description: Testimonial not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ContactSubmissionCreate:
+      type: object
+      required:
+        - sender_name
+        - sender_email
+        - subject
+        - message
+      properties:
+        sender_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Name of the person submitting the form
+          example: "John Doe"
+        sender_email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Email address for response
+          example: "john.doe@example.com"
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Subject line of the inquiry
+          example: "Question about pricing"
+        message:
+          type: string
+          minLength: 1
+          maxLength: 5000
+          description: Message body (HTML will be stripped)
+          example: "I'm interested in learning more about your pricing plans."
+
+    ContactSubmissionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier
+        sender_name:
+          type: string
+        sender_email:
+          type: string
+          format: email
+        subject:
+          type: string
+        status:
+          type: string
+          enum: [pending, processed, failed]
+          description: Processing status
+        created_at:
+          type: string
+          format: date-time
+          description: Submission timestamp
+
+    TestimonialCreate:
+      type: object
+      required:
+        - quote_text
+        - author_name
+        - author_role
+      properties:
+        quote_text:
+          type: string
+          minLength: 10
+          maxLength: 500
+          description: The testimonial quote
+        author_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Author's name or initials
+          example: "Sarah J."
+        author_role:
+          type: string
+          enum: [donor, auctioneer, npo_admin]
+          description: Author's role in the platform
+        organization_name:
+          type: string
+          maxLength: 200
+          nullable: true
+          description: Optional organization name
+        photo_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Optional photo URL (Azure Blob Storage)
+        display_order:
+          type: integer
+          minimum: 0
+          maximum: 9999
+          default: 0
+          description: Order for display (lower = higher priority)
+        is_published:
+          type: boolean
+          default: false
+          description: Whether testimonial is published
+
+    TestimonialUpdate:
+      type: object
+      properties:
+        quote_text:
+          type: string
+          minLength: 10
+          maxLength: 500
+        author_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        author_role:
+          type: string
+          enum: [donor, auctioneer, npo_admin]
+        organization_name:
+          type: string
+          maxLength: 200
+          nullable: true
+        photo_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+        display_order:
+          type: integer
+          minimum: 0
+          maximum: 9999
+        is_published:
+          type: boolean
+
+    TestimonialResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        quote_text:
+          type: string
+        author_name:
+          type: string
+        author_role:
+          type: string
+          enum: [donor, auctioneer, npo_admin]
+        organization_name:
+          type: string
+          nullable: true
+        photo_url:
+          type: string
+          nullable: true
+        display_order:
+          type: integer
+        is_published:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    TestimonialDetail:
+      allOf:
+        - $ref: '#/components/schemas/TestimonialResponse'
+        - type: object
+          properties:
+            created_by:
+              type: string
+              format: uuid
+              description: Admin user who created the testimonial
+            updated_at:
+              type: string
+              format: date-time
+            deleted_at:
+              type: string
+              format: date-time
+              nullable: true
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message
+      required:
+        - detail
+
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              loc:
+                type: array
+                items:
+                  oneOf:
+                    - type: string
+                    - type: integer
+                description: Location of the error (e.g., ["body", "sender_email"])
+              msg:
+                type: string
+                description: Error message
+              type:
+                type: string
+                description: Error type
