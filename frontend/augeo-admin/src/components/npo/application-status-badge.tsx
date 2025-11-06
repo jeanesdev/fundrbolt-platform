@@ -3,8 +3,6 @@
  * Displays application status and submit button for NPO Admins
  */
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,11 +12,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { npoService } from '@/services/npo-service'
 import { useNPOStore } from '@/stores/npo-store'
 import type { NPODetail } from '@/types/npo'
-import { Send } from 'lucide-react'
+import { AlertCircle, Send } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -47,8 +47,53 @@ export function ApplicationStatusBadge({
   npo,
   onApplicationSubmitted,
 }: ApplicationStatusBadgeProps) {
-  const { submitApplication } = useNPOStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [showErrorDialog, setShowErrorDialog] = useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+
+  // Validate required fields before submission
+  const validateRequiredFields = (): { valid: boolean; error?: string } => {
+    const fieldLabels: Record<string, string> = {
+      name: 'Organization Name',
+      description: 'Description',
+      email: 'Email Address',
+      phone: 'Phone Number',
+      address: 'Physical Address',
+      tax_id: 'Tax ID (EIN)',
+    }
+
+    const missingFields: string[] = []
+    if (!npo.name) missingFields.push('name')
+    if (!npo.description) missingFields.push('description')
+    if (!npo.email) missingFields.push('email')
+    if (!npo.phone) missingFields.push('phone')
+    if (!npo.address) missingFields.push('address')
+    if (!npo.tax_id) missingFields.push('tax_id')
+
+    if (missingFields.length > 0) {
+      const missingLabels = missingFields.map((field) => fieldLabels[field])
+      const error =
+        missingLabels.length === 1
+          ? `Please complete the required field: ${missingLabels[0]}`
+          : `Please complete the following required fields: ${missingLabels.join(', ')}`
+      return { valid: false, error }
+    }
+
+    return { valid: true }
+  }
+
+  // Handle click on submit button - validate before showing confirmation
+  const handleSubmitClick = () => {
+    const validation = validateRequiredFields()
+    if (!validation.valid) {
+      setErrorMessage(validation.error!)
+      setShowErrorDialog(true)
+      return
+    }
+    // Validation passed, show confirmation dialog
+    setShowConfirmDialog(true)
+  }
 
   // Show nothing if NPO status is not draft (already approved, etc.)
   if (npo.status !== 'draft') {
@@ -95,21 +140,63 @@ export function ApplicationStatusBadge({
   // No application yet - show submit button
   const handleSubmit = async () => {
     setIsSubmitting(true)
+    setErrorMessage(null) // Clear any previous errors
+    setShowErrorDialog(false) // Close any open error dialog
     try {
-      await submitApplication(npo.id)
+      // Call API directly to avoid setting global store error
+      const updatedNpo = await npoService.application.submitApplication(npo.id)
+
+      // Update store manually using Zustand's set function
+      useNPOStore.setState((state) => ({
+        npos: state.npos.map((n) => (n.id === npo.id ? updatedNpo : n)),
+        currentNPO: state.currentNPO?.id === npo.id
+          ? { ...state.currentNPO, ...updatedNpo }
+          : state.currentNPO,
+      }))
+
+      setShowConfirmDialog(false) // Close confirmation dialog on success
       toast.success('Application submitted successfully')
       onApplicationSubmitted?.()
-    } catch (error) {
+    } catch (error: unknown) {
       // eslint-disable-next-line no-console
       console.error('Failed to submit application:', error)
-      toast.error('Failed to submit application')
+      // eslint-disable-next-line no-console
+      console.log('Setting error dialog state...')
+
+      // Extract user-friendly error message
+      let message = 'Failed to submit application. Please try again.'
+
+      if (error && typeof error === 'object' && 'response' in error) {
+        const response = error.response as { data?: { detail?: string | { message?: string } } }
+        if (response?.data?.detail) {
+          const detail = response.data.detail
+          // Handle string detail
+          if (typeof detail === 'string') {
+            message = detail
+          }
+          // Handle object detail with message
+          else if (detail && typeof detail === 'object' && 'message' in detail) {
+            message = detail.message as string
+          }
+        }
+      }
+
+      // eslint-disable-next-line no-console
+      console.log('Error message extracted:', message)
+      setShowConfirmDialog(false) // Close confirmation dialog on error
+      setErrorMessage(message)
+      setShowErrorDialog(true)
+      // eslint-disable-next-line no-console
+      console.log('Error dialog should now be visible')
+
+      // DO NOT set nposError - this would cause the page to show error state
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-muted-foreground">
           Application Status:
@@ -119,13 +206,15 @@ export function ApplicationStatusBadge({
       <p className="text-xs text-muted-foreground">
         Your organization profile is in draft status. Submit an application for approval.
       </p>
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button size="sm" disabled={isSubmitting}>
-            <Send className="mr-2 h-4 w-4" />
-            Submit for Approval
-          </Button>
-        </AlertDialogTrigger>
+
+      {/* Submit Button - validates before showing confirmation */}
+      <Button size="sm" disabled={isSubmitting} onClick={handleSubmitClick}>
+        <Send className="mr-2 h-4 w-4" />
+        Submit for Approval
+      </Button>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Submit Application for Approval</AlertDialogTitle>
@@ -138,9 +227,35 @@ export function ApplicationStatusBadge({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSubmit} disabled={isSubmitting}>
+            <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                handleSubmit()
+              }}
+              disabled={isSubmitting}
+            >
               {isSubmitting ? 'Submitting...' : 'Submit Application'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Error Dialog */}
+      <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              Unable to Submit Application
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              {errorMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowErrorDialog(false)}>
+              OK
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

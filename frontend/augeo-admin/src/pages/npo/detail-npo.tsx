@@ -3,12 +3,12 @@
  * Displays detailed information about a specific NPO with edit and delete actions
  */
 
+import { ApplicationStatusBadge } from '@/components/npo/application-status-badge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ApplicationStatusBadge } from '@/components/npo/application-status-badge'
 import { MemberList } from '@/features/npo-management/components/MemberList'
 import { PendingInvitations } from '@/features/npo-management/components/PendingInvitations'
 import { StaffInvitation } from '@/features/npo-management/components/StaffInvitation'

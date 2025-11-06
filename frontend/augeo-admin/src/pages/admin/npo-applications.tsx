@@ -3,6 +3,7 @@
  * Lists pending NPO applications with search, filter, and review actions
  */
 
+import { ApplicationReviewDialog } from '@/components/admin/application-review-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -23,7 +24,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ApplicationReviewDialog } from '@/components/admin/application-review-dialog'
 import npoService from '@/services/npo-service'
 import type { ApplicationStatus, NPOApplication } from '@/types/npo'
 import { useQuery } from '@tanstack/react-query'
@@ -201,7 +201,7 @@ export default function NPOApplicationsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         {application.status === 'submitted' ||
-                        application.status === 'under_review' ? (
+                          application.status === 'under_review' ? (
                           <Button
                             size="sm"
                             onClick={() => setSelectedApplication(application)}

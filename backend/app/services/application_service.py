@@ -83,6 +83,14 @@ class ApplicationService:
             )
 
         # Validate required fields
+        field_labels = {
+            "name": "Organization Name",
+            "description": "Description",
+            "email": "Email Address",
+            "phone": "Phone Number",
+            "address": "Physical Address",
+            "tax_id": "Tax ID (EIN)",
+        }
         missing_fields = []
         if not npo.name:
             missing_fields.append("name")
@@ -98,9 +106,17 @@ class ApplicationService:
             missing_fields.append("tax_id")
 
         if missing_fields:
+            missing_labels = [field_labels[field] for field in missing_fields]
+            if len(missing_labels) == 1:
+                detail = f"Please complete the required field: {missing_labels[0]}"
+            else:
+                detail = (
+                    f"Please complete the following required fields: {', '.join(missing_labels)}"
+                )
+
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Cannot submit application: missing required fields: {', '.join(missing_fields)}",
+                detail=detail,
             )
 
         # Update status
