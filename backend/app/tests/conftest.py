@@ -1225,13 +1225,125 @@ async def test_invited_user(db_session: AsyncSession) -> Any:
 
 
 @pytest_asyncio.fixture
+async def test_expired_user(db_session: AsyncSession) -> Any:
+    """
+    Create a user for expired invitation testing.
+    Email matches the expired invitation email.
+    """
+    from sqlalchemy import select
+
+    from app.core.security import hash_password
+    from app.models.role import Role
+    from app.models.user import User
+
+    # Get or create donor role
+    stmt = select(Role).where(Role.name == "donor")
+    result = await db_session.execute(stmt)
+    donor_role = result.scalar_one_or_none()
+
+    if not donor_role:
+        donor_role = Role(name="donor", description="Regular donor user")
+        db_session.add(donor_role)
+        await db_session.flush()
+
+    user = User(
+        email="expired@example.com",
+        password_hash=hash_password("Password123!"),
+        first_name="Expired",
+        last_name="User",
+        email_verified=True,
+        is_active=True,
+        role_id=donor_role.id,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest_asyncio.fixture
+async def test_accepted_user(db_session: AsyncSession) -> Any:
+    """
+    Create a user for accepted invitation testing.
+    Email matches the accepted invitation email.
+    """
+    from sqlalchemy import select
+
+    from app.core.security import hash_password
+    from app.models.role import Role
+    from app.models.user import User
+
+    # Get or create donor role
+    stmt = select(Role).where(Role.name == "donor")
+    result = await db_session.execute(stmt)
+    donor_role = result.scalar_one_or_none()
+
+    if not donor_role:
+        donor_role = Role(name="donor", description="Regular donor user")
+        db_session.add(donor_role)
+        await db_session.flush()
+
+    user = User(
+        email="accepted@example.com",
+        password_hash=hash_password("Password123!"),
+        first_name="Accepted",
+        last_name="User",
+        email_verified=True,
+        is_active=True,
+        role_id=donor_role.id,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest_asyncio.fixture
+async def test_revoked_user(db_session: AsyncSession) -> Any:
+    """
+    Create a user for revoked invitation testing.
+    Email matches the revoked invitation email.
+    """
+    from sqlalchemy import select
+
+    from app.core.security import hash_password
+    from app.models.role import Role
+    from app.models.user import User
+
+    # Get or create donor role
+    stmt = select(Role).where(Role.name == "donor")
+    result = await db_session.execute(stmt)
+    donor_role = result.scalar_one_or_none()
+
+    if not donor_role:
+        donor_role = Role(name="donor", description="Regular donor user")
+        db_session.add(donor_role)
+        await db_session.flush()
+
+    user = User(
+        email="revoked@example.com",
+        password_hash=hash_password("Password123!"),
+        first_name="Revoked",
+        last_name="User",
+        email_verified=True,
+        is_active=True,
+        role_id=donor_role.id,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest_asyncio.fixture
 async def test_expired_invitation_token(
-    db_session: AsyncSession, test_npo: Any, test_user: Any
+    db_session: AsyncSession, test_npo: Any, test_user: Any, test_expired_user: Any
 ) -> str:
     """
     Create an expired invitation token for testing.
 
     Returns invitation ID as token string for expired invitation.
+    NOTE: Depends on test_expired_user to ensure user exists with matching email.
     """
     import hashlib
     import uuid
@@ -1246,7 +1358,7 @@ async def test_expired_invitation_token(
     # Create expired invitation
     invitation = Invitation(
         npo_id=test_npo.id,
-        email="expired@example.com",
+        email="expired@example.com",  # Matches test_expired_user email
         role="staff",
         status=InvitationStatus.PENDING,
         expires_at=datetime.now(UTC) - timedelta(days=1),
@@ -1262,12 +1374,13 @@ async def test_expired_invitation_token(
 
 @pytest_asyncio.fixture
 async def test_accepted_invitation_token(
-    db_session: AsyncSession, test_npo: Any, test_user: Any
+    db_session: AsyncSession, test_npo: Any, test_user: Any, test_accepted_user: Any
 ) -> str:
     """
     Create an accepted invitation token for testing.
 
     Returns invitation ID as token string for already accepted invitation.
+    NOTE: Depends on test_accepted_user to ensure user exists with matching email.
     """
     import hashlib
     import uuid
@@ -1282,7 +1395,7 @@ async def test_accepted_invitation_token(
     # Create accepted invitation
     invitation = Invitation(
         npo_id=test_npo.id,
-        email="accepted@example.com",
+        email="accepted@example.com",  # Matches test_accepted_user email
         role="staff",
         status=InvitationStatus.ACCEPTED,
         expires_at=datetime.now(UTC) + timedelta(days=7),
@@ -1298,12 +1411,13 @@ async def test_accepted_invitation_token(
 
 @pytest_asyncio.fixture
 async def test_revoked_invitation_token(
-    db_session: AsyncSession, test_npo: Any, test_user: Any
+    db_session: AsyncSession, test_npo: Any, test_user: Any, test_revoked_user: Any
 ) -> str:
     """
     Create a revoked invitation token for testing.
 
     Returns invitation ID as token string for revoked invitation.
+    NOTE: Depends on test_revoked_user to ensure user exists with matching email.
     """
     import hashlib
     import uuid
@@ -1318,7 +1432,7 @@ async def test_revoked_invitation_token(
     # Create revoked invitation
     invitation = Invitation(
         npo_id=test_npo.id,
-        email="revoked@example.com",
+        email="revoked@example.com",  # Matches test_revoked_user email
         role="staff",
         status=InvitationStatus.REVOKED,
         expires_at=datetime.now(UTC) + timedelta(days=7),

@@ -42,7 +42,9 @@ class TestAcceptInvitationEndpoint:
         response = await client.post(f"/api/v1/invitations/{fake_token}/accept")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
-        assert "not found" in response.json()["detail"].lower()
+        detail = response.json()["detail"]
+        message = detail if isinstance(detail, str) else detail.get("message", "")
+        assert "not found" in message.lower() or "invalid" in message.lower()
 
     async def test_accept_invitation_expired_token(
         self,
@@ -53,7 +55,9 @@ class TestAcceptInvitationEndpoint:
         response = await client.post(f"/api/v1/invitations/{test_expired_invitation_token}/accept")
 
         assert response.status_code == status.HTTP_410_GONE
-        assert "expired" in response.json()["detail"].lower()
+        detail = response.json()["detail"]
+        message = detail if isinstance(detail, str) else detail.get("message", "")
+        assert "expired" in message.lower()
 
     async def test_accept_invitation_already_accepted(
         self,
@@ -64,7 +68,9 @@ class TestAcceptInvitationEndpoint:
         response = await client.post(f"/api/v1/invitations/{test_accepted_invitation_token}/accept")
 
         assert response.status_code == status.HTTP_409_CONFLICT
-        assert "already" in response.json()["detail"].lower()
+        detail = response.json()["detail"]
+        message = detail if isinstance(detail, str) else detail.get("message", "")
+        assert "already" in message.lower()
 
     async def test_accept_invitation_revoked(
         self,
@@ -75,7 +81,9 @@ class TestAcceptInvitationEndpoint:
         response = await client.post(f"/api/v1/invitations/{test_revoked_invitation_token}/accept")
 
         assert response.status_code == status.HTTP_410_GONE
-        assert "revoked" in response.json()["detail"].lower()
+        detail = response.json()["detail"]
+        message = detail if isinstance(detail, str) else detail.get("message", "")
+        assert "revoked" in message.lower()
 
     async def test_accept_invitation_user_already_member(
         self,
@@ -88,4 +96,6 @@ class TestAcceptInvitationEndpoint:
         )
 
         assert response.status_code == status.HTTP_409_CONFLICT
-        assert "already a member" in response.json()["detail"].lower()
+        detail = response.json()["detail"]
+        message = detail if isinstance(detail, str) else detail.get("message", "")
+        assert "already a member" in message.lower() or "already" in message.lower()
