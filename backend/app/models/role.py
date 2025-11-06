@@ -34,6 +34,11 @@ class Role(Base, UUIDMixin, TimestampMixin):
         String(255),
         nullable=True,
     )
+    scope: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        comment="Access scope: platform, npo, event, own",
+    )
 
     # Relationships
     users: Mapped[list["User"]] = relationship(

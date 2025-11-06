@@ -87,8 +87,8 @@ jobs:
       - name: Run Ruff linter
         run: poetry run ruff check .
 
-      - name: Run Black formatter check
-        run: poetry run black --check .
+      - name: Run Ruff formatter check
+        run: poetry run ruff format --check .
 
       - name: Run MyPy type checker
         run: poetry run mypy app

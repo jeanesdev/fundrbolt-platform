@@ -7,6 +7,7 @@ Persists audit events to database and logs to structured logger.
 import uuid
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,6 +36,18 @@ class AuditEventType(str, Enum):
     USER_CREATED = "user_created"
     USER_UPDATED = "user_updated"
     USER_DELETED = "user_deleted"
+    # NPO-specific events
+    NPO_CREATED = "npo_created"
+    NPO_UPDATED = "npo_updated"
+    NPO_STATUS_CHANGED = "npo_status_changed"
+    NPO_APPLICATION_SUBMITTED = "npo_application_submitted"
+    NPO_APPLICATION_APPROVED = "npo_application_approved"
+    NPO_APPLICATION_REJECTED = "npo_application_rejected"
+    NPO_MEMBER_INVITED = "npo_member_invited"
+    NPO_MEMBER_ADDED = "npo_member_added"
+    NPO_MEMBER_REMOVED = "npo_member_removed"
+    NPO_MEMBER_ROLE_CHANGED = "npo_member_role_changed"
+    NPO_BRANDING_UPDATED = "npo_branding_updated"
 
 
 class AuditService:
@@ -730,6 +743,259 @@ class AuditService:
                 "user_id": str(user_id),
                 "email": email,
                 "admin_user_id": str(admin_user_id) if admin_user_id else None,
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+    # ============================================
+    # NPO-specific audit log methods
+    # ============================================
+
+    @staticmethod
+    async def log_npo_created(
+        db: AsyncSession,
+        npo_id: uuid.UUID,
+        npo_name: str,
+        created_by_user_id: uuid.UUID,
+        created_by_email: str,
+        ip_address: str | None = None,
+    ) -> None:
+        """Log NPO creation event."""
+        from app.models.audit_log import AuditLog
+
+        audit_log = AuditLog(
+            user_id=created_by_user_id,
+            action="npo_created",
+            ip_address=ip_address or "unknown",
+            user_agent=None,
+            event_metadata={
+                "npo_id": str(npo_id),
+                "npo_name": npo_name,
+                "created_by_email": created_by_email,
+            },
+        )
+        db.add(audit_log)
+        await db.commit()
+
+        logger.info(
+            "NPO created",
+            extra={
+                "event_type": AuditEventType.NPO_CREATED.value,
+                "npo_id": str(npo_id),
+                "npo_name": npo_name,
+                "created_by_user_id": str(created_by_user_id),
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+    @staticmethod
+    async def log_npo_application_reviewed(
+        db: AsyncSession,
+        npo_id: uuid.UUID,
+        npo_name: str,
+        status: str,
+        reviewed_by_user_id: uuid.UUID,
+        reviewed_by_email: str,
+        ip_address: str | None = None,
+    ) -> None:
+        """Log NPO application review event."""
+        from app.models.audit_log import AuditLog
+
+        event_type = (
+            AuditEventType.NPO_APPLICATION_APPROVED
+            if status == "approved"
+            else AuditEventType.NPO_APPLICATION_REJECTED
+        )
+
+        audit_log = AuditLog(
+            user_id=reviewed_by_user_id,
+            action=event_type.value,
+            ip_address=ip_address or "unknown",
+            user_agent=None,
+            event_metadata={
+                "npo_id": str(npo_id),
+                "npo_name": npo_name,
+                "status": status,
+                "reviewed_by_email": reviewed_by_email,
+            },
+        )
+        db.add(audit_log)
+        await db.commit()
+
+        logger.info(
+            f"NPO application {status}",
+            extra={
+                "event_type": event_type.value,
+                "npo_id": str(npo_id),
+                "npo_name": npo_name,
+                "reviewed_by_user_id": str(reviewed_by_user_id),
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+    @staticmethod
+    async def log_npo_member_added(
+        db: AsyncSession,
+        npo_id: uuid.UUID,
+        npo_name: str,
+        member_user_id: uuid.UUID,
+        member_email: str,
+        role: str,
+        added_by_user_id: uuid.UUID,
+        ip_address: str | None = None,
+    ) -> None:
+        """Log NPO member addition event."""
+        from app.models.audit_log import AuditLog
+
+        audit_log = AuditLog(
+            user_id=added_by_user_id,
+            action="npo_member_added",
+            ip_address=ip_address or "unknown",
+            user_agent=None,
+            event_metadata={
+                "npo_id": str(npo_id),
+                "npo_name": npo_name,
+                "member_user_id": str(member_user_id),
+                "member_email": member_email,
+                "role": role,
+            },
+        )
+        db.add(audit_log)
+        await db.commit()
+
+        logger.info(
+            "NPO member added",
+            extra={
+                "event_type": AuditEventType.NPO_MEMBER_ADDED.value,
+                "npo_id": str(npo_id),
+                "npo_name": npo_name,
+                "member_user_id": str(member_user_id),
+                "added_by_user_id": str(added_by_user_id),
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+    @staticmethod
+    async def log_npo_member_removed(
+        db: AsyncSession,
+        npo_id: uuid.UUID,
+        npo_name: str,
+        member_user_id: uuid.UUID,
+        member_email: str,
+        removed_by_user_id: uuid.UUID,
+        reason: str | None = None,
+        ip_address: str | None = None,
+    ) -> None:
+        """Log NPO member removal event."""
+        from app.models.audit_log import AuditLog
+
+        audit_log = AuditLog(
+            user_id=removed_by_user_id,
+            action="npo_member_removed",
+            ip_address=ip_address or "unknown",
+            user_agent=None,
+            event_metadata={
+                "npo_id": str(npo_id),
+                "npo_name": npo_name,
+                "member_user_id": str(member_user_id),
+                "member_email": member_email,
+                "reason": reason,
+            },
+        )
+        db.add(audit_log)
+        await db.commit()
+
+        logger.warning(
+            "NPO member removed",
+            extra={
+                "event_type": AuditEventType.NPO_MEMBER_REMOVED.value,
+                "npo_id": str(npo_id),
+                "member_user_id": str(member_user_id),
+                "removed_by_user_id": str(removed_by_user_id),
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+    @staticmethod
+    async def log_npo_updated(
+        db: AsyncSession,
+        npo_id: uuid.UUID,
+        npo_name: str,
+        updated_by_user_id: uuid.UUID,
+        updated_by_email: str,
+        changes: dict[str, Any],
+        ip_address: str | None = None,
+    ) -> None:
+        """Log NPO update event."""
+        from app.models.audit_log import AuditLog
+
+        audit_log = AuditLog(
+            user_id=updated_by_user_id,
+            action="npo_updated",
+            ip_address=ip_address or "unknown",
+            user_agent=None,
+            event_metadata={
+                "npo_id": str(npo_id),
+                "npo_name": npo_name,
+                "updated_by_email": updated_by_email,
+                "changes": changes,
+            },
+        )
+        db.add(audit_log)
+        await db.commit()
+
+        logger.info(
+            "NPO updated",
+            extra={
+                "event_type": AuditEventType.NPO_UPDATED.value,
+                "npo_id": str(npo_id),
+                "npo_name": npo_name,
+                "updated_by_user_id": str(updated_by_user_id),
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+    @staticmethod
+    async def log_npo_status_changed(
+        db: AsyncSession,
+        npo_id: uuid.UUID,
+        npo_name: str,
+        old_status: str | None,
+        new_status: str,
+        changed_by_user_id: uuid.UUID,
+        changed_by_email: str,
+        notes: str | None = None,
+        ip_address: str | None = None,
+    ) -> None:
+        """Log NPO status change event."""
+        from app.models.audit_log import AuditLog
+
+        audit_log = AuditLog(
+            user_id=changed_by_user_id,
+            action="npo_status_changed",
+            ip_address=ip_address or "unknown",
+            user_agent=None,
+            event_metadata={
+                "npo_id": str(npo_id),
+                "npo_name": npo_name,
+                "old_status": old_status,
+                "new_status": new_status,
+                "notes": notes,
+                "changed_by_email": changed_by_email,
+            },
+        )
+        db.add(audit_log)
+        await db.commit()
+
+        logger.info(
+            "NPO status changed",
+            extra={
+                "event_type": AuditEventType.NPO_STATUS_CHANGED.value,
+                "npo_id": str(npo_id),
+                "npo_name": npo_name,
+                "old_status": old_status,
+                "new_status": new_status,
+                "changed_by_user_id": str(changed_by_user_id),
                 "timestamp": datetime.utcnow().isoformat(),
             },
         )

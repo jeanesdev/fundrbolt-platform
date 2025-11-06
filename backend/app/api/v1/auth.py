@@ -75,8 +75,21 @@ async def register(
         # Register user and get verification token
         user, verification_token = await AuthService.register(db, user_data)
 
-        # TODO: Send verification email (EmailService in User Story 2)
-        # For now, token would need to be logged or returned in dev mode
+        # Send verification email
+        from app.services.email_service import get_email_service
+
+        email_service = get_email_service()
+        try:
+            await email_service.send_verification_email(
+                to_email=user.email,
+                verification_token=verification_token,
+                user_name=user.first_name,
+            )
+            logger.info(f"Verification email sent to {user.email} (user_id={user.id})")
+        except Exception as e:
+            # Log error but don't fail registration
+            logger.error(f"Failed to send verification email to {user.email}: {str(e)}")
+            # Continue with registration - user can resend verification email later
 
         # Build response
         user_public = UserPublic(

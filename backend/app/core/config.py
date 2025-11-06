@@ -41,6 +41,11 @@ class Settings(BaseSettings):
     email_from_address: EmailStr
     email_from_name: str = "Augeo Platform"
 
+    # Azure Blob Storage (for NPO logo uploads) - Optional for local dev
+    azure_storage_connection_string: str | None = None
+    azure_storage_container_name: str = "npo-assets"
+    azure_storage_account_name: str | None = None
+
     # Frontend URLs (for email links)
     frontend_admin_url: str = "http://localhost:5173"
     frontend_donor_url: str = "http://localhost:5174"

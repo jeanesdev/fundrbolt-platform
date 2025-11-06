@@ -6,7 +6,6 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
-from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from redis.asyncio import Redis  # type: ignore[import-untyped]
 from sqlalchemy import text
@@ -17,6 +16,7 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.main import app
 from app.models.base import Base
+from app.models.user import User
 
 settings = get_settings()
 
@@ -124,38 +124,47 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
         # Reflect the roles table into Base.metadata so auth_service can use it
         await conn.run_sync(lambda sync_conn: Base.metadata.reflect(bind=sync_conn, only=["roles"]))
 
-        # Create PostgreSQL enum types for legal documentation (matching migration 007)
-        # Use exception handling since CREATE TYPE doesn't support IF NOT EXISTS
-        try:
+    # Create PostgreSQL enum types for legal documentation (matching migration 007)
+    # Each enum creation needs its own transaction block since CREATE TYPE errors
+    # leave the transaction in a failed state
+    try:
+        async with engine.begin() as conn:
             await conn.execute(
                 text(
                     "CREATE TYPE legal_document_type AS ENUM ('terms_of_service', 'privacy_policy')"
                 )
             )
-        except Exception:
-            pass  # Type already exists
-        try:
+    except Exception:
+        pass  # Type already exists
+
+    try:
+        async with engine.begin() as conn:
             await conn.execute(
                 text("CREATE TYPE legal_document_status AS ENUM ('draft', 'published', 'archived')")
             )
-        except Exception:
-            pass
-        try:
+    except Exception:
+        pass
+
+    try:
+        async with engine.begin() as conn:
             await conn.execute(
                 text("CREATE TYPE consent_status AS ENUM ('active', 'withdrawn', 'superseded')")
             )
-        except Exception:
-            pass
-        try:
+    except Exception:
+        pass
+
+    try:
+        async with engine.begin() as conn:
             await conn.execute(
                 text(
                     "CREATE TYPE consent_action AS ENUM ('consent_given', 'consent_updated', 'consent_withdrawn', 'data_export_requested', 'data_deletion_requested', 'cookie_consent_updated')"
                 )
             )
-        except Exception:
-            pass
+    except Exception:
+        pass
 
-        # Then create other tables
+    # Create all other tables in a fresh transaction
+    async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     yield engine
@@ -223,16 +232,18 @@ async def redis_client() -> AsyncGenerator["Redis[Any]", None]:
 # ================================
 
 
-@pytest.fixture
-def client() -> Generator[TestClient, None, None]:
+@pytest_asyncio.fixture
+async def client(async_client: AsyncClient) -> AsyncClient:
     """
-    Create synchronous test client.
+    Create non-authenticated async test client.
 
     Scope: function - new client for each test
-    Use for simple tests that don't need async
+    Use for testing unauthorized access (401 responses)
     """
-    with TestClient(app) as test_client:
-        yield test_client
+    # Remove any auth headers if present
+    if "Authorization" in async_client.headers:
+        del async_client.headers["Authorization"]
+    return async_client
 
 
 @pytest_asyncio.fixture
@@ -301,6 +312,9 @@ async def test_user(db_session: AsyncSession) -> Any:
     db_session.add(user)
     await db_session.commit()
     await db_session.refresh(user)
+
+    # Add role_name attribute (normally attached by auth middleware)
+    user.role_name = "donor"  # type: ignore[attr-defined]
 
     return user
 
@@ -704,6 +718,108 @@ async def event_coordinator_client(
     return async_client
 
 
+@pytest.fixture
+async def test_user_2(
+    db_session: AsyncSession,
+) -> User:
+    """
+    Create a second test user (donor role).
+
+    Used for testing multi-user scenarios and permissions between different users.
+    """
+    from sqlalchemy import text
+
+    from app.core.security import hash_password
+
+    # Get donor role_id from database
+    role_result = await db_session.execute(text("SELECT id FROM roles WHERE name = 'donor'"))
+    donor_role_id = role_result.scalar_one()
+
+    user = User(
+        email="testuser2@example.com",
+        password_hash=hash_password("TestPass123"),
+        first_name="Jane",
+        last_name="Smith",
+        role_id=donor_role_id,
+        email_verified=True,
+        is_active=True,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+async def authenticated_client_2(
+    async_client: AsyncClient,
+    test_user_2: User,
+) -> AsyncClient:
+    """
+    Create authenticated async test client for test_user_2.
+
+    Returns AsyncClient with Authorization header set to test_user_2 token.
+    """
+    # Clear rate limiting from Redis to avoid conflicts from previous test runs
+    from app.core.redis import get_redis
+
+    redis_client = await get_redis()
+    await redis_client.flushdb()
+
+    # Login to get access token
+    response = await async_client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": test_user_2.email,
+            "password": "TestPass123",
+        },
+    )
+
+    assert response.status_code == 200, f"Login failed: {response.json()}"
+    data = response.json()
+    access_token = data["access_token"]
+
+    # Set authorization header for subsequent requests
+    async_client.headers["Authorization"] = f"Bearer {access_token}"
+
+    return async_client
+
+
+@pytest.fixture
+async def authenticated_superadmin_client(
+    async_client: AsyncClient,
+    test_super_admin_user: User,
+) -> AsyncClient:
+    """
+    Alias for super_admin_client for consistency with naming conventions.
+
+    Returns AsyncClient with Authorization header set to super_admin token.
+    """
+    # Clear rate limiting from Redis to avoid conflicts from previous test runs
+    from app.core.redis import get_redis
+
+    redis_client = await get_redis()
+    await redis_client.flushdb()
+
+    # Login to get access token
+    response = await async_client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": test_super_admin_user.email,
+            "password": "TestPass123",
+        },
+    )
+
+    assert response.status_code == 200, f"Login failed: {response.json()}"
+    data = response.json()
+    access_token = data["access_token"]
+
+    # Set authorization header for subsequent requests
+    async_client.headers["Authorization"] = f"Bearer {access_token}"
+
+    return async_client
+
+
 # Legal documentation fixtures
 
 
@@ -800,3 +916,622 @@ async def published_legal_documents(
         "tos_id": tos_id,
         "privacy_id": privacy_id,
     }
+
+
+# ================================
+# NPO Fixtures
+# ================================
+
+
+@pytest_asyncio.fixture
+async def test_npo(db_session: AsyncSession, test_user: Any) -> Any:
+    """
+    Create a test NPO for testing.
+
+    Returns an NPO in DRAFT status with test_user as admin member.
+    """
+    from app.models.npo import NPO, NPOStatus
+    from app.models.npo_member import MemberRole, MemberStatus, NPOMember
+
+    # Create NPO
+    npo = NPO(
+        name="Test NPO Organization",
+        description="A test non-profit organization for testing",
+        mission_statement="Help people test software properly",
+        email="test@testnpo.org",
+        phone="+1-555-0100",
+        website_url="https://testnpo.org",
+        tax_id="12-3456789",
+        address={
+            "street": "123 Test St",
+            "city": "Test City",
+            "state": "TS",
+            "zipCode": "12345",
+            "country": "US",
+        },
+        registration_number="REG123456",
+        status=NPOStatus.DRAFT,
+        created_by_user_id=test_user.id,
+    )
+    db_session.add(npo)
+    await db_session.flush()
+
+    # Add creator as admin member
+    member = NPOMember(
+        npo_id=npo.id,
+        user_id=test_user.id,
+        role=MemberRole.ADMIN,
+        status=MemberStatus.ACTIVE,
+    )
+    db_session.add(member)
+    await db_session.commit()
+    await db_session.refresh(npo)
+
+    return npo
+
+
+@pytest_asyncio.fixture
+async def test_npo_2(db_session: AsyncSession, test_super_admin_user: Any) -> Any:
+    """
+    Create a second test NPO for testing.
+
+    Returns an NPO in DRAFT status with superadmin as creator.
+    """
+    from app.models.npo import NPO, NPOStatus
+    from app.models.npo_member import MemberRole, MemberStatus, NPOMember
+
+    # Create NPO
+    npo = NPO(
+        name="Second Test NPO",
+        description="Another test organization",
+        mission_statement="Testing multiple NPOs",
+        email="test2@testnpo.org",
+        phone="+1-555-0200",
+        status=NPOStatus.DRAFT,
+        created_by_user_id=test_super_admin_user.id,
+    )
+    db_session.add(npo)
+    await db_session.flush()
+
+    # Add creator as admin member
+    member = NPOMember(
+        npo_id=npo.id,
+        user_id=test_super_admin_user.id,
+        role=MemberRole.ADMIN,
+        status=MemberStatus.ACTIVE,
+    )
+    db_session.add(member)
+    await db_session.commit()
+    await db_session.refresh(npo)
+
+    return npo
+
+
+@pytest_asyncio.fixture
+async def superadmin_user(db_session: AsyncSession) -> Any:
+    """
+    Alias for test_super_admin_user for consistency.
+    """
+    from sqlalchemy import text
+
+    from app.core.security import hash_password
+    from app.models.user import User
+
+    # Get super_admin role_id from database
+    role_result = await db_session.execute(text("SELECT id FROM roles WHERE name = 'super_admin'"))
+    superadmin_role_id = role_result.scalar_one()
+
+    # Create super admin user
+    user = User(
+        email="superadmin@example.com",
+        first_name="Super",
+        last_name="Admin",
+        phone="+1-555-0001",
+        password_hash=hash_password("AdminPass123"),
+        email_verified=True,
+        is_active=True,
+        role_id=superadmin_role_id,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+
+    # Add role_name attribute (normally attached by auth middleware)
+    user.role_name = "super_admin"  # type: ignore[attr-defined]
+
+    return user
+
+
+# ================================
+# NPO Member & Invitation Fixtures
+# ================================
+
+
+@pytest_asyncio.fixture
+async def test_staff_member(db_session: AsyncSession, test_npo: Any, test_staff_user: Any) -> Any:
+    """
+    Create a staff member in the test NPO.
+
+    Returns an NPOMember instance with STAFF role.
+    """
+    from app.models.npo_member import MemberRole, MemberStatus, NPOMember
+
+    member = NPOMember(
+        npo_id=test_npo.id,
+        user_id=test_staff_user.id,
+        role=MemberRole.STAFF,
+        status=MemberStatus.ACTIVE,
+    )
+    db_session.add(member)
+    await db_session.commit()
+    await db_session.refresh(member)
+
+    return member
+
+
+@pytest_asyncio.fixture
+async def authenticated_staff_client(
+    async_client: AsyncClient, test_staff_user: Any, test_staff_member: Any
+) -> AsyncClient:
+    """
+    Create an authenticated async client for staff user.
+
+    Returns AsyncClient with valid auth token in headers.
+    """
+    # Login to get token
+    login_data = {"email": test_staff_user.email, "password": "TestPass123"}
+    response = await async_client.post("/api/v1/auth/login", json=login_data)
+    assert response.status_code == 200
+    token_data = response.json()
+    access_token = token_data["access_token"]
+
+    # Set auth header for subsequent requests
+    async_client.headers["Authorization"] = f"Bearer {access_token}"
+
+    return async_client
+
+
+@pytest_asyncio.fixture
+async def test_npo_other_user(db_session: AsyncSession, test_user_2: Any) -> Any:
+    """
+    Create an NPO owned by test_user_2 for cross-NPO permission testing.
+
+    Returns NPO owned by test_user_2 (different from test_npo).
+    """
+    from app.models.npo import NPO, NPOStatus
+    from app.models.npo_member import MemberRole, MemberStatus, NPOMember
+
+    # Create NPO for test_user_2
+    npo = NPO(
+        name="Other User NPO",
+        mission_statement="NPO for cross-NPO permission testing",
+        description="Used for testing that users can't access other NPOs",
+        tax_id="98-7654321",
+        email="otheruser@example.com",  # Email is required
+        status=NPOStatus.APPROVED,
+        created_by_user_id=test_user_2.id,
+    )
+    db_session.add(npo)
+    await db_session.commit()
+    await db_session.refresh(npo)
+
+    # Create admin member for test_user_2
+    member = NPOMember(
+        npo_id=npo.id,
+        user_id=test_user_2.id,
+        role=MemberRole.ADMIN,
+        status=MemberStatus.ACTIVE,
+    )
+    db_session.add(member)
+    await db_session.commit()
+
+    return npo
+
+
+@pytest_asyncio.fixture
+async def authenticated_client_other_user(
+    async_client: AsyncClient, test_user_2: Any, test_npo_other_user: Any
+) -> AsyncClient:
+    """
+    Create an authenticated async client for a different user.
+
+    Returns AsyncClient with valid auth token for test_user_2 who is admin of test_npo_other_user.
+    """
+    # Login to get token
+    login_data = {"email": test_user_2.email, "password": "TestPass123"}
+    response = await async_client.post("/api/v1/auth/login", json=login_data)
+    assert response.status_code == 200
+    token_data = response.json()
+    access_token = token_data["access_token"]
+
+    # Set auth header for subsequent requests
+    async_client.headers["Authorization"] = f"Bearer {access_token}"
+
+    return async_client
+
+
+@pytest_asyncio.fixture
+async def test_invitation_token(
+    db_session: AsyncSession, test_npo: Any, test_user: Any, test_invited_user: Any
+) -> str:
+    """
+    Create a valid invitation token for testing.
+
+    Returns invitation ID as token string for acceptance.
+    NOTE: Depends on test_invited_user to ensure user exists with matching email.
+    """
+    import hashlib
+    import uuid
+    from datetime import UTC, datetime, timedelta
+
+    from app.models.invitation import Invitation, InvitationStatus
+
+    # Generate a simple token hash for testing
+    token = f"test-token-{uuid.uuid4()}"
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+
+    # Create invitation
+    invitation = Invitation(
+        npo_id=test_npo.id,
+        email="invited@example.com",  # Matches test_invited_user email
+        role="staff",
+        status=InvitationStatus.PENDING,
+        expires_at=datetime.now(UTC) + timedelta(days=7),
+        invited_by_user_id=test_user.id,
+        token_hash=token_hash,
+    )
+    db_session.add(invitation)
+    await db_session.commit()
+    await db_session.refresh(invitation)
+
+    return str(invitation.id)
+
+
+@pytest_asyncio.fixture
+async def test_invited_user(db_session: AsyncSession) -> Any:
+    """
+    Create a user for invitation acceptance testing.
+    Email matches the invitation email in test_invitation_token fixture.
+    """
+    from sqlalchemy import select
+
+    from app.core.security import hash_password
+    from app.models.role import Role
+    from app.models.user import User
+
+    # Get or create donor role
+    stmt = select(Role).where(Role.name == "donor")
+    result = await db_session.execute(stmt)
+    donor_role = result.scalar_one_or_none()
+
+    if not donor_role:
+        donor_role = Role(name="donor", description="Regular donor user")
+        db_session.add(donor_role)
+        await db_session.flush()
+
+    user = User(
+        email="invited@example.com",
+        password_hash=hash_password("Password123!"),
+        first_name="Invited",
+        last_name="User",
+        email_verified=True,
+        is_active=True,
+        role_id=donor_role.id,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest_asyncio.fixture
+async def test_expired_user(db_session: AsyncSession) -> Any:
+    """
+    Create a user for expired invitation testing.
+    Email matches the expired invitation email.
+    """
+    from sqlalchemy import select
+
+    from app.core.security import hash_password
+    from app.models.role import Role
+    from app.models.user import User
+
+    # Get or create donor role
+    stmt = select(Role).where(Role.name == "donor")
+    result = await db_session.execute(stmt)
+    donor_role = result.scalar_one_or_none()
+
+    if not donor_role:
+        donor_role = Role(name="donor", description="Regular donor user")
+        db_session.add(donor_role)
+        await db_session.flush()
+
+    user = User(
+        email="expired@example.com",
+        password_hash=hash_password("Password123!"),
+        first_name="Expired",
+        last_name="User",
+        email_verified=True,
+        is_active=True,
+        role_id=donor_role.id,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest_asyncio.fixture
+async def test_accepted_user(db_session: AsyncSession) -> Any:
+    """
+    Create a user for accepted invitation testing.
+    Email matches the accepted invitation email.
+    """
+    from sqlalchemy import select
+
+    from app.core.security import hash_password
+    from app.models.role import Role
+    from app.models.user import User
+
+    # Get or create donor role
+    stmt = select(Role).where(Role.name == "donor")
+    result = await db_session.execute(stmt)
+    donor_role = result.scalar_one_or_none()
+
+    if not donor_role:
+        donor_role = Role(name="donor", description="Regular donor user")
+        db_session.add(donor_role)
+        await db_session.flush()
+
+    user = User(
+        email="accepted@example.com",
+        password_hash=hash_password("Password123!"),
+        first_name="Accepted",
+        last_name="User",
+        email_verified=True,
+        is_active=True,
+        role_id=donor_role.id,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest_asyncio.fixture
+async def test_revoked_user(db_session: AsyncSession) -> Any:
+    """
+    Create a user for revoked invitation testing.
+    Email matches the revoked invitation email.
+    """
+    from sqlalchemy import select
+
+    from app.core.security import hash_password
+    from app.models.role import Role
+    from app.models.user import User
+
+    # Get or create donor role
+    stmt = select(Role).where(Role.name == "donor")
+    result = await db_session.execute(stmt)
+    donor_role = result.scalar_one_or_none()
+
+    if not donor_role:
+        donor_role = Role(name="donor", description="Regular donor user")
+        db_session.add(donor_role)
+        await db_session.flush()
+
+    user = User(
+        email="revoked@example.com",
+        password_hash=hash_password("Password123!"),
+        first_name="Revoked",
+        last_name="User",
+        email_verified=True,
+        is_active=True,
+        role_id=donor_role.id,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest_asyncio.fixture
+async def test_expired_invitation_token(
+    db_session: AsyncSession, test_npo: Any, test_user: Any, test_expired_user: Any
+) -> str:
+    """
+    Create an expired invitation token for testing.
+
+    Returns invitation ID as token string for expired invitation.
+    NOTE: Depends on test_expired_user to ensure user exists with matching email.
+    """
+    import hashlib
+    import uuid
+    from datetime import UTC, datetime, timedelta
+
+    from app.models.invitation import Invitation, InvitationStatus
+
+    # Generate a simple token hash for testing
+    token = f"test-token-expired-{uuid.uuid4()}"
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+
+    # Create expired invitation
+    invitation = Invitation(
+        npo_id=test_npo.id,
+        email="expired@example.com",  # Matches test_expired_user email
+        role="staff",
+        status=InvitationStatus.PENDING,
+        expires_at=datetime.now(UTC) - timedelta(days=1),
+        invited_by_user_id=test_user.id,
+        token_hash=token_hash,
+    )
+    db_session.add(invitation)
+    await db_session.commit()
+    await db_session.refresh(invitation)
+
+    return str(invitation.id)
+
+
+@pytest_asyncio.fixture
+async def test_accepted_invitation_token(
+    db_session: AsyncSession, test_npo: Any, test_user: Any, test_accepted_user: Any
+) -> str:
+    """
+    Create an accepted invitation token for testing.
+
+    Returns invitation ID as token string for already accepted invitation.
+    NOTE: Depends on test_accepted_user to ensure user exists with matching email.
+    """
+    import hashlib
+    import uuid
+    from datetime import UTC, datetime, timedelta
+
+    from app.models.invitation import Invitation, InvitationStatus
+
+    # Generate a simple token hash for testing
+    token = f"test-token-accepted-{uuid.uuid4()}"
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+
+    # Create accepted invitation
+    invitation = Invitation(
+        npo_id=test_npo.id,
+        email="accepted@example.com",  # Matches test_accepted_user email
+        role="staff",
+        status=InvitationStatus.ACCEPTED,
+        expires_at=datetime.now(UTC) + timedelta(days=7),
+        invited_by_user_id=test_user.id,
+        token_hash=token_hash,
+    )
+    db_session.add(invitation)
+    await db_session.commit()
+    await db_session.refresh(invitation)
+
+    return str(invitation.id)
+
+
+@pytest_asyncio.fixture
+async def test_revoked_invitation_token(
+    db_session: AsyncSession, test_npo: Any, test_user: Any, test_revoked_user: Any
+) -> str:
+    """
+    Create a revoked invitation token for testing.
+
+    Returns invitation ID as token string for revoked invitation.
+    NOTE: Depends on test_revoked_user to ensure user exists with matching email.
+    """
+    import hashlib
+    import uuid
+    from datetime import UTC, datetime, timedelta
+
+    from app.models.invitation import Invitation, InvitationStatus
+
+    # Generate a simple token hash for testing
+    token = f"test-token-revoked-{uuid.uuid4()}"
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+
+    # Create revoked invitation
+    invitation = Invitation(
+        npo_id=test_npo.id,
+        email="revoked@example.com",  # Matches test_revoked_user email
+        role="staff",
+        status=InvitationStatus.REVOKED,
+        expires_at=datetime.now(UTC) + timedelta(days=7),
+        invited_by_user_id=test_user.id,
+        token_hash=token_hash,
+    )
+    db_session.add(invitation)
+    await db_session.commit()
+    await db_session.refresh(invitation)
+
+    return str(invitation.id)
+
+
+@pytest_asyncio.fixture
+async def test_invitation_token_existing_member(
+    db_session: AsyncSession, test_npo: Any, test_user: Any
+) -> str:
+    """
+    Create an invitation for a user who is already a member.
+
+    Returns invitation ID as token string for invitation to existing member.
+    """
+    import hashlib
+    import uuid
+    from datetime import UTC, datetime, timedelta
+
+    from app.models.invitation import Invitation, InvitationStatus
+
+    # Generate a simple token hash for testing
+    token = f"test-token-existing-{uuid.uuid4()}"
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+
+    # Create invitation for existing member's email
+    invitation = Invitation(
+        npo_id=test_npo.id,
+        email=test_user.email,  # User who is already a member
+        role="staff",
+        status=InvitationStatus.PENDING,
+        expires_at=datetime.now(UTC) + timedelta(days=7),
+        invited_by_user_id=test_user.id,
+        token_hash=token_hash,
+    )
+    db_session.add(invitation)
+    await db_session.commit()
+    await db_session.refresh(invitation)
+
+    return str(invitation.id)
+
+
+# ================================
+# Mock Azure Storage Fixture
+# ================================
+
+
+@pytest.fixture(autouse=True)
+def mock_azure_storage(monkeypatch):
+    """Mock Azure Blob Storage for tests that don't need actual storage."""
+    from unittest.mock import MagicMock
+
+    from app.core.config import get_settings
+
+    # Set environment variables for Azure Storage
+    monkeypatch.setenv(
+        "AZURE_STORAGE_CONNECTION_STRING",
+        "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net",
+    )
+    monkeypatch.setenv("AZURE_STORAGE_ACCOUNT_NAME", "teststorage")
+    monkeypatch.setenv("AZURE_STORAGE_CONTAINER_NAME", "test-container")
+
+    # Clear settings cache to force reload with new env vars
+    get_settings.cache_clear()
+
+    # Mock the BlobServiceClient with unique URLs per blob
+    mock_blob_service = MagicMock()
+
+    def mock_get_blob_client(container, blob):
+        """Return a mock blob client with unique URL based on blob name."""
+        mock_blob_client = MagicMock()
+        mock_blob_client.url = f"https://teststorage.blob.core.windows.net/{container}/{blob}"
+        return mock_blob_client
+
+    mock_blob_service.get_blob_client = mock_get_blob_client
+
+    # Mock the generate_blob_sas function
+    def mock_generate_sas(*args, **kwargs):
+        # Use timestamp to ensure unique tokens for each call
+        import time
+
+        timestamp = str(time.time())
+        blob_name = kwargs.get("blob_name", "test-blob")
+        return f"mock_sas_token=test&sig=mocksignature-{blob_name[:8]}-{timestamp}"
+
+    monkeypatch.setattr(
+        "app.services.file_upload_service.BlobServiceClient.from_connection_string",
+        lambda *args, **kwargs: mock_blob_service,
+    )
+    monkeypatch.setattr(
+        "app.services.file_upload_service.generate_blob_sas",
+        mock_generate_sas,
+    )
+
+    return mock_blob_service

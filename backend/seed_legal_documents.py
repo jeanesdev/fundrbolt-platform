@@ -121,9 +121,7 @@ These terms are governed by the laws of South Carolina, without regard to confli
 ---
 
 By using the Augeo Platform, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
-""".format(
-            date=datetime.now().strftime("%B %d, %Y")
-        )
+""".format(date=datetime.now().strftime("%B %d, %Y"))
 
         # Privacy Policy
         privacy_content = """# Privacy Policy
@@ -248,9 +246,7 @@ For EU users:
 ---
 
 By using the Augeo Platform, you acknowledge that you have read and understood this Privacy Policy.
-""".format(
-            date=datetime.now().strftime("%B %d, %Y")
-        )
+""".format(date=datetime.now().strftime("%B %d, %Y"))
 
         # Create Terms of Service
         tos = LegalDocument(

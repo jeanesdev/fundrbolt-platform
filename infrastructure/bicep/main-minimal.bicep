@@ -73,9 +73,6 @@ module appInsights './modules/monitoring.bicep' = {
     enableAvailabilityTests: false // Skip availability tests for localhost URLs
     tags: tags
   }
-  dependsOn: [
-    logAnalytics
-  ]
 }
 
 // Deploy Key Vault (minimal cost: ~$0.03 per 10k operations)
@@ -115,7 +112,6 @@ module dns './modules/dns.bicep' = if (enableDns) {
   scope: az.resourceGroup(resourceGroupName)
   params: {
     domainName: customDomain
-    environment: environment
     tags: tags
   }
   dependsOn: [

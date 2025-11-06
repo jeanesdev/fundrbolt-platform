@@ -36,6 +36,7 @@ class ConsentCheckMiddleware(BaseHTTPMiddleware):
         "/api/v1/legal",  # Legal document endpoints (public)
         "/api/v1/consent",  # Consent management endpoints
         "/api/v1/cookies",  # Cookie consent endpoints (public)
+        "/api/v1/invitations",  # Invitation acceptance (user may not have consent yet)
         "/health",  # Health checks
         "/metrics",  # Prometheus metrics
         "/docs",  # API documentation

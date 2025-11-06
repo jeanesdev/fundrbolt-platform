@@ -1,5 +1,5 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/auth-store'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 // Global flag to track if consent modal is already shown
 let consentModalShown = false
@@ -10,7 +10,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 seconds
+  timeout: 30000, // 30 seconds
 })
 
 // Flag to prevent multiple simultaneous refresh requests
@@ -162,7 +162,7 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 429) {
       const retryAfter = error.response.headers['retry-after']
       if (retryAfter) {
-        ;(error as AxiosError & { retryAfter?: number }).retryAfter = parseInt(
+        ; (error as AxiosError & { retryAfter?: number }).retryAfter = parseInt(
           retryAfter,
           10
         )

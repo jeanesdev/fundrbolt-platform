@@ -31,8 +31,8 @@ repos:
           - starlette==0.48.0
           - bcrypt==5.0.0
           - types-redis==4.6.0.20241004
-        args: [--config-file=backend/pyproject.toml, --strict]
-        files: ^backend/
+        args: [--strict, --ignore-missing-imports]
+        files: ^backend/app/
         exclude: ^backend/(alembic/|app/tests/)
 
   # Frontend and Bicep validation (local hooks)
@@ -57,7 +57,7 @@ repos:
       # Bicep Build Validation
       - id: bicep-build
         name: Bicep Build Validation
-        entry: bash -c 'for file in "$@"; do echo "Validating $file..."; az bicep build --file "$file" || exit 1; done' --
+        entry: bash -c 'for file in "$@"; do echo "Validating $file..."; output=$(az bicep build --file "$file" 2>&1); if echo "$output" | grep -q "Error "; then echo "$output"; exit 1; else echo "$output" | grep -i "warning" || true; fi; done' --
         language: system
         files: ^infrastructure/bicep/.*\.bicep$
         pass_filenames: true

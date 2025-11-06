@@ -2,11 +2,13 @@
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.health import router as health_router
 from app.api.metrics import router as metrics_router
@@ -104,6 +106,8 @@ app = FastAPI(
     openapi_tags=[
         {"name": "auth", "description": "Authentication and authorization operations"},
         {"name": "users", "description": "User management operations"},
+        {"name": "npos", "description": "Nonprofit organization management"},
+        {"name": "branding", "description": "NPO branding and visual identity customization"},
         {"name": "legal", "description": "Legal documents (Terms of Service, Privacy Policy)"},
         {"name": "consent", "description": "User consent management and GDPR compliance"},
         {"name": "cookies", "description": "Cookie consent management (EU Cookie Law)"},
@@ -113,16 +117,7 @@ app = FastAPI(
     ],
 )
 
-# Request ID middleware (must be before CORS)
-app.add_middleware(RequestIDMiddleware)
-
-# Metrics middleware (after request ID for accurate tracking)
-app.add_middleware(MetricsMiddleware)
-
-# Consent check middleware (after metrics, before CORS)
-app.add_middleware(ConsentCheckMiddleware)
-
-# CORS middleware
+# CORS middleware (MUST be first to add headers to all responses)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.get_cors_origins_list(),
@@ -130,6 +125,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Request ID middleware
+app.add_middleware(RequestIDMiddleware)
+
+# Metrics middleware
+app.add_middleware(MetricsMiddleware)
+
+# Consent check middleware
+app.add_middleware(ConsentCheckMiddleware)
 
 # Exception handlers
 app.add_exception_handler(Exception, generic_exception_handler)
@@ -145,6 +149,11 @@ app.add_exception_handler(RateLimitError, http_exception_handler)  # type: ignor
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(health_router)
 app.include_router(metrics_router)
+
+# Mount static files (for local logo uploads in development)
+static_dir = Path("static")
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
 # Root endpoint

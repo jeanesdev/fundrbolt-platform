@@ -1,10 +1,6 @@
 // DNS Zone Module
 // Creates Azure DNS Zone for custom domain management
 
-@description('Environment name (dev, staging, production)')
-@allowed(['dev', 'staging', 'production'])
-param environment string
-
 @description('Custom domain name (e.g., augeo.app)')
 param domainName string
 

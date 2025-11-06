@@ -203,7 +203,6 @@ module dnsZone './modules/dns.bicep' = if (enableCustomDomain && customDomain !=
   name: 'dnsZone-${environment}'
   scope: az.resourceGroup(resourceGroupName)
   params: {
-    environment: environment
     domainName: customDomain
     tags: tags
   }

@@ -8,6 +8,8 @@ Tests:
 2. POST /api/v1/auth/verify-email/resend - Resend verification email
 """
 
+from unittest.mock import patch
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import text
@@ -233,14 +235,23 @@ class TestEmailResendContract:
         3. New token generated and sent
         4. Returns success message
         """
-        resend_payload = {"email": unverified_user["email"]}
-        response = await async_client.post("/api/v1/auth/verify-email/resend", json=resend_payload)
+        # Mock the email service to avoid actually sending emails
+        with patch("app.services.email_service.EmailService.send_verification_email") as mock_send:
+            mock_send.return_value = True
 
-        # Should succeed
-        assert response.status_code == 200
-        data = response.json()
-        assert "message" in data
-        assert "sent" in data["message"].lower() or "resent" in data["message"].lower()
+            resend_payload = {"email": unverified_user["email"]}
+            response = await async_client.post(
+                "/api/v1/auth/verify-email/resend", json=resend_payload
+            )
+
+            # Should succeed
+            assert response.status_code == 200
+            data = response.json()
+            assert "message" in data
+            assert "sent" in data["message"].lower() or "resent" in data["message"].lower()
+
+            # Verify email service was called
+            mock_send.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_resend_verification_already_verified_returns_400(

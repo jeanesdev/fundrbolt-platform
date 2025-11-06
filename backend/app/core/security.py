@@ -139,6 +139,74 @@ def create_refresh_token(
     return encoded_jwt
 
 
+def create_invitation_token(
+    invitation_id: str,
+    npo_id: str,
+    email: str,
+    npo_name: str,
+    role: str,
+    inviter_name: str | None = None,
+    first_name: str | None = None,
+    last_name: str | None = None,
+) -> str:
+    """Create a JWT token for NPO invitation.
+
+    Args:
+        invitation_id: UUID of the invitation
+        npo_id: UUID of the NPO
+        email: Email address of invitee
+        npo_name: Name of the NPO organization
+        role: Role being assigned (admin, co_admin, staff)
+        inviter_name: Optional name of person sending invitation
+        first_name: Optional first name to pre-fill registration
+        last_name: Optional last name to pre-fill registration
+
+    Returns:
+        str: Encoded JWT invitation token (7-day expiry)
+
+    Example:
+        token = create_invitation_token(
+            str(invitation.id), str(npo.id), "user@example.com",
+            "Example NPO", "staff", "John Doe", "Jane", "Smith"
+        )
+    """
+    to_encode: dict[str, str | datetime] = {
+        "sub": invitation_id,
+        "npo_id": npo_id,
+        "email": email,
+        "npo_name": npo_name,
+        "role": role,
+        "type": "invitation",
+    }
+
+    if inviter_name:
+        to_encode["inviter_name"] = inviter_name
+
+    if first_name:
+        to_encode["first_name"] = first_name
+
+    if last_name:
+        to_encode["last_name"] = last_name
+
+    expire = datetime.utcnow() + timedelta(days=7)
+
+    to_encode.update(
+        {
+            "exp": expire,
+            "iat": datetime.utcnow(),
+            "jti": secrets.token_urlsafe(32),
+        }
+    )
+
+    encoded_jwt: str = jwt.encode(
+        to_encode,
+        settings.jwt_secret_key,
+        algorithm=settings.jwt_algorithm,
+    )
+
+    return encoded_jwt
+
+
 def decode_token(token: str, verify_expiration: bool = True) -> dict[str, Any]:
     """Decode and verify a JWT token.
 

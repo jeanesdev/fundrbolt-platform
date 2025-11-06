@@ -1,5 +1,6 @@
 import { TermsOfServiceModal } from '@/components/legal/terms-of-service-modal'
 import { PasswordInput } from '@/components/password-input'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -16,8 +17,8 @@ import { consentService } from '@/services/consent-service'
 import { useAuthStore } from '@/stores/auth-store'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from '@tanstack/react-router'
-import { Loader2, UserPlus } from 'lucide-react'
-import { useState } from 'react'
+import { Info, Loader2, UserPlus } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -89,6 +90,7 @@ export function SignUpForm({
   const [isLoading, setIsLoading] = useState(false)
   const [showLegalModal, setShowLegalModal] = useState(false)
   const [legalDocumentIds, setLegalDocumentIds] = useState<{ tosId: string; privacyId: string } | null>(null)
+  const [invitationContext, setInvitationContext] = useState<{ email: string; npo_name: string; token: string } | null>(null)
   const navigate = useNavigate()
   const register = useAuthStore((state) => state.register)
 
@@ -104,6 +106,47 @@ export function SignUpForm({
       acceptedTerms: false,
     },
   })
+
+  // Check for invitation token in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const redirectParam = urlParams.get('redirect')
+
+    if (redirectParam && redirectParam.includes('token=')) {
+      try {
+        // Extract token from redirect URL
+        const tokenMatch = redirectParam.match(/token=([^&]+)/)
+        if (tokenMatch) {
+          const token = decodeURIComponent(tokenMatch[1])
+
+          // Decode JWT to get invitation details
+          const payload = JSON.parse(atob(token.split('.')[1]))
+
+          if (payload.email && payload.npo_name) {
+            setInvitationContext({
+              email: payload.email,
+              npo_name: payload.npo_name,
+              token: token,
+            })
+
+            // Pre-fill email (read-only)
+            form.setValue('email', payload.email)
+
+            // Pre-fill names if provided
+            if (payload.first_name) {
+              form.setValue('first_name', payload.first_name)
+            }
+            if (payload.last_name) {
+              form.setValue('last_name', payload.last_name)
+            }
+          }
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to parse invitation token:', err)
+      }
+    }
+  }, [form])
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true)
@@ -129,12 +172,46 @@ export function SignUpForm({
       }
 
       toast.success(`Account created! ${response.message}`)
-      navigate({ to: '/sign-in', replace: true })
+
+      // If this is an invitation registration, redirect to sign-in with return URL
+      if (invitationContext) {
+        toast.info(`Now sign in to accept your invitation to ${invitationContext.npo_name}`)
+        navigate({
+          to: '/sign-in',
+          search: { redirect: `/invitations/accept?token=${encodeURIComponent(invitationContext.token)}` },
+          replace: true,
+        })
+      } else {
+        navigate({ to: '/sign-in', replace: true })
+      }
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: { message?: string } } } }
-      const errorMessage =
-        error.response?.data?.error?.message ||
-        'Registration failed. Please try again.'
+      const error = err as {
+        response?: {
+          data?: {
+            detail?: string | { code?: string; message?: string; details?: unknown }
+            error?: { message?: string }
+          }
+        }
+      }
+
+      let errorMessage = 'Registration failed. Please try again.'
+
+      // Handle different error response formats
+      if (error.response?.data?.detail) {
+        if (typeof error.response.data.detail === 'string') {
+          errorMessage = error.response.data.detail
+        } else if (error.response.data.detail.message) {
+          errorMessage = error.response.data.detail.message
+
+          // Special handling for duplicate email
+          if (error.response.data.detail.code === 'DUPLICATE_EMAIL') {
+            errorMessage = 'This email is already registered. Please use the "Log in to accept" link instead.'
+          }
+        }
+      } else if (error.response?.data?.error?.message) {
+        errorMessage = error.response.data.error.message
+      }
+
       toast.error(errorMessage)
     } finally {
       setIsLoading(false)
@@ -153,6 +230,17 @@ export function SignUpForm({
         className={cn('grid gap-3', className)}
         {...props}
       >
+        {/* Invitation Context Alert */}
+        {invitationContext && (
+          <Alert className='bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800'>
+            <Info className='h-4 w-4 text-blue-600 dark:text-blue-400' />
+            <AlertDescription className='text-blue-900 dark:text-blue-100'>
+              You're creating an account to join <strong>{invitationContext.npo_name}</strong>.
+              After registration, you'll be prompted to sign in and accept the invitation.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className='grid grid-cols-2 gap-3'>
           <FormField
             control={form.control}
@@ -188,8 +276,18 @@ export function SignUpForm({
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder='name@example.com' {...field} />
+                <Input
+                  placeholder='name@example.com'
+                  {...field}
+                  readOnly={!!invitationContext}
+                  className={invitationContext ? 'bg-muted' : ''}
+                />
               </FormControl>
+              {invitationContext && (
+                <p className='text-xs text-muted-foreground'>
+                  Email from invitation (cannot be changed)
+                </p>
+              )}
               <FormMessage />
             </FormItem>
           )}

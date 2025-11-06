@@ -57,6 +57,26 @@ class RateLimitError(HTTPException):
         )
 
 
+class NotFoundError(HTTPException):
+    """Raised when a resource is not found."""
+
+    def __init__(self, detail: str = "Resource not found"):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=detail,
+        )
+
+
+class ValidationError(HTTPException):
+    """Raised when validation fails."""
+
+    def __init__(self, detail: str = "Validation failed"):
+        super().__init__(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=detail,
+        )
+
+
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     """Handle HTTPException and return JSON response.
 

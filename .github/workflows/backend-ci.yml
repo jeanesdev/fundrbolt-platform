@@ -53,8 +53,8 @@ jobs:
       - name: Lint with Ruff
         run: poetry run ruff check .
 
-      - name: Format check with Black
-        run: poetry run black --check .
+      - name: Format check with Ruff
+        run: poetry run ruff format --check .
 
       - name: Type check with mypy
         run: poetry run mypy app --strict --ignore-missing-imports --exclude 'app/tests'

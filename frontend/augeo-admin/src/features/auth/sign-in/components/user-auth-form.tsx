@@ -1,12 +1,4 @@
-import { useState } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Link, useNavigate } from '@tanstack/react-router'
-import { Loader2, LogIn } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { cn } from '@/lib/utils'
+import { PasswordInput } from '@/components/password-input'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -17,7 +9,16 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { PasswordInput } from '@/components/password-input'
+import { getErrorMessage } from '@/lib/error-utils'
+import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { Loader2, LogIn } from 'lucide-react'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
 
 const formSchema = z.object({
   email: z.email({
@@ -66,9 +67,34 @@ export function UserAuthForm({
       },
       error: (err) => {
         setIsLoading(false)
-        const errorMessage =
-          err.response?.data?.error?.message ||
-          'Login failed. Please try again.'
+
+        // Extract error details
+        const apiError = err as { response?: { data?: { detail?: { code?: string } } } }
+        const errorCode = apiError?.response?.data?.detail?.code
+        const errorMessage = getErrorMessage(err, 'Login failed. Please try again.')
+
+        // Check if email verification is required
+        if (errorCode === 'EMAIL_NOT_VERIFIED') {
+          // Show a more helpful message with action button
+          const email = data.email
+          toast.error(
+            `Email verification required for ${email}`,
+            {
+              description: 'Please check your inbox for the verification link, or request a new one.',
+              action: {
+                label: 'Resend Email',
+                onClick: () => {
+                  // TODO: Implement resend verification email
+                  toast.info('Redirecting to resend verification...')
+                  navigate({ to: '/verify-email', search: { email } })
+                },
+              },
+              duration: 10000, // Show for 10 seconds
+            }
+          )
+          return // Don't show the error string, the custom toast handles it
+        }
+
         return errorMessage
       },
     })
