@@ -1151,15 +1151,21 @@ async def authenticated_client_other_user(
 
 
 @pytest_asyncio.fixture
-async def test_invitation_token(db_session: AsyncSession, test_npo: Any) -> str:
+async def test_invitation_token(db_session: AsyncSession, test_npo: Any, test_user: Any) -> str:
     """
     Create a valid invitation token for testing.
 
     Returns invitation ID as token string for acceptance.
     """
+    import hashlib
+    import uuid
     from datetime import UTC, datetime, timedelta
 
     from app.models.invitation import Invitation, InvitationStatus
+
+    # Generate a simple token hash for testing
+    token = f"test-token-{uuid.uuid4()}"
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
 
     # Create invitation
     invitation = Invitation(
@@ -1168,6 +1174,8 @@ async def test_invitation_token(db_session: AsyncSession, test_npo: Any) -> str:
         role="staff",
         status=InvitationStatus.PENDING,
         expires_at=datetime.now(UTC) + timedelta(days=7),
+        invited_by_user_id=test_user.id,
+        token_hash=token_hash,
     )
     db_session.add(invitation)
     await db_session.commit()
@@ -1177,15 +1185,23 @@ async def test_invitation_token(db_session: AsyncSession, test_npo: Any) -> str:
 
 
 @pytest_asyncio.fixture
-async def test_expired_invitation_token(db_session: AsyncSession, test_npo: Any) -> str:
+async def test_expired_invitation_token(
+    db_session: AsyncSession, test_npo: Any, test_user: Any
+) -> str:
     """
     Create an expired invitation token for testing.
 
     Returns invitation ID as token string for expired invitation.
     """
+    import hashlib
+    import uuid
     from datetime import UTC, datetime, timedelta
 
     from app.models.invitation import Invitation, InvitationStatus
+
+    # Generate a simple token hash for testing
+    token = f"test-token-expired-{uuid.uuid4()}"
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
 
     # Create expired invitation
     invitation = Invitation(
@@ -1194,6 +1210,8 @@ async def test_expired_invitation_token(db_session: AsyncSession, test_npo: Any)
         role="staff",
         status=InvitationStatus.PENDING,
         expires_at=datetime.now(UTC) - timedelta(days=1),
+        invited_by_user_id=test_user.id,
+        token_hash=token_hash,
     )
     db_session.add(invitation)
     await db_session.commit()
@@ -1203,15 +1221,23 @@ async def test_expired_invitation_token(db_session: AsyncSession, test_npo: Any)
 
 
 @pytest_asyncio.fixture
-async def test_accepted_invitation_token(db_session: AsyncSession, test_npo: Any) -> str:
+async def test_accepted_invitation_token(
+    db_session: AsyncSession, test_npo: Any, test_user: Any
+) -> str:
     """
     Create an accepted invitation token for testing.
 
     Returns invitation ID as token string for already accepted invitation.
     """
+    import hashlib
+    import uuid
     from datetime import UTC, datetime, timedelta
 
     from app.models.invitation import Invitation, InvitationStatus
+
+    # Generate a simple token hash for testing
+    token = f"test-token-accepted-{uuid.uuid4()}"
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
 
     # Create accepted invitation
     invitation = Invitation(
@@ -1220,6 +1246,8 @@ async def test_accepted_invitation_token(db_session: AsyncSession, test_npo: Any
         role="staff",
         status=InvitationStatus.ACCEPTED,
         expires_at=datetime.now(UTC) + timedelta(days=7),
+        invited_by_user_id=test_user.id,
+        token_hash=token_hash,
     )
     db_session.add(invitation)
     await db_session.commit()
@@ -1229,15 +1257,23 @@ async def test_accepted_invitation_token(db_session: AsyncSession, test_npo: Any
 
 
 @pytest_asyncio.fixture
-async def test_revoked_invitation_token(db_session: AsyncSession, test_npo: Any) -> str:
+async def test_revoked_invitation_token(
+    db_session: AsyncSession, test_npo: Any, test_user: Any
+) -> str:
     """
     Create a revoked invitation token for testing.
 
     Returns invitation ID as token string for revoked invitation.
     """
+    import hashlib
+    import uuid
     from datetime import UTC, datetime, timedelta
 
     from app.models.invitation import Invitation, InvitationStatus
+
+    # Generate a simple token hash for testing
+    token = f"test-token-revoked-{uuid.uuid4()}"
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
 
     # Create revoked invitation
     invitation = Invitation(
@@ -1246,6 +1282,8 @@ async def test_revoked_invitation_token(db_session: AsyncSession, test_npo: Any)
         role="staff",
         status=InvitationStatus.REVOKED,
         expires_at=datetime.now(UTC) + timedelta(days=7),
+        invited_by_user_id=test_user.id,
+        token_hash=token_hash,
     )
     db_session.add(invitation)
     await db_session.commit()
@@ -1263,9 +1301,15 @@ async def test_invitation_token_existing_member(
 
     Returns invitation ID as token string for invitation to existing member.
     """
+    import hashlib
+    import uuid
     from datetime import UTC, datetime, timedelta
 
     from app.models.invitation import Invitation, InvitationStatus
+
+    # Generate a simple token hash for testing
+    token = f"test-token-existing-{uuid.uuid4()}"
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
 
     # Create invitation for existing member's email
     invitation = Invitation(
@@ -1274,6 +1318,8 @@ async def test_invitation_token_existing_member(
         role="staff",
         status=InvitationStatus.PENDING,
         expires_at=datetime.now(UTC) + timedelta(days=7),
+        invited_by_user_id=test_user.id,
+        token_hash=token_hash,
     )
     db_session.add(invitation)
     await db_session.commit()

@@ -54,8 +54,10 @@ def require_superadmin(current_user: Annotated[User, Depends(get_current_user)])
     description="Retrieve list of NPO applications with PENDING_APPROVAL status (SuperAdmin only)",
 )
 async def get_pending_applications(
-    page: int = 1,
-    page_size: int = 50,
+    skip: int = 0,
+    limit: int = 50,
+    page: int | None = None,
+    page_size: int | None = None,
     status: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_superadmin),
@@ -68,8 +70,10 @@ async def get_pending_applications(
     Returns paginated list of NPOs awaiting approval.
 
     Args:
-        page: Page number (1-indexed)
-        page_size: Number of items per page
+        skip: Number of items to skip (offset-based pagination)
+        limit: Number of items to return
+        page: Page number (1-indexed, alternative to skip/limit)
+        page_size: Number of items per page (alternative to limit)
         status: Filter by status (optional, currently ignored - always returns pending)
         db: Database session
         current_user: Current SuperAdmin user
@@ -77,17 +81,19 @@ async def get_pending_applications(
     Returns:
         Dictionary with applications list and pagination metadata
     """
-    # Calculate skip from page number
-    skip = (page - 1) * page_size
+    # Support both skip/limit and page/page_size pagination
+    if page is not None and page_size is not None:
+        skip = (page - 1) * page_size
+        limit = page_size
 
     npos, total = await ApplicationService.get_pending_applications(
         db=db,
         skip=skip,
-        limit=page_size,
+        limit=limit,
     )
 
-    # Calculate total pages
-    total_pages = (total + page_size - 1) // page_size
+    # Calculate total pages based on limit
+    total_pages = (total + limit - 1) // limit
 
     # Transform NPOs into application format expected by frontend
     applications = []
@@ -111,8 +117,8 @@ async def get_pending_applications(
     return {
         "applications": applications,
         "total": total,
-        "page": page,
-        "page_size": page_size,
+        "skip": skip,
+        "limit": limit,
         "total_pages": total_pages,
     }
 

@@ -83,6 +83,13 @@ async def get_npo_branding(
     summary="Update NPO branding",
     description="Update visual identity configuration. Requires NPO admin role.",
 )
+@router.put(
+    "/{npo_id}/branding",
+    response_model=BrandingUpdateResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update NPO branding",
+    description="Update visual identity configuration. Requires NPO admin role.",
+)
 async def update_npo_branding(
     npo_id: uuid.UUID,
     branding_data: BrandingUpdateRequest,
@@ -139,6 +146,13 @@ async def update_npo_branding(
 
 @router.post(
     "/{npo_id}/branding/logo-upload",
+    response_model=LogoUploadResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Generate logo upload URL",
+    description="Generate pre-signed Azure Blob Storage URL for logo upload.",
+)
+@router.post(
+    "/{npo_id}/logo/upload-url",
     response_model=LogoUploadResponse,
     status_code=status.HTTP_200_OK,
     summary="Generate logo upload URL",
