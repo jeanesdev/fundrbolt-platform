@@ -28,6 +28,8 @@ from app.core.config import Settings
 class FileUploadService:
     """Service for handling file uploads to Azure Blob Storage."""
 
+    blob_service_client: BlobServiceClient | None
+
     # Allowed image MIME types
     ALLOWED_IMAGE_TYPES = {
         "image/jpeg",
