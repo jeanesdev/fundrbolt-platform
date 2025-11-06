@@ -2,3 +2,4 @@ check_sessions.py
 infrastructure/bicep/*.json
 infrastructure/bicep/modules/*.json
 backend/static/uploads/
+node_modules/
