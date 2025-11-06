@@ -3,12 +3,14 @@
  * Modal for accepting legal agreements before NPO submission
  */
 
-import { useState } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Check, Loader2 } from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
+import { LegalDocumentViewer } from '@/components/legal/legal-document-viewer'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -17,13 +19,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { LegalDocumentViewer } from '@/components/legal/legal-document-viewer'
-import { legalService } from '@/services/legal-service'
 import { consentService } from '@/services/consent-service'
+import { legalService } from '@/services/legal-service'
 
 interface NPOLegalAgreementModalProps {
   open: boolean
@@ -65,8 +65,7 @@ export function NPOLegalAgreementModal({
       toast.success('Legal agreements accepted')
       onAccepted()
     },
-    onError: (error) => {
-      console.error('Failed to accept legal agreements:', error)
+    onError: () => {
       toast.error('Failed to accept legal agreements. Please try again.')
     },
   })

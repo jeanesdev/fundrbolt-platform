@@ -3,6 +3,7 @@
  * Displays application status and submit button for NPO Admins
  */
 
+import { NPOLegalAgreementModal } from '@/components/npo/npo-legal-agreement-modal'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +16,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { NPOLegalAgreementModal } from '@/components/npo/npo-legal-agreement-modal'
 import { npoService } from '@/services/npo-service'
 import { useNPOStore } from '@/stores/npo-store'
 import type { NPODetail } from '@/types/npo'
@@ -92,7 +92,7 @@ export function ApplicationStatusBadge({
     } else {
       setErrorMessage(null)
     }
-  }, [npo.name, npo.description, npo.email, npo.phone, npo.address, npo.tax_id])
+  }, [npo.name, npo.description, npo.email, npo.phone, npo.address, npo.tax_id, validateRequiredFields])
 
   // Check if submit button should be disabled
   const isSubmitDisabled = isSubmitting || !!errorMessage

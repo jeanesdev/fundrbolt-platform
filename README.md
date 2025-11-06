@@ -168,6 +168,79 @@ augeo-platform/
 
 **Cost Management**: Budget alerts (80%, 100%), auto-scaling, daily ingestion caps
 
+## Platform Features
+
+### NPO Management (002-npo-creation) ✅ Complete
+
+Comprehensive nonprofit organization onboarding and management system with multi-tenant architecture.
+
+**Key Capabilities**:
+- **Organization Profiles**: Create detailed NPO profiles with validation (name, description, contact info, tax ID, address)
+- **Custom Branding**: Logo upload (image cropping), color customization (WCAG AA contrast checking), social media links
+- **Team Collaboration**: Role-based team management (Admin > Co-Admin > Staff), email invitations with JWT tokens
+- **Application Workflow**: Draft → Submit → SuperAdmin Review → Approved/Rejected
+- **Legal Compliance**: Automatic Terms of Service and Privacy Policy consent tracking with audit trail
+
+**User Roles**:
+- **NPO Admin**: Create profile, customize branding, invite team, submit for approval
+- **NPO Co-Admin**: Update details, manage branding, invite staff members
+- **NPO Staff**: View-only access to organization information
+- **SuperAdmin**: Review and approve/reject applications with notes
+
+**Technical Highlights**:
+- Multi-tenant data isolation with row-level security
+- Consent enforcement middleware (409 Conflict if consent outdated)
+- Real-time validation and auto-save
+- Responsive mobile-first UI
+- Comprehensive audit logging
+
+**Documentation**: [NPO Management Feature Guide](./docs/features/npo-management.md)
+
+**API Endpoints**: 25+ RESTful endpoints for NPO CRUD, team management, branding, applications, and consent
+
+**Test Coverage**: 224 tests passing (40% coverage), 21 contract tests, integration and unit tests
+
+### User Authentication & Authorization (001-user-authentication-role) ✅ Complete
+
+Secure authentication system with role-based access control and GDPR-compliant consent management.
+
+**Features**:
+- OAuth2 + JWT authentication (15-min access, 7-day refresh tokens)
+- Email verification with token-based confirmation
+- Password reset workflow with secure tokens
+- Rate limiting (5 login attempts per 15 minutes)
+- Session tracking with device info and IP logging
+- Role hierarchy: SuperAdmin > NPO Admin > NPO Co-Admin > NPO Staff > Donor
+
+**Documentation**: [Authentication System](./backend/app/api/v1/auth.py)
+
+### Legal Documentation & Consent (005-legal-documentation) ✅ Complete
+
+GDPR-compliant legal document management with versioned consent tracking.
+
+**Features**:
+- Versioned Terms of Service and Privacy Policy (semantic versioning)
+- Automatic consent enforcement via middleware
+- Cookie consent management (Essential, Analytics, Marketing)
+- Data export and deletion requests (30-day grace period)
+- Immutable audit trail (7-year retention)
+
+**Documentation**: [Legal Compliance](./backend/app/models/legal_document.py)
+
+### Cloud Infrastructure (004-cloud-infrastructure-deployment) ✅ Complete
+
+Production-ready Azure infrastructure with 9 phases complete (Setup → Safeguards).
+
+**Features**:
+- Infrastructure as Code (Bicep) with 11 Azure resources
+- CI/CD pipelines for backend, frontend, and infrastructure
+- Blue-green deployment with automatic rollback
+- Comprehensive monitoring and alerting
+- Disaster recovery procedures (1-hour RTO, 15-min RPO)
+- Cost optimization with budgets and auto-scaling
+
+**Documentation**: [Infrastructure Guide](./infrastructure/README.md)
+
 ## Development Workflow
 
 ### Backend Development

@@ -1,6 +1,6 @@
 """Admin API endpoints for SuperAdmin operations."""
 
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -59,7 +59,7 @@ async def get_pending_applications(
     status: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_superadmin),
-) -> dict[str, int | list[NPOResponse]]:
+) -> dict[str, Any]:
     """
     Get all pending NPO applications.
 
@@ -92,19 +92,23 @@ async def get_pending_applications(
     # Transform NPOs into application format expected by frontend
     applications = []
     for npo in npos:
-        applications.append({
-            "id": str(npo.id),
-            "npo_id": str(npo.id),
-            "status": "submitted" if npo.status.value == "pending_approval" else npo.status.value,
-            "review_notes": None,
-            "reviewed_by_user_id": None,
-            "submitted_at": npo.created_at.isoformat(),
-            "reviewed_at": None,
-            "created_at": npo.created_at.isoformat(),
-            "updated_at": npo.updated_at.isoformat(),
-            "npo_name": npo.name,
-            "npo_email": npo.email,
-        })
+        applications.append(
+            {
+                "id": str(npo.id),
+                "npo_id": str(npo.id),
+                "status": "submitted"
+                if npo.status.value == "pending_approval"
+                else npo.status.value,
+                "review_notes": None,
+                "reviewed_by_user_id": None,
+                "submitted_at": npo.created_at.isoformat(),
+                "reviewed_at": None,
+                "created_at": npo.created_at.isoformat(),
+                "updated_at": npo.updated_at.isoformat(),
+                "npo_name": npo.name,
+                "npo_email": npo.email,
+            }
+        )
 
     return {
         "items": applications,
@@ -153,9 +157,14 @@ async def review_application(
     """
     # Debug logging
     import logging
+
     logger = logging.getLogger(__name__)
-    logger.error(f"DEBUG: Received review request - npo_id: {npo_id}, decision: {review_request.decision}, notes: {review_request.notes}")
-    logger.error(f"DEBUG: Request type: decision={type(review_request.decision)}, notes={type(review_request.notes)}")
+    logger.error(
+        f"DEBUG: Received review request - npo_id: {npo_id}, decision: {review_request.decision}, notes: {review_request.notes}"
+    )
+    logger.error(
+        f"DEBUG: Request type: decision={type(review_request.decision)}, notes={type(review_request.notes)}"
+    )
 
     # Validate decision
     if review_request.decision not in ("approve", "reject"):
