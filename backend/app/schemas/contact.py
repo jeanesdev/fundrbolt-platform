@@ -17,6 +17,7 @@ class ContactSubmissionCreate(BaseModel):
     sender_email: EmailStr
     subject: str = Field(..., min_length=1, max_length=200)
     message: str = Field(..., min_length=1, max_length=5000)
+    website: str = Field(default="", max_length=0)  # Honeypot field - must be empty
 
     @field_validator("sender_name")
     @classmethod
@@ -24,6 +25,14 @@ class ContactSubmissionCreate(BaseModel):
         """Ensure name is at least 2 characters"""
         if not isinstance(value, str) or len(value.strip()) < 2:
             raise ValueError("Name must be at least 2 characters")
+        return value
+
+    @field_validator("website")
+    @classmethod
+    def validate_honeypot(cls, value: str) -> str:
+        """Reject if honeypot field is filled (bot detection)"""
+        if value:
+            raise ValueError("Bot detected")
         return value
 
     @field_validator("message", "sender_name")

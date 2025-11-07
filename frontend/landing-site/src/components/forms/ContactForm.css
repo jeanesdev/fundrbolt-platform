@@ -114,6 +114,17 @@
     font-size: 1rem;
 }
 
+/* Honeypot field - hidden from humans, visible to bots */
+.honeypot-field {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
 /* Submit button */
 .contact-form .btn {
     width: 100%;

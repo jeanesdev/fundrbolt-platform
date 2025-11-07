@@ -24,6 +24,8 @@ const contactSchema = z.object({
     .string()
     .min(1, 'Message is required')
     .max(5000, 'Message must not exceed 5000 characters'),
+  // Honeypot field - should always be empty
+  website: z.string().max(0, 'Bot detected').optional(),
 });
 
 type ContactFormData = z.infer<typeof contactSchema>;
@@ -176,6 +178,19 @@ export const ContactForm = ({ onSuccess }: ContactFormProps) => {
             {errors.message.message}
           </p>
         )}
+      </div>
+
+      {/* Honeypot field - hidden from humans, catches bots */}
+      <div className="honeypot-field" aria-hidden="true">
+        <label htmlFor="website">Website (leave blank)</label>
+        <input
+          type="text"
+          id="website"
+          className="form-input"
+          {...register('website')}
+          tabIndex={-1}
+          autoComplete="off"
+        />
       </div>
 
       {/* Submit button */}
