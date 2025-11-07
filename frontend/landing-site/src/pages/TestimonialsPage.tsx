@@ -5,8 +5,8 @@
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
-import { testimonialApi, Testimonial } from '../services/api';
 import { TestimonialCard } from '../components/testimonials/TestimonialCard';
+import { Testimonial, testimonialApi } from '../services/api';
 import './TestimonialsPage.css';
 
 type RoleFilter = '' | 'donor' | 'auctioneer' | 'npo_admin';
@@ -163,30 +163,33 @@ export const TestimonialsPage = () => {
             </div>
           )}
 
-          {/* Pagination */}
-          {!loading && !error && testimonials.length > 0 && (
-            <div className="pagination" role="navigation" aria-label="Pagination">
-              <button
-                className="pagination-btn"
-                onClick={handlePrevPage}
-                disabled={currentPage === 1}
-                aria-label="Go to previous page"
-              >
-                ← Previous
-              </button>
-              <span className="pagination-info" aria-live="polite">
-                Page {currentPage}
-              </span>
-              <button
-                className="pagination-btn"
-                onClick={handleNextPage}
-                disabled={testimonials.length < ITEMS_PER_PAGE}
-                aria-label="Go to next page"
-              >
-                Next →
-              </button>
-            </div>
-          )}
+          {/* Pagination - only show if there's more than one page */}
+          {!loading &&
+            !error &&
+            testimonials.length > 0 &&
+            (currentPage > 1 || testimonials.length === ITEMS_PER_PAGE) && (
+              <div className="pagination" role="navigation" aria-label="Pagination">
+                <button
+                  className="pagination-btn"
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                  aria-label="Go to previous page"
+                >
+                  ← Previous
+                </button>
+                <span className="pagination-info" aria-live="polite">
+                  Page {currentPage}
+                </span>
+                <button
+                  className="pagination-btn"
+                  onClick={handleNextPage}
+                  disabled={testimonials.length < ITEMS_PER_PAGE}
+                  aria-label="Go to next page"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
         </div>
       </section>
 

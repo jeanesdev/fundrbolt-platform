@@ -3,11 +3,11 @@
  * Tests WCAG 2.1 AA compliance using axe-core.
  */
 
-import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import { HelmetProvider } from 'react-helmet-async';
 import { axe } from 'jest-axe';
+import { HelmetProvider } from 'react-helmet-async';
+import { BrowserRouter } from 'react-router-dom';
+import { describe, expect, it } from 'vitest';
 import { AboutPage } from './AboutPage';
 
 const renderWithProviders = (component: React.ReactElement) => {

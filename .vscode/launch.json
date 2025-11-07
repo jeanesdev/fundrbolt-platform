@@ -98,7 +98,7 @@
       "justMyCode": false
     },
     {
-      "name": "Frontend: Chrome",
+      "name": "Frontend: Admin Dashboard (Chrome)",
       "type": "chrome",
       "request": "launch",
       "url": "http://localhost:5173",
@@ -116,17 +116,35 @@
       }
     },
     {
-      "name": "Frontend: Edge",
-      "type": "msedge",
+      "name": "Frontend: Landing Site (Chrome)",
+      "type": "chrome",
       "request": "launch",
-      "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}/frontend/augeo-admin/src",
+      "url": "http://localhost:3001",
+      "webRoot": "${workspaceFolder}/frontend/landing-site/src",
       "sourceMaps": true,
       "skipFiles": [
         "<node_internals>/**",
         "**/node_modules/**"
       ],
-      "preLaunchTask": "start-frontend-with-cleanup",
+      "preLaunchTask": "start-landing-site",
+      "serverReadyAction": {
+        "pattern": "Local:.*(http://localhost:[0-9]+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
+    },
+    {
+      "name": "Frontend: Landing Site - Testimonials (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3001/testimonials",
+      "webRoot": "${workspaceFolder}/frontend/landing-site/src",
+      "sourceMaps": true,
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/node_modules/**"
+      ],
+      "preLaunchTask": "start-landing-site",
       "serverReadyAction": {
         "pattern": "Local:.*(http://localhost:[0-9]+)",
         "uriFormat": "%s",

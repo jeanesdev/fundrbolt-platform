@@ -2,10 +2,10 @@
  * Tests for AboutPage component.
  */
 
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { BrowserRouter } from 'react-router-dom';
+import { describe, expect, it } from 'vitest';
 import { AboutPage } from './AboutPage';
 
 const renderWithProviders = (component: React.ReactElement) => {

@@ -2,251 +2,251 @@
 
 /* Hero Section */
 .about-hero {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  color: white;
-  padding: 4rem 0 3rem;
-  text-align: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4rem 0 3rem;
+    text-align: center;
 }
 
 .about-hero h1 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  font-weight: 700;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
 }
 
 .hero-subtitle {
-  font-size: 1.125rem;
-  opacity: 0.95;
-  max-width: 600px;
-  margin: 0 auto;
+    font-size: 1.125rem;
+    opacity: 0.95;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 /* Mission Section */
 .mission-section {
-  padding: 3rem 0;
-  background-color: var(--background-color);
+    padding: 3rem 0;
+    background-color: var(--color-bg-alt);
 }
 
 .mission-section h2 {
-  font-size: 1.75rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-  color: var(--text-color);
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: var(--color-text);
 }
 
 .mission-text {
-  font-size: 1.125rem;
-  line-height: 1.8;
-  color: var(--text-secondary);
-  margin-bottom: 1.5rem;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
+    font-size: 1.125rem;
+    line-height: 1.8;
+    color: var(--color-text-light);
+    margin-bottom: 1.5rem;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Features Section */
 .features-section {
-  padding: 3rem 0;
-  background-color: white;
+    padding: 3rem 0;
+    background-color: white;
 }
 
 .features-section h2 {
-  font-size: 1.75rem;
-  margin-bottom: 2rem;
-  text-align: center;
-  color: var(--text-color);
+    font-size: 1.75rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: var(--color-text);
 }
 
 .features-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
 }
 
 .feature-card {
-  background: var(--background-color);
-  padding: 1.5rem;
-  border-radius: var(--border-radius);
-  border: 1px solid var(--border-color);
-  transition: all 0.3s ease;
+    background: var(--color-bg-alt);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    transition: all 0.3s ease;
 }
 
 .feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary-color);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-primary);
 }
 
 .feature-icon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
 }
 
 .feature-card h3 {
-  font-size: 1.25rem;
-  margin-bottom: 0.75rem;
-  color: var(--text-color);
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+    color: var(--color-text);
 }
 
 .feature-card p {
-  font-size: 1rem;
-  line-height: 1.6;
-  color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--color-text-light);
 }
 
 /* Benefits Section */
 .benefits-section {
-  padding: 3rem 0;
-  background: linear-gradient(to bottom, white 0%, var(--background-color) 100%);
+    padding: 3rem 0;
+    background: linear-gradient(to bottom, white 0%, var(--color-bg-alt) 100%);
 }
 
 .benefits-section h2 {
-  font-size: 1.75rem;
-  margin-bottom: 2rem;
-  text-align: center;
-  color: var(--text-color);
+    font-size: 1.75rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: var(--color-text);
 }
 
 .benefits-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
 }
 
 .benefit-card {
-  background: white;
-  padding: 2rem;
-  border-radius: var(--border-radius);
-  border: 2px solid var(--border-color);
-  transition: all 0.3s ease;
+    background: white;
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--color-border);
+    transition: all 0.3s ease;
 }
 
 .benefit-card.featured {
-  border-color: var(--primary-color);
-  background: linear-gradient(to bottom, white 0%, #f0f7ff 100%);
+    border-color: var(--color-primary);
+    background: linear-gradient(to bottom, white 0%, #f0f7ff 100%);
 }
 
 .benefit-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
 }
 
 .benefit-card h3 {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-  color: var(--text-color);
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--color-text);
 }
 
 .benefit-card ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 .benefit-card li {
-  padding: 0.5rem 0;
-  padding-left: 1.5rem;
-  position: relative;
-  color: var(--text-secondary);
-  line-height: 1.6;
+    padding: 0.5rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+    color: var(--color-text-light);
+    line-height: 1.6;
 }
 
 .benefit-card li::before {
-  content: '✓';
-  position: absolute;
-  left: 0;
-  color: var(--primary-color);
-  font-weight: bold;
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--color-primary);
+    font-weight: bold;
 }
 
 /* CTA Section */
 .cta-section {
-  padding: 4rem 0;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  color: white;
-  text-align: center;
+    padding: 4rem 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
 }
 
 .cta-section h2 {
-  font-size: 1.75rem;
-  margin-bottom: 1rem;
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
 }
 
 .cta-section p {
-  font-size: 1.125rem;
-  margin-bottom: 2rem;
-  opacity: 0.95;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
+    font-size: 1.125rem;
+    margin-bottom: 2rem;
+    opacity: 0.95;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .cta-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 400px;
-  margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 400px;
+    margin: 0 auto;
 }
 
 /* Tablet Styles */
 @media (min-width: 768px) {
-  .about-hero h1 {
-    font-size: 2.5rem;
-  }
+    .about-hero h1 {
+        font-size: 2.5rem;
+    }
 
-  .hero-subtitle {
-    font-size: 1.25rem;
-  }
+    .hero-subtitle {
+        font-size: 1.25rem;
+    }
 
-  .features-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
-  }
+    .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+    }
 
-  .benefits-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
-  }
+    .benefits-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+    }
 
-  .cta-buttons {
-    flex-direction: row;
-    justify-content: center;
-    max-width: none;
-  }
+    .cta-buttons {
+        flex-direction: row;
+        justify-content: center;
+        max-width: none;
+    }
 }
 
 /* Desktop Styles */
 @media (min-width: 1024px) {
-  .about-hero {
-    padding: 5rem 0 4rem;
-  }
+    .about-hero {
+        padding: 5rem 0 4rem;
+    }
 
-  .about-hero h1 {
-    font-size: 3rem;
-  }
+    .about-hero h1 {
+        font-size: 3rem;
+    }
 
-  .mission-section,
-  .features-section,
-  .benefits-section {
-    padding: 4rem 0;
-  }
+    .mission-section,
+    .features-section,
+    .benefits-section {
+        padding: 4rem 0;
+    }
 
-  .features-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+    .features-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
 
-  .benefits-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+    .benefits-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
 
-  .mission-section h2,
-  .features-section h2,
-  .benefits-section h2 {
-    font-size: 2rem;
-  }
+    .mission-section h2,
+    .features-section h2,
+    .benefits-section h2 {
+        font-size: 2rem;
+    }
 
-  .cta-section h2 {
-    font-size: 2.25rem;
-  }
+    .cta-section h2 {
+        font-size: 2.25rem;
+    }
 }

@@ -3,8 +3,8 @@
  */
 
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { PublicLayout } from './components/layout/PublicLayout';
 
 // Lazy load pages for code splitting

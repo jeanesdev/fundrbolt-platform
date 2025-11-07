@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 from app.models.testimonial import AuthorRole
 
@@ -35,6 +35,8 @@ class TestimonialUpdate(BaseModel):
 class TestimonialResponse(BaseModel):
     """Schema for testimonial response (public view)."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     quote_text: str
     author_name: str
@@ -44,9 +46,6 @@ class TestimonialResponse(BaseModel):
     display_order: int
     is_published: bool
     created_at: datetime
-
-    class Config:
-        orm_mode = True
 
 
 class TestimonialDetail(TestimonialResponse):
