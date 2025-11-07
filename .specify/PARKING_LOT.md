@@ -144,6 +144,20 @@ Items that are deferred, blocked, or waiting for future consideration.
 - **Priority**: Medium - Not blocking current development, required before production launch
 - **Dependencies**: T162 (Production Deployment), DNS propagation (24-48 hours)
 
+### Feature 006: Landing Page - Performance & Production Tasks (T083-T094)
+- **Status**: Deferred - MVP is production-ready without these optimizations
+- **Feature**: 006-landing-page
+- **Tasks**: Performance optimization (T083-T088), Production readiness (T089-T094)
+- **Current State**: Core functionality complete, 148 tests passing (88 testimonial + 60 contact form)
+- **Reason**: Optimizations not critical for initial launch; core observability already in place
+- **Blocking**: None - can be implemented incrementally post-launch
+- **Revisit When**:
+  - User feedback indicates slow page loads
+  - Bundle size becomes problematic (>300KB)
+  - Need enhanced monitoring/alerting
+- **Estimated Effort**: 8-12 days total
+- **Details**: See `.specify/specs/006-landing-page/PARKING_LOT.md`
+
 ## Future Enhancements
 
 ### Row-Level Security (RLS)
@@ -160,12 +174,41 @@ Items that are deferred, blocked, or waiting for future consideration.
 - **Priority**: Nice-to-have enhancement
 - **Estimated Effort**: 3-5 days
 
+## Known Issues
+
+### Feature 006: Rate Limiting Redis Bug
+- **Status**: Identified in testing, deferred fix
+- **Impact**: 500 error on 6th+ contact form submission
+- **Root Cause**: Redis data type conflict (middleware uses string counters, service uses sorted sets)
+- **Fix Required**: Refactor to use consistent Redis implementation (recommend sorted sets)
+- **Test**: `test_rate_limiting_blocks_excessive_submissions` currently skipped
+- **Priority**: Medium - Security/stability issue but workaround exists (works for first 5 submissions)
+- **Estimated Effort**: 1-2 days
+
+### Feature 006: HTML Sanitization Not Implemented
+- **Status**: Identified in testing, deferred fix
+- **Impact**: Contact form stores unsanitized HTML/script tags
+- **Security Risk**: Medium (XSS if displayed in admin without escaping)
+- **Fix Required**: Add HTML sanitization to ContactSubmissionCreate schema
+- **Recommendation**: Use `bleach` or `markupsafe` library
+- **Test**: `test_contact_submission_html_sanitization` currently skipped
+- **Priority**: Medium - Security issue but data not rendered without escaping
+- **Estimated Effort**: 1 day
+
+### Feature 006: Whitespace Trimming Not Implemented
+- **Status**: Identified in testing, deferred fix
+- **Impact**: Leading/trailing whitespace not trimmed from form fields
+- **Fix Required**: Add `.strip()` to Pydantic validators
+- **Test**: `test_whitespace_trimming_in_name_field` currently skipped
+- **Priority**: Low - Cosmetic issue only
+- **Estimated Effort**: 0.5 days
+
 ## Decisions Needed
 
 None currently - all active work has clear direction.
 
 ---
 
-**Last Updated**: 2025-10-28
+**Last Updated**: 2025-11-07
 **Maintained By**: Development Team
 **Review Cadence**: Update after each phase completion

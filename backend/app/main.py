@@ -111,6 +111,7 @@ app = FastAPI(
         {"name": "legal", "description": "Legal documents (Terms of Service, Privacy Policy)"},
         {"name": "consent", "description": "User consent management and GDPR compliance"},
         {"name": "cookies", "description": "Cookie consent management (EU Cookie Law)"},
+        {"name": "public-contact", "description": "Public contact form submission"},
         {"name": "health", "description": "Health check and monitoring"},
         {"name": "metrics", "description": "Prometheus metrics for monitoring"},
         {"name": "root", "description": "Root API information"},

@@ -1,0 +1,159 @@
+/* Contact Form Styles */
+
+.contact-form {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Form messages */
+.form-message {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-message.success {
+    background: #d1fae5;
+    border: 1px solid #6ee7b7;
+    color: #065f46;
+}
+
+.form-message.error {
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    color: #991b1b;
+}
+
+.form-message p {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+/* Form field */
+.form-field {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--color-text-dark);
+    margin-bottom: 0.5rem;
+}
+
+.form-label .required {
+    color: #dc2626;
+}
+
+/* Form inputs */
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--color-text);
+    background: var(--color-white);
+    border: 2px solid var(--color-border);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-input.error {
+    border-color: #dc2626;
+}
+
+.form-input.error:focus {
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.form-input:disabled {
+    background: var(--color-bg-light);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* Form error message */
+.form-error {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.875rem;
+    color: #dc2626;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.form-error::before {
+    content: '⚠';
+    font-size: 1rem;
+}
+
+/* Honeypot field - hidden from humans, visible to bots */
+.honeypot-field {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Submit button */
+.contact-form .btn {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.btn-large {
+    padding: 1rem 2rem;
+    font-size: 1.0625rem;
+    font-weight: 600;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .form-input {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.9375rem;
+    }
+
+    .form-label {
+        font-size: 0.875rem;
+    }
+
+    .form-textarea {
+        min-height: 100px;
+    }
+
+    .btn-large {
+        padding: 0.875rem 1.5rem;
+        font-size: 1rem;
+    }
+}

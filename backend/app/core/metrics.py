@@ -19,6 +19,13 @@ DB_FAILURES_TOTAL = Counter("augeo_db_failures_total", "Total DB failure events"
 REDIS_FAILURES_TOTAL = Counter("augeo_redis_failures_total", "Total Redis failure events")
 EMAIL_FAILURES_TOTAL = Counter("augeo_email_failures_total", "Total email send failures")
 
+# Contact form submission counters
+CONTACT_SUBMISSIONS_TOTAL = Counter(
+    "augeo_contact_submissions_total",
+    "Total number of contact form submissions",
+    ["status"],  # success or failure
+)
+
 # Simple gauges for introspection
 UP = Gauge("augeo_up", "Application up (1 = up, 0 = down)")
 
@@ -34,6 +41,7 @@ __all__ = [
     "DB_FAILURES_TOTAL",
     "REDIS_FAILURES_TOTAL",
     "EMAIL_FAILURES_TOTAL",
+    "CONTACT_SUBMISSIONS_TOTAL",
     "UP",
     "set_up",
 ]
