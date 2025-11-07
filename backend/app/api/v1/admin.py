@@ -50,10 +50,10 @@ def require_superadmin(current_user: Annotated[User, Depends(get_current_user)])
 @router.get(
     "/npos/applications",
     response_model=dict,
-    summary="Get pending NPO applications",
-    description="Retrieve list of NPO applications with PENDING_APPROVAL status (SuperAdmin only)",
+    summary="Get NPO applications",
+    description="Retrieve list of NPO applications with optional status filter (SuperAdmin only)",
 )
-async def get_pending_applications(
+async def get_applications(
     skip: int = 0,
     limit: int = 50,
     page: int | None = None,
@@ -63,18 +63,18 @@ async def get_pending_applications(
     current_user: User = Depends(require_superadmin),
 ) -> dict[str, Any]:
     """
-    Get all pending NPO applications.
+    Get NPO applications with optional status filter.
 
     **SuperAdmin only**
 
-    Returns paginated list of NPOs awaiting approval.
+    Returns paginated list of NPO applications.
 
     Args:
         skip: Number of items to skip (offset-based pagination)
         limit: Number of items to return
         page: Page number (1-indexed, alternative to skip/limit)
         page_size: Number of items per page (alternative to limit)
-        status: Filter by status (optional, currently ignored - always returns pending)
+        status: Filter by application status (submitted, under_review, approved, rejected)
         db: Database session
         current_user: Current SuperAdmin user
 
@@ -86,10 +86,11 @@ async def get_pending_applications(
         skip = (page - 1) * page_size
         limit = page_size
 
-    npos, total = await ApplicationService.get_pending_applications(
+    npos, total = await ApplicationService.get_applications(
         db=db,
         skip=skip,
         limit=limit,
+        status=status,
     )
 
     # Calculate total pages based on limit
@@ -98,11 +99,20 @@ async def get_pending_applications(
     # Transform NPOs into application format expected by frontend
     applications = []
     for npo in npos:
+        # Map NPO status to application status
+        status_map = {
+            "draft": "submitted",
+            "pending_approval": "under_review",
+            "approved": "approved",
+            "rejected": "rejected",
+        }
+        app_status = status_map.get(npo.status.value, "submitted")
+
         applications.append(
             {
                 "id": str(npo.id),
                 "npo_id": str(npo.id),
-                "status": npo.status.value,
+                "status": app_status,
                 "review_notes": None,
                 "reviewed_by_user_id": None,
                 "submitted_at": npo.created_at.isoformat(),
@@ -114,11 +124,14 @@ async def get_pending_applications(
             }
         )
 
+    # Calculate page number from skip/limit
+    current_page = (skip // limit) + 1 if limit > 0 else 1
+
     return {
-        "applications": applications,
+        "items": applications,
         "total": total,
-        "skip": skip,
-        "limit": limit,
+        "page": current_page,
+        "page_size": limit,
         "total_pages": total_pages,
     }
 

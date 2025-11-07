@@ -1,5 +1,6 @@
 """Application service for NPO application submission and review."""
 
+from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -235,6 +236,64 @@ class ApplicationService:
         return npo
 
     @staticmethod
+    async def get_applications(
+        db: AsyncSession,
+        skip: int = 0,
+        limit: int = 50,
+        status: str | None = None,
+    ) -> tuple[list[NPO], int]:
+        """
+        Get NPO applications with optional status filter (SuperAdmin only).
+
+        Args:
+            db: Database session
+            skip: Number of records to skip (pagination)
+            limit: Maximum number of records to return
+            status: Optional status filter (pending_approval, approved, rejected, draft)
+
+        Returns:
+            Tuple of (list of NPOs, total count)
+        """
+        # Build base query with status filter
+        where_conditions: list[Any] = [NPO.deleted_at.is_(None)]
+
+        if status:
+            # Map application status to NPO status
+            # Application statuses: submitted, under_review, approved, rejected
+            # NPO statuses: draft, pending_approval, approved, rejected
+            status_map = {
+                "submitted": NPOStatus.PENDING_APPROVAL,  # Submitted = waiting for review
+                "under_review": NPOStatus.PENDING_APPROVAL,  # Same as submitted
+                "approved": NPOStatus.APPROVED,
+                "rejected": NPOStatus.REJECTED,
+            }
+            npo_status = status_map.get(status)
+            if npo_status:
+                where_conditions.append(NPO.status == npo_status)
+        else:
+            # Default: only show pending_approval if no status specified
+            where_conditions.append(NPO.status == NPOStatus.PENDING_APPROVAL)
+
+        # Count query
+        count_stmt = select(NPO).where(*where_conditions)
+        count_result = await db.execute(count_stmt)
+        total = len(count_result.scalars().all())
+
+        # Data query with pagination
+        stmt = (
+            select(NPO)
+            .options(selectinload(NPO.creator))
+            .where(*where_conditions)
+            .order_by(NPO.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await db.execute(stmt)
+        npos = result.scalars().all()
+
+        return list(npos), total
+
+    @staticmethod
     async def get_pending_applications(
         db: AsyncSession,
         skip: int = 0,
@@ -242,6 +301,7 @@ class ApplicationService:
     ) -> tuple[list[NPO], int]:
         """
         Get all NPOs with PENDING_APPROVAL status (SuperAdmin only).
+        This is a convenience method that calls get_applications with status filter.
 
         Args:
             db: Database session
@@ -251,30 +311,12 @@ class ApplicationService:
         Returns:
             Tuple of (list of pending NPOs, total count)
         """
-        # Count query
-        count_stmt = select(NPO).where(
-            NPO.status == NPOStatus.PENDING_APPROVAL,
-            NPO.deleted_at.is_(None),
+        return await ApplicationService.get_applications(
+            db=db,
+            skip=skip,
+            limit=limit,
+            status="under_review",
         )
-        count_result = await db.execute(count_stmt)
-        total = len(count_result.scalars().all())
-
-        # Data query with pagination
-        stmt = (
-            select(NPO)
-            .options(selectinload(NPO.creator))
-            .where(
-                NPO.status == NPOStatus.PENDING_APPROVAL,
-                NPO.deleted_at.is_(None),
-            )
-            .order_by(NPO.created_at.desc())
-            .offset(skip)
-            .limit(limit)
-        )
-        result = await db.execute(stmt)
-        npos = result.scalars().all()
-
-        return list(npos), total
 
     @staticmethod
     async def get_application_by_npo_id(
