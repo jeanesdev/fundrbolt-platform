@@ -1,0 +1,1212 @@
+openapi: 3.0.3
+info:
+  title: Augeo Events API
+  description: API for creating and managing fundraising events
+  version: 1.0.0
+  contact:
+    name: Augeo Platform
+    email: engineering@augeo.app
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.augeo.app/api/v1
+    description: Production
+  - url: https://api.staging.augeo.app/api/v1
+    description: Staging
+  - url: http://localhost:8000/api/v1
+    description: Local Development
+
+tags:
+  - name: events
+    description: Event creation and management operations
+  - name: event-media
+    description: Event media file upload and management
+  - name: event-links
+    description: Event external links management
+  - name: food-options
+    description: Event food options management
+
+paths:
+  /events:
+    get:
+      summary: List events
+      description: Retrieve paginated list of events for the authenticated user's NPO. Supports filtering by status.
+      operationId: listEvents
+      tags:
+        - events
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by event status
+          required: false
+          schema:
+            type: string
+            enum: [draft, active, closed]
+        - name: npo_id
+          in: query
+          description: Filter by NPO ID (admin only)
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of events retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventSummary'
+                  total:
+                    type: integer
+                    description: Total number of events matching filter
+                  page:
+                    type: integer
+                    description: Current page number
+                  per_page:
+                    type: integer
+                    description: Items per page
+                  total_pages:
+                    type: integer
+                    description: Total number of pages
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      summary: Create event
+      description: Create a new fundraising event. User must have Event Coordinator or NPO Admin role.
+      operationId: createEvent
+      tags:
+        - events
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCreate'
+      responses:
+        '201':
+          description: Event created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /events/{event_id}:
+    get:
+      summary: Get event details
+      description: Retrieve full details of a specific event including all media, links, and food options.
+      operationId: getEvent
+      tags:
+        - events
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: Event details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update event
+      description: Update event details. User must be Event Coordinator or NPO Admin for the event's NPO.
+      operationId: updateEvent
+      tags:
+        - events
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventUpdate'
+      responses:
+        '200':
+          description: Event updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Conflict - concurrent edit detected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Conflict: event was modified by another user"
+                  current_version:
+                    type: integer
+                    example: 5
+                  your_version:
+                    type: integer
+                    example: 3
+                  current_data:
+                    $ref: '#/components/schemas/EventDetail'
+                  your_changes:
+                    type: object
+                    description: Changes you attempted to make
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    delete:
+      summary: Delete event
+      description: Soft delete an event. Only allowed for draft events with no registrations.
+      operationId: deleteEvent
+      tags:
+        - events
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '204':
+          description: Event deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Conflict - cannot delete event with registrations
+
+  /events/{event_id}/publish:
+    post:
+      summary: Publish event
+      description: Change event status from draft to active, making it publicly visible.
+      operationId: publishEvent
+      tags:
+        - events
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: Event published successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetail'
+        '400':
+          description: Bad Request - event already published or closed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{event_id}/unpublish:
+    post:
+      summary: Unpublish event
+      description: Change event status from active to draft, hiding it from public view.
+      operationId: unpublishEvent
+      tags:
+        - events
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: Event unpublished successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetail'
+        '400':
+          description: Bad Request - event not active or has registrations
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{event_id}/close:
+    post:
+      summary: Close event
+      description: Manually close an active event. Typically done when event concludes.
+      operationId: closeEvent
+      tags:
+        - events
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: Event closed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetail'
+        '400':
+          description: Bad Request - event not active
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{event_id}/media/upload-url:
+    post:
+      summary: Request media upload URL
+      description: Generate a pre-signed Azure Blob Storage URL for direct file upload from browser.
+      operationId: getMediaUploadUrl
+      tags:
+        - event-media
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - file_name
+                - file_type
+                - file_size
+              properties:
+                file_name:
+                  type: string
+                  example: "gala-flyer.png"
+                  maxLength: 255
+                file_type:
+                  type: string
+                  example: "image/png"
+                  enum:
+                    - image/png
+                    - image/jpeg
+                    - image/svg+xml
+                    - application/pdf
+                file_size:
+                  type: integer
+                  minimum: 1
+                  maximum: 10485760
+                  description: File size in bytes (max 10MB)
+      responses:
+        '200':
+          description: Upload URL generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  upload_url:
+                    type: string
+                    format: uri
+                    description: Pre-signed URL for file upload (15-minute expiry)
+                  media_id:
+                    type: string
+                    format: uuid
+                    description: ID of the EventMedia record created
+                  expires_at:
+                    type: string
+                    format: date-time
+                    description: Upload URL expiration timestamp
+        '400':
+          description: Bad Request - file size exceeds limit or total event media >50MB
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          description: Payload Too Large - file size exceeds 10MB or total >50MB
+
+  /events/{event_id}/media:
+    get:
+      summary: List event media
+      description: Retrieve all media files for an event, ordered by display_order.
+      operationId: listEventMedia
+      tags:
+        - event-media
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: Media list retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventMedia'
+                  total_size:
+                    type: integer
+                    description: Total size of all media in bytes
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{event_id}/media/{media_id}:
+    delete:
+      summary: Delete media file
+      description: Remove a media file from the event and delete from Azure Blob Storage.
+      operationId: deleteEventMedia
+      tags:
+        - event-media
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - name: media_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Media deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update media metadata
+      description: Update display order or other media metadata.
+      operationId: updateEventMedia
+      tags:
+        - event-media
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - name: media_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_order:
+                  type: integer
+                  minimum: 0
+      responses:
+        '200':
+          description: Media updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventMedia'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{event_id}/links:
+    get:
+      summary: List event links
+      description: Retrieve all external links for an event, optionally filtered by type.
+      operationId: listEventLinks
+      tags:
+        - event-links
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - name: link_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [video, website, social_media]
+      responses:
+        '200':
+          description: Links retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventLink'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Add event link
+      description: Add an external link (video, website, social media) to the event.
+      operationId: addEventLink
+      tags:
+        - event-links
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventLinkCreate'
+      responses:
+        '201':
+          description: Link added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventLink'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /events/{event_id}/links/{link_id}:
+    delete:
+      summary: Delete event link
+      description: Remove an external link from the event.
+      operationId: deleteEventLink
+      tags:
+        - event-links
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - name: link_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Link deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update event link
+      description: Update link metadata (label, display order).
+      operationId: updateEventLink
+      tags:
+        - event-links
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - name: link_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label:
+                  type: string
+                  maxLength: 255
+                display_order:
+                  type: integer
+                  minimum: 0
+      responses:
+        '200':
+          description: Link updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventLink'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{event_id}/food-options:
+    get:
+      summary: List food options
+      description: Retrieve all food options for an event, ordered by display_order.
+      operationId: listFoodOptions
+      tags:
+        - food-options
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: Food options retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FoodOption'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Add food option
+      description: Add a food/menu option to the event. Maximum 20 options per event.
+      operationId: addFoodOption
+      tags:
+        - food-options
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FoodOptionCreate'
+      responses:
+        '201':
+          description: Food option added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoodOption'
+        '400':
+          description: Bad Request - maximum 20 food options per event
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Conflict - duplicate food option name
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /events/{event_id}/food-options/{option_id}:
+    delete:
+      summary: Delete food option
+      description: Remove a food option from the event.
+      operationId: deleteFoodOption
+      tags:
+        - food-options
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - name: option_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Food option deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      summary: Update food option
+      description: Update food option name, description, or display order.
+      operationId: updateFoodOption
+      tags:
+        - food-options
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - name: option_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                description:
+                  type: string
+                display_order:
+                  type: integer
+                  minimum: 0
+      responses:
+        '200':
+          description: Food option updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoodOption'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Conflict - duplicate food option name
+
+  /public/events/{slug}:
+    get:
+      summary: Get public event page
+      description: Retrieve event details for public viewing using event slug. No authentication required.
+      operationId: getPublicEvent
+      tags:
+        - events
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "spring-gala-2025"
+      responses:
+        '200':
+          description: Public event details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventPublic'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    EventId:
+      name: event_id
+      in: path
+      required: true
+      description: Event UUID
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    EventCreate:
+      type: object
+      required:
+        - npo_id
+        - name
+        - event_datetime
+        - timezone
+      properties:
+        npo_id:
+          type: string
+          format: uuid
+          description: ID of the NPO hosting this event
+        name:
+          type: string
+          maxLength: 255
+          minLength: 1
+          example: "Spring Gala 2025"
+        custom_slug:
+          type: string
+          maxLength: 255
+          pattern: '^[a-z0-9-]+$'
+          example: "spring-gala-2025"
+          description: Optional custom URL slug (auto-generated if not provided)
+        event_datetime:
+          type: string
+          format: date-time
+          example: "2025-04-15T18:00:00-05:00"
+          description: Event date and time with timezone offset
+        timezone:
+          type: string
+          example: "America/Chicago"
+          description: IANA timezone name for the event venue
+        venue_name:
+          type: string
+          maxLength: 255
+        venue_address:
+          type: string
+        description:
+          type: string
+          description: Rich text description (Markdown format)
+        primary_color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          example: "#FF5733"
+        secondary_color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          example: "#33C4FF"
+
+    EventUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        custom_slug:
+          type: string
+          maxLength: 255
+          pattern: '^[a-z0-9-]+$'
+        event_datetime:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+        venue_name:
+          type: string
+          maxLength: 255
+        venue_address:
+          type: string
+        description:
+          type: string
+        logo_url:
+          type: string
+          format: uri
+        primary_color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+        secondary_color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+        version:
+          type: integer
+          description: Current version number for optimistic locking
+
+    EventSummary:
+      type: object
+      required:
+        - id
+        - npo_id
+        - name
+        - slug
+        - status
+        - event_datetime
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        npo_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, closed]
+        event_datetime:
+          type: string
+          format: date-time
+        venue_name:
+          type: string
+        logo_url:
+          type: string
+          format: uri
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    EventDetail:
+      allOf:
+        - $ref: '#/components/schemas/EventSummary'
+        - type: object
+          properties:
+            timezone:
+              type: string
+            venue_address:
+              type: string
+            description:
+              type: string
+            primary_color:
+              type: string
+            secondary_color:
+              type: string
+            version:
+              type: integer
+            created_by:
+              type: string
+              format: uuid
+            updated_by:
+              type: string
+              format: uuid
+            media:
+              type: array
+              items:
+                $ref: '#/components/schemas/EventMedia'
+            links:
+              type: array
+              items:
+                $ref: '#/components/schemas/EventLink'
+            food_options:
+              type: array
+              items:
+                $ref: '#/components/schemas/FoodOption'
+
+    EventPublic:
+      type: object
+      description: Public event information (draft events excluded)
+      required:
+        - id
+        - name
+        - slug
+        - event_datetime
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        event_datetime:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+        venue_name:
+          type: string
+        venue_address:
+          type: string
+        description:
+          type: string
+        logo_url:
+          type: string
+          format: uri
+        primary_color:
+          type: string
+        secondary_color:
+          type: string
+        media:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              file_url:
+                type: string
+                format: uri
+                description: Time-limited signed URL (15-min expiry)
+              file_name:
+                type: string
+              file_type:
+                type: string
+              display_order:
+                type: integer
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventLink'
+        food_options:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              description:
+                type: string
+              display_order:
+                type: integer
+
+    EventMedia:
+      type: object
+      required:
+        - id
+        - event_id
+        - file_url
+        - file_name
+        - file_type
+        - file_size
+        - status
+        - uploaded_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        file_url:
+          type: string
+          format: uri
+          description: Time-limited signed URL for viewing
+        file_name:
+          type: string
+        file_type:
+          type: string
+        file_size:
+          type: integer
+          description: File size in bytes
+        display_order:
+          type: integer
+        status:
+          type: string
+          enum: [uploaded, scanned, quarantined]
+        uploaded_at:
+          type: string
+          format: date-time
+        uploaded_by:
+          type: string
+          format: uuid
+
+    EventLink:
+      type: object
+      required:
+        - id
+        - event_id
+        - link_type
+        - url
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        link_type:
+          type: string
+          enum: [video, website, social_media]
+        url:
+          type: string
+          format: uri
+        label:
+          type: string
+        platform:
+          type: string
+          description: Platform name (YouTube, Vimeo, Facebook, etc.)
+        display_order:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    EventLinkCreate:
+      type: object
+      required:
+        - link_type
+        - url
+      properties:
+        link_type:
+          type: string
+          enum: [video, website, social_media]
+        url:
+          type: string
+          format: uri
+          example: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        label:
+          type: string
+          maxLength: 255
+          example: "Event Promo Video"
+        platform:
+          type: string
+          maxLength: 50
+          example: "YouTube"
+        display_order:
+          type: integer
+          minimum: 0
+          default: 0
+
+    FoodOption:
+      type: object
+      required:
+        - id
+        - event_id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Grilled Chicken"
+        description:
+          type: string
+          example: "Grilled chicken breast with seasonal vegetables"
+        display_order:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    FoodOptionCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          minLength: 1
+          example: "Vegetarian Pasta"
+        description:
+          type: string
+          example: "Penne pasta with marinara and fresh basil"
+        display_order:
+          type: integer
+          minimum: 0
+          default: 0
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: "ValidationError"
+        message:
+          type: string
+          example: "Event name is required"
+        details:
+          type: object
+          additionalProperties: true
+
+  responses:
+    BadRequest:
+      description: Bad Request - invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized - authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Not Found - resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    ValidationError:
+      description: Validation Error - request body failed validation
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "ValidationError"
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    field:
+                      type: string
+                      example: "event_datetime"
+                    message:
+                      type: string
+                      example: "Event date must be in the future"

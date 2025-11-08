@@ -9,6 +9,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Legal Compliance: GDPR consent tracking, cookie consent management, versioned legal documents (005-legal-documentation)
 - Python 3.11+ (Backend), TypeScript (Frontend) + FastAPI, SQLAlchemy, Pydantic (Backend); React, Vite, Zustand, React Router (Frontend) (006-landing-page)
 - PostgreSQL (contact submissions, testimonials), Redis (rate limiting) (006-landing-page)
+- Python 3.11+ (Backend), TypeScript (Frontend) + FastAPI, SQLAlchemy, Pydantic, Alembic (Backend); React, Vite, Zustand, React Router (Frontend) (003-event-creation-ability)
+- Azure Database for PostgreSQL (event data, audit logs), Azure Blob Storage (media files: logos, images, flyers), Azure Cache for Redis (rate limiting, caching) (003-event-creation-ability)
 
 ## Project Structure
 ```
@@ -93,6 +95,7 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 003-event-creation-ability: Added Python 3.11+ (Backend), TypeScript (Frontend) + FastAPI, SQLAlchemy, Pydantic, Alembic (Backend); React, Vite, Zustand, React Router (Frontend)
 - 006-landing-page: Added Python 3.11+ (Backend), TypeScript (Frontend) + FastAPI, SQLAlchemy, Pydantic (Backend); React, Vite, Zustand, React Router (Frontend)
 - 004-cloud-infrastructure-deployment: Completed Phase 1-4 (Setup, Foundational, Infrastructure, CI/CD)
   - ✅ Azure Bicep templates for 9 Azure resources (App Service, Static Web Apps, PostgreSQL, Redis, Key Vault, etc.)
@@ -101,7 +104,6 @@ git commit -m "message"
   - ✅ Deployment scripts: deploy-backend.sh, deploy-frontend.sh, run-migrations.sh, rollback.sh
   - ✅ Blue-green deployment for production with automatic rollback
   - ✅ CI/CD documentation and rollback procedures
-- 004-cloud-infrastructure-deployment: Completed Phase 5-6 (T061-T103)
   - ✅ DNS Zone module with Azure DNS for custom domain augeo.app
   - ✅ Communication Services module for email with SPF/DKIM/DMARC
   - ✅ DNS and email configuration documentation

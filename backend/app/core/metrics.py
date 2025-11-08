@@ -26,6 +26,36 @@ CONTACT_SUBMISSIONS_TOTAL = Counter(
     ["status"],  # success or failure
 )
 
+# Event metrics
+EVENTS_CREATED_TOTAL = Counter(
+    "augeo_events_created_total",
+    "Total number of events created",
+    ["npo_id"],
+)
+
+EVENTS_PUBLISHED_TOTAL = Counter(
+    "augeo_events_published_total",
+    "Total number of events published",
+)
+
+EVENTS_CLOSED_TOTAL = Counter(
+    "augeo_events_closed_total",
+    "Total number of events closed",
+    ["closure_type"],  # manual or automatic
+)
+
+EVENT_MEDIA_UPLOADS_TOTAL = Counter(
+    "augeo_event_media_uploads_total",
+    "Total number of media files uploaded",
+    ["status"],  # success or failure
+)
+
+EVENT_MEDIA_SCAN_RESULTS_TOTAL = Counter(
+    "augeo_event_media_scan_results_total",
+    "Total number of virus scan results",
+    ["result"],  # clean or infected
+)
+
 # Simple gauges for introspection
 UP = Gauge("augeo_up", "Application up (1 = up, 0 = down)")
 
@@ -42,6 +72,11 @@ __all__ = [
     "REDIS_FAILURES_TOTAL",
     "EMAIL_FAILURES_TOTAL",
     "CONTACT_SUBMISSIONS_TOTAL",
+    "EVENTS_CREATED_TOTAL",
+    "EVENTS_PUBLISHED_TOTAL",
+    "EVENTS_CLOSED_TOTAL",
+    "EVENT_MEDIA_UPLOADS_TOTAL",
+    "EVENT_MEDIA_SCAN_RESULTS_TOTAL",
     "UP",
     "set_up",
 ]

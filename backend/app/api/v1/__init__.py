@@ -9,6 +9,7 @@ from app.api.v1 import (
     branding,
     consent,
     cookies,
+    events,
     invitations,
     legal_documents,
     members,
@@ -28,6 +29,7 @@ api_router.include_router(npos.router, tags=["npos"])
 api_router.include_router(members.router, tags=["members"])
 api_router.include_router(invitations.router, tags=["invitations"])
 api_router.include_router(branding.router, tags=["branding"])
+api_router.include_router(events.router, tags=["events"])
 api_router.include_router(legal_documents.router, prefix="/legal", tags=["legal"])
 api_router.include_router(consent.router, prefix="/consent", tags=["consent"])
 api_router.include_router(cookies.router, prefix="/cookies", tags=["cookies"])

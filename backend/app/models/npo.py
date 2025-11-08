@@ -12,6 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
+    from app.models.event import Event
     from app.models.npo_application import NPOApplication
     from app.models.npo_branding import NPOBranding
     from app.models.npo_member import NPOMember
@@ -123,6 +124,12 @@ class NPO(Base, UUIDMixin, TimestampMixin):
         "NPOBranding",
         back_populates="npo",
         uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+    events: Mapped[list["Event"]] = relationship(
+        "Event",
+        back_populates="npo",
         cascade="all, delete-orphan",
     )
 
