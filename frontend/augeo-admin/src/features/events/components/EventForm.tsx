@@ -1,0 +1,383 @@
+/**
+ * EventForm Component
+ * Comprehensive form for creating and editing events with all fields
+ */
+
+import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import type { EventCreateRequest, EventDetail, EventUpdateRequest } from '@/types/event'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Calendar, Clock, MapPin } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { ColorPicker } from './ColorPicker'
+import { RichTextEditor } from './RichTextEditor'
+
+// Form validation schema
+const eventFormSchema = z.object({
+  name: z.string().min(3, 'Event name must be at least 3 characters'),
+  slug: z.string().optional(),
+  tagline: z.string().max(200, 'Tagline must be under 200 characters').optional(),
+  description: z.string().optional(),
+  event_datetime: z.string().min(1, 'Event date and time is required'),
+  timezone: z.string().min(1, 'Timezone is required'),
+  venue_name: z.string().optional(),
+  venue_address: z.string().optional(),
+  venue_city: z.string().optional(),
+  venue_state: z.string().optional(),
+  venue_zip: z.string().optional(),
+  primary_color: z.string().optional(),
+  secondary_color: z.string().optional(),
+  background_color: z.string().optional(),
+  accent_color: z.string().optional(),
+})
+
+type EventFormValues = z.infer<typeof eventFormSchema>
+
+interface EventFormProps {
+  event?: EventDetail
+  npoId: string
+  onSubmit: (data: EventCreateRequest & Partial<EventUpdateRequest>) => Promise<void>
+  onCancel?: () => void
+  isSubmitting?: boolean
+}
+
+export function EventForm({ event, npoId, onSubmit, onCancel, isSubmitting }: EventFormProps) {
+  // Initialize form with existing event data or defaults
+  const form = useForm<EventFormValues>({
+    resolver: zodResolver(eventFormSchema),
+    defaultValues: {
+      name: event?.name || '',
+      slug: event?.slug || '',
+      tagline: event?.tagline || '',
+      description: event?.description || '',
+      event_datetime: event?.event_datetime
+        ? new Date(event.event_datetime).toISOString().slice(0, 16)
+        : '',
+      timezone: event?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      venue_name: event?.venue_name || '',
+      venue_address: event?.venue_address || '',
+      venue_city: event?.venue_city || '',
+      venue_state: event?.venue_state || '',
+      venue_zip: event?.venue_zip || '',
+      primary_color: event?.primary_color || '',
+      secondary_color: event?.secondary_color || '',
+      background_color: event?.background_color || '',
+      accent_color: event?.accent_color || '',
+    },
+  })
+
+  const handleSubmit = async (values: EventFormValues) => {
+    const baseData = {
+      ...values,
+      npo_id: npoId,
+      // Convert datetime-local to ISO string
+      event_datetime: new Date(values.event_datetime).toISOString(),
+    }
+
+    // Add version for optimistic locking on updates
+    if (event) {
+      await onSubmit({ ...baseData, version: event.version })
+    } else {
+      await onSubmit(baseData)
+    }
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+        {/* Basic Information Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Basic Information</h3>
+
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Event Name *</FormLabel>
+                <FormControl>
+                  <Input placeholder="Spring Gala 2025" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="slug"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Slug (URL)</FormLabel>
+                <FormControl>
+                  <Input placeholder="spring-gala-2025" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Leave blank to auto-generate from event name
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="tagline"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tagline</FormLabel>
+                <FormControl>
+                  <Input placeholder="An Evening of Elegance and Impact" {...field} />
+                </FormControl>
+                <FormDescription>Short catchy phrase (max 200 characters)</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <RichTextEditor
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    placeholder="Enter event description..."
+                  />
+                </FormControl>
+                <FormDescription>
+                  Full event description with formatting (Markdown supported)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Date, Time & Location Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Date, Time & Location
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="event_datetime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Event Date & Time *</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Clock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input type="datetime-local" className="pl-10" {...field} />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="timezone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Timezone *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="America/New_York" {...field} />
+                  </FormControl>
+                  <FormDescription>IANA timezone (e.g., America/New_York)</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="venue_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Venue Name</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Grand Ballroom" className="pl-10" {...field} />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="venue_address"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Venue Address</FormLabel>
+                <FormControl>
+                  <Input placeholder="123 Main St" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
+              name="venue_city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>City</FormLabel>
+                  <FormControl>
+                    <Input placeholder="New York" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="venue_state"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>State</FormLabel>
+                  <FormControl>
+                    <Input placeholder="NY" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="venue_zip"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ZIP Code</FormLabel>
+                  <FormControl>
+                    <Input placeholder="10001" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        {/* Branding Colors Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Branding Colors</h3>
+          <p className="text-sm text-muted-foreground">
+            Customize the event page appearance with your organization's colors
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="primary_color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Primary Color</FormLabel>
+                  <FormControl>
+                    <ColorPicker
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      label="Primary"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="secondary_color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Secondary Color</FormLabel>
+                  <FormControl>
+                    <ColorPicker
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      label="Secondary"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="background_color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Background Color</FormLabel>
+                  <FormControl>
+                    <ColorPicker
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      label="Background"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="accent_color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Accent Color</FormLabel>
+                  <FormControl>
+                    <ColorPicker
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      label="Accent"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        {/* Form Actions */}
+        <div className="flex gap-4">
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : event ? 'Update Event' : 'Create Event'}
+          </Button>
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+        </div>
+      </form>
+    </Form>
+  )
+}
