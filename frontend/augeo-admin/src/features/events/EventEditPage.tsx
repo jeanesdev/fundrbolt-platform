@@ -71,7 +71,7 @@ export function EventEditPage() {
   }
 
   const handleCancel = () => {
-    navigate({ to: '/' })
+    navigate({ to: '/events' })
   }
 
   const handleMediaUpload = async (file: File) => {

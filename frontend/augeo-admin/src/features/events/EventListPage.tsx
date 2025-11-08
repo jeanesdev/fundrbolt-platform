@@ -42,14 +42,11 @@ export function EventListPage() {
   }, [loadEventsCallback])
 
   const handleCreateClick = () => {
-    // TODO: Fix navigation types when routes are set up
-    navigate({ to: '/' })
+    navigate({ to: '/events/create' })
   }
 
-  const handleEditClick = (_eventId: string) => {
-    // TODO: Fix navigation types when routes are set up
-    // Navigate to edit page for eventId
-    navigate({ to: '/' })
+  const handleEditClick = (eventId: string) => {
+    navigate({ to: '/events/$eventId/edit', params: { eventId } })
   }
 
   const handlePublish = async (eventId: string) => {

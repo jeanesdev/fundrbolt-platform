@@ -24,10 +24,9 @@ export function EventCreatePage() {
   const handleSubmit = async (data: EventCreateRequest & Partial<EventUpdateRequest>) => {
     setIsSubmitting(true)
     try {
-      await createEvent(data as EventCreateRequest)
+      const createdEvent = await createEvent(data as EventCreateRequest)
       toast.success('Event created successfully!')
-      // TODO: Fix navigation types when routes are set up
-      navigate({ to: '/' })
+      navigate({ to: '/events/$eventId/edit', params: { eventId: createdEvent.id } })
     } catch (_err) {
       toast.error('Failed to create event')
     } finally {
@@ -36,7 +35,7 @@ export function EventCreatePage() {
   }
 
   const handleCancel = () => {
-    navigate({ to: '/' })
+    navigate({ to: '/events' })
   }
 
   return (
