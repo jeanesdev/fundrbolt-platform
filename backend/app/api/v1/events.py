@@ -7,7 +7,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_active_user, get_db
+from app.core.database import get_db
+from app.middleware.auth import get_current_active_user
 from app.models.user import User
 from app.schemas.event import (
     EventCreateRequest,
@@ -100,12 +101,10 @@ async def close_event(
 async def list_events(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],
-    npo_id: Annotated[uuid.UUID | None, Query(description="Filter by NPO ID")] = None,
-    status: Annotated[
-        str | None, Query(description="Filter by status (draft/active/closed)")
-    ] = None,
-    page: Annotated[int, Query(ge=1, description="Page number")] = 1,
-    per_page: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
+    npo_id: Annotated[uuid.UUID | None, Query()] = None,
+    status_param: Annotated[str | None, Query(alias="status")] = None,
+    page: Annotated[int, Query(ge=1)] = 1,
+    per_page: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> EventListResponse:
     """
     List events with filtering and pagination.
@@ -117,13 +116,13 @@ async def list_events(
     from app.models.event import EventStatus
 
     status_filter = None
-    if status:
+    if status_param:
         try:
-            status_filter = EventStatus(status)
+            status_filter = EventStatus(status_param)
         except ValueError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid status: {status}. Must be draft, active, or closed.",
+                detail=f"Invalid status: {status_param}. Must be draft, active, or closed.",
             )
 
     events, total = await EventService.list_events(

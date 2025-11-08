@@ -1483,6 +1483,133 @@ async def test_invitation_token_existing_member(
 
 
 # ================================
+# Event Fixtures
+# ================================
+
+
+@pytest_asyncio.fixture
+async def test_approved_npo(db_session: AsyncSession, test_npo_admin_user: Any) -> Any:
+    """
+    Create a test NPO in APPROVED status for event creation.
+
+    Returns an NPO with status=APPROVED and test_npo_admin_user as admin member.
+    Events can only be created for APPROVED NPOs.
+    """
+    from app.models.npo import NPO, NPOStatus
+    from app.models.npo_member import MemberRole, MemberStatus, NPOMember
+
+    # Create NPO
+    npo = NPO(
+        name="Approved Test NPO",
+        description="An approved non-profit organization for event testing",
+        mission_statement="Host amazing fundraising events",
+        email="approved@testnpo.org",
+        phone="+1-555-0300",
+        website_url="https://approved-testnpo.org",
+        tax_id="99-8877665",
+        address={
+            "street": "456 Event St",
+            "city": "Event City",
+            "state": "EC",
+            "zipCode": "54321",
+            "country": "US",
+        },
+        registration_number="REG999888",
+        status=NPOStatus.APPROVED,
+        created_by_user_id=test_npo_admin_user.id,
+    )
+    db_session.add(npo)
+    await db_session.flush()
+
+    # Add creator as admin member
+    member = NPOMember(
+        npo_id=npo.id,
+        user_id=test_npo_admin_user.id,
+        role=MemberRole.ADMIN,
+        status=MemberStatus.ACTIVE,
+    )
+    db_session.add(member)
+    await db_session.commit()
+    await db_session.refresh(npo)
+
+    return npo
+
+
+@pytest_asyncio.fixture
+async def test_event(
+    db_session: AsyncSession, test_approved_npo: Any, test_npo_admin_user: Any
+) -> Any:
+    """
+    Create a test event in DRAFT status.
+
+    Returns an Event instance with sample data in DRAFT status.
+    """
+    from datetime import UTC, datetime, timedelta
+
+    from app.models.event import Event, EventStatus
+
+    event = Event(
+        npo_id=test_approved_npo.id,
+        name="Annual Gala 2025",
+        slug="annual-gala-2025",
+        status=EventStatus.DRAFT,
+        event_datetime=datetime.now(UTC) + timedelta(days=30),
+        timezone="America/New_York",
+        venue_name="Grand Ballroom",
+        venue_address="789 Gala Ave, New York, NY 10001",
+        description="Our annual fundraising gala with silent auction and dinner.",
+        logo_url="https://example.com/logo.png",
+        primary_color="#1a73e8",
+        secondary_color="#34a853",
+        version=1,
+        created_by=test_npo_admin_user.id,
+        updated_by=test_npo_admin_user.id,
+    )
+    db_session.add(event)
+    await db_session.commit()
+    await db_session.refresh(event)
+
+    return event
+
+
+@pytest_asyncio.fixture
+async def test_active_event(
+    db_session: AsyncSession, test_approved_npo: Any, test_npo_admin_user: Any
+) -> Any:
+    """
+    Create a test event in ACTIVE status for public access testing.
+
+    Returns an Event instance with ACTIVE status.
+    """
+    from datetime import UTC, datetime, timedelta
+
+    from app.models.event import Event, EventStatus
+
+    event = Event(
+        npo_id=test_approved_npo.id,
+        name="Summer Fundraiser 2025",
+        slug="summer-fundraiser-2025",
+        status=EventStatus.ACTIVE,
+        event_datetime=datetime.now(UTC) + timedelta(days=60),
+        timezone="America/Los_Angeles",
+        venue_name="Beach Club",
+        venue_address="123 Beach Blvd, Los Angeles, CA 90001",
+        description="Join us for a summer evening of fun and fundraising!",
+        logo_url="https://example.com/summer-logo.png",
+        primary_color="#ff6b35",
+        secondary_color="#004e89",
+        version=1,
+        created_by=test_npo_admin_user.id,
+        updated_by=test_npo_admin_user.id,
+    )
+    db_session.add(event)
+    await db_session.commit()
+    await db_session.refresh(event)
+
+    return event
+
+
+# ================================
 # Mock Azure Storage Fixture
 # ================================
 

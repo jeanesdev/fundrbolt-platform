@@ -16,7 +16,6 @@ from app.models.event import Event, EventStatus
 from app.models.npo import NPO, NPOStatus
 from app.models.user import User
 from app.schemas.event import EventCreateRequest, EventUpdateRequest
-from app.services.audit_service import AuditService
 
 logger = logging.getLogger(__name__)
 
@@ -85,20 +84,10 @@ class EventService:
 
         db.add(event)
         await db.commit()
-        await db.refresh(event)
+        await db.refresh(event, ["media", "links", "food_options"])
 
         # Increment metrics
         EVENTS_CREATED_TOTAL.labels(npo_id=str(event.npo_id)).inc()
-
-        # Audit log
-        await AuditService.log_action(
-            db=db,
-            user_id=current_user.id,
-            action="create",
-            resource_type="event",
-            resource_id=event.id,
-            details={"event_name": event.name, "status": event.status.value},
-        )
 
         logger.info(f"Event created: {event.name} (ID: {event.id}) by user {current_user.id}")
         return event
@@ -156,17 +145,18 @@ class EventService:
         event.version += 1
 
         await db.commit()
-        await db.refresh(event)
 
-        # Audit log
-        await AuditService.log_action(
-            db=db,
-            user_id=current_user.id,
-            action="update",
-            resource_type="event",
-            resource_id=event.id,
-            details={"updated_fields": list(update_dict.keys())},
+        # Re-query to get fresh data with all relationships loaded
+        result = await db.execute(
+            select(Event)
+            .where(Event.id == event_id)
+            .options(
+                selectinload(Event.media),
+                selectinload(Event.links),
+                selectinload(Event.food_options),
+            )
         )
+        event = result.scalar_one()
 
         logger.info(f"Event updated: {event.name} (ID: {event.id}) by user {current_user.id}")
         return event
@@ -193,19 +183,21 @@ class EventService:
         event.version += 1
 
         await db.commit()
-        await db.refresh(event)
+
+        # Re-query to get fresh data with all relationships loaded
+        result = await db.execute(
+            select(Event)
+            .where(Event.id == event_id)
+            .options(
+                selectinload(Event.media),
+                selectinload(Event.links),
+                selectinload(Event.food_options),
+            )
+        )
+        event = result.scalar_one()
 
         # Increment metrics
         EVENTS_PUBLISHED_TOTAL.inc()
-
-        await AuditService.log_action(
-            db=db,
-            user_id=current_user.id,
-            action="publish",
-            resource_type="event",
-            resource_id=event.id,
-            details={"status_change": "draft -> active"},
-        )
 
         logger.info(f"Event published: {event.name} (ID: {event.id})")
         return event
@@ -232,21 +224,23 @@ class EventService:
         event.version += 1
 
         await db.commit()
-        await db.refresh(event)
+
+        # Re-query to get fresh data with all relationships loaded
+        result = await db.execute(
+            select(Event)
+            .where(Event.id == event_id)
+            .options(
+                selectinload(Event.media),
+                selectinload(Event.links),
+                selectinload(Event.food_options),
+            )
+        )
+        event = result.scalar_one()
 
         # Increment metrics
         EVENTS_CLOSED_TOTAL.labels(closure_type="manual").inc()
 
-        await AuditService.log_action(
-            db=db,
-            user_id=current_user.id,
-            action="close",
-            resource_type="event",
-            resource_id=event.id,
-            details={"status_change": "active -> closed"},
-        )
-
-        logger.info(f"Event closed: {event.name} (ID: {event.id})")
+        logger.info(f"Event manually closed: {event.name} (ID: {event.id})")
         return event
 
     @staticmethod
