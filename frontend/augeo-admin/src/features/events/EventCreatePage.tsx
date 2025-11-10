@@ -18,7 +18,7 @@ import { EventForm } from './components/EventForm'
 export function EventCreatePage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
-  const { createEvent, loadNPOBranding, npoBranding } = useEventStore()
+  const { createEvent, loadNPOBranding, npoBranding, npoBrandingLoading } = useEventStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedNpoId, setSelectedNpoId] = useState<string>('')
 
@@ -91,7 +91,7 @@ export function EventCreatePage() {
       )}
 
       {/* Step 2: Event Form (shown when NPO is selected/determined) */}
-      {npoId && (
+      {npoId && !npoBrandingLoading && (
         <Card>
           <CardHeader>
             <CardTitle>Event Details</CardTitle>
@@ -108,6 +108,24 @@ export function EventCreatePage() {
               onCancel={handleCancel}
               isSubmitting={isSubmitting}
             />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Loading state while branding loads */}
+      {npoId && npoBrandingLoading && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Loading Organization Details...</CardTitle>
+            <CardDescription>
+              Please wait while we load the organization's branding
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <span>Loading branding...</span>
+            </div>
           </CardContent>
         </Card>
       )}
