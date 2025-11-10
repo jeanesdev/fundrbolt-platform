@@ -14,8 +14,13 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { StateSelect } from '@/components/ui/state-select'
-import { TimezoneSelect } from '@/components/ui/timezone-select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import type { NPOBranding } from '@/services/event-service'
 import type { EventCreateRequest, EventDetail, EventUpdateRequest } from '@/types/event'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -210,12 +215,35 @@ export function EventForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Timezone *</FormLabel>
-                  <FormControl>
-                    <TimezoneSelect
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    />
-                  </FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select timezone" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                        United States
+                      </div>
+                      <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
+                      <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
+                      <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
+                      <SelectItem value="America/Phoenix">Arizona Time (No DST)</SelectItem>
+                      <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
+                      <SelectItem value="America/Anchorage">Alaska Time (AKT)</SelectItem>
+                      <SelectItem value="Pacific/Honolulu">Hawaii Time (HT)</SelectItem>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-t mt-2">
+                        International
+                      </div>
+                      <SelectItem value="Europe/London">London (GMT/BST)</SelectItem>
+                      <SelectItem value="Europe/Paris">Paris (CET/CEST)</SelectItem>
+                      <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
+                      <SelectItem value="Asia/Shanghai">Shanghai (CST)</SelectItem>
+                      <SelectItem value="Asia/Dubai">Dubai (GST)</SelectItem>
+                      <SelectItem value="Australia/Sydney">Sydney (AEST/AEDT)</SelectItem>
+                      <SelectItem value="UTC">UTC (Coordinated Universal Time)</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormDescription>Select event timezone</FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -275,13 +303,70 @@ export function EventForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>State</FormLabel>
-                  <FormControl>
-                    <StateSelect
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      placeholder="Select state"
-                    />
-                  </FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select state" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="AL">Alabama</SelectItem>
+                      <SelectItem value="AK">Alaska</SelectItem>
+                      <SelectItem value="AZ">Arizona</SelectItem>
+                      <SelectItem value="AR">Arkansas</SelectItem>
+                      <SelectItem value="CA">California</SelectItem>
+                      <SelectItem value="CO">Colorado</SelectItem>
+                      <SelectItem value="CT">Connecticut</SelectItem>
+                      <SelectItem value="DE">Delaware</SelectItem>
+                      <SelectItem value="FL">Florida</SelectItem>
+                      <SelectItem value="GA">Georgia</SelectItem>
+                      <SelectItem value="HI">Hawaii</SelectItem>
+                      <SelectItem value="ID">Idaho</SelectItem>
+                      <SelectItem value="IL">Illinois</SelectItem>
+                      <SelectItem value="IN">Indiana</SelectItem>
+                      <SelectItem value="IA">Iowa</SelectItem>
+                      <SelectItem value="KS">Kansas</SelectItem>
+                      <SelectItem value="KY">Kentucky</SelectItem>
+                      <SelectItem value="LA">Louisiana</SelectItem>
+                      <SelectItem value="ME">Maine</SelectItem>
+                      <SelectItem value="MD">Maryland</SelectItem>
+                      <SelectItem value="MA">Massachusetts</SelectItem>
+                      <SelectItem value="MI">Michigan</SelectItem>
+                      <SelectItem value="MN">Minnesota</SelectItem>
+                      <SelectItem value="MS">Mississippi</SelectItem>
+                      <SelectItem value="MO">Missouri</SelectItem>
+                      <SelectItem value="MT">Montana</SelectItem>
+                      <SelectItem value="NE">Nebraska</SelectItem>
+                      <SelectItem value="NV">Nevada</SelectItem>
+                      <SelectItem value="NH">New Hampshire</SelectItem>
+                      <SelectItem value="NJ">New Jersey</SelectItem>
+                      <SelectItem value="NM">New Mexico</SelectItem>
+                      <SelectItem value="NY">New York</SelectItem>
+                      <SelectItem value="NC">North Carolina</SelectItem>
+                      <SelectItem value="ND">North Dakota</SelectItem>
+                      <SelectItem value="OH">Ohio</SelectItem>
+                      <SelectItem value="OK">Oklahoma</SelectItem>
+                      <SelectItem value="OR">Oregon</SelectItem>
+                      <SelectItem value="PA">Pennsylvania</SelectItem>
+                      <SelectItem value="RI">Rhode Island</SelectItem>
+                      <SelectItem value="SC">South Carolina</SelectItem>
+                      <SelectItem value="SD">South Dakota</SelectItem>
+                      <SelectItem value="TN">Tennessee</SelectItem>
+                      <SelectItem value="TX">Texas</SelectItem>
+                      <SelectItem value="UT">Utah</SelectItem>
+                      <SelectItem value="VT">Vermont</SelectItem>
+                      <SelectItem value="VA">Virginia</SelectItem>
+                      <SelectItem value="WA">Washington</SelectItem>
+                      <SelectItem value="WV">West Virginia</SelectItem>
+                      <SelectItem value="WI">Wisconsin</SelectItem>
+                      <SelectItem value="WY">Wyoming</SelectItem>
+                      <SelectItem value="DC">District of Columbia</SelectItem>
+                      <SelectItem value="PR">Puerto Rico</SelectItem>
+                      <SelectItem value="VI">Virgin Islands</SelectItem>
+                      <SelectItem value="GU">Guam</SelectItem>
+                      <SelectItem value="AS">American Samoa</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
