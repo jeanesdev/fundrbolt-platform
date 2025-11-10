@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -167,14 +168,14 @@ export function EventForm({
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
+                <Label>Description</Label>
+                <div>
                   <RichTextEditor
                     value={field.value || ''}
                     onChange={field.onChange}
                     placeholder="Enter event description..."
                   />
-                </FormControl>
+                </div>
                 <FormDescription>
                   Full event description with formatting (Markdown supported)
                 </FormDescription>
@@ -197,11 +198,12 @@ export function EventForm({
               name="event_datetime"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Event Date & Time *</FormLabel>
+                  <Label htmlFor="event_datetime">Event Date & Time *</Label>
                   <FormControl>
                     <div className="relative">
                       <Clock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
+                        id="event_datetime"
                         type="datetime-local"
                         className="pl-10"
                         autoComplete="off"
@@ -219,7 +221,7 @@ export function EventForm({
               name="timezone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Timezone *</FormLabel>
+                  <Label htmlFor="timezone">Timezone *</Label>
                   <Select
                     value={field.value}
                     onValueChange={field.onChange}
@@ -265,11 +267,16 @@ export function EventForm({
             name="venue_name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Venue Name</FormLabel>
+                <Label htmlFor="venue_name">Venue Name</Label>
                 <FormControl>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Grand Ballroom" className="pl-10" {...field} />
+                    <Input
+                      id="venue_name"
+                      placeholder="Grand Ballroom"
+                      className="pl-10"
+                      {...field}
+                    />
                   </div>
                 </FormControl>
                 <FormMessage />
@@ -311,7 +318,7 @@ export function EventForm({
               name="venue_state"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>State</FormLabel>
+                  <Label htmlFor="venue_state">State</Label>
                   <Select
                     value={field.value}
                     onValueChange={field.onChange}
@@ -414,14 +421,14 @@ export function EventForm({
               name="primary_color"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Primary Color</FormLabel>
-                  <FormControl>
+                  <Label>Primary Color</Label>
+                  <div>
                     <ColorPicker
                       value={field.value || ''}
                       onChange={field.onChange}
                       label="Primary"
                     />
-                  </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -432,14 +439,14 @@ export function EventForm({
               name="secondary_color"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Secondary Color</FormLabel>
-                  <FormControl>
+                  <Label>Secondary Color</Label>
+                  <div>
                     <ColorPicker
                       value={field.value || ''}
                       onChange={field.onChange}
                       label="Secondary"
                     />
-                  </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -450,14 +457,14 @@ export function EventForm({
               name="background_color"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Background Color</FormLabel>
-                  <FormControl>
+                  <Label>Background Color</Label>
+                  <div>
                     <ColorPicker
                       value={field.value || ''}
                       onChange={field.onChange}
                       label="Background"
                     />
-                  </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -468,14 +475,14 @@ export function EventForm({
               name="accent_color"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Accent Color</FormLabel>
-                  <FormControl>
+                  <Label>Accent Color</Label>
+                  <div>
                     <ColorPicker
                       value={field.value || ''}
                       onChange={field.onChange}
                       label="Accent"
                     />
-                  </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
