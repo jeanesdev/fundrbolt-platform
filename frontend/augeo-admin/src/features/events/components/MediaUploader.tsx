@@ -119,9 +119,8 @@ export function MediaUploader({
     <div className="space-y-4">
       {/* Upload Zone */}
       <Card
-        className={`border-2 border-dashed transition-colors ${
-          dragActive ? 'border-primary bg-primary/5' : 'border-muted'
-        }`}
+        className={`border-2 border-dashed transition-colors ${dragActive ? 'border-primary bg-primary/5' : 'border-muted'
+          }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}

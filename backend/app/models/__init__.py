@@ -3,6 +3,7 @@
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin, UUIDMixin
 from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
+from app.models.event import Event, EventLink, EventMedia, FoodOption
 from app.models.invitation import Invitation
 from app.models.legal_document import LegalDocument
 from app.models.npo import NPO
@@ -20,6 +21,10 @@ __all__ = [
     "UUIDMixin",
     "ConsentAuditLog",
     "CookieConsent",
+    "Event",
+    "EventLink",
+    "EventMedia",
+    "FoodOption",
     "Invitation",
     "LegalDocument",
     "NPO",

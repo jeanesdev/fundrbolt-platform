@@ -122,13 +122,12 @@ export function EventEditPage() {
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Status:</span>
             <span
-              className={`text-xs px-2 py-1 rounded ${
-                currentEvent.status === 'draft'
+              className={`text-xs px-2 py-1 rounded ${currentEvent.status === 'draft'
                   ? 'bg-gray-100 text-gray-800'
                   : currentEvent.status === 'active'
                     ? 'bg-green-100 text-green-800'
                     : 'bg-red-100 text-red-800'
-              }`}
+                }`}
             >
               {currentEvent.status.charAt(0).toUpperCase() + currentEvent.status.slice(1)}
             </span>

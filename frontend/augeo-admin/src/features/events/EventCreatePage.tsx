@@ -3,6 +3,7 @@
  * Page for creating a new event
  */
 
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEventStore } from '@/stores/event-store'
 import type { EventCreateRequest, EventUpdateRequest } from '@/types/event'
@@ -11,15 +12,15 @@ import { ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { EventForm } from './components/EventForm'
-import { Button } from '@/components/ui/button'
 
 export function EventCreatePage() {
   const navigate = useNavigate()
   const { createEvent } = useEventStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // TODO: Get npoId from context or user session
-  const npoId = 'temp-npo-id' // Replace with actual NPO ID from auth context
+  // TODO: Get npoId from actual NPO context when auth integration is complete
+  // Using Hope Foundation NPO ID for testing
+  const npoId = 'a3423046-8a83-409c-8ad3-16fc4420a40b' // Hope Foundation (from seed data)
 
   const handleSubmit = async (data: EventCreateRequest & Partial<EventUpdateRequest>) => {
     setIsSubmitting(true)

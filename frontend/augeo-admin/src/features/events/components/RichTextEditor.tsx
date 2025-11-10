@@ -3,11 +3,11 @@
  * Markdown-based rich text editor with sanitization for XSS prevention
  */
 
-import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
 import { Bold, Italic, Link, List, ListOrdered } from 'lucide-react'
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 
 interface RichTextEditorProps {
   value: string
