@@ -45,7 +45,7 @@ f6a01f90-8940-4aa7-9274-8742a1cc868e
   - Click button → should navigate to `/events/create`
 
 #### With Events
-- [ ] **Status Tabs**
+- [x] **Status Tabs**
   - Create an event first (see Test 3)
   - Verify tabs: All | Draft | Active | Closed
   - Check event counts in parentheses (e.g., "Draft (2)")
