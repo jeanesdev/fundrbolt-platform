@@ -156,11 +156,11 @@ export const linkApi = {
     eventId: string,
     data: EventLinkCreateRequest
   ): Promise<EventLink> {
-    const response = await apiClient.post<{ link: EventLink }>(
+    const response = await apiClient.post<EventLink>(
       `/events/${eventId}/links`,
       data
     )
-    return response.data.link
+    return response.data
   },
 
   /**
@@ -171,11 +171,11 @@ export const linkApi = {
     linkId: string,
     data: EventLinkUpdateRequest
   ): Promise<EventLink> {
-    const response = await apiClient.patch<{ link: EventLink }>(
+    const response = await apiClient.patch<EventLink>(
       `/events/${eventId}/links/${linkId}`,
       data
     )
-    return response.data.link
+    return response.data
   },
 
   /**
@@ -198,11 +198,11 @@ export const foodOptionApi = {
     eventId: string,
     data: FoodOptionCreateRequest
   ): Promise<FoodOption> {
-    const response = await apiClient.post<{ food_option: FoodOption }>(
+    const response = await apiClient.post<FoodOption>(
       `/events/${eventId}/food-options`,
       data
     )
-    return response.data.food_option
+    return response.data
   },
 
   /**
@@ -213,11 +213,11 @@ export const foodOptionApi = {
     optionId: string,
     data: FoodOptionUpdateRequest
   ): Promise<FoodOption> {
-    const response = await apiClient.patch<{ food_option: FoodOption }>(
+    const response = await apiClient.patch<FoodOption>(
       `/events/${eventId}/food-options/${optionId}`,
       data
     )
-    return response.data.food_option
+    return response.data
   },
 
   /**
