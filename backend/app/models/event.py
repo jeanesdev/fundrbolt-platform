@@ -82,6 +82,11 @@ class Event(Base, UUIDMixin, TimestampMixin):
         index=True,
     )
     custom_slug: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    tagline: Mapped[str | None] = mapped_column(
+        String(200),
+        nullable=True,
+        comment="Short tagline for event (max 200 characters)",
+    )
 
     # Status
     status: Mapped[EventStatus] = mapped_column(
@@ -107,6 +112,21 @@ class Event(Base, UUIDMixin, TimestampMixin):
     # Venue
     venue_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     venue_address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    venue_city: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        comment="City where event is held",
+    )
+    venue_state: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        comment="State/Province where event is held",
+    )
+    venue_zip: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        comment="ZIP/Postal code where event is held",
+    )
 
     # Content
     description: Mapped[str | None] = mapped_column(
@@ -130,6 +150,16 @@ class Event(Base, UUIDMixin, TimestampMixin):
         String(7),
         nullable=True,
         comment="Hex color code (e.g., #33C4FF)",
+    )
+    background_color: Mapped[str | None] = mapped_column(
+        String(7),
+        nullable=True,
+        comment="Hex color code for background (e.g., #FFFFFF)",
+    )
+    accent_color: Mapped[str | None] = mapped_column(
+        String(7),
+        nullable=True,
+        comment="Hex color code for accents (e.g., #FF5733)",
     )
 
     # Optimistic Locking

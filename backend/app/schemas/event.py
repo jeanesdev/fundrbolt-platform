@@ -24,13 +24,23 @@ class EventCreateRequest(BaseModel):
         max_length=255,
         description="Optional custom URL slug (auto-generated if not provided)",
     )
+    tagline: str | None = Field(
+        default=None,
+        max_length=200,
+        description="Short tagline for event (max 200 characters)",
+    )
     event_datetime: datetime = Field(..., description="Event date and time")
     timezone: str = Field(..., max_length=50, description="IANA timezone name")
     venue_name: str | None = Field(default=None, max_length=255)
     venue_address: str | None = Field(default=None)
+    venue_city: str | None = Field(default=None, max_length=100)
+    venue_state: str | None = Field(default=None, max_length=50)
+    venue_zip: str | None = Field(default=None, max_length=20)
     description: str | None = Field(default=None, description="Rich text description (Markdown)")
     primary_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     secondary_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    background_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    accent_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
 
     @field_validator("name")
     @classmethod
@@ -68,14 +78,20 @@ class EventUpdateRequest(BaseModel):
 
     name: str | None = Field(default=None, min_length=1, max_length=255)
     custom_slug: str | None = Field(default=None, max_length=255)
+    tagline: str | None = Field(default=None, max_length=200)
     event_datetime: datetime | None = Field(default=None)
     timezone: str | None = Field(default=None, max_length=50)
     venue_name: str | None = Field(default=None, max_length=255)
     venue_address: str | None = Field(default=None)
+    venue_city: str | None = Field(default=None, max_length=100)
+    venue_state: str | None = Field(default=None, max_length=50)
+    venue_zip: str | None = Field(default=None, max_length=20)
     description: str | None = Field(default=None)
     logo_url: str | None = Field(default=None, max_length=500)
     primary_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     secondary_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    background_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    accent_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     version: int | None = Field(default=None, description="Current version for optimistic locking")
 
     @field_validator("name")
@@ -267,10 +283,14 @@ class EventSummaryResponse(BaseModel):
     npo_name: str | None
     name: str
     slug: str
+    tagline: str | None
     status: EventStatus
     event_datetime: datetime
     timezone: str
     venue_name: str | None
+    venue_city: str | None
+    venue_state: str | None
+    venue_zip: str | None
     logo_url: str | None
     created_at: datetime
     updated_at: datetime
@@ -287,15 +307,21 @@ class EventDetailResponse(BaseModel):
     npo_name: str | None
     name: str
     slug: str
+    tagline: str | None
     status: EventStatus
     event_datetime: datetime
     timezone: str
     venue_name: str | None
     venue_address: str | None
+    venue_city: str | None
+    venue_state: str | None
+    venue_zip: str | None
     description: str | None
     logo_url: str | None
     primary_color: str | None
     secondary_color: str | None
+    background_color: str | None
+    accent_color: str | None
     version: int
     created_at: datetime
     updated_at: datetime
@@ -315,14 +341,20 @@ class EventPublicResponse(BaseModel):
     id: uuid.UUID
     name: str
     slug: str
+    tagline: str | None
     event_datetime: datetime
     timezone: str
     venue_name: str | None
     venue_address: str | None
+    venue_city: str | None
+    venue_state: str | None
+    venue_zip: str | None
     description: str | None
     logo_url: str | None
     primary_color: str | None
     secondary_color: str | None
+    background_color: str | None
+    accent_color: str | None
     media: list[EventMediaResponse]
     links: list[EventLinkResponse]
     food_options: list[FoodOptionResponse]
