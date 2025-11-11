@@ -48,10 +48,11 @@ async def create_event_link(
         label=request.label,
         platform=request.platform,
         display_order=request.display_order or 0,
+        created_by=current_user.id,
     )
 
     db.add(link)
-    await db.commit()
+    await db.flush()  # Flush to get the ID without committing
     await db.refresh(link)
 
     logger.info(f"Created link {link.id} for event {event_id} by user {current_user.id}")
@@ -106,7 +107,7 @@ async def update_event_link(
     if request.display_order is not None:
         link.display_order = request.display_order
 
-    await db.commit()
+    await db.flush()
     await db.refresh(link)
 
     logger.info(f"Updated link {link_id} for event {event_id} by user {current_user.id}")
@@ -156,6 +157,6 @@ async def delete_event_link(
 
     # Delete the link
     await db.delete(link)
-    await db.commit()
+    # No need to commit - get_db() handles it automatically
 
     logger.info(f"Deleted link {link_id} from event {event_id} by user {current_user.id}")

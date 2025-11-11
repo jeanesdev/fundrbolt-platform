@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label'
 import type { FoodOption } from '@/types/event'
 import { Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { toast } from 'sonner'
 
 interface FoodOptionSelectorProps {
   options: FoodOption[]
@@ -24,7 +23,6 @@ export function FoodOptionSelector({ options, onCreate, onDelete }: FoodOptionSe
 
   const handleCreate = async () => {
     if (!newOption.name.trim()) {
-      toast.error('Option name is required')
       return
     }
 
@@ -36,9 +34,6 @@ export function FoodOptionSelector({ options, onCreate, onDelete }: FoodOptionSe
         icon: newOption.icon || undefined,
       })
       setNewOption({ name: '', description: '', icon: '' })
-      toast.success('Food option added')
-    } catch (_err) {
-      toast.error('Failed to add food option')
     } finally {
       setIsCreating(false)
     }
@@ -47,12 +42,7 @@ export function FoodOptionSelector({ options, onCreate, onDelete }: FoodOptionSe
   const handleDelete = async (optionId: string) => {
     if (!confirm('Remove this food option?')) return
 
-    try {
-      await onDelete(optionId)
-      toast.success('Food option removed')
-    } catch (_err) {
-      toast.error('Failed to remove food option')
-    }
+    await onDelete(optionId)
   }
 
   return (

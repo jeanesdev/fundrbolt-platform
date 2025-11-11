@@ -11,7 +11,7 @@ export type EventStatus = 'draft' | 'active' | 'closed'
 
 export type EventMediaStatus = 'uploaded' | 'scanning' | 'approved' | 'rejected'
 
-export type EventLinkType = 'video' | 'website' | 'social'
+export type EventLinkType = 'video' | 'website' | 'social_media'
 
 // ============================================
 // Event Types
@@ -160,18 +160,17 @@ export interface EventLink {
   event_id: string
   link_type: EventLinkType
   url: string
-  title: string | null
-  description: string | null
+  label: string | null
+  platform: string | null
   display_order: number
   created_at: string
-  updated_at: string
 }
 
 export interface EventLinkCreateRequest {
   link_type: EventLinkType
   url: string
-  title?: string
-  description?: string
+  label?: string
+  platform?: string
   display_order?: number
 }
 

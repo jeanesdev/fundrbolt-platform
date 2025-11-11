@@ -98,27 +98,63 @@ export function EventEditPage() {
   }
 
   const handleMediaUpload = async (file: File) => {
-    await uploadMedia(eventId, file)
+    try {
+      await uploadMedia(eventId, file)
+      toast.success('Media uploaded successfully!')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to upload media'
+      toast.error(message)
+    }
   }
 
   const handleMediaDelete = async (mediaId: string) => {
-    await deleteMedia(eventId, mediaId)
+    try {
+      await deleteMedia(eventId, mediaId)
+      toast.success('Media deleted successfully!')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete media'
+      toast.error(message)
+    }
   }
 
   const handleLinkCreate = async (data: EventLinkCreateRequest) => {
-    await createLink(eventId, data)
+    try {
+      await createLink(eventId, data)
+      toast.success('Link added successfully!')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to add link'
+      toast.error(message)
+    }
   }
 
   const handleLinkDelete = async (linkId: string) => {
-    await deleteLink(eventId, linkId)
+    try {
+      await deleteLink(eventId, linkId)
+      toast.success('Link deleted successfully!')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete link'
+      toast.error(message)
+    }
   }
 
   const handleFoodOptionCreate = async (data: FoodOptionCreateRequest) => {
-    await createFoodOption(eventId, data)
+    try {
+      await createFoodOption(eventId, data)
+      toast.success('Food option added successfully!')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to add food option'
+      toast.error(message)
+    }
   }
 
   const handleFoodOptionDelete = async (optionId: string) => {
-    await deleteFoodOption(eventId, optionId)
+    try {
+      await deleteFoodOption(eventId, optionId)
+      toast.success('Food option deleted successfully!')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete food option'
+      toast.error(message)
+    }
   }
 
   if (eventsLoading || !currentEvent) {
@@ -254,9 +290,10 @@ export function EventEditPage() {
                       <Card key={link.id}>
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">{link.title || link.url}</p>
-                              <p className="text-sm text-muted-foreground">{link.link_type}</p>
+                            <div className="flex-1">
+                              <p className="font-medium">{link.label || 'Untitled Link'}</p>
+                              <p className="text-sm text-muted-foreground truncate">{link.url}</p>
+                              <p className="text-xs text-muted-foreground capitalize">{link.link_type.replace('_', ' ')}</p>
                             </div>
                             <Button
                               variant="ghost"

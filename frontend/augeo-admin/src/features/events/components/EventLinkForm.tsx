@@ -20,17 +20,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
 import type { EventLink, EventLinkType } from '@/types/event'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 const linkFormSchema = z.object({
-  link_type: z.enum(['video', 'website', 'social']),
+  link_type: z.enum(['video', 'website', 'social_media']),
   url: z.string().url('Must be a valid URL'),
-  title: z.string().optional(),
-  description: z.string().optional(),
+  label: z.string().optional(),
+  platform: z.string().optional(),
   display_order: z.number().int().min(0).optional(),
 })
 
@@ -49,8 +48,8 @@ export function EventLinkForm({ link, onSubmit, onCancel, isSubmitting }: EventL
     defaultValues: {
       link_type: (link?.link_type as EventLinkType) || 'website',
       url: link?.url || '',
-      title: link?.title || '',
-      description: link?.description || '',
+      label: link?.label || '',
+      platform: link?.platform || '',
       display_order: link?.display_order || 0,
     },
   })
@@ -73,7 +72,7 @@ export function EventLinkForm({ link, onSubmit, onCancel, isSubmitting }: EventL
                 <SelectContent>
                   <SelectItem value="video">Video (YouTube/Vimeo)</SelectItem>
                   <SelectItem value="website">Website</SelectItem>
-                  <SelectItem value="social">Social Media</SelectItem>
+                  <SelectItem value="social_media">Social Media</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -97,12 +96,12 @@ export function EventLinkForm({ link, onSubmit, onCancel, isSubmitting }: EventL
 
         <FormField
           control={form.control}
-          name="title"
+          name="label"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Title (Optional)</FormLabel>
+              <FormLabel>Label (Optional)</FormLabel>
               <FormControl>
-                <Input placeholder="Link title" {...field} />
+                <Input placeholder="e.g. Event Promo Video" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -111,12 +110,12 @@ export function EventLinkForm({ link, onSubmit, onCancel, isSubmitting }: EventL
 
         <FormField
           control={form.control}
-          name="description"
+          name="platform"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description (Optional)</FormLabel>
+              <FormLabel>Platform (Optional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Link description" {...field} />
+                <Input placeholder="e.g. YouTube, Facebook, Instagram" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
