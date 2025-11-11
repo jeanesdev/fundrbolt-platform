@@ -23,7 +23,7 @@ import { MediaUploader } from './components/MediaUploader'
 
 export function EventEditPage() {
   const navigate = useNavigate()
-  const { id: eventId } = useParams({ strict: false }) as { id: string }
+  const { eventId } = useParams({ strict: false }) as { eventId: string }
   const {
     currentEvent,
     eventsLoading,
