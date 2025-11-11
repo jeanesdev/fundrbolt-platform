@@ -39,10 +39,16 @@ export function EventCreatePage() {
     setIsSubmitting(true)
     try {
       const createdEvent = await createEvent(data as EventCreateRequest)
+
+      if (!createdEvent?.id) {
+        throw new Error('Event created but no ID returned from server')
+      }
+
       toast.success('Event created successfully!')
       navigate({ to: '/events/$eventId/edit', params: { eventId: createdEvent.id } })
-    } catch (_err) {
-      toast.error('Failed to create event')
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create event'
+      toast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
