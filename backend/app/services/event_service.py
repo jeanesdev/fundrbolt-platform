@@ -288,7 +288,9 @@ class EventService:
         per_page: int = 20,
     ) -> tuple[list[Event], int]:
         """List events with filtering and pagination."""
-        query = select(Event)
+        from sqlalchemy.orm import selectinload
+
+        query = select(Event).options(selectinload(Event.npo))
 
         if npo_id:
             query = query.where(Event.npo_id == npo_id)

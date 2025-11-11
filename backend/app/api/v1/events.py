@@ -133,8 +133,28 @@ async def list_events(
         per_page=per_page,
     )
 
+    # Manually construct response items to include NPO name
+    items = []
+    for event in events:
+        items.append(
+            EventSummaryResponse(
+                id=event.id,
+                npo_id=event.npo_id,
+                npo_name=event.npo.name if event.npo else None,
+                name=event.name,
+                slug=event.slug,
+                status=event.status,
+                event_datetime=event.event_datetime,
+                timezone=event.timezone,
+                venue_name=event.venue_name,
+                logo_url=event.logo_url,
+                created_at=event.created_at,
+                updated_at=event.updated_at,
+            )
+        )
+
     return EventListResponse(
-        items=[EventSummaryResponse.model_validate(e) for e in events],
+        items=items,
         total=total,
         page=page,
         per_page=per_page,

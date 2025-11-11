@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useEventStore } from '@/stores/event-store'
 import type { EventStatus } from '@/types/event'
 import { useNavigate } from '@tanstack/react-router'
-import { Calendar, Clock, MapPin, Plus } from 'lucide-react'
+import { Building2, Calendar, Clock, MapPin, Plus } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -111,6 +111,12 @@ export function EventListPage() {
       </CardHeader>
       <CardContent>
         <div className="space-y-2 text-sm text-muted-foreground">
+          {event.npo_name && (
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              <span className="font-medium">{event.npo_name}</span>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             <span>{formatEventDate(event.event_datetime, event.timezone)}</span>

@@ -264,6 +264,7 @@ class EventSummaryResponse(BaseModel):
 
     id: uuid.UUID
     npo_id: uuid.UUID
+    npo_name: str | None
     name: str
     slug: str
     status: EventStatus
