@@ -56,7 +56,7 @@ async def close_expired_events_task(db: AsyncSession) -> int:
     return len(events_to_close)
 
 
-async def scan_uploaded_file_task(media_id: str) -> dict:
+async def scan_uploaded_file_task(media_id: str) -> dict[str, bool | str]:
     """
     Background task: Scan uploaded file for viruses using ClamAV.
 

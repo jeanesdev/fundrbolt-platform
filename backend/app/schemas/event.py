@@ -129,12 +129,25 @@ class MediaUploadUrlRequest(BaseModel):
         description="MIME type (image/png, image/jpeg, image/svg+xml, application/pdf)",
     )
     file_size: int = Field(..., ge=1, le=10485760, description="File size in bytes (max 10MB)")
+    media_type: str = Field(
+        ...,
+        description="Media type: image, video, or flyer",
+        pattern="^(image|video|flyer)$",
+    )
 
     @field_validator("file_type")
     @classmethod
     def validate_file_type(cls, v: str) -> str:
         """Validate allowed file types."""
-        allowed_types = ["image/png", "image/jpeg", "image/svg+xml", "application/pdf"]
+        allowed_types = [
+            "image/png",
+            "image/jpeg",
+            "image/webp",
+            "image/gif",
+            "video/mp4",
+            "video/quicktime",
+            "application/pdf",
+        ]
         if v not in allowed_types:
             raise ValueError(f"File type must be one of: {', '.join(allowed_types)}")
         return v
@@ -232,9 +245,11 @@ class EventMediaResponse(BaseModel):
 
     id: uuid.UUID
     event_id: uuid.UUID
+    media_type: str
     file_url: str
     file_name: str
     file_type: str
+    mime_type: str
     file_size: int
     display_order: int
     status: EventMediaStatus

@@ -2,13 +2,16 @@
 
 import logging
 import uuid
+from datetime import datetime, timedelta
 from typing import Annotated
 
+import pytz
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.middleware.auth import get_current_active_user
+from app.models.event import EventMediaType
 from app.models.user import User
 from app.schemas.event import (
     EventMediaResponse,
@@ -16,6 +19,7 @@ from app.schemas.event import (
     MediaUploadUrlResponse,
 )
 from app.services.event_service import EventService
+from app.services.media_service import MediaService
 
 logger = logging.getLogger(__name__)
 
@@ -32,21 +36,17 @@ async def request_upload_url(
     """
     Generate pre-signed URL for uploading media to Azure Blob Storage.
 
-    **NOTE**: Media upload functionality is not yet fully implemented.
-    This endpoint requires Azure Blob Storage configuration and
-    media upload service implementation.
-
     Workflow:
     1. Request upload URL with file metadata
     2. Upload file to pre-signed URL (client-side)
     3. Call confirm endpoint to finalize upload
 
     Returns:
-    - upload_url: Pre-signed Azure Blob URL (15-minute expiry)
+    - upload_url: Pre-signed Azure Blob URL (1-hour expiry)
     - media_id: UUID of created EventMedia record
     - expires_at: Upload URL expiration timestamp
     """
-    # Verify event exists and user has permission
+    # Verify event exists
     event = await EventService.get_event_by_id(db, event_id)
     if not event:
         raise HTTPException(
@@ -54,11 +54,32 @@ async def request_upload_url(
             detail=f"Event with ID {event_id} not found",
         )
 
-    # TODO: Implement media upload functionality
-    # For now, return a not implemented error
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Media upload functionality is not yet implemented. Azure Blob Storage configuration and media service implementation required.",
+    # Convert string media_type to enum
+    try:
+        media_type_enum = EventMediaType(request.media_type)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid media type: {request.media_type}. Must be one of: image, video, flyer",
+        )
+
+    # Generate upload URL
+    upload_url, media_id = await MediaService.generate_upload_url(
+        db=db,
+        event_id=event_id,
+        filename=request.file_name,
+        file_size=request.file_size,
+        media_type=media_type_enum,
+        current_user=current_user,
+    )
+
+    # URL expires in 1 hour
+    expires_at = datetime.now(pytz.UTC) + timedelta(hours=1)
+
+    return MediaUploadUrlResponse(
+        upload_url=upload_url,
+        media_id=media_id,
+        expires_at=expires_at,
     )
 
 
@@ -74,8 +95,6 @@ async def confirm_upload(
     """
     Confirm media upload completion and trigger virus scan.
 
-    **NOTE**: Media upload functionality is not yet fully implemented.
-
     Call this after successfully uploading file to Azure Blob Storage.
     """
     # Verify event exists
@@ -86,9 +105,22 @@ async def confirm_upload(
             detail=f"Event with ID {event_id} not found",
         )
 
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Media upload functionality is not yet implemented.",
+    # Confirm upload
+    media = await MediaService.confirm_upload(db=db, media_id=media_id)
+
+    return EventMediaResponse(
+        id=media.id,
+        event_id=media.event_id,
+        media_type=media.media_type.value,
+        file_name=media.file_name,
+        file_url=media.file_url,
+        file_type=media.file_type,
+        mime_type=media.mime_type,
+        file_size=media.file_size,
+        display_order=media.display_order,
+        status=media.status,
+        uploaded_at=media.created_at,
+        uploaded_by=media.uploaded_by,
     )
 
 
@@ -102,8 +134,6 @@ async def delete_media(
     """
     Delete media file.
 
-    **NOTE**: Media upload functionality is not yet fully implemented.
-
     Removes file from Azure Blob Storage and database record.
     """
     # Verify event exists
@@ -114,7 +144,5 @@ async def delete_media(
             detail=f"Event with ID {event_id} not found",
         )
 
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Media upload functionality is not yet implemented.",
-    )
+    # Delete media
+    await MediaService.delete_media(db=db, media_id=media_id, current_user=current_user)

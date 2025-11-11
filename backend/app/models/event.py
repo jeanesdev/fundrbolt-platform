@@ -39,6 +39,14 @@ class EventMediaStatus(str, enum.Enum):
     QUARANTINED = "quarantined"  # Virus detected
 
 
+class EventMediaType(str, enum.Enum):
+    """Media file type."""
+
+    IMAGE = "image"  # Image files (JPEG, PNG, WebP, GIF)
+    VIDEO = "video"  # Video files (MP4, MOV)
+    FLYER = "flyer"  # PDF flyers/documents
+
+
 class EventLinkType(str, enum.Enum):
     """External link type."""
 
@@ -242,6 +250,15 @@ class EventMedia(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         index=True,
     )
+    media_type: Mapped[EventMediaType] = mapped_column(
+        Enum(
+            EventMediaType,
+            name="event_media_type",
+            values_callable=lambda x: [e.value for e in x],
+        ),
+        nullable=False,
+        comment="Type of media: image, video, or flyer",
+    )
     file_url: Mapped[str] = mapped_column(
         String(500),
         nullable=False,
@@ -256,6 +273,16 @@ class EventMedia(Base, UUIDMixin, TimestampMixin):
         String(100),
         nullable=False,
         comment="MIME type (e.g., image/png)",
+    )
+    mime_type: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        comment="MIME type for validation (e.g., image/jpeg)",
+    )
+    blob_name: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+        comment="Azure Blob Storage blob name/path",
     )
     file_size: Mapped[int] = mapped_column(
         Integer,

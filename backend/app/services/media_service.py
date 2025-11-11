@@ -8,14 +8,15 @@ from datetime import datetime, timedelta
 import pytz
 from azure.storage.blob import BlobSasPermissions, BlobServiceClient, generate_blob_sas
 from fastapi import HTTPException, status
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
+from app.core.config import get_settings
 from app.core.metrics import EVENT_MEDIA_SCAN_RESULTS_TOTAL, EVENT_MEDIA_UPLOADS_TOTAL
 from app.models.event import EventMedia, EventMediaStatus, EventMediaType
 from app.models.user import User
-from app.services.audit_service import AuditService
 
+settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
@@ -35,12 +36,16 @@ class MediaService:
         "image/webp",
         "image/gif",
     }
+    ALLOWED_VIDEO_TYPES = {
+        "video/mp4",
+        "video/quicktime",
+    }
     ALLOWED_DOCUMENT_TYPES = {
         "application/pdf",
     }
 
     @staticmethod
-    def _get_blob_client():
+    def _get_blob_client() -> BlobServiceClient:
         """Get Azure Blob Service Client."""
         if not settings.azure_storage_connection_string:
             raise HTTPException(
@@ -84,8 +89,6 @@ class MediaService:
             )
 
         # Check total event media size
-        from sqlalchemy import func, select
-
         total_query = select(func.sum(EventMedia.file_size)).where(EventMedia.event_id == event_id)
         result = await db.execute(total_query)
         current_total = result.scalar() or 0
@@ -104,11 +107,18 @@ class MediaService:
                 detail="Unable to determine file type",
             )
 
-        allowed_types = (
-            MediaService.ALLOWED_IMAGE_TYPES
-            if media_type == EventMediaType.IMAGE
-            else MediaService.ALLOWED_DOCUMENT_TYPES
-        )
+        # Get allowed types based on media_type
+        if media_type == EventMediaType.IMAGE:
+            allowed_types = MediaService.ALLOWED_IMAGE_TYPES
+        elif media_type == EventMediaType.VIDEO:
+            allowed_types = MediaService.ALLOWED_VIDEO_TYPES
+        elif media_type == EventMediaType.FLYER:
+            allowed_types = MediaService.ALLOWED_DOCUMENT_TYPES
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid media type: {media_type}",
+            )
 
         if mime_type not in allowed_types:
             raise HTTPException(
@@ -119,6 +129,11 @@ class MediaService:
         # Create media record
         media_id = uuid.uuid4()
         blob_name = f"events/{event_id}/{media_id}/{filename}"
+        container_name = settings.azure_storage_container_name or "event-media"
+
+        # Generate placeholder URL (will be replaced with actual URL after upload)
+        blob_client = MediaService._get_blob_client()
+        file_url = f"{blob_client.url}/{container_name}/{blob_name}"
 
         media = EventMedia(
             id=media_id,
@@ -126,29 +141,47 @@ class MediaService:
             media_type=media_type,
             file_name=filename,
             file_size=file_size,
+            file_type=mime_type,  # Keep for backward compatibility
             mime_type=mime_type,
             blob_name=blob_name,
+            file_url=file_url,
             status=EventMediaStatus.UPLOADED,
             uploaded_by=current_user.id,
+            display_order=0,
         )
 
         db.add(media)
         await db.commit()
 
-        # Generate SAS URL
-        blob_client = MediaService._get_blob_client()
-        container_name = settings.azure_storage_container_name or "event-media"
+        # Generate SAS URL for upload
+        account_name = blob_client.account_name
+        if not account_name:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Azure Storage account name not available",
+            )
+
+        # Get account key from credential
+        account_key = None
+        if hasattr(blob_client.credential, "account_key"):
+            account_key = blob_client.credential.account_key
+
+        if not account_key:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Azure Storage account key not available",
+            )
 
         sas_token = generate_blob_sas(
-            account_name=blob_client.account_name,
+            account_name=account_name,
             container_name=container_name,
             blob_name=blob_name,
-            account_key=blob_client.credential.account_key,
+            account_key=account_key,
             permission=BlobSasPermissions(write=True, create=True),
             expiry=datetime.now(pytz.UTC) + timedelta(hours=1),
         )
 
-        upload_url = f"{blob_client.url}/{container_name}/{blob_name}?{sas_token}"
+        upload_url = f"{file_url}?{sas_token}"
 
         logger.info(
             f"Generated upload URL for event {event_id}, media {media_id}, user {current_user.id}"
@@ -166,8 +199,6 @@ class MediaService:
 
         Triggers virus scanning via Celery task.
         """
-        from sqlalchemy import select
-
         query = select(EventMedia).where(EventMedia.id == media_id)
         result = await db.execute(query)
         media = result.scalar_one_or_none()
@@ -204,11 +235,9 @@ class MediaService:
         db: AsyncSession,
         media_id: uuid.UUID,
         scan_passed: bool,
-        scan_details: dict | None = None,
+        scan_details: dict[str, str] | None = None,
     ) -> EventMedia:
         """Update media status after virus scan completes."""
-        from sqlalchemy import select
-
         query = select(EventMedia).where(EventMedia.id == media_id)
         result = await db.execute(query)
         media = result.scalar_one_or_none()
@@ -247,8 +276,6 @@ class MediaService:
             media_id: Media UUID
             current_user: User deleting the media
         """
-        from sqlalchemy import select
-
         query = select(EventMedia).where(EventMedia.id == media_id)
         result = await db.execute(query)
         media = result.scalar_one_or_none()
@@ -272,14 +299,5 @@ class MediaService:
         # Delete from database
         await db.delete(media)
         await db.commit()
-
-        await AuditService.log_action(
-            db=db,
-            user_id=current_user.id,
-            action="delete",
-            resource_type="event_media",
-            resource_id=media_id,
-            details={"file_name": media.file_name, "event_id": str(media.event_id)},
-        )
 
         logger.info(f"Media {media_id} deleted by user {current_user.id}")

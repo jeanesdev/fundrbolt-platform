@@ -24,12 +24,14 @@ import {
 } from '@/components/ui/select'
 import type { NPOBranding } from '@/services/event-service'
 import type { EventCreateRequest, EventDetail, EventUpdateRequest } from '@/types/event'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Calendar, Clock, MapPin } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { ColorPicker } from './ColorPicker'
-import { RichTextEditor } from './RichTextEditor'
+import { ColorPicker } from './ColorPicker.tsx'
+import { RichTextEditor } from './RichTextEditor.tsx'
 
 // Form validation schema
 const eventFormSchema = z.object({
@@ -69,6 +71,11 @@ export function EventForm({
   onCancel,
   isSubmitting,
 }: EventFormProps) {
+  // Refs for Google Maps Autocomplete
+  const venueAddressInputRef = useRef<HTMLInputElement>(null)
+  const autocompleteRef = useRef<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
+  const isGoogleMapsInitialized = useRef(false)
+
   // Initialize form with existing event data or NPO branding defaults
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -114,6 +121,78 @@ export function EventForm({
       form.setValue('slug', generatedSlug)
     }
   }
+
+  // Initialize Google Maps Autocomplete
+  useEffect(() => {
+    const initAutocomplete = async () => {
+      // Prevent multiple initializations
+      if (!venueAddressInputRef.current || isGoogleMapsInitialized.current) return
+
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+      if (!apiKey) {
+        return
+      }
+
+      try {
+        // Set options for Google Maps (only once)
+        if (!isGoogleMapsInitialized.current) {
+          setOptions({ key: apiKey })
+          isGoogleMapsInitialized.current = true
+        }
+
+        // Import places library
+        const { Autocomplete } = (await importLibrary('places')) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+
+        const autocomplete = new Autocomplete(venueAddressInputRef.current, {
+          types: ['address'],
+          componentRestrictions: { country: 'us' },
+          fields: ['address_components', 'formatted_address', 'geometry', 'name'],
+        })
+
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace()
+
+          if (!place.address_components) {
+            return
+          }
+
+          let street = ''
+          let city = ''
+          let state = ''
+          let postalCode = ''
+
+          // Parse address components
+          for (const component of place.address_components) {
+            const types = component.types
+
+            if (types.includes('street_number')) {
+              street = component.long_name + ' '
+            } else if (types.includes('route')) {
+              street += component.long_name
+            } else if (types.includes('locality')) {
+              city = component.long_name
+            } else if (types.includes('administrative_area_level_1')) {
+              state = component.short_name
+            } else if (types.includes('postal_code')) {
+              postalCode = component.long_name
+            }
+          }
+
+          // Update form values
+          form.setValue('venue_address', street.trim())
+          form.setValue('venue_city', city)
+          form.setValue('venue_state', state)
+          form.setValue('venue_zip', postalCode)
+        })
+
+        autocompleteRef.current = autocomplete
+      } catch (_error) {
+        // Error loading Google Places - silently fail
+      }
+    }
+
+    initAutocomplete()
+  }, [form])
 
   const handleSubmit = async (values: EventFormValues) => {
     const baseData = {
@@ -318,8 +397,18 @@ export function EventForm({
               <FormItem>
                 <FormLabel>Venue Address</FormLabel>
                 <FormControl>
-                  <Input placeholder="123 Main St" {...field} />
+                  <Input
+                    placeholder="123 Main St"
+                    {...field}
+                    ref={(e) => {
+                      field.ref(e)
+                      venueAddressInputRef.current = e
+                    }}
+                  />
                 </FormControl>
+                <FormDescription>
+                  Start typing to search for addresses
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
