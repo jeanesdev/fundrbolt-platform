@@ -8,7 +8,7 @@
 
 This feature establishes the authentication and authorization foundation for the Augeo platform. It implements a multi-tier role system with five distinct roles (Super Admin, NPO Admin, Event Coordinator, Staff, Donor) with organizational and event-level scoping. The system provides secure OAuth2 JWT-based authentication, role-based access control (RBAC), password management, **email verification for new users**, session handling, and comprehensive security logging. NPO Admins automatically have coordinator access to all events in their organization, while Staff are manually assigned to specific events. This feature is critical as it gates all other platform functionality and must be production-ready before any other features can be built.
 
-**Technical Approach**: FastAPI backend with SQLAlchemy ORM for PostgreSQL (with Row-Level Security), Pydantic for validation, OAuth2 with JWT tokens (15-min access, 7-day refresh), bcrypt password hashing, Redis for session/token management, email verification via Azure Communication Services, and React TypeScript frontend with Zustand state management.
+**Technical Approach**: FastAPI backend with SQLAlchemy ORM for PostgreSQL (with Row-Level Security), Pydantic for validation, OAuth2 with JWT tokens (15-min access, 7-day refresh), bcrypt password hashing, Redis for session/token management, email verification via Azure Communication Services, and React TypeScript frontend with Zustand state management. User profiles include optional organization name and address fields for business/institutional affiliations.
 
 ## Technical Context
 
@@ -63,7 +63,7 @@ backend/
 │   ├── database.py                      # SQLAlchemy engine, session, base
 │   ├── models/
 │   │   ├── __init__.py
-│   │   ├── user.py                      # User model with password hashing
+│   │   ├── user.py                      # User model with password hashing + org fields
 │   │   ├── role.py                      # Role model (5 core roles)
 │   │   ├── permission.py                # Permission model (platform/NPO/event scoped)
 │   │   ├── session.py                   # Session model (Redis-backed)
@@ -71,7 +71,7 @@ backend/
 │   ├── schemas/
 │   │   ├── __init__.py
 │   │   ├── auth.py                      # AuthRequest, TokenResponse, RefreshRequest
-│   │   ├── user.py                      # UserCreate, UserUpdate, UserResponse
+│   │   ├── user.py                      # UserCreate, UserUpdate, UserResponse (with optional org fields)
 │   │   └── role.py                      # RoleResponse, PermissionResponse
 │   ├── services/
 │   │   ├── __init__.py
@@ -125,7 +125,7 @@ frontend/
 │       │   └── auth/
 │       │       ├── components/
 │       │       │   ├── LoginForm.tsx    # Email/password login
-│       │       │   ├── RegisterForm.tsx # New user registration
+│       │       │   ├── RegisterForm.tsx # New user registration (with optional org fields)
 │       │       │   └── PasswordResetForm.tsx
 │       │       ├── hooks/
 │       │       │   ├── useAuth.ts       # Auth state hook
@@ -165,6 +165,7 @@ shared/
 ## Progress Tracking
 
 ### Phase 0: Research ✅ COMPLETE
+
 - ✅ `research.md` created (13 technical decisions documented)
 - ✅ JWT token management strategy defined (15min/7day)
 - ✅ Password security standards defined (bcrypt, 12 rounds)
@@ -176,7 +177,9 @@ shared/
 - ✅ Event-scoped roles clarified (auto NPO admin, manual staff)
 
 ### Phase 1: Design ✅ COMPLETE
+
 - ✅ `data-model.md` created (6 entities: User, Role, Permission, Session, AuditLog, EventStaff)
+- ✅ User model extended with optional organization_name and organization_address fields
 - ✅ `contracts/auth.yaml` created (8 authentication endpoints)
 - ✅ `contracts/users.yaml` created (9 user management endpoints)
 - ✅ `quickstart.md` created (12-section setup guide with 7 test scenarios)
@@ -184,6 +187,7 @@ shared/
 - ✅ Constitution compliance validated
 
 ### Phase 2: Tasks ✅ COMPLETE
+
 - ✅ `tasks.md` created (170 implementation tasks across 12 phases)
 - ✅ Tasks organized by user story (US1-US4) for independent delivery
 - ✅ MVP path identified (54 tasks for User Story 1 + foundation)
@@ -191,11 +195,13 @@ shared/
 - ✅ Dependencies and execution order documented
 
 ### Phase 3: Implementation ⏳ PENDING
+
 - ⏳ Backend: Database models, services, API endpoints, middleware
 - ⏳ Frontend: Auth forms, protected routes, state management
 - ⏳ Tests: Unit, integration, E2E, security tests
 
 ### Phase 4: Deployment ⏳ PENDING
+
 - ⏳ Staging deployment with Azure services
 - ⏳ Production deployment with monitoring
 - ⏳ Performance validation (login <2s, auth <100ms)

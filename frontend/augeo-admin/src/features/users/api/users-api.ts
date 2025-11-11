@@ -6,6 +6,13 @@ export interface User {
   first_name: string
   last_name: string
   phone: string | null
+  organization_name: string | null
+  address_line1: string | null
+  address_line2: string | null
+  city: string | null
+  state: string | null
+  postal_code: string | null
+  country: string | null
   role: string
   npo_id: string | null
   email_verified: boolean
@@ -29,6 +36,13 @@ export interface CreateUserRequest {
   first_name: string
   last_name: string
   phone?: string
+  organization_name?: string
+  address_line1?: string
+  address_line2?: string
+  city?: string
+  state?: string
+  postal_code?: string
+  country?: string
   role: string
   npo_id?: string
 }
@@ -37,6 +51,13 @@ export interface UpdateUserRequest {
   first_name?: string
   last_name?: string
   phone?: string
+  organization_name?: string
+  address_line1?: string
+  address_line2?: string
+  city?: string
+  state?: string
+  postal_code?: string
+  country?: string
 }
 
 export interface RoleUpdateRequest {

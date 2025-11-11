@@ -22,6 +22,49 @@ from app.services.user_service import UserService
 router = APIRouter()
 
 
+async def build_user_response(user: User, db: AsyncSession) -> dict[str, object]:
+    """Build a complete user response dict with all fields including address.
+
+    Args:
+        user: User model instance
+        db: Database session
+
+    Returns:
+        dict with all user fields including role name and address fields
+    """
+    # Get role name
+    from sqlalchemy import select
+
+    from app.models.base import Base
+
+    roles_table = Base.metadata.tables["roles"]
+    role_stmt = select(roles_table.c.name).where(roles_table.c.id == user.role_id)
+    role_result = await db.execute(role_stmt)
+    role_name = role_result.scalar_one()
+
+    return {
+        "id": user.id,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "phone": user.phone,
+        "organization_name": user.organization_name,
+        "address_line1": user.address_line1,
+        "address_line2": user.address_line2,
+        "city": user.city,
+        "state": user.state,
+        "postal_code": user.postal_code,
+        "country": user.country,
+        "role": role_name,
+        "npo_id": user.npo_id,
+        "email_verified": user.email_verified,
+        "is_active": user.is_active,
+        "last_login_at": user.last_login_at,
+        "created_at": user.created_at,
+        "updated_at": user.updated_at,
+    }
+
+
 @router.get("/me", response_model=UserPublicWithRole)
 async def get_current_user_profile(
     current_user: User = Depends(get_current_user),
@@ -172,20 +215,7 @@ async def create_user(
             ip_address=ip_address,
         )
 
-        return {
-            "id": user.id,
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "phone": user.phone,
-            "role": role_name,
-            "npo_id": user.npo_id,
-            "email_verified": user.email_verified,
-            "is_active": user.is_active,
-            "last_login_at": user.last_login_at,
-            "created_at": user.created_at,
-            "updated_at": user.updated_at,
-        }
+        return await build_user_response(user, db)
     except ValueError as e:
         if "already exists" in str(e).lower():
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
@@ -287,16 +317,6 @@ async def update_user(
             db=db, current_user=current_user, user_id=user_id, user_data=user_data
         )
 
-        # Get role name
-        from sqlalchemy import select
-
-        from app.models.base import Base
-
-        roles_table = Base.metadata.tables["roles"]
-        role_stmt = select(roles_table.c.name).where(roles_table.c.id == user.role_id)
-        role_result = await db.execute(role_stmt)
-        role_name = role_result.scalar_one()
-
         # Log user update
         # Determine which fields were updated
         fields_updated = []
@@ -318,20 +338,7 @@ async def update_user(
             ip_address=ip_address,
         )
 
-        return {
-            "id": user.id,
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "phone": user.phone,
-            "role": role_name,
-            "npo_id": user.npo_id,
-            "email_verified": user.email_verified,
-            "is_active": user.is_active,
-            "last_login_at": user.last_login_at,
-            "created_at": user.created_at,
-            "updated_at": user.updated_at,
-        }
+        return await build_user_response(user, db)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except PermissionError as e:

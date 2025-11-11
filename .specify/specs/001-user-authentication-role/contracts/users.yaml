@@ -733,6 +733,41 @@ components:
         created_at:
           type: string
           format: date-time
+        organization_name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Organization name for NPO administrators
+        address_line1:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Street address line 1
+        address_line2:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Street address line 2 (apartment, suite, etc.)
+        city:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: City
+        state:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: State or province
+        postal_code:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: Postal or ZIP code
+        country:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Country
 
     UserDetailResponse:
       allOf:
@@ -794,6 +829,41 @@ components:
           type: string
           format: uuid
           description: Required for npo_admin and event_coordinator roles
+        organization_name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Organization name for NPO administrators
+        address_line1:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Street address line 1
+        address_line2:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Street address line 2 (apartment, suite, etc.)
+        city:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: City
+        state:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: State or province
+        postal_code:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: Postal or ZIP code
+        country:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Country
 
     UserUpdateRequest:
       type: object
@@ -810,6 +880,41 @@ components:
           type: string
           maxLength: 20
           nullable: true
+        organization_name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Organization name for NPO administrators
+        address_line1:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Street address line 1
+        address_line2:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Street address line 2 (apartment, suite, etc.)
+        city:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: City
+        state:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: State or province
+        postal_code:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: Postal or ZIP code
+        country:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Country
 
     UserResponse:
       type: object

@@ -51,6 +51,34 @@ const formSchema = z
         },
         { message: '11-digit phone must start with 1' }
       ),
+    organization_name: z
+      .string()
+      .max(255, 'Organization name must not exceed 255 characters')
+      .optional(),
+    address_line1: z
+      .string()
+      .max(255, 'Address line 1 must not exceed 255 characters')
+      .optional(),
+    address_line2: z
+      .string()
+      .max(255, 'Address line 2 must not exceed 255 characters')
+      .optional(),
+    city: z
+      .string()
+      .max(100, 'City must not exceed 100 characters')
+      .optional(),
+    state: z
+      .string()
+      .max(100, 'State must not exceed 100 characters')
+      .optional(),
+    postal_code: z
+      .string()
+      .max(20, 'Postal code must not exceed 20 characters')
+      .optional(),
+    country: z
+      .string()
+      .max(100, 'Country must not exceed 100 characters')
+      .optional(),
     email: z.email({
       error: (iss) => (iss.input === '' ? 'Email is required.' : undefined),
     }),
@@ -159,11 +187,25 @@ export function UsersActionDialog({
           first_name?: string
           last_name?: string
           phone?: string
+          organization_name?: string
+          address_line1?: string
+          address_line2?: string
+          city?: string
+          state?: string
+          postal_code?: string
+          country?: string
           password?: string
         } = {
           first_name: values.firstName,
           last_name: values.lastName,
           phone: values.phoneNumber || undefined,
+          organization_name: values.organization_name || undefined,
+          address_line1: values.address_line1 || undefined,
+          address_line2: values.address_line2 || undefined,
+          city: values.city || undefined,
+          state: values.state || undefined,
+          postal_code: values.postal_code || undefined,
+          country: values.country || undefined,
         }
 
         // Only include password if it was changed
@@ -191,6 +233,13 @@ export function UsersActionDialog({
           first_name: values.firstName,
           last_name: values.lastName,
           phone: values.phoneNumber || undefined,
+          organization_name: values.organization_name || undefined,
+          address_line1: values.address_line1 || undefined,
+          address_line2: values.address_line2 || undefined,
+          city: values.city || undefined,
+          state: values.state || undefined,
+          postal_code: values.postal_code || undefined,
+          country: values.country || undefined,
           role: values.role,
         }
         await createUser.mutateAsync(payload)
@@ -341,6 +390,146 @@ export function UsersActionDialog({
                     </FormItem>
                   )
                 }}
+              />
+              <FormField
+                control={form.control}
+                name='organization_name'
+                render={({ field }) => (
+                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                    <FormLabel className='col-span-2 text-end'>
+                      Organization Name
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder='Organization Name'
+                        className='col-span-4'
+                        autoComplete='organization'
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className='col-span-4 col-start-3' />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='address_line1'
+                render={({ field }) => (
+                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                    <FormLabel className='col-span-2 text-end'>
+                      Street Address 1
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder='123 Main St'
+                        className='col-span-4'
+                        autoComplete='address-line1'
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className='col-span-4 col-start-3' />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='address_line2'
+                render={({ field }) => (
+                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                    <FormLabel className='col-span-2 text-end'>
+                      Street Address 2
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder='Apt 4B (optional)'
+                        className='col-span-4'
+                        autoComplete='address-line2'
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className='col-span-4 col-start-3' />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='city'
+                render={({ field }) => (
+                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                    <FormLabel className='col-span-2 text-end'>
+                      City
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder='City'
+                        className='col-span-4'
+                        autoComplete='address-level2'
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className='col-span-4 col-start-3' />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='state'
+                render={({ field }) => (
+                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                    <FormLabel className='col-span-2 text-end'>
+                      State / Province
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder='State / Province'
+                        className='col-span-4'
+                        autoComplete='address-level1'
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className='col-span-4 col-start-3' />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='postal_code'
+                render={({ field }) => (
+                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                    <FormLabel className='col-span-2 text-end'>
+                      Postal Code
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder='12345'
+                        className='col-span-4'
+                        autoComplete='postal-code'
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className='col-span-4 col-start-3' />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='country'
+                render={({ field }) => (
+                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                    <FormLabel className='col-span-2 text-end'>
+                      Country
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder='United States'
+                        className='col-span-4'
+                        autoComplete='country-name'
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className='col-span-4 col-start-3' />
+                  </FormItem>
+                )}
               />
               <FormField
                 control={form.control}

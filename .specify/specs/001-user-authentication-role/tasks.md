@@ -627,9 +627,73 @@ With multiple developers:
 
 ---
 
+## Phase 13: Organization Profile Fields (Optional User Information) ✅ COMPLETE
+
+**Purpose**: Add optional organization name and address fields to user profiles for users representing businesses or institutions
+
+**Dependencies**: Phase 3 (User Registration & Login) must be complete
+
+**User Story Context**: Extension of User Story 1 (User Registration & Login) - enhances user profile capabilities
+
+### Database Migration
+
+- [x] T171 [P] Create Alembic migration 008_add_user_organization_fields.py to add organization_name (VARCHAR 255 NULL) and organization_address (TEXT NULL) to users table in backend/alembic/versions/
+
+### Backend Schema Updates
+
+- [x] T172 [P] Update UserCreate schema to include organization_name: str | None and organization_address: str | None in backend/app/schemas/auth.py
+- [x] T173 [P] Update UserUpdate schema to include optional organization_name and organization_address fields in backend/app/schemas/users.py
+- [x] T174 [P] Update UserPublic/UserResponse schemas to include organization_name and organization_address in response in backend/app/schemas/auth.py and users.py
+
+### Backend Service Updates
+
+- [x] T175 Update AuthService.register() to accept and store organization_name and organization_address during user registration in backend/app/services/auth_service.py
+- [x] T176 Update UserService to handle organization field updates in user profile management in backend/app/services/user_service.py
+
+### Frontend Updates
+
+- [x] T177 [P] Add organization_name and organization_address fields to SignUpForm component with optional validation in frontend/augeo-admin/src/features/auth/sign-up/components/sign-up-form.tsx
+- [x] T178 [P] Add organization_name and organization_address fields to user type definitions for profile updates in frontend/shared/types/user.ts
+- [x] T179 [P] Update User type definition to include organization_name?: string | null and organization_address?: string | null in frontend/shared/types/user.ts
+
+### Testing
+
+- [x] T180 [P] Add integration test for registration with organization and address fields in backend/app/tests/integration/test_auth_flow.py
+- [x] T181 [P] Add validation tests for organization_name and address field max lengths in backend/app/tests/contract/test_auth_register.py
+- [x] T182 [P] Add user update tests for address field operations in backend/app/tests/contract/test_users_update.py
+- [x] T183 [P] Verify frontend component includes organization and address fields (SignUpForm updated)
+- [x] T184 [P] Verify TypeScript types updated for all user schemas
+
+### Documentation
+
+- [x] T185 [P] Update API documentation in contracts/auth.yaml to reflect new optional fields in registration endpoint
+- [x] T186 [P] Update API documentation in contracts/users.yaml to reflect new fields in user response and update endpoints
+- [x] T187 [P] Update quickstart.md to show example registration with organization fields
+
+**Completed**: October 30, 2025 | **Commits**: fe9dd41 (implementation), ebf89b2 (tests), 18799c6 (documentation)
+
+**Notes**:
+
+- All backend, frontend, and documentation updates complete
+- Database migration 008 successfully applied
+- Backend tests: 7 new tests covering registration, validation, and updates (all passing)
+- API contracts updated: auth.yaml and users.yaml with address field schemas and examples
+- Documentation updated: quickstart.md with registration and user creation examples
+- Address fields restructured: Split organization_address into 6 components (address_line1/2, city, state, postal_code, country)
+- All 7 address fields optional with proper maxLength constraints
+- Existing integration tests pass without modification (fields are truly optional)
+- SignUpForm includes organization_name and address input fields with proper validation
+- TypeScript types updated across User, UserCreate, UserUpdate, UserPublic interfaces
+
+**Checkpoint**: ✅ Users can optionally provide organization name and address during registration and profile updates
+
+**Independent Test**: Register new user with organization fields → verify stored → update organization info → verify updated → register user without organization fields → verify optional
+
+---
+
 ## Task Summary
 
-**Total Tasks**: 170
+**Total Tasks**: 187
 
 **Tasks by Phase**:
 
@@ -645,8 +709,9 @@ With multiple developers:
 - Phase 10 (Super Admin Bootstrap): 4 tasks
 - Phase 11 (Audit Logging): 8 tasks
 - Phase 12 (Polish): 17 tasks
+- Phase 13 (Organization Profile Fields): 17 tasks
 
-**Parallel Tasks**: 83 tasks marked [P] can run in parallel
+**Parallel Tasks**: 94 tasks marked [P] can run in parallel
 
 **MVP Scope** (Minimum Viable Product):
 
@@ -662,6 +727,7 @@ With multiple developers:
 - US2: Request password reset → receive email → reset password → login with new password
 - US3: Create user → assign role → verify role-based access → change role → verify updated access
 - US4: Login → wait for expiration → verify re-auth required → trigger rate limit → verify blocking
+- Phase 13: Register with organization and address → verify stored → update address → verify updated → register without fields → verify optional → clear fields → verify NULL
 
 ---
 

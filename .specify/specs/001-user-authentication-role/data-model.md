@@ -63,6 +63,8 @@ CREATE TABLE users (
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20) NULL,
+    organization_name VARCHAR(255) NULL,
+    organization_address TEXT NULL,
 
     -- Authentication
     email_verified BOOLEAN NOT NULL DEFAULT false,  -- Can be manually verified by super_admin or npo_admin
@@ -103,6 +105,7 @@ CREATE INDEX idx_users_created_at ON users(created_at DESC);
 - Staff and Donor roles MUST NOT have `npo_id` (use event_staff for staff assignments)
 - Default role on registration: "donor"
 - Phone numbers are stored as raw digits (no formatting characters) for consistency
+- Organization name and address are optional fields for users who wish to provide business/organization information
 
 **SQLAlchemy Model**:
 ```python
@@ -124,6 +127,8 @@ class User(Base):
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     phone = Column(String(20), nullable=True)
+    organization_name = Column(String(255), nullable=True)
+    organization_address = Column(String, nullable=True)
     email_verified = Column(Boolean, nullable=False, default=False)
     is_active = Column(Boolean, nullable=False, default=False)
     role_id = Column(UUID(as_uuid=True), ForeignKey("roles.id"), nullable=False)
@@ -628,6 +633,8 @@ def upgrade():
         sa.Column('first_name', sa.String(100), nullable=False),
         sa.Column('last_name', sa.String(100), nullable=False),
         sa.Column('phone', sa.String(20), nullable=True),
+        sa.Column('organization_name', sa.String(255), nullable=True),
+        sa.Column('organization_address', sa.String, nullable=True),
         sa.Column('email_verified', sa.Boolean, nullable=False, server_default='false'),
         sa.Column('is_active', sa.Boolean, nullable=False, server_default='false'),
         sa.Column('role_id', UUID(as_uuid=True), sa.ForeignKey('roles.id'), nullable=False),
@@ -664,6 +671,8 @@ class UserCreate(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
     phone: str | None = Field(None, max_length=20)
+    organization_name: str | None = Field(None, max_length=255)
+    organization_address: str | None = None
 
     @field_validator('password')
     @classmethod

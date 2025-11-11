@@ -305,3 +305,99 @@ class TestAuthRegisterContract:
         data = response.json()
         assert data["user"]["email_verified"] is False
         assert data["user"]["is_active"] is False
+
+    @pytest.mark.asyncio
+    async def test_register_organization_name_max_length(self, async_client: AsyncClient) -> None:
+        """Test organization_name field validation for max length (255 chars).
+
+        Contract: organization_name VARCHAR(255)
+        Expected: 422 Validation Error if exceeds 255 characters
+        """
+        # Valid: exactly 255 characters
+        valid_org_name = "A" * 255
+        valid_payload = {
+            "email": "valid-org@example.com",
+            "password": "SecurePass123",
+            "first_name": "Test",
+            "last_name": "User",
+            "organization_name": valid_org_name,
+        }
+
+        response = await async_client.post("/api/v1/auth/register", json=valid_payload)
+        assert response.status_code == 201
+
+        # Invalid: 256 characters (exceeds max)
+        invalid_org_name = "A" * 256
+        invalid_payload = {
+            "email": "invalid-org@example.com",
+            "password": "SecurePass123",
+            "first_name": "Test",
+            "last_name": "User",
+            "organization_name": invalid_org_name,
+        }
+
+        response = await async_client.post("/api/v1/auth/register", json=invalid_payload)
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_register_address_fields_max_lengths(self, async_client: AsyncClient) -> None:
+        """Test address field validations for max lengths.
+
+        Contract:
+        - address_line1: VARCHAR(255)
+        - address_line2: VARCHAR(255)
+        - city: VARCHAR(100)
+        - state: VARCHAR(100)
+        - postal_code: VARCHAR(20)
+        - country: VARCHAR(100)
+
+        Expected: 422 Validation Error if any field exceeds its max length
+        """
+        # Test address_line1 exceeds 255
+        payload = {
+            "email": "test1@example.com",
+            "password": "SecurePass123",
+            "first_name": "Test",
+            "last_name": "User",
+            "address_line1": "A" * 256,  # Exceeds 255
+        }
+        response = await async_client.post("/api/v1/auth/register", json=payload)
+        assert response.status_code == 422
+
+        # Test city exceeds 100
+        payload = {
+            "email": "test2@example.com",
+            "password": "SecurePass123",
+            "first_name": "Test",
+            "last_name": "User",
+            "city": "A" * 101,  # Exceeds 100
+        }
+        response = await async_client.post("/api/v1/auth/register", json=payload)
+        assert response.status_code == 422
+
+        # Test postal_code exceeds 20
+        payload = {
+            "email": "test3@example.com",
+            "password": "SecurePass123",
+            "first_name": "Test",
+            "last_name": "User",
+            "postal_code": "A" * 21,  # Exceeds 20
+        }
+        response = await async_client.post("/api/v1/auth/register", json=payload)
+        assert response.status_code == 422
+
+        # Test valid max lengths (all at limit)
+        valid_payload = {
+            "email": "valid-address@example.com",
+            "password": "SecurePass123",
+            "first_name": "Test",
+            "last_name": "User",
+            "address_line1": "A" * 255,
+            "address_line2": "B" * 255,
+            "city": "C" * 100,
+            "state": "D" * 100,
+            "postal_code": "E" * 20,
+            "country": "F" * 100,
+        }
+        response = await async_client.post("/api/v1/auth/register", json=valid_payload)
+        assert response.status_code == 201

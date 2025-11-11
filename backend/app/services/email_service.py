@@ -190,7 +190,94 @@ class EmailService:
         # Email content
         subject = "Reset Your Password - Augeo Platform"
         greeting = f"Hi {user_name}," if user_name else "Hi,"
-        body = f"""
+
+        # HTML email body
+        html_body = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Your Password</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 40px 40px 30px; text-align: center; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 8px 8px 0 0;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Password Reset</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.5;">
+                                {greeting}
+                            </p>
+                            <p style="margin: 0 0 30px; color: #666666; font-size: 16px; line-height: 1.5;">
+                                We received a request to reset your password for your Augeo Platform account. Click the button below to create a new password.
+                            </p>
+
+                            <!-- CTA Button -->
+                            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <td align="center" style="padding: 20px 0;">
+                                        <a href="{reset_url}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 6px rgba(240, 147, 251, 0.4);">
+                                            Reset Password
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Alternative link -->
+                            <p style="margin: 30px 0 0; color: #999999; font-size: 14px; line-height: 1.5; text-align: center;">
+                                Or copy and paste this link into your browser:<br>
+                                <a href="{reset_url}" style="color: #f093fb; text-decoration: none; word-break: break-all;">{reset_url}</a>
+                            </p>
+
+                            <!-- Expiry notice -->
+                            <table role="presentation" style="width: 100%; border-collapse: collapse; margin-top: 30px;">
+                                <tr>
+                                    <td style="padding: 20px; background-color: #fff3cd; border-radius: 6px; border-left: 4px solid #ffc107;">
+                                        <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.5;">
+                                            <strong>⏰ Important:</strong> This password reset link will expire in 1 hour for security purposes.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 30px 0 0; color: #999999; font-size: 14px; line-height: 1.5;">
+                                If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; text-align: center; background-color: #f8f9fa; border-radius: 0 0 8px 8px; border-top: 1px solid #e9ecef;">
+                            <p style="margin: 0 0 10px; color: #666666; font-size: 14px;">
+                                Best regards,<br>
+                                <strong>The Augeo Platform Team</strong>
+                            </p>
+                            <p style="margin: 0; color: #999999; font-size: 12px;">
+                                © 2025 Augeo Platform. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+        """.strip()
+
+        # Plain text fallback
+        plain_text_body = f"""
 {greeting}
 
 You requested to reset your password for your Augeo Platform account.
@@ -207,7 +294,9 @@ The Augeo Platform Team
         """.strip()
 
         # Send with retry logic
-        return await self._send_email_with_retry(to_email, subject, body, "password_reset")
+        return await self._send_email_with_retry(
+            to_email, subject, html_body, plain_text_body, "password_reset"
+        )
 
     async def send_verification_email(
         self, to_email: str, verification_token: str, user_name: str | None = None
@@ -232,7 +321,94 @@ The Augeo Platform Team
         # Email content
         subject = "Verify Your Email - Augeo Platform"
         greeting = f"Hi {user_name}," if user_name else "Hi,"
-        body = f"""
+
+        # HTML email body
+        html_body = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 40px 40px 30px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Welcome to Augeo!</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.5;">
+                                {greeting}
+                            </p>
+                            <p style="margin: 0 0 30px; color: #666666; font-size: 16px; line-height: 1.5;">
+                                Thank you for joining Augeo Platform! We're excited to have you on board. To get started, please verify your email address by clicking the button below.
+                            </p>
+
+                            <!-- CTA Button -->
+                            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <td align="center" style="padding: 20px 0;">
+                                        <a href="{verification_url}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.4);">
+                                            Verify Email Address
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Alternative link -->
+                            <p style="margin: 30px 0 0; color: #999999; font-size: 14px; line-height: 1.5; text-align: center;">
+                                Or copy and paste this link into your browser:<br>
+                                <a href="{verification_url}" style="color: #667eea; text-decoration: none; word-break: break-all;">{verification_url}</a>
+                            </p>
+
+                            <!-- Expiry notice -->
+                            <table role="presentation" style="width: 100%; border-collapse: collapse; margin-top: 30px;">
+                                <tr>
+                                    <td style="padding: 20px; background-color: #f8f9fa; border-radius: 6px; border-left: 4px solid #667eea;">
+                                        <p style="margin: 0; color: #666666; font-size: 14px; line-height: 1.5;">
+                                            <strong>⏰ Important:</strong> This verification link will expire in 24 hours for security purposes.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 30px 0 0; color: #999999; font-size: 14px; line-height: 1.5;">
+                                If you didn't create an account with Augeo, you can safely ignore this email.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; text-align: center; background-color: #f8f9fa; border-radius: 0 0 8px 8px; border-top: 1px solid #e9ecef;">
+                            <p style="margin: 0 0 10px; color: #666666; font-size: 14px;">
+                                Best regards,<br>
+                                <strong>The Augeo Platform Team</strong>
+                            </p>
+                            <p style="margin: 0; color: #999999; font-size: 12px;">
+                                © 2025 Augeo Platform. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+        """.strip()
+
+        # Plain text fallback for email clients that don't support HTML
+        plain_text_body = f"""
 {greeting}
 
 Welcome to Augeo Platform!
@@ -249,7 +425,9 @@ The Augeo Platform Team
         """.strip()
 
         # Send with retry logic
-        return await self._send_email_with_retry(to_email, subject, body, "verification")
+        return await self._send_email_with_retry(
+            to_email, subject, html_body, plain_text_body, "verification"
+        )
 
     async def send_npo_member_invitation_email(
         self,

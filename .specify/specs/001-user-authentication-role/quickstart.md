@@ -287,10 +287,69 @@ Expected response:
     "is_active": false,
     "role": "donor",
     "npo_id": null,
-    "created_at": "2025-10-20T10:00:00Z"
+    "created_at": "2025-10-20T10:00:00Z",
+    "organization_name": null,
+    "address_line1": null,
+    "address_line2": null,
+    "city": null,
+    "state": null,
+    "postal_code": null,
+    "country": null
   },
   "message": "Verification email sent to test.donor@example.com"
 }
+```
+
+#### Registration with Organization and Address
+
+For NPO administrators who want to provide organization details:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@helpinghand.org",
+    "password": "SecurePass456",
+    "first_name": "Jane",
+    "last_name": "Smith",
+    "phone": "+1-555-0199",
+    "organization_name": "Helping Hand Foundation",
+    "address_line1": "123 Main Street",
+    "address_line2": "Suite 200",
+    "city": "Boston",
+    "state": "MA",
+    "postal_code": "02101",
+    "country": "USA"
+  }'
+```
+
+Expected response:
+```json
+{
+  "user": {
+    "id": "uuid-here",
+    "email": "admin@helpinghand.org",
+    "first_name": "Jane",
+    "last_name": "Smith",
+    "phone": "+1-555-0199",
+    "email_verified": false,
+    "is_active": false,
+    "role": "donor",
+    "npo_id": null,
+    "created_at": "2025-10-20T10:00:00Z",
+    "organization_name": "Helping Hand Foundation",
+    "address_line1": "123 Main Street",
+    "address_line2": "Suite 200",
+    "city": "Boston",
+    "state": "MA",
+    "postal_code": "02101",
+    "country": "USA"
+  },
+  "message": "Verification email sent to admin@helpinghand.org"
+}
+```
+
+**Note**: All address fields are optional. You can provide organization name without address, partial addresses, or all fields.
 ```
 
 ### Test 2: Check Email Verification Token (Development)
@@ -478,7 +537,78 @@ curl -X POST http://localhost:8000/api/v1/users \
   }'
 ```
 
-**Note**: `npo_id` assumes organizations table exists (Feature 002)
+Expected response:
+```json
+{
+  "id": "uuid-here",
+  "email": "npo.admin@nonprofit.org",
+  "first_name": "NPO",
+  "last_name": "Administrator",
+  "phone": null,
+  "role": "npo_admin",
+  "npo_id": "660e8400-e29b-41d4-a716-446655440000",
+  "email_verified": false,
+  "is_active": true,
+  "created_at": "2025-10-20T11:00:00Z",
+  "organization_name": null,
+  "address_line1": null,
+  "address_line2": null,
+  "city": null,
+  "state": null,
+  "postal_code": null,
+  "country": null
+}
+```
+
+#### Create User with Organization and Address
+
+Super Admin can create users with full organization details:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/users \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "director@foodbank.org",
+    "password": "SecurePass789",
+    "first_name": "Maria",
+    "last_name": "Rodriguez",
+    "phone": "+1-555-0200",
+    "role": "npo_admin",
+    "npo_id": "770e8400-e29b-41d4-a716-446655440000",
+    "organization_name": "City Food Bank",
+    "address_line1": "456 Oak Avenue",
+    "city": "Seattle",
+    "state": "WA",
+    "postal_code": "98101",
+    "country": "USA"
+  }'
+```
+
+Expected response:
+```json
+{
+  "id": "uuid-here",
+  "email": "director@foodbank.org",
+  "first_name": "Maria",
+  "last_name": "Rodriguez",
+  "phone": "+1-555-0200",
+  "role": "npo_admin",
+  "npo_id": "770e8400-e29b-41d4-a716-446655440000",
+  "email_verified": false,
+  "is_active": true,
+  "created_at": "2025-10-20T11:00:00Z",
+  "organization_name": "City Food Bank",
+  "address_line1": "456 Oak Avenue",
+  "address_line2": null,
+  "city": "Seattle",
+  "state": "WA",
+  "postal_code": "98101",
+  "country": "USA"
+}
+```
+
+**Note**: `npo_id` assumes organizations table exists (Feature 002). All address fields are optional.
 
 ### Test 3: List All Users (Super Admin)
 

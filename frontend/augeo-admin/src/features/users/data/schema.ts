@@ -18,6 +18,13 @@ const userSchema = z.object({
   first_name: z.string(),
   last_name: z.string(),
   phone: z.string().nullable(),
+  organization_name: z.string().nullable(),
+  address_line1: z.string().nullable(),
+  address_line2: z.string().nullable(),
+  city: z.string().nullable(),
+  state: z.string().nullable(),
+  postal_code: z.string().nullable(),
+  country: z.string().nullable(),
   role: z.string(), // String role name from backend
   npo_id: z.string().nullable(),
   email_verified: z.boolean(),

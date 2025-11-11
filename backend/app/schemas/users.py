@@ -19,6 +19,13 @@ class UserCreateRequest(BaseModel):
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
     phone: str | None = Field(None, max_length=20)
+    organization_name: str | None = Field(None, max_length=255)
+    address_line1: str | None = Field(None, max_length=255)
+    address_line2: str | None = Field(None, max_length=255)
+    city: str | None = Field(None, max_length=100)
+    state: str | None = Field(None, max_length=100)
+    postal_code: str | None = Field(None, max_length=20)
+    country: str | None = Field(None, max_length=100)
     role: Literal["super_admin", "npo_admin", "event_coordinator", "staff", "donor"]
     npo_id: uuid.UUID | None = None
 
@@ -82,6 +89,13 @@ class UserUpdateRequest(BaseModel):
     first_name: str | None = Field(None, min_length=1, max_length=100)
     last_name: str | None = Field(None, min_length=1, max_length=100)
     phone: str | None = Field(None, max_length=20)
+    organization_name: str | None = Field(None, max_length=255)
+    address_line1: str | None = Field(None, max_length=255)
+    address_line2: str | None = Field(None, max_length=255)
+    city: str | None = Field(None, max_length=100)
+    state: str | None = Field(None, max_length=100)
+    postal_code: str | None = Field(None, max_length=20)
+    country: str | None = Field(None, max_length=100)
     password: str | None = Field(None, min_length=8, max_length=100)
 
     @field_validator("password")
@@ -109,12 +123,19 @@ class UserPublicWithRole(BaseModel):
     email: str
     first_name: str
     last_name: str
-    phone: str | None
+    phone: str | None = None
+    organization_name: str | None = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    city: str | None = None
+    state: str | None = None
+    postal_code: str | None = None
+    country: str | None = None
     role: str
-    npo_id: uuid.UUID | None
+    npo_id: uuid.UUID | None = None
     email_verified: bool
     is_active: bool
-    last_login_at: datetime | None
+    last_login_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 

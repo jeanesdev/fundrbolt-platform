@@ -110,7 +110,7 @@ The system manages user sessions securely, including automatic logout for inacti
 
 ### Functional Requirements
 
-- **FR-001**: System MUST allow users to create accounts using email and password
+- **FR-001**: System MUST allow users to create accounts using email, password, name, and optional organization information (organization name and address)
 - **FR-002**: System MUST validate email addresses and enforce password strength requirements
 - **FR-003**: Users MUST be able to login with their registered email and password
 - **FR-004**: System MUST provide secure password reset functionality via email
@@ -145,7 +145,7 @@ The system manages user sessions securely, including automatic logout for inacti
 
 ### Key Entities
 
-- **User**: Represents individuals who can access the system, containing profile information, credentials, and role assignments
+- **User**: Represents individuals who can access the system, containing profile information (name, phone, optional organization name and address), credentials, and role assignments
 - **Role**: Defines a set of permissions that can be assigned to users, with five core types: Super Admin (platform-wide access), NPO Admin (full NPO management), Event Coordinator (event and auction management), Staff (donor registration/checkin), and Donor (bidding participation)
 - **Permission**: Specific actions or access rights that can be granted to roles, scoped to platform, NPO, or event levels
 - **NPO (Nonprofit Organization)**: Organization context that scopes NPO Admin, Event Coordinator, and Staff permissions

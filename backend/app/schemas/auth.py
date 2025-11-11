@@ -15,6 +15,8 @@ class UserCreate(BaseModel):
     - Password must be 8-100 chars with at least 1 letter and 1 number
     - First/last names required (1-100 chars)
     - Phone optional (max 20 chars)
+    - Organization name optional (max 255 chars)
+    - Address fields optional (structured: line1, line2, city, state, postal_code, country)
     """
 
     email: EmailStr
@@ -22,6 +24,13 @@ class UserCreate(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
     phone: str | None = Field(None, max_length=20)
+    organization_name: str | None = Field(None, max_length=255)
+    address_line1: str | None = Field(None, max_length=255)
+    address_line2: str | None = Field(None, max_length=255)
+    city: str | None = Field(None, max_length=100)
+    state: str | None = Field(None, max_length=100)
+    postal_code: str | None = Field(None, max_length=20)
+    country: str | None = Field(None, max_length=100)
 
     @field_validator("password")
     @classmethod
@@ -50,11 +59,18 @@ class UserPublic(BaseModel):
     email: EmailStr
     first_name: str
     last_name: str
-    phone: str | None
+    phone: str | None = None
+    organization_name: str | None = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    city: str | None = None
+    state: str | None = None
+    postal_code: str | None = None
+    country: str | None = None
     email_verified: bool
     is_active: bool
     role: str  # Role name (e.g., "donor", "npo_admin")
-    npo_id: uuid.UUID | None
+    npo_id: uuid.UUID | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

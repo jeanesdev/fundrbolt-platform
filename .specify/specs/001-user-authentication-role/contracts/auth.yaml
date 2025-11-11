@@ -66,6 +66,21 @@ paths:
                   first_name: John
                   last_name: Doe
                   phone: "+1-555-0123"
+              with_address:
+                summary: Registration with organization and address
+                value:
+                  email: jane.smith@example.com
+                  password: SecurePass456
+                  first_name: Jane
+                  last_name: Smith
+                  phone: "+1-555-0456"
+                  organization_name: "Smith Consulting LLC"
+                  address_line1: "456 Oak Avenue"
+                  address_line2: "Floor 2"
+                  city: "Boston"
+                  state: "Massachusetts"
+                  postal_code: "02101"
+                  country: "United States"
       responses:
         '201':
           description: User created successfully (verification email sent)
@@ -583,6 +598,48 @@ components:
           maxLength: 20
           nullable: true
           example: "+1-555-0123"
+        organization_name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Optional organization/business name
+          example: "Example Corporation"
+        address_line1:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Street address line 1
+          example: "123 Main Street"
+        address_line2:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Street address line 2 (apartment, suite, etc.)
+          example: "Suite 100"
+        city:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: City name
+          example: "San Francisco"
+        state:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: State or province
+          example: "California"
+        postal_code:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: Postal or ZIP code
+          example: "94102"
+        country:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Country name
+          example: "United States"
 
     UserRegisterResponse:
       type: object
@@ -614,6 +671,34 @@ components:
           type: string
           nullable: true
           example: "+1-555-0123"
+        organization_name:
+          type: string
+          nullable: true
+          example: "Example Corporation"
+        address_line1:
+          type: string
+          nullable: true
+          example: "123 Main Street"
+        address_line2:
+          type: string
+          nullable: true
+          example: "Suite 100"
+        city:
+          type: string
+          nullable: true
+          example: "San Francisco"
+        state:
+          type: string
+          nullable: true
+          example: "California"
+        postal_code:
+          type: string
+          nullable: true
+          example: "94102"
+        country:
+          type: string
+          nullable: true
+          example: "United States"
         email_verified:
           type: boolean
           example: false

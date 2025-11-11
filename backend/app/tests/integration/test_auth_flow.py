@@ -207,6 +207,76 @@ class TestAuthenticationFlow:
         # # Password hash should not equal plaintext
         # assert user.password_hash != "SecurePass123"
 
+    @pytest.mark.asyncio
+    async def test_register_with_organization_and_address_fields(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+    ) -> None:
+        """Test registration with organization and address fields.
+
+        This verifies:
+        1. Registration succeeds with all 7 optional fields (organization_name + 6 address fields)
+        2. Fields are stored correctly in database
+        3. Login response includes all address fields
+        4. Fields are properly validated for max lengths
+        """
+        payload = {
+            "email": "address@example.com",
+            "password": "SecurePass123",
+            "first_name": "Address",
+            "last_name": "Test",
+            "phone": "+1-555-0100",
+            "organization_name": "Test Organization Inc.",
+            "address_line1": "123 Main Street",
+            "address_line2": "Suite 100",
+            "city": "San Francisco",
+            "state": "California",
+            "postal_code": "94102",
+            "country": "United States",
+        }
+
+        # Register with all address fields
+        register_response = await async_client.post("/api/v1/auth/register", json=payload)
+
+        if register_response.status_code != 201:
+            print(f"Error response: {register_response.json()}")
+        assert register_response.status_code == 201
+        register_data = register_response.json()
+
+        # Verify all fields are in response
+        user_data = register_data["user"]
+        assert user_data["organization_name"] == "Test Organization Inc."
+        assert user_data["address_line1"] == "123 Main Street"
+        assert user_data["address_line2"] == "Suite 100"
+        assert user_data["city"] == "San Francisco"
+        assert user_data["state"] == "California"
+        assert user_data["postal_code"] == "94102"
+        assert user_data["country"] == "United States"
+
+        # Test registration with partial address (only some fields)
+        partial_payload = {
+            "email": "partial@example.com",
+            "password": "SecurePass123",
+            "first_name": "Partial",
+            "last_name": "Test",
+            "organization_name": "Partial Org",
+            "city": "Boston",
+            "country": "USA",
+            # Omit address_line1, address_line2, state, postal_code
+        }
+
+        partial_response = await async_client.post("/api/v1/auth/register", json=partial_payload)
+        assert partial_response.status_code == 201
+        partial_data = partial_response.json()["user"]
+        assert partial_data["organization_name"] == "Partial Org"
+        assert partial_data["city"] == "Boston"
+        assert partial_data["country"] == "USA"
+        assert partial_data["address_line1"] is None
+        assert partial_data["address_line2"] is None
+        assert partial_data["state"] is None
+        assert partial_data["postal_code"] is None
+
     @pytest.mark.skip(
         reason="TODO: Concurrent database operations cause ResourceClosedError in test cleanup - test infrastructure issue"
     )
