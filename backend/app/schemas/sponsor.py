@@ -69,15 +69,37 @@ class SponsorUpdate(BaseModel):
     notes: str | None = None
 
 
-class SponsorResponse(SponsorBase):
+class SponsorResponse(BaseModel):
     """Schema for sponsor response."""
 
     id: uuid.UUID
     event_id: uuid.UUID
+    name: Annotated[str, Field(min_length=1, max_length=200)]
     logo_url: str
     logo_blob_name: str
     thumbnail_url: str
     thumbnail_blob_name: str
+    website_url: str | None = None
+    logo_size: LogoSize = LogoSize.LARGE
+    sponsor_level: Annotated[str, Field(max_length=100)] | None = None
+
+    # Contact Information
+    contact_name: Annotated[str, Field(max_length=200)] | None = None
+    contact_email: str | None = None  # Already validated as EmailStr in database
+    contact_phone: Annotated[str, Field(max_length=20)] | None = None
+
+    # Address Information
+    address_line1: Annotated[str, Field(max_length=200)] | None = None
+    address_line2: Annotated[str, Field(max_length=200)] | None = None
+    city: Annotated[str, Field(max_length=100)] | None = None
+    state: Annotated[str, Field(max_length=100)] | None = None
+    postal_code: Annotated[str, Field(max_length=20)] | None = None
+    country: Annotated[str, Field(max_length=100)] | None = None
+
+    # Financial Information
+    donation_amount: Decimal | None = None
+    notes: str | None = None
+
     display_order: int
     created_at: str
     updated_at: str
