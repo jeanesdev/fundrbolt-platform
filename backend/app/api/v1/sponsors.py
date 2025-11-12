@@ -229,6 +229,7 @@ async def request_logo_upload_url(
 
     return LogoUploadResponse(
         upload_url=upload_url,
+        blob_name=blob_name,
         expires_at=expires_at,
     )
 

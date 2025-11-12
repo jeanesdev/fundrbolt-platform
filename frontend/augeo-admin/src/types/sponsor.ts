@@ -91,6 +91,7 @@ export interface LogoUploadRequest {
 
 export interface LogoUploadResponse {
   upload_url: string;
+  blob_name: string;
   expires_at: string;
 }
 

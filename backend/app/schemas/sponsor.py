@@ -128,6 +128,7 @@ class LogoUploadResponse(BaseModel):
     """Schema for logo upload URL response."""
 
     upload_url: str
+    blob_name: str
     expires_at: str
 
 
