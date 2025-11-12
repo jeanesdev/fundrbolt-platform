@@ -21,6 +21,7 @@ from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from app.models.npo import NPO
+    from app.models.sponsor import Sponsor
 
 
 class EventStatus(str, enum.Enum):
@@ -233,6 +234,12 @@ class Event(Base, UUIDMixin, TimestampMixin):
         back_populates="event",
         cascade="all, delete-orphan",
         order_by="FoodOption.display_order",
+    )
+    sponsors: Mapped[list["Sponsor"]] = relationship(
+        "Sponsor",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        order_by="Sponsor.display_order",
     )
 
     # Constraints
