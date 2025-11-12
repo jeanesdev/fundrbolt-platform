@@ -1661,4 +1661,14 @@ def mock_azure_storage(monkeypatch):
         mock_generate_sas,
     )
 
+    # Also mock for sponsor_logo_service
+    monkeypatch.setattr(
+        "app.services.sponsor_logo_service.BlobServiceClient.from_connection_string",
+        lambda *args, **kwargs: mock_blob_service,
+    )
+    monkeypatch.setattr(
+        "app.services.sponsor_logo_service.generate_blob_sas",
+        mock_generate_sas,
+    )
+
     return mock_blob_service

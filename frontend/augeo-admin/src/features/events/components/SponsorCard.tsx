@@ -25,12 +25,23 @@ export function SponsorCard({ sponsor, onEdit, onDelete, readOnly = false }: Spo
     xlarge: 'Extra Large',
   }
 
+  // Dynamic logo size classes based on sponsor.logo_size
+  const logoSizeClasses = {
+    xsmall: 'w-16 h-16', // 64px
+    small: 'w-24 h-24',  // 96px
+    medium: 'w-32 h-32', // 128px
+    large: 'w-48 h-48',  // 192px
+    xlarge: 'w-64 h-64', // 256px
+  }
+
+  const logoSize = logoSizeClasses[sponsor.logo_size] || logoSizeClasses.medium
+
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
       <CardContent className="p-4">
         <div className="flex items-start gap-4">
           {/* Logo Thumbnail */}
-          <div className="shrink-0 w-24 h-24 rounded-md bg-muted flex items-center justify-center overflow-hidden">
+          <div className={`shrink-0 ${logoSize} rounded-md bg-muted flex items-center justify-center overflow-hidden`}>
             {sponsor.thumbnail_url || sponsor.logo_url ? (
               <img
                 src={sponsor.thumbnail_url || sponsor.logo_url}
