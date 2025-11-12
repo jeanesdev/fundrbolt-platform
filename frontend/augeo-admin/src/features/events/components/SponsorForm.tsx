@@ -28,10 +28,10 @@ interface SponsorFormProps {
 export function SponsorForm({ sponsor, onSubmit, onCancel, isSubmitting = false }: SponsorFormProps) {
   const isEdit = !!sponsor
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CreateSponsorRequest>({
     name: sponsor?.name || '',
     website_url: sponsor?.website_url || '',
-    logo_size: sponsor?.logo_size || LogoSize.MEDIUM,
+    logo_size: sponsor?.logo_size || LogoSize.LARGE,
     sponsor_level: sponsor?.sponsor_level || '',
     contact_name: sponsor?.contact_name || '',
     contact_email: sponsor?.contact_email || '',

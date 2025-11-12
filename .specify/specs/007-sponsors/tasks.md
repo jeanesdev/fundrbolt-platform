@@ -260,35 +260,45 @@
 
 ### Frontend Components (User Story 2)
 
-- [ ] T052 [P] [US2] Add logo_size field to SponsorForm in `frontend/augeo-admin/src/features/events/components/SponsorForm.tsx`:
-  - Dropdown/select for LogoSize enum (xsmall, small, medium, large, xlarge)
-  - Default value: "large"
-  - Zod validation with enum
-- [ ] T053 [P] [US2] Add sponsor_level field to SponsorForm:
-  - Text input (optional, max 100 chars)
-  - Placeholder: e.g., "Gold", "Platinum", "Title Sponsor"
-  - Validation: max length 100
-- [ ] T054 [US2] Update SponsorCard in `frontend/augeo-admin/src/features/events/components/SponsorCard.tsx`:
-  - Apply CSS size classes based on logo_size (xsmall=64px, small=96px, medium=128px, large=192px, xlarge=256px)
-  - Display sponsor_level badge/label if present
-  - Tailwind classes: w-16 (xsmall), w-24 (small), w-32 (medium), w-48 (large), w-64 (xlarge)
-- [ ] T055 [US2] Update SponsorList to maintain visual hierarchy:
-  - Sponsors with xlarge logos displayed prominently at top
-  - Grid layout adapts to different logo sizes
-  - Responsive design for mobile vs desktop
+- [x] T052 [P] [US2] Add logo_size field to SponsorForm in `frontend/augeo-admin/src/features/events/components/SponsorForm.tsx`:
+  - Dropdown/select for LogoSize enum (xsmall, small, medium, large, xlarge) ✅
+  - Default value: "large" ✅ (Fixed from "medium" to match backend)
+  - Zod validation with enum ✅
+  - **Result**: Already implemented in Phase 3, verified functional
+- [x] T053 [P] [US2] Add sponsor_level field to SponsorForm:
+  - Text input (optional, max 100 chars) ✅
+  - Placeholder: e.g., "Gold", "Platinum", "Title Sponsor" ✅
+  - Validation: max length 100 ✅
+  - **Result**: Already implemented in Phase 3, verified functional
+- [x] T054 [US2] Update SponsorCard in `frontend/augeo-admin/src/features/events/components/SponsorCard.tsx`:
+  - Apply CSS size classes based on logo_size (xsmall=64px, small=96px, medium=128px, large=192px, xlarge=256px) ✅
+  - Display sponsor_level badge/label if present ✅
+  - Tailwind classes: w-16 (xsmall), w-24 (small), w-32 (medium), w-48 (large), w-64 (xlarge) ✅
+  - **Result**: Already implemented in Phase 3 with dynamic sizing, verified functional
+- [x] T055 [US2] Update SponsorList to maintain visual hierarchy:
+  - Sponsors with xlarge logos displayed prominently at top ✅
+  - Grid layout adapts to different logo sizes ✅
+  - Responsive design for mobile vs desktop ✅
+  - **Result**: Already implemented with grouping by size (Title/Platinum/Gold/Silver/Bronze)
 
 ### Tests (User Story 2)
 
-- [ ] T056 [P] [US2] Contract test for sponsor creation with logo_size in `backend/app/tests/test_sponsors_api.py`:
-  - Test logo_size default to "large" if not provided
-  - Test logo_size accepts all enum values
-  - Test logo_size rejects invalid values
-- [ ] T057 [P] [US2] Frontend test for logo_size display in `frontend/augeo-admin/src/tests/features/events/SponsorCard.test.tsx`:
-  - Test xlarge logo renders at 256px
-  - Test xsmall logo renders at 64px
-  - Test sponsor_level badge displays
+- [x] T056 [P] [US2] Contract test for sponsor creation with logo_size in `backend/app/tests/contract/test_sponsors_api.py`:
+  - Test logo_size default to "large" if not provided ✅
+  - Test logo_size accepts all enum values ✅
+  - Test logo_size rejects invalid values ✅
+  - Test sponsor_level field ✅
+  - **Result**: Already exists (test_create_sponsor_with_default_logo_size, test_create_sponsor_with_all_logo_sizes, test_create_sponsor_rejects_invalid_logo_size, test_create_sponsor_with_sponsor_level)
+- [x] T057 [P] [US2] Frontend test for logo_size display in `frontend/augeo-admin/src/tests/features/events/SponsorCard.test.tsx`:
+  - Test xlarge logo renders with w-64 (256px) ✅
+  - Test xsmall logo renders with w-16 (64px) ✅
+  - Test all logo sizes render correct CSS classes ✅
+  - Test sponsor_level badge displays ✅
+  - Test fallback behavior ✅
+  - Test image rendering with object-contain ✅
+  - **Result**: 16 tests created
 
-**Checkpoint**: User Story 2 complete - logo size and sponsor tier configurable
+**Checkpoint**: User Story 2 ✅ COMPLETE - logo size and sponsor tier fully configurable with tests (most functionality already existed from Phase 3, added 16 new frontend display tests and fixed default)
 
 ---
 
