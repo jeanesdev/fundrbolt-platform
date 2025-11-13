@@ -209,12 +209,6 @@ export function SponsorForm({ sponsor, onSubmit, onCancel, isSubmitting = false 
   // Initialize Google Places Autocomplete
   useEffect(() => {
     const initAutocomplete = async () => {
-      // Check if feature is enabled
-      const isEnabled = import.meta.env.VITE_ENABLE_ADDRESS_AUTOCOMPLETE === 'true'
-      if (!isEnabled) {
-        return
-      }
-
       // Prevent multiple initializations
       if (!addressInputRef.current || isGoogleMapsInitialized.current) return
 
@@ -578,6 +572,7 @@ export function SponsorForm({ sponsor, onSubmit, onCancel, isSubmitting = false 
               onChange={(e) => setFormData({ ...formData, address_line1: e.target.value })}
               disabled={isSubmitting}
               placeholder="123 Main St"
+              autoComplete="off"
             />
           </div>
 
