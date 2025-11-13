@@ -2,11 +2,12 @@
 
 import uuid
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl
 
-from app.models.sponsor import LogoSize
+# Type alias for logo size values
+LogoSizeType = Literal["xsmall", "small", "medium", "large", "xlarge"]
 
 
 class SponsorBase(BaseModel):
@@ -14,7 +15,7 @@ class SponsorBase(BaseModel):
 
     name: Annotated[str, Field(min_length=1, max_length=200)]
     website_url: HttpUrl | None = None
-    logo_size: LogoSize = LogoSize.LARGE
+    logo_size: LogoSizeType = "large"
     sponsor_level: Annotated[str, Field(max_length=100)] | None = None
 
     # Contact Information
@@ -48,7 +49,7 @@ class SponsorUpdate(BaseModel):
 
     name: Annotated[str, Field(min_length=1, max_length=200)] | None = None
     website_url: HttpUrl | str | None = None  # Allow empty string for removal
-    logo_size: LogoSize | None = None
+    logo_size: LogoSizeType | None = None
     sponsor_level: Annotated[str, Field(max_length=100)] | str | None = None  # Allow empty string
 
     # Contact Information
@@ -80,7 +81,7 @@ class SponsorResponse(BaseModel):
     thumbnail_url: str
     thumbnail_blob_name: str
     website_url: str | None = None
-    logo_size: LogoSize = LogoSize.LARGE
+    logo_size: str = "large"  # xsmall, small, medium, large, xlarge
     sponsor_level: Annotated[str, Field(max_length=100)] | None = None
 
     # Contact Information

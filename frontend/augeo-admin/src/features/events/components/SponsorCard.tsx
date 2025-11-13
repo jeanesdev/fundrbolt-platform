@@ -18,29 +18,18 @@ interface SponsorCardProps {
 
 export function SponsorCard({ sponsor, onEdit, onDelete, readOnly = false }: SponsorCardProps) {
   const logoSizeLabels = {
-    xsmall: 'Extra Small',
-    small: 'Small',
-    medium: 'Medium',
-    large: 'Large',
-    xlarge: 'Extra Large',
+    xsmall: 'XS',
+    small: 'S',
+    medium: 'M',
+    large: 'L',
+    xlarge: 'XL',
   }
-
-  // Dynamic logo size classes based on sponsor.logo_size
-  const logoSizeClasses = {
-    xsmall: 'w-16 h-16', // 64px
-    small: 'w-24 h-24',  // 96px
-    medium: 'w-32 h-32', // 128px
-    large: 'w-48 h-48',  // 192px
-    xlarge: 'w-64 h-64', // 256px
-  }
-
-  const logoSize = logoSizeClasses[sponsor.logo_size] || logoSizeClasses.medium
 
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
       <CardContent className="p-4">
         <div className="flex items-start gap-4">
-          {/* Logo Thumbnail */}
+          {/* Logo Thumbnail - Fixed size for admin display */}
           {sponsor.website_url ? (
             <a
               href={sponsor.website_url}
@@ -49,7 +38,7 @@ export function SponsorCard({ sponsor, onEdit, onDelete, readOnly = false }: Spo
               aria-label={`Visit ${sponsor.name} website`}
               className="cursor-pointer hover:opacity-80 transition-opacity"
             >
-              <div className={`shrink-0 ${logoSize} rounded-md bg-muted flex items-center justify-center overflow-hidden`}>
+              <div className="shrink-0 w-24 h-24 rounded-md bg-muted flex items-center justify-center overflow-hidden">
                 {sponsor.thumbnail_url || sponsor.logo_url ? (
                   <img
                     src={sponsor.thumbnail_url || sponsor.logo_url}
@@ -62,7 +51,7 @@ export function SponsorCard({ sponsor, onEdit, onDelete, readOnly = false }: Spo
               </div>
             </a>
           ) : (
-            <div className={`shrink-0 ${logoSize} rounded-md bg-muted flex items-center justify-center overflow-hidden`}>
+            <div className="shrink-0 w-24 h-24 rounded-md bg-muted flex items-center justify-center overflow-hidden">
               {sponsor.thumbnail_url || sponsor.logo_url ? (
                 <img
                   src={sponsor.thumbnail_url || sponsor.logo_url}
@@ -77,32 +66,31 @@ export function SponsorCard({ sponsor, onEdit, onDelete, readOnly = false }: Spo
 
           {/* Sponsor Info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <div className="flex-1 min-w-0">
-                {sponsor.website_url ? (
-                  <a
-                    href={sponsor.website_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`Visit ${sponsor.name} website`}
-                  >
-                    <h3 className="font-semibold text-base md:text-lg truncate hover:underline">
-                      {sponsor.name}
-                    </h3>
-                  </a>
-                ) : (
-                  <h3 className="font-semibold text-base md:text-lg truncate">{sponsor.name}</h3>
-                )}
-                {sponsor.sponsor_level && (
-                  <Badge variant="secondary" className="mt-1">
-                    {sponsor.sponsor_level}
-                  </Badge>
-                )}
-              </div>
+            {/* Sponsor Name */}
+            {sponsor.website_url ? (
+              <a
+                href={sponsor.website_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Visit ${sponsor.name} website`}
+              >
+                <h3 className="font-semibold text-base md:text-lg truncate hover:underline">
+                  {sponsor.name}
+                </h3>
+              </a>
+            ) : (
+              <h3 className="font-semibold text-base md:text-lg truncate">{sponsor.name}</h3>
+            )}
 
-              {/* Logo Size Badge */}
-              <Badge variant="outline" className="shrink-0">
-                {logoSizeLabels[sponsor.logo_size]}
+            {/* Sponsor Level and Logo Size Badges */}
+            <div className="flex flex-wrap items-center gap-2 mt-1.5">
+              {sponsor.sponsor_level && (
+                <Badge variant="secondary">
+                  {sponsor.sponsor_level}
+                </Badge>
+              )}
+              <Badge variant="outline" className="text-xs">
+                Logo: {logoSizeLabels[sponsor.logo_size]}
               </Badge>
             </div>
 
@@ -138,7 +126,7 @@ export function SponsorCard({ sponsor, onEdit, onDelete, readOnly = false }: Spo
 
             {/* Actions */}
             {!readOnly && (onEdit || onDelete) && (
-              <div className="flex gap-2 mt-3">
+              <div className="flex flex-wrap gap-2 mt-3">
                 {onEdit && (
                   <Button
                     size="sm"

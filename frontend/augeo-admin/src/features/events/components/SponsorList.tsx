@@ -111,27 +111,23 @@ export function SponsorList({
     setActiveId(null)
   }
 
-  // Group sponsors by logo size
+  // Group sponsors by sponsor_level (or 'other' if no level)
   const groupedSponsors = localSponsors.reduce(
     (acc, sponsor) => {
-      if (!acc[sponsor.logo_size]) {
-        acc[sponsor.logo_size] = []
+      const level = sponsor.sponsor_level || 'other'
+      if (!acc[level]) {
+        acc[level] = []
       }
-      acc[sponsor.logo_size].push(sponsor)
+      acc[level].push(sponsor)
       return acc
     },
     {} as Record<string, Sponsor[]>
   )
 
-  const logoSizeTitles = {
-    xlarge: 'Title Sponsors',
-    large: 'Platinum Sponsors',
-    medium: 'Gold Sponsors',
-    small: 'Silver Sponsors',
-    xsmall: 'Bronze Sponsors',
-  }
-
-  const sizeOrder = ['xlarge', 'large', 'medium', 'small', 'xsmall'] as const
+  // Get unique sponsor levels from the data, sorted by total sponsor count (descending)
+  const sponsorLevels = Object.entries(groupedSponsors)
+    .sort(([, a], [, b]) => b.length - a.length)
+    .map(([level]) => level)
 
   const activeSponsor = activeId
     ? localSponsors.find((s) => s.id === activeId)
@@ -194,21 +190,26 @@ export function SponsorList({
         )}
 
         {/* Grouped Sponsors */}
-        {sizeOrder.map((size) => {
-          const sizeSponsors = groupedSponsors[size]
-          if (!sizeSponsors || sizeSponsors.length === 0) return null
+        {sponsorLevels.map((level) => {
+          const levelSponsors = groupedSponsors[level]
+          if (!levelSponsors || levelSponsors.length === 0) return null
+
+          // Format the level name for display
+          const displayName = level === 'other'
+            ? 'Other Sponsors'
+            : `${level} Sponsors`
 
           return (
-            <div key={size} className="space-y-4">
+            <div key={level} className="space-y-4">
               <h3 className="text-xl font-semibold border-b pb-2">
-                {logoSizeTitles[size]}
+                {displayName}
               </h3>
               <SortableContext
-                items={sizeSponsors.map((s) => s.id)}
+                items={levelSponsors.map((s) => s.id)}
                 strategy={rectSortingStrategy}
               >
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {sizeSponsors.map((sponsor) =>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {levelSponsors.map((sponsor) =>
                     readOnly || !onReorder ? (
                       <SponsorCard
                         key={sponsor.id}

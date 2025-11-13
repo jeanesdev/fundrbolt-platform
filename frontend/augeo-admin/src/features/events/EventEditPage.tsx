@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useEventStore } from '@/stores/event-store'
+import { useSponsorStore } from '@/stores/sponsorStore'
 import type {
   EventLinkCreateRequest,
   EventUpdateRequest,
@@ -42,6 +43,7 @@ export function EventEditPage() {
     uploadProgress,
     uploadingFiles,
   } = useEventStore()
+  const { sponsors, fetchSponsors } = useSponsorStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const loadEvent = useCallback(() => {
@@ -56,6 +58,15 @@ export function EventEditPage() {
   useEffect(() => {
     loadEvent()
   }, [loadEvent])
+
+  // Load sponsors for tab count
+  useEffect(() => {
+    if (eventId) {
+      fetchSponsors(eventId).catch(() => {
+        // Silently fail - SponsorsTab will show error if user navigates there
+      })
+    }
+  }, [eventId, fetchSponsors])
 
   // Load NPO branding when event is loaded
   useEffect(() => {
@@ -219,7 +230,7 @@ export function EventEditPage() {
             <span className="hidden md:inline">Food </span>Options<span className="hidden sm:inline"> ({currentEvent.food_options?.length || 0})</span>
           </TabsTrigger>
           <TabsTrigger value="sponsors" className="text-xs sm:text-sm">
-            Sponsors<span className="hidden sm:inline"> ({currentEvent.sponsors?.length || 0})</span>
+            Sponsors<span className="hidden sm:inline"> ({sponsors.length})</span>
           </TabsTrigger>
         </TabsList>
 
