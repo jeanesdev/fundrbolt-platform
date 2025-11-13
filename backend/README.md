@@ -188,6 +188,24 @@ Interactive API documentation is automatically generated:
 - `POST /api/v1/legal/admin/documents/{id}/publish` - Publish document (super admin)
 - `GET /api/v1/legal/admin/documents` - List all documents with filters (super admin)
 
+**Event Sponsors**:
+
+- `GET /api/v1/events/{event_id}/sponsors` - List all sponsors for an event (public)
+- `POST /api/v1/events/{event_id}/sponsors` - Create a new sponsor (NPO admin/staff)
+- `GET /api/v1/events/{event_id}/sponsors/{sponsor_id}` - Get sponsor details (public)
+- `PATCH /api/v1/events/{event_id}/sponsors/{sponsor_id}` - Update sponsor (NPO admin/staff)
+- `DELETE /api/v1/events/{event_id}/sponsors/{sponsor_id}` - Delete sponsor (NPO admin/staff)
+- `PATCH /api/v1/events/{event_id}/sponsors/reorder` - Reorder sponsors via drag-and-drop (NPO admin/staff)
+
+**Sponsor Logo Management**:
+
+- Sponsors require logo upload with automatic thumbnail generation
+- Supported formats: PNG, JPEG, WebP
+- Max file size: 5MB
+- Thumbnails: Auto-generated at 300x300px for list views
+- Logos stored in Azure Blob Storage with automatic cleanup on delete
+- Logo sizes: xlarge, large, medium, small, xsmall (controls display size/prominence)
+
 **Metrics** (Prometheus):
 
 - `GET /metrics` - Prometheus-formatted metrics
