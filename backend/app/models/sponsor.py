@@ -5,7 +5,7 @@ import uuid
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, Enum, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import CheckConstraint, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -87,10 +87,10 @@ class Sponsor(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         comment="Azure Blob Storage blob name/path for thumbnail",
     )
-    logo_size: Mapped[LogoSize] = mapped_column(
-        Enum(LogoSize, name="logo_size", values_callable=lambda x: [e.value for e in x]),
+    logo_size: Mapped[str] = mapped_column(
+        String(20),
         nullable=False,
-        default=LogoSize.LARGE,
+        default=LogoSize.LARGE.value,
         server_default=LogoSize.LARGE.value,
         comment="Display size: xsmall, small, medium, large, xlarge",
     )
