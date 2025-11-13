@@ -121,19 +121,34 @@ class SponsorService {
    * @param file - Logo file to upload
    */
   async uploadLogoToBlob(uploadUrl: string, file: File): Promise<void> {
-    // Direct PUT request to Azure Blob Storage (bypass apiClient)
-    const response = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: {
-        'x-ms-blob-type': 'BlockBlob',
-        'Content-Type': file.type,
-      },
-      body: file,
-    });
+    // Create an AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Logo upload failed: ${response.status} - ${errorText}`);
+    try {
+      // Direct PUT request to Azure Blob Storage (bypass apiClient)
+      const response = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'x-ms-blob-type': 'BlockBlob',
+          'Content-Type': file.type,
+        },
+        body: file,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Logo upload failed: ${response.status} - ${errorText}`);
+      }
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Logo upload timed out after 60 seconds. Please try again with a smaller file.');
+      }
+      throw error;
     }
   }
 

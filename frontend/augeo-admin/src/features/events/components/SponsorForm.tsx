@@ -311,6 +311,29 @@ export function SponsorForm({ sponsor, onSubmit, onCancel, isSubmitting = false 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Validate before submitting
+    let hasErrors = false
+
+    if (formData.website_url && !isValidUrl(formData.website_url)) {
+      setWebsiteError('Please enter a valid URL (e.g., https://example.com)')
+      hasErrors = true
+    }
+
+    if (formData.contact_email && !isValidEmail(formData.contact_email)) {
+      setEmailError('Please enter a valid email address')
+      hasErrors = true
+    }
+
+    if (formData.postal_code && !isValidPostalCode(formData.postal_code)) {
+      setPostalCodeError('Postal code must be in format 12345 or 12345-6789')
+      hasErrors = true
+    }
+
+    // Don't submit if there are validation errors
+    if (hasErrors) {
+      return
+    }
+
     const data = isEdit
       ? ({
         name: formData.name || undefined,
