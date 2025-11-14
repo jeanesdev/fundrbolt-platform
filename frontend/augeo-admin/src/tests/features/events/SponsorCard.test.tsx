@@ -37,58 +37,27 @@ const mockSponsor: Sponsor = {
 }
 
 describe('SponsorCard - Logo Size Display (T057)', () => {
-  it('renders xsmall logo with w-16 h-16 CSS class (64px)', () => {
-    const sponsor = { ...mockSponsor, logo_size: LogoSize.XSMALL }
-    const { container } = render(<SponsorCard sponsor={sponsor} />)
+  it('renders all logos with fixed w-24 h-24 CSS class (96px) regardless of logo_size', () => {
+    const sizes = [LogoSize.XSMALL, LogoSize.SMALL, LogoSize.MEDIUM, LogoSize.LARGE, LogoSize.XLARGE]
 
-    const logoContainer = container.querySelector('.w-16.h-16')
-    expect(logoContainer).toBeInTheDocument()
-    expect(logoContainer).toHaveClass('w-16', 'h-16')
+    sizes.forEach((size) => {
+      const sponsor = { ...mockSponsor, logo_size: size }
+      const { container, unmount } = render(<SponsorCard sponsor={sponsor} />)
+
+      const logoContainer = container.querySelector('.w-24.h-24')
+      expect(logoContainer).toBeInTheDocument()
+      expect(logoContainer).toHaveClass('w-24', 'h-24')
+      unmount()
+    })
   })
 
-  it('renders small logo with w-24 h-24 CSS class (96px)', () => {
-    const sponsor = { ...mockSponsor, logo_size: LogoSize.SMALL }
-    const { container } = render(<SponsorCard sponsor={sponsor} />)
-
-    const logoContainer = container.querySelector('.w-24.h-24')
-    expect(logoContainer).toBeInTheDocument()
-    expect(logoContainer).toHaveClass('w-24', 'h-24')
-  })
-
-  it('renders medium logo with w-32 h-32 CSS class (128px)', () => {
-    const sponsor = { ...mockSponsor, logo_size: LogoSize.MEDIUM }
-    const { container } = render(<SponsorCard sponsor={sponsor} />)
-
-    const logoContainer = container.querySelector('.w-32.h-32')
-    expect(logoContainer).toBeInTheDocument()
-    expect(logoContainer).toHaveClass('w-32', 'h-32')
-  })
-
-  it('renders large logo with w-48 h-48 CSS class (192px)', () => {
-    const sponsor = { ...mockSponsor, logo_size: LogoSize.LARGE }
-    const { container } = render(<SponsorCard sponsor={sponsor} />)
-
-    const logoContainer = container.querySelector('.w-48.h-48')
-    expect(logoContainer).toBeInTheDocument()
-    expect(logoContainer).toHaveClass('w-48', 'h-48')
-  })
-
-  it('renders xlarge logo with w-64 h-64 CSS class (256px)', () => {
-    const sponsor = { ...mockSponsor, logo_size: LogoSize.XLARGE }
-    const { container } = render(<SponsorCard sponsor={sponsor} />)
-
-    const logoContainer = container.querySelector('.w-64.h-64')
-    expect(logoContainer).toBeInTheDocument()
-    expect(logoContainer).toHaveClass('w-64', 'h-64')
-  })
-
-  it('displays logo size label badge for each size', () => {
+  it('displays abbreviated logo size label badge for each size', () => {
     const sizes = [
-      { size: LogoSize.XSMALL, label: 'Extra Small' },
-      { size: LogoSize.SMALL, label: 'Small' },
-      { size: LogoSize.MEDIUM, label: 'Medium' },
-      { size: LogoSize.LARGE, label: 'Large' },
-      { size: LogoSize.XLARGE, label: 'Extra Large' },
+      { size: LogoSize.XSMALL, label: 'Logo: XS' },
+      { size: LogoSize.SMALL, label: 'Logo: S' },
+      { size: LogoSize.MEDIUM, label: 'Logo: M' },
+      { size: LogoSize.LARGE, label: 'Logo: L' },
+      { size: LogoSize.XLARGE, label: 'Logo: XL' },
     ]
 
     sizes.forEach(({ size, label }) => {
@@ -155,19 +124,18 @@ describe('SponsorCard - Sponsor Level Badge Display (T057)', () => {
     }
     render(<SponsorCard sponsor={sponsor} />)
 
-    expect(screen.getByText('Extra Large')).toBeInTheDocument() // Logo size badge
+    expect(screen.getByText('Logo: XL')).toBeInTheDocument() // Logo size badge
     expect(screen.getByText('Diamond')).toBeInTheDocument() // Sponsor level badge
   })
 })
 
 describe('SponsorCard - Logo Size Defaults (T057)', () => {
-  it('defaults to medium size (w-32) if invalid logo_size provided', () => {
+  it('defaults to medium size badge (Logo: M) if invalid logo_size provided', () => {
     const sponsor = { ...mockSponsor, logo_size: 'invalid' as LogoSize }
-    const { container } = render(<SponsorCard sponsor={sponsor} />)
+    render(<SponsorCard sponsor={sponsor} />)
 
-    // Component has fallback logic: logoSizeClasses[sponsor.logo_size] || logoSizeClasses.medium
-    const logoContainer = container.querySelector('.w-32.h-32')
-    expect(logoContainer).toBeInTheDocument()
+    // Component has fallback logic for badge label
+    expect(screen.getByText('Logo: M')).toBeInTheDocument()
   })
 })
 
@@ -180,8 +148,8 @@ describe('SponsorCard - Visual Rendering with Logo Sizes', () => {
     expect(img).toBeInTheDocument()
     expect(img).toHaveClass('w-full', 'h-full', 'object-contain')
 
-    // Parent container should have size class
-    const logoContainer = container.querySelector('.w-48.h-48')
+    // Parent container should have fixed w-24 h-24 class
+    const logoContainer = container.querySelector('.w-24.h-24')
     expect(logoContainer).toContainElement(img)
   })
 
@@ -260,8 +228,8 @@ describe('SponsorCard - Website URL Links (Phase 8 - User Story 5)', () => {
     const sponsor = { ...mockSponsor, website_url: undefined }
     const { container } = render(<SponsorCard sponsor={sponsor} />)
 
-    // Logo container should not be wrapped in anchor
-    const logoContainer = container.querySelector('.w-32.h-32')
+    // Logo container should not be wrapped in anchor (fixed w-24 h-24 size)
+    const logoContainer = container.querySelector('.w-24.h-24')
     expect(logoContainer?.tagName).toBe('DIV')
     expect(logoContainer?.parentElement?.tagName).not.toBe('A')
   })
