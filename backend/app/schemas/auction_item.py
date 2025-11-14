@@ -86,6 +86,17 @@ class AuctionItemListResponse(BaseModel):
     """Schema for paginated list of auction items."""
 
     items: list[AuctionItemResponse]
-    pagination: dict[str, int]
+    pagination: "PaginationInfo"
+
+    model_config = {"from_attributes": True}
+
+
+class PaginationInfo(BaseModel):
+    """Schema for pagination metadata."""
+
+    page: int = Field(..., ge=1)
+    limit: int = Field(..., ge=1, le=100)
+    total: int = Field(..., ge=0)
+    pages: int = Field(..., ge=0)
 
     model_config = {"from_attributes": True}
