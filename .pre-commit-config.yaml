@@ -32,6 +32,7 @@ repos:
           - bcrypt==5.0.0
           - types-redis==4.6.0.20241004
           - types-pytz==2025.2.0.20251108
+          - types-pillow==10.2.0.20240822
         args: [--strict, --ignore-missing-imports]
         files: ^backend/app/
         exclude: ^backend/(alembic/|app/tests/)

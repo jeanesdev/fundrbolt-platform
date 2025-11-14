@@ -10,6 +10,7 @@ import pytz
 from azure.storage.blob import BlobSasPermissions, BlobServiceClient, generate_blob_sas
 from fastapi import HTTPException, status
 from PIL import Image
+from PIL.Image import Image as PILImage
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -205,7 +206,7 @@ class SponsorLogoService:
             HTTPException: If thumbnail generation fails
         """
         try:
-            image = Image.open(BytesIO(logo_blob_data))
+            image: PILImage = Image.open(BytesIO(logo_blob_data))
 
             # For SVG or if image is already small, just return original
             if image.format == "SVG" or (
@@ -221,7 +222,7 @@ class SponsorLogoService:
             output = BytesIO()
             # Convert to RGB if necessary (for transparency handling)
             if image.mode in ("RGBA", "LA", "P"):
-                background = Image.new("RGB", image.size, (255, 255, 255))
+                background: PILImage = Image.new("RGB", image.size, (255, 255, 255))
                 if image.mode == "P":
                     image = image.convert("RGBA")
                 background.paste(image, mask=image.split()[-1] if image.mode == "RGBA" else None)
