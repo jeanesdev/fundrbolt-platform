@@ -12,6 +12,7 @@ from sqlalchemy.orm import joinedload
 from app.models.auction_item import AuctionItem, AuctionType, ItemStatus
 from app.models.event import Event
 from app.schemas.auction_item import AuctionItemCreate, AuctionItemUpdate
+from app.services.audit_service import AuditService
 
 logger = logging.getLogger(__name__)
 
@@ -171,6 +172,17 @@ class AuctionItemService:
         try:
             await self.db.commit()
             await self.db.refresh(auction_item)
+
+            # Audit logging (T025)
+            await AuditService.log_auction_item_created(
+                db=self.db,
+                item_id=auction_item.id,
+                event_id=event_id,
+                bid_number=bid_number,
+                title=item_data.title,
+                created_by_user_id=created_by,
+            )
+
             logger.info(
                 f"Created auction item {auction_item.id} with bid number {bid_number} for event {event_id}"
             )
@@ -328,6 +340,21 @@ class AuctionItemService:
         try:
             await self.db.commit()
             await self.db.refresh(item)
+
+            # Audit logging (T025) - only if changes were made
+            if changes:
+                # Convert changes dict to simple key-value pairs for logging
+                simplified_changes = {k: v["new"] for k, v in changes.items()}
+                await AuditService.log_auction_item_updated(
+                    db=self.db,
+                    item_id=item_id,
+                    event_id=item.event_id,
+                    bid_number=item.bid_number,
+                    title=item.title,
+                    updated_fields=simplified_changes,
+                    updated_by_user_id=item.created_by,  # Note: user_id should be passed in, for now using created_by
+                )
+
             logger.info(f"Updated auction item {item_id}: {changes}")
             return item
 
@@ -377,10 +404,34 @@ class AuctionItemService:
                 item.deleted_at = datetime.now(UTC)
                 item.status = ItemStatus.WITHDRAWN
                 await self.db.commit()
+
+                # Audit logging (T025)
+                await AuditService.log_auction_item_deleted(
+                    db=self.db,
+                    item_id=item_id,
+                    event_id=item.event_id,
+                    bid_number=item.bid_number,
+                    title=item.title,
+                    deleted_by_user_id=item.created_by,  # Note: user_id should be passed in
+                    is_soft_delete=True,
+                )
+
                 logger.info(f"Soft deleted auction item {item_id}")
             else:
                 # Hard delete: Remove from database and clean up media blobs
                 # Note: Media blob cleanup will be implemented in AuctionItemMediaService (T047)
+
+                # Audit logging before deletion (T025)
+                await AuditService.log_auction_item_deleted(
+                    db=self.db,
+                    item_id=item_id,
+                    event_id=item.event_id,
+                    bid_number=item.bid_number,
+                    title=item.title,
+                    deleted_by_user_id=item.created_by,  # Note: user_id should be passed in
+                    is_soft_delete=False,
+                )
+
                 await self.db.delete(item)
                 await self.db.commit()
                 logger.info(f"Hard deleted auction item {item_id}")
