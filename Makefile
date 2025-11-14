@@ -1,4 +1,4 @@
-.PHONY: help install test lint format clean docker-up docker-down migrate dev-backend dev-frontend dev-fullstack validate-infra deploy-infra check-commits
+.PHONY: help install test lint format clean docker-up docker-down migrate dev-backend dev-frontend dev-fullstack validate-infra deploy-infra check-commits ngrok-start ngrok-stop ngrok-status ngrok-local
 
 # Default target
 help:
@@ -32,6 +32,12 @@ help:
 	@echo "  make docker-up        - Start Docker services (PostgreSQL, Redis)"
 	@echo "  make docker-down      - Stop Docker services"
 	@echo "  make docker-logs      - Show Docker logs"
+	@echo ""
+	@echo "Ngrok (Mobile Testing):"
+	@echo "  make ngrok-start      - Start ngrok tunnels and configure frontend"
+	@echo "  make ngrok-stop       - Stop ngrok and restore local config"
+	@echo "  make ngrok-status     - Show ngrok tunnel URLs"
+	@echo "  make ngrok-local      - Switch frontend back to localhost"
 	@echo ""
 	@echo "Infrastructure:"
 	@echo "  make validate-infra   - Validate Bicep templates (ENV=dev|staging|production)"
@@ -272,6 +278,47 @@ kill-frontend:
 	pkill -f 'vite/bin/vite.js' || echo "Frontend not running"
 
 kill-all: kill-backend kill-frontend
+
+# Ngrok for mobile testing
+ngrok-start:
+	@echo "Starting ngrok tunnels..."
+	@pkill ngrok 2>/dev/null || true
+	@nohup ngrok start --all --config ngrok.yml > /tmp/ngrok.log 2>&1 & echo $$! > /tmp/ngrok.pid
+	@sleep 3
+	@echo "Configuring frontend to use ngrok backend..."
+	@sed -i 's|VITE_API_URL=http://localhost:8000/api/v1|VITE_API_URL=https://augeo-backend.ngrok.io/api/v1|g' frontend/augeo-admin/.env
+	@echo "Restarting frontend..."
+	@pkill -f 'vite/bin/vite.js' || true
+	@sleep 1
+	@(bash -c "cd frontend/augeo-admin && source ~/.nvm/nvm.sh && nvm use 22 && nohup pnpm dev > /tmp/frontend-ngrok.log 2>&1 &") || true
+	@sleep 3
+	@echo ""
+	@echo "✅ Ngrok tunnels started!"
+	@echo ""
+	@curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[] | "  \(.public_url) -> \(.config.addr)"' || echo "  Frontend: https://augeo-frontend.ngrok.io\n  Backend: https://augeo-backend.ngrok.io"
+	@echo ""
+	@echo "📱 Open https://augeo-frontend.ngrok.io on your phone"
+	@echo ""
+
+ngrok-stop:
+	@echo "Stopping ngrok..."
+	@pkill ngrok 2>/dev/null || true
+	@$(MAKE) ngrok-local
+	@echo "✅ Ngrok stopped and config restored to localhost"
+
+ngrok-status:
+	@echo "Ngrok tunnel status:"
+	@curl -s http://localhost:4040/api/tunnels 2>/dev/null | jq -r '.tunnels[] | "  \(.public_url) -> \(.config.addr)"' || echo "  Ngrok not running"
+
+ngrok-local:
+	@echo "Switching frontend back to localhost..."
+	@sed -i 's|VITE_API_URL=https://augeo-backend.ngrok.io/api/v1|VITE_API_URL=http://localhost:8000/api/v1|g' frontend/augeo-admin/.env
+	@echo "Restarting frontend..."
+	@pkill -f 'vite/bin/vite.js' || true
+	@sleep 1
+	@(bash -c "cd frontend/augeo-admin && source ~/.nvm/nvm.sh && nvm use 22 && nohup pnpm dev > /tmp/frontend.log 2>&1 &") || true
+	@sleep 2
+	@echo "✅ Frontend configured for localhost:8000"
 
 # Quick shortcuts
 .PHONY: b f t m

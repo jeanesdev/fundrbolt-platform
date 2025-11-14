@@ -46,7 +46,7 @@ export function CookieConsentBanner({ open, onOpenChange }: CookieConsentBannerP
   if (!showCustomize) {
     return (
       <AlertDialog open={open} onOpenChange={onOpenChange}>
-        <AlertDialogContent className="max-w-2xl">
+        <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <AlertDialogHeader>
             <div className="flex items-center gap-2">
               <Cookie className="h-5 w-5" />
@@ -134,7 +134,7 @@ export function CookieConsentBanner({ open, onOpenChange }: CookieConsentBannerP
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-2xl">
+      <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <AlertDialogHeader>
           <div className="flex items-center gap-2">
             <Cookie className="h-5 w-5" />
