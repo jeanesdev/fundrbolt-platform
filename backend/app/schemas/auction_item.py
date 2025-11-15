@@ -69,6 +69,9 @@ class AuctionItemResponse(AuctionItemBase):
     created_by: UUID
     created_at: datetime
     updated_at: datetime
+    primary_image_url: str | None = Field(
+        None, description="URL of primary image (with SAS token if Azure)"
+    )
 
     model_config = {"from_attributes": True}
 

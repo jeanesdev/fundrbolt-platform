@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.middleware.auth import get_current_active_user, get_current_user_optional
 from app.models.auction_item import AuctionType, ItemStatus
@@ -149,8 +150,57 @@ async def list_auction_items(
     # Calculate pagination
     total_pages = (total + limit - 1) // limit if total > 0 else 0
 
+    # Enrich items with primary image URLs
+    from sqlalchemy import select
+
+    from app.models.auction_item import AuctionItemMedia
+    from app.services.auction_item_media_service import AuctionItemMediaService
+
+    settings = get_settings()
+    media_service = AuctionItemMediaService(settings, db)
+
+    enriched_items = []
+    for item in items:
+        item_dict = AuctionItemResponse.model_validate(item).model_dump()
+
+        # Fetch primary image (first image by display_order)
+        media_stmt = (
+            select(AuctionItemMedia)
+            .where(
+                AuctionItemMedia.auction_item_id == item.id,
+                AuctionItemMedia.media_type == "image",
+            )
+            .order_by(AuctionItemMedia.display_order)
+            .limit(1)
+        )
+        media_result = await db.execute(media_stmt)
+        primary_media = media_result.scalar_one_or_none()
+
+        if primary_media and primary_media.thumbnail_path:
+            # Generate SAS URL for thumbnail
+            if primary_media.thumbnail_path.startswith("https://"):
+                blob_path = "/".join(
+                    primary_media.thumbnail_path.split(f"{settings.azure_storage_container_name}/")[
+                        1
+                    ]
+                    .split("?")[0]
+                    .split("/")
+                )
+                try:
+                    item_dict["primary_image_url"] = media_service._generate_blob_sas_url(
+                        blob_path, expiry_hours=24
+                    )
+                except ValueError:
+                    item_dict["primary_image_url"] = primary_media.thumbnail_path
+            else:
+                item_dict["primary_image_url"] = primary_media.thumbnail_path
+        else:
+            item_dict["primary_image_url"] = None
+
+        enriched_items.append(AuctionItemResponse(**item_dict))
+
     return AuctionItemListResponse(
-        items=[AuctionItemResponse.model_validate(item) for item in items],
+        items=enriched_items,
         pagination=PaginationInfo(
             page=page,
             limit=limit,

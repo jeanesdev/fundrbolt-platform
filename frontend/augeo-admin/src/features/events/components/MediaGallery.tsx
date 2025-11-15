@@ -111,7 +111,10 @@ function SortableMediaItem({
                 <Button
                   size="sm"
                   variant="secondary"
-                  onClick={() => onSetPrimary(media.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSetPrimary(media.id);
+                  }}
                   title="Set as primary image"
                 >
                   <Star className="w-4 h-4" />
@@ -121,7 +124,10 @@ function SortableMediaItem({
               <Button
                 size="sm"
                 variant="destructive"
-                onClick={() => onDelete(media.id)}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(media.id);
+                  }}
                 title="Delete media"
               >
                 <Trash2 className="w-4 h-4" />
@@ -163,7 +169,7 @@ export function MediaGallery({
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 15, // Increased from 8 to prevent accidental text selection
       },
     }),
     useSensor(TouchSensor, {

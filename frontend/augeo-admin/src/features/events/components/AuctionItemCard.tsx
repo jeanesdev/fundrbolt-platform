@@ -64,6 +64,17 @@ export function AuctionItemCard({
 }: AuctionItemCardProps) {
   return (
     <Card className="flex flex-col">
+      {/* Image Section */}
+      {item.primary_image_url && (
+        <div className="aspect-video bg-muted relative overflow-hidden">
+          <img
+            src={item.primary_image_url}
+            alt={item.title}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1">

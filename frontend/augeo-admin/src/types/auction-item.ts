@@ -38,6 +38,7 @@ export interface AuctionItem extends AuctionItemBase {
   created_by: string;
   created_at: string;
   updated_at: string;
+  primary_image_url?: string | null; // Primary image thumbnail URL (with SAS token if Azure)
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

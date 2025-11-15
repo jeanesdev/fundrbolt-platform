@@ -98,6 +98,48 @@ class AuctionItemMediaService:
         self.local_storage_dir = Path("static/uploads/auction-items")
         self.local_storage_dir.mkdir(parents=True, exist_ok=True)
 
+    def _generate_blob_sas_url(self, blob_name: str, expiry_hours: float = 24.0) -> str:
+        """Generate a SAS URL with read permissions for a blob.
+
+        Args:
+            blob_name: Name of the blob in Azure Storage
+            expiry_hours: Hours until SAS URL expires (default 24 hours)
+
+        Returns:
+            Full blob URL with SAS token for read access
+
+        Raises:
+            ValueError: If Azure Blob Storage is not configured
+        """
+        if not self.blob_service_client or not self.settings.azure_storage_account_name:
+            raise ValueError("Azure Blob Storage not configured")
+
+        if not self.settings.azure_storage_connection_string:
+            raise ValueError("Azure storage connection string not configured")
+
+        # Extract account key from connection string
+        conn_str = self.settings.azure_storage_connection_string
+        try:
+            account_key = conn_str.split("AccountKey=")[1].split(";")[0]
+        except (IndexError, AttributeError) as e:
+            raise ValueError("Invalid Azure storage connection string format") from e
+
+        # Generate SAS token
+        sas_token = generate_blob_sas(
+            account_name=self.settings.azure_storage_account_name,
+            container_name=self.container_name,
+            blob_name=blob_name,
+            account_key=account_key,
+            permission=BlobSasPermissions(read=True),
+            expiry=datetime.utcnow() + timedelta(hours=expiry_hours),
+        )
+
+        # Get blob URL and append SAS token
+        blob_client = self.blob_service_client.get_blob_client(
+            container=self.container_name, blob=blob_name
+        )
+        return f"{blob_client.url}?{sas_token}"
+
     def _validate_file_type(
         self, content_type: str, file_name: str, media_type: str
     ) -> tuple[bool, str | None]:
