@@ -278,8 +278,43 @@ async def reorder_media(
 
     try:
         media_items = await media_service.reorder_media(item_id, request.media_order)
+
+        # Convert media URLs to SAS URLs for secure access (same as list endpoint)
+        media_responses = []
+        for media in media_items:
+            media_dict = MediaResponse.model_validate(media).model_dump()
+
+            # Generate SAS URLs for file_path and thumbnail_path if using Azure Blob Storage
+            if media.file_path and media.file_path.startswith("https://"):
+                blob_path = "/".join(
+                    media.file_path.split(f"{settings.azure_storage_container_name}/")[1]
+                    .split("?")[0]
+                    .split("/")
+                )
+                try:
+                    media_dict["file_path"] = media_service._generate_blob_sas_url(
+                        blob_path, expiry_hours=24
+                    )
+                except ValueError:
+                    pass
+
+            if media.thumbnail_path and media.thumbnail_path.startswith("https://"):
+                thumb_blob_path = "/".join(
+                    media.thumbnail_path.split(f"{settings.azure_storage_container_name}/")[1]
+                    .split("?")[0]
+                    .split("/")
+                )
+                try:
+                    media_dict["thumbnail_path"] = media_service._generate_blob_sas_url(
+                        thumb_blob_path, expiry_hours=24
+                    )
+                except ValueError:
+                    pass
+
+            media_responses.append(MediaResponse(**media_dict))
+
         return MediaListResponse(
-            items=[MediaResponse.model_validate(m) for m in media_items],
+            items=media_responses,
             total=len(media_items),
         )
     except ValueError as e:

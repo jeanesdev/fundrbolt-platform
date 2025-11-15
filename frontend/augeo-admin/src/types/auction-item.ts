@@ -41,9 +41,8 @@ export interface AuctionItem extends AuctionItemBase {
   primary_image_url?: string | null; // Primary image thumbnail URL (with SAS token if Azure)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface AuctionItemDetail extends AuctionItem {
-  // Media will be added when we implement media management
+  media: AuctionItemMedia[]; // Media items with SAS URLs for secure access
   // Sponsor will be added when we integrate sponsor display
 }
 

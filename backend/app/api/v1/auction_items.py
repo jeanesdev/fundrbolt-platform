@@ -257,7 +257,66 @@ async def get_auction_item(
     # Authenticated users can view all items
     # Future: Add NPO-specific permissions here if needed
 
-    return AuctionItemDetail.model_validate(item)
+    # Fetch media with SAS URLs
+    from sqlalchemy import select
+
+    from app.models.auction_item import AuctionItemMedia
+    from app.schemas.auction_item_media import MediaResponse
+    from app.services.auction_item_media_service import AuctionItemMediaService
+
+    settings = get_settings()
+    media_service = AuctionItemMediaService(settings, db)
+
+    # Fetch media items
+    media_stmt = (
+        select(AuctionItemMedia)
+        .where(AuctionItemMedia.auction_item_id == item_id)
+        .order_by(AuctionItemMedia.display_order)
+    )
+    media_result = await db.execute(media_stmt)
+    media_items = media_result.scalars().all()
+
+    # Convert media URLs to SAS URLs
+    media_responses = []
+    for media in media_items:
+        media_dict = MediaResponse.model_validate(media).model_dump()
+
+        # Generate SAS URLs for file_path and thumbnail_path if using Azure Blob Storage
+        if media.file_path and media.file_path.startswith("https://"):
+            blob_path = "/".join(
+                media.file_path.split(f"{settings.azure_storage_container_name}/")[1]
+                .split("?")[0]
+                .split("/")
+            )
+            try:
+                media_dict["file_path"] = media_service._generate_blob_sas_url(
+                    blob_path, expiry_hours=24
+                )
+            except ValueError:
+                pass
+
+        if media.thumbnail_path and media.thumbnail_path.startswith("https://"):
+            thumb_blob_path = "/".join(
+                media.thumbnail_path.split(f"{settings.azure_storage_container_name}/")[1]
+                .split("?")[0]
+                .split("/")
+            )
+            try:
+                media_dict["thumbnail_path"] = media_service._generate_blob_sas_url(
+                    thumb_blob_path, expiry_hours=24
+                )
+            except ValueError:
+                pass
+
+        media_responses.append(media_dict)
+
+    # Build response dictionary with all fields
+    response_dict = {
+        **AuctionItemResponse.model_validate(item).model_dump(),
+        "media": media_responses,
+    }
+
+    return AuctionItemDetail(**response_dict)
 
 
 @router.patch(

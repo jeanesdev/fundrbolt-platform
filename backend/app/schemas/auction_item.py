@@ -79,10 +79,19 @@ class AuctionItemResponse(AuctionItemBase):
 class AuctionItemDetail(AuctionItemResponse):
     """Schema for detailed auction item response with media and sponsor."""
 
-    # Media will be added when we implement media management
+    media: list["MediaResponse"] = Field(
+        default_factory=list, description="Media items with SAS URLs"
+    )
     # Sponsor will be added when we integrate sponsor display
 
     model_config = {"from_attributes": True}
+
+
+# Import MediaResponse for forward reference
+from app.schemas.auction_item_media import MediaResponse  # noqa: E402
+
+# Rebuild model to resolve forward references
+AuctionItemDetail.model_rebuild()
 
 
 class AuctionItemListResponse(BaseModel):

@@ -78,6 +78,14 @@ export function AuctionItemForm({
 
   // Validation errors
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [numericErrors, setNumericErrors] = useState<{
+    starting_bid?: string;
+    donor_value?: string;
+    cost?: string;
+    buy_now_price?: string;
+    quantity_available?: string;
+    display_priority?: string;
+  }>({});
 
   // Media management
   const [media, setMedia] = useState<AuctionItemMedia[]>([]);
@@ -155,12 +163,38 @@ export function AuctionItemForm({
     }
   };
 
+  const handleNumericBlur = (field: keyof typeof numericErrors, value: string, isInteger = false) => {
+    if (!value) {
+      // Empty is allowed for optional fields
+      setNumericErrors((prev) => ({ ...prev, [field]: undefined }));
+      return;
+    }
+
+    const num = isInteger ? parseInt(value, 10) : parseFloat(value);
+
+    if (isNaN(num)) {
+      setNumericErrors((prev) => ({ ...prev, [field]: 'Please enter a valid number' }));
+    } else if (num < 0) {
+      setNumericErrors((prev) => ({ ...prev, [field]: 'Value cannot be negative' }));
+    } else if (isInteger && !Number.isInteger(num)) {
+      setNumericErrors((prev) => ({ ...prev, [field]: 'Please enter a whole number' }));
+    } else {
+      setNumericErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate URL before submitting
     if (formData.item_webpage && !isValidUrl(formData.item_webpage)) {
       setUrlError('Please enter a valid URL (e.g., https://example.com)');
+      return;
+    }
+
+    // Check for any numeric validation errors
+    const hasNumericErrors = Object.values(numericErrors).some((error) => error !== undefined);
+    if (hasNumericErrors) {
       return;
     }
 
@@ -285,9 +319,13 @@ export function AuctionItemForm({
             onChange={(e) =>
               setFormData({ ...formData, quantity_available: e.target.value })
             }
+            onBlur={(e) => handleNumericBlur('quantity_available', e.target.value, true)}
             required
             disabled={isSubmitting}
           />
+          {numericErrors.quantity_available && (
+            <p className="text-xs text-destructive">{numericErrors.quantity_available}</p>
+          )}
         </div>
       </div>
 
@@ -308,10 +346,14 @@ export function AuctionItemForm({
               onChange={(e) =>
                 setFormData({ ...formData, starting_bid: e.target.value })
               }
+              onBlur={(e) => handleNumericBlur('starting_bid', e.target.value)}
               required
               disabled={isSubmitting}
               placeholder="0.00"
             />
+            {numericErrors.starting_bid && (
+              <p className="text-xs text-destructive">{numericErrors.starting_bid}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -325,9 +367,13 @@ export function AuctionItemForm({
               onChange={(e) =>
                 setFormData({ ...formData, donor_value: e.target.value })
               }
+              onBlur={(e) => handleNumericBlur('donor_value', e.target.value)}
               disabled={isSubmitting}
               placeholder="0.00"
             />
+            {numericErrors.donor_value && (
+              <p className="text-xs text-destructive">{numericErrors.donor_value}</p>
+            )}
             <p className="text-xs text-muted-foreground">
               The value declared by the donor
             </p>
@@ -342,9 +388,13 @@ export function AuctionItemForm({
               min="0"
               value={formData.cost}
               onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+              onBlur={(e) => handleNumericBlur('cost', e.target.value)}
               disabled={isSubmitting}
               placeholder="0.00"
             />
+            {numericErrors.cost && (
+              <p className="text-xs text-destructive">{numericErrors.cost}</p>
+            )}
             <p className="text-xs text-muted-foreground">
               Internal cost tracking (not shown to bidders)
             </p>
@@ -361,9 +411,13 @@ export function AuctionItemForm({
               onChange={(e) =>
                 setFormData({ ...formData, buy_now_price: e.target.value })
               }
+              onBlur={(e) => handleNumericBlur('buy_now_price', e.target.value)}
               disabled={isSubmitting}
               placeholder="0.00"
             />
+            {numericErrors.buy_now_price && (
+              <p className="text-xs text-destructive">{numericErrors.buy_now_price}</p>
+            )}
           </div>
 
           <div className="flex items-center space-x-2 sm:col-span-2">
@@ -430,9 +484,13 @@ export function AuctionItemForm({
               onChange={(e) =>
                 setFormData({ ...formData, display_priority: e.target.value })
               }
+              onBlur={(e) => handleNumericBlur('display_priority', e.target.value, true)}
               disabled={isSubmitting}
               placeholder="0"
             />
+            {numericErrors.display_priority && (
+              <p className="text-xs text-destructive">{numericErrors.display_priority}</p>
+            )}
             <p className="text-xs text-muted-foreground">
               Higher numbers appear first (default: 0)
             </p>
