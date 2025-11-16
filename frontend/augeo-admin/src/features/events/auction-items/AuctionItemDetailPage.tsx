@@ -30,7 +30,7 @@ const formatCurrency = (amount: number | null): string => {
 export function AuctionItemDetailPage() {
   const navigate = useNavigate();
   const { eventId, itemId } = useParams({
-    from: '/_authenticated/events/$eventId/auction-items/$itemId',
+    from: '/_authenticated/events/$eventId/auction-items/$itemId/',
   });
 
   const { selectedItem, isLoading, getAuctionItem, clearSelectedItem } =

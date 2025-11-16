@@ -5,8 +5,14 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import type { EventMedia } from '@/types/event'
-import { FileImage, Trash2, Upload, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileImage, Trash2, Upload, X } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -31,6 +37,7 @@ export function MediaUploader({
 }: MediaUploaderProps) {
   const [dragActive, setDragActive] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [viewMedia, setViewMedia] = useState<EventMedia | null>(null)
 
   const validateFile = (file: File): string | null => {
     if (file.size > maxFileSize * 1024 * 1024) {
@@ -115,6 +122,26 @@ export function MediaUploader({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
+  const handleNextMedia = () => {
+    if (!viewMedia) return;
+    const currentIndex = media.findIndex((item) => item.id === viewMedia.id);
+    const nextIndex = (currentIndex + 1) % media.length;
+    setViewMedia(media[nextIndex]);
+  };
+
+  const handlePrevMedia = () => {
+    if (!viewMedia) return;
+    const currentIndex = media.findIndex((item) => item.id === viewMedia.id);
+    const prevIndex = (currentIndex - 1 + media.length) % media.length;
+    setViewMedia(media[prevIndex]);
+  };
+
+  const getCurrentMediaIndex = () => {
+    if (!viewMedia) return { current: 0, total: 0 };
+    const currentIndex = media.findIndex((item) => item.id === viewMedia.id);
+    return { current: currentIndex + 1, total: media.length };
+  };
+
   return (
     <div className="space-y-4">
       {/* Upload Zone */}
@@ -168,12 +195,15 @@ export function MediaUploader({
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
                   {/* Thumbnail or File Icon */}
-                  <div className="flex-shrink-0">
+                  <div
+                    className="flex-shrink-0 cursor-pointer"
+                    onClick={() => file.mime_type?.startsWith('image/') && setViewMedia(file)}
+                  >
                     {file.mime_type?.startsWith('image/') ? (
                       <img
                         src={file.file_url}
                         alt={file.file_name}
-                        className="h-16 w-16 object-cover rounded border"
+                        className="h-16 w-16 object-cover rounded border hover:opacity-80 transition-opacity"
                         onError={(e) => {
                           // Fallback to icon if image fails to load
                           e.currentTarget.style.display = 'none'
@@ -264,6 +294,72 @@ export function MediaUploader({
             ))}
         </div>
       )}
+
+      {/* Full-Size Media Modal */}
+      <Dialog open={!!viewMedia} onOpenChange={(open) => !open && setViewMedia(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+          {viewMedia && (
+            <>
+              <DialogHeader className="p-6 pb-0">
+                <div className="flex items-center justify-between">
+                  <DialogTitle>{viewMedia.file_name}</DialogTitle>
+                  <span className="text-sm text-muted-foreground">
+                    {getCurrentMediaIndex().current} / {getCurrentMediaIndex().total}
+                  </span>
+                </div>
+              </DialogHeader>
+
+              <div className="relative group">
+                {/* Media Display */}
+                <div className="flex items-center justify-center bg-muted min-h-[400px] max-h-[60vh]">
+                  {viewMedia.mime_type?.startsWith('image/') ? (
+                    <img
+                      src={viewMedia.file_url}
+                      alt={viewMedia.file_name}
+                      className="max-w-full max-h-[60vh] object-contain"
+                    />
+                  ) : (
+                    <div className="text-center p-8">
+                      <FileImage className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-muted-foreground">Preview not available for this file type</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Navigation Buttons */}
+                {media.length > 1 && (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={handlePrevMedia}
+                    >
+                      <ChevronLeft className="h-6 w-6" />
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={handleNextMedia}
+                    >
+                      <ChevronRight className="h-6 w-6" />
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {/* File Details */}
+              <div className="p-6 pt-4 text-sm text-muted-foreground space-y-1">
+                <p><strong>File:</strong> {viewMedia.file_name}</p>
+                <p><strong>Size:</strong> {formatFileSize(viewMedia.file_size)}</p>
+                <p><strong>Type:</strong> {viewMedia.mime_type || viewMedia.file_type}</p>
+                <p><strong>Status:</strong> {viewMedia.status}</p>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
