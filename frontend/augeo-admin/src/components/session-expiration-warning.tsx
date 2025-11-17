@@ -1,6 +1,3 @@
-import { useCallback, useEffect, useState } from 'react'
-import { useAuthStore } from '@/stores/auth-store'
-import apiClient from '@/lib/axios'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -10,6 +7,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import apiClient from '@/lib/axios'
+import { useAuthStore } from '@/stores/auth-store'
+import { useRouter } from '@tanstack/react-router'
+import { useCallback, useEffect, useState } from 'react'
 
 interface SessionExpirationWarningProps {
   /**
@@ -17,15 +18,23 @@ interface SessionExpirationWarningProps {
    * Default: 120 (2 minutes)
    */
   warningThresholdSeconds?: number
+  /**
+   * How many seconds before expiry to auto-refresh on navigation
+   * Default: 300 (5 minutes)
+   */
+  autoRefreshThresholdSeconds?: number
 }
 
 export function SessionExpirationWarning({
   warningThresholdSeconds = 120,
+  autoRefreshThresholdSeconds = 300,
 }: SessionExpirationWarningProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [secondsRemaining, setSecondsRemaining] = useState<number | null>(null)
   const [isExtending, setIsExtending] = useState(false)
+  const [lastRefreshAttempt, setLastRefreshAttempt] = useState<number>(0)
 
+  const router = useRouter()
   const { accessToken, refreshToken, reset } = useAuthStore()
 
   // Parse JWT to get expiration time
@@ -39,10 +48,18 @@ export function SessionExpirationWarning({
   }, [])
 
   // Extend session by refreshing the access token
-  const handleExtendSession = useCallback(async () => {
-    if (!refreshToken) return
+  const handleExtendSession = useCallback(async (silent = false) => {
+    if (!refreshToken) return false
 
-    setIsExtending(true)
+    // Prevent too frequent refresh attempts (minimum 30 seconds between)
+    const now = Date.now()
+    if (now - lastRefreshAttempt < 30000) {
+      return false
+    }
+
+    if (!silent) {
+      setIsExtending(true)
+    }
 
     try {
       const response = await apiClient.post('/auth/refresh', {
@@ -51,25 +68,56 @@ export function SessionExpirationWarning({
 
       const { access_token } = response.data
       useAuthStore.getState().setAccessToken(access_token)
+      setLastRefreshAttempt(now)
 
       // Close dialog on success
-      setIsOpen(false)
-      setSecondsRemaining(null)
+      if (!silent) {
+        setIsOpen(false)
+        setSecondsRemaining(null)
+      }
+
+      return true
     } catch {
-      // If refresh fails, logout user
-      // Session extension failed - redirect to login
-      reset()
-      window.location.href = '/sign-in'
+      // If refresh fails, only logout if this was a user action
+      if (!silent) {
+        reset()
+        window.location.href = '/sign-in'
+      }
+      return false
     } finally {
-      setIsExtending(false)
+      if (!silent) {
+        setIsExtending(false)
+      }
     }
-  }, [refreshToken, reset])
+  }, [refreshToken, reset, lastRefreshAttempt])
 
   // Handle logout
   const handleLogout = useCallback(() => {
     reset()
     window.location.href = '/sign-in'
   }, [reset])
+
+  // Auto-refresh token on navigation if it's getting close to expiry
+  useEffect(() => {
+    if (!accessToken || !refreshToken) return
+
+    const expiryTime = getTokenExpiry(accessToken)
+    if (!expiryTime) return
+
+    const unsubscribe = router.subscribe('onBeforeLoad', () => {
+      const now = Date.now()
+      const timeUntilExpiry = expiryTime - now
+      const secondsUntilExpiry = Math.floor(timeUntilExpiry / 1000)
+
+      // If token expires within autoRefreshThreshold, refresh it silently
+      if (secondsUntilExpiry <= autoRefreshThresholdSeconds && secondsUntilExpiry > 0) {
+        // Silent refresh on navigation
+        handleExtendSession(true)
+      }
+    })
+
+    return unsubscribe
+  }, [accessToken, refreshToken, autoRefreshThresholdSeconds, getTokenExpiry, handleExtendSession, router])
 
   // Monitor token expiration
   useEffect(() => {
@@ -142,7 +190,7 @@ export function SessionExpirationWarning({
           >
             Log Out
           </Button>
-          <Button onClick={handleExtendSession} disabled={isExtending}>
+          <Button onClick={() => handleExtendSession(false)} disabled={isExtending}>
             {isExtending ? 'Extending...' : 'Stay Logged In'}
           </Button>
         </AlertDialogFooter>
