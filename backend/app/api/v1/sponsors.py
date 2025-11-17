@@ -49,36 +49,63 @@ async def list_sponsors(
 
     sponsors = await SponsorService.get_sponsors_for_event(db, event_id)
 
-    return [
-        SponsorResponse(
-            id=sponsor.id,
-            event_id=sponsor.event_id,
-            name=sponsor.name,
-            logo_url=sponsor.logo_url,
-            logo_blob_name=sponsor.logo_blob_name,
-            thumbnail_url=sponsor.thumbnail_url,
-            thumbnail_blob_name=sponsor.thumbnail_blob_name,
-            website_url=sponsor.website_url,
-            logo_size=sponsor.logo_size,
-            sponsor_level=sponsor.sponsor_level,
-            contact_name=sponsor.contact_name,
-            contact_email=sponsor.contact_email,
-            contact_phone=sponsor.contact_phone,
-            address_line1=sponsor.address_line1,
-            address_line2=sponsor.address_line2,
-            city=sponsor.city,
-            state=sponsor.state,
-            postal_code=sponsor.postal_code,
-            country=sponsor.country,
-            donation_amount=sponsor.donation_amount,
-            notes=sponsor.notes,
-            display_order=sponsor.display_order,
-            created_at=sponsor.created_at.isoformat(),
-            updated_at=sponsor.updated_at.isoformat(),
-            created_by=sponsor.created_by,
+    # Generate SAS URLs for logo and thumbnail
+    sponsor_responses = []
+
+    for sponsor in sponsors:
+        # Generate SAS URLs if blob names exist
+        logo_url = sponsor.logo_url
+        thumbnail_url = sponsor.thumbnail_url
+
+        if sponsor.logo_blob_name and sponsor.logo_url:
+            try:
+                logo_url = SponsorLogoService.generate_blob_sas_url(
+                    sponsor.logo_blob_name, expiry_hours=24
+                )
+            except Exception as e:
+                logger.warning(f"Failed to generate logo SAS URL for sponsor {sponsor.id}: {e}")
+
+        if sponsor.thumbnail_blob_name and sponsor.thumbnail_url:
+            try:
+                thumbnail_url = SponsorLogoService.generate_blob_sas_url(
+                    sponsor.thumbnail_blob_name, expiry_hours=24
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to generate thumbnail SAS URL for sponsor {sponsor.id}: {e}"
+                )
+
+        sponsor_responses.append(
+            SponsorResponse(
+                id=sponsor.id,
+                event_id=sponsor.event_id,
+                name=sponsor.name,
+                logo_url=logo_url,
+                logo_blob_name=sponsor.logo_blob_name,
+                thumbnail_url=thumbnail_url,
+                thumbnail_blob_name=sponsor.thumbnail_blob_name,
+                website_url=sponsor.website_url,
+                logo_size=sponsor.logo_size,
+                sponsor_level=sponsor.sponsor_level,
+                contact_name=sponsor.contact_name,
+                contact_email=sponsor.contact_email,
+                contact_phone=sponsor.contact_phone,
+                address_line1=sponsor.address_line1,
+                address_line2=sponsor.address_line2,
+                city=sponsor.city,
+                state=sponsor.state,
+                postal_code=sponsor.postal_code,
+                country=sponsor.country,
+                donation_amount=sponsor.donation_amount,
+                notes=sponsor.notes,
+                display_order=sponsor.display_order,
+                created_at=sponsor.created_at.isoformat(),
+                updated_at=sponsor.updated_at.isoformat(),
+                created_by=sponsor.created_by,
+            )
         )
-        for sponsor in sponsors
-    ]
+
+    return sponsor_responses
 
 
 @router.post("", response_model=SponsorCreateResponse, status_code=status.HTTP_201_CREATED)

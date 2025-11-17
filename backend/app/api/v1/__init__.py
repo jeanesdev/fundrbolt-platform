@@ -5,6 +5,8 @@ from fastapi import APIRouter
 from app.api.v1 import (
     admin,
     admin_testimonials,
+    auction_item_media,
+    auction_items,
     auth,
     branding,
     consent,
@@ -38,6 +40,8 @@ api_router.include_router(events_links.router, tags=["events", "links"])
 api_router.include_router(events_media.router, tags=["events", "media"])
 api_router.include_router(events_food_options.router, tags=["events", "food-options"])
 api_router.include_router(sponsors.router, tags=["events", "sponsors"])
+api_router.include_router(auction_items.router, tags=["auction-items"])
+api_router.include_router(auction_item_media.router, tags=["auction-items", "media"])
 api_router.include_router(legal_documents.router, prefix="/legal", tags=["legal"])
 api_router.include_router(consent.router, prefix="/consent", tags=["consent"])
 api_router.include_router(cookies.router, prefix="/cookies", tags=["cookies"])

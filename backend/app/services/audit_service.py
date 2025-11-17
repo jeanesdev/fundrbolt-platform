@@ -48,6 +48,12 @@ class AuditEventType(str, Enum):
     NPO_MEMBER_REMOVED = "npo_member_removed"
     NPO_MEMBER_ROLE_CHANGED = "npo_member_role_changed"
     NPO_BRANDING_UPDATED = "npo_branding_updated"
+    # Auction item events
+    AUCTION_ITEM_CREATED = "auction_item_created"
+    AUCTION_ITEM_UPDATED = "auction_item_updated"
+    AUCTION_ITEM_DELETED = "auction_item_deleted"
+    AUCTION_ITEM_PUBLISHED = "auction_item_published"
+    AUCTION_ITEM_WITHDRAWN = "auction_item_withdrawn"
 
 
 class AuditService:
@@ -996,6 +1002,135 @@ class AuditService:
                 "old_status": old_status,
                 "new_status": new_status,
                 "changed_by_user_id": str(changed_by_user_id),
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+    @staticmethod
+    async def log_auction_item_created(
+        db: AsyncSession,
+        item_id: uuid.UUID,
+        event_id: uuid.UUID,
+        bid_number: int,
+        title: str,
+        created_by_user_id: uuid.UUID,
+        ip_address: str | None = None,
+    ) -> None:
+        """Log auction item creation event."""
+        from app.models.audit_log import AuditLog
+
+        audit_log = AuditLog(
+            user_id=created_by_user_id,
+            action="auction_item_created",
+            ip_address=ip_address or "unknown",
+            user_agent=None,
+            event_metadata={
+                "item_id": str(item_id),
+                "event_id": str(event_id),
+                "bid_number": bid_number,
+                "title": title,
+            },
+        )
+        db.add(audit_log)
+        await db.commit()
+
+        logger.info(
+            "Auction item created",
+            extra={
+                "event_type": AuditEventType.AUCTION_ITEM_CREATED.value,
+                "item_id": str(item_id),
+                "event_id": str(event_id),
+                "bid_number": bid_number,
+                "title": title,
+                "created_by_user_id": str(created_by_user_id),
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+    @staticmethod
+    async def log_auction_item_updated(
+        db: AsyncSession,
+        item_id: uuid.UUID,
+        event_id: uuid.UUID,
+        bid_number: int,
+        title: str,
+        updated_fields: dict[str, Any],
+        updated_by_user_id: uuid.UUID,
+        ip_address: str | None = None,
+    ) -> None:
+        """Log auction item update event."""
+        from app.models.audit_log import AuditLog
+
+        audit_log = AuditLog(
+            user_id=updated_by_user_id,
+            action="auction_item_updated",
+            ip_address=ip_address or "unknown",
+            user_agent=None,
+            event_metadata={
+                "item_id": str(item_id),
+                "event_id": str(event_id),
+                "bid_number": bid_number,
+                "title": title,
+                "updated_fields": updated_fields,
+            },
+        )
+        db.add(audit_log)
+        await db.commit()
+
+        logger.info(
+            "Auction item updated",
+            extra={
+                "event_type": AuditEventType.AUCTION_ITEM_UPDATED.value,
+                "item_id": str(item_id),
+                "event_id": str(event_id),
+                "bid_number": bid_number,
+                "title": title,
+                "updated_fields": list(updated_fields.keys()),
+                "updated_by_user_id": str(updated_by_user_id),
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+    @staticmethod
+    async def log_auction_item_deleted(
+        db: AsyncSession,
+        item_id: uuid.UUID,
+        event_id: uuid.UUID,
+        bid_number: int,
+        title: str,
+        deleted_by_user_id: uuid.UUID,
+        is_soft_delete: bool,
+        ip_address: str | None = None,
+    ) -> None:
+        """Log auction item deletion event."""
+        from app.models.audit_log import AuditLog
+
+        audit_log = AuditLog(
+            user_id=deleted_by_user_id,
+            action="auction_item_deleted",
+            ip_address=ip_address or "unknown",
+            user_agent=None,
+            event_metadata={
+                "item_id": str(item_id),
+                "event_id": str(event_id),
+                "bid_number": bid_number,
+                "title": title,
+                "is_soft_delete": is_soft_delete,
+            },
+        )
+        db.add(audit_log)
+        await db.commit()
+
+        logger.info(
+            "Auction item deleted",
+            extra={
+                "event_type": AuditEventType.AUCTION_ITEM_DELETED.value,
+                "item_id": str(item_id),
+                "event_id": str(event_id),
+                "bid_number": bid_number,
+                "title": title,
+                "is_soft_delete": is_soft_delete,
+                "deleted_by_user_id": str(deleted_by_user_id),
                 "timestamp": datetime.utcnow().isoformat(),
             },
         )

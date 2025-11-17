@@ -1,0 +1,856 @@
+openapi: 3.0.3
+
+info:
+  title: Augeo Platform - Auction Items API
+  description: |
+    API endpoints for managing auction items (live and silent auctions) in the Augeo fundraising platform.
+
+    **Features**:
+    - CRUD operations for auction items
+    - Media upload (images/videos) with Azure Blob Storage
+    - Sponsor attribution
+    - Buy-now functionality
+    - Auto-assigned bid numbers (100-999)
+    - Status workflow (draft → published → sold/withdrawn)
+
+  version: 1.0.0
+  contact:
+    name: Augeo Platform Team
+    email: dev@augeo.app
+  license:
+    name: Proprietary
+    url: https://augeo.app/terms
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development
+  - url: https://api-dev.augeo.app/api/v1
+    description: Development environment
+  - url: https://api-staging.augeo.app/api/v1
+    description: Staging environment
+  - url: https://api.augeo.app/api/v1
+    description: Production
+
+tags:
+  - name: Auction Items
+    description: Auction item management (CRUD operations)
+  - name: Auction Item Media
+    description: Media upload and management for auction items
+
+security:
+  - BearerAuth: []
+
+paths:
+  /events/{event_id}/auction-items:
+    get:
+      tags: [Auction Items]
+      summary: List auction items for an event
+      description: |
+        Retrieve paginated list of auction items for a specific event.
+
+        **Permissions**:
+        - Public: Returns only published items
+        - Authenticated (NPO Admin/Staff): Returns all items including drafts
+
+        **Filters**: auction_type, status, search (title/bid_number)
+      operationId: listAuctionItems
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageLimit'
+        - name: auction_type
+          in: query
+          description: Filter by auction type
+          required: false
+          schema:
+            $ref: '#/components/schemas/AuctionType'
+        - name: status
+          in: query
+          description: Filter by status
+          required: false
+          schema:
+            $ref: '#/components/schemas/ItemStatus'
+        - name: search
+          in: query
+          description: Search by title or bid number
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+      responses:
+        '200':
+          description: Successful response with paginated items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuctionItemListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Auction Items]
+      summary: Create a new auction item
+      description: |
+        Create a new auction item in draft status.
+
+        **Permissions**: NPO Admin, NPO Staff
+
+        **Automatic Behavior**:
+        - Bid number auto-assigned (100-999 sequential per event)
+        - Status defaults to 'draft'
+        - created_by set to current user
+      operationId: createAuctionItem
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuctionItemCreate'
+      responses:
+        '201':
+          description: Auction item created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuctionItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Conflict - bid number sequence exhausted (reached 999)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /events/{event_id}/auction-items/{item_id}:
+    get:
+      tags: [Auction Items]
+      summary: Get auction item details
+      description: |
+        Retrieve full details for a specific auction item.
+
+        **Permissions**:
+        - Public: Only published items
+        - Authenticated (NPO Admin/Staff): All items for their event
+      operationId: getAuctionItem
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Auction item details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuctionItemDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Auction Items]
+      summary: Update auction item
+      description: |
+        Partially update an auction item.
+
+        **Permissions**: NPO Admin, NPO Staff
+
+        **Notes**:
+        - bid_number cannot be changed after creation
+        - Editing published items shows warning (UI responsibility)
+      operationId: updateAuctionItem
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuctionItemUpdate'
+      responses:
+        '200':
+          description: Auction item updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuctionItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Auction Items]
+      summary: Delete auction item
+      description: |
+        Delete an auction item.
+
+        **Permissions**: NPO Admin, NPO Staff
+
+        **Behavior**:
+        - Hard delete if status = draft and no bids
+        - Soft delete (status → withdrawn) if bids exist or status = published/sold
+      operationId: deleteAuctionItem
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '204':
+          description: Auction item deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{event_id}/auction-items/{item_id}/publish:
+    post:
+      tags: [Auction Items]
+      summary: Publish auction item
+      description: |
+        Transition item from draft to published status.
+
+        **Permissions**: NPO Admin, NPO Staff
+
+        **Validations**:
+        - title, description, starting_bid must be set
+        - At least 1 image recommended (warning only)
+      operationId: publishAuctionItem
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Item published successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuctionItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{event_id}/auction-items/{item_id}/withdraw:
+    post:
+      tags: [Auction Items]
+      summary: Withdraw auction item
+      description: |
+        Transition item to withdrawn status (soft delete).
+
+        **Permissions**: NPO Admin, NPO Staff
+
+        **Behavior**:
+        - Item hidden from public view
+        - Audit trail preserved
+        - Irreversible (terminal state)
+      operationId: withdrawAuctionItem
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Optional reason for withdrawal
+                  maxLength: 500
+      responses:
+        '200':
+          description: Item withdrawn successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuctionItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{event_id}/auction-items/{item_id}/media:
+    post:
+      tags: [Auction Item Media]
+      summary: Upload media file
+      description: |
+        Upload an image or video to an auction item.
+
+        **Permissions**: NPO Admin, NPO Staff
+
+        **Limits**:
+        - Images: Max 10MB, formats: JPEG, PNG, WebP
+        - Videos: Max 100MB, formats: MP4, WebM
+        - Max 20 images + 5 videos per item
+      operationId: uploadAuctionItemMedia
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, media_type]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image or video file
+                media_type:
+                  $ref: '#/components/schemas/MediaType'
+                video_url:
+                  type: string
+                  format: uri
+                  description: Alternative to file upload for videos (YouTube/Vimeo)
+                  maxLength: 500
+      responses:
+        '201':
+          description: Media uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuctionItemMedia'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          description: Payload too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /events/{event_id}/auction-items/{item_id}/media/order:
+    patch:
+      tags: [Auction Item Media]
+      summary: Reorder media files
+      description: |
+        Update display order of media files.
+
+        **Permissions**: NPO Admin, NPO Staff
+
+        **Request**: Array of media IDs in desired order
+      operationId: reorderAuctionItemMedia
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [media_ids]
+              properties:
+                media_ids:
+                  type: array
+                  description: Array of media IDs in new order
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+                  maxItems: 25
+      responses:
+        '200':
+          description: Media reordered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Media reordered successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{event_id}/auction-items/{item_id}/media/{media_id}:
+    delete:
+      tags: [Auction Item Media]
+      summary: Delete media file
+      description: |
+        Delete a media file from an auction item.
+
+        **Permissions**: NPO Admin, NPO Staff
+
+        **Behavior**: Deletes blob from Azure Storage and database record
+      operationId: deleteAuctionItemMedia
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+        - $ref: '#/components/parameters/MediaId'
+      responses:
+        '204':
+          description: Media deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token from /api/v1/auth/login
+
+  parameters:
+    EventId:
+      name: event_id
+      in: path
+      required: true
+      description: Event UUID
+      schema:
+        type: string
+        format: uuid
+
+    ItemId:
+      name: item_id
+      in: path
+      required: true
+      description: Auction item UUID
+      schema:
+        type: string
+        format: uuid
+
+    MediaId:
+      name: media_id
+      in: path
+      required: true
+      description: Media UUID
+      schema:
+        type: string
+        format: uuid
+
+    PageNumber:
+      name: page
+      in: query
+      required: false
+      description: Page number (1-indexed)
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+
+    PageLimit:
+      name: limit
+      in: query
+      required: false
+      description: Items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+
+  schemas:
+    AuctionType:
+      type: string
+      enum: [live, silent]
+      description: Type of auction
+
+    ItemStatus:
+      type: string
+      enum: [draft, published, sold, withdrawn]
+      description: Item publication status
+
+    MediaType:
+      type: string
+      enum: [image, video]
+      description: Media file type
+
+    AuctionItemBase:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Item name/title
+          example: "Wine Basket from Napa Valley"
+
+        description:
+          type: string
+          minLength: 1
+          maxLength: 10000
+          description: Rich text description (Markdown supported)
+          example: "Premium wine collection including 6 bottles from award-winning vineyards..."
+
+        auction_type:
+          $ref: '#/components/schemas/AuctionType'
+
+        starting_bid:
+          type: number
+          format: decimal
+          minimum: 0
+          multipleOf: 0.01
+          description: Minimum opening bid (USD)
+          example: 100.00
+
+        donor_value:
+          type: number
+          format: decimal
+          minimum: 0
+          multipleOf: 0.01
+          nullable: true
+          description: Fair market value (USD)
+          example: 250.00
+
+        cost:
+          type: number
+          format: decimal
+          minimum: 0
+          multipleOf: 0.01
+          nullable: true
+          description: NPO's acquisition cost (USD)
+          example: 180.00
+
+        buy_now_price:
+          type: number
+          format: decimal
+          minimum: 0
+          multipleOf: 0.01
+          nullable: true
+          description: Buy-it-now price (must be >= starting_bid)
+          example: 300.00
+
+        buy_now_enabled:
+          type: boolean
+          default: false
+          description: Enable buy-it-now feature
+
+        quantity_available:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Number of units (sold as single lot)
+
+        donated_by:
+          type: string
+          maxLength: 200
+          nullable: true
+          description: Donor name (free text)
+          example: "Smith Family Vineyard"
+
+        sponsor_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Sponsoring organization (must be in same event)
+
+        item_webpage:
+          type: string
+          format: uri
+          maxLength: 2048
+          nullable: true
+          description: External webpage with more details
+          example: "https://smithfamilyvineyard.com/wine-collections"
+
+        display_priority:
+          type: integer
+          nullable: true
+          description: Sort order for featured items
+
+    AuctionItemCreate:
+      allOf:
+        - $ref: '#/components/schemas/AuctionItemBase'
+        - type: object
+          required:
+            - title
+            - description
+            - auction_type
+            - starting_bid
+
+    AuctionItemUpdate:
+      allOf:
+        - $ref: '#/components/schemas/AuctionItemBase'
+        - type: object
+          description: All fields optional for partial update
+
+    AuctionItem:
+      allOf:
+        - $ref: '#/components/schemas/AuctionItemBase'
+        - type: object
+          required:
+            - id
+            - event_id
+            - bid_number
+            - title
+            - description
+            - auction_type
+            - starting_bid
+            - status
+            - created_by
+            - created_at
+            - updated_at
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: Unique identifier
+
+            event_id:
+              type: string
+              format: uuid
+              description: Parent event UUID
+
+            bid_number:
+              type: integer
+              minimum: 100
+              maximum: 999
+              description: Auto-assigned 3-digit bid number
+              example: 127
+
+            status:
+              $ref: '#/components/schemas/ItemStatus'
+
+            created_by:
+              type: string
+              format: uuid
+              description: User who created the item
+
+            created_at:
+              type: string
+              format: date-time
+              description: Creation timestamp
+
+            updated_at:
+              type: string
+              format: date-time
+              description: Last update timestamp
+
+    AuctionItemDetail:
+      allOf:
+        - $ref: '#/components/schemas/AuctionItem'
+        - type: object
+          properties:
+            media:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuctionItemMedia'
+              description: Media files (images/videos) in display order
+
+            sponsor:
+              $ref: '#/components/schemas/SponsorSummary'
+              nullable: true
+              description: Sponsor details (if sponsor_id set)
+
+    AuctionItemListResponse:
+      type: object
+      required:
+        - items
+        - pagination
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuctionItem'
+
+        pagination:
+          type: object
+          required: [page, limit, total, pages]
+          properties:
+            page:
+              type: integer
+              minimum: 1
+              description: Current page number
+
+            limit:
+              type: integer
+              minimum: 1
+              maximum: 100
+              description: Items per page
+
+            total:
+              type: integer
+              minimum: 0
+              description: Total number of items
+
+            pages:
+              type: integer
+              minimum: 0
+              description: Total number of pages
+
+    AuctionItemMedia:
+      type: object
+      required:
+        - id
+        - auction_item_id
+        - media_type
+        - file_name
+        - file_size
+        - mime_type
+        - display_order
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier
+
+        auction_item_id:
+          type: string
+          format: uuid
+          description: Parent auction item UUID
+
+        media_type:
+          $ref: '#/components/schemas/MediaType'
+
+        file_url:
+          type: string
+          format: uri
+          description: Signed URL for file access (15-min expiry)
+          example: "https://storage.blob.core.windows.net/event-media/items/123/image.jpg?sig=..."
+
+        file_name:
+          type: string
+          maxLength: 255
+          description: Original filename
+          example: "wine_basket.jpg"
+
+        file_size:
+          type: integer
+          minimum: 1
+          description: File size in bytes
+          example: 2457600
+
+        mime_type:
+          type: string
+          maxLength: 100
+          description: MIME type
+          example: "image/jpeg"
+
+        display_order:
+          type: integer
+          minimum: 0
+          description: Order in gallery (0 = first)
+
+        thumbnail_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Thumbnail URL (images only, 200x200)
+
+        video_url:
+          type: string
+          format: uri
+          nullable: true
+          description: YouTube/Vimeo embed URL (if external video)
+
+        created_at:
+          type: string
+          format: date-time
+          description: Upload timestamp
+
+    SponsorSummary:
+      type: object
+      required:
+        - id
+        - name
+        - logo_url
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 200
+        logo_url:
+          type: string
+          format: uri
+        sponsor_level:
+          type: string
+          maxLength: 100
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Error message
+          example: "Auction item not found"
+
+  responses:
+    BadRequest:
+      description: Bad request - validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Validation error: starting_bid must be >= 0"
+
+    Unauthorized:
+      description: Unauthorized - missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Not authenticated"
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Insufficient permissions"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Auction item not found"

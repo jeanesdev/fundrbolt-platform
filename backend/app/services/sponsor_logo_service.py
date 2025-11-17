@@ -192,6 +192,59 @@ class SponsorLogoService:
         return upload_url, expiry.isoformat()
 
     @staticmethod
+    def generate_blob_sas_url(blob_name: str, expiry_hours: float = 24.0) -> str:
+        """Generate a SAS URL with read permissions for a sponsor logo blob.
+
+        Args:
+            blob_name: Name of the blob in Azure Storage
+            expiry_hours: Hours until SAS URL expires (default 24 hours)
+
+        Returns:
+            Full blob URL with SAS token for read access
+
+        Raises:
+            HTTPException: If Azure Blob Storage is not configured
+        """
+        if not settings.azure_storage_connection_string:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Azure Storage not configured",
+            )
+
+        if not settings.azure_storage_account_name:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Azure Storage account name not configured",
+            )
+
+        # Extract account key from connection string
+        conn_str = settings.azure_storage_connection_string
+        try:
+            account_key = conn_str.split("AccountKey=")[1].split(";")[0]
+        except (IndexError, AttributeError) as e:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Invalid Azure storage connection string format",
+            ) from e
+
+        # Generate SAS token with read permission
+        expiry = datetime.now(pytz.UTC) + timedelta(hours=expiry_hours)
+        sas_token = generate_blob_sas(
+            account_name=settings.azure_storage_account_name,
+            container_name=settings.azure_storage_container_name,
+            blob_name=blob_name,
+            account_key=account_key,
+            permission=BlobSasPermissions(read=True),
+            expiry=expiry,
+        )
+
+        # Generate full URL with SAS token
+        base_url = f"https://{settings.azure_storage_account_name}.blob.core.windows.net"
+        sas_url = f"{base_url}/{settings.azure_storage_container_name}/{blob_name}?{sas_token}"
+
+        return sas_url
+
+    @staticmethod
     def generate_thumbnail(logo_blob_data: bytes) -> bytes:
         """
         Generate a thumbnail from logo image data.

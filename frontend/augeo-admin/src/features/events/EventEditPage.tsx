@@ -6,6 +6,7 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
 import { useEventStore } from '@/stores/event-store'
 import { useSponsorStore } from '@/stores/sponsorStore'
 import type {
@@ -17,6 +18,7 @@ import { useNavigate, useParams } from '@tanstack/react-router'
 import { ArrowLeft, Clock } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { AuctionItemList } from './components/AuctionItemList'
 import { EventForm } from './components/EventForm'
 import { EventLinkForm } from './components/EventLinkForm'
 import { FoodOptionSelector } from './components/FoodOptionSelector'
@@ -44,6 +46,7 @@ export function EventEditPage() {
     uploadingFiles,
   } = useEventStore()
   const { sponsors, fetchSponsors } = useSponsorStore()
+  const { items: auctionItems, fetchAuctionItems } = useAuctionItemStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const loadEvent = useCallback(() => {
@@ -67,6 +70,15 @@ export function EventEditPage() {
       })
     }
   }, [eventId, fetchSponsors])
+
+  // Load auction items for tab count
+  useEffect(() => {
+    if (eventId) {
+      fetchAuctionItems(eventId).catch(() => {
+        // Silently fail - auction items tab will show error if user navigates there
+      })
+    }
+  }, [eventId, fetchAuctionItems])
 
   // Load NPO branding when event is loaded
   useEffect(() => {
@@ -216,7 +228,7 @@ export function EventEditPage() {
       </div>
 
       <Tabs defaultValue="details" className="space-y-4 md:space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 h-auto">
           <TabsTrigger value="details" className="text-xs sm:text-sm">
             <span className="hidden sm:inline">Event </span>Details
           </TabsTrigger>
@@ -231,6 +243,9 @@ export function EventEditPage() {
           </TabsTrigger>
           <TabsTrigger value="sponsors" className="text-xs sm:text-sm">
             Sponsors<span className="hidden sm:inline"> ({sponsors.length})</span>
+          </TabsTrigger>
+          <TabsTrigger value="auction-items" className="text-xs sm:text-sm">
+            <span className="hidden md:inline">Auction </span>Items<span className="hidden sm:inline"> ({auctionItems.length})</span>
           </TabsTrigger>
         </TabsList>
 
@@ -351,6 +366,40 @@ export function EventEditPage() {
             </CardHeader>
             <CardContent>
               <SponsorsTab eventId={eventId} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Auction Items Tab */}
+        <TabsContent value="auction-items">
+          <Card>
+            <CardHeader>
+              <CardTitle>Auction Items</CardTitle>
+              <CardDescription>
+                Manage live and silent auction items for your fundraising event
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AuctionItemList
+                items={auctionItems}
+                isLoading={false}
+                onAdd={() => navigate({ to: '/events/$eventId/auction-items/create', params: { eventId } })}
+                onEdit={(item) => navigate({ to: '/events/$eventId/auction-items/$itemId/edit', params: { eventId, itemId: item.id } })}
+                onView={(item) => navigate({ to: '/events/$eventId/auction-items/$itemId', params: { eventId, itemId: item.id } })}
+                onDelete={async (item) => {
+                  if (!confirm(`Are you sure you want to delete "${item.title}"?`)) return;
+                  const { deleteAuctionItem } = useAuctionItemStore.getState();
+                  try {
+                    await deleteAuctionItem(eventId, item.id);
+                    toast.success('Auction item deleted successfully');
+                    // Refresh the list
+                    fetchAuctionItems(eventId);
+                  } catch (err) {
+                    const message = err instanceof Error ? err.message : 'Failed to delete auction item';
+                    toast.error(message);
+                  }
+                }}
+              />
             </CardContent>
           </Card>
         </TabsContent>
