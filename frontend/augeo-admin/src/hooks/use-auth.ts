@@ -19,8 +19,17 @@ export type UserRole =
   | 'staff'
   | 'donor'
 
+interface AuthUser {
+  id: string
+  email: string
+  first_name: string
+  last_name: string
+  role: string
+  npo_id: string | null
+}
+
 export interface UseAuthReturn {
-  user: ReturnType<typeof useAuthStore>['user']
+  user: AuthUser | null
   isAuthenticated: boolean
   isLoading: boolean
   role: UserRole | null

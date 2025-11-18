@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { CommandMenu } from '@/components/command-menu'
+import { SearchBar } from '@/components/search/SearchBar'
 
 type SearchContextType = {
   open: boolean
@@ -29,7 +29,7 @@ export function SearchProvider({ children }: SearchProviderProps) {
   return (
     <SearchContext value={{ open, setOpen }}>
       {children}
-      <CommandMenu />
+      <SearchBar open={open} onOpenChange={setOpen} />
     </SearchContext>
   )
 }

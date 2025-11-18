@@ -20,6 +20,7 @@ from app.api.v1 import (
     members,
     npos,
     public_testimonials,
+    search,
     sponsors,
     users,
 )
@@ -45,6 +46,7 @@ api_router.include_router(auction_item_media.router, tags=["auction-items", "med
 api_router.include_router(legal_documents.router, prefix="/legal", tags=["legal"])
 api_router.include_router(consent.router, prefix="/consent", tags=["consent"])
 api_router.include_router(cookies.router, prefix="/cookies", tags=["cookies"])
+api_router.include_router(search.router, tags=["search"])
 api_router.include_router(public_contact.router, prefix="/public", tags=["public-contact"])
 api_router.include_router(public_testimonials.router, tags=["public-testimonials"])
 api_router.include_router(admin_testimonials.router, tags=["admin-testimonials"])

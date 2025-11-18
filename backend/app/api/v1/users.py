@@ -9,6 +9,7 @@ from app.core.database import get_db
 from app.middleware.auth import get_current_user, require_role
 from app.models.user import User
 from app.schemas.users import (
+    ProfileUpdateRequest,
     RoleUpdateRequest,
     UserActivateRequest,
     UserCreateRequest,
@@ -97,6 +98,100 @@ async def get_current_user_profile(
         updated_at=current_user.updated_at,
         last_login_at=current_user.last_login_at,
     )
+
+
+@router.patch("/me/profile", response_model=UserPublicWithRole)
+async def update_current_user_profile(
+    profile_data: ProfileUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> UserPublicWithRole:
+    """Update current user's profile.
+
+    Allows authenticated users to update their own profile information.
+    Email changes are not allowed via this endpoint (requires separate verification flow).
+
+    Access Control (T052):
+    - All authenticated users can update their own profile
+
+    Args:
+        profile_data: Updated profile data
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        UserPublicWithRole: Updated user profile
+
+    Raises:
+        400: Invalid data
+        401: Not authenticated
+        404: User not found
+    """
+    user_service = UserService()
+
+    try:
+        # Create UserUpdateRequest from ProfileUpdateRequest
+        # (T051: Backend Pydantic validation already handled by ProfileUpdateRequest)
+        update_data = UserUpdateRequest(
+            first_name=profile_data.first_name,
+            last_name=profile_data.last_name,
+            phone=profile_data.phone,
+            organization_name=profile_data.organization_name,
+            address_line1=profile_data.address_line1,
+            address_line2=profile_data.address_line2,
+            city=profile_data.city,
+            state=profile_data.state,
+            postal_code=profile_data.postal_code,
+            country=profile_data.country,
+        )
+
+        # Update user - user can only update their own profile (T052)
+        updated_user = await user_service.update_user(
+            db=db,
+            current_user=current_user,
+            user_id=current_user.id,  # Enforce updating only own profile
+            user_data=update_data,
+        )
+
+        # Log profile update
+        fields_updated = [
+            field
+            for field in ["first_name", "last_name", "phone", "organization_name",
+                         "address_line1", "address_line2", "city", "state",
+                         "postal_code", "country"]
+            if getattr(profile_data, field, None) is not None
+        ]
+
+        await AuditService.log_user_updated(
+            db=db,
+            user_id=updated_user.id,
+            email=updated_user.email,
+            fields_updated=fields_updated,
+            admin_user_id=current_user.id,
+            admin_email=current_user.email,
+            ip_address=None,
+        )
+
+        # Return updated user with role info
+        role_name = getattr(updated_user, "role_name", "unknown")
+        return UserPublicWithRole(
+            id=updated_user.id,
+            email=updated_user.email,
+            first_name=updated_user.first_name,
+            last_name=updated_user.last_name,
+            phone=updated_user.phone,
+            email_verified=updated_user.email_verified,
+            is_active=updated_user.is_active,
+            role=role_name,
+            npo_id=updated_user.npo_id,
+            created_at=updated_user.created_at,
+            updated_at=updated_user.updated_at,
+            last_login_at=updated_user.last_login_at,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
 
 
 @router.get("", response_model=UserListResponse)

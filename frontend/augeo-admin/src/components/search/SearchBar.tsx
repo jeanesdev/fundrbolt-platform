@@ -1,0 +1,100 @@
+/**
+ * SearchBar Component
+ * Search input with debouncing and TanStack Query integration
+ *
+ * T074: Debounced input (300ms)
+ * T075: TanStack Query hook with min 2 character validation
+ * T081: Loading spinner
+ */
+
+import { useState, useEffect, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { SearchIcon, Loader2 } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { searchService } from '@/services/search'
+import { SearchResults } from './SearchResults'
+import { useNpoContext } from '@/hooks/use-npo-context'
+
+interface SearchBarProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+export function SearchBar({ open, onOpenChange }: SearchBarProps) {
+  const [query, setQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+  const { selectedNpoId } = useNpoContext()
+
+  // T074: Debounce search input (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [query])
+
+  // T075: Min 2 character validation
+  const shouldSearch = debouncedQuery.length >= 2
+
+  // TanStack Query for search
+  const { data: results, isLoading } = useQuery({
+    queryKey: ['search', debouncedQuery, selectedNpoId],
+    queryFn: () =>
+      searchService.search({
+        query: debouncedQuery,
+        npo_id: selectedNpoId,
+        limit: 10,
+      }),
+    enabled: shouldSearch && open,
+    staleTime: 30000, // 30 seconds
+  })
+
+  // Reset query when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setQuery('')
+      setDebouncedQuery('')
+    }
+  }, [open])
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className='max-w-2xl'>
+        <DialogHeader>
+          <DialogTitle className='sr-only'>Search</DialogTitle>
+        </DialogHeader>
+        
+        <div className='relative'>
+          <SearchIcon className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+          {/* T081: Loading spinner */}
+          {isLoading && (
+            <Loader2 className='absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground' />
+          )}
+          <Input
+            type='text'
+            placeholder='Search users, organizations, events...'
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className='pl-10 pr-10'
+            autoFocus
+          />
+        </div>
+
+        {query.length > 0 && query.length < 2 && (
+          <p className='text-muted-foreground text-sm px-2'>
+            Type at least 2 characters to search
+          </p>
+        )}
+
+        {shouldSearch && <SearchResults results={results || null} isLoading={isLoading} />}
+      </DialogContent>
+    </Dialog>
+  )
+}

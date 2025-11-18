@@ -183,6 +183,10 @@ export const useAuthStore = create<AuthState>()(
         } finally {
           // Always clear local state
           reset()
+          
+          // T070: Clear NPO selection from localStorage on logout
+          const { useNPOContextStore } = await import('./npo-context-store')
+          useNPOContextStore.getState().reset()
         }
       },
 
