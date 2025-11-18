@@ -6,36 +6,39 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import { useLayout } from '@/context/layout-provider'
-import { useAuthStore } from '@/stores/auth-store'
-// import { AppTitle } from './app-title'
+import { Building2, Calendar, LayoutDashboard, Users } from 'lucide-react'
+import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
 import { sidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
 import { TeamSwitcher } from './team-switcher'
+import type { NavGroup as NavGroupType } from './types'
+
+// Map icon string names to lucide-react icon components
+const iconMap = {
+  LayoutDashboard,
+  Building2,
+  Calendar,
+  Users,
+}
 
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
-  const user = useAuthStore((state) => state.user)
+  const { navItems } = useRoleBasedNav()
 
-  // Filter navigation items based on user role
-  const filteredNavGroups = sidebarData.navGroups.map((group) => ({
-    ...group,
-    items: group.items.filter((item) => {
-      // Hide Users link for non-super_admin users
-      if (item.title === 'Users' && user?.role !== 'super_admin') {
-        return false
-      }
-      // Hide Organizations link for non-super_admin users
-      if (item.title === 'Organizations' && user?.role !== 'super_admin') {
-        return false
-      }
-      // Hide NPO Applications link for non-super_admin users
-      if (item.title === 'NPO Applications' && user?.role !== 'super_admin') {
-        return false
-      }
-      return true
-    }),
-  }))
+  // Convert useRoleBasedNav items to sidebar structure
+  const roleBasedNavGroup: NavGroupType = {
+    title: 'General',
+    items: navItems.map((item) => ({
+      title: item.title,
+      url: item.href,
+      badge: item.badge,
+      icon: item.icon ? iconMap[item.icon as keyof typeof iconMap] : undefined,
+    })),
+  }
+
+  // Only show the role-based navigation group
+  const filteredNavGroups = [roleBasedNavGroup]
 
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
