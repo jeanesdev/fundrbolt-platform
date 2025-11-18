@@ -1,9 +1,9 @@
 /**
  * SuperAdmin Dashboard
- * 
+ *
  * Displayed to users with super_admin role.
  * Provides platform-wide overview and management capabilities.
- * 
+ *
  * Features (placeholder):
  * - Platform-wide statistics
  * - All NPOs overview

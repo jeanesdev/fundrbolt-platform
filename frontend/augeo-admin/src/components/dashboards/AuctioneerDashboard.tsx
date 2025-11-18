@@ -1,9 +1,9 @@
 /**
  * Auctioneer (Event Coordinator) Dashboard
- * 
+ *
  * Displayed to users with event_coordinator role.
  * Provides event management and auction oversight capabilities.
- * 
+ *
  * Features (placeholder):
  * - Assigned events
  * - Auction items overview

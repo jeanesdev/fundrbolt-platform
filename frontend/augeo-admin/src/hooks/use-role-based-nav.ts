@@ -1,9 +1,9 @@
 /**
  * useRoleBasedNav Hook
- * 
+ *
  * Provides navigation items filtered by user role.
  * Ensures users only see menu items they have permission to access.
- * 
+ *
  * Navigation items by role:
  * - super_admin: All items
  * - npo_admin: Dashboard, NPOs (own), Events (own), Users (own NPO)

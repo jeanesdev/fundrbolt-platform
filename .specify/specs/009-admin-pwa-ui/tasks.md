@@ -11,11 +11,13 @@
 **Organization**: Tasks are grouped by user story (6 total: US1-US6) to enable independent implementation and testing.
 
 ## Format: `[ID] [P?] [Story] Description`
+
 - **[P]**: Can run in parallel (different files, no dependencies)
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
 - Include exact file paths in descriptions
 
 ## Path Conventions
+
 - **Frontend**: `frontend/augeo-admin/src/`
 - **Backend**: `backend/app/`
 - This is a web application (frontend + backend coordination)
@@ -45,14 +47,14 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T009 Create Zustand store for NPO context state in frontend/augeo-admin/src/stores/npo-context.ts
-- [ ] T010 [P] Create useAuth hook for accessing current user role in frontend/augeo-admin/src/hooks/useAuth.ts
-- [ ] T011 [P] Create useNpoContext hook wrapping store with query invalidation in frontend/augeo-admin/src/hooks/useNpoContext.ts
-- [ ] T012 [P] Create Zod validation schema for profile updates in frontend/augeo-admin/src/schemas/profile.ts
-- [ ] T013 Update authenticated route layout to support beforeLoad guards in frontend/augeo-admin/src/routes/_authenticated.tsx
-- [ ] T014 [P] Create base PermissionService for role-based filtering logic in backend/app/services/permission.py
-- [ ] T015 [P] Update User schema with ProfileUpdate validator in backend/app/schemas/user.py
-- [ ] T016 [P] Create SearchRequest and SearchResponse schemas in backend/app/schemas/search.py
+- [x] T009 Create Zustand store for NPO context state in frontend/augeo-admin/src/stores/npo-context.ts
+- [x] T010 [P] Create useAuth hook for accessing current user role in frontend/augeo-admin/src/hooks/useAuth.ts
+- [x] T011 [P] Create useNpoContext hook wrapping store with query invalidation in frontend/augeo-admin/src/hooks/useNpoContext.ts
+- [x] T012 [P] Create Zod validation schema for profile updates in frontend/augeo-admin/src/schemas/profile.ts
+- [x] T013 Update authenticated route layout to support beforeLoad guards in frontend/augeo-admin/src/routes/_authenticated.tsx
+- [x] T014 [P] Create base PermissionService for role-based filtering logic in backend/app/services/permission.py
+- [x] T015 [P] Update User schema with ProfileUpdate validator in backend/app/schemas/user.py
+- [x] T016 [P] Create SearchRequest and SearchResponse schemas in backend/app/schemas/search.py
 
 **Checkpoint**: Foundation ready - all hooks, stores, and schemas in place. User story implementation can now begin.
 
@@ -66,14 +68,14 @@
 
 ### Implementation for User Story 1
 
-- [ ] T017 [P] [US1] Create SuperAdminDashboard component in frontend/augeo-admin/src/components/dashboards/SuperAdminDashboard.tsx
-- [ ] T018 [P] [US1] Create NpoAdminDashboard component in frontend/augeo-admin/src/components/dashboards/NpoAdminDashboard.tsx
-- [ ] T019 [P] [US1] Create AuctioneerDashboard component in frontend/augeo-admin/src/components/dashboards/AuctioneerDashboard.tsx
-- [ ] T020 [P] [US1] Create EventDashboard component in frontend/augeo-admin/src/components/dashboards/EventDashboard.tsx
-- [ ] T021 [US1] Update DashboardPage to route to role-specific dashboard with lazy loading in frontend/augeo-admin/src/pages/DashboardPage.tsx
-- [ ] T022 [US1] Add beforeLoad guard to authenticated route to block Donor role from admin PWA in frontend/augeo-admin/src/routes/_authenticated.tsx
-- [ ] T023 [US1] Create UnauthorizedPage component for access denial in frontend/augeo-admin/src/pages/UnauthorizedPage.tsx
-- [ ] T024 [P] [US1] Create useRoleBasedNav hook to filter navigation items by role in frontend/augeo-admin/src/hooks/useRoleBasedNav.ts
+- [x] T017 [P] [US1] Create SuperAdminDashboard component in frontend/augeo-admin/src/components/dashboards/SuperAdminDashboard.tsx
+- [x] T018 [P] [US1] Create NpoAdminDashboard component in frontend/augeo-admin/src/components/dashboards/NpoAdminDashboard.tsx
+- [x] T019 [P] [US1] Create AuctioneerDashboard component in frontend/augeo-admin/src/components/dashboards/AuctioneerDashboard.tsx
+- [x] T020 [P] [US1] Create EventDashboard component in frontend/augeo-admin/src/components/dashboards/EventDashboard.tsx
+- [x] T021 [US1] Update DashboardPage to route to role-specific dashboard with lazy loading in frontend/augeo-admin/src/routes/_authenticated/index.tsx
+- [x] T022 [US1] Add beforeLoad guard to authenticated route to block Donor role from admin PWA in frontend/augeo-admin/src/routes/_authenticated/route.tsx
+- [x] T023 [US1] Create UnauthorizedPage component for access denial in frontend/augeo-admin/src/pages/errors/UnauthorizedPage.tsx
+- [x] T024 [P] [US1] Create useRoleBasedNav hook to filter navigation items by role in frontend/augeo-admin/src/hooks/use-role-based-nav.ts
 - [ ] T025 [US1] Update Sidebar component to use useRoleBasedNav for dynamic navigation in frontend/augeo-admin/src/components/layout/Sidebar.tsx
 - [ ] T026 [US1] Update backend NPO list endpoint to apply role-based filtering in backend/app/api/v1/npos.py
 - [ ] T027 [US1] Update backend Event list endpoint to apply role-based filtering in backend/app/api/v1/events.py
@@ -261,33 +263,42 @@
 ### Parallel Opportunities
 
 **Setup Phase**:
+
 - T003, T004 (frontend/backend installs)
 - T005, T006 (DB/Redis verification)
 
 **Foundational Phase**:
+
 - T010, T011, T012, T013 (frontend hooks and schemas)
 - T014, T015, T016 (backend services and schemas)
 
 **User Story 1**:
+
 - T017, T018, T019, T020 (all dashboard components - different files)
 - T024 (useRoleBasedNav hook - parallel with T025 prep)
 
 **User Story 2**:
+
 - T029, T030, T031, T032, T033 (all deletions - different directories)
 
 **User Story 3**:
+
 - T040 (ProfileDropdown simplification - parallel with other US3 prep)
 
 **User Story 4**:
+
 - T045, T046 (ProfileForm component and backend endpoint - frontend/backend parallelism)
 
 **User Story 5**:
+
 - T056, T057 (NpoSelector component and placement)
 
 **User Story 6**:
+
 - T071, T072, T073 (SearchService, backend endpoint, migration - all different areas)
 
 **Polish Phase**:
+
 - T083, T084, T091 (documentation and screenshots)
 
 ---
@@ -335,6 +346,7 @@ Task: "Delete hamburger-menu component directory in frontend/augeo-admin/src/com
 ### Incremental Delivery (Add P2 Stories)
 
 After MVP (US1 + US2):
+
 1. Add User Story 3: Persistent Profile Dropdown (T040-T044)
 2. Add User Story 4: Editable Profile (T045-T055)
 3. Add User Story 5: NPO Context Selector (T056-T070)
@@ -344,6 +356,7 @@ After MVP (US1 + US2):
 ### Full Feature (Add P3 Story)
 
 After P1 + P2:
+
 1. Add User Story 6: Functional Search (T071-T082)
 2. Complete Phase 9: Polish (T083-T095)
 3. Full validation and testing
@@ -354,16 +367,19 @@ After P1 + P2:
 With 3 developers (after Foundational phase):
 
 **Week 1**:
+
 - Developer A: User Story 1 (Role-Based Dashboards)
 - Developer B: User Story 2 (Template Cleanup)
 - Developer C: User Story 3 (Profile Dropdown)
 
 **Week 2**:
+
 - Developer A: User Story 4 (Profile Editing)
 - Developer B: User Story 5 (NPO Context)
 - Developer C: User Story 6 (Search)
 
 **Week 3**:
+
 - All: Integration testing, Polish phase, bug fixes
 
 ---
@@ -371,6 +387,7 @@ With 3 developers (after Foundational phase):
 ## Task Summary
 
 **Total Tasks**: 95 tasks
+
 - **Setup**: 8 tasks
 - **Foundational**: 8 tasks (BLOCKING)
 - **User Story 1 (P1)**: 12 tasks
@@ -387,6 +404,7 @@ With 3 developers (after Foundational phase):
 **MVP Scope**: User Stories 1 & 2 (23 tasks) + Setup (8) + Foundational (8) = **39 tasks for MVP**
 
 **Estimated Timeline**:
+
 - MVP (P1 stories): 1 week
 - MVP + P2 stories: 2-2.5 weeks
 - Full feature (all stories + polish): 2.5-3 weeks

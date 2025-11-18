@@ -390,7 +390,9 @@ class PermissionService:
         await self._set_cached_permission(cache_key, result)
         return result
 
-    def get_npo_filter_for_user(self, user: Any, requested_npo_id: uuid.UUID | None = None) -> uuid.UUID | None | list[uuid.UUID]:
+    def get_npo_filter_for_user(
+        self, user: Any, requested_npo_id: uuid.UUID | None = None
+    ) -> uuid.UUID | None:
         """Get NPO filter to apply for list queries based on user role.
 
         Args:
@@ -400,12 +402,11 @@ class PermissionService:
         Returns:
             - None: No filtering (show all NPOs) - SuperAdmin with "Augeo Platform" selected
             - UUID: Filter to single NPO - All other users or SuperAdmin with specific NPO selected
-            - list[UUID]: Filter to multiple NPOs - Event Coordinator with multiple NPO assignments (future)
 
         Rules:
             - super_admin: Use requested_npo_id (None = all, UUID = specific NPO)
             - npo_admin: Always filter to user.npo_id (ignore requested_npo_id)
-            - event_coordinator: Always filter to user.npo_id (TODO: support multiple NPO assignments)
+            - event_coordinator: Always filter to user.npo_id (ignore requested_npo_id)
             - staff: Always filter to user.npo_id (ignore requested_npo_id)
         """
         if user.role_name == "super_admin":
@@ -413,8 +414,8 @@ class PermissionService:
             return requested_npo_id
         elif user.role_name in {"npo_admin", "event_coordinator", "staff"}:
             # All other roles locked to their NPO
-            return user.npo_id
+            npo_id: uuid.UUID | None = user.npo_id
+            return npo_id
         else:
             # Donor role should never reach here (blocked at route level)
             return None
-

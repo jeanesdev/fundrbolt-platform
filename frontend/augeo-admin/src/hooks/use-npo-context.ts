@@ -1,7 +1,7 @@
 /**
  * useNpoContext Hook
  * Manages NPO context state with query invalidation and role-based NPO selection
- * 
+ *
  * Business Rules:
  * - SuperAdmin: Can select any NPO or "Augeo Platform" (shows all NPOs)
  * - NPO Admin: Auto-select their assigned NPO, disable selector
@@ -10,11 +10,10 @@
  * - Changes to NPO selection invalidate TanStack Query cache
  */
 
+import { useNPOContextStore, type NPOContextOption } from '@/stores/npo-context-store'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { useAuth } from './use-auth'
-import { useNPOContextStore } from '@/stores/npo-context-store'
-import type { NPOContextOption } from '@/stores/npo-context-store'
 
 export interface UseNpoContextReturn {
   selectedNpoId: string | null
@@ -22,11 +21,11 @@ export interface UseNpoContextReturn {
   availableNpos: NPOContextOption[]
   isLoading: boolean
   error: string | null
-  
+
   // Actions
   selectNpo: (npoId: string | null, npoName: string) => void
   setAvailableNpos: (npos: NPOContextOption[]) => void
-  
+
   // Helpers
   isAugeoPlatformView: boolean
   isSingleNpoUser: boolean // True if user has only one NPO (disable selector)
@@ -35,8 +34,8 @@ export interface UseNpoContextReturn {
 
 export function useNpoContext(): UseNpoContextReturn {
   const queryClient = useQueryClient()
-  const { role, npoId: userNpoId, isSuperAdmin, isNpoAdmin, isStaff } = useAuth()
-  
+  const { npoId: userNpoId, isNpoAdmin, isStaff } = useAuth()
+
   const {
     selectedNpoId,
     selectedNpoName,
@@ -45,19 +44,18 @@ export function useNpoContext(): UseNpoContextReturn {
     error,
     setSelectedNpo,
     setAvailableNpos: storeSetAvailableNpos,
-    getSelectedNpoId,
     isAugeoPlatformView: isAugeoView,
   } = useNPOContextStore()
-  
+
   const isAugeoPlatformView = isAugeoView()
-  
+
   // Single NPO users (NPO Admin and Staff) should have only their NPO
   const isSingleNpoUser = (isNpoAdmin || isStaff) && userNpoId !== null
-  
+
   // Only SuperAdmin and Event Coordinator can change NPO selection
   // (NPO Admin and Staff are locked to their NPO)
   const canChangeNpo = !isSingleNpoUser && availableNpos.length > 1
-  
+
   // Auto-select NPO for single-NPO users on mount
   useEffect(() => {
     if (isSingleNpoUser && userNpoId && selectedNpoId !== userNpoId) {
@@ -66,26 +64,26 @@ export function useNpoContext(): UseNpoContextReturn {
       setSelectedNpo(userNpoId, npoName)
     }
   }, [isSingleNpoUser, userNpoId, selectedNpoId, availableNpos, setSelectedNpo])
-  
+
   // Invalidate queries when NPO selection changes
   const selectNpo = (npoId: string | null, npoName: string) => {
     // Update store
     setSelectedNpo(npoId, npoName)
-    
+
     // Invalidate all queries to refetch with new NPO context
     // This ensures all data is filtered by the newly selected NPO
     queryClient.invalidateQueries()
   }
-  
+
   const setAvailableNpos = (npos: NPOContextOption[]) => {
     storeSetAvailableNpos(npos)
-    
+
     // For single-NPO users, auto-select their NPO
     if (isSingleNpoUser && npos.length === 1 && npos[0].id) {
       setSelectedNpo(npos[0].id, npos[0].name)
     }
   }
-  
+
   return {
     selectedNpoId,
     selectedNpoName,

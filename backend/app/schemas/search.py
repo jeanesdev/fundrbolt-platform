@@ -10,7 +10,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 # ================================
 # Request Schemas
 # ================================
@@ -18,7 +17,7 @@ from pydantic import BaseModel, Field
 
 class SearchRequest(BaseModel):
     """Request schema for cross-resource search.
-    
+
     Searches across Users, NPOs, and Events using PostgreSQL tsvector.
     Results are filtered based on user role and NPO context.
     """
@@ -53,7 +52,7 @@ class UserSearchResult(BaseModel):
     first_name: str
     last_name: str
     role: str
-    npo_id: uuid.UUID | null = None
+    npo_id: uuid.UUID | None = None
     organization_name: str | None = None
     created_at: datetime
 
@@ -92,7 +91,7 @@ class EventSearchResult(BaseModel):
 
 class SearchResponse(BaseModel):
     """Response schema for search results.
-    
+
     Groups results by resource type for easy display.
     """
 
@@ -101,7 +100,7 @@ class SearchResponse(BaseModel):
     npos: list[NPOSearchResult] = Field(default_factory=list, description="Matching NPOs")
     events: list[EventSearchResult] = Field(default_factory=list, description="Matching events")
     total_results: int = Field(description="Total number of results across all types")
-    
+
     @property
     def has_results(self) -> bool:
         """Check if search returned any results."""

@@ -1,9 +1,9 @@
 /**
  * Event (Staff) Dashboard
- * 
+ *
  * Displayed to users with staff role.
  * Provides event check-in and donor management capabilities.
- * 
+ *
  * Features (placeholder):
  * - Assigned events
  * - Donor check-in

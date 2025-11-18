@@ -1,6 +1,6 @@
 /**
  * Unauthorized Page (403)
- * 
+ *
  * Displayed when a user tries to access a resource they don't have permission for.
  * Primary use case: Donor role attempting to access admin PWA.
  */
@@ -13,7 +13,7 @@ import { ShieldAlert } from 'lucide-react'
 export function UnauthorizedPage() {
   const router = useRouter()
   const search = useSearch({ strict: false }) as { message?: string }
-  
+
   const defaultMessage = 'You do not have permission to access this area.'
   const message = search?.message || defaultMessage
 

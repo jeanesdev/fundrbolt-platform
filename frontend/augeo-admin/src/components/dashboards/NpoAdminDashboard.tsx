@@ -1,9 +1,9 @@
 /**
  * NPO Admin Dashboard
- * 
+ *
  * Displayed to users with npo_admin role.
  * Provides NPO-specific overview and management capabilities.
- * 
+ *
  * Features (placeholder):
  * - NPO statistics
  * - Events overview

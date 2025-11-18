@@ -113,7 +113,7 @@ class UserUpdateRequest(BaseModel):
 
 class ProfileUpdateRequest(BaseModel):
     """Request schema for user profile self-update (from profile page).
-    
+
     This excludes password changes (use separate password change endpoint).
     Email changes also require separate verification flow.
     Phone numbers must be in E.164 format (+[country code][number]).
@@ -121,7 +121,7 @@ class ProfileUpdateRequest(BaseModel):
 
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
-    phone: str | None = Field(None, max_length=20, pattern=r'^\+[1-9]\d{1,14}$')
+    phone: str | None = Field(None, max_length=20, pattern=r"^\+[1-9]\d{1,14}$")
     organization_name: str | None = Field(None, max_length=255)
     address_line1: str | None = Field(None, max_length=255)
     address_line2: str | None = Field(None, max_length=255)

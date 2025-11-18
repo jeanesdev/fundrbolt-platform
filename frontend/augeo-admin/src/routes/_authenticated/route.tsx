@@ -4,7 +4,7 @@ import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
 
 /**
  * Authenticated route wrapper with role-based access control
- * 
+ *
  * Access Rules:
  * - Donor role: BLOCKED from admin PWA (redirected to 403)
  * - All other roles: Allowed (super_admin, npo_admin, event_coordinator, staff)

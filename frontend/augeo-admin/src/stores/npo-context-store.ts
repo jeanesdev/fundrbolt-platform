@@ -1,7 +1,7 @@
 /**
  * NPO Context Zustand Store
  * Manages the currently selected NPO context for filtering data across the admin PWA
- * 
+ *
  * Business Rules:
  * - SuperAdmin can select any NPO or "Augeo Platform" (null npoId)
  * - NPO Admin sees only their assigned NPO (non-selectable)
@@ -24,21 +24,21 @@ interface NPOContextState {
   // Currently selected NPO
   selectedNpoId: string | null
   selectedNpoName: string
-  
+
   // Available NPO options for current user (populated on login based on role)
   availableNpos: NPOContextOption[]
-  
+
   // Loading state
   isLoading: boolean
   error: string | null
-  
+
   // Actions
   setSelectedNpo: (npoId: string | null, npoName: string) => void
   setAvailableNpos: (npos: NPOContextOption[]) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
   reset: () => void
-  
+
   // Helper getters
   getSelectedNpoId: () => string | null
   isAugeoPlatformView: () => boolean
@@ -53,25 +53,25 @@ export const useNPOContextStore = create<NPOContextState>()(
       availableNpos: [],
       isLoading: false,
       error: null,
-      
+
       // Setters
-      setSelectedNpo: (npoId, npoName) => 
-        set({ 
+      setSelectedNpo: (npoId, npoName) =>
+        set({
           selectedNpoId: npoId,
           selectedNpoName: npoName,
-          error: null 
+          error: null
         }),
-      
-      setAvailableNpos: (npos) => 
+
+      setAvailableNpos: (npos) =>
         set({ availableNpos: npos }),
-      
-      setLoading: (loading) => 
+
+      setLoading: (loading) =>
         set({ isLoading: loading }),
-      
-      setError: (error) => 
+
+      setError: (error) =>
         set({ error }),
-      
-      reset: () => 
+
+      reset: () =>
         set({
           selectedNpoId: null,
           selectedNpoName: 'Augeo Platform',
@@ -79,12 +79,12 @@ export const useNPOContextStore = create<NPOContextState>()(
           isLoading: false,
           error: null,
         }),
-      
+
       // Getters
       getSelectedNpoId: (): string | null => {
         return get().selectedNpoId
       },
-      
+
       isAugeoPlatformView: (): boolean => {
         return get().selectedNpoId === null
       },
