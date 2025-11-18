@@ -257,4 +257,55 @@ git commit -m "message"
 - `DELETE /api/v1/cookies/consent` - Revoke cookie consent (default to reject all)
 
 <!-- MANUAL ADDITIONS START -->
+
+## Cloud Agents for Specialized Tasks
+
+For complex tasks, delegate to specialized domain expert agents:
+
+### Available Agents
+
+1. **Backend Python Specialist** (`.github/agents/backend-python.md`)
+   - FastAPI REST API development
+   - SQLAlchemy models and Alembic migrations
+   - Authentication and authorization
+   - Azure service integration
+   - Backend testing with pytest
+
+2. **Frontend TypeScript/React Specialist** (`.github/agents/frontend-typescript.md`)
+   - React 18 component development
+   - TypeScript and type safety
+   - Tailwind CSS styling
+   - Zustand state management
+   - Form validation and API integration
+
+3. **Infrastructure & DevOps Specialist** (`.github/agents/infrastructure-devops.md`)
+   - Azure Bicep infrastructure as code
+   - GitHub Actions CI/CD pipelines
+   - Azure resource management
+   - Monitoring and alerting
+   - Security and compliance
+
+4. **Database & Migration Specialist** (`.github/agents/database-migrations.md`)
+   - PostgreSQL schema design
+   - SQLAlchemy relationships
+   - Alembic migrations
+   - Query optimization and indexing
+   - Redis caching
+
+### Usage Example
+
+When you need specialized expertise, delegate to the appropriate agent:
+
+```
+@workspace /delegate Create a new API endpoint for user statistics with proper authentication (Backend Python Specialist)
+
+@workspace /delegate Build a responsive dashboard card component with loading states (Frontend TypeScript/React Specialist)
+
+@workspace /delegate Add email verification columns to users table and create migration (Database & Migration Specialist)
+
+@workspace /delegate Set up Application Insights monitoring for the new feature (Infrastructure & DevOps Specialist)
+```
+
+See [.github/agents/README.md](./.github/agents/README.md) for complete documentation and examples.
+
 <!-- MANUAL ADDITIONS END -->

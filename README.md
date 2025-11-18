@@ -431,6 +431,28 @@ make budget-status ENV=production
 - Security scanning in CI/CD
 - Quarterly DR drills
 
+## GitHub Copilot Cloud Agents
+
+The project includes specialized AI agent configurations for domain-specific development tasks:
+
+- **Backend Python Specialist** - FastAPI, SQLAlchemy, Pydantic, Azure integration
+- **Frontend TypeScript/React Specialist** - React, TypeScript, Tailwind, Radix UI
+- **Infrastructure & DevOps Specialist** - Azure Bicep, CI/CD, monitoring, security
+- **Database & Migration Specialist** - PostgreSQL, Alembic, query optimization
+
+### Using Cloud Agents
+
+Delegate specialized tasks to domain experts:
+
+```
+@workspace /delegate Create a new API endpoint for user statistics (Backend Python Specialist)
+@workspace /delegate Build a dashboard card component (Frontend TypeScript/React Specialist)
+@workspace /delegate Set up Application Insights alerts (Infrastructure & DevOps Specialist)
+@workspace /delegate Add email verification columns to users table (Database & Migration Specialist)
+```
+
+See [.github/agents/README.md](./.github/agents/README.md) for detailed usage guide and examples.
+
 ## Documentation
 
 - [Infrastructure Setup](./infrastructure/README.md) - Complete deployment guide
@@ -444,6 +466,7 @@ make budget-status ENV=production
 - [Quick Reference](./docs/operations/quick-reference.md) - Common operations
 - [Security Checklist](./docs/operations/security-checklist.md) - Security validation
 - [DNS Configuration](./docs/operations/dns-configuration.md) - Domain setup & configuration
+- [Cloud Agents Guide](./.github/agents/README.md) - AI agent delegation guide
 
 ## Domain Information
 
