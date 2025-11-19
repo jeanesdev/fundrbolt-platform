@@ -143,6 +143,7 @@ async def update_current_user_profile(
             state=profile_data.state,
             postal_code=profile_data.postal_code,
             country=profile_data.country,
+            password=None,  # Profile updates don't change password
         )
 
         # Update user - user can only update their own profile (T052)
@@ -156,9 +157,18 @@ async def update_current_user_profile(
         # Log profile update
         fields_updated = [
             field
-            for field in ["first_name", "last_name", "phone", "organization_name",
-                         "address_line1", "address_line2", "city", "state",
-                         "postal_code", "country"]
+            for field in [
+                "first_name",
+                "last_name",
+                "phone",
+                "organization_name",
+                "address_line1",
+                "address_line2",
+                "city",
+                "state",
+                "postal_code",
+                "country",
+            ]
             if getattr(profile_data, field, None) is not None
         ]
 

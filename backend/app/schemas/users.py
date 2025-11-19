@@ -149,6 +149,15 @@ class ProfileUpdateRequest(BaseModel):
 # ================================
 
 
+class NPOMembershipInfo(BaseModel):
+    """NPO membership information for a user."""
+
+    npo_id: uuid.UUID
+    npo_name: str
+    role: str  # admin, co_admin, staff
+    status: str  # active, invited, suspended, removed
+
+
 class UserPublicWithRole(BaseModel):
     """Public user information with role details."""
 
@@ -166,6 +175,7 @@ class UserPublicWithRole(BaseModel):
     country: str | None = None
     role: str
     npo_id: uuid.UUID | None = None
+    npo_memberships: list[NPOMembershipInfo] = []
     email_verified: bool
     is_active: bool
     last_login_at: datetime | None = None

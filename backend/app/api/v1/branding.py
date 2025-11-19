@@ -4,7 +4,6 @@ Handles visual identity configuration including colors, logos, and social media 
 """
 
 import uuid
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -299,33 +298,13 @@ async def upload_logo_local(
             logger.error(f"File validation failed: {error_msg}")
             raise ValueError(error_msg)
 
-        # Generate upload URL info
-        upload_data = file_upload_service.generate_upload_url(
+        # Upload file to Azure or local storage
+        logo_url = file_upload_service.upload_file(
             npo_id=npo_id,
             file_name=file_name,
             content_type=content_type,
-            file_size=file_size,
+            file_content=file_content,
         )
-
-        # If local storage, write file
-        if upload_data.get("is_local"):
-            upload_path = Path(str(upload_data["upload_url"]))
-            print("\n=== WRITING FILE ===")
-            print(f"Upload path: {upload_path}")
-            print(f"Path exists: {upload_path.parent.exists()}")
-            print("==================\n")
-
-            upload_path.parent.mkdir(parents=True, exist_ok=True)
-
-            with open(upload_path, "wb") as f:
-                f.write(file_content)
-
-            print("\n=== FILE WRITTEN ===")
-            print(f"File size written: {len(file_content)} bytes")
-            print(f"File exists: {upload_path.exists()}")
-            print("===================\n")
-
-        logo_url = str(upload_data["logo_url"])
 
         # Update branding with logo URL
         branding_service = BrandingService()

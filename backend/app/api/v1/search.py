@@ -3,11 +3,10 @@
 Cross-resource search across Users, NPOs, and Events with role-based filtering.
 """
 
-import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import and_, func, or_, select
+from fastapi import APIRouter, Depends
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -16,7 +15,13 @@ from app.middleware.auth import get_current_active_user
 from app.models.event import Event
 from app.models.npo import NPO
 from app.models.user import User
-from app.schemas.search import SearchRequest, SearchResponse
+from app.schemas.search import (
+    EventSearchResult,
+    NPOSearchResult,
+    SearchRequest,
+    SearchResponse,
+    UserSearchResult,
+)
 from app.services.permission_service import PermissionService
 
 router = APIRouter(prefix="/search", tags=["search"])
@@ -78,20 +83,20 @@ async def search(
         # Limit results
         users_query = users_query.limit(search_request.limit)
 
-        result = await db.execute(users_query)
-        users = result.scalars().all()
+        users_result = await db.execute(users_query)
+        users = users_result.scalars().all()
 
         users_results = [
-            {
-                "id": user.id,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "role": getattr(user, "role_name", "unknown"),
-                "npo_id": user.npo_id,
-                "organization_name": user.organization_name,
-                "created_at": user.created_at,
-            }
+            UserSearchResult(
+                id=user.id,
+                email=user.email,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                role=user.role.value if hasattr(user.role, "value") else str(user.role),
+                npo_id=user.npo_id,
+                organization_name=user.organization_name,
+                created_at=user.created_at,
+            )
             for user in users
         ]
 
@@ -104,7 +109,7 @@ async def search(
             or_(
                 func.lower(NPO.name).like(func.lower(search_pattern)),
                 func.lower(NPO.tagline).like(func.lower(search_pattern)),
-                func.lower(NPO.ein).like(func.lower(search_pattern)),
+                func.lower(NPO.tax_id).like(func.lower(search_pattern)),
             )
         )
 
@@ -115,19 +120,19 @@ async def search(
         # Limit results
         npos_query = npos_query.limit(search_request.limit)
 
-        result = await db.execute(npos_query)
-        npos = result.scalars().all()
+        npos_result = await db.execute(npos_query)
+        npos = npos_result.scalars().all()
 
         npos_results = [
-            {
-                "id": npo.id,
-                "name": npo.name,
-                "ein": npo.ein,
-                "status": npo.status.value if hasattr(npo.status, "value") else str(npo.status),
-                "tagline": npo.tagline,
-                "logo_url": npo.logo_url,
-                "created_at": npo.created_at,
-            }
+            NPOSearchResult(
+                id=npo.id,
+                name=npo.name,
+                ein=npo.tax_id,  # Map tax_id to ein for schema compatibility
+                status=npo.status.value if hasattr(npo.status, "value") else str(npo.status),
+                tagline=npo.tagline,
+                logo_url=None,  # logo_url is in NPOBranding, would need join to get it
+                created_at=npo.created_at,
+            )
             for npo in npos
         ]
 
@@ -150,21 +155,21 @@ async def search(
         # Limit results
         events_query = events_query.limit(search_request.limit)
 
-        result = await db.execute(events_query)
-        events = result.scalars().all()
+        events_result = await db.execute(events_query)
+        events = events_result.scalars().all()
 
         events_results = [
-            {
-                "id": event.id,
-                "name": event.name,
-                "npo_id": event.npo_id,
-                "npo_name": event.npo.name if event.npo else "Unknown",
-                "event_type": event.event_type.value if hasattr(event.event_type, "value") else str(event.event_type),
-                "status": event.status.value if hasattr(event.status, "value") else str(event.status),
-                "start_date": getattr(event, "event_datetime", None),
-                "end_date": getattr(event, "end_datetime", None),
-                "created_at": event.created_at,
-            }
+            EventSearchResult(
+                id=event.id,
+                name=event.name,
+                npo_id=event.npo_id,  # type: ignore[arg-type]  # npo_id is non-nullable in Event model
+                npo_name=event.npo.name if event.npo else "Unknown",
+                event_type="gala",  # Default event type for now, as Event model doesn't have event_type field
+                status=event.status.value if hasattr(event.status, "value") else str(event.status),
+                start_date=getattr(event, "event_datetime", None),
+                end_date=getattr(event, "end_datetime", None),
+                created_at=event.created_at,
+            )
             for event in events
         ]
 
