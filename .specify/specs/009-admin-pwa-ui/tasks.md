@@ -34,7 +34,7 @@
 - [x] T004 [P] Install backend dependencies in backend via poetry install
 - [x] T005 [P] Verify PostgreSQL 15 database running with existing schema (users, roles, npos, events tables)
 - [x] T006 [P] Verify Redis 7 running on localhost:6379 for session management
-- [ ] T007 Create database indexes for search optimization in backend/alembic/versions/
+- [x] T007 Create database indexes for search optimization in backend/alembic/versions/ (migration b581d537bb64)
 - [ ] T008 Seed test users with all roles (SuperAdmin, NPO Admin, Event Coordinator, Staff, Donor) for testing
 
 **Checkpoint**: Development environment ready, dependencies installed, test data seeded
@@ -199,7 +199,7 @@
 
 - [x] T071 [P] [US6] Create SearchService with API call logic in frontend/augeo-admin/src/services/search.ts
 - [x] T072 [P] [US6] Create search endpoint with PostgreSQL tsvector search in backend/app/api/v1/search.py
-- [ ] T073 [P] [US6] Create database migration for tsvector indexes on users, npos, events tables in backend/alembic/versions/
+- [x] T073 [P] [US6] Create database migration for tsvector indexes on users, npos, events tables in backend/alembic/versions/ (migration b581d537bb64)
 - [x] T074 [US6] Update SearchBar component with debounced input (300ms) in frontend/augeo-admin/src/components/search/SearchBar.tsx
 - [x] T075 [US6] Add TanStack Query hook for search with min 2 character validation in SearchBar
 - [x] T076 [US6] Create SearchResults component to display grouped results in frontend/augeo-admin/src/components/search/SearchResults.tsx
