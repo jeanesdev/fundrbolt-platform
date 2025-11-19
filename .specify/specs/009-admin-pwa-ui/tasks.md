@@ -35,7 +35,11 @@
 - [x] T005 [P] Verify PostgreSQL 15 database running with existing schema (users, roles, npos, events tables)
 - [x] T006 [P] Verify Redis 7 running on localhost:6379 for session management
 - [x] T007 Create database indexes for search optimization in backend/alembic/versions/ (migration b581d537bb64)
-- [ ] T008 Seed test users with all roles (SuperAdmin, NPO Admin, Event Coordinator, Staff, Donor) for testing
+- [x] T008 Seed test users with all roles (SuperAdmin, NPO Admin, Event Coordinator, Staff, Donor) for testing
+  - **Note**: All 5 test users created with NPO memberships via `backend/seed_test_users.py`
+  - **Credentials**: `{role}@test.com` / `{Role}123!` (e.g., `super_admin@test.com` / `SuperAdmin123!`)
+  - **Test NPO**: Test Non-Profit Organization (ID: dcffcf5e-2e1d-4b80-aa8d-6774d47e5599)
+  - **Memberships**: NPO Admin (ADMIN), Event Coordinator (CO_ADMIN), Staff (STAFF)
 
 **Checkpoint**: Development environment ready, dependencies installed, test data seeded
 
@@ -479,6 +483,14 @@ With 3 developers (after Foundational phase):
 - Verified template pages (tasks/, chats/, apps/, theme-toggle/, hamburger-menu/) already removed
 - All linting and type-checking passed with no errors
 
+**Phase 1 - Setup**: ✅ COMPLETE (T001-T008)
+
+- T008: Seed test users completed - All 5 roles (SuperAdmin, NPO Admin, Event Coordinator, Staff, Donor)
+- Test credentials: `{role}@test.com` / `{Role}123!` (e.g., `super_admin@test.com`)
+- Test NPO: Test Non-Profit Organization (dcffcf5e-2e1d-4b80-aa8d-6774d47e5599)
+- NPO memberships created: NPO Admin (ADMIN), Event Coordinator (CO_ADMIN), Staff (STAFF)
+- Script verified idempotent (safe to re-run)
+
 **User Story 4 - Profile Editing**: ✅ COMPLETE
 
 - Added password change page at `/settings/password` route
@@ -538,21 +550,18 @@ With 3 developers (after Foundational phase):
 **High Priority**:
 
 - T007: Create database indexes for search optimization
-- T008: Seed test users with all roles
 - T073: Create tsvector indexes for search performance optimization
 - T082: Performance test search with 1000 records
 - T089-T090: Manual acceptance testing and success criteria validation
 
 **Medium Priority**:
 
+- US3: Persistent Profile Dropdown Access (T040-T044) - 5 tasks, P2 priority
 - T091: Create role dashboard screenshots
 - T092: Performance testing (dashboard load, navigation, profile save)
 - T093: Accessibility audit
 - T095: Validate against quickstart.md
 
-**Low Priority** (User Story 1 & 2 incomplete tasks):
-
-- T025-T028: Update Sidebar and backend endpoints for role-based filtering
-- T029-T039: Template cleanup (delete unused pages and components)
+**Status**: All MVP user stories (US1, US2, US4, US5, US6) complete. Test users seeded. Ready for manual testing and US3 implementation.
 
 **Status**: Feature is production-ready for User Stories 4, 5, and 6. Search works but would benefit from tsvector indexes for optimal performance. Environment verified and documentation complete.
