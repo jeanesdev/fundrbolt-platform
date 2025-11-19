@@ -7,7 +7,7 @@ including listing, creating, updating roles, and deactivating users.
 import uuid
 from math import ceil
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
@@ -92,7 +92,12 @@ class UserService:
             )
 
         if npo_id:
-            stmt = stmt.where(User.npo_id == npo_id)
+            # Filter by NPO membership (not just npo_id field)
+            from app.models.npo_member import NPOMember
+
+            stmt = stmt.join(NPOMember, NPOMember.user_id == User.id).where(
+                and_(NPOMember.npo_id == npo_id, NPOMember.status == "active")
+            )
 
         if email_verified is not None:
             stmt = stmt.where(User.email_verified == email_verified)
@@ -122,16 +127,45 @@ class UserService:
         result = await db.execute(stmt)
         users = result.scalars().all()
 
-        # Get role names for users
+        # Get role names and NPO memberships for users
         user_list = []
         for user in users:
             # Fetch role name
             from app.models.base import Base
+            from app.models.npo_member import NPOMember
 
             roles_table = Base.metadata.tables["roles"]
             role_stmt = select(roles_table.c.name).where(roles_table.c.id == user.role_id)
             role_result = await db.execute(role_stmt)
             role_name = role_result.scalar_one()
+
+            # Fetch NPO memberships
+            npo_memberships = []
+            member_stmt = (
+                select(NPOMember)
+                .where(NPOMember.user_id == user.id)
+                .where(NPOMember.status == "active")
+            )
+            member_result = await db.execute(member_stmt)
+            members = member_result.scalars().all()
+
+            for member in members:
+                # Get NPO name
+                from app.models.npo import NPO
+
+                npo_stmt = select(NPO.name).where(NPO.id == member.npo_id)
+                npo_result = await db.execute(npo_stmt)
+                npo_name = npo_result.scalar_one_or_none()
+
+                if npo_name:
+                    npo_memberships.append(
+                        {
+                            "npo_id": member.npo_id,
+                            "npo_name": npo_name,
+                            "role": member.role.value,
+                            "status": member.status.value,
+                        }
+                    )
 
             user_dict = {
                 "id": user.id,
@@ -141,6 +175,7 @@ class UserService:
                 "phone": user.phone,
                 "role": role_name,
                 "npo_id": user.npo_id,
+                "npo_memberships": npo_memberships,
                 "email_verified": user.email_verified,
                 "is_active": user.is_active,
                 "last_login_at": user.last_login_at,

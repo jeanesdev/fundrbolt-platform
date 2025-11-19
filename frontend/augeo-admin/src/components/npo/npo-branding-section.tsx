@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { brandingApi } from '@/services/npo-service'
 import type { BrandingUpdateRequest } from '@/types/npo'
+import { useQueryClient } from '@tanstack/react-query'
 import { Building2, Facebook, Instagram, Linkedin, Save, Twitter, X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
@@ -97,15 +98,24 @@ async function createCroppedImage(
     pixelCrop.height
   )
 
+  // Use JPEG with 0.85 quality for better compression
+  const outputType = 'image/jpeg'
+  const quality = 0.85
+  const newFileName = fileName.replace(/\.[^.]+$/, '.jpg')
+
   return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        reject(new Error('Canvas is empty'))
-        return
-      }
-      const file = new File([blob], fileName, { type: 'image/png' })
-      resolve(file)
-    }, 'image/png')
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error('Canvas is empty'))
+          return
+        }
+        const file = new File([blob], newFileName, { type: outputType })
+        resolve(file)
+      },
+      outputType,
+      quality
+    )
   })
 }
 
@@ -124,6 +134,7 @@ interface NPOBrandingSectionProps {
 }
 
 export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
+  const queryClient = useQueryClient()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -228,8 +239,19 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
         originalFileName
       )
 
+      // Validate cropped file size
+      const maxSize = 5 * 1024 * 1024 // 5MB
+      if (croppedFile.size > maxSize) {
+        const sizeMB = (croppedFile.size / (1024 * 1024)).toFixed(2)
+        toast.error(`Cropped image is too large (${sizeMB}MB). Please try a smaller crop area or lower resolution image.`)
+        return
+      }
+
       const result = await brandingApi.uploadLogoLocal(npoId, croppedFile)
       setLogoUrl(result.logo_url)
+
+      // Invalidate NPO queries to refresh the logo in NpoSelector dropdown
+      await queryClient.invalidateQueries({ queryKey: ['npos'] })
 
       setCropDialogOpen(false)
       URL.revokeObjectURL(imageToCrop)
@@ -250,7 +272,7 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
 
       toast.error(errorMsg, { duration: 5000 })
     }
-  }, [npoId, imageToCrop, croppedAreaPixels, originalFileName])
+  }, [npoId, imageToCrop, croppedAreaPixels, originalFileName, queryClient])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

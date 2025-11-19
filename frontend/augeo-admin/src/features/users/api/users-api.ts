@@ -77,8 +77,22 @@ export async function listUsers(params?: {
   page_size?: number
   role?: string
   is_active?: boolean
+  npo_id?: string
 }): Promise<UserListResponse> {
-  const response = await apiClient.get<UserListResponse>('/users', { params })
+  // Transform page_size to per_page for backend API
+  const apiParams = params
+    ? {
+      page: params.page,
+      per_page: params.page_size,
+      role: params.role,
+      is_active: params.is_active,
+      npo_id: params.npo_id,
+    }
+    : undefined
+
+  const response = await apiClient.get<UserListResponse>('/users', {
+    params: apiParams,
+  })
   return response.data
 }
 

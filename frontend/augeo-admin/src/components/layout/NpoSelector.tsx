@@ -8,7 +8,6 @@
  * - Event Coordinator: Shows NPOs they're registered with
  */
 
-import { Building2, ChevronsUpDown } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +22,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useNpoContext } from '@/hooks/use-npo-context'
+import { Building2, ChevronsUpDown } from 'lucide-react'
 
 export function NpoSelector() {
   const { isMobile } = useSidebar()
@@ -36,6 +36,10 @@ export function NpoSelector() {
     canChangeNpo,
   } = useNpoContext()
 
+  // Get selected NPO's logo if available
+  const selectedNpo = availableNpos.find((npo) => npo.id === selectedNpoId)
+  const selectedNpoLogo = selectedNpo?.logo_url
+
   // T061: For single-NPO users, show name only (not clickable)
   if (isSingleNpoUser && !canChangeNpo) {
     return (
@@ -46,8 +50,16 @@ export function NpoSelector() {
             className='cursor-default'
             disabled
           >
-            <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg'>
-              <Building2 className='size-4' />
+            <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden'>
+              {selectedNpoLogo ? (
+                <img
+                  src={selectedNpoLogo}
+                  alt={selectedNpoName}
+                  className='size-full object-cover'
+                />
+              ) : (
+                <Building2 className='size-4' />
+              )}
             </div>
             <div className='grid flex-1 text-start text-sm leading-tight'>
               <span className='truncate font-semibold'>
@@ -71,8 +83,16 @@ export function NpoSelector() {
               size='lg'
               className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
             >
-              <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg'>
-                <Building2 className='size-4' />
+              <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden'>
+                {selectedNpoLogo ? (
+                  <img
+                    src={selectedNpoLogo}
+                    alt={selectedNpoName}
+                    className='size-full object-cover'
+                  />
+                ) : (
+                  <Building2 className='size-4' />
+                )}
               </div>
               <div className='grid flex-1 text-start text-sm leading-tight'>
                 <span className='truncate font-semibold'>
@@ -100,8 +120,16 @@ export function NpoSelector() {
                 onClick={() => selectNpo(npo.id, npo.name)}
                 className='gap-2 p-2'
               >
-                <div className='flex size-6 items-center justify-center rounded-sm border'>
-                  <Building2 className='size-4 shrink-0' />
+                <div className='flex size-6 items-center justify-center rounded-sm border overflow-hidden'>
+                  {npo.logo_url ? (
+                    <img
+                      src={npo.logo_url}
+                      alt={npo.name}
+                      className='size-full object-cover'
+                    />
+                  ) : (
+                    <Building2 className='size-4 shrink-0' />
+                  )}
                 </div>
                 <div className='flex-1'>
                   <div className='font-medium'>{npo.name}</div>

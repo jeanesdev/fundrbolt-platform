@@ -42,7 +42,7 @@ function MissingClerkPubKey() {
       <div className='bg-background flex h-16 justify-between p-4'>
         <SidebarTrigger variant='outline' className='scale-125 sm:scale-100' />
         <div className='space-x-4'>
-          
+
           <ConfigDrawer />
         </div>
       </div>

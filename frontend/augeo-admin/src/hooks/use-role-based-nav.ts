@@ -12,6 +12,7 @@
  */
 
 import { useAuth } from './use-auth'
+import { useNpoContext } from './use-npo-context'
 
 export interface NavItem {
   title: string
@@ -35,6 +36,12 @@ export interface UseRoleBasedNavReturn {
 
 export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const { role, isSuperAdmin, isNpoAdmin, isEventCoordinator, isStaff } = useAuth()
+  const { selectedNpoId } = useNpoContext()
+
+  // Determine NPO link based on selected NPO
+  const npoHref = selectedNpoId ? `/npos/${selectedNpoId}` : '/npos'
+  // Change title based on whether specific NPO is selected
+  const npoTitle = selectedNpoId ? 'NPO' : 'NPOs'
 
   // Base navigation items available to all authenticated users
   const baseNavItems: NavItem[] = [
@@ -50,8 +57,8 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const superAdminNavItems: NavItem[] = [
     ...baseNavItems,
     {
-      title: 'NPOs',
-      href: '/npos',
+      title: npoTitle,
+      href: npoHref,
       icon: 'Building2',
       description: 'Manage all nonprofit organizations',
     },
@@ -74,7 +81,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     ...baseNavItems,
     {
       title: 'My NPO',
-      href: '/npos',
+      href: npoHref,
       icon: 'Building2',
       description: 'Manage your organization',
     },
@@ -97,7 +104,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     ...baseNavItems,
     {
       title: 'NPOs',
-      href: '/npos',
+      href: npoHref,
       icon: 'Building2',
       description: 'View organizations (read-only)',
       badge: 'Read-only',
@@ -122,7 +129,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     ...baseNavItems,
     {
       title: 'My NPO',
-      href: '/npos',
+      href: npoHref,
       icon: 'Building2',
       description: 'View your organization (read-only)',
       badge: 'Read-only',

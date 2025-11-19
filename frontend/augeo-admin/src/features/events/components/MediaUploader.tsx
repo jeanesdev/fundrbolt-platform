@@ -39,7 +39,7 @@ export function MediaUploader({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [viewMedia, setViewMedia] = useState<EventMedia | null>(null)
 
-  const validateFile = (file: File): string | null => {
+  const validateFile = useCallback((file: File): string | null => {
     if (file.size > maxFileSize * 1024 * 1024) {
       return `File size must be under ${maxFileSize}MB`
     }
@@ -47,7 +47,7 @@ export function MediaUploader({
       return `File type not accepted. Allowed: ${acceptedTypes.join(', ')}`
     }
     return null
-  }
+  }, [maxFileSize, acceptedTypes])
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files)

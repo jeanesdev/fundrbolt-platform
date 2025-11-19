@@ -30,7 +30,7 @@ function RouteComponent() {
       <Header fixed className='border-b'>
         <Search />
         <div className='ms-auto flex items-center space-x-4'>
-          
+
           <ConfigDrawer />
           <ProfileDropdown />
         </div>

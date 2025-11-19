@@ -1,5 +1,3 @@
-import { useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { Header } from '@/components/layout/header'
 import { LegalFooter } from '@/components/legal/legal-footer'
@@ -9,13 +7,15 @@ import { SkipToMain } from '@/components/skip-to-main'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { LayoutProvider } from '@/context/layout-provider'
 import { SearchProvider } from '@/context/search-provider'
-import { getCookie } from '@/lib/cookies'
-import { cn } from '@/lib/utils'
-import { Outlet } from '@tanstack/react-router'
 import { useAuth } from '@/hooks/use-auth'
 import { useNpoContext } from '@/hooks/use-npo-context'
 import apiClient from '@/lib/axios'
+import { getCookie } from '@/lib/cookies'
+import { cn } from '@/lib/utils'
 import type { NPOContextOption } from '@/stores/npo-context-store'
+import { useQuery } from '@tanstack/react-query'
+import { Outlet } from '@tanstack/react-router'
+import { useEffect } from 'react'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -23,17 +23,18 @@ type AuthenticatedLayoutProps = {
 
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const defaultOpen = getCookie('sidebar_state') !== 'false'
-  const { isSuperAdmin } = useAuth()
+  const { isSuperAdmin, user } = useAuth()
   const { setAvailableNpos } = useNpoContext()
 
   // T058: Fetch available NPOs on login based on user role
   const { data: nposData } = useQuery({
     queryKey: ['npos', 'available'],
     queryFn: async () => {
-      const response = await apiClient.get('/api/v1/npos')
+      const response = await apiClient.get('/npos')
       return response.data
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!user, // Only fetch when user is authenticated
   })
 
   // T059: Populate available NPOs including "Augeo Platform" option for SuperAdmin
@@ -50,7 +51,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       }
 
       // Add all NPOs user has access to
-      nposData.items.forEach((npo: any) => {
+      nposData.items.forEach((npo: { id: string; name: string; logo_url?: string }) => {
         npoOptions.push({
           id: npo.id,
           name: npo.name,

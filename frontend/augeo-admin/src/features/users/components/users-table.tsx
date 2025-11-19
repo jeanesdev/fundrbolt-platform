@@ -1,18 +1,4 @@
-import { useEffect, useState } from 'react'
-import {
-  type SortingState,
-  type VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table'
-import { cn } from '@/lib/utils'
-import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
+import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
 import {
   Table,
   TableBody,
@@ -21,7 +7,20 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
+import { cn } from '@/lib/utils'
+import {
+  type SortingState,
+  type VisibilityState,
+  flexRender,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
+import { useEffect, useState } from 'react'
 import { roles } from '../data/data'
 import { type User } from '../data/schema'
 import { DataTableBulkActions } from './data-table-bulk-actions'
@@ -29,11 +28,17 @@ import { usersColumns as columns } from './users-columns'
 
 type DataTableProps = {
   data: User[]
+  totalRows?: number
   search: Record<string, unknown>
   navigate: NavigateFn
 }
 
-export function UsersTable({ data, search, navigate }: DataTableProps) {
+export function UsersTable({
+  data,
+  totalRows,
+  search,
+  navigate,
+}: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -67,6 +72,7 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
   const table = useReactTable({
     data,
     columns,
+    pageCount: totalRows ? Math.ceil(totalRows / pagination.pageSize) : -1,
     state: {
       sorting,
       pagination,
@@ -75,12 +81,12 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
       columnVisibility,
     },
     enableRowSelection: true,
+    manualPagination: true,
     onPaginationChange,
     onColumnFiltersChange,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
-    getPaginationRowModel: getPaginationRowModel(),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -138,9 +144,9 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   )
                 })}

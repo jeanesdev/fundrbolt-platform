@@ -117,32 +117,41 @@ export function ConsentHistory() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {history.consents.map((consent) => (
-                    <TableRow key={consent.id}>
-                      <TableCell>
-                        <div className='flex flex-col'>
-                          <span className='font-medium'>
-                            {new Date(consent.accepted_at).toLocaleDateString()}
-                          </span>
-                          <span className='text-xs text-muted-foreground'>
-                            {formatDistanceToNow(new Date(consent.accepted_at), {
-                              addSuffix: true,
-                            })}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(consent.status)}</TableCell>
-                      <TableCell className='font-mono text-sm'>
-                        {consent.tos_document_id.slice(0, 8)}...
-                      </TableCell>
-                      <TableCell className='font-mono text-sm'>
-                        {consent.privacy_document_id.slice(0, 8)}...
-                      </TableCell>
-                      <TableCell className='text-sm text-muted-foreground'>
-                        N/A
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {history.consents.map((consent) => {
+                    const acceptedDate = new Date(consent.accepted_at)
+                    const isValidDate = !isNaN(acceptedDate.getTime())
+
+                    return (
+                      <TableRow key={consent.id}>
+                        <TableCell>
+                          <div className='flex flex-col'>
+                            <span className='font-medium'>
+                              {isValidDate
+                                ? acceptedDate.toLocaleDateString()
+                                : 'Invalid date'}
+                            </span>
+                            <span className='text-xs text-muted-foreground'>
+                              {isValidDate
+                                ? formatDistanceToNow(acceptedDate, {
+                                  addSuffix: true,
+                                })
+                                : 'N/A'}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(consent.status)}</TableCell>
+                        <TableCell className='font-mono text-sm'>
+                          {consent.tos_document_id.slice(0, 8)}...
+                        </TableCell>
+                        <TableCell className='font-mono text-sm'>
+                          {consent.privacy_document_id.slice(0, 8)}...
+                        </TableCell>
+                        <TableCell className='text-sm text-muted-foreground'>
+                          N/A
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </div>

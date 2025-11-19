@@ -7,19 +7,19 @@
  * T081: Loading spinner
  */
 
-import { useState, useEffect, useCallback } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { SearchIcon, Loader2 } from 'lucide-react'
-import { Input } from '@/components/ui/input'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { searchService } from '@/services/search'
-import { SearchResults } from './SearchResults'
+import { Input } from '@/components/ui/input'
 import { useNpoContext } from '@/hooks/use-npo-context'
+import { searchService } from '@/services/search'
+import { useQuery } from '@tanstack/react-query'
+import { Loader2, SearchIcon } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { SearchResults } from './SearchResults'
 
 interface SearchBarProps {
   open: boolean
@@ -40,6 +40,16 @@ export function SearchBar({ open, onOpenChange }: SearchBarProps) {
     return () => clearTimeout(timer)
   }, [query])
 
+  // Handle dialog state changes
+  const handleOpenChange = (newOpen: boolean) => {
+    onOpenChange(newOpen)
+    // Reset query when closing
+    if (!newOpen) {
+      setQuery('')
+      setDebouncedQuery('')
+    }
+  }
+
   // T075: Min 2 character validation
   const shouldSearch = debouncedQuery.length >= 2
 
@@ -56,21 +66,13 @@ export function SearchBar({ open, onOpenChange }: SearchBarProps) {
     staleTime: 30000, // 30 seconds
   })
 
-  // Reset query when dialog closes
-  useEffect(() => {
-    if (!open) {
-      setQuery('')
-      setDebouncedQuery('')
-    }
-  }, [open])
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className='max-w-2xl'>
         <DialogHeader>
           <DialogTitle className='sr-only'>Search</DialogTitle>
         </DialogHeader>
-        
+
         <div className='relative'>
           <SearchIcon className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
           {/* T081: Loading spinner */}

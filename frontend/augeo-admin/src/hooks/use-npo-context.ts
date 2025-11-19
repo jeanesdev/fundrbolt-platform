@@ -12,7 +12,7 @@
 
 import { useNPOContextStore, type NPOContextOption } from '@/stores/npo-context-store'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useAuth } from './use-auth'
 
 export interface UseNpoContextReturn {
@@ -75,14 +75,14 @@ export function useNpoContext(): UseNpoContextReturn {
     queryClient.invalidateQueries()
   }
 
-  const setAvailableNpos = (npos: NPOContextOption[]) => {
+  const setAvailableNpos = useCallback((npos: NPOContextOption[]) => {
     storeSetAvailableNpos(npos)
 
     // For single-NPO users, auto-select their NPO
     if (isSingleNpoUser && npos.length === 1 && npos[0].id) {
       setSelectedNpo(npos[0].id, npos[0].name)
     }
-  }
+  }, [isSingleNpoUser, setSelectedNpo, storeSetAvailableNpos])
 
   return {
     selectedNpoId,

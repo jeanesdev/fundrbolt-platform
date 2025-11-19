@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useNpoContext } from '@/hooks/use-npo-context'
 import { useEventStore } from '@/stores/event-store'
 import type { EventStatus } from '@/types/event'
 import { useNavigate } from '@tanstack/react-router'
@@ -29,13 +30,15 @@ import { toast } from 'sonner'
 export function EventListPage() {
   const navigate = useNavigate()
   const { events, eventsLoading, loadEvents, publishEvent, closeEvent, deleteEvent } = useEventStore()
+  const { selectedNpoId } = useNpoContext()
   const [statusFilter, setStatusFilter] = useState<EventStatus | 'all'>('all')
 
   const loadEventsCallback = useCallback(() => {
-    loadEvents().catch((_err) => {
+    const params = selectedNpoId ? { npo_id: selectedNpoId } : undefined
+    loadEvents(params).catch((_err) => {
       toast.error('Failed to load events')
     })
-  }, [loadEvents])
+  }, [loadEvents, selectedNpoId])
 
   useEffect(() => {
     loadEventsCallback()

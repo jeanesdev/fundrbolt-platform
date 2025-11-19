@@ -1,9 +1,10 @@
-import { getRouteApi } from '@tanstack/react-router'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
+import { useNpoContext } from '@/hooks/use-npo-context'
+import { getRouteApi } from '@tanstack/react-router'
 import { UsersDialogs } from './components/users-dialogs'
 import { UsersPrimaryButtons } from './components/users-primary-buttons'
 import { UsersProvider } from './components/users-provider'
@@ -15,6 +16,7 @@ const route = getRouteApi('/_authenticated/users/')
 export function Users() {
   const search = route.useSearch()
   const navigate = route.useNavigate()
+  const { selectedNpoId } = useNpoContext()
 
   // Determine is_active filter based on status search param
   // If no status filter, default to showing only active users
@@ -23,7 +25,7 @@ export function Users() {
       ? search.status.includes('active') && !search.status.includes('inactive')
         ? true // Only "active" selected
         : !search.status.includes('active') &&
-            search.status.includes('inactive')
+          search.status.includes('inactive')
           ? false // Only "inactive" selected
           : undefined // Both selected or neither (show all)
       : true // Default: show only active users
@@ -37,17 +39,19 @@ export function Users() {
     page: search.page || 1,
     page_size: search.pageSize || 10,
     is_active: isActiveFilter,
+    ...(selectedNpoId && { npo_id: selectedNpoId }),
   })
 
   // Use API data directly, or empty array if not loaded yet
   const users = usersData?.items || []
+  const totalUsers = usersData?.total || 0
 
   return (
     <UsersProvider>
       <Header fixed>
         <Search />
         <div className='ms-auto flex items-center space-x-4'>
-          
+
           <ConfigDrawer />
           <ProfileDropdown />
         </div>
@@ -65,7 +69,12 @@ export function Users() {
         </div>
         {isLoading && <div>Loading users...</div>}
         {isError && <div>Error loading users. Using mock data.</div>}
-        <UsersTable data={users} search={search} navigate={navigate} />
+        <UsersTable
+          data={users}
+          totalRows={totalUsers}
+          search={search}
+          navigate={navigate}
+        />
       </Main>
 
       <UsersDialogs />

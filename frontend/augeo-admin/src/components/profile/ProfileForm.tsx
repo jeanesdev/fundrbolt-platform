@@ -5,13 +5,6 @@
  * Connects to PATCH /api/v1/users/me/profile endpoint
  */
 
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { profileUpdateSchema, type ProfileUpdateFormData } from '@/schemas/profile'
-import apiClient from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -23,6 +16,13 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import apiClient from '@/lib/axios'
+import { profileUpdateSchema, type ProfileUpdateFormData } from '@/schemas/profile'
+import { useAuthStore } from '@/stores/auth-store'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
 
 interface ProfileFormProps {
   initialData?: Partial<ProfileUpdateFormData>
@@ -32,8 +32,8 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
   const queryClient = useQueryClient()
   const user = useAuthStore((state) => state.user)
 
-  const form = useForm({
-    resolver: zodResolver(profileUpdateSchema) as any,
+  const form = useForm<ProfileUpdateFormData>({
+    resolver: zodResolver(profileUpdateSchema),
     defaultValues: {
       first_name: initialData?.first_name || user?.first_name || '',
       last_name: initialData?.last_name || user?.last_name || '',
@@ -51,7 +51,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileUpdateFormData) => {
-      const response = await apiClient.patch('/api/v1/users/me/profile', data)
+      const response = await apiClient.patch('/users/me/profile', data)
       return response.data
     },
     onSuccess: (data) => {
@@ -65,9 +65,10 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
       // Update auth store with new user data
       useAuthStore.getState().setUser(data.user || data)
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       // T054: Display inline error messages
-      const errorMessage = error.response?.data?.detail || 'Failed to update profile'
+      const err = error as { response?: { data?: { detail?: string } } }
+      const errorMessage = err.response?.data?.detail || 'Failed to update profile'
       toast.error(errorMessage)
     },
   })

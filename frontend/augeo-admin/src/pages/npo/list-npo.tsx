@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useNpoContext } from '@/hooks/use-npo-context'
 import { useNPOStore } from '@/stores/npo-store'
 import type { NPOStatus } from '@/types/npo'
 import { Link } from '@tanstack/react-router'
@@ -40,6 +41,7 @@ const statusLabels = {
 
 export default function NpoListPage() {
   const { npos, nposTotalCount, nposLoading, nposError, loadNPOs } = useNPOStore()
+  const { selectedNpoId } = useNpoContext()
 
   // Filter state
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -54,8 +56,9 @@ export default function NpoListPage() {
       page_size: pageSize,
       search: searchQuery || undefined,
       ...(statusFilter !== 'all' && { status: statusFilter as NPOStatus }),
+      ...(selectedNpoId && { npo_id: selectedNpoId }),
     })
-  }, [page, searchQuery, statusFilter, loadNPOs, pageSize])  // Handle search with debounce
+  }, [page, searchQuery, statusFilter, loadNPOs, pageSize, selectedNpoId])  // Handle search with debounce
   const handleSearchChange = (value: string) => {
     setSearchQuery(value)
     setPage(1) // Reset to first page on search

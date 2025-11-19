@@ -5,7 +5,7 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { Separator } from '@/components/ui/separator'
 import { Outlet } from '@tanstack/react-router'
-import { Bell, Monitor, Palette, Shield, UserCog, Wrench } from 'lucide-react'
+import { KeyRound, Shield, UserCog } from 'lucide-react'
 import { SidebarNav } from './components/sidebar-nav'
 
 const sidebarNavItems = [
@@ -15,24 +15,9 @@ const sidebarNavItems = [
     icon: <UserCog size={18} />,
   },
   {
-    title: 'Account',
-    href: '/settings/account',
-    icon: <Wrench size={18} />,
-  },
-  {
-    title: 'Appearance',
-    href: '/settings/appearance',
-    icon: <Palette size={18} />,
-  },
-  {
-    title: 'Notifications',
-    href: '/settings/notifications',
-    icon: <Bell size={18} />,
-  },
-  {
-    title: 'Display',
-    href: '/settings/display',
-    icon: <Monitor size={18} />,
+    title: 'Password',
+    href: '/settings/password',
+    icon: <KeyRound size={18} />,
   },
   {
     title: 'Privacy & Consent',
@@ -48,7 +33,7 @@ export function Settings() {
       <Header>
         <Search />
         <div className='ms-auto flex items-center space-x-4'>
-          
+
           <ConfigDrawer />
           <ProfileDropdown />
         </div>
@@ -68,7 +53,7 @@ export function Settings() {
           <aside className='top-0 lg:sticky lg:w-1/5'>
             <SidebarNav items={sidebarNavItems} />
           </aside>
-          <div className='flex w-full overflow-y-hidden p-1'>
+          <div className='flex w-full p-1'>
             <Outlet />
           </div>
         </div>
