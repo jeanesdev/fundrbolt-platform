@@ -162,7 +162,7 @@ async def search(
             EventSearchResult(
                 id=event.id,
                 name=event.name,
-                npo_id=event.npo_id,  # type: ignore[arg-type]  # npo_id is non-nullable in Event model
+                npo_id=event.npo_id,  # npo_id is non-nullable in Event model
                 npo_name=event.npo.name if event.npo else "Unknown",
                 event_type="gala",  # Default event type for now, as Event model doesn't have event_type field
                 status=event.status.value if hasattr(event.status, "value") else str(event.status),

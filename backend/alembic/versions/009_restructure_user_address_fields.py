@@ -1,7 +1,7 @@
 """restructure user address fields
 
-Revision ID: 009
-Revises: 008
+Revision ID: 009b
+Revises: 008b
 Create Date: 2025-10-30
 
 """
@@ -13,8 +13,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "009"
-down_revision: str | None = "008"
+revision: str = "009b"
+down_revision: str | None = "008b"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

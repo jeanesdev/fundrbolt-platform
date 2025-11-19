@@ -1,7 +1,7 @@
 """add user organization fields
 
-Revision ID: 008
-Revises: 007
+Revision ID: 008b
+Revises: 008
 Create Date: 2025-10-30
 
 """
@@ -13,8 +13,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "008"
-down_revision: str | None = "007"
+revision: str = "008b"
+down_revision: str | None = "008"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
