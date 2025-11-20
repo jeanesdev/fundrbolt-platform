@@ -1,5 +1,12 @@
 import apiClient from '@/lib/axios'
 
+export interface NPOMembership {
+  npo_id: string
+  npo_name: string
+  role: string
+  status: string
+}
+
 export interface User {
   id: string
   email: string
@@ -15,6 +22,7 @@ export interface User {
   country: string | null
   role: string
   npo_id: string | null
+  npo_memberships: NPOMembership[]
   email_verified: boolean
   is_active: boolean
   last_login_at: string | null

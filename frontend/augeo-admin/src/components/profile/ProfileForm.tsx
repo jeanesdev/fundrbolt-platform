@@ -32,7 +32,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
   const queryClient = useQueryClient()
   const user = useAuthStore((state) => state.user)
 
-  const form = useForm<ProfileUpdateFormData>({
+  const form = useForm({
     resolver: zodResolver(profileUpdateSchema),
     defaultValues: {
       first_name: initialData?.first_name || user?.first_name || '',
