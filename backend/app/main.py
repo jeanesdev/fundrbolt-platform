@@ -108,6 +108,8 @@ app = FastAPI(
         {"name": "users", "description": "User management operations"},
         {"name": "npos", "description": "Nonprofit organization management"},
         {"name": "branding", "description": "NPO branding and visual identity customization"},
+        {"name": "events", "description": "Event management and coordination"},
+        {"name": "search", "description": "Cross-resource search with role-based filtering"},
         {"name": "legal", "description": "Legal documents (Terms of Service, Privacy Policy)"},
         {"name": "consent", "description": "User consent management and GDPR compliance"},
         {"name": "cookies", "description": "Cookie consent management (EU Cookie Law)"},

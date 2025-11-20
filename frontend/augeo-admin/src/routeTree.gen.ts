@@ -32,26 +32,20 @@ import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_aut
 import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
-import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedNposIndexRouteImport } from './routes/_authenticated/npos/index'
-import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events/index'
-import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
-import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
-import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
-import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
+import { Route as AuthenticatedSettingsPasswordRouteImport } from './routes/_authenticated/settings/password'
 import { Route as AuthenticatedSettingsConsentRouteImport } from './routes/_authenticated/settings/consent'
-import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
-import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedNposCreateRouteImport } from './routes/_authenticated/npos/create'
 import { Route as AuthenticatedEventsCreateRouteImport } from './routes/_authenticated/events/create'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedAdminNpoApplicationsRouteImport } from './routes/_authenticated/admin/npo-applications'
 import { Route as AuthenticatedNposNpoIdIndexRouteImport } from './routes/_authenticated/npos/$npoId.index'
+import { Route as AuthenticatedEventsEventIdIndexRouteImport } from './routes/_authenticated/events/$eventId/index'
 import { Route as AuthenticatedNposNpoIdEditRouteImport } from './routes/_authenticated/npos/$npoId/edit'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events/$eventId/edit'
 import { Route as AuthenticatedEventsEventIdAuctionItemsIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-items/index'
@@ -173,11 +167,6 @@ const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
   path: '/users/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
-  id: '/tasks/',
-  path: '/tasks/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedSettingsIndexRoute =
   AuthenticatedSettingsIndexRouteImport.update({
     id: '/',
@@ -189,28 +178,12 @@ const AuthenticatedNposIndexRoute = AuthenticatedNposIndexRouteImport.update({
   path: '/npos/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedHelpCenterIndexRoute =
-  AuthenticatedHelpCenterIndexRouteImport.update({
-    id: '/help-center/',
-    path: '/help-center/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedEventsIndexRoute =
   AuthenticatedEventsIndexRouteImport.update({
     id: '/events/',
     path: '/events/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
-  id: '/chats/',
-  path: '/chats/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAppsIndexRoute = AuthenticatedAppsIndexRouteImport.update({
-  id: '/apps/',
-  path: '/apps/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const ClerkAuthenticatedUserManagementRoute =
   ClerkAuthenticatedUserManagementRouteImport.update({
     id: '/user-management',
@@ -227,34 +200,16 @@ const ClerkauthSignInRoute = ClerkauthSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => ClerkauthRouteRoute,
 } as any)
-const AuthenticatedSettingsNotificationsRoute =
-  AuthenticatedSettingsNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any)
-const AuthenticatedSettingsDisplayRoute =
-  AuthenticatedSettingsDisplayRouteImport.update({
-    id: '/display',
-    path: '/display',
+const AuthenticatedSettingsPasswordRoute =
+  AuthenticatedSettingsPasswordRouteImport.update({
+    id: '/password',
+    path: '/password',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
 const AuthenticatedSettingsConsentRoute =
   AuthenticatedSettingsConsentRouteImport.update({
     id: '/consent',
     path: '/consent',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any)
-const AuthenticatedSettingsAppearanceRoute =
-  AuthenticatedSettingsAppearanceRouteImport.update({
-    id: '/appearance',
-    path: '/appearance',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any)
-const AuthenticatedSettingsAccountRoute =
-  AuthenticatedSettingsAccountRouteImport.update({
-    id: '/account',
-    path: '/account',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
 const AuthenticatedNposCreateRoute = AuthenticatedNposCreateRouteImport.update({
@@ -284,6 +239,12 @@ const AuthenticatedNposNpoIdIndexRoute =
   AuthenticatedNposNpoIdIndexRouteImport.update({
     id: '/npos/$npoId/',
     path: '/npos/$npoId/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEventsEventIdIndexRoute =
+  AuthenticatedEventsEventIdIndexRouteImport.update({
+    id: '/events/$eventId/',
+    path: '/events/$eventId/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedNposNpoIdEditRoute =
@@ -348,24 +309,18 @@ export interface FileRoutesByFullPath {
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/events/create': typeof AuthenticatedEventsCreateRoute
   '/npos/create': typeof AuthenticatedNposCreateRoute
-  '/settings/account': typeof AuthenticatedSettingsAccountRoute
-  '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/consent': typeof AuthenticatedSettingsConsentRoute
-  '/settings/display': typeof AuthenticatedSettingsDisplayRoute
-  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/settings/password': typeof AuthenticatedSettingsPasswordRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
-  '/apps': typeof AuthenticatedAppsIndexRoute
-  '/chats': typeof AuthenticatedChatsIndexRoute
   '/events': typeof AuthenticatedEventsIndexRoute
-  '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/npos': typeof AuthenticatedNposIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
+  '/events/$eventId': typeof AuthenticatedEventsEventIdIndexRoute
   '/npos/$npoId': typeof AuthenticatedNposNpoIdIndexRoute
   '/events/$eventId/auction-items/create': typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
   '/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
@@ -395,24 +350,18 @@ export interface FileRoutesByTo {
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/events/create': typeof AuthenticatedEventsCreateRoute
   '/npos/create': typeof AuthenticatedNposCreateRoute
-  '/settings/account': typeof AuthenticatedSettingsAccountRoute
-  '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/consent': typeof AuthenticatedSettingsConsentRoute
-  '/settings/display': typeof AuthenticatedSettingsDisplayRoute
-  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/settings/password': typeof AuthenticatedSettingsPasswordRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
-  '/apps': typeof AuthenticatedAppsIndexRoute
-  '/chats': typeof AuthenticatedChatsIndexRoute
   '/events': typeof AuthenticatedEventsIndexRoute
-  '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/npos': typeof AuthenticatedNposIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
-  '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
+  '/events/$eventId': typeof AuthenticatedEventsEventIdIndexRoute
   '/npos/$npoId': typeof AuthenticatedNposNpoIdIndexRoute
   '/events/$eventId/auction-items/create': typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
   '/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
@@ -447,24 +396,18 @@ export interface FileRoutesById {
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/events/create': typeof AuthenticatedEventsCreateRoute
   '/_authenticated/npos/create': typeof AuthenticatedNposCreateRoute
-  '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
-  '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/consent': typeof AuthenticatedSettingsConsentRoute
-  '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
-  '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/_authenticated/settings/password': typeof AuthenticatedSettingsPasswordRoute
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
-  '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
-  '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
-  '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/npos/': typeof AuthenticatedNposIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/_authenticated/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
+  '/_authenticated/events/$eventId/': typeof AuthenticatedEventsEventIdIndexRoute
   '/_authenticated/npos/$npoId/': typeof AuthenticatedNposNpoIdIndexRoute
   '/_authenticated/events/$eventId/auction-items/create': typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
   '/_authenticated/events/$eventId/auction-items/': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
@@ -498,24 +441,18 @@ export interface FileRouteTypes {
     | '/errors/$error'
     | '/events/create'
     | '/npos/create'
-    | '/settings/account'
-    | '/settings/appearance'
     | '/settings/consent'
-    | '/settings/display'
-    | '/settings/notifications'
+    | '/settings/password'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
-    | '/apps'
-    | '/chats'
     | '/events'
-    | '/help-center'
     | '/npos'
     | '/settings/'
-    | '/tasks'
     | '/users'
     | '/events/$eventId/edit'
     | '/npos/$npoId/edit'
+    | '/events/$eventId'
     | '/npos/$npoId'
     | '/events/$eventId/auction-items/create'
     | '/events/$eventId/auction-items'
@@ -545,24 +482,18 @@ export interface FileRouteTypes {
     | '/errors/$error'
     | '/events/create'
     | '/npos/create'
-    | '/settings/account'
-    | '/settings/appearance'
     | '/settings/consent'
-    | '/settings/display'
-    | '/settings/notifications'
+    | '/settings/password'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
-    | '/apps'
-    | '/chats'
     | '/events'
-    | '/help-center'
     | '/npos'
     | '/settings'
-    | '/tasks'
     | '/users'
     | '/events/$eventId/edit'
     | '/npos/$npoId/edit'
+    | '/events/$eventId'
     | '/npos/$npoId'
     | '/events/$eventId/auction-items/create'
     | '/events/$eventId/auction-items'
@@ -596,24 +527,18 @@ export interface FileRouteTypes {
     | '/_authenticated/errors/$error'
     | '/_authenticated/events/create'
     | '/_authenticated/npos/create'
-    | '/_authenticated/settings/account'
-    | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/consent'
-    | '/_authenticated/settings/display'
-    | '/_authenticated/settings/notifications'
+    | '/_authenticated/settings/password'
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
     | '/clerk/_authenticated/user-management'
-    | '/_authenticated/apps/'
-    | '/_authenticated/chats/'
     | '/_authenticated/events/'
-    | '/_authenticated/help-center/'
     | '/_authenticated/npos/'
     | '/_authenticated/settings/'
-    | '/_authenticated/tasks/'
     | '/_authenticated/users/'
     | '/_authenticated/events/$eventId/edit'
     | '/_authenticated/npos/$npoId/edit'
+    | '/_authenticated/events/$eventId/'
     | '/_authenticated/npos/$npoId/'
     | '/_authenticated/events/$eventId/auction-items/create'
     | '/_authenticated/events/$eventId/auction-items/'
@@ -805,13 +730,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/tasks/': {
-      id: '/_authenticated/tasks/'
-      path: '/tasks'
-      fullPath: '/tasks'
-      preLoaderRoute: typeof AuthenticatedTasksIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/settings/': {
       id: '/_authenticated/settings/'
       path: '/'
@@ -826,32 +744,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNposIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/help-center/': {
-      id: '/_authenticated/help-center/'
-      path: '/help-center'
-      fullPath: '/help-center'
-      preLoaderRoute: typeof AuthenticatedHelpCenterIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/events/': {
       id: '/_authenticated/events/'
       path: '/events'
       fullPath: '/events'
       preLoaderRoute: typeof AuthenticatedEventsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/chats/': {
-      id: '/_authenticated/chats/'
-      path: '/chats'
-      fullPath: '/chats'
-      preLoaderRoute: typeof AuthenticatedChatsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/apps/': {
-      id: '/_authenticated/apps/'
-      path: '/apps'
-      fullPath: '/apps'
-      preLoaderRoute: typeof AuthenticatedAppsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/clerk/_authenticated/user-management': {
@@ -875,18 +772,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClerkauthSignInRouteImport
       parentRoute: typeof ClerkauthRouteRoute
     }
-    '/_authenticated/settings/notifications': {
-      id: '/_authenticated/settings/notifications'
-      path: '/notifications'
-      fullPath: '/settings/notifications'
-      preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
-      parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
-    '/_authenticated/settings/display': {
-      id: '/_authenticated/settings/display'
-      path: '/display'
-      fullPath: '/settings/display'
-      preLoaderRoute: typeof AuthenticatedSettingsDisplayRouteImport
+    '/_authenticated/settings/password': {
+      id: '/_authenticated/settings/password'
+      path: '/password'
+      fullPath: '/settings/password'
+      preLoaderRoute: typeof AuthenticatedSettingsPasswordRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
     '/_authenticated/settings/consent': {
@@ -894,20 +784,6 @@ declare module '@tanstack/react-router' {
       path: '/consent'
       fullPath: '/settings/consent'
       preLoaderRoute: typeof AuthenticatedSettingsConsentRouteImport
-      parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
-    '/_authenticated/settings/appearance': {
-      id: '/_authenticated/settings/appearance'
-      path: '/appearance'
-      fullPath: '/settings/appearance'
-      preLoaderRoute: typeof AuthenticatedSettingsAppearanceRouteImport
-      parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
-    '/_authenticated/settings/account': {
-      id: '/_authenticated/settings/account'
-      path: '/account'
-      fullPath: '/settings/account'
-      preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
     '/_authenticated/npos/create': {
@@ -943,6 +819,13 @@ declare module '@tanstack/react-router' {
       path: '/npos/$npoId'
       fullPath: '/npos/$npoId'
       preLoaderRoute: typeof AuthenticatedNposNpoIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/events/$eventId/': {
+      id: '/_authenticated/events/$eventId/'
+      path: '/events/$eventId'
+      fullPath: '/events/$eventId'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/npos/$npoId/edit': {
@@ -991,22 +874,15 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedSettingsRouteRouteChildren {
-  AuthenticatedSettingsAccountRoute: typeof AuthenticatedSettingsAccountRoute
-  AuthenticatedSettingsAppearanceRoute: typeof AuthenticatedSettingsAppearanceRoute
   AuthenticatedSettingsConsentRoute: typeof AuthenticatedSettingsConsentRoute
-  AuthenticatedSettingsDisplayRoute: typeof AuthenticatedSettingsDisplayRoute
-  AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
+  AuthenticatedSettingsPasswordRoute: typeof AuthenticatedSettingsPasswordRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
 
 const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
   {
-    AuthenticatedSettingsAccountRoute: AuthenticatedSettingsAccountRoute,
-    AuthenticatedSettingsAppearanceRoute: AuthenticatedSettingsAppearanceRoute,
     AuthenticatedSettingsConsentRoute: AuthenticatedSettingsConsentRoute,
-    AuthenticatedSettingsDisplayRoute: AuthenticatedSettingsDisplayRoute,
-    AuthenticatedSettingsNotificationsRoute:
-      AuthenticatedSettingsNotificationsRoute,
+    AuthenticatedSettingsPasswordRoute: AuthenticatedSettingsPasswordRoute,
     AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   }
 
@@ -1022,15 +898,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedEventsCreateRoute: typeof AuthenticatedEventsCreateRoute
   AuthenticatedNposCreateRoute: typeof AuthenticatedNposCreateRoute
-  AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
-  AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedEventsIndexRoute: typeof AuthenticatedEventsIndexRoute
-  AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedNposIndexRoute: typeof AuthenticatedNposIndexRoute
-  AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
   AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
   AuthenticatedNposNpoIdEditRoute: typeof AuthenticatedNposNpoIdEditRoute
+  AuthenticatedEventsEventIdIndexRoute: typeof AuthenticatedEventsEventIdIndexRoute
   AuthenticatedNposNpoIdIndexRoute: typeof AuthenticatedNposNpoIdIndexRoute
   AuthenticatedEventsEventIdAuctionItemsCreateRoute: typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
   AuthenticatedEventsEventIdAuctionItemsIndexRoute: typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
@@ -1046,15 +919,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedEventsCreateRoute: AuthenticatedEventsCreateRoute,
   AuthenticatedNposCreateRoute: AuthenticatedNposCreateRoute,
-  AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
-  AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedEventsIndexRoute: AuthenticatedEventsIndexRoute,
-  AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedNposIndexRoute: AuthenticatedNposIndexRoute,
-  AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
   AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
   AuthenticatedNposNpoIdEditRoute: AuthenticatedNposNpoIdEditRoute,
+  AuthenticatedEventsEventIdIndexRoute: AuthenticatedEventsEventIdIndexRoute,
   AuthenticatedNposNpoIdIndexRoute: AuthenticatedNposNpoIdIndexRoute,
   AuthenticatedEventsEventIdAuctionItemsCreateRoute:
     AuthenticatedEventsEventIdAuctionItemsCreateRoute,

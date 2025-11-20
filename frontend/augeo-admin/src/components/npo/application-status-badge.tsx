@@ -20,7 +20,7 @@ import { npoService } from '@/services/npo-service'
 import { useNPOStore } from '@/stores/npo-store'
 import type { NPODetail } from '@/types/npo'
 import { AlertCircle, Send } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 interface ApplicationStatusBadgeProps {
@@ -54,7 +54,7 @@ export function ApplicationStatusBadge({
   const [showLegalModal, setShowLegalModal] = useState(false)
 
   // Validate required fields
-  const validateRequiredFields = (): { valid: boolean; error?: string } => {
+  const validateRequiredFields = useCallback((): { valid: boolean; error?: string } => {
     const fieldLabels: Record<string, string> = {
       name: 'Organization Name',
       description: 'Description',
@@ -82,7 +82,7 @@ export function ApplicationStatusBadge({
     }
 
     return { valid: true }
-  }
+  }, [npo.name, npo.description, npo.email, npo.phone, npo.address, npo.tax_id])
 
   // Run validation on mount and whenever NPO data changes
   useEffect(() => {

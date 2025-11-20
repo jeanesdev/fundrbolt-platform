@@ -2,13 +2,15 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import Settings, get_settings
 from app.core.database import get_db
 from app.middleware.auth import get_current_user, require_role
 from app.models.user import User
 from app.schemas.users import (
+    ProfileUpdateRequest,
     RoleUpdateRequest,
     UserActivateRequest,
     UserCreateRequest,
@@ -55,6 +57,8 @@ async def build_user_response(user: User, db: AsyncSession) -> dict[str, object]
         "state": user.state,
         "postal_code": user.postal_code,
         "country": user.country,
+        "profile_picture_url": user.profile_picture_url,
+        "social_media_links": user.social_media_links,
         "role": role_name,
         "npo_id": user.npo_id,
         "email_verified": user.email_verified,
@@ -89,6 +93,7 @@ async def get_current_user_profile(
         first_name=current_user.first_name,
         last_name=current_user.last_name,
         phone=current_user.phone,
+        profile_picture_url=current_user.profile_picture_url,
         email_verified=current_user.email_verified,
         is_active=current_user.is_active,
         role=role_name,
@@ -97,6 +102,111 @@ async def get_current_user_profile(
         updated_at=current_user.updated_at,
         last_login_at=current_user.last_login_at,
     )
+
+
+@router.patch("/me/profile", response_model=UserPublicWithRole)
+async def update_current_user_profile(
+    profile_data: ProfileUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> UserPublicWithRole:
+    """Update current user's profile.
+
+    Allows authenticated users to update their own profile information.
+    Email changes are not allowed via this endpoint (requires separate verification flow).
+
+    Access Control (T052):
+    - All authenticated users can update their own profile
+
+    Args:
+        profile_data: Updated profile data
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        UserPublicWithRole: Updated user profile
+
+    Raises:
+        400: Invalid data
+        401: Not authenticated
+        404: User not found
+    """
+    user_service = UserService()
+
+    try:
+        # Create UserUpdateRequest from ProfileUpdateRequest
+        # (T051: Backend Pydantic validation already handled by ProfileUpdateRequest)
+        update_data = UserUpdateRequest(
+            first_name=profile_data.first_name,
+            last_name=profile_data.last_name,
+            phone=profile_data.phone,
+            organization_name=profile_data.organization_name,
+            address_line1=profile_data.address_line1,
+            address_line2=profile_data.address_line2,
+            city=profile_data.city,
+            state=profile_data.state,
+            postal_code=profile_data.postal_code,
+            country=profile_data.country,
+            social_media_links=profile_data.social_media_links,
+            password=None,  # Profile updates don't change password
+        )
+
+        # Update user - user can only update their own profile (T052)
+        updated_user = await user_service.update_user(
+            db=db,
+            current_user=current_user,
+            user_id=current_user.id,  # Enforce updating only own profile
+            user_data=update_data,
+        )
+
+        # Log profile update
+        fields_updated = [
+            field
+            for field in [
+                "first_name",
+                "last_name",
+                "phone",
+                "organization_name",
+                "address_line1",
+                "address_line2",
+                "city",
+                "state",
+                "postal_code",
+                "country",
+            ]
+            if getattr(profile_data, field, None) is not None
+        ]
+
+        await AuditService.log_user_updated(
+            db=db,
+            user_id=updated_user.id,
+            email=updated_user.email,
+            fields_updated=fields_updated,
+            admin_user_id=current_user.id,
+            admin_email=current_user.email,
+            ip_address=None,
+        )
+
+        # Return updated user with role info
+        role_name = getattr(updated_user, "role_name", "unknown")
+        return UserPublicWithRole(
+            id=updated_user.id,
+            email=updated_user.email,
+            first_name=updated_user.first_name,
+            last_name=updated_user.last_name,
+            phone=updated_user.phone,
+            email_verified=updated_user.email_verified,
+            is_active=updated_user.is_active,
+            role=role_name,
+            npo_id=updated_user.npo_id,
+            created_at=updated_user.created_at,
+            updated_at=updated_user.updated_at,
+            last_login_at=updated_user.last_login_at,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
 
 
 @router.get("", response_model=UserListResponse)
@@ -646,3 +756,105 @@ async def verify_user_email(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except PermissionError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+
+
+@router.post("/{user_id}/profile-picture")
+async def upload_profile_picture(
+    user_id: uuid.UUID,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, str]:
+    """Upload or update user profile picture.
+
+    Allows users to upload their profile picture. Users can only update their own picture,
+    except for super_admin who can update any user's picture.
+
+    Args:
+        user_id: User ID
+        file: Uploaded image file
+        current_user: Currently authenticated user
+        db: Database session
+
+    Returns:
+        dict with profile_picture_url
+
+    Raises:
+        403: User trying to update another user's picture (non-admin)
+        404: User not found
+        400: Invalid file type or size
+    """
+    from sqlalchemy import select, update
+
+    from app.services.file_upload_service import FileUploadService
+
+    # Permission check: users can only update their own picture, except super_admin
+    if current_user.id != user_id and current_user.role_name != "super_admin":  # type: ignore[attr-defined]
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update your own profile picture",
+        )
+
+    # Validate file type
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be an image",
+        )
+
+    # Read file content
+    file_content = await file.read()
+
+    # Validate file size (5MB limit)
+    max_size = 5 * 1024 * 1024  # 5MB
+    if len(file_content) > max_size:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File size must be less than 5MB",
+        )
+
+    # Get the user
+    user_stmt = select(User).where(User.id == user_id)
+    result = await db.execute(user_stmt)
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    # Upload file
+    file_upload_service = FileUploadService(settings)
+
+    # Use user_id as npo_id for file upload service (store in user-specific folder)
+    profile_picture_url = file_upload_service.upload_file(
+        npo_id=user_id,  # Use user_id as folder identifier
+        file_name=file.filename or "profile.jpg",
+        content_type=file.content_type,
+        file_content=file_content,
+    )
+
+    # Update user's profile_picture_url
+    update_stmt = (
+        update(User)
+        .where(User.id == user_id)
+        .values(profile_picture_url=profile_picture_url)
+        .returning(User)
+    )
+    await db.execute(update_stmt)
+    await db.commit()
+
+    # Audit log
+    await AuditService.log_user_updated(
+        db=db,
+        user_id=user_id,
+        email=user.email,
+        fields_updated=["profile_picture_url"],
+        admin_user_id=current_user.id,
+        admin_email=current_user.email,
+        ip_address=None,
+    )
+
+    return {"profile_picture_url": profile_picture_url}

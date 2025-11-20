@@ -97,6 +97,7 @@ class UserUpdateRequest(BaseModel):
     postal_code: str | None = Field(None, max_length=20)
     country: str | None = Field(None, max_length=100)
     password: str | None = Field(None, min_length=8, max_length=100)
+    social_media_links: dict[str, str] | None = None
 
     @field_validator("password")
     @classmethod
@@ -111,9 +112,52 @@ class UserUpdateRequest(BaseModel):
         return v
 
 
+class ProfileUpdateRequest(BaseModel):
+    """Request schema for user profile self-update (from profile page).
+
+    This excludes password changes (use separate password change endpoint).
+    Email changes also require separate verification flow.
+    Phone numbers must be in E.164 format (+[country code][number]).
+    """
+
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+    phone: str | None = Field(None, max_length=20, pattern=r"^\+[1-9]\d{1,14}$")
+    organization_name: str | None = Field(None, max_length=255)
+    address_line1: str | None = Field(None, max_length=255)
+    address_line2: str | None = Field(None, max_length=255)
+    city: str | None = Field(None, max_length=100)
+    state: str | None = Field(None, max_length=100)
+    postal_code: str | None = Field(None, max_length=20)
+    country: str | None = Field(None, max_length=100)
+    social_media_links: dict[str, str] | None = None
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone_e164(cls, v: str | None) -> str | None:
+        """Validate phone is in E.164 format if provided."""
+        if v is None or v == "":
+            return None
+        # E.164 format: +[country code][number], max 15 digits
+        if not v.startswith("+"):
+            raise ValueError("Phone must start with + (E.164 format)")
+        if len(v) < 3 or len(v) > 16:
+            raise ValueError("Phone must be between 3 and 16 characters (E.164 format)")
+        return v
+
+
 # ================================
 # Response Schemas
 # ================================
+
+
+class NPOMembershipInfo(BaseModel):
+    """NPO membership information for a user."""
+
+    npo_id: uuid.UUID
+    npo_name: str
+    role: str  # admin, co_admin, staff
+    status: str  # active, invited, suspended, removed
 
 
 class UserPublicWithRole(BaseModel):
@@ -131,8 +175,11 @@ class UserPublicWithRole(BaseModel):
     state: str | None = None
     postal_code: str | None = None
     country: str | None = None
+    profile_picture_url: str | None = None
+    social_media_links: dict[str, str] | None = None
     role: str
     npo_id: uuid.UUID | None = None
+    npo_memberships: list[NPOMembershipInfo] = []
     email_verified: bool
     is_active: bool
     last_login_at: datetime | None = None

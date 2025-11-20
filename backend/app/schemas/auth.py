@@ -67,6 +67,7 @@ class UserPublic(BaseModel):
     state: str | None = None
     postal_code: str | None = None
     country: str | None = None
+    profile_picture_url: str | None = None
     email_verified: bool
     is_active: bool
     role: str  # Role name (e.g., "donor", "npo_admin")

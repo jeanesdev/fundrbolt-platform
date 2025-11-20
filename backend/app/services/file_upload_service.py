@@ -265,8 +265,15 @@ class FileUploadService:
         Returns:
             Dict with upload_url, logo_url, and expires_in
         """
-        # Generate SAS URL
-        upload_url, logo_url = self.generate_upload_sas_url(npo_id, file_name, content_type)
+        # Generate blob name
+        blob_name = self.generate_blob_name(npo_id, file_name)
+
+        # Generate upload SAS URL (short expiry for upload)
+        upload_url, _public_url = self.generate_upload_sas_url(npo_id, file_name, content_type)
+
+        # Generate read SAS URL with long expiry for logo_url
+        # This allows logos to be accessible even when public access is disabled
+        logo_url = self.generate_read_sas_url(blob_name, expiry_days=365)
 
         # Calculate expiry time in seconds
         expires_in = int(self.SAS_EXPIRY_HOURS * 3600)  # Convert hours to seconds
@@ -316,6 +323,165 @@ class FileUploadService:
             "is_local": True,  # Flag to indicate local storage
         }
 
+    def upload_file(
+        self,
+        npo_id: uuid.UUID,
+        file_name: str,
+        content_type: str,
+        file_content: bytes,
+    ) -> str:
+        """Upload file to Azure Blob Storage or local storage.
+
+        Args:
+            npo_id: NPO ID
+            file_name: Original file name
+            content_type: MIME type
+            file_content: File bytes
+
+        Returns:
+            Final logo URL (SAS URL for Azure, local URL for local storage)
+
+        Raises:
+            ValueError: If upload fails
+        """
+        # Validate file size
+        file_size = len(file_content)
+        if file_size > self.MAX_FILE_SIZE:
+            max_mb = self.MAX_FILE_SIZE / (1024 * 1024)
+            raise ValueError(f"File size {file_size} bytes exceeds {max_mb}MB limit")
+
+        # Validate content type
+        if content_type not in self.ALLOWED_IMAGE_TYPES:
+            raise ValueError(
+                f"Invalid content type: {content_type}. "
+                f"Allowed: {', '.join(self.ALLOWED_IMAGE_TYPES)}"
+            )
+
+        # Use Azure Storage if configured, otherwise use local storage
+        if self.blob_service_client and self.settings.azure_storage_account_name:
+            return self._upload_to_azure(npo_id, file_name, content_type, file_content)
+        else:
+            return self._upload_to_local(npo_id, file_name, file_content)
+
+    def _upload_to_azure(
+        self,
+        npo_id: uuid.UUID,
+        file_name: str,
+        content_type: str,
+        file_content: bytes,
+    ) -> str:
+        """Upload file directly to Azure Blob Storage.
+
+        Args:
+            npo_id: NPO ID
+            file_name: Original file name
+            content_type: MIME type
+            file_content: File bytes
+
+        Returns:
+            Read SAS URL with 365-day expiry
+
+        Raises:
+            ValueError: If upload fails
+        """
+        # Generate blob name
+        blob_name = self.generate_blob_name(npo_id, file_name)
+
+        # Get blob client
+        if not self.blob_service_client:
+            raise ValueError("Azure Blob Storage is not configured")
+
+        blob_client = self.blob_service_client.get_blob_client(
+            container=self.container_name, blob=blob_name
+        )
+
+        # Upload to Azure
+        blob_client.upload_blob(
+            file_content,
+            blob_type="BlockBlob",
+            content_settings=ContentSettings(content_type=content_type),
+            overwrite=True,
+        )
+
+        # Generate read SAS URL for the uploaded blob
+        logo_url = self.generate_read_sas_url(blob_name, expiry_days=365)
+
+        return logo_url
+
+    def _upload_to_local(self, npo_id: uuid.UUID, file_name: str, file_content: bytes) -> str:
+        """Upload file to local storage (development mode).
+
+        Args:
+            npo_id: NPO ID
+            file_name: Original file name
+            file_content: File bytes
+
+        Returns:
+            Local URL path
+        """
+        # Generate blob name (same format as Azure)
+        blob_name = self.generate_blob_name(npo_id, file_name)
+
+        # Strip "logos/" prefix since local_storage_dir already includes it
+        if blob_name.startswith("logos/"):
+            blob_name = blob_name[6:]
+
+        # Create NPO-specific directory
+        npo_dir = self.local_storage_dir / str(npo_id)
+        npo_dir.mkdir(parents=True, exist_ok=True)
+
+        # Local file path
+        local_file_path = self.local_storage_dir / blob_name
+
+        # Write file
+        local_file_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(local_file_path, "wb") as f:
+            f.write(file_content)
+
+        # Return URL that will be served by FastAPI static files
+        return f"/static/uploads/logos/{blob_name}"
+
+    def generate_read_sas_url(self, blob_name: str, expiry_days: int = 365) -> str:
+        """Generate a read-only SAS URL for an uploaded blob.
+
+        This is used for logo_url to allow read access even when
+        the storage account has public access disabled.
+
+        Args:
+            blob_name: Blob name (e.g., logos/npo-id/filename.png)
+            expiry_days: Number of days until SAS token expires (default: 365)
+
+        Returns:
+            SAS URL with read permissions
+
+        Raises:
+            ValueError: If Azure Storage is not configured
+        """
+        if not self.blob_service_client or not self.settings.azure_storage_account_name:
+            raise ValueError(
+                "Azure Blob Storage is not configured. "
+                "Set AZURE_STORAGE_CONNECTION_STRING and AZURE_STORAGE_ACCOUNT_NAME."
+            )
+
+        # Get blob client
+        blob_client = self.blob_service_client.get_blob_client(
+            container=self.container_name, blob=blob_name
+        )
+
+        # Generate SAS token with read permissions
+        sas_token = generate_blob_sas(
+            account_name=self.settings.azure_storage_account_name,
+            container_name=self.container_name,
+            blob_name=blob_name,
+            account_key=self._get_account_key(),
+            permission=BlobSasPermissions(read=True),
+            expiry=datetime.utcnow() + timedelta(days=expiry_days),
+        )
+
+        # Construct SAS URL
+        sas_url = f"{blob_client.url}?{sas_token}"
+        return sas_url
+
     def _get_account_key(self) -> str:
         """Extract account key from connection string.
 
@@ -340,52 +506,6 @@ class FileUploadService:
             raise ValueError("AccountKey not found in connection string")
 
         return account_key
-
-    async def upload_file(
-        self, npo_id: uuid.UUID, file_content: bytes, file_name: str, content_type: str
-    ) -> str:
-        """Upload file directly to Azure Blob Storage (server-side upload).
-
-        Use this method for server-side uploads. For client-side uploads,
-        use generate_upload_sas_url() instead.
-
-        Args:
-            npo_id: NPO ID
-            file_content: File content as bytes
-            file_name: Original file name
-            content_type: MIME type
-
-        Returns:
-            Public URL of the uploaded blob
-
-        Raises:
-            ValueError: If validation fails or Azure Storage not configured
-        """
-        # Validate file
-        is_valid, error_msg = self.validate_image_file(file_content, content_type, file_name)
-        if not is_valid:
-            raise ValueError(error_msg)
-
-        if not self.blob_service_client:
-            raise ValueError("Azure Blob Storage is not configured")
-
-        # Generate blob name
-        blob_name = self.generate_blob_name(npo_id, file_name)
-
-        # Get blob client
-        blob_client = self.blob_service_client.get_blob_client(
-            container=self.container_name, blob=blob_name
-        )
-
-        # Upload file
-        blob_client.upload_blob(
-            file_content,
-            blob_type="BlockBlob",
-            content_settings=ContentSettings(content_type=content_type),
-            overwrite=True,
-        )
-
-        return str(blob_client.url)
 
     async def delete_file(self, blob_url: str) -> bool:
         """Delete a file from Azure Blob Storage.

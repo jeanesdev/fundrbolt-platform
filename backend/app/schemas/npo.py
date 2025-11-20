@@ -131,6 +131,9 @@ class NPOResponse(BaseModel):
     member_count: int | None = None
     active_member_count: int | None = None
 
+    # Branding info (optional, for selectors/list views)
+    logo_url: str | None = None
+
     model_config = {"from_attributes": True}
 
 

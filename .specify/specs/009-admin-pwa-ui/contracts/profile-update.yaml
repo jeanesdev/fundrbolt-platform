@@ -1,0 +1,202 @@
+openapi: 3.1.0
+info:
+  title: Profile Update API
+  description: API endpoint for users to update their profile information
+  version: 1.0.0
+
+paths:
+  /api/v1/users/{user_id}/profile:
+    patch:
+      summary: Update user profile
+      description: |
+        Allows authenticated users to update their own profile information.
+        Users cannot change their email, password, role, or activation status via this endpoint.
+      operationId: updateUserProfile
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: UUID of the user to update (must match authenticated user ID for non-admins)
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  example: "Jane"
+                last_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  example: "Doe"
+                phone:
+                  type: string
+                  pattern: '^\+?[1-9]\d{1,14}$'
+                  nullable: true
+                  example: "+15551234567"
+                organization_name:
+                  type: string
+                  maxLength: 255
+                  nullable: true
+                  example: "Acme Corp"
+                address_line1:
+                  type: string
+                  maxLength: 255
+                  nullable: true
+                  example: "123 Main St"
+                address_line2:
+                  type: string
+                  maxLength: 255
+                  nullable: true
+                  example: "Apt 4B"
+                city:
+                  type: string
+                  maxLength: 100
+                  nullable: true
+                  example: "San Francisco"
+                state:
+                  type: string
+                  maxLength: 100
+                  nullable: true
+                  example: "CA"
+                postal_code:
+                  type: string
+                  maxLength: 20
+                  nullable: true
+                  example: "94102"
+                country:
+                  type: string
+                  maxLength: 100
+                  nullable: true
+                  example: "United States"
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  email:
+                    type: string
+                    format: email
+                  first_name:
+                    type: string
+                  last_name:
+                    type: string
+                  phone:
+                    type: string
+                    nullable: true
+                  organization_name:
+                    type: string
+                    nullable: true
+                  address_line1:
+                    type: string
+                    nullable: true
+                  address_line2:
+                    type: string
+                    nullable: true
+                  city:
+                    type: string
+                    nullable: true
+                  state:
+                    type: string
+                    nullable: true
+                  postal_code:
+                    type: string
+                    nullable: true
+                  country:
+                    type: string
+                    nullable: true
+                  email_verified:
+                    type: boolean
+                  is_active:
+                    type: boolean
+                  role:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      name:
+                        type: string
+                        example: "NPO Admin"
+                  created_at:
+                    type: string
+                    format: date-time
+                  updated_at:
+                    type: string
+                    format: date-time
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        loc:
+                          type: array
+                          items:
+                            type: string
+                        msg:
+                          type: string
+                        type:
+                          type: string
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Not authenticated"
+        '403':
+          description: Forbidden (user trying to edit another user's profile without admin rights)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "You do not have permission to update this profile"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "User not found"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

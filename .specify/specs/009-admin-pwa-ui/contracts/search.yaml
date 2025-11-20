@@ -1,0 +1,180 @@
+openapi: 3.1.0
+info:
+  title: Search API
+  description: Cross-resource search API with role-based filtering
+  version: 1.0.0
+
+paths:
+  /api/v1/search:
+    get:
+      summary: Search across users, NPOs, and events
+      description: |
+        Performs full-text search across multiple resource types (users, npos, events)
+        with automatic role-based filtering. Returns top 20 results per entity type.
+
+        Role-based filtering:
+        - SuperAdmin: All resources (filtered by npoId if provided, else all)
+        - NPO Admin: Resources within assigned NPO(s)
+        - Event Coordinator: Read-only NPOs (registered), assigned events, event users
+        - Staff: Read-only NPO (assigned), assigned events, event users
+        - Donor: No access (admin PWA restricted)
+      operationId: searchResources
+      tags:
+        - Search
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query string (minimum 2 characters)
+          schema:
+            type: string
+            minLength: 2
+            example: "john doe"
+        - name: npoId
+          in: query
+          required: false
+          description: Filter results to specific NPO (SuperAdmin only, optional)
+          schema:
+            type: string
+            format: uuid
+            nullable: true
+            example: "123e4567-e89b-12d3-a456-426614174000"
+        - name: types
+          in: query
+          required: false
+          description: "Comma-separated list of entity types to search (default: all)"
+          schema:
+            type: string
+            enum:
+              - users
+              - npos
+              - events
+              - users,npos
+              - users,events
+              - npos,events
+              - users,npos,events
+            example: users,events
+      responses:
+        '200':
+          description: Search results with matching entities
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  query:
+                    type: string
+                    example: "john doe"
+                  total_results:
+                    type: integer
+                    example: 42
+                  results:
+                    type: object
+                    properties:
+                      users:
+                        type: array
+                        maxItems: 20
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            type:
+                              type: string
+                              enum: ["user"]
+                            first_name:
+                              type: string
+                            last_name:
+                              type: string
+                            email:
+                              type: string
+                              format: email
+                            role:
+                              type: string
+                              example: "NPO Admin"
+                            npo_name:
+                              type: string
+                              nullable: true
+                              example: "Bay Area Food Bank"
+                      npos:
+                        type: array
+                        maxItems: 20
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            type:
+                              type: string
+                              enum: ["npo"]
+                            name:
+                              type: string
+                            email:
+                              type: string
+                              format: email
+                            status:
+                              type: string
+                              enum: ["draft", "pending_approval", "approved", "suspended", "rejected"]
+                      events:
+                        type: array
+                        maxItems: 20
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            type:
+                              type: string
+                              enum: ["event"]
+                            title:
+                              type: string
+                            npo_name:
+                              type: string
+                            start_datetime:
+                              type: string
+                              format: date-time
+                            status:
+                              type: string
+                              enum: ["draft", "active", "closed"]
+        '400':
+          description: Validation error (query too short, invalid types, etc.)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Query must be at least 2 characters"
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Not authenticated"
+        '403':
+          description: Forbidden (Donor role attempting to access admin PWA)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Donors do not have access to admin search"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

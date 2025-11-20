@@ -1,7 +1,7 @@
 """add tagline to npo
 
 Revision ID: 010
-Revises: 009
+Revises: 009b
 Create Date: 2025-11-01
 
 """
@@ -14,7 +14,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "010"
-down_revision: str | None = "009"
+down_revision: str | None = "009b"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

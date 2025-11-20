@@ -196,11 +196,19 @@ async def list_events(
     """
     List events with filtering and pagination.
 
+    Access Control:
+    - Super Admin: Can view all events (or filter by npo_id if specified)
+    - NPO Admin: Can view events in their NPO only
+    - Event Coordinator: Can view events in their NPO only
+    - Staff: Can view events in their NPO only
+    - Donor: Not allowed (blocked at route level)
+
     Filters:
-    - npo_id: Show events for specific NPO
+    - npo_id: Show events for specific NPO (SuperAdmin only)
     - status: draft, active, or closed
     """
     from app.models.event import EventStatus
+    from app.services.permission_service import PermissionService
 
     status_filter = None
     if status_param:
@@ -212,9 +220,13 @@ async def list_events(
                 detail=f"Invalid status: {status_param}. Must be draft, active, or closed.",
             )
 
+    # Apply role-based filtering
+    permission_service = PermissionService()
+    filtered_npo_id = permission_service.get_npo_filter_for_user(current_user, npo_id)
+
     events, total = await EventService.list_events(
         db,
-        npo_id=npo_id,
+        npo_id=filtered_npo_id,
         status_filter=status_filter,
         page=page,
         per_page=per_page,

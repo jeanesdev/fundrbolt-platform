@@ -10,6 +10,7 @@ export function useUsers(params?: {
   page_size?: number
   role?: string
   is_active?: boolean
+  npo_id?: string
 }) {
   return useQuery({
     queryKey: ['users', params],
@@ -127,10 +128,10 @@ export function useUpdateUserRole() {
       const message =
         error instanceof Error && 'response' in error
           ? (
-              error as {
-                response?: { data?: { error?: { message?: string } } }
-              }
-            ).response?.data?.error?.message
+            error as {
+              response?: { data?: { error?: { message?: string } } }
+            }
+          ).response?.data?.error?.message
           : 'Failed to update user role'
       toast.error(message || 'Failed to update user role')
     },
@@ -161,10 +162,10 @@ export function useActivateUser() {
       const message =
         error instanceof Error && 'response' in error
           ? (
-              error as {
-                response?: { data?: { error?: { message?: string } } }
-              }
-            ).response?.data?.error?.message
+            error as {
+              response?: { data?: { error?: { message?: string } } }
+            }
+          ).response?.data?.error?.message
           : 'Failed to update user status'
       toast.error(message || 'Failed to update user status')
     },
@@ -188,7 +189,7 @@ export function useVerifyUserEmail() {
       const message =
         error instanceof Error && 'response' in error
           ? (error as { response?: { data?: { detail?: string } } }).response
-              ?.data?.detail
+            ?.data?.detail
           : 'Failed to verify email'
       toast.error(message || 'Failed to verify email')
     },

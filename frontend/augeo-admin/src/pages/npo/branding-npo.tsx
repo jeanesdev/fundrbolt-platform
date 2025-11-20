@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { brandingApi } from '@/services/npo-service'
 import { useNPOStore } from '@/stores/npo-store'
 import type { BrandingUpdateRequest } from '@/types/npo'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { AlertCircle, ArrowLeft, Building2, Facebook, Instagram, Linkedin, Palette, Save, Twitter } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
@@ -131,16 +132,29 @@ async function createCroppedImage(
     pixelCrop.height
   )
 
+  // Determine output format and quality
+  // Use JPEG with 0.85 quality for better compression
+  // This significantly reduces file size while maintaining good quality
+  const outputType = 'image/jpeg'
+  const quality = 0.85
+
+  // Update filename extension to match output type
+  const newFileName = fileName.replace(/\.[^.]+$/, '.jpg')
+
   // Convert canvas to blob
   return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        reject(new Error('Canvas is empty'))
-        return
-      }
-      const file = new File([blob], fileName, { type: 'image/png' })
-      resolve(file)
-    }, 'image/png')
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error('Canvas is empty'))
+          return
+        }
+        const file = new File([blob], newFileName, { type: outputType })
+        resolve(file)
+      },
+      outputType,
+      quality
+    )
   })
 }
 
@@ -158,6 +172,7 @@ export default function NpoBrandingPage() {
   const { npoId } = useParams({ from: '/_authenticated/npos/$npoId/' })
   const { currentNPO, loadNPOById } = useNPOStore()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -278,11 +293,22 @@ export default function NpoBrandingPage() {
         originalFileName
       )
 
+      // Validate cropped file size
+      const maxSize = 5 * 1024 * 1024 // 5MB
+      if (croppedFile.size > maxSize) {
+        const sizeMB = (croppedFile.size / (1024 * 1024)).toFixed(2)
+        toast.error(`Cropped image is too large (${sizeMB}MB). Please try a smaller crop area or lower resolution image.`)
+        return
+      }
+
       // Upload the cropped image
       const result = await brandingApi.uploadLogoLocal(npoId, croppedFile)
 
       // Update logo URL
       setLogoUrl(result.logo_url)
+
+      // Invalidate NPO queries to refresh the logo in NpoSelector dropdown
+      await queryClient.invalidateQueries({ queryKey: ['npos'] })
 
       // Close dialog and clean up
       setCropDialogOpen(false)
@@ -307,7 +333,7 @@ export default function NpoBrandingPage() {
         duration: 5000, // Show for 5 seconds since it's an important message
       })
     }
-  }, [npoId, imageToCrop, croppedAreaPixels, originalFileName])
+  }, [npoId, imageToCrop, croppedAreaPixels, originalFileName, queryClient])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

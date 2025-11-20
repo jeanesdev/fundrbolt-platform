@@ -144,8 +144,17 @@ async def list_npos(
     # Get filtered NPOs based on user permissions
     npos, total = await NPOService.list_npos(db, current_user, list_params)
 
+    # Convert to response schemas, including logo_url from branding
+    npo_responses = []
+    for npo in npos:
+        npo_dict = NPOResponse.model_validate(npo).model_dump()
+        # Add logo_url from branding relationship if available
+        if npo.branding and npo.branding.logo_url:
+            npo_dict["logo_url"] = npo.branding.logo_url
+        npo_responses.append(NPOResponse.model_validate(npo_dict))
+
     return NPOListResponse(
-        items=[NPOResponse.model_validate(npo) for npo in npos],
+        items=npo_responses,
         total=total,
         page=page,
         page_size=page_size,

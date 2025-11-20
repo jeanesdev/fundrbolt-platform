@@ -289,3 +289,133 @@ class PermissionService:
             return False, f"Role '{role}' must not have npo_id set"
 
         return True, None
+
+    async def can_view_npo(self, user: Any, target_npo_id: uuid.UUID) -> bool:
+        """Check if user can view a specific NPO.
+
+        Args:
+            user: User making the request
+            target_npo_id: NPO ID being viewed
+
+        Returns:
+            True if user can view the NPO, False otherwise
+
+        Rules:
+            - super_admin: Can view all NPOs
+            - npo_admin: Can view their NPO only
+            - event_coordinator: Can view NPOs they're registered with (read-only)
+            - staff: Can view their NPO only (read-only)
+            - donor: Cannot access admin PWA
+        """
+        cache_key = f"perm:{user.id}:view_npo:{target_npo_id}"
+        cached_result = await self._get_cached_permission(cache_key)
+        if cached_result is not None:
+            return cached_result
+
+        result = False
+        if user.role_name == "super_admin":
+            result = True
+        elif user.role_name in {"npo_admin", "event_coordinator", "staff"}:
+            if user.npo_id is None:
+                result = False
+            else:
+                result = bool(target_npo_id == user.npo_id)
+
+        await self._set_cached_permission(cache_key, result)
+        return result
+
+    async def can_modify_npo(self, user: Any, target_npo_id: uuid.UUID) -> bool:
+        """Check if user can modify (update/delete) a specific NPO.
+
+        Args:
+            user: User making the request
+            target_npo_id: NPO ID being modified
+
+        Returns:
+            True if user can modify the NPO, False otherwise
+
+        Rules:
+            - super_admin: Can modify all NPOs
+            - npo_admin: Can modify their NPO only
+            - event_coordinator: Read-only access
+            - staff: Read-only access
+        """
+        cache_key = f"perm:{user.id}:modify_npo:{target_npo_id}"
+        cached_result = await self._get_cached_permission(cache_key)
+        if cached_result is not None:
+            return cached_result
+
+        result = False
+        if user.role_name == "super_admin":
+            result = True
+        elif user.role_name == "npo_admin":
+            if user.npo_id is None:
+                result = False
+            else:
+                result = bool(target_npo_id == user.npo_id)
+
+        await self._set_cached_permission(cache_key, result)
+        return result
+
+    async def can_view_event(self, user: Any, event_npo_id: uuid.UUID) -> bool:
+        """Check if user can view an event.
+
+        Args:
+            user: User making the request
+            event_npo_id: NPO ID that owns the event
+
+        Returns:
+            True if user can view the event, False otherwise
+
+        Rules:
+            - super_admin: Can view all events
+            - npo_admin: Can view events in their NPO
+            - event_coordinator: Can view events in their NPO
+            - staff: Can view events in their NPO (assigned events only in practice)
+        """
+        cache_key = f"perm:{user.id}:view_event:{event_npo_id}"
+        cached_result = await self._get_cached_permission(cache_key)
+        if cached_result is not None:
+            return cached_result
+
+        result = False
+        if user.role_name == "super_admin":
+            result = True
+        elif user.role_name in {"npo_admin", "event_coordinator", "staff"}:
+            if user.npo_id is None:
+                result = False
+            else:
+                result = bool(event_npo_id == user.npo_id)
+
+        await self._set_cached_permission(cache_key, result)
+        return result
+
+    def get_npo_filter_for_user(
+        self, user: Any, requested_npo_id: uuid.UUID | None = None
+    ) -> uuid.UUID | None:
+        """Get NPO filter to apply for list queries based on user role.
+
+        Args:
+            user: User making the request
+            requested_npo_id: NPO ID from NPO context selector (None = "Augeo Platform" for SuperAdmin)
+
+        Returns:
+            - None: No filtering (show all NPOs) - SuperAdmin with "Augeo Platform" selected
+            - UUID: Filter to single NPO - All other users or SuperAdmin with specific NPO selected
+
+        Rules:
+            - super_admin: Use requested_npo_id (None = all, UUID = specific NPO)
+            - npo_admin: Always filter to user.npo_id (ignore requested_npo_id)
+            - event_coordinator: Always filter to user.npo_id (ignore requested_npo_id)
+            - staff: Always filter to user.npo_id (ignore requested_npo_id)
+        """
+        if user.role_name == "super_admin":
+            # SuperAdmin respects NPO context selector
+            return requested_npo_id
+        elif user.role_name in {"npo_admin", "event_coordinator", "staff"}:
+            # All other roles locked to their NPO
+            npo_id: uuid.UUID | None = user.npo_id
+            return npo_id
+        else:
+            # Donor role should never reach here (blocked at route level)
+            return None

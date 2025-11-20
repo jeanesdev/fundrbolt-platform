@@ -14,6 +14,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Azure Database for PostgreSQL (sponsor data), Azure Blob Storage (sponsor logos), Azure Cache for Redis (optional caching) (007-sponsors)
 - Python 3.11+ + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, Azure Blob Storage SDK, Pillow (image processing) (008-auction-items)
 - Azure Database for PostgreSQL (auction item data, metadata), Azure Blob Storage (images/videos) (008-auction-items)
+- TypeScript 5.x (frontend) + Python 3.11+ (backend) + React 18 + Vite + TanStack Router + Radix UI + Tailwind 4 (frontend); FastAPI 0.120 + SQLAlchemy 2.0 + Pydantic 2.0 (backend) (009-admin-pwa-ui)
+- PostgreSQL 15 (users, roles, npos, events, user_role_assignments) + Redis 7 (sessions) (009-admin-pwa-ui)
 
 ## Project Structure
 ```
@@ -98,9 +100,15 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 009-admin-pwa-ui: Added TypeScript 5.x (frontend) + Python 3.11+ (backend) + React 18 + Vite + TanStack Router + Radix UI + Tailwind 4 (frontend); FastAPI 0.120 + SQLAlchemy 2.0 + Pydantic 2.0 (backend)
+  - ✅ Password change page: `/settings/password` route with PasswordChangeForm component
+  - ✅ Settings menu: Added Password menu item with KeyRound icon
+  - ✅ User list pagination: Server-side pagination with proper page count from API
+  - ✅ NPO filtering: Filter users by active NPO membership (not just npo_id field)
+  - ✅ API param fix: Transform `page_size` to `per_page` for backend compatibility
+  - ✅ NPO memberships display: Shows NPO name and role in users table
 - 008-auction-items: Added Python 3.11+ + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, Azure Blob Storage SDK, Pillow (image processing)
 - 007-sponsors: Added Python 3.11+ (Backend), TypeScript (Frontend) + FastAPI, SQLAlchemy, Pydantic, Alembic (Backend); React, Vite, Zustand, React Router (Frontend)
-- 003-event-creation-ability: Added Python 3.11+ (Backend), TypeScript (Frontend) + FastAPI, SQLAlchemy, Pydantic, Alembic (Backend); React, Vite, Zustand, React Router (Frontend)
   - ✅ Azure Bicep templates for 9 Azure resources (App Service, Static Web Apps, PostgreSQL, Redis, Key Vault, etc.)
   - ✅ Environment configurations for dev/staging/production
   - ✅ GitHub Actions workflows: pr-checks, backend-deploy, frontend-deploy, infrastructure-deploy

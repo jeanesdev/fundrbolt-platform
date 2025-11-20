@@ -7,12 +7,14 @@ Admin web application for nonprofit auction management with authentication, user
 - **User Authentication**: Login, registration, logout with JWT tokens
 - **Password Management**: Reset and change password with email verification
 - **Email Verification**: Email verification flow before login
-- **User Management**: List, create, update, delete users (admin only)
+- **User Management**: List, create, update, delete users with server-side pagination and NPO filtering
+- **NPO Context Selector**: Filter all data by selected NPO (top-left corner)
 - **Role Assignment**: Assign roles to users (Super Admin, NPO Admin, NPO Manager, Event Staff, Donor)
+- **Role-Based Dashboards**: Different dashboard views for each role
 - **Session Management**: Automatic token refresh, session expiration warning
 - **Legal Compliance**: Terms of Service, Privacy Policy, Cookie Consent (GDPR)
 - **Consent Management**: View consent history, export data, withdraw consent, delete account
-- **Dark/Light Mode**: Theme switcher with system preference support
+- **Search Bar**: Cross-resource search with role-based filtering (Users, NPOs, Events)
 - **Responsive Design**: Mobile-first responsive layout
 - **Accessibility**: Built with accessibility in mind (ARIA, keyboard navigation)
 
@@ -135,15 +137,20 @@ frontend/augeo-admin/
 ├── src/
 │   ├── components/       # Reusable UI components
 │   │   ├── ui/           # Shadcn UI components
-│   │   ├── layout/       # Layout components (header, sidebar)
+│   │   ├── layout/       # Layout components (header, sidebar, NPO selector)
 │   │   ├── legal/        # Legal components (TOS modal, cookie banner, consent)
+│   │   ├── search/       # Search bar and results components
+│   │   ├── dashboards/   # Role-based dashboard components
 │   │   └── custom/       # Custom shared components
 │   ├── features/         # Feature-based modules
 │   │   ├── auth/         # Authentication (login, register, password reset)
-│   │   ├── users/        # User management
-│   │   └── settings/     # Settings and account
+│   │   ├── users/        # User management with pagination and NPO filtering
+│   │   ├── settings/     # Settings, account, and password change
+│   │   └── events/       # Event management
 │   ├── hooks/            # Custom React hooks
 │   │   ├── use-users.ts  # User management hooks (React Query)
+│   │   ├── use-npo-context.ts  # NPO context hook
+│   │   ├── use-role-based-nav.ts  # Role-based navigation
 │   │   └── use-tos.ts    # Terms of Service hooks
 │   ├── lib/              # Utilities and configurations
 │   │   ├── axios.ts      # Axios configuration with interceptors
@@ -153,11 +160,14 @@ frontend/augeo-admin/
 │   │   └── legal/        # Legal pages (TOS, Privacy, Cookies, Consent)
 │   ├── routes/           # TanStack Router routes
 │   │   ├── __root.tsx    # Root route layout
-│   │   ├── _authenticated/ # Protected routes
+│   │   ├── _authenticated/ # Protected routes with NPO context
 │   │   └── (auth)/       # Auth routes (login, register)
 │   ├── stores/           # Zustand state management
 │   │   ├── auth-store.ts # Auth state (user, tokens, login/logout)
+│   │   ├── npo-context.ts # NPO context state with localStorage
 │   │   └── tos-store.ts  # TOS consent state
+│   ├── services/         # API service layer
+│   │   └── search.ts     # Search API client
 │   ├── types/            # TypeScript type definitions
 │   │   ├── api.ts        # API request/response types
 │   │   ├── auth.ts       # Auth types
@@ -206,10 +216,12 @@ frontend/augeo-admin/
 ### User Management (Admin)
 
 1. **User List** (`/users`):
-   - Paginated table view
-   - Search and filter
+   - Server-side paginated table view
+   - Search and filter by NPO membership
+   - NPO memberships display (shows all active NPO affiliations)
    - Role badges
    - Quick actions (edit, delete, change role)
+   - Proper page count based on total results
 
 2. **Create User**:
    - Invite dialog with form
@@ -221,6 +233,47 @@ frontend/augeo-admin/
    - Edit user details
    - Change role
    - Activate/deactivate account
+
+4. **Password Change** (`/settings/password`):
+   - Change password page with current password verification
+   - Password strength validation
+   - Accessible from Settings menu
+
+### NPO Context Management
+
+1. **NPO Selector** (top-left corner):
+   - Role-based NPO list (SuperAdmin sees all, others see assigned NPOs)
+   - "Augeo Platform" option for SuperAdmin (view all data)
+   - Auto-selection for single-NPO users
+   - Disabled for users with only one NPO (shows name only)
+   - LocalStorage persistence across sessions
+
+2. **Data Filtering**:
+   - All list pages filter by selected NPO context
+   - User list shows only users from selected NPO
+   - Event list shows only events from selected NPO
+   - NPO list shows only selected NPO or all NPOs
+
+### Search Functionality
+
+1. **Cross-Resource Search** (top-right corner):
+   - Search across Users, NPOs, and Events
+   - 300ms debounced input for performance
+   - Minimum 2 characters required
+   - Role-based filtering (NPO Admin sees only own NPO results)
+   - NPO context awareness (respects selected NPO)
+   - Grouped results display
+   - Clickable results navigate to detail pages
+   - "No results found" message
+
+### Role-Based Dashboards
+
+1. **SuperAdmin Dashboard**: Platform-wide statistics and management
+2. **NPO Admin Dashboard**: NPO-specific analytics and tools
+3. **Event Coordinator Dashboard**: Event management and coordination
+4. **Staff Dashboard**: Operational tasks and check-in features
+
+Each dashboard shows role-appropriate data and actions.
 
 ### Authorization
 

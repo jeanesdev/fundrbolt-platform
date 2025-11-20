@@ -1,5 +1,6 @@
 """Database models package."""
 
+from app.models.auction_item import AuctionItem
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin, UUIDMixin
 from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
@@ -16,6 +17,7 @@ from app.models.sponsor import Sponsor
 from app.models.user import User
 
 __all__ = [
+    "AuctionItem",
     "AuditLog",
     "Base",
     "TimestampMixin",

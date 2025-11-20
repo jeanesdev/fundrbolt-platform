@@ -12,6 +12,14 @@ const _userRoleSchema = z.union([
 ])
 export type UserRole = z.infer<typeof _userRoleSchema>
 
+const npoMembershipSchema = z.object({
+  npo_id: z.string(),
+  npo_name: z.string(),
+  role: z.string(), // admin, co_admin, staff
+  status: z.string(), // active, invited, suspended, removed
+})
+export type NPOMembership = z.infer<typeof npoMembershipSchema>
+
 const userSchema = z.object({
   id: z.string(),
   email: z.string(),
@@ -27,6 +35,7 @@ const userSchema = z.object({
   country: z.string().nullable(),
   role: z.string(), // String role name from backend
   npo_id: z.string().nullable(),
+  npo_memberships: z.array(npoMembershipSchema).default([]),
   email_verified: z.boolean(),
   is_active: z.boolean(),
   last_login_at: z.string().nullable(),

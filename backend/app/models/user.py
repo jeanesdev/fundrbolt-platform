@@ -2,10 +2,10 @@
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDMixin
@@ -64,6 +64,16 @@ class User(Base, UUIDMixin, TimestampMixin):
     state: Mapped[str | None] = mapped_column(String(100), nullable=True)
     postal_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
     country: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    # Profile Picture
+    profile_picture_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    # Social Media Links (JSON)
+    # Schema: {facebook, twitter, instagram, linkedin, youtube, website}
+    social_media_links: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON,
+        nullable=True,
+    )
 
     # Authentication
     email_verified: Mapped[bool] = mapped_column(

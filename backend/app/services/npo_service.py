@@ -137,8 +137,10 @@ class NPOService:
         Returns:
             Tuple of (NPO list, total count)
         """
-        # Build base query
-        query = select(NPO).where(NPO.deleted_at.is_(None))
+        # Build base query with branding relationship for logo_url
+        from sqlalchemy.orm import selectinload
+
+        query = select(NPO).options(selectinload(NPO.branding)).where(NPO.deleted_at.is_(None))
 
         # Apply permission filtering
         if current_user.role_name == "super_admin":  # type: ignore[attr-defined]

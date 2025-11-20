@@ -1,6 +1,6 @@
+import apiClient from '@/lib/axios'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import apiClient from '@/lib/axios'
 
 interface AuthUser {
   id: string
@@ -9,6 +9,7 @@ interface AuthUser {
   last_name: string
   role: string
   npo_id: string | null
+  profile_picture_url?: string | null
 }
 
 interface LoginRequest {
@@ -68,6 +69,8 @@ interface AuthState {
   register: (data: RegisterRequest) => Promise<RegisterResponse>
   logout: () => Promise<void>
   getUser: () => AuthUser | null
+  updateUser: (userData: Partial<AuthUser>) => void
+  getProfilePictureUrl: () => string | null
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -183,11 +186,36 @@ export const useAuthStore = create<AuthState>()(
         } finally {
           // Always clear local state
           reset()
+
+          // T070: Clear NPO selection from localStorage on logout
+          const { useNPOContextStore } = await import('./npo-context-store')
+          useNPOContextStore.getState().reset()
         }
       },
 
       getUser: (): AuthUser | null => {
         return get().user
+      },
+
+      updateUser: (userData: Partial<AuthUser>): void => {
+        const currentUser = get().user
+        if (currentUser) {
+          set({ user: { ...currentUser, ...userData } })
+        }
+      },
+
+      getProfilePictureUrl: (): string | null => {
+        const user = get().user
+        if (!user?.profile_picture_url) return null
+
+        const pictureUrl = user.profile_picture_url
+        if (pictureUrl.startsWith('http://') || pictureUrl.startsWith('https://')) {
+          return pictureUrl
+        }
+
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
+        const baseUrl = apiUrl.replace(/\/api\/v1$/, '')
+        return `${baseUrl}${pictureUrl}`
       },
     }),
     {
