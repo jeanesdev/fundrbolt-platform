@@ -26,6 +26,7 @@ export function UsersDialogs() {
       country: currentRow.country,
       role: currentRow.role,
       npo_id: currentRow.npo_id,
+      npo_memberships: currentRow.npo_memberships || [],
       email_verified: currentRow.email_verified,
       is_active: currentRow.is_active,
       last_login_at: currentRow.last_login_at,

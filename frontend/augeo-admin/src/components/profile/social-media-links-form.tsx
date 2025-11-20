@@ -99,7 +99,7 @@ export function SocialMediaLinksForm({
   onSubmit,
   isPending = false,
 }: SocialMediaLinksFormProps) {
-  const form = useForm<SocialMediaLinksFormData>({
+  const form = useForm({
     resolver: zodResolver(socialMediaSchema),
     defaultValues: {
       facebook: initialData?.facebook || '',
