@@ -1529,6 +1529,11 @@ async def test_approved_npo(db_session: AsyncSession, test_npo_admin_user: Any) 
         status=MemberStatus.ACTIVE,
     )
     db_session.add(member)
+    
+    # Update user's npo_id to match the created NPO
+    # This ensures permission checks work correctly
+    test_npo_admin_user.npo_id = npo.id
+    
     await db_session.commit()
     await db_session.refresh(npo)
 

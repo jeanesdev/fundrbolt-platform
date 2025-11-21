@@ -227,7 +227,12 @@ class TestConcurrentEdits:
         assert "detail" in data
 
         # Error message should mention conflict or version
-        detail_lower = data["detail"].lower()
+        # Note: http_exception_handler wraps string details in {"code": X, "message": "..."}
+        if isinstance(data["detail"], dict):
+            detail_lower = data["detail"].get("message", "").lower()
+        else:
+            detail_lower = data["detail"].lower()
+        
         assert (
             "concurrent" in detail_lower or "version" in detail_lower or "conflict" in detail_lower
         )

@@ -265,8 +265,9 @@ class Event(Base, UUIDMixin, TimestampMixin):
         ),
     )
 
-    # Enable optimistic locking
-    __mapper_args__ = {"version_id_col": version}
+    # Note: We don't use SQLAlchemy's automatic version_id_col because we only want
+    # to increment version on content changes (updates), not status changes (publish/close)
+    # This is managed manually in event_service.py
 
 
 class EventMedia(Base, UUIDMixin, TimestampMixin):

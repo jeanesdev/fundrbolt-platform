@@ -138,6 +138,7 @@ class EventService:
             setattr(event, key, value)
 
         event.updated_by = current_user.id
+        event.version += 1  # Increment version on content updates
 
         await db.commit()
 
