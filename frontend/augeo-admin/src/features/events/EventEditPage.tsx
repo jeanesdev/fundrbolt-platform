@@ -180,7 +180,7 @@ export function EventEditPage() {
   }
 
   return (
-    <div className="container mx-auto py-4 md:py-8 max-w-6xl">
+    <div className="container mx-auto px-2 py-3 sm:px-6 sm:py-4 md:py-8 max-w-6xl">
       <div className="mb-4 md:mb-6 space-y-4">
         <Button variant="ghost" onClick={handleCancel} className="px-0 hover:bg-transparent">
           <ArrowLeft className="h-4 w-4 mr-2" />

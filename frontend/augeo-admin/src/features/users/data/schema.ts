@@ -33,6 +33,8 @@ const userSchema = z.object({
   state: z.string().nullable(),
   postal_code: z.string().nullable(),
   country: z.string().nullable(),
+  profile_picture_url: z.string().nullable(),
+  social_media_links: z.record(z.string(), z.string()).nullable(),
   role: z.string(), // String role name from backend
   npo_id: z.string().nullable(),
   npo_memberships: z.array(npoMembershipSchema).default([]),

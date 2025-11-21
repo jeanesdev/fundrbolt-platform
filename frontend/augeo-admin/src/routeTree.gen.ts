@@ -44,6 +44,7 @@ import { Route as AuthenticatedNposCreateRouteImport } from './routes/_authentic
 import { Route as AuthenticatedEventsCreateRouteImport } from './routes/_authenticated/events/create'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedAdminNpoApplicationsRouteImport } from './routes/_authenticated/admin/npo-applications'
+import { Route as AuthenticatedUsersUserIdIndexRouteImport } from './routes/_authenticated/users/$userId/index'
 import { Route as AuthenticatedNposNpoIdIndexRouteImport } from './routes/_authenticated/npos/$npoId.index'
 import { Route as AuthenticatedEventsEventIdIndexRouteImport } from './routes/_authenticated/events/$eventId/index'
 import { Route as AuthenticatedNposNpoIdEditRouteImport } from './routes/_authenticated/npos/$npoId/edit'
@@ -235,6 +236,12 @@ const AuthenticatedAdminNpoApplicationsRoute =
     path: '/admin/npo-applications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedUsersUserIdIndexRoute =
+  AuthenticatedUsersUserIdIndexRouteImport.update({
+    id: '/users/$userId/',
+    path: '/users/$userId/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedNposNpoIdIndexRoute =
   AuthenticatedNposNpoIdIndexRouteImport.update({
     id: '/npos/$npoId/',
@@ -322,6 +329,7 @@ export interface FileRoutesByFullPath {
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
   '/events/$eventId': typeof AuthenticatedEventsEventIdIndexRoute
   '/npos/$npoId': typeof AuthenticatedNposNpoIdIndexRoute
+  '/users/$userId': typeof AuthenticatedUsersUserIdIndexRoute
   '/events/$eventId/auction-items/create': typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
   '/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
   '/events/$eventId/auction-items/$itemId/edit': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
@@ -363,6 +371,7 @@ export interface FileRoutesByTo {
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
   '/events/$eventId': typeof AuthenticatedEventsEventIdIndexRoute
   '/npos/$npoId': typeof AuthenticatedNposNpoIdIndexRoute
+  '/users/$userId': typeof AuthenticatedUsersUserIdIndexRoute
   '/events/$eventId/auction-items/create': typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
   '/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
   '/events/$eventId/auction-items/$itemId/edit': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
@@ -409,6 +418,7 @@ export interface FileRoutesById {
   '/_authenticated/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
   '/_authenticated/events/$eventId/': typeof AuthenticatedEventsEventIdIndexRoute
   '/_authenticated/npos/$npoId/': typeof AuthenticatedNposNpoIdIndexRoute
+  '/_authenticated/users/$userId/': typeof AuthenticatedUsersUserIdIndexRoute
   '/_authenticated/events/$eventId/auction-items/create': typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
   '/_authenticated/events/$eventId/auction-items/': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
   '/_authenticated/events/$eventId/auction-items/$itemId/edit': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
@@ -454,6 +464,7 @@ export interface FileRouteTypes {
     | '/npos/$npoId/edit'
     | '/events/$eventId'
     | '/npos/$npoId'
+    | '/users/$userId'
     | '/events/$eventId/auction-items/create'
     | '/events/$eventId/auction-items'
     | '/events/$eventId/auction-items/$itemId/edit'
@@ -495,6 +506,7 @@ export interface FileRouteTypes {
     | '/npos/$npoId/edit'
     | '/events/$eventId'
     | '/npos/$npoId'
+    | '/users/$userId'
     | '/events/$eventId/auction-items/create'
     | '/events/$eventId/auction-items'
     | '/events/$eventId/auction-items/$itemId/edit'
@@ -540,6 +552,7 @@ export interface FileRouteTypes {
     | '/_authenticated/npos/$npoId/edit'
     | '/_authenticated/events/$eventId/'
     | '/_authenticated/npos/$npoId/'
+    | '/_authenticated/users/$userId/'
     | '/_authenticated/events/$eventId/auction-items/create'
     | '/_authenticated/events/$eventId/auction-items/'
     | '/_authenticated/events/$eventId/auction-items/$itemId/edit'
@@ -814,6 +827,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminNpoApplicationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/users/$userId/': {
+      id: '/_authenticated/users/$userId/'
+      path: '/users/$userId'
+      fullPath: '/users/$userId'
+      preLoaderRoute: typeof AuthenticatedUsersUserIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/npos/$npoId/': {
       id: '/_authenticated/npos/$npoId/'
       path: '/npos/$npoId'
@@ -905,6 +925,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNposNpoIdEditRoute: typeof AuthenticatedNposNpoIdEditRoute
   AuthenticatedEventsEventIdIndexRoute: typeof AuthenticatedEventsEventIdIndexRoute
   AuthenticatedNposNpoIdIndexRoute: typeof AuthenticatedNposNpoIdIndexRoute
+  AuthenticatedUsersUserIdIndexRoute: typeof AuthenticatedUsersUserIdIndexRoute
   AuthenticatedEventsEventIdAuctionItemsCreateRoute: typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
   AuthenticatedEventsEventIdAuctionItemsIndexRoute: typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
   AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute: typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
@@ -926,6 +947,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNposNpoIdEditRoute: AuthenticatedNposNpoIdEditRoute,
   AuthenticatedEventsEventIdIndexRoute: AuthenticatedEventsEventIdIndexRoute,
   AuthenticatedNposNpoIdIndexRoute: AuthenticatedNposNpoIdIndexRoute,
+  AuthenticatedUsersUserIdIndexRoute: AuthenticatedUsersUserIdIndexRoute,
   AuthenticatedEventsEventIdAuctionItemsCreateRoute:
     AuthenticatedEventsEventIdAuctionItemsCreateRoute,
   AuthenticatedEventsEventIdAuctionItemsIndexRoute:

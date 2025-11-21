@@ -107,13 +107,30 @@ class UserService:
 
         if search:
             search_pattern = f"%{search.lower()}%"
-            stmt = stmt.where(
-                or_(
-                    func.lower(User.first_name).like(search_pattern),
-                    func.lower(User.last_name).like(search_pattern),
-                    func.lower(User.email).like(search_pattern),
+            # Search in first_name, last_name, email, phone
+            search_conditions = [
+                func.lower(User.first_name).like(search_pattern),
+                func.lower(User.last_name).like(search_pattern),
+                func.lower(User.email).like(search_pattern),
+                func.lower(User.phone).like(search_pattern),  # Simple phone search
+                # Search full name (concatenated first + last)
+                func.lower(func.concat(User.first_name, " ", User.last_name)).like(search_pattern),
+            ]
+
+            # Search in NPO memberships (npo name)
+            from app.models.npo import NPO
+            from app.models.npo_member import NPOMember
+
+            npo_subquery = (
+                select(NPOMember.user_id)
+                .join(NPO, NPOMember.npo_id == NPO.id)
+                .where(
+                    and_(NPOMember.status == "active", func.lower(NPO.name).like(search_pattern))
                 )
             )
+            search_conditions.append(User.id.in_(npo_subquery))
+
+            stmt = stmt.where(or_(*search_conditions))
 
         # Get total count
         count_stmt = select(func.count()).select_from(stmt.alias())
@@ -295,6 +312,9 @@ class UserService:
         # Check permissions
         if not await self.permission_service.can_view_user(current_user, user.npo_id):
             raise PermissionError("Insufficient permissions to view this user")
+
+        # Refresh to ensure all attributes are loaded
+        await db.refresh(user)
 
         return user
 

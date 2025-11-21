@@ -1,17 +1,17 @@
-import { useMemo, useState } from 'react'
 import type {
   ColumnFiltersState,
   OnChangeFn,
   PaginationState,
 } from '@tanstack/react-table'
+import { useEffect, useMemo, useState } from 'react'
 
 type SearchRecord = Record<string, unknown>
 
 export type NavigateFn = (opts: {
   search:
-    | true
-    | SearchRecord
-    | ((prev: SearchRecord) => Partial<SearchRecord> | SearchRecord)
+  | true
+  | SearchRecord
+  | ((prev: SearchRecord) => Partial<SearchRecord> | SearchRecord)
   replace?: boolean
 }) => void
 
@@ -31,20 +31,20 @@ type UseTableUrlStateParams = {
   }
   columnFilters?: Array<
     | {
-        columnId: string
-        searchKey: string
-        type?: 'string'
-        // Optional transformers for custom types
-        serialize?: (value: unknown) => unknown
-        deserialize?: (value: unknown) => unknown
-      }
+      columnId: string
+      searchKey: string
+      type?: 'string'
+      // Optional transformers for custom types
+      serialize?: (value: unknown) => unknown
+      deserialize?: (value: unknown) => unknown
+    }
     | {
-        columnId: string
-        searchKey: string
-        type: 'array'
-        serialize?: (value: unknown) => unknown
-        deserialize?: (value: unknown) => unknown
-      }
+      columnId: string
+      searchKey: string
+      type: 'array'
+      serialize?: (value: unknown) => unknown
+      deserialize?: (value: unknown) => unknown
+    }
   >
 }
 
@@ -110,6 +110,13 @@ export function useTableUrlState(
   const [columnFilters, setColumnFilters] =
     useState<ColumnFiltersState>(initialColumnFilters)
 
+  // Update columnFilters when URL search params change
+  // Use JSON.stringify for deep comparison to avoid infinite loops
+  useEffect(() => {
+    setColumnFilters(initialColumnFilters)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(search), JSON.stringify(columnFiltersCfg)])
+
   const pagination: PaginationState = useMemo(() => {
     const rawPage = (search as SearchRecord)[pageKey]
     const rawPageSize = (search as SearchRecord)[pageSizeKey]
@@ -142,20 +149,20 @@ export function useTableUrlState(
   const onGlobalFilterChange: OnChangeFn<string> | undefined =
     globalFilterEnabled
       ? (updater) => {
-          const next =
-            typeof updater === 'function'
-              ? updater(globalFilter ?? '')
-              : updater
-          const value = trimGlobal ? next.trim() : next
-          setGlobalFilter(value)
-          navigate({
-            search: (prev) => ({
-              ...(prev as SearchRecord),
-              [pageKey]: undefined,
-              [globalFilterKey]: value ? value : undefined,
-            }),
-          })
-        }
+        const next =
+          typeof updater === 'function'
+            ? updater(globalFilter ?? '')
+            : updater
+        const value = trimGlobal ? next.trim() : next
+        setGlobalFilter(value)
+        navigate({
+          search: (prev) => ({
+            ...(prev as SearchRecord),
+            [pageKey]: undefined,
+            [globalFilterKey]: value ? value : undefined,
+          }),
+        })
+      }
       : undefined
 
   const onColumnFiltersChange: OnChangeFn<ColumnFiltersState> = (updater) => {

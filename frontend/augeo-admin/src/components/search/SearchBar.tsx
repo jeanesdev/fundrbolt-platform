@@ -99,7 +99,7 @@ export function SearchBar({ open, onOpenChange }: SearchBarProps) {
           </p>
         )}
 
-        {shouldSearch && <SearchResults results={results || null} isLoading={isLoading} />}
+        {shouldSearch && <SearchResults results={results || null} isLoading={isLoading} onClose={() => handleOpenChange(false)} />}
       </DialogContent>
     </Dialog>
   )

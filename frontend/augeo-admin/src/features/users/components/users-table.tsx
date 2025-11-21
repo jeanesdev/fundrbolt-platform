@@ -61,8 +61,8 @@ export function UsersTable({
     pagination: { defaultPage: 1, defaultPageSize: 10 },
     globalFilter: { enabled: false },
     columnFilters: [
-      // email per-column text filter
-      { columnId: 'email', searchKey: 'email', type: 'string' },
+      // fullName per-column text filter
+      { columnId: 'fullName', searchKey: 'name', type: 'string' },
       { columnId: 'status', searchKey: 'status', type: 'array' },
       { columnId: 'role', searchKey: 'role', type: 'array' },
     ],
@@ -82,6 +82,7 @@ export function UsersTable({
     },
     enableRowSelection: true,
     manualPagination: true,
+    manualFiltering: true, // Use server-side filtering
     onPaginationChange,
     onColumnFiltersChange,
     onRowSelectionChange: setRowSelection,
@@ -107,8 +108,8 @@ export function UsersTable({
     >
       <DataTableToolbar
         table={table}
-        searchPlaceholder='Filter users...'
-        searchKey='email'
+        searchPlaceholder='Search by name, email, phone, or NPO...'
+        searchKey='fullName'
         filters={[
           {
             columnId: 'status',

@@ -121,7 +121,7 @@ export default function NpoDetailPage() {
   // Loading state
   if (nposLoading && !currentNPO) {
     return (
-      <div className="container mx-auto space-y-6 py-6">
+      <div className="container mx-auto space-y-4 px-2 py-3 sm:space-y-6 sm:px-6 sm:py-6">
         <Skeleton className="h-12 w-64" />
         <Skeleton className="h-64 w-full" />
         <Skeleton className="h-64 w-full" />
@@ -132,7 +132,7 @@ export default function NpoDetailPage() {
   // Error state
   if (nposError) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto px-2 py-3 sm:px-6 sm:py-6">
         <Card className="border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-950/20">
           <CardContent className="pt-6">
             <p className="text-sm text-red-600 dark:text-red-400">{nposError}</p>
@@ -145,7 +145,7 @@ export default function NpoDetailPage() {
   // Not found state
   if (!currentNPO) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto px-2 py-3 sm:px-6 sm:py-6">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Building2 className="mb-4 h-12 w-12 text-muted-foreground" />
@@ -168,7 +168,7 @@ export default function NpoDetailPage() {
   const npo = currentNPO
 
   return (
-    <div className="container mx-auto space-y-6 py-6">
+    <div className="container mx-auto space-y-4 px-2 py-3 sm:space-y-6 sm:px-6 sm:py-6">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">

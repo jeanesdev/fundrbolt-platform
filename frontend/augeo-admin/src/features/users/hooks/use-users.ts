@@ -11,6 +11,7 @@ export function useUsers(params?: {
   role?: string
   is_active?: boolean
   npo_id?: string
+  search?: string
 }) {
   return useQuery({
     queryKey: ['users', params],

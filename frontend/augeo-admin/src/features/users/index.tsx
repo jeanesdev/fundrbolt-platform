@@ -1,6 +1,3 @@
-import { Header } from '@/components/layout/header'
-import { Main } from '@/components/layout/main'
-import { Search } from '@/components/search'
 import { useNpoContext } from '@/hooks/use-npo-context'
 import { getRouteApi } from '@tanstack/react-router'
 import { UsersDialogs } from './components/users-dialogs'
@@ -37,6 +34,7 @@ export function Users() {
     page: search.page || 1,
     page_size: search.pageSize || 10,
     is_active: isActiveFilter,
+    search: search.name as string | undefined,
     ...(selectedNpoId && { npo_id: selectedNpoId }),
   })
 
@@ -46,11 +44,7 @@ export function Users() {
 
   return (
     <UsersProvider>
-      <Header fixed>
-        <Search />
-      </Header>
-
-      <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
+      <div className='flex flex-1 flex-col gap-4 sm:gap-6'>
         <div className='flex flex-wrap items-end justify-between gap-2'>
           <div>
             <h2 className='text-2xl font-bold tracking-tight'>User List</h2>
@@ -68,9 +62,11 @@ export function Users() {
           search={search}
           navigate={navigate}
         />
-      </Main>
+      </div>
 
       <UsersDialogs />
     </UsersProvider>
   )
 }
+
+export { default as UserDetailPage } from './UserDetailPage'

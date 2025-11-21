@@ -3,6 +3,7 @@ import { LongText } from '@/components/long-text'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
+import { Link } from '@tanstack/react-router'
 import { type ColumnDef } from '@tanstack/react-table'
 import { callTypes, roles } from '../data/data'
 import { type User } from '../data/schema'
@@ -38,13 +39,26 @@ export const usersColumns: ColumnDef<User>[] = [
   },
   {
     id: 'fullName',
+    accessorFn: (row) => `${row.first_name} ${row.last_name}`,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Name' />
     ),
     cell: ({ row }) => {
-      const { first_name, last_name } = row.original
+      const { first_name, last_name, id } = row.original
       const fullName = `${first_name} ${last_name}`
-      return <LongText className='max-w-36 ps-3'>{fullName}</LongText>
+      return (
+        <Link
+          to='/users/$userId'
+          params={{ userId: id }}
+          className='hover:underline focus:underline'
+        >
+          <LongText className='max-w-36 ps-3'>{fullName}</LongText>
+        </Link>
+      )
+    },
+    filterFn: (row, _id, value) => {
+      const fullName = `${row.original.first_name} ${row.original.last_name}`.toLowerCase()
+      return fullName.includes(value.toLowerCase())
     },
     meta: {
       className: cn(

@@ -14,9 +14,10 @@ import { Building2, Calendar, Gavel, User } from 'lucide-react'
 interface SearchResultsProps {
   results: SearchResponse | null
   isLoading: boolean
+  onClose: () => void
 }
 
-export function SearchResults({ results, isLoading }: SearchResultsProps) {
+export function SearchResults({ results, isLoading, onClose }: SearchResultsProps) {
   // T081: Loading skeleton
   if (isLoading) {
     return (
@@ -58,6 +59,8 @@ export function SearchResults({ results, isLoading }: SearchResultsProps) {
             <Link
               key={user.id}
               to='/users'
+              search={{ name: `${user.first_name} ${user.last_name}` }}
+              onClick={onClose}
               className='hover:bg-accent flex items-center gap-3 rounded p-2 transition-colors'
             >
               <div className='bg-muted flex h-8 w-8 items-center justify-center rounded'>
@@ -87,6 +90,7 @@ export function SearchResults({ results, isLoading }: SearchResultsProps) {
               key={npo.id}
               to='/npos/$npoId'
               params={{ npoId: npo.id }}
+              onClick={onClose}
               className='hover:bg-accent flex items-center gap-3 rounded p-2 transition-colors'
             >
               <div className='bg-muted flex h-8 w-8 items-center justify-center rounded'>
@@ -114,6 +118,7 @@ export function SearchResults({ results, isLoading }: SearchResultsProps) {
               key={event.id}
               to='/events/$eventId'
               params={{ eventId: event.id }}
+              onClick={onClose}
               className='hover:bg-accent flex items-center gap-3 rounded p-2 transition-colors'
             >
               <div className='bg-muted flex h-8 w-8 items-center justify-center rounded'>
@@ -141,6 +146,7 @@ export function SearchResults({ results, isLoading }: SearchResultsProps) {
               key={item.id}
               to='/events/$eventId/auction-items/$itemId'
               params={{ eventId: item.event_id, itemId: item.id }}
+              onClick={onClose}
               className='hover:bg-accent flex items-center gap-3 rounded p-2 transition-colors'
             >
               <div className='bg-muted flex h-8 w-8 items-center justify-center rounded'>

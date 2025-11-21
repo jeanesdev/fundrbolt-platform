@@ -68,21 +68,27 @@ export default function NpoListPage() {
   const totalPages = Math.ceil(nposTotalCount / pageSize)
 
   return (
-    <div className="container mx-auto space-y-6 py-6">
+    <div className="container mx-auto space-y-4 px-2 py-3 sm:space-y-6 sm:px-6 sm:py-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="space-y-4">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
             <Building2 className="h-6 w-6 text-primary" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-3xl font-bold tracking-tight">Organizations</h1>
             <p className="text-muted-foreground">
               Manage your non-profit organizations
             </p>
           </div>
         </div>
-        <Link to="/npos/create">
+        <Link to="/npos/create" className="block sm:hidden">
+          <Button className="w-full">
+            <Plus className="mr-2 h-4 w-4" />
+            Create Organization
+          </Button>
+        </Link>
+        <Link to="/npos/create" className="hidden sm:block">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Create Organization

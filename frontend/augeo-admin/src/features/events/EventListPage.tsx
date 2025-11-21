@@ -207,7 +207,7 @@ export function EventListPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="container mx-auto space-y-4 px-2 py-3 sm:space-y-6 sm:px-6 sm:py-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -621,3 +621,246 @@ Results:
 5. Create dashboard screenshots for documentation
 
 **Status**: All 6 user stories functionally complete! Search working, profile pictures loading on login, all code syntax-valid and passing type checks. Ready for performance optimization and final polish.
+
+---
+
+## Session Progress: November 20, 2025
+
+### Major Achievements
+
+**User Profile & Search Enhancements** ✅
+
+- **User Detail Page**: Complete profile view with picture, contact info, social media, role, NPO memberships
+- **Server-Side Search**: Full-text search across first_name, last_name, email, phone, NPO memberships
+- **Full Name Search**: Concatenated "First Last" search pattern using PostgreSQL func.concat()
+- **Search Result Navigation**: Click search results to filter user list or view NPO/Event details
+- **Profile Pictures Backend Fix**: GET /users/{id} endpoint now returns all UserPublicWithRole fields
+- **Session Auto-Refresh**: Fixed router.history.subscribe() for proper navigation-based token refresh
+- **Ellipsis Menu Enhancement**: Added "View Details" link with Eye icon to user row actions
+- **Layout Improvements**: Consistent padding (px-2 py-3 sm:px-6 sm:py-6) across all pages
+- **Search Modal UX**: Modal closes automatically on result link click
+
+### Completed Tasks
+
+**User Profile Viewing** (New Tasks):
+
+- [x] T096 [US5] Create UserDetailPage component with profile picture, contact, social media, role display
+- [x] T097 [US5] Create dynamic route /users/$userId/ with proper directory structure (trailing slash)
+- [x] T098 [US5] Make user names clickable in users table linking to detail page
+- [x] T099 [US5] Fix backend GET /users/{id} to return all UserPublicWithRole schema fields
+- [x] T100 [US5] Add profile_picture_url and social_media_links to User TypeScript interface
+- [x] T101 [US5] Add profile_picture_url and social_media_links to userSchema (Zod)
+- [x] T102 [US5] Add Eye icon "View Details" link to user row actions ellipsis menu
+
+**Server-Side Search** (Enhancements):
+
+- [x] T103 [US6] Implement server-side comprehensive search in backend (name, email, phone, NPO)
+- [x] T104 [US6] Add full name concatenation search: func.concat(first_name, " ", last_name)
+- [x] T105 [US6] Add NPO membership search via join to npo_members and NPO tables
+- [x] T106 [US6] Simplify phone search to basic LIKE (removed complex regex patterns)
+- [x] T107 [US6] Add search parameter to frontend users-api.ts listUsers function
+- [x] T108 [US6] Update users table to use fullName column for search (was email)
+- [x] T109 [US6] Change table search placeholder to "Search by name, email, phone, or NPO..."
+- [x] T110 [US6] Enable manualFiltering: true in users table for server-side search
+- [x] T111 [US6] Fix SearchResults to pass URL params to user list filter
+- [x] T112 [US6] Add onClose callback to SearchResults for modal dismiss on navigation
+- [x] T113 [US6] Fix useTableUrlState infinite loop with JSON.stringify dependencies
+
+**Session Auto-Refresh Fix**:
+
+- [x] T114 [US3] Fix session auto-refresh to use router.history.subscribe() instead of router.subscribe('onBeforeLoad')
+- [x] T115 [US3] Verify auto-refresh triggers on all route changes (not just specific events)
+
+**Layout & UX Polish**:
+
+- [x] T116 [Polish] Add consistent padding to all pages: px-2 py-3 sm:px-6 sm:py-6
+- [x] T117 [Polish] Update authenticated-layout to add flex-1 p-4 sm:p-6 to main content
+- [x] T118 [Polish] Update header padding: p-3 sm:p-4 (was p-4)
+- [x] T119 [Polish] Update NPO list/detail pages with responsive padding
+- [x] T120 [Polish] Update Event list/edit pages with responsive padding
+- [x] T121 [Polish] Fix NPO creation form: Google Places address autocomplete with proper ref handling
+- [x] T122 [Polish] Fix NPO creation form: State dropdown to use value instead of defaultValue
+
+### Technical Details
+
+**User Detail Page Architecture**:
+
+```typescript
+// Route: /users/$userId/ (directory structure with trailing slash)
+// Component: UserDetailPage.tsx
+// Features:
+- Profile picture with 128x128 circular display, initials fallback
+- Contact: email (mailto), phone (tel), full address (7 fields)
+- Social media: Facebook, Twitter, Instagram, LinkedIn, YouTube, website
+- Role badges: active/inactive, email verified/unverified
+- NPO memberships: Card list with organization names and roles
+- Account activity: last login, created date, updated date
+```
+
+**Server-Side Search Flow**:
+
+```python
+# backend/app/services/user_service.py
+# Search across 6 conditions:
+1. func.lower(User.first_name).like(search_pattern)
+2. func.lower(User.last_name).like(search_pattern)
+3. func.lower(User.email).like(search_pattern)
+4. func.lower(User.phone).like(search_pattern)  # Basic LIKE
+5. func.lower(func.concat(User.first_name, " ", User.last_name)).like(search_pattern)
+6. User.id.in_(npo_subquery)  # NPO membership subquery
+
+# NPO membership subquery:
+select(NPOMember.user_id)
+  .join(NPO, NPOMember.npo_id == NPO.id)
+  .where(
+    NPOMember.status == "active",
+    func.lower(NPO.name).like(search_pattern)
+  )
+```
+
+**Session Auto-Refresh Mechanics**:
+
+```typescript
+// Before: router.subscribe('onBeforeLoad', ...) ❌ Wrong API
+// After: router.history.subscribe(checkAndRefresh) ✅ Correct
+
+// Behavior:
+- Every route change triggers checkAndRefresh()
+- If token expires within 5 minutes, silently refresh
+- Modal only appears if idle on same page for 13 minutes (15min token - 2min warning)
+```
+
+### Bug Fixes
+
+**Critical - Profile Picture Not Displaying**:
+
+- **Issue**: User detail page showed initials instead of profile picture despite URL in database
+- **Root Cause**: GET /users/{id} endpoint manually built response dict, omitted new fields
+- **Debugging Steps**:
+  1. Verified data exists in PostgreSQL: profile_picture_url has full Azure Blob URL ✓
+  2. Verified SQLAlchemy loads correctly: Direct async query showed loaded fields ✓
+  3. Found API response missing fields: Manual dict building excluded profile_picture_url ✗
+- **Fix**: Added all 22 UserPublicWithRole schema fields to response dict (was only 12)
+  - Added: profile_picture_url, social_media_links, organization_name, all 6 address fields
+- **Impact**: Profile pictures now display correctly for users with Azure Blob Storage URLs
+
+**Session Auto-Refresh Not Triggering**:
+
+- **Issue**: "Stay Logged In" modal appearing despite navigation (should auto-refresh)
+- **Root Cause**: `router.subscribe('onBeforeLoad', ...)` is not valid TanStack Router API
+- **Fix**: Changed to `router.history.subscribe(checkAndRefresh)`
+- **Impact**: Token refresh on every navigation, modal only appears after 13min idle
+
+**Infinite Loop in Table URL State**:
+
+- **Issue**: useEffect re-running constantly, causing performance degradation
+- **Root Cause**: Memo creates new array reference every render, deps always different
+- **Fix**: Changed dependencies to `[JSON.stringify(search), JSON.stringify(columnFiltersCfg)]`
+- **Impact**: useEffect only runs when actual values change, not references
+
+**TanStack Router Dynamic Route Issues**:
+
+- **Issue**: Route showed "Hello..." placeholder instead of component
+- **Root Cause**: Dynamic route $userId.tsx created as flat file instead of directory
+- **Fix**: Created proper structure: $userId/index.tsx with trailing slash in route path
+- **Impact**: UserDetailPage component now renders correctly
+
+### Files Modified (This Session)
+
+**Backend** (2 files):
+
+- `backend/app/api/v1/users.py`: Fixed GET /{user_id} response dict (added 10 missing fields)
+- `backend/app/services/user_service.py`: Added full name concat search, NPO membership search
+- `backend/app/services/auth_service.py`: Added profile_picture_url to LoginResponse user object
+
+**Frontend** (20+ files):
+
+**Search & Navigation**:
+
+- `src/components/search/SearchBar.tsx`: Added onClose callback handling
+- `src/components/search/SearchResults.tsx`: Added URL params, onClose prop, modal dismiss
+- `src/components/session-expiration-warning.tsx`: Fixed router.history.subscribe()
+
+**User Features**:
+
+- `src/features/users/UserDetailPage.tsx`: NEW - Complete profile view component
+- `src/features/users/index.tsx`: Added UserDetailPage export, removed Header/Main wrappers
+- `src/features/users/api/users-api.ts`: Added search param, profile_picture_url, social_media_links
+- `src/features/users/data/schema.ts`: Added profile_picture_url, social_media_links to Zod schema
+- `src/features/users/hooks/use-users.ts`: Added search param to useUsers hook
+- `src/features/users/components/users-columns.tsx`: Made fullName cell clickable Link
+- `src/features/users/components/users-table.tsx`: Changed search to fullName column, server-side filtering
+- `src/features/users/components/data-table-row-actions.tsx`: Added "View Details" menu item with Eye icon
+- `src/routes/_authenticated/users/$userId/index.tsx`: NEW - Route definition
+
+**Layout & Polish**:
+
+- `src/components/layout/authenticated-layout.tsx`: Added flex-1 p-4 sm:p-6 to main content
+- `src/components/layout/header.tsx`: Updated padding to p-3 sm:p-4
+- `src/components/npo/npo-creation-form.tsx`: Fixed Google Places ref, state dropdown value
+- `src/pages/npo/list-npo.tsx`: Responsive padding, mobile-friendly buttons
+- `src/pages/npo/detail-npo.tsx`: Responsive padding
+- `src/features/events/EventListPage.tsx`: Responsive padding
+- `src/features/events/EventEditPage.tsx`: Responsive padding
+- `src/hooks/use-table-url-state.ts`: Fixed infinite loop with JSON.stringify deps
+- `src/routeTree.gen.ts`: Auto-generated route tree with new $userId route
+
+### Testing Results
+
+**User Detail Page**:
+
+- Profile picture displays for users with profile_picture_url ✓
+- Initials fallback works when no picture ✓
+- Contact information displays correctly (email, phone, address) ✓
+- Social media links render with proper icons ✓
+- NPO memberships show organization name and role ✓
+- Account activity shows last login, created, updated dates ✓
+
+**Server-Side Search**:
+
+- Search "Maria Garcia" finds user by full name ✓
+- Search "maria" finds by first name ✓
+- Search "garcia" finds by last name ✓
+- Search "maria.garcia@test.com" finds by email ✓
+- Search "Hope" finds NPO membership ✓
+- Search result click filters user list ✓
+- Search modal closes on result click ✓
+
+**Session Auto-Refresh**:
+
+- Navigate between pages: Token refreshes silently when <5min remaining ✓
+- Stay on same page 13min: Modal appears at 2min warning ✓
+- Click "Stay Logged In": Token refreshes, modal closes ✓
+- Navigate during modal: Modal disappears, token refreshed ✓
+
+### Remaining Work
+
+**High Priority**:
+
+- T007: Create database indexes for search optimization (migration exists)
+- T082: Performance test search with 1000 records (target <300ms)
+- T089-T090: Manual acceptance testing and success criteria validation
+
+**Medium Priority**:
+
+- T091: Create role dashboard screenshots
+- T092: Performance testing (dashboard load <2s, navigation <500ms, profile save <1s)
+- T093: Accessibility audit (keyboard nav, focus, screen readers)
+- T095: Validate against quickstart.md
+
+**Nice to Have**:
+
+- Profile picture upload UI component (backend endpoint exists)
+- Integrate profile pictures in ProfileDropdown and NavUser components
+- Add profile picture to users table rows
+
+### Next Steps
+
+1. ✅ Commit all changes (user detail page + search enhancements + session fix)
+2. ✅ Update Speckit documentation with session progress
+3. Performance optimization (tsvector indexes if needed)
+4. Manual acceptance testing across all user stories
+5. Create dashboard screenshots for documentation
+6. Final polish and PR review
+
+**Status**: User profile viewing fully functional! Server-side search working across all fields including NPO memberships. Session auto-refresh fixed. All core functionality complete. Ready for performance testing and final acceptance validation.

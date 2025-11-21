@@ -200,6 +200,7 @@ class AuthService:
             state=user.state,
             postal_code=user.postal_code,
             country=user.country,
+            profile_picture_url=user.profile_picture_url,
             email_verified=user.email_verified,
             is_active=user.is_active,
             role=user.role.name,  # Get role name from relationship

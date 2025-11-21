@@ -336,11 +336,11 @@ export function NPOCreationForm({
           }
 
           // Update form values
-          form.setValue('address.street', street.trim())
-          form.setValue('address.city', city)
-          form.setValue('address.state', state)
-          form.setValue('address.postal_code', postalCode)
-          form.setValue('address.country', country)
+          form.setValue('address.street', street.trim(), { shouldValidate: true, shouldDirty: true })
+          form.setValue('address.city', city, { shouldValidate: true, shouldDirty: true })
+          form.setValue('address.state', state, { shouldValidate: true, shouldDirty: true })
+          form.setValue('address.postal_code', postalCode, { shouldValidate: true, shouldDirty: true })
+          form.setValue('address.country', country, { shouldValidate: true, shouldDirty: true })
         })
 
         autocompleteRef.current = autocomplete
@@ -670,7 +670,10 @@ export function NPOCreationForm({
                     <Input
                       placeholder="123 Main St"
                       {...field}
-                      ref={addressInputRef}
+                      ref={(e) => {
+                        field.ref(e)
+                        addressInputRef.current = e
+                      }}
                       disabled={isLoading}
                     />
                   </FormControl>
@@ -724,7 +727,7 @@ export function NPOCreationForm({
                     <FormLabel>State / Province</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                       disabled={isLoading}
                     >
                       <FormControl>

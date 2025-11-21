@@ -20,6 +20,8 @@ export interface User {
   state: string | null
   postal_code: string | null
   country: string | null
+  profile_picture_url: string | null
+  social_media_links: Record<string, string> | null
   role: string
   npo_id: string | null
   npo_memberships: NPOMembership[]
@@ -86,6 +88,7 @@ export async function listUsers(params?: {
   role?: string
   is_active?: boolean
   npo_id?: string
+  search?: string
 }): Promise<UserListResponse> {
   // Transform page_size to per_page for backend API
   const apiParams = params
@@ -95,6 +98,7 @@ export async function listUsers(params?: {
       role: params.role,
       is_active: params.is_active,
       npo_id: params.npo_id,
+      search: params.search,
     }
     : undefined
 

@@ -104,7 +104,8 @@ export function SessionExpirationWarning({
     const expiryTime = getTokenExpiry(accessToken)
     if (!expiryTime) return
 
-    const unsubscribe = router.subscribe('onBeforeLoad', () => {
+    // Listen to router location changes
+    const checkAndRefresh = () => {
       const now = Date.now()
       const timeUntilExpiry = expiryTime - now
       const secondsUntilExpiry = Math.floor(timeUntilExpiry / 1000)
@@ -114,7 +115,10 @@ export function SessionExpirationWarning({
         // Silent refresh on navigation
         handleExtendSession(true)
       }
-    })
+    }
+
+    // Subscribe to router history changes
+    const unsubscribe = router.history.subscribe(checkAndRefresh)
 
     return unsubscribe
   }, [accessToken, refreshToken, autoRefreshThresholdSeconds, getTokenExpiry, handleExtendSession, router])
