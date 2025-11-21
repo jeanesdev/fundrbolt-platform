@@ -1,2 +1,2 @@
 // Shared hooks barrel export
-export {};
+export { };

@@ -22,7 +22,7 @@
 - [x] T001 Create donor PWA project structure at `frontend/donor-pwa/` - **DONE** (copied from admin PWA template)
 - [x] T002 Initialize Vite + React + TypeScript project with pnpm in `frontend/donor-pwa/` - **DONE** (React 19, Vite 7, TypeScript 5.9)
 - [x] T003 [P] Install dependencies: React 18, TanStack Router, Radix UI, Tailwind CSS 4, Zustand - **DONE** (all correct dependencies installed matching admin PWA)
-- [x] T004 [P] Configure TypeScript path aliases for `@/*` and `@augeo/shared/*` in `frontend/donor-pwa/tsconfig.json` - **DONE** (configured @/* and @augeo/shared/* paths)
+- [x] T004 [P] Configure TypeScript path aliases for `@/*` and `@augeo/shared/*` in `frontend/donor-pwa/tsconfig.json` - **DONE** (configured @/*and @augeo/shared/* paths)
 - [x] T005 [P] Setup Tailwind CSS 4 configuration in `frontend/donor-pwa/tailwind.config.ts` - **DONE** (copied from admin PWA)
 - [x] T006 [P] Configure Vite to optimize `@augeo/shared` dependencies in `frontend/donor-pwa/vite.config.ts` - **DONE** (copied from admin PWA)
 - [x] T007 [P] Create Azure Static Web App Bicep template in `infrastructure/bicep/modules/donor-static-web-app.bicep` - **DONE**
@@ -48,32 +48,32 @@
 
 ### Backend Foundation
 
-- [ ] T012 Create database migration 011 in `backend/alembic/versions/[timestamp]_add_guest_meal_tables.py`
-- [ ] T013 Add migration up: create `event_registrations` table (8 fields, 4 indexes, unique constraint)
-- [ ] T014 Add migration up: create `registration_guests` table (10 fields, 3 indexes)
-- [ ] T015 Add migration up: create `meal_selections` table (6 fields, 4 indexes, unique constraint)
-- [ ] T016 Add migration down: drop all 3 tables in reverse order
-- [ ] T017 [P] Create `RegistrationStatus` enum in `backend/app/models/event_registration.py`
-- [ ] T018 [P] Create EventRegistration model in `backend/app/models/event_registration.py` (8 fields, relationships)
-- [ ] T019 [P] Create RegistrationGuest model in `backend/app/models/registration_guest.py` (10 fields, relationships)
-- [ ] T020 [P] Create MealSelection model in `backend/app/models/meal_selection.py` (6 fields, relationships)
-- [ ] T021 Update User model to add `event_registrations` relationship in `backend/app/models/user.py`
-- [ ] T022 Update Event model to add `registrations` relationship in `backend/app/models/event.py`
-- [ ] T023 [P] Create EventRegistration Pydantic schemas in `backend/app/schemas/event_registration.py` (Create, Update, Response)
-- [ ] T024 [P] Create RegistrationGuest Pydantic schemas in `backend/app/schemas/registration_guest.py` (Create, Update, Response)
-- [ ] T025 [P] Create MealSelection Pydantic schemas in `backend/app/schemas/meal_selection.py` (Create, Update, Response)
+- [x] T012 Create database migration 011 in `backend/alembic/versions/012_add_event_registration_tables.py` - **DONE**
+- [x] T013 Add migration up: create `event_registrations` table (8 fields, 4 indexes, unique constraint) - **DONE**
+- [x] T014 Add migration up: create `registration_guests` table (10 fields, 3 indexes) - **DONE**
+- [x] T015 Add migration up: create `meal_selections` table (6 fields, 4 indexes, unique constraint) - **DONE**
+- [x] T016 Add migration down: drop all 3 tables in reverse order - **DONE**
+- [x] T017 [P] Create `RegistrationStatus` enum in `backend/app/models/event_registration.py` - **DONE**
+- [x] T018 [P] Create EventRegistration model in `backend/app/models/event_registration.py` (8 fields, relationships) - **DONE**
+- [x] T019 [P] Create RegistrationGuest model in `backend/app/models/registration_guest.py` (10 fields, relationships) - **DONE**
+- [x] T020 [P] Create MealSelection model in `backend/app/models/meal_selection.py` (6 fields, relationships) - **DONE**
+- [x] T021 Update User model to add `event_registrations` relationship in `backend/app/models/user.py` - **DONE**
+- [x] T022 Update Event model to add `registrations` relationship in `backend/app/models/event.py` - **DONE**
+- [x] T023 [P] Create EventRegistration Pydantic schemas in `backend/app/schemas/event_registration.py` (Create, Update, Response) - **DONE**
+- [x] T024 [P] Create RegistrationGuest Pydantic schemas in `backend/app/schemas/registration_guest.py` (Create, Update, Response) - **DONE**
+- [x] T025 [P] Create MealSelection Pydantic schemas in `backend/app/schemas/meal_selection.py` (Create, Update, Response) - **DONE**
 
 ### Frontend Foundation
 
-- [ ] T026 [P] Create TanStack Router configuration in `frontend/donor-pwa/src/main.tsx`
-- [ ] T027 [P] Setup Zustand auth store in `frontend/donor-pwa/src/lib/store/auth.ts`
-- [ ] T028 [P] Create axios instance with auth interceptor in `frontend/donor-pwa/src/lib/api/client.ts`
-- [ ] T029 [P] Create CSS custom properties branding system in `frontend/donor-pwa/src/styles/globals.css`
-- [ ] T030 [P] Implement `useEventBranding` hook for dynamic CSS variables in `frontend/donor-pwa/src/hooks/use-event-branding.ts`
-- [ ] T031 [P] Create root layout component in `frontend/donor-pwa/src/components/layout/RootLayout.tsx`
-- [ ] T032 Create seed script `backend/seed_food_options.py` for event meal options test data
+- [x] T026 [P] Create TanStack Router configuration in `frontend/donor-pwa/src/main.tsx` - **DONE** (already existed)
+- [x] T027 [P] Setup Zustand auth store in `frontend/donor-pwa/src/stores/auth-store.ts` - **DONE** (already existed)
+- [x] T028 [P] Create axios instance with auth interceptor in `frontend/donor-pwa/src/lib/axios.ts` - **DONE** (already existed)
+- [x] T029 [P] Create CSS custom properties branding system in `frontend/donor-pwa/src/styles/index.css` - **DONE**
+- [x] T030 [P] Implement `useEventBranding` hook for dynamic CSS variables in `frontend/donor-pwa/src/hooks/use-event-branding.ts` - **DONE**
+- [x] T031 [P] Create root layout component in `frontend/donor-pwa/src/routes/__root.tsx` - **DONE** (already existed)
+- [x] T032 Create seed script `backend/seed_food_options.py` for event meal options test data - **DONE**
 
-**Checkpoint**: Foundation ready - user story implementation can now begin in parallel
+**Status**: ✅ **PHASE 2 COMPLETE** - All foundational infrastructure complete. Migration 012 created and run successfully (3 tables: event_registrations, registration_guests, meal_selections). Models, schemas, and services exist. Frontend foundation ready (TanStack Router, auth store, axios client, branding system). Ready for Phase 3 (User Story 1 - MVP).
 
 ---
 

@@ -145,7 +145,11 @@ async def cancel_registration(
 # ================================
 
 
-@router.post("/{registration_id}/guests", response_model=RegistrationGuestResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{registration_id}/guests",
+    response_model=RegistrationGuestResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def add_guest(
     registration_id: uuid.UUID,
     guest_data: RegistrationGuestCreateRequest,
@@ -204,7 +208,11 @@ async def remove_guest(
 # ================================
 
 
-@router.post("/{registration_id}/meal-selections", response_model=MealSelectionResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{registration_id}/meal-selections",
+    response_model=MealSelectionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_meal_selection(
     registration_id: uuid.UUID,
     meal_data: MealSelectionCreateRequest,
@@ -232,8 +240,7 @@ async def list_meal_selections(
 
     return MealSelectionListResponse(
         meal_selections=[
-            MealSelectionResponse.model_validate(ms, from_attributes=True)
-            for ms in meal_selections
+            MealSelectionResponse.model_validate(ms, from_attributes=True) for ms in meal_selections
         ],
         total=len(meal_selections),
     )

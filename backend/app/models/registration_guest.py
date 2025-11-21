@@ -4,7 +4,8 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, String, DateTime as SADateTime
+from sqlalchemy import Boolean, ForeignKey, String
+from sqlalchemy import DateTime as SADateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -89,8 +90,4 @@ class RegistrationGuest(Base, UUIDMixin, TimestampMixin):
     )
 
     # Table Configuration
-    __table_args__ = (
-        {
-            "comment": "Guest information for event registrations",
-        }
-    )
+    __table_args__ = ()

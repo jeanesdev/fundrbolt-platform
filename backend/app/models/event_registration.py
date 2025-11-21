@@ -4,7 +4,7 @@ import enum
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -101,15 +101,6 @@ class EventRegistration(Base, UUIDMixin, TimestampMixin):
 
     # Unique Constraints
     __table_args__ = (
-        {
-            "comment": "Event registrations linking donors to events",
-            "indexes": [
-                # Composite index for "user's confirmed events" queries
-                {"name": "idx_user_event_status", "columns": ["user_id", "event_id", "status"]},
-            ],
-            "unique_constraints": [
-                # Prevents duplicate registrations
-                {"name": "uq_user_event_registration", "columns": ["user_id", "event_id"]},
-            ],
-        }
+        UniqueConstraint("user_id", "event_id", name="uq_user_event_registration"),
+        Index("idx_user_event_status", "user_id", "event_id", "status"),
     )

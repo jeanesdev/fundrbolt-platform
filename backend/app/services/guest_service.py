@@ -4,7 +4,7 @@ import logging
 import uuid
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.event_registration import EventRegistration
@@ -72,8 +72,7 @@ class GuestService:
         await db.refresh(guest)
 
         logger.info(
-            f"Guest added to registration {registration.id}: "
-            f"name={guest.name}, email={guest.email}"
+            f"Guest added to registration {registration.id}: name={guest.name}, email={guest.email}"
         )
         return guest
 
@@ -100,9 +99,7 @@ class GuestService:
             HTTPException: If guest not found or unauthorized
         """
         # Get guest with registration
-        result = await db.execute(
-            select(RegistrationGuest).where(RegistrationGuest.id == guest_id)
-        )
+        result = await db.execute(select(RegistrationGuest).where(RegistrationGuest.id == guest_id))
         guest = result.scalar_one_or_none()
 
         if not guest:
@@ -157,9 +154,7 @@ class GuestService:
             HTTPException: If guest not found or unauthorized
         """
         # Get guest with registration
-        result = await db.execute(
-            select(RegistrationGuest).where(RegistrationGuest.id == guest_id)
-        )
+        result = await db.execute(select(RegistrationGuest).where(RegistrationGuest.id == guest_id))
         guest = result.scalar_one_or_none()
 
         if not guest:
@@ -228,9 +223,7 @@ class GuestService:
             HTTPException: If guest not found or already linked
         """
         # Get guest
-        result = await db.execute(
-            select(RegistrationGuest).where(RegistrationGuest.id == guest_id)
-        )
+        result = await db.execute(select(RegistrationGuest).where(RegistrationGuest.id == guest_id))
         guest = result.scalar_one_or_none()
 
         if not guest:

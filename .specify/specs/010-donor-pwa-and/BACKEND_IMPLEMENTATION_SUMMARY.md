@@ -13,12 +13,12 @@ This implementation provides the complete backend infrastructure for the donor P
    - Tracks registration status (pending, confirmed, cancelled, waitlisted)
    - Stores number of guests and ticket type
    - Unique constraint on (user_id, event_id) prevents duplicates
-   
+
 2. `registration_guests` - Optional guest information
    - Stores guest name, email, phone (all nullable)
    - Links to user account when guest creates one (user_id nullable)
    - Tracks admin invitations (invited_by_admin, invitation_sent_at)
-   
+
 3. `meal_selections` - Meal choices per attendee
    - One selection per attendee (registrant + guests)
    - Unique constraint on (registration_id, guest_id)

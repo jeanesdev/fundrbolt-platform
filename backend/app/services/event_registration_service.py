@@ -44,9 +44,7 @@ class EventRegistrationService:
             HTTPException: If event not found, already registered, or validation fails
         """
         # Verify event exists and is active
-        event_result = await db.execute(
-            select(Event).where(Event.id == registration_data.event_id)
-        )
+        event_result = await db.execute(select(Event).where(Event.id == registration_data.event_id))
         event = event_result.scalar_one_or_none()
 
         if not event:
@@ -358,7 +356,10 @@ class EventRegistrationService:
         """
         # Define valid transitions
         valid_transitions = {
-            RegistrationStatus.PENDING: [RegistrationStatus.CONFIRMED, RegistrationStatus.CANCELLED],
+            RegistrationStatus.PENDING: [
+                RegistrationStatus.CONFIRMED,
+                RegistrationStatus.CANCELLED,
+            ],
             RegistrationStatus.CONFIRMED: [RegistrationStatus.CANCELLED],
             RegistrationStatus.CANCELLED: [],  # No transitions from cancelled
             RegistrationStatus.WAITLISTED: [

@@ -3,7 +3,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -62,15 +62,6 @@ class MealSelection(Base, UUIDMixin, TimestampMixin):
 
     # Table Configuration
     __table_args__ = (
-        {
-            "comment": "Meal selections for event attendees",
-            "indexes": [
-                # Composite index for "get all meal selections for a registration" queries
-                {"name": "idx_registration_guest_meal", "columns": ["registration_id", "guest_id"]},
-            ],
-            "unique_constraints": [
-                # One meal selection per guest per registration (guest_id NULL for registrant)
-                {"name": "uq_registration_guest_meal", "columns": ["registration_id", "guest_id"]},
-            ],
-        }
+        UniqueConstraint("registration_id", "guest_id", name="uq_registration_guest_meal"),
+        Index("idx_registration_guest_meal", "registration_id", "guest_id"),
     )

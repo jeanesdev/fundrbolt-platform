@@ -160,12 +160,8 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["registration_id"], ["event_registrations.id"], ondelete="CASCADE"
         ),
-        sa.ForeignKeyConstraint(
-            ["guest_id"], ["registration_guests.id"], ondelete="CASCADE"
-        ),
-        sa.ForeignKeyConstraint(
-            ["food_option_id"], ["event_food_options.id"], ondelete="RESTRICT"
-        ),
+        sa.ForeignKeyConstraint(["guest_id"], ["registration_guests.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["food_option_id"], ["food_options.id"], ondelete="RESTRICT"),
         sa.UniqueConstraint("registration_id", "guest_id", name="uq_registration_guest_meal"),
         comment="Meal selections for event attendees",
     )

@@ -1,2 +1,2 @@
 // Shared utilities barrel export
-export {};
+export { };
