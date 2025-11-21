@@ -125,11 +125,7 @@ class EventService:
         if event_data.version is not None and event.version != event_data.version:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail={
-                    "error": "Conflict: event was modified by another user",
-                    "current_version": event.version,
-                    "your_version": event_data.version,
-                },
+                detail=f"Conflict: event was modified by another user (current version: {event.version}, your version: {event_data.version})",
             )
 
         # Validate timezone if being updated
@@ -142,7 +138,6 @@ class EventService:
             setattr(event, key, value)
 
         event.updated_by = current_user.id
-        event.version += 1
 
         await db.commit()
 
@@ -180,7 +175,6 @@ class EventService:
 
         event.status = EventStatus.ACTIVE
         event.updated_by = current_user.id
-        event.version += 1
 
         await db.commit()
 
@@ -221,7 +215,6 @@ class EventService:
 
         event.status = EventStatus.CLOSED
         event.updated_by = current_user.id
-        event.version += 1
 
         await db.commit()
 
@@ -405,7 +398,6 @@ async def close_expired_events(db: AsyncSession) -> int:
 
     for event in events_to_close:
         event.status = EventStatus.CLOSED
-        event.version += 1
 
     if events_to_close:
         await db.commit()
