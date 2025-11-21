@@ -13,6 +13,8 @@ import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as InvitationsAcceptRouteImport } from './routes/invitations/accept'
+import { Route as EventsSlugRouteImport } from './routes/events.$slug'
+import { Route as AuthenticatedRegistrationsRouteImport } from './routes/_authenticated/registrations'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
 import { Route as errors404RouteImport } from './routes/(errors)/404'
@@ -35,6 +37,7 @@ import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedNposIndexRouteImport } from './routes/_authenticated/npos/index'
 import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events/index'
+import { Route as EventsSlugRegisterRouteImport } from './routes/events.$slug.register'
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
@@ -73,6 +76,17 @@ const InvitationsAcceptRoute = InvitationsAcceptRouteImport.update({
   path: '/invitations/accept',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EventsSlugRoute = EventsSlugRouteImport.update({
+  id: '/events/$slug',
+  path: '/events/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRegistrationsRoute =
+  AuthenticatedRegistrationsRouteImport.update({
+    id: '/registrations',
+    path: '/registrations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const errors503Route = errors503RouteImport.update({
   id: '/(errors)/503',
   path: '/503',
@@ -185,6 +199,11 @@ const AuthenticatedEventsIndexRoute =
     path: '/events/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const EventsSlugRegisterRoute = EventsSlugRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => EventsSlugRoute,
+} as any)
 const ClerkAuthenticatedUserManagementRoute =
   ClerkAuthenticatedUserManagementRouteImport.update({
     id: '/user-management',
@@ -310,6 +329,8 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/registrations': typeof AuthenticatedRegistrationsRoute
+  '/events/$slug': typeof EventsSlugRouteWithChildren
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/npo-applications': typeof AuthenticatedAdminNpoApplicationsRoute
@@ -321,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/events/$slug/register': typeof EventsSlugRegisterRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/npos': typeof AuthenticatedNposIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -352,6 +374,8 @@ export interface FileRoutesByTo {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/registrations': typeof AuthenticatedRegistrationsRoute
+  '/events/$slug': typeof EventsSlugRouteWithChildren
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/npo-applications': typeof AuthenticatedAdminNpoApplicationsRoute
@@ -363,6 +387,7 @@ export interface FileRoutesByTo {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/events/$slug/register': typeof EventsSlugRegisterRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/npos': typeof AuthenticatedNposIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -399,6 +424,8 @@ export interface FileRoutesById {
   '/(errors)/404': typeof errors404Route
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
+  '/_authenticated/registrations': typeof AuthenticatedRegistrationsRoute
+  '/events/$slug': typeof EventsSlugRouteWithChildren
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/npo-applications': typeof AuthenticatedAdminNpoApplicationsRoute
@@ -410,6 +437,7 @@ export interface FileRoutesById {
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/events/$slug/register': typeof EventsSlugRegisterRoute
   '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
   '/_authenticated/npos/': typeof AuthenticatedNposIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -445,6 +473,8 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/registrations'
+    | '/events/$slug'
     | '/invitations/accept'
     | '/'
     | '/admin/npo-applications'
@@ -456,6 +486,7 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
+    | '/events/$slug/register'
     | '/events'
     | '/npos'
     | '/settings/'
@@ -487,6 +518,8 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/registrations'
+    | '/events/$slug'
     | '/invitations/accept'
     | '/'
     | '/admin/npo-applications'
@@ -498,6 +531,7 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
+    | '/events/$slug/register'
     | '/events'
     | '/npos'
     | '/settings'
@@ -533,6 +567,8 @@ export interface FileRouteTypes {
     | '/(errors)/404'
     | '/(errors)/500'
     | '/(errors)/503'
+    | '/_authenticated/registrations'
+    | '/events/$slug'
     | '/invitations/accept'
     | '/_authenticated/'
     | '/_authenticated/admin/npo-applications'
@@ -544,6 +580,7 @@ export interface FileRouteTypes {
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
     | '/clerk/_authenticated/user-management'
+    | '/events/$slug/register'
     | '/_authenticated/events/'
     | '/_authenticated/npos/'
     | '/_authenticated/settings/'
@@ -577,6 +614,7 @@ export interface RootRouteChildren {
   errors404Route: typeof errors404Route
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
+  EventsSlugRoute: typeof EventsSlugRouteWithChildren
   InvitationsAcceptRoute: typeof InvitationsAcceptRoute
 }
 
@@ -609,6 +647,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/invitations/accept'
       preLoaderRoute: typeof InvitationsAcceptRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/events/$slug': {
+      id: '/events/$slug'
+      path: '/events/$slug'
+      fullPath: '/events/$slug'
+      preLoaderRoute: typeof EventsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/registrations': {
+      id: '/_authenticated/registrations'
+      path: '/registrations'
+      fullPath: '/registrations'
+      preLoaderRoute: typeof AuthenticatedRegistrationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/(errors)/503': {
       id: '/(errors)/503'
@@ -764,6 +816,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/events/$slug/register': {
+      id: '/events/$slug/register'
+      path: '/register'
+      fullPath: '/events/$slug/register'
+      preLoaderRoute: typeof EventsSlugRegisterRouteImport
+      parentRoute: typeof EventsSlugRoute
+    }
     '/clerk/_authenticated/user-management': {
       id: '/clerk/_authenticated/user-management'
       path: '/user-management'
@@ -913,6 +972,7 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
+  AuthenticatedRegistrationsRoute: typeof AuthenticatedRegistrationsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminNpoApplicationsRoute: typeof AuthenticatedAdminNpoApplicationsRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
@@ -934,6 +994,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
+  AuthenticatedRegistrationsRoute: AuthenticatedRegistrationsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminNpoApplicationsRoute:
     AuthenticatedAdminNpoApplicationsRoute,
@@ -1004,6 +1065,18 @@ const ClerkRouteRouteWithChildren = ClerkRouteRoute._addFileChildren(
   ClerkRouteRouteChildren,
 )
 
+interface EventsSlugRouteChildren {
+  EventsSlugRegisterRoute: typeof EventsSlugRegisterRoute
+}
+
+const EventsSlugRouteChildren: EventsSlugRouteChildren = {
+  EventsSlugRegisterRoute: EventsSlugRegisterRoute,
+}
+
+const EventsSlugRouteWithChildren = EventsSlugRoute._addFileChildren(
+  EventsSlugRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ClerkRouteRoute: ClerkRouteRouteWithChildren,
@@ -1022,6 +1095,7 @@ const rootRouteChildren: RootRouteChildren = {
   errors404Route: errors404Route,
   errors500Route: errors500Route,
   errors503Route: errors503Route,
+  EventsSlugRoute: EventsSlugRouteWithChildren,
   InvitationsAcceptRoute: InvitationsAcceptRoute,
 }
 export const routeTree = rootRouteImport

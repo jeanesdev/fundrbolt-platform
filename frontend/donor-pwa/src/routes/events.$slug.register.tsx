@@ -244,11 +244,11 @@ function EventRegistration() {
       <div className="mb-8">
         <Button
           variant="ghost"
-          onClick={() => navigate({ to: '/events/$slug', params: { slug } })}
+          onClick={() => navigate({ to: '/' })}
           className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Event
+          Back to Home
         </Button>
         <h1 className="text-3xl font-bold mb-2">Event Registration</h1>
         <p className="text-muted-foreground">{event.name}</p>
@@ -353,16 +353,16 @@ function EventRegistration() {
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={() => navigate({ to: '/registrations' })}
+                onClick={() => navigate({ to: '/_authenticated/registrations' })}
                 className="flex-1"
               >
                 View My Registrations
               </Button>
               <Button
-                onClick={() => navigate({ to: '/events/$slug', params: { slug } })}
+                onClick={() => navigate({ to: '/' })}
                 className="flex-1"
               >
-                Back to Event
+                Back to Home
               </Button>
             </div>
           </CardContent>
