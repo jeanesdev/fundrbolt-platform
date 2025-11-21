@@ -13,6 +13,8 @@ from app.models.base import Base, TimestampMixin, UUIDMixin
 if TYPE_CHECKING:
     from app.models.audit_log import AuditLog
     from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
+    from app.models.event_registration import EventRegistration
+    from app.models.registration_guest import RegistrationGuest
     from app.models.role import Role
     from app.models.session import Session
 
@@ -143,6 +145,19 @@ class User(Base, UUIDMixin, TimestampMixin):
         "ConsentAuditLog",
         back_populates="user",
         cascade="all, delete-orphan",
+    )
+
+    # Event registration relationships
+    event_registrations: Mapped[list["EventRegistration"]] = relationship(
+        "EventRegistration",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    guest_records: Mapped[list["RegistrationGuest"]] = relationship(
+        "RegistrationGuest",
+        back_populates="user",
+        foreign_keys="RegistrationGuest.user_id",
     )
 
     # Check constraints

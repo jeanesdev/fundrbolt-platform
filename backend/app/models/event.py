@@ -21,6 +21,7 @@ from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from app.models.auction_item import AuctionItem
+    from app.models.event_registration import EventRegistration
     from app.models.npo import NPO
     from app.models.sponsor import Sponsor
 
@@ -247,6 +248,11 @@ class Event(Base, UUIDMixin, TimestampMixin):
         back_populates="event",
         cascade="all, delete-orphan",
         order_by="AuctionItem.bid_number",
+    )
+    registrations: Mapped[list["EventRegistration"]] = relationship(
+        "EventRegistration",
+        back_populates="event",
+        cascade="all, delete-orphan",
     )
 
     # Constraints
