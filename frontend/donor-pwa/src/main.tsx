@@ -1,15 +1,16 @@
-import { StrictMode } from 'react'
-import ReactDOM from 'react-dom/client'
-import { AxiosError } from 'axios'
+import { SessionExpiryWarning } from '@/components/SessionExpiryWarning'
+import { handleServerError } from '@/lib/handle-server-error'
+import { useAuthStore } from '@/stores/auth-store'
 import {
   QueryCache,
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { AxiosError } from 'axios'
+import { StrictMode, useEffect } from 'react'
+import ReactDOM from 'react-dom/client'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { handleServerError } from '@/lib/handle-server-error'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
@@ -84,6 +85,25 @@ declare module '@tanstack/react-router' {
   }
 }
 
+// Auto-login component - restores session from storage on app load
+function AutoLogin({ children }: { children: React.ReactNode }) {
+  const { initializeFromStorage } = useAuthStore()
+
+  useEffect(() => {
+    // Initialize auth state from localStorage (tokens, user data, etc.)
+    // Token refresh will be handled automatically by axios interceptors
+    // when the user makes their first authenticated request
+    initializeFromStorage()
+  }, [initializeFromStorage])
+
+  return (
+    <>
+      {children}
+      <SessionExpiryWarning />
+    </>
+  )
+}
+
 // Render the app
 const rootElement = document.getElementById('root')!
 if (!rootElement.innerHTML) {
@@ -94,7 +114,9 @@ if (!rootElement.innerHTML) {
         <ThemeProvider>
           <FontProvider>
             <DirectionProvider>
-              <RouterProvider router={router} />
+              <AutoLogin>
+                <RouterProvider router={router} />
+              </AutoLogin>
             </DirectionProvider>
           </FontProvider>
         </ThemeProvider>

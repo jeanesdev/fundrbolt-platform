@@ -1,22 +1,19 @@
-# Augeo Admin Dashboard
+# Augeo Donor PWA
 
-Admin web application for nonprofit auction management with authentication, user management, and role-based access control.
+Progressive Web App (PWA) for donors to browse events, register as guests, manage profiles, and participate in nonprofit auctions.
 
 ## Features
 
-- **User Authentication**: Login, registration, logout with JWT tokens
-- **Password Management**: Reset and change password with email verification
-- **Email Verification**: Email verification flow before login
-- **User Management**: List, create, update, delete users with server-side pagination and NPO filtering
-- **NPO Context Selector**: Filter all data by selected NPO (top-left corner)
-- **Role Assignment**: Assign roles to users (Super Admin, NPO Admin, NPO Manager, Event Staff, Donor)
-- **Role-Based Dashboards**: Different dashboard views for each role
-- **Session Management**: Automatic token refresh, session expiration warning
+- **Public Event Discovery**: Browse events by slug-based URLs (e.g., `/events/spring-gala-2025`)
+- **Event Registration**: Multi-step wizard for donor registration with guest management
+- **Meal Selection**: Per-guest meal preferences with dietary restrictions
+- **Branded Event Pages**: Custom logos, banners, colors per event
+- **Donor Authentication**: Login, registration, logout with JWT tokens
+- **Session Management**: Auto-login, token refresh, session expiry warnings (2-min countdown)
+- **Mobile-First Design**: Optimized for phones/tablets with navy theme
 - **Legal Compliance**: Terms of Service, Privacy Policy, Cookie Consent (GDPR)
-- **Consent Management**: View consent history, export data, withdraw consent, delete account
-- **Search Bar**: Cross-resource search with role-based filtering (Users, NPOs, Events)
-- **Responsive Design**: Mobile-first responsive layout
-- **Accessibility**: Built with accessibility in mind (ARIA, keyboard navigation)
+- **Responsive Design**: Fluid layouts with Tailwind v4
+- **Accessibility**: ARIA labels, keyboard navigation
 
 ## Technology Stack
 
@@ -45,6 +42,422 @@ Admin web application for nonprofit auction management with authentication, user
 - **Node.js**: 22+ (managed with NVM)
 - **pnpm**: 9+ for package management
 - **Backend API**: Running on http://localhost:8000
+
+### Quick Start
+
+```bash
+cd frontend/donor-pwa
+pnpm install
+pnpm dev
+```
+
+Application runs at <http://localhost:5174>
+
+## Architecture
+
+### Technology Stack (Shared with Admin PWA)
+
+Both Donor PWA and Admin PWA use identical technology stacks and configurations to ensure consistency:
+
+**UI Framework:** [React](https://react.dev/) 19+ with TypeScript 5.6+
+
+**Build Tool:** [Vite](https://vitejs.dev/) 7.0+ with identical plugin configuration
+
+**Routing:** [TanStack Router](https://tanstack.com/router/latest) v1 (file-based routes)
+
+**Styling:** [Tailwind CSS](https://tailwindcss.com/) v4 (CSS-first, no config file)
+
+**Components:** [shadcn/ui](https://ui.shadcn.com) (New York style, slate base color)
+
+**State Management:** [Zustand](https://github.com/pmndrs/zustand) 5.0+
+
+**Data Fetching:** [TanStack Query](https://tanstack.com/query/latest) v5 + [Axios](https://axios-http.com/) 1.7+
+
+**Icons:** [Lucide Icons](https://lucide.dev/icons/)
+
+**Linting:** [ESLint](https://eslint.org/) 9+ (shared config)
+
+### Configuration Consistency
+
+Both PWAs share identical configurations for maximum consistency:
+
+**`vite.config.ts`**:
+
+```typescript
+export default defineConfig({
+  plugins: [
+    TanStackRouterVite({ autoCodeSplitting: true }),
+    react(),
+    tailwindcss()
+  ],
+  server: {
+    proxy: {
+      '/api': 'http://localhost:8000'
+    }
+  }
+})
+```
+
+**`components.json`** (shadcn/ui):
+
+```json
+{
+  "style": "new-york",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": { "config": "", "css": "src/styles/index.css", "baseColor": "slate", "cssVariables": true }
+}
+```
+
+**`tsconfig.json`**:
+
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@augeo/shared": ["../shared/src/index.ts"],
+      "@augeo/shared/*": ["../shared/src/*"]
+    }
+  }
+}
+```
+
+### Design System
+
+**Color Theme**:
+
+- **Donor PWA**: Navy blue theme (OKLCH hue 250°) for visual differentiation
+- **Admin PWA**: Black/neutral theme (default shadcn/ui)
+- **Shared**: Both use OKLCH color space for perceptual uniformity
+
+**Typography** (Identical):
+
+- Font families: Inter, Manrope (defined in `theme.css`)
+- Base text sizing via Tailwind utilities (`text-base`, `text-sm`, etc.)
+- Consistent heading hierarchy (`h1`-`h6`)
+
+**Spacing Patterns** (Identical):
+
+- Container padding: `p-4`, `p-6` (mobile/desktop)
+- Vertical spacing: `space-y-4`, `space-y-6`, `gap-4`, `gap-6`
+- Horizontal gaps: `gap-4`, `gap-6`
+- Margins: `m-4`, `m-6` for standalone elements
+
+**Border Radius** (Identical):
+
+- Base radius: `0.625rem` (10px)
+- Variants: `radius-sm`, `radius-md`, `radius-lg`, `radius-xl`
+
+### Component Library
+
+Both PWAs use identical **shadcn/ui** components from `src/components/ui/`:
+
+- **Forms**: Button, Input, Textarea, Label, Checkbox, Radio, Select
+- **Layout**: Card, Separator, Sheet, Sidebar, Collapsible
+- **Overlays**: Dialog, Alert Dialog, Popover, Dropdown Menu
+- **Feedback**: Toast, Alert, Badge, Progress, Skeleton
+- **Data**: Table, Pagination, Calendar, Avatar
+- **Navigation**: Command, Tabs, Scroll Area
+
+**Usage Example**:
+
+```tsx
+import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+
+export function RegistrationForm() {
+  return (
+    <Card className="space-y-6">
+      <CardHeader>
+        <CardTitle>Register for Event</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Input placeholder="Full Name" />
+        <Button>Submit</Button>
+      </CardContent>
+    </Card>
+  )
+}
+```
+
+### Session Management Architecture
+
+**Token Storage Strategy**:
+
+- **Access Tokens**: Memory-only (Zustand store, not persisted) - expires in 15 minutes
+- **Refresh Tokens**: `localStorage` with 7-day expiry
+- **Rationale**: Balance security (access token not persisted) with UX (auto-login via refresh token)
+
+**Flow**:
+
+1. **Login**: Store access token in memory, refresh token in `localStorage`
+2. **App Load**: Check `localStorage` for valid refresh token → auto-login
+3. **401 Error**: Axios interceptor uses refresh token to get new access token
+4. **Session Expiry**: Show modal 2 minutes before expiry with countdown
+5. **Logout**: Clear both tokens from memory and `localStorage`
+
+**Implementation**:
+
+```typescript
+// Token storage utilities
+export const saveRefreshToken = (token: string, expiryTimestamp: number) => {
+  localStorage.setItem('refresh_token', token)
+  localStorage.setItem('refresh_token_expiry', expiryTimestamp.toString())
+}
+
+export const getRefreshToken = (): string | null => {
+  const token = localStorage.getItem('refresh_token')
+  const expiry = localStorage.getItem('refresh_token_expiry')
+  if (!token || !expiry) return null
+  if (Date.now() >= parseInt(expiry)) {
+    clearRefreshToken()
+    return null
+  }
+  return token
+}
+```
+
+**Files**:
+
+- `src/lib/storage/tokens.ts` - Token storage utilities
+- `src/stores/auth-store.ts` - Auth state (access token in memory only)
+- `src/lib/axios.ts` - Token refresh interceptor
+- `src/components/SessionExpiryWarning.tsx` - 2-minute countdown modal
+- `src/components/ProtectedRoute.tsx` - Auth wrapper for routes
+
+### Route Protection
+
+**Pattern**: Use TanStack Router `beforeLoad` hook for authentication checks
+
+```tsx
+// Protected registration route
+export const Route = createFileRoute('/events/$slug/register')({
+  beforeLoad: async ({ context }) => {
+    const { isAuthenticated } = useAuthStore.getState()
+    const hasRefreshToken = hasValidRefreshToken()
+
+    if (!isAuthenticated && !hasRefreshToken) {
+      throw redirect({
+        to: '/sign-in',
+        search: { redirect: location.pathname }
+      })
+    }
+  }
+})
+```
+
+### Shared Package Pattern
+
+**Purpose**: Share types, utilities, and components between Admin and Donor PWAs
+
+**Structure**:
+
+```text
+frontend/shared/
+├── src/
+│   ├── components/  # Shared UI components
+│   ├── hooks/       # Shared React hooks
+│   ├── utils/       # Shared utilities
+│   ├── types/       # Shared TypeScript types
+│   └── index.ts     # Main export
+├── package.json
+└── tsconfig.json
+```
+
+**Import Pattern**:
+
+```typescript
+import { SharedButton } from '@augeo/shared/components'
+import { useSharedHook } from '@augeo/shared/hooks'
+import type { SharedType } from '@augeo/shared/types'
+```
+
+**Current Status**: Package exists but not yet populated (planned for future use)
+
+### File-Based Routing
+
+Both PWAs use **TanStack Router** with identical route patterns:
+
+**Public Routes** (Donor PWA):
+
+- `/` - Landing page
+- `/events/:slug` - Event detail page
+- `/sign-in`, `/sign-up` - Auth pages
+
+**Protected Routes** (Donor PWA):
+
+- `/events/:slug/register` - Event registration (requires auth)
+- `/profile` - Donor profile
+
+**Layout Hierarchy**:
+
+```text
+routes/
+├── __root.tsx              # Root layout (theme, font, direction)
+├── index.tsx               # Landing page
+├── sign-in.tsx             # Login
+├── sign-up.tsx             # Registration
+└── events/
+    ├── $slug.tsx           # Event layout
+    ├── $slug.index.tsx     # Event details (public)
+    └── $slug.register.tsx  # Registration (protected)
+```
+
+### State Management Patterns
+
+**Zustand Stores**:
+
+- **Auth Store**: User, tokens, login/logout methods
+- **Event Branding Store**: Dynamic event colors/logos
+- **Form State**: React Hook Form (ephemeral, component-level)
+
+**React Query Caching**:
+
+- Event data: `['event', slug]`
+- Registration data: `['registration', eventId, userId]`
+- Stale time: 5 minutes for event data
+- Cache time: 10 minutes
+
+### API Integration
+
+**Axios Configuration**:
+
+```typescript
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  headers: { 'Content-Type': 'application/json' }
+})
+
+// Request interceptor: Add auth token
+api.interceptors.request.use((config) => {
+  const { accessToken } = useAuthStore.getState()
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`
+  }
+  return config
+})
+
+// Response interceptor: Refresh token on 401
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      const refreshToken = getRefreshToken()
+      if (refreshToken) {
+        const { data } = await axios.post('/api/v1/auth/refresh', { refresh_token: refreshToken })
+        useAuthStore.getState().setTokens(data.access_token, data.refresh_token)
+        // Retry original request
+        return api(error.config)
+      }
+    }
+    throw error
+  }
+)
+```
+
+### PWA Features (Future)
+
+**Planned**:
+
+- Service Worker for offline support
+- Web App Manifest (`manifest.json`)
+- Install prompt for "Add to Home Screen"
+- Push notifications for event updates
+- Background sync for registration submissions
+
+**Current**: Standard SPA (not yet PWA-enabled)
+
+### Accessibility
+
+**Keyboard Navigation**:
+
+- All interactive elements focusable
+- Logical tab order
+- Visible focus indicators
+
+**ARIA Labels**:
+
+- Form inputs labeled
+- Buttons descriptive
+- Dialog roles and properties
+
+**Screen Readers**:
+
+- Semantic HTML (`<nav>`, `<main>`, `<header>`)
+- `aria-live` regions for dynamic content
+- `aria-label` for icon-only buttons
+
+### Performance
+
+**Code Splitting**:
+
+- TanStack Router auto-code-splitting enabled
+- Route-level lazy loading
+- Component-level dynamic imports
+
+**Optimization**:
+
+- Vite dev server with HMR
+- Production build with tree-shaking
+- Image optimization via Azure Blob CDN
+
+**Bundle Size**:
+
+- Target: < 300KB initial bundle
+- Lazy routes: < 50KB each
+
+### Development Workflow
+
+**Local Development**:
+
+```bash
+pnpm dev              # Start dev server (port 5174)
+pnpm build            # Production build
+pnpm preview          # Preview production build
+pnpm lint             # ESLint
+pnpm type-check       # TypeScript validation
+```
+
+**Pre-Commit Hooks**:
+
+```bash
+./scripts/safe-commit.sh    # Run hooks with auto-retry
+```
+
+Hooks run: ESLint auto-fix, TypeScript check, trailing whitespace removal
+
+**Environment Variables**:
+
+```bash
+VITE_API_URL=http://localhost:8000  # Backend API
+```
+
+### Deployment
+
+**Target**: Azure Static Web Apps
+
+**Build Command**: `pnpm build`
+
+**Output Directory**: `dist/`
+
+**API Integration**: Azure Functions proxy to FastAPI backend
+
+**CI/CD**: GitHub Actions workflow (`.github/workflows/frontend-deploy.yml`)
+
+---
+
+## Differences from Admin PWA
+
+While both PWAs share architecture, they differ in:
+
+1. **Theme Colors**: Donor (navy), Admin (black/neutral)
+2. **Routes**: Donor (public event pages), Admin (user management, NPO context)
+3. **Features**: Donor (event registration), Admin (admin dashboards, search)
+4. **Port**: Donor (5174), Admin (5173)
+
+---
 
 ## Quick Start
 

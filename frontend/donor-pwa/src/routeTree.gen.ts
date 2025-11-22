@@ -9,12 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as InvitationsAcceptRouteImport } from './routes/invitations/accept'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
 import { Route as AuthenticatedRegistrationsRouteImport } from './routes/_authenticated/registrations'
+import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
 import { Route as errors404RouteImport } from './routes/(errors)/404'
@@ -30,24 +30,17 @@ import { Route as authPasswordResetConfirmRouteImport } from './routes/(auth)/pa
 import { Route as authPasswordResetRouteImport } from './routes/(auth)/password-reset'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
-import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_authenticated/route'
-import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
-import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
+import { Route as EventsSlugIndexRouteImport } from './routes/events.$slug.index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedNposIndexRouteImport } from './routes/_authenticated/npos/index'
 import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events/index'
 import { Route as EventsSlugRegisterRouteImport } from './routes/events.$slug.register'
-import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
-import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
-import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
 import { Route as AuthenticatedSettingsPasswordRouteImport } from './routes/_authenticated/settings/password'
 import { Route as AuthenticatedSettingsConsentRouteImport } from './routes/_authenticated/settings/consent'
 import { Route as AuthenticatedNposCreateRouteImport } from './routes/_authenticated/npos/create'
 import { Route as AuthenticatedEventsCreateRouteImport } from './routes/_authenticated/events/create'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
-import { Route as AuthenticatedAdminNpoApplicationsRouteImport } from './routes/_authenticated/admin/npo-applications'
-import { Route as AuthenticatedUsersUserIdIndexRouteImport } from './routes/_authenticated/users/$userId/index'
 import { Route as AuthenticatedNposNpoIdIndexRouteImport } from './routes/_authenticated/npos/$npoId.index'
 import { Route as AuthenticatedEventsEventIdIndexRouteImport } from './routes/_authenticated/events/$eventId/index'
 import { Route as AuthenticatedNposNpoIdEditRouteImport } from './routes/_authenticated/npos/$npoId/edit'
@@ -57,19 +50,14 @@ import { Route as AuthenticatedEventsEventIdAuctionItemsCreateRouteImport } from
 import { Route as AuthenticatedEventsEventIdAuctionItemsItemIdIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-items/$itemId/index'
 import { Route as AuthenticatedEventsEventIdAuctionItemsItemIdEditRouteImport } from './routes/_authenticated/events/$eventId/auction-items/$itemId/edit'
 
-const ClerkRouteRoute = ClerkRouteRouteImport.update({
-  id: '/clerk',
-  path: '/clerk',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthenticatedRouteRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
 const InvitationsAcceptRoute = InvitationsAcceptRouteImport.update({
   id: '/invitations/accept',
@@ -87,6 +75,11 @@ const AuthenticatedRegistrationsRoute =
     path: '/registrations',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const errors503Route = errors503RouteImport.update({
   id: '/(errors)/503',
   path: '/503',
@@ -163,24 +156,16 @@ const authForgotPasswordRoute = authForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ClerkAuthenticatedRouteRoute = ClerkAuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => ClerkRouteRoute,
-} as any)
-const ClerkauthRouteRoute = ClerkauthRouteRouteImport.update({
-  id: '/(auth)',
-  getParentRoute: () => ClerkRouteRoute,
-} as any)
 const AuthenticatedSettingsRouteRoute =
   AuthenticatedSettingsRouteRouteImport.update({
     id: '/settings',
     path: '/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
-  id: '/users/',
-  path: '/users/',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const EventsSlugIndexRoute = EventsSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EventsSlugRoute,
 } as any)
 const AuthenticatedSettingsIndexRoute =
   AuthenticatedSettingsIndexRouteImport.update({
@@ -203,22 +188,6 @@ const EventsSlugRegisterRoute = EventsSlugRegisterRouteImport.update({
   id: '/register',
   path: '/register',
   getParentRoute: () => EventsSlugRoute,
-} as any)
-const ClerkAuthenticatedUserManagementRoute =
-  ClerkAuthenticatedUserManagementRouteImport.update({
-    id: '/user-management',
-    path: '/user-management',
-    getParentRoute: () => ClerkAuthenticatedRouteRoute,
-  } as any)
-const ClerkauthSignUpRoute = ClerkauthSignUpRouteImport.update({
-  id: '/sign-up',
-  path: '/sign-up',
-  getParentRoute: () => ClerkauthRouteRoute,
-} as any)
-const ClerkauthSignInRoute = ClerkauthSignInRouteImport.update({
-  id: '/sign-in',
-  path: '/sign-in',
-  getParentRoute: () => ClerkauthRouteRoute,
 } as any)
 const AuthenticatedSettingsPasswordRoute =
   AuthenticatedSettingsPasswordRouteImport.update({
@@ -247,18 +216,6 @@ const AuthenticatedErrorsErrorRoute =
   AuthenticatedErrorsErrorRouteImport.update({
     id: '/errors/$error',
     path: '/errors/$error',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminNpoApplicationsRoute =
-  AuthenticatedAdminNpoApplicationsRouteImport.update({
-    id: '/admin/npo-applications',
-    path: '/admin/npo-applications',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedUsersUserIdIndexRoute =
-  AuthenticatedUsersUserIdIndexRouteImport.update({
-    id: '/users/$userId/',
-    path: '/users/$userId/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedNposNpoIdIndexRoute =
@@ -311,9 +268,8 @@ const AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/': typeof IndexRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/clerk/': typeof ClerkauthRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/password-reset': typeof authPasswordResetRoute
@@ -329,36 +285,31 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/home': typeof AuthenticatedHomeRoute
   '/registrations': typeof AuthenticatedRegistrationsRoute
   '/events/$slug': typeof EventsSlugRouteWithChildren
   '/invitations/accept': typeof InvitationsAcceptRoute
-  '/': typeof AuthenticatedIndexRoute
-  '/admin/npo-applications': typeof AuthenticatedAdminNpoApplicationsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/events/create': typeof AuthenticatedEventsCreateRoute
   '/npos/create': typeof AuthenticatedNposCreateRoute
   '/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/settings/password': typeof AuthenticatedSettingsPasswordRoute
-  '/clerk/sign-in': typeof ClerkauthSignInRoute
-  '/clerk/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/npos': typeof AuthenticatedNposIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/users': typeof AuthenticatedUsersIndexRoute
+  '/events/$slug/': typeof EventsSlugIndexRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
   '/events/$eventId': typeof AuthenticatedEventsEventIdIndexRoute
   '/npos/$npoId': typeof AuthenticatedNposNpoIdIndexRoute
-  '/users/$userId': typeof AuthenticatedUsersUserIdIndexRoute
   '/events/$eventId/auction-items/create': typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
   '/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
   '/events/$eventId/auction-items/$itemId/edit': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
   '/events/$eventId/auction-items/$itemId': typeof AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute
 }
 export interface FileRoutesByTo {
-  '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/': typeof IndexRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/password-reset': typeof authPasswordResetRoute
@@ -374,29 +325,23 @@ export interface FileRoutesByTo {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/home': typeof AuthenticatedHomeRoute
   '/registrations': typeof AuthenticatedRegistrationsRoute
-  '/events/$slug': typeof EventsSlugRouteWithChildren
   '/invitations/accept': typeof InvitationsAcceptRoute
-  '/': typeof AuthenticatedIndexRoute
-  '/admin/npo-applications': typeof AuthenticatedAdminNpoApplicationsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/events/create': typeof AuthenticatedEventsCreateRoute
   '/npos/create': typeof AuthenticatedNposCreateRoute
   '/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/settings/password': typeof AuthenticatedSettingsPasswordRoute
-  '/clerk/sign-in': typeof ClerkauthSignInRoute
-  '/clerk/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/npos': typeof AuthenticatedNposIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
-  '/users': typeof AuthenticatedUsersIndexRoute
+  '/events/$slug': typeof EventsSlugIndexRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
   '/events/$eventId': typeof AuthenticatedEventsEventIdIndexRoute
   '/npos/$npoId': typeof AuthenticatedNposNpoIdIndexRoute
-  '/users/$userId': typeof AuthenticatedUsersUserIdIndexRoute
   '/events/$eventId/auction-items/create': typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
   '/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
   '/events/$eventId/auction-items/$itemId/edit': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
@@ -404,11 +349,9 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/clerk': typeof ClerkRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/clerk/(auth)': typeof ClerkauthRouteRouteWithChildren
-  '/clerk/_authenticated': typeof ClerkAuthenticatedRouteRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/otp': typeof authOtpRoute
   '/(auth)/password-reset': typeof authPasswordResetRoute
@@ -424,29 +367,24 @@ export interface FileRoutesById {
   '/(errors)/404': typeof errors404Route
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
+  '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/registrations': typeof AuthenticatedRegistrationsRoute
   '/events/$slug': typeof EventsSlugRouteWithChildren
   '/invitations/accept': typeof InvitationsAcceptRoute
-  '/_authenticated/': typeof AuthenticatedIndexRoute
-  '/_authenticated/admin/npo-applications': typeof AuthenticatedAdminNpoApplicationsRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/events/create': typeof AuthenticatedEventsCreateRoute
   '/_authenticated/npos/create': typeof AuthenticatedNposCreateRoute
   '/_authenticated/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/_authenticated/settings/password': typeof AuthenticatedSettingsPasswordRoute
-  '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
-  '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
   '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
   '/_authenticated/npos/': typeof AuthenticatedNposIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/events/$slug/': typeof EventsSlugIndexRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/_authenticated/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
   '/_authenticated/events/$eventId/': typeof AuthenticatedEventsEventIdIndexRoute
   '/_authenticated/npos/$npoId/': typeof AuthenticatedNposNpoIdIndexRoute
-  '/_authenticated/users/$userId/': typeof AuthenticatedUsersUserIdIndexRoute
   '/_authenticated/events/$eventId/auction-items/create': typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
   '/_authenticated/events/$eventId/auction-items/': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
   '/_authenticated/events/$eventId/auction-items/$itemId/edit': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
@@ -455,9 +393,8 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/clerk'
+    | '/'
     | '/settings'
-    | '/clerk/'
     | '/forgot-password'
     | '/otp'
     | '/password-reset'
@@ -473,36 +410,31 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/home'
     | '/registrations'
     | '/events/$slug'
     | '/invitations/accept'
-    | '/'
-    | '/admin/npo-applications'
     | '/errors/$error'
     | '/events/create'
     | '/npos/create'
     | '/settings/consent'
     | '/settings/password'
-    | '/clerk/sign-in'
-    | '/clerk/sign-up'
-    | '/clerk/user-management'
     | '/events/$slug/register'
     | '/events'
     | '/npos'
     | '/settings/'
-    | '/users'
+    | '/events/$slug/'
     | '/events/$eventId/edit'
     | '/npos/$npoId/edit'
     | '/events/$eventId'
     | '/npos/$npoId'
-    | '/users/$userId'
     | '/events/$eventId/auction-items/create'
     | '/events/$eventId/auction-items'
     | '/events/$eventId/auction-items/$itemId/edit'
     | '/events/$eventId/auction-items/$itemId'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/clerk'
+    | '/'
     | '/forgot-password'
     | '/otp'
     | '/password-reset'
@@ -518,40 +450,32 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/home'
     | '/registrations'
-    | '/events/$slug'
     | '/invitations/accept'
-    | '/'
-    | '/admin/npo-applications'
     | '/errors/$error'
     | '/events/create'
     | '/npos/create'
     | '/settings/consent'
     | '/settings/password'
-    | '/clerk/sign-in'
-    | '/clerk/sign-up'
-    | '/clerk/user-management'
     | '/events/$slug/register'
     | '/events'
     | '/npos'
     | '/settings'
-    | '/users'
+    | '/events/$slug'
     | '/events/$eventId/edit'
     | '/npos/$npoId/edit'
     | '/events/$eventId'
     | '/npos/$npoId'
-    | '/users/$userId'
     | '/events/$eventId/auction-items/create'
     | '/events/$eventId/auction-items'
     | '/events/$eventId/auction-items/$itemId/edit'
     | '/events/$eventId/auction-items/$itemId'
   id:
     | '__root__'
+    | '/'
     | '/_authenticated'
-    | '/clerk'
     | '/_authenticated/settings'
-    | '/clerk/(auth)'
-    | '/clerk/_authenticated'
     | '/(auth)/forgot-password'
     | '/(auth)/otp'
     | '/(auth)/password-reset'
@@ -567,29 +491,24 @@ export interface FileRouteTypes {
     | '/(errors)/404'
     | '/(errors)/500'
     | '/(errors)/503'
+    | '/_authenticated/home'
     | '/_authenticated/registrations'
     | '/events/$slug'
     | '/invitations/accept'
-    | '/_authenticated/'
-    | '/_authenticated/admin/npo-applications'
     | '/_authenticated/errors/$error'
     | '/_authenticated/events/create'
     | '/_authenticated/npos/create'
     | '/_authenticated/settings/consent'
     | '/_authenticated/settings/password'
-    | '/clerk/(auth)/sign-in'
-    | '/clerk/(auth)/sign-up'
-    | '/clerk/_authenticated/user-management'
     | '/events/$slug/register'
     | '/_authenticated/events/'
     | '/_authenticated/npos/'
     | '/_authenticated/settings/'
-    | '/_authenticated/users/'
+    | '/events/$slug/'
     | '/_authenticated/events/$eventId/edit'
     | '/_authenticated/npos/$npoId/edit'
     | '/_authenticated/events/$eventId/'
     | '/_authenticated/npos/$npoId/'
-    | '/_authenticated/users/$userId/'
     | '/_authenticated/events/$eventId/auction-items/create'
     | '/_authenticated/events/$eventId/auction-items/'
     | '/_authenticated/events/$eventId/auction-items/$itemId/edit'
@@ -597,8 +516,8 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  ClerkRouteRoute: typeof ClerkRouteRouteWithChildren
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
   authPasswordResetRoute: typeof authPasswordResetRoute
@@ -620,13 +539,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/clerk': {
-      id: '/clerk'
-      path: '/clerk'
-      fullPath: '/clerk'
-      preLoaderRoute: typeof ClerkRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -634,12 +546,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/': {
-      id: '/_authenticated/'
+    '/': {
+      id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/invitations/accept': {
       id: '/invitations/accept'
@@ -660,6 +572,13 @@ declare module '@tanstack/react-router' {
       path: '/registrations'
       fullPath: '/registrations'
       preLoaderRoute: typeof AuthenticatedRegistrationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/home': {
+      id: '/_authenticated/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AuthenticatedHomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/(errors)/503': {
@@ -767,20 +686,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/clerk/_authenticated': {
-      id: '/clerk/_authenticated'
-      path: ''
-      fullPath: '/clerk'
-      preLoaderRoute: typeof ClerkAuthenticatedRouteRouteImport
-      parentRoute: typeof ClerkRouteRoute
-    }
-    '/clerk/(auth)': {
-      id: '/clerk/(auth)'
-      path: '/'
-      fullPath: '/clerk/'
-      preLoaderRoute: typeof ClerkauthRouteRouteImport
-      parentRoute: typeof ClerkRouteRoute
-    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -788,12 +693,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/users/': {
-      id: '/_authenticated/users/'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof AuthenticatedUsersIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/events/$slug/': {
+      id: '/events/$slug/'
+      path: '/'
+      fullPath: '/events/$slug/'
+      preLoaderRoute: typeof EventsSlugIndexRouteImport
+      parentRoute: typeof EventsSlugRoute
     }
     '/_authenticated/settings/': {
       id: '/_authenticated/settings/'
@@ -822,27 +727,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/events/$slug/register'
       preLoaderRoute: typeof EventsSlugRegisterRouteImport
       parentRoute: typeof EventsSlugRoute
-    }
-    '/clerk/_authenticated/user-management': {
-      id: '/clerk/_authenticated/user-management'
-      path: '/user-management'
-      fullPath: '/clerk/user-management'
-      preLoaderRoute: typeof ClerkAuthenticatedUserManagementRouteImport
-      parentRoute: typeof ClerkAuthenticatedRouteRoute
-    }
-    '/clerk/(auth)/sign-up': {
-      id: '/clerk/(auth)/sign-up'
-      path: '/sign-up'
-      fullPath: '/clerk/sign-up'
-      preLoaderRoute: typeof ClerkauthSignUpRouteImport
-      parentRoute: typeof ClerkauthRouteRoute
-    }
-    '/clerk/(auth)/sign-in': {
-      id: '/clerk/(auth)/sign-in'
-      path: '/sign-in'
-      fullPath: '/clerk/sign-in'
-      preLoaderRoute: typeof ClerkauthSignInRouteImport
-      parentRoute: typeof ClerkauthRouteRoute
     }
     '/_authenticated/settings/password': {
       id: '/_authenticated/settings/password'
@@ -877,20 +761,6 @@ declare module '@tanstack/react-router' {
       path: '/errors/$error'
       fullPath: '/errors/$error'
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/npo-applications': {
-      id: '/_authenticated/admin/npo-applications'
-      path: '/admin/npo-applications'
-      fullPath: '/admin/npo-applications'
-      preLoaderRoute: typeof AuthenticatedAdminNpoApplicationsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/users/$userId/': {
-      id: '/_authenticated/users/$userId/'
-      path: '/users/$userId'
-      fullPath: '/users/$userId'
-      preLoaderRoute: typeof AuthenticatedUsersUserIdIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/npos/$npoId/': {
@@ -972,20 +842,17 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
+  AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedRegistrationsRoute: typeof AuthenticatedRegistrationsRoute
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
-  AuthenticatedAdminNpoApplicationsRoute: typeof AuthenticatedAdminNpoApplicationsRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedEventsCreateRoute: typeof AuthenticatedEventsCreateRoute
   AuthenticatedNposCreateRoute: typeof AuthenticatedNposCreateRoute
   AuthenticatedEventsIndexRoute: typeof AuthenticatedEventsIndexRoute
   AuthenticatedNposIndexRoute: typeof AuthenticatedNposIndexRoute
-  AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
   AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
   AuthenticatedNposNpoIdEditRoute: typeof AuthenticatedNposNpoIdEditRoute
   AuthenticatedEventsEventIdIndexRoute: typeof AuthenticatedEventsEventIdIndexRoute
   AuthenticatedNposNpoIdIndexRoute: typeof AuthenticatedNposNpoIdIndexRoute
-  AuthenticatedUsersUserIdIndexRoute: typeof AuthenticatedUsersUserIdIndexRoute
   AuthenticatedEventsEventIdAuctionItemsCreateRoute: typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
   AuthenticatedEventsEventIdAuctionItemsIndexRoute: typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
   AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute: typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
@@ -994,21 +861,17 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
+  AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedRegistrationsRoute: AuthenticatedRegistrationsRoute,
-  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
-  AuthenticatedAdminNpoApplicationsRoute:
-    AuthenticatedAdminNpoApplicationsRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedEventsCreateRoute: AuthenticatedEventsCreateRoute,
   AuthenticatedNposCreateRoute: AuthenticatedNposCreateRoute,
   AuthenticatedEventsIndexRoute: AuthenticatedEventsIndexRoute,
   AuthenticatedNposIndexRoute: AuthenticatedNposIndexRoute,
-  AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
   AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
   AuthenticatedNposNpoIdEditRoute: AuthenticatedNposNpoIdEditRoute,
   AuthenticatedEventsEventIdIndexRoute: AuthenticatedEventsEventIdIndexRoute,
   AuthenticatedNposNpoIdIndexRoute: AuthenticatedNposNpoIdIndexRoute,
-  AuthenticatedUsersUserIdIndexRoute: AuthenticatedUsersUserIdIndexRoute,
   AuthenticatedEventsEventIdAuctionItemsCreateRoute:
     AuthenticatedEventsEventIdAuctionItemsCreateRoute,
   AuthenticatedEventsEventIdAuctionItemsIndexRoute:
@@ -1022,55 +885,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
-interface ClerkauthRouteRouteChildren {
-  ClerkauthSignInRoute: typeof ClerkauthSignInRoute
-  ClerkauthSignUpRoute: typeof ClerkauthSignUpRoute
-}
-
-const ClerkauthRouteRouteChildren: ClerkauthRouteRouteChildren = {
-  ClerkauthSignInRoute: ClerkauthSignInRoute,
-  ClerkauthSignUpRoute: ClerkauthSignUpRoute,
-}
-
-const ClerkauthRouteRouteWithChildren = ClerkauthRouteRoute._addFileChildren(
-  ClerkauthRouteRouteChildren,
-)
-
-interface ClerkAuthenticatedRouteRouteChildren {
-  ClerkAuthenticatedUserManagementRoute: typeof ClerkAuthenticatedUserManagementRoute
-}
-
-const ClerkAuthenticatedRouteRouteChildren: ClerkAuthenticatedRouteRouteChildren =
-  {
-    ClerkAuthenticatedUserManagementRoute:
-      ClerkAuthenticatedUserManagementRoute,
-  }
-
-const ClerkAuthenticatedRouteRouteWithChildren =
-  ClerkAuthenticatedRouteRoute._addFileChildren(
-    ClerkAuthenticatedRouteRouteChildren,
-  )
-
-interface ClerkRouteRouteChildren {
-  ClerkauthRouteRoute: typeof ClerkauthRouteRouteWithChildren
-  ClerkAuthenticatedRouteRoute: typeof ClerkAuthenticatedRouteRouteWithChildren
-}
-
-const ClerkRouteRouteChildren: ClerkRouteRouteChildren = {
-  ClerkauthRouteRoute: ClerkauthRouteRouteWithChildren,
-  ClerkAuthenticatedRouteRoute: ClerkAuthenticatedRouteRouteWithChildren,
-}
-
-const ClerkRouteRouteWithChildren = ClerkRouteRoute._addFileChildren(
-  ClerkRouteRouteChildren,
-)
-
 interface EventsSlugRouteChildren {
   EventsSlugRegisterRoute: typeof EventsSlugRegisterRoute
+  EventsSlugIndexRoute: typeof EventsSlugIndexRoute
 }
 
 const EventsSlugRouteChildren: EventsSlugRouteChildren = {
   EventsSlugRegisterRoute: EventsSlugRegisterRoute,
+  EventsSlugIndexRoute: EventsSlugIndexRoute,
 }
 
 const EventsSlugRouteWithChildren = EventsSlugRoute._addFileChildren(
@@ -1078,8 +900,8 @@ const EventsSlugRouteWithChildren = EventsSlugRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  ClerkRouteRoute: ClerkRouteRouteWithChildren,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
   authPasswordResetRoute: authPasswordResetRoute,

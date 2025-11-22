@@ -3,7 +3,6 @@
  * Displays detailed information about a specific NPO with edit and delete actions
  */
 
-import { ApplicationReviewDialog } from '@/components/admin/application-review-dialog'
 import { ApplicationStatusBadge } from '@/components/npo/application-status-badge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,15 +12,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { MemberList } from '@/features/npo-management/components/MemberList'
 import { PendingInvitations } from '@/features/npo-management/components/PendingInvitations'
 import { StaffInvitation } from '@/features/npo-management/components/StaffInvitation'
-import { useAuthStore } from '@/stores/auth-store'
 import { useNPOStore } from '@/stores/npo-store'
-import type { NPOApplication } from '@/types/npo'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
   ArrowLeft,
   Building2,
   Calendar,
-  ClipboardCheck,
   Edit,
   Globe,
   Mail,
@@ -30,7 +26,7 @@ import {
   Trash2,
   Users,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { toast } from 'sonner'
 
 // Helper to get full logo URL
@@ -85,22 +81,12 @@ export default function NpoDetailPage() {
   const { npoId } = useParams({ from: '/_authenticated/npos/$npoId/' })
   const navigate = useNavigate()
   const { currentNPO, nposLoading, nposError, loadNPOById, deleteNPO } = useNPOStore()
-  const user = useAuthStore((state) => state.user)
-  const [showReviewDialog, setShowReviewDialog] = useState(false)
 
   useEffect(() => {
     if (npoId) {
       loadNPOById(npoId)
     }
   }, [npoId, loadNPOById])
-
-  const handleReviewComplete = async () => {
-    setShowReviewDialog(false)
-    // Reload the NPO to get updated status
-    if (npoId) {
-      await loadNPOById(npoId)
-    }
-  }
 
   const handleDelete = async () => {
     if (!npoId) return
@@ -191,13 +177,6 @@ export default function NpoDetailPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {/* Review button - only for super_admin when NPO is pending approval */}
-          {user?.role === 'super_admin' && npo.status === 'pending_approval' && (
-            <Button onClick={() => setShowReviewDialog(true)} className="flex-1 md:flex-none">
-              <ClipboardCheck className="mr-2 h-4 w-4" />
-              <span>Review Application</span>
-            </Button>
-          )}
           <Link to="/npos/$npoId/edit" params={{ npoId }} className="flex-1 md:flex-none">
             <Button variant="outline" className="w-full">
               <Edit className="mr-2 h-4 w-4" />
@@ -581,25 +560,6 @@ export default function NpoDetailPage() {
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {/* Review Dialog */}
-      {showReviewDialog && currentNPO && (
-        <ApplicationReviewDialog
-          application={{
-            id: currentNPO.id,
-            npo_id: currentNPO.id,
-            status: 'submitted',
-            npo_name: currentNPO.name,
-            npo_email: currentNPO.email,
-            submitted_at: currentNPO.created_at,
-            created_at: currentNPO.created_at,
-            updated_at: currentNPO.updated_at,
-          } as NPOApplication}
-          open={showReviewDialog}
-          onClose={() => setShowReviewDialog(false)}
-          onReviewComplete={handleReviewComplete}
-        />
       )}
     </div>
   )

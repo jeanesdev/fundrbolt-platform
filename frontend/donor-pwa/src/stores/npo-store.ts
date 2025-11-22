@@ -219,29 +219,9 @@ export const useNPOStore = create<NPOState>()(
         }
       },
 
-      updateNPOStatus: async (npoId, status, notes) => {
-        set({ nposLoading: true, nposError: null })
-        try {
-          const updatedNPO = await npoService.updateNPOStatus(npoId, status, notes)
-          // Update in list
-          set((state) => ({
-            npos: state.npos.map((npo) =>
-              npo.id === npoId ? updatedNPO : npo
-            ),
-            currentNPO:
-              state.currentNPO?.id === npoId
-                ? { ...state.currentNPO, ...updatedNPO }
-                : state.currentNPO,
-            nposLoading: false,
-          }))
-          return updatedNPO
-        } catch (error: unknown) {
-          set({
-            nposError: getErrorMessage(error) || 'Failed to update NPO status',
-            nposLoading: false,
-          })
-          throw error
-        }
+      updateNPOStatus: async (_npoId, _status, _notes) => {
+        // This operation is not available in donor PWA
+        throw new Error('Updating NPO status requires admin access')
       },
 
       deleteNPO: async (npoId) => {
@@ -292,48 +272,14 @@ export const useNPOStore = create<NPOState>()(
         }
       },
 
-      loadApplications: async (params) => {
-        set({ applicationsLoading: true, applicationsError: null })
-        try {
-          const response = await npoService.application.listApplications(params)
-          set({
-            applications: response.items,
-            applicationsTotalCount: response.total,
-            applicationsLoading: false,
-          })
-        } catch (error: unknown) {
-          set({
-            applicationsError:
-              getErrorMessage(error) || 'Failed to load applications',
-            applicationsLoading: false,
-          })
-          throw error
-        }
+      loadApplications: async (_params) => {
+        // This operation is not available in donor PWA
+        throw new Error('Listing applications requires admin access')
       },
 
-      reviewApplication: async (applicationId, data) => {
-        set({ applicationsLoading: true, applicationsError: null })
-        try {
-          const updatedApp = await npoService.application.reviewApplication(
-            applicationId,
-            data
-          )
-          // Update in list
-          set((state) => ({
-            applications: state.applications.map((app) =>
-              app.id === applicationId ? updatedApp : app
-            ),
-            applicationsLoading: false,
-          }))
-          return updatedApp
-        } catch (error: unknown) {
-          set({
-            applicationsError:
-              getErrorMessage(error) || 'Failed to review application',
-            applicationsLoading: false,
-          })
-          throw error
-        }
+      reviewApplication: async (_applicationId, _data) => {
+        // This operation is not available in donor PWA
+        throw new Error('Reviewing applications requires admin access')
       },
 
       // ============================================

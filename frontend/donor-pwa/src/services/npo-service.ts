@@ -5,9 +5,6 @@
 
 import apiClient from '@/lib/axios'
 import type {
-  ApplicationListParams,
-  ApplicationListResponse,
-  ApplicationReviewRequest,
   BrandingCreateRequest,
   BrandingUpdateRequest,
   LogoUploadRequest,
@@ -19,7 +16,6 @@ import type {
   MemberListResponse,
   MemberRoleUpdateRequest,
   NPO,
-  NPOApplication,
   NPOBranding,
   NPOCreateRequest,
   NPODetail,
@@ -27,7 +23,7 @@ import type {
   NPOListResponse,
   NPOMember,
   NPOUpdateRequest,
-  PendingInvitation,
+  PendingInvitation
 } from '@/types/npo'
 
 // ============================================
@@ -68,21 +64,6 @@ export const npoApi = {
   },
 
   /**
-   * Update NPO status (admin only)
-   */
-  async updateNPOStatus(
-    npoId: string,
-    status: string,
-    notes?: string
-  ): Promise<NPO> {
-    const response = await apiClient.patch<{ npo: NPO }>(
-      `/npos/${npoId}/status`,
-      { status, notes }
-    )
-    return response.data.npo
-  },
-
-  /**
    * Delete NPO (soft delete)
    */
   async deleteNPO(npoId: string): Promise<void> {
@@ -103,42 +84,6 @@ export const applicationApi = {
       `/npos/${npoId}/submit`
     )
     return response.data
-  },
-
-  /**
-   * List applications with filters (admin only)
-   */
-  async listApplications(
-    params?: ApplicationListParams
-  ): Promise<ApplicationListResponse> {
-    const response = await apiClient.get<ApplicationListResponse>('/applications', {
-      params,
-    })
-    return response.data
-  },
-
-  /**
-   * Get application by ID
-   */
-  async getApplication(applicationId: string): Promise<NPOApplication> {
-    const response = await apiClient.get<NPOApplication>(
-      `/applications/${applicationId}`
-    )
-    return response.data
-  },
-
-  /**
-   * Review application (approve/reject) - admin only
-   */
-  async reviewApplication(
-    applicationId: string,
-    data: ApplicationReviewRequest
-  ): Promise<NPOApplication> {
-    const response = await apiClient.post<{ application: NPOApplication }>(
-      `/applications/${applicationId}/review`,
-      data
-    )
-    return response.data.application
   },
 }
 
@@ -365,56 +310,12 @@ export const brandingApi = {
   },
 }
 
-// ============================================
-// Admin Operations (SuperAdmin only)
-// ============================================
-
-export const adminApi = {
-  /**
-   * List pending NPO applications (SuperAdmin only)
-   */
-  async listApplications(
-    params?: ApplicationListParams
-  ): Promise<ApplicationListResponse> {
-    const response = await apiClient.get<ApplicationListResponse>(
-      '/admin/npos/applications',
-      { params }
-    )
-    return response.data
-  },
-
-  /**
-   * Review NPO application (SuperAdmin only)
-   */
-  async reviewApplication(
-    npoId: string,
-    decision: 'approved' | 'rejected',
-    notes?: string
-  ): Promise<NPO> {
-    // Backend expects 'approve' or 'reject', not 'approved' or 'rejected'
-    const backendDecision = decision === 'approved' ? 'approve' : 'reject'
-
-    // Only include notes if provided
-    const payload: { decision: string; notes?: string } = { decision: backendDecision }
-    if (notes) {
-      payload.notes = notes
-    }
-
-    const response = await apiClient.post<NPO>(
-      `/admin/npos/${npoId}/review`,
-      payload
-    )
-    return response.data
-  },
-}
-
 // Export unified API object
 export const npoService = {
   ...npoApi,
   application: applicationApi,
   member: memberApi,
   branding: brandingApi,
-  admin: adminApi,
 }
 
 export default npoService

@@ -44,7 +44,7 @@ class MealSelection(Base, UUIDMixin, TimestampMixin):
     )
     food_option_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("event_food_options.id", ondelete="RESTRICT"),
+        ForeignKey("food_options.id", ondelete="RESTRICT"),
         nullable=False,
         index=True,
     )
@@ -58,7 +58,9 @@ class MealSelection(Base, UUIDMixin, TimestampMixin):
         "RegistrationGuest",
         back_populates="meal_selections",
     )
-    food_option: Mapped["FoodOption"] = relationship("FoodOption")
+    food_option: Mapped["FoodOption"] = relationship(
+        "FoodOption",
+    )
 
     # Table Configuration
     __table_args__ = (

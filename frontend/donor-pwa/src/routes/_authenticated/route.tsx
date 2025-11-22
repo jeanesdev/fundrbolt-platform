@@ -1,17 +1,15 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
-import { useAuthStore } from '@/stores/auth-store'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import { useAuthStore } from '@/stores/auth-store'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 /**
- * Authenticated route wrapper with role-based access control
+ * Authenticated route wrapper for donor PWA
  *
- * Access Rules:
- * - Donor role: BLOCKED from admin PWA (redirected to 403)
- * - All other roles: Allowed (super_admin, npo_admin, event_coordinator, staff)
+ * All authenticated users can access this area.
  */
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: async ({ location }) => {
-    const { isAuthenticated, user } = useAuthStore.getState()
+    const { isAuthenticated } = useAuthStore.getState()
 
     // Check authentication
     if (!isAuthenticated) {
@@ -19,16 +17,6 @@ export const Route = createFileRoute('/_authenticated')({
         to: '/sign-in',
         search: {
           redirect: location.href,
-        },
-      })
-    }
-
-    // Block Donor role from accessing admin PWA
-    if (user?.role === 'donor') {
-      throw redirect({
-        to: '/403',
-        search: {
-          message: 'This area is for administrators only. Donors should use the donor portal.',
         },
       })
     }

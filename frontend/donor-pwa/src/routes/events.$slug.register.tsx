@@ -16,14 +16,29 @@ import { getEventBySlug } from '@/lib/api/events'
 import { addGuest } from '@/lib/api/guests'
 import { createMealSelection } from '@/lib/api/meal-selections'
 import { createRegistration } from '@/lib/api/registrations'
+import { hasValidRefreshToken } from '@/lib/storage/tokens'
 import { useAuthStore } from '@/stores/auth-store'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 export const Route = createFileRoute('/events/$slug/register')({
+  beforeLoad: ({ location }) => {
+    const { isAuthenticated } = useAuthStore.getState()
+    const hasRefreshToken = hasValidRefreshToken()
+
+    // Require authentication for registration
+    if (!isAuthenticated && !hasRefreshToken) {
+      throw redirect({
+        to: '/sign-in',
+        search: {
+          redirect: location.href,
+        },
+      })
+    }
+  },
   component: EventRegistration,
 })
 
@@ -353,7 +368,7 @@ function EventRegistration() {
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={() => navigate({ to: '/_authenticated/registrations' })}
+                onClick={() => navigate({ to: '/registrations' })}
                 className="flex-1"
               >
                 View My Registrations

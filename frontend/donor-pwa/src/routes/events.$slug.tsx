@@ -4,6 +4,7 @@
  * Parent route for /events/$slug/register
  */
 
+import { EventBrandingProvider } from '@/contexts/EventBrandingContext'
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/events/$slug')({
@@ -12,8 +13,10 @@ export const Route = createFileRoute('/events/$slug')({
 
 function EventLayout() {
   return (
-    <div className="min-h-screen bg-background">
-      <Outlet />
-    </div>
+    <EventBrandingProvider>
+      <div className="min-h-screen bg-background">
+        <Outlet />
+      </div>
+    </EventBrandingProvider>
   )
 }

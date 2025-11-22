@@ -3,6 +3,8 @@
  * Page for editing an existing event with media, links, and food options
  */
 
+import { AttendeeListTable } from '@/components/admin/AttendeeListTable'
+import { MealSummaryCard } from '@/components/admin/MealSummaryCard'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -228,7 +230,7 @@ export function EventEditPage() {
       </div>
 
       <Tabs defaultValue="details" className="space-y-4 md:space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 h-auto">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7 h-auto">
           <TabsTrigger value="details" className="text-xs sm:text-sm">
             <span className="hidden sm:inline">Event </span>Details
           </TabsTrigger>
@@ -240,6 +242,9 @@ export function EventEditPage() {
           </TabsTrigger>
           <TabsTrigger value="food" className="text-xs sm:text-sm">
             <span className="hidden md:inline">Food </span>Options<span className="hidden sm:inline"> ({currentEvent.food_options?.length || 0})</span>
+          </TabsTrigger>
+          <TabsTrigger value="registrations" className="text-xs sm:text-sm">
+            <span className="hidden md:inline">Guest </span>List
           </TabsTrigger>
           <TabsTrigger value="sponsors" className="text-xs sm:text-sm">
             Sponsors<span className="hidden sm:inline"> ({sponsors.length})</span>
@@ -353,6 +358,32 @@ export function EventEditPage() {
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Registrations Tab */}
+        <TabsContent value="registrations">
+          <div className="space-y-6">
+            {/* Meal Summary Card */}
+            {currentEvent.food_options && currentEvent.food_options.length > 0 && (
+              <MealSummaryCard eventId={eventId} />
+            )}
+
+            {/* Attendee List */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Guest List</CardTitle>
+                <CardDescription>
+                  View all registrants and their guests, manage invitations, and export attendee data
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AttendeeListTable
+                  eventId={eventId}
+                  includeMealSelections={currentEvent.food_options && currentEvent.food_options.length > 0}
+                />
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Sponsors Tab */}
