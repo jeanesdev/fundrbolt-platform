@@ -11,8 +11,8 @@ import { getErrorMessage, isConsentError } from '@/lib/error-utils'
 import { memberApi } from '@/services/npo-service'
 import { useAuthStore } from '@/stores/auth-store'
 import { useMutation } from '@tanstack/react-query'
-import { CheckCircle, Mail, Shield, UserPlus, XCircle } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { AlertTriangle, CheckCircle, Mail, Shield, UserPlus, XCircle } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 interface InvitationDetails {
@@ -28,8 +28,20 @@ export default function AcceptInvitationPage() {
   const [validating, setValidating] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Check authentication status
+  // Check authentication status and get user info
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const user = useAuthStore((state) => state.user)
+  const logout = useAuthStore((state) => state.logout)
+
+  // Check if the logged-in user's email matches the invitation email
+  const emailMismatch = useMemo(() => {
+    if (isAuthenticated && user && details) {
+      const userEmail = user.email?.toLowerCase()
+      const invitationEmail = details.email?.toLowerCase()
+      return !!(userEmail && invitationEmail && userEmail !== invitationEmail)
+    }
+    return false
+  }, [isAuthenticated, user, details])
 
   // Accept invitation mutation
   const acceptMutation = useMutation({
@@ -76,12 +88,13 @@ export default function AcceptInvitationPage() {
       // Decode JWT token to extract invitation details
       try {
         const payload = JSON.parse(atob(urlToken.split('.')[1]))
-        setDetails({
+        const invitationDetails = {
           npo_name: payload.npo_name || 'Unknown Organization',
           role: payload.role || 'staff',
           inviter_name: payload.inviter_name,
           email: payload.email,
-        })
+        }
+        setDetails(invitationDetails)
         setValidating(false)
       } catch (_err) {
         setError('Invalid invitation token format')
@@ -104,6 +117,12 @@ export default function AcceptInvitationPage() {
   const handleDecline = () => {
     toast.info('Invitation declined')
     window.location.href = '/'
+  }
+
+  const handleSwitchAccount = async () => {
+    // Logout and redirect to sign-in with the invitation redirect
+    await logout()
+    window.location.href = `/sign-in?redirect=/invitations/accept?token=${encodeURIComponent(token)}`
   }
 
   // Loading state
@@ -203,31 +222,70 @@ export default function AcceptInvitationPage() {
 
           {/* Action Buttons - Different based on auth status */}
           {isAuthenticated ? (
-            <div className="flex gap-3">
-              <Button
-                onClick={handleAccept}
-                disabled={acceptMutation.isPending}
-                className="flex-1"
-                size="lg"
-              >
-                {acceptMutation.isPending ? (
-                  <>Processing...</>
-                ) : (
-                  <>
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Accept Invitation
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={handleDecline}
-                disabled={acceptMutation.isPending}
-                variant="outline"
-                size="lg"
-              >
-                Decline
-              </Button>
-            </div>
+            emailMismatch ? (
+              // Email mismatch warning - user logged in with different email
+              <div className="space-y-4">
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/20">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                        Email Mismatch
+                      </p>
+                      <p className="text-sm text-amber-700 dark:text-amber-300">
+                        You are logged in as <strong className="font-mono">{user?.email}</strong>, but this invitation was sent to <strong className="font-mono">{details?.email}</strong>.
+                      </p>
+                      <p className="text-sm text-amber-700 dark:text-amber-300">
+                        Please log in with the correct account to accept this invitation.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleSwitchAccount}
+                    className="flex-1"
+                    size="lg"
+                  >
+                    Switch Account
+                  </Button>
+                  <Button
+                    onClick={handleDecline}
+                    variant="outline"
+                    size="lg"
+                  >
+                    Decline
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              // Normal accept/decline buttons
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleAccept}
+                  disabled={acceptMutation.isPending}
+                  className="flex-1"
+                  size="lg"
+                >
+                  {acceptMutation.isPending ? (
+                    <>Processing...</>
+                  ) : (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Accept Invitation
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={handleDecline}
+                  disabled={acceptMutation.isPending}
+                  variant="outline"
+                  size="lg"
+                >
+                  Decline
+                </Button>
+              </div>
+            )
           ) : (
             <div className="space-y-3">
               <Button

@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { useAuthStore } from '@/stores/auth-store'
+import { hasValidRefreshToken } from '@/lib/storage/tokens'
+import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -33,7 +35,7 @@ function HomePage() {
             </CardHeader>
             <CardContent>
               <Button asChild variant="ghost" className="w-full">
-                <Link to="/events">View Events</Link>
+                <Link to="/sign-in" search={{ redirect: '/events' }}>View Events</Link>
               </Button>
             </CardContent>
           </Card>
@@ -47,7 +49,7 @@ function HomePage() {
             </CardHeader>
             <CardContent>
               <Button asChild variant="ghost" className="w-full">
-                <Link to="/npos">Explore Organizations</Link>
+                <Link to="/sign-in" search={{ redirect: '/npos' }}>Explore Organizations</Link>
               </Button>
             </CardContent>
           </Card>
@@ -72,5 +74,16 @@ function HomePage() {
 }
 
 export const Route = createFileRoute('/')({
+  beforeLoad: async () => {
+    const { isAuthenticated } = useAuthStore.getState()
+    const hasRefreshToken = hasValidRefreshToken()
+
+    // If user is authenticated or has a valid refresh token, redirect to home
+    if (isAuthenticated || hasRefreshToken) {
+      throw redirect({
+        to: '/home',
+      })
+    }
+  },
   component: HomePage,
 })
