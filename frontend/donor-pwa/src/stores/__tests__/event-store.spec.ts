@@ -35,7 +35,7 @@ describe('Event Store Types', () => {
 describe('getEventsWithDetails', () => {
   it('should filter out registrations without event details', async () => {
     const { getEventsWithDetails } = await import('@/stores/event-store');
-    
+
     const registrations = [
       { id: '1', event_id: 'e1', event: { id: 'e1', name: 'Event 1' } },
       { id: '2', event_id: 'e2', event: null },
@@ -51,7 +51,7 @@ describe('getEventsWithDetails', () => {
 
   it('should return empty array when no registrations have events', async () => {
     const { getEventsWithDetails } = await import('@/stores/event-store');
-    
+
     const registrations = [
       { id: '1', event_id: 'e1', event: null },
       { id: '2', event_id: 'e2', event: undefined },
