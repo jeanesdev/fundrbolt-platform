@@ -25,6 +25,14 @@ export const users = Array.from({ length: 500 }, () => {
     state: faker.helpers.arrayElement([null, faker.location.state()]),
     postal_code: faker.helpers.arrayElement([null, faker.location.zipCode()]),
     country: faker.helpers.arrayElement([null, faker.location.country()]),
+    profile_picture_url: faker.helpers.arrayElement([null, faker.image.avatar()]),
+    social_media_links: faker.helpers.arrayElement([
+      null,
+      {
+        twitter: faker.internet.url(),
+        linkedin: faker.internet.url(),
+      },
+    ]),
     role: faker.helpers.arrayElement([
       'super_admin',
       'npo_admin',
