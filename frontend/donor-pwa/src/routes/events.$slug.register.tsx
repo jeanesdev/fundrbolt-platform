@@ -16,27 +16,17 @@ import { getEventBySlug } from '@/lib/api/events'
 import { addGuest } from '@/lib/api/guests'
 import { createMealSelection, getRegistrationMealSelections } from '@/lib/api/meal-selections'
 import { createRegistration, getUserRegistrations } from '@/lib/api/registrations'
-import { hasValidRefreshToken } from '@/lib/storage/tokens'
 import { useAuthStore } from '@/stores/auth-store'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { createFileRoute, redirect, useLocation, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, useLocation, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 export const Route = createFileRoute('/events/$slug/register')({
-  beforeLoad: ({ location }) => {
-    const { isAuthenticated } = useAuthStore.getState()
-    const hasRefreshToken = hasValidRefreshToken()
-
-    // Require authentication for registration
-    if (!isAuthenticated && !hasRefreshToken) {
-      throw redirect({
-        to: '/sign-in',
-        search: {
-          redirect: location.href,
-        },
-      })
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      guest: (search.guest as string) || undefined,
     }
   },
   component: EventRegistration,
@@ -68,18 +58,17 @@ function EventRegistration() {
   const [isRestoring, setIsRestoring] = useState(true)
   const [isCheckingRegistration, setIsCheckingRegistration] = useState(true)
 
-  // Fetch event data - must be called unconditionally
+  // Fetch event data - always fetch, not dependent on auth
   const { data: event, isLoading: isLoadingEvent } = useQuery({
     queryKey: ['event', slug],
     queryFn: () => getEventBySlug(slug),
-    enabled: !isRestoring, // Only fetch after restoring user
   })
 
-  // Fetch user's existing registrations for this event
+  // Fetch user's existing registrations for this event (only when authenticated)
   const { data: userRegistrations } = useQuery({
     queryKey: ['userRegistrations'],
     queryFn: () => getUserRegistrations(),
-    enabled: !isRestoring && !!event, // Only fetch after restoring user and event is loaded
+    enabled: !isRestoring && !!event && isAuthenticated, // Only fetch when authenticated
   })
 
   // Get existing meal selections if user has a registration
@@ -165,7 +154,7 @@ function EventRegistration() {
       toast.success('Meal selection saved!')
 
       // Move to next meal selection or complete
-      const totalMealSelections = guestCount + 1 // registrant + all guests
+      const totalMealSelections = guestCount // Total attendees (registrant + guests)
       if (currentMealIndex < totalMealSelections - 1) {
         setCurrentMealIndex(currentMealIndex + 1)
       } else {
@@ -192,18 +181,7 @@ function EventRegistration() {
         }
 
         // Try to restore from refresh token
-        const restored = await restoreUserFromRefreshToken()
-        if (!restored && mounted) {
-          // No valid refresh token, redirect to sign-in
-          navigate({
-            to: '/sign-in',
-            search: {
-              redirect: location.pathname + location.search
-            },
-            replace: true
-          })
-          return
-        }
+        await restoreUserFromRefreshToken()
 
         if (mounted) {
           setIsRestoring(false)
@@ -211,14 +189,7 @@ function EventRegistration() {
       } catch (error) {
         console.error('Error during user restoration:', error)
         if (mounted) {
-          // On error, redirect to sign-in
-          navigate({
-            to: '/sign-in',
-            search: {
-              redirect: location.pathname + location.search
-            },
-            replace: true
-          })
+          setIsRestoring(false)
         }
       }
     }
@@ -264,7 +235,7 @@ function EventRegistration() {
   // Check if user has already completed meal selections
   useEffect(() => {
     if (registrationId && event && existingMealSelections) {
-      const expectedMealSelections = guestCount + 1 // registrant + guests
+      const expectedMealSelections = guestCount // Total attendees (registrant + guests)
       const actualMealSelections = existingMealSelections.meal_selections.length
 
       if (actualMealSelections >= expectedMealSelections) {
@@ -348,6 +319,7 @@ function EventRegistration() {
 
   // Show loading while restoring user
   if (isRestoring) {
+    console.log('🔄 Auth restoring...')
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -357,6 +329,66 @@ function EventRegistration() {
       </div>
     )
   }
+
+  console.log('🔍 Auth state:', { isAuthenticated, hasUser: !!user, isRestoring })
+
+  // Show auth prompt if user is not authenticated
+  if (!isAuthenticated || !user) {
+    console.log('🔐 Showing auth prompt')
+
+    // Build the full redirect URL with query params
+    const searchParams = new URLSearchParams()
+    Object.entries(location.search).forEach(([key, value]) => {
+      if (value !== undefined) searchParams.append(key, String(value))
+    })
+    const fullRedirectUrl = searchParams.toString()
+      ? `${location.pathname}?${searchParams.toString()}`
+      : location.pathname
+
+    return (
+      <div className="container max-w-2xl mx-auto py-12">
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Event Registration</CardTitle>
+            <CardDescription>
+              {event ? `Register for ${event.name}` : 'Loading event...'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="text-center space-y-4">
+              <p className="text-muted-foreground">
+                To register for this event, please sign in to your account or create a new one.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button asChild size="lg">
+                  <Link
+                    to="/sign-in"
+                    search={{
+                      redirect: fullRedirectUrl,
+                    }}
+                  >
+                    Sign In
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="lg">
+                  <Link
+                    to="/sign-up"
+                    search={{
+                      redirect: fullRedirectUrl,
+                    }}
+                  >
+                    Create Account
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  console.log('✅ User authenticated, showing registration form')
 
   // Loading state
   if (isLoadingEvent || isCheckingRegistration) {
@@ -481,7 +513,7 @@ function EventRegistration() {
           <CardHeader>
             <CardTitle>Meal Selection</CardTitle>
             <CardDescription>
-              Selection {currentMealIndex + 1} of {guestCount + 1}
+              {guestCount > 1 ? `Selection ${currentMealIndex + 1} of ${guestCount}` : 'Select your meal preference'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -491,7 +523,7 @@ function EventRegistration() {
               onSubmit={handleMealSubmit}
               isLoading={createMealMutation.isPending}
               submitButtonText={
-                currentMealIndex < guestCount ? 'Next Attendee' : 'Complete Registration'
+                currentMealIndex < guestCount - 1 ? 'Next Attendee' : 'Complete Registration'
               }
             />
           </CardContent>

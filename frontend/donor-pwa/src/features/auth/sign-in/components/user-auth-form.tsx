@@ -59,14 +59,12 @@ export function UserAuthForm({
       success: (response) => {
         setIsLoading(false)
 
-        // Redirect to the stored location or default to home
+        // Navigate using router instead of full page reload
+        // The auth state is already set by the login function
         if (redirectTo && typeof redirectTo === 'string') {
-          // Force a full page reload to the redirect URL
-          setTimeout(() => {
-            window.location.href = redirectTo
-          }, 100)
+          navigate({ to: redirectTo as any, replace: true })
         } else {
-          navigate({ to: '/', replace: true })
+          navigate({ to: '/home', replace: true })
         }
 
         return `Welcome back, ${response.user.first_name || response.user.email}!`

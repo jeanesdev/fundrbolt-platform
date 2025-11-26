@@ -12,10 +12,11 @@ import { useNpoContext } from '@/hooks/use-npo-context'
 import apiClient from '@/lib/axios'
 import { getCookie } from '@/lib/cookies'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
 import type { NPOContextOption } from '@/stores/npo-context-store'
 import { useQuery } from '@tanstack/react-query'
 import { Outlet } from '@tanstack/react-router'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -25,6 +26,25 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const defaultOpen = getCookie('sidebar_state') !== 'false'
   const { isSuperAdmin, user } = useAuth()
   const { setAvailableNpos } = useNpoContext()
+  const restoreUserFromRefreshToken = useAuthStore(state => state.restoreUserFromRefreshToken)
+  const [isRestoring, setIsRestoring] = useState(true)
+
+  // Restore user from refresh token on mount if needed
+  useEffect(() => {
+    const restore = async () => {
+      const currentUser = useAuthStore.getState().user
+      if (!currentUser) {
+        try {
+          await restoreUserFromRefreshToken()
+        } catch (error) {
+          console.error('Failed to restore user:', error)
+        }
+      }
+      setIsRestoring(false)
+    }
+    restore()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once on mount
 
   // T058: Fetch available NPOs on login based on user role
   const { data: nposData } = useQuery({
@@ -34,7 +54,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       return response.data
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    enabled: !!user, // Only fetch when user is authenticated
+    enabled: !!user && !isRestoring, // Only fetch when user is authenticated and restored
   })
 
   // T059: Populate available NPOs including "Augeo Platform" option for SuperAdmin
@@ -62,6 +82,18 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       setAvailableNpos(npoOptions)
     }
   }, [nposData, isSuperAdmin, setAvailableNpos])
+
+  // Show loading while restoring user
+  if (isRestoring) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <SearchProvider>
