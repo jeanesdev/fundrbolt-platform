@@ -3,6 +3,9 @@
  * Page for editing an existing event with media, links, and food options
  */
 
+import { AttendeeListTable } from '@/components/admin/AttendeeListTable'
+import { InviteGuestDialog } from '@/components/admin/InviteGuestDialog'
+import { MealSummaryCard } from '@/components/admin/MealSummaryCard'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -14,7 +17,7 @@ import type {
   EventUpdateRequest,
   FoodOptionCreateRequest,
 } from '@/types/event'
-import { useNavigate, useParams } from '@tanstack/react-router'
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { ArrowLeft, Clock } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -28,6 +31,8 @@ import { SponsorsTab } from './components/SponsorsTab'
 export function EventEditPage() {
   const navigate = useNavigate()
   const { eventId } = useParams({ strict: false }) as { eventId: string }
+  const search = useSearch({ strict: false }) as { tab?: string }
+  const activeTab = search?.tab || 'details'
   const {
     currentEvent,
     eventsLoading,
@@ -227,8 +232,8 @@ export function EventEditPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="details" className="space-y-4 md:space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 h-auto">
+      <Tabs value={activeTab} onValueChange={(value) => navigate({ to: '/events/$eventId', params: { eventId }, search: (prev) => ({ ...prev, tab: value }) })} className="space-y-4 md:space-y-6">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7 h-auto">
           <TabsTrigger value="details" className="text-xs sm:text-sm">
             <span className="hidden sm:inline">Event </span>Details
           </TabsTrigger>
@@ -240,6 +245,9 @@ export function EventEditPage() {
           </TabsTrigger>
           <TabsTrigger value="food" className="text-xs sm:text-sm">
             <span className="hidden md:inline">Food </span>Options<span className="hidden sm:inline"> ({currentEvent.food_options?.length || 0})</span>
+          </TabsTrigger>
+          <TabsTrigger value="registrations" className="text-xs sm:text-sm">
+            Guest<span className="hidden sm:inline"> List</span>
           </TabsTrigger>
           <TabsTrigger value="sponsors" className="text-xs sm:text-sm">
             Sponsors<span className="hidden sm:inline"> ({sponsors.length})</span>
@@ -353,6 +361,57 @@ export function EventEditPage() {
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Registrations Tab */}
+        <TabsContent value="registrations">
+          <div className="space-y-6">
+            {/* Meal Summary Card */}
+            {currentEvent.food_options && currentEvent.food_options.length > 0 && (
+              <MealSummaryCard eventId={eventId} />
+            )}
+
+            {/* Attendee List */}
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <CardTitle>Guest List</CardTitle>
+                    <CardDescription>
+                      View all registrants and their guests, manage invitations, and export attendee data
+                    </CardDescription>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <InviteGuestDialog
+                      eventId={eventId}
+                      onGuestInvited={() => {
+                        // Refresh the attendee list
+                        window.location.reload();
+                      }}
+                    />
+                    <Button
+                      onClick={() => {
+                        const donorUrl = `${window.location.origin.replace('5173', '5174')}/events/${currentEvent.slug || eventId}/register`;
+                        navigator.clipboard.writeText(donorUrl);
+                        toast.success('Registration link copied to clipboard!');
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0"
+                    >
+                      Copy Registration Link
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <AttendeeListTable
+                  eventId={eventId}
+                  includeMealSelections={currentEvent.food_options && currentEvent.food_options.length > 0}
+                />
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Sponsors Tab */}

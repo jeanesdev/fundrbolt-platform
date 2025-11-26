@@ -226,14 +226,16 @@ The Augeo Platform Team
         Raises:
             EmailSendError: If email fails to send after all retries
         """
-        # Construct verification link (admin portal)
-        verification_url = f"{settings.frontend_admin_url}/verify-email?token={verification_token}"
+        # Construct verification link (donor portal)
+        verification_url = f"{settings.frontend_donor_url}/verify-email?token={verification_token}"
 
         # Email content
         subject = "Verify Your Email - Augeo Platform"
-        greeting = f"Hi {user_name}," if user_name else "Hi,"
+        greeting = f"Hi {user_name}" if user_name else "Hi"
+
+        # Plain text version
         body = f"""
-{greeting}
+{greeting},
 
 Welcome to Augeo Platform!
 
@@ -248,8 +250,20 @@ Best regards,
 The Augeo Platform Team
         """.strip()
 
+        # HTML version
+        html_body = _create_email_html_template(
+            heading="Welcome to Augeo Platform!",
+            body_paragraphs=[
+                f"Thank you for creating an account{' ' + user_name if user_name else ''}! To get started, we need to verify your email address.",
+                "Click the button below to verify your email and activate your account.",
+            ],
+            cta_text="Verify Email Address",
+            cta_url=verification_url,
+            footer_text="This verification link will expire in 24 hours. If you didn't create an account, please ignore this email.",
+        )
+
         # Send with retry logic
-        return await self._send_email_with_retry(to_email, subject, body, "verification")
+        return await self._send_email_with_retry(to_email, subject, body, "verification", html_body)
 
     async def send_npo_member_invitation_email(
         self,

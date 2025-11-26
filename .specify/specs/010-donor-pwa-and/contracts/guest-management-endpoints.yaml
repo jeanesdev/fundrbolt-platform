@@ -1,0 +1,798 @@
+openapi: 3.1.0
+info:
+  title: Guest Management & Meal Selection API
+  version: 1.0.0
+  description: |
+    API endpoints for managing event registration guests and meal selections.
+
+    **Authentication**: All endpoints require Bearer token (JWT) in Authorization header.
+    **Authorization**: Users can only manage their own registration guests; admins can manage all.
+
+servers:
+  - url: https://api.augeo.app/api/v1
+    description: Production
+  - url: https://staging-api.augeo.app/api/v1
+    description: Staging
+  - url: http://localhost:8000/api/v1
+    description: Local development
+
+tags:
+  - name: Registration Guests
+    description: Manage guest information for event registrations
+  - name: Meal Selections
+    description: Manage meal choices for attendees and guests
+  - name: Admin Guest Management
+    description: Admin operations for guest invitations and exports
+
+paths:
+  /registrations/{registration_id}/guests:
+    get:
+      summary: List guests for a registration
+      description: |
+        Retrieve all guests associated with a registration.
+
+        **Use Case**: Display guest list on "My Registration" page in donor PWA.
+        **Authorization**: User must own the registration or be an admin.
+      operationId: listRegistrationGuests
+      tags:
+        - Registration Guests
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: registration_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of guests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GuestDetail'
+              example:
+                - id: "990e8400-e29b-41d4-a716-446655440005"
+                  registration_id: "770e8400-e29b-41d4-a716-446655440002"
+                  name: "Jane Smith"
+                  email: "jane.smith@example.com"
+                  phone: "+1-555-0102"
+                  user_id: null
+                  has_account: false
+                  invited_by_admin: false
+                  meal_selection:
+                    food_option_id: "aa0e8400-e29b-41d4-a716-446655440010"
+                    food_option_name: "Chicken Marsala"
+                - id: "990e8400-e29b-41d4-a716-446655440006"
+                  registration_id: "770e8400-e29b-41d4-a716-446655440002"
+                  name: "Bob Johnson"
+                  email: null
+                  phone: null
+                  user_id: null
+                  has_account: false
+                  invited_by_admin: false
+                  meal_selection: null
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Add guest to registration
+      description: |
+        Add a new guest to an event registration.
+
+        **Use Case**: Registrant adds guest information after initial registration.
+        **Authorization**: User must own the registration.
+        **Validation**: Guest count cannot exceed registration.number_of_guests.
+      operationId: createRegistrationGuest
+      tags:
+        - Registration Guests
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: registration_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGuestRequest'
+            example:
+              name: "Jane Smith"
+              email: "jane.smith@example.com"
+              phone: "+1-555-0102"
+      responses:
+        '201':
+          description: Guest created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuestDetail'
+        '400':
+          description: Invalid request or guest limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Guest count exceeds registration limit (3 guests allowed)"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /registrations/{registration_id}/guests/{guest_id}:
+    patch:
+      summary: Update guest information
+      description: |
+        Update guest details (name, email, phone).
+
+        **Use Case**: Registrant updates guest information before event.
+        **Authorization**: User must own the registration.
+        **Note**: Cannot update after event has started.
+      operationId: updateRegistrationGuest
+      tags:
+        - Registration Guests
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: registration_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: guest_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGuestRequest'
+            example:
+              name: "Jane M. Smith"
+              email: "jane.m.smith@example.com"
+      responses:
+        '200':
+          description: Guest updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuestDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Cannot update after event started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Cannot update guest information after event has started"
+
+    delete:
+      summary: Remove guest from registration
+      description: |
+        Remove a guest from the registration.
+
+        **Use Case**: Registrant removes a guest who can no longer attend.
+        **Authorization**: User must own the registration.
+        **Note**: Also deletes associated meal selection.
+      operationId: deleteRegistrationGuest
+      tags:
+        - Registration Guests
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: registration_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: guest_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Guest deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /registrations/{registration_id}/meal-selections:
+    get:
+      summary: List meal selections for registration
+      description: |
+        Retrieve all meal selections for a registration (registrant + guests).
+
+        **Use Case**: Display meal choices summary on registration details page.
+        **Authorization**: User must own the registration or be an admin.
+      operationId: listRegistrationMealSelections
+      tags:
+        - Meal Selections
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: registration_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of meal selections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MealSelectionDetail'
+              example:
+                - id: "bb0e8400-e29b-41d4-a716-446655440020"
+                  registration_id: "770e8400-e29b-41d4-a716-446655440002"
+                  guest_id: null
+                  attendee_name: "John Doe (Registrant)"
+                  food_option_id: "aa0e8400-e29b-41d4-a716-446655440010"
+                  food_option_name: "Chicken Marsala"
+                  created_at: "2025-01-20T14:32:00Z"
+                - id: "bb0e8400-e29b-41d4-a716-446655440021"
+                  registration_id: "770e8400-e29b-41d4-a716-446655440002"
+                  guest_id: "990e8400-e29b-41d4-a716-446655440005"
+                  attendee_name: "Jane Smith (Guest)"
+                  food_option_id: "aa0e8400-e29b-41d4-a716-446655440011"
+                  food_option_name: "Vegetarian Pasta"
+                  created_at: "2025-01-20T14:35:00Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: Create meal selection
+      description: |
+        Create a meal selection for registrant or guest.
+
+        **Use Case**: Select meal during registration or add meal choice later.
+        **Authorization**: User must own the registration.
+        **Validation**: Event must have meal options configured.
+      operationId: createMealSelection
+      tags:
+        - Meal Selections
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: registration_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMealSelectionRequest'
+            examples:
+              registrantMeal:
+                summary: Meal selection for primary registrant
+                value:
+                  guest_id: null
+                  food_option_id: "aa0e8400-e29b-41d4-a716-446655440010"
+              guestMeal:
+                summary: Meal selection for guest
+                value:
+                  guest_id: "990e8400-e29b-41d4-a716-446655440005"
+                  food_option_id: "aa0e8400-e29b-41d4-a716-446655440011"
+      responses:
+        '201':
+          description: Meal selection created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MealSelectionDetail'
+        '400':
+          description: Invalid request or duplicate meal selection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Meal selection already exists for this attendee"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /registrations/{registration_id}/meal-selections/{meal_selection_id}:
+    patch:
+      summary: Update meal selection
+      description: |
+        Change the selected meal option.
+
+        **Use Case**: Attendee changes their meal choice before event.
+        **Authorization**: User must own the registration.
+        **Note**: Cannot update after event has started.
+      operationId: updateMealSelection
+      tags:
+        - Meal Selections
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: registration_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: meal_selection_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - food_option_id
+              properties:
+                food_option_id:
+                  type: string
+                  format: uuid
+            example:
+              food_option_id: "aa0e8400-e29b-41d4-a716-446655440012"
+      responses:
+        '200':
+          description: Meal selection updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MealSelectionDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Cannot update after event started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/events/{event_id}/attendees:
+    get:
+      summary: Export event attendee list (Admin)
+      description: |
+        Export complete attendee list with guest details and meal selections for event planning.
+
+        **Use Case**: Admin downloads CSV/JSON of all attendees for catering, seating, badges.
+        **Authorization**: User must be NPO admin/staff for the event.
+        **Returns**: All confirmed registrations with primary registrant + guests.
+      operationId: exportEventAttendees
+      tags:
+        - Admin Guest Management
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          description: Export format
+          schema:
+            type: string
+            enum: [json, csv]
+            default: json
+        - name: include_meal_selections
+          in: query
+          description: Include meal selection details
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Attendee list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_attendees:
+                    type: integer
+                    example: 147
+                  total_registrations:
+                    type: integer
+                    example: 52
+                  attendees:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AttendeeExport'
+            text/csv:
+              schema:
+                type: string
+                example: |
+                  Name,Email,Phone,Type,Primary Registrant,Meal Selection
+                  "John Doe","john.doe@example.com","+1-555-0100","Registrant","john.doe@example.com","Chicken Marsala"
+                  "Jane Smith","jane.smith@example.com","+1-555-0102","Guest","john.doe@example.com","Vegetarian Pasta"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/events/{event_id}/meal-summary:
+    get:
+      summary: Get meal selection summary (Admin)
+      description: |
+        Get aggregated meal selection counts for catering planning.
+
+        **Use Case**: Admin views meal counts to order correct quantities.
+        **Authorization**: User must be NPO admin/staff for the event.
+        **Returns**: Count of each meal option selected.
+      operationId: getMealSelectionSummary
+      tags:
+        - Admin Guest Management
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Meal selection summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_selections:
+                    type: integer
+                    example: 147
+                  pending_selections:
+                    type: integer
+                    description: Attendees without meal selection
+                    example: 12
+                  meal_counts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        food_option_name:
+                          type: string
+                        count:
+                          type: integer
+                example:
+                  total_selections: 147
+                  pending_selections: 12
+                  meal_counts:
+                    - food_option_name: "Chicken Marsala"
+                      count: 65
+                    - food_option_name: "Vegetarian Pasta"
+                      count: 42
+                    - food_option_name: "Salmon Fillet"
+                      count: 40
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/guests/{guest_id}/send-invitation:
+    post:
+      summary: Send registration invitation to guest (Admin)
+      description: |
+        Send individual registration link to guest email.
+
+        **Use Case**: Admin sends invitation link to guest so they can create their own account.
+        **Authorization**: User must be NPO admin/staff.
+        **Note**: Sets invited_by_admin=true and invitation_sent_at timestamp.
+      operationId: sendGuestInvitation
+      tags:
+        - Admin Guest Management
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: guest_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Invitation sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invitation sent to jane.smith@example.com"
+                  invitation_sent_at:
+                    type: string
+                    format: date-time
+                    example: "2025-01-22T10:30:00Z"
+        '400':
+          description: Guest missing email address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Guest does not have an email address"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    GuestDetail:
+      type: object
+      required:
+        - id
+        - registration_id
+        - has_account
+        - invited_by_admin
+      properties:
+        id:
+          type: string
+          format: uuid
+        registration_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+        name:
+          type: string
+          nullable: true
+          example: "Jane Smith"
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: "jane.smith@example.com"
+        phone:
+          type: string
+          nullable: true
+          example: "+1-555-0102"
+        has_account:
+          type: boolean
+          description: Whether guest has created their own user account
+        invited_by_admin:
+          type: boolean
+          description: Whether admin sent registration link to this guest
+        invitation_sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        meal_selection:
+          type: object
+          nullable: true
+          properties:
+            food_option_id:
+              type: string
+              format: uuid
+            food_option_name:
+              type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateGuestRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          example: "Jane Smith"
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          example: "jane.smith@example.com"
+        phone:
+          type: string
+          maxLength: 20
+          example: "+1-555-0102"
+
+    UpdateGuestRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 20
+
+    MealSelectionDetail:
+      type: object
+      required:
+        - id
+        - registration_id
+        - food_option_id
+        - food_option_name
+        - attendee_name
+      properties:
+        id:
+          type: string
+          format: uuid
+        registration_id:
+          type: string
+          format: uuid
+        guest_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: NULL if meal is for primary registrant
+        attendee_name:
+          type: string
+          description: Name of person who made selection (registrant or guest)
+          example: "Jane Smith (Guest)"
+        food_option_id:
+          type: string
+          format: uuid
+        food_option_name:
+          type: string
+          example: "Chicken Marsala"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateMealSelectionRequest:
+      type: object
+      required:
+        - food_option_id
+      properties:
+        guest_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: NULL for registrant's meal selection
+        food_option_id:
+          type: string
+          format: uuid
+          description: Selected meal option from event's food options
+
+    AttendeeExport:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [registrant, guest]
+        primary_registrant_email:
+          type: string
+          description: Email of the user who created the registration
+        meal_selection:
+          type: string
+          nullable: true
+        has_account:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Not authenticated"
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "You do not have permission to access this resource"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Resource not found"
+
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Invalid request parameters"

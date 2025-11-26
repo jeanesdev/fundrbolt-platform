@@ -271,20 +271,23 @@ class AuthService:
     @staticmethod
     async def refresh_access_token(
         refresh_token: str,
-    ) -> tuple[str, int]:
+        db: AsyncSession,
+    ) -> tuple[str, int, User]:
         """Generate new access token from valid refresh token.
 
         Flow:
         1. Decode and validate refresh token
         2. Check session exists in Redis
         3. Check token not blacklisted
-        4. Generate new access token
+        4. Fetch user from database
+        5. Generate new access token
 
         Args:
             refresh_token: Valid refresh token
+            db: Database session
 
         Returns:
-            Tuple of (new access token, expires_in seconds)
+            Tuple of (new access token, expires_in seconds, user)
 
         Raises:
             ValueError: If refresh token invalid or session not found
@@ -304,15 +307,24 @@ class AuthService:
             if not session:
                 raise ValueError("Session not found or expired")
 
+            # Fetch user from database with eager loading of role
+            from sqlalchemy.orm import joinedload
+
+            stmt = select(User).options(joinedload(User.role)).where(User.id == user_id)
+            result = await db.execute(stmt)
+            user = result.unique().scalar_one_or_none()
+            if not user:
+                raise ValueError("User not found")
+
             # Generate new access token
             token_data = {
-                "sub": payload["sub"],
-                "email": payload.get("email"),
-                "role": payload.get("role"),
+                "sub": str(user.id),
+                "email": user.email,
+                "role": user.role.name,
             }
             access_token = create_access_token(data=token_data)
 
-            return access_token, 900  # 15 minutes
+            return access_token, 900, user  # 15 minutes
 
         except Exception as e:
             raise ValueError(f"Invalid refresh token: {e}") from e

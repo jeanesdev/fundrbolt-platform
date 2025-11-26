@@ -26,12 +26,27 @@ from app.schemas.cookies import (
     CookieConsentStatusResponse,
     CookieConsentUpdateRequest,
 )
+from app.schemas.event_registration import (
+    EventRegistrationCreateRequest,
+    EventRegistrationListResponse,
+    EventRegistrationResponse,
+    EventRegistrationUpdateRequest,
+    EventRegistrationWithDetails,
+)
 from app.schemas.legal_documents import (
     LegalDocumentCreateRequest,
     LegalDocumentListResponse,
     LegalDocumentPublicResponse,
     LegalDocumentResponse,
     LegalDocumentUpdateRequest,
+)
+from app.schemas.meal_selection import (
+    MealSelectionCreateRequest,
+    MealSelectionListResponse,
+    MealSelectionResponse,
+    MealSelectionSummary,
+    MealSelectionSummaryResponse,
+    MealSelectionUpdateRequest,
 )
 from app.schemas.npo import (
     NPOCreateRequest,
@@ -74,6 +89,12 @@ from app.schemas.npo_member import (
     MemberRoleUpdateRequest,
     MemberStatusUpdateRequest,
 )
+from app.schemas.registration_guest import (
+    RegistrationGuestCreateRequest,
+    RegistrationGuestListResponse,
+    RegistrationGuestResponse,
+    RegistrationGuestUpdateRequest,
+)
 
 __all__ = [
     # Auth
@@ -99,12 +120,25 @@ __all__ = [
     "CookieConsentResponse",
     "CookieConsentStatusResponse",
     "CookieConsentUpdateRequest",
+    # Event Registration
+    "EventRegistrationCreateRequest",
+    "EventRegistrationListResponse",
+    "EventRegistrationResponse",
+    "EventRegistrationUpdateRequest",
+    "EventRegistrationWithDetails",
     # Legal Documents
     "LegalDocumentCreateRequest",
     "LegalDocumentListResponse",
     "LegalDocumentPublicResponse",
     "LegalDocumentResponse",
     "LegalDocumentUpdateRequest",
+    # Meal Selection
+    "MealSelectionCreateRequest",
+    "MealSelectionListResponse",
+    "MealSelectionResponse",
+    "MealSelectionSummary",
+    "MealSelectionSummaryResponse",
+    "MealSelectionUpdateRequest",
     # NPO
     "NPOCreateRequest",
     "NPOCreateResponse",
@@ -142,4 +176,9 @@ __all__ = [
     "MemberResponse",
     "MemberRoleUpdateRequest",
     "MemberStatusUpdateRequest",
+    # Registration Guest
+    "RegistrationGuestCreateRequest",
+    "RegistrationGuestListResponse",
+    "RegistrationGuestResponse",
+    "RegistrationGuestUpdateRequest",
 ]

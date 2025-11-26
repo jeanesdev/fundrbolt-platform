@@ -24,6 +24,8 @@ export function UsersDialogs() {
       state: currentRow.state,
       postal_code: currentRow.postal_code,
       country: currentRow.country,
+      profile_picture_url: currentRow.profile_picture_url,
+      social_media_links: currentRow.social_media_links,
       role: currentRow.role,
       npo_id: currentRow.npo_id,
       npo_memberships: currentRow.npo_memberships || [],

@@ -47,8 +47,9 @@ export function AuctionItemCreatePage() {
 
       toast.success('Auction item created successfully!');
       navigate({
-        to: '/events/$eventId/auction-items',
+        to: '/events/$eventId',
         params: { eventId },
+        search: { tab: 'auction-items' },
       });
     } catch (err) {
       const errorMessage =
@@ -60,7 +61,7 @@ export function AuctionItemCreatePage() {
   };
 
   const handleCancel = () => {
-    navigate({ to: '/events/$eventId/auction-items', params: { eventId } });
+    navigate({ to: '/events/$eventId', params: { eventId }, search: { tab: 'auction-items' } });
   };
 
   return (
