@@ -112,9 +112,9 @@ class TestGetPendingApplications:
         assert data["total"] >= 2  # At least our 2 pending NPOs
         assert len(data["items"]) >= 2
 
-        # Verify all returned NPOs are PENDING_APPROVAL
+        # Verify all returned NPOs are in under_review status (mapped from PENDING_APPROVAL)
         for app in data["items"]:
-            assert app["status"] == "pending_approval"
+            assert app["status"] == "under_review"
 
     @pytest.mark.asyncio
     async def test_get_pending_applications_with_pagination(
