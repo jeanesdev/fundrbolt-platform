@@ -16,6 +16,7 @@ jobs:
   backend-validation:
     name: Backend Tests & Linting
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./backend
@@ -96,6 +97,7 @@ jobs:
 
       - name: Run tests
         run: poetry run pytest --cov=app --cov-report=xml --cov-report=term
+        timeout-minutes: 10
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -110,6 +112,7 @@ jobs:
   frontend-validation:
     name: Frontend Tests & Linting
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: ./frontend/augeo-admin
