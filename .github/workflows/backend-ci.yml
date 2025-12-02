@@ -134,7 +134,7 @@ jobs:
           EMAIL_FROM_ADDRESS: noreply@test.example.com
           SUPER_ADMIN_EMAIL: admin@test.example.com
           SUPER_ADMIN_PASSWORD: Test123!@#TestPassword
-        run: poetry run pytest -v --tb=short
+        run: poetry run pytest -v --tb=short -m "not requires_email and not requires_azure_storage"
         timeout-minutes: 10
 
       - name: Upload coverage reports to Codecov
