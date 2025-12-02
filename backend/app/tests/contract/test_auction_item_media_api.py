@@ -8,8 +8,9 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+pytestmark = [pytest.mark.asyncio, pytest.mark.requires_azure_storage]
 
-@pytest.mark.asyncio
+
 class TestMediaUploadURL:
     """Test POST /api/v1/events/{event_id}/auction-items/{item_id}/media/upload-url endpoint."""
 

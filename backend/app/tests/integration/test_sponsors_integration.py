@@ -7,8 +7,9 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+pytestmark = [pytest.mark.asyncio, pytest.mark.requires_azure_storage]
 
-@pytest.mark.asyncio
+
 class TestSponsorIntegration:
     """Test complete sponsor management workflows."""
 
