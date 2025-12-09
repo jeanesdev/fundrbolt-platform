@@ -202,6 +202,69 @@ async def create_sponsor(
     )
 
 
+@router.patch(
+    "/reorder",
+    response_model=list[SponsorResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def reorder_sponsors(
+    event_id: uuid.UUID,
+    request: ReorderRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
+) -> list[SponsorResponse]:
+    """
+    Reorder sponsors by display_order.
+
+    Provide an array of sponsor IDs in the desired order.
+    """
+    # Verify event exists
+    event = await EventService.get_event_by_id(db, event_id)
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with ID {event_id} not found",
+        )
+
+    # Reorder sponsors
+    reordered_sponsors = await SponsorService.reorder_sponsors(
+        db=db,
+        event_id=event_id,
+        sponsor_ids_ordered=request.sponsor_ids,
+    )
+
+    return [
+        SponsorResponse(
+            id=sponsor.id,
+            event_id=sponsor.event_id,
+            name=sponsor.name,
+            logo_url=sponsor.logo_url,
+            logo_blob_name=sponsor.logo_blob_name,
+            thumbnail_url=sponsor.thumbnail_url,
+            thumbnail_blob_name=sponsor.thumbnail_blob_name,
+            website_url=sponsor.website_url,
+            logo_size=sponsor.logo_size,
+            sponsor_level=sponsor.sponsor_level,
+            contact_name=sponsor.contact_name,
+            contact_email=sponsor.contact_email,
+            contact_phone=sponsor.contact_phone,
+            address_line1=sponsor.address_line1,
+            address_line2=sponsor.address_line2,
+            city=sponsor.city,
+            state=sponsor.state,
+            postal_code=sponsor.postal_code,
+            country=sponsor.country,
+            donation_amount=sponsor.donation_amount,
+            notes=sponsor.notes,
+            display_order=sponsor.display_order,
+            created_at=sponsor.created_at.isoformat(),
+            updated_at=sponsor.updated_at.isoformat(),
+            created_by=sponsor.created_by,
+        )
+        for sponsor in reordered_sponsors
+    ]
+
+
 @router.post(
     "/{sponsor_id}/logo/upload-url",
     response_model=LogoUploadResponse,
@@ -367,69 +430,6 @@ async def get_sponsor(
         updated_at=sponsor.updated_at.isoformat(),
         created_by=sponsor.created_by,
     )
-
-
-@router.patch(
-    "/reorder",
-    response_model=list[SponsorResponse],
-    status_code=status.HTTP_200_OK,
-)
-async def reorder_sponsors(
-    event_id: uuid.UUID,
-    request: ReorderRequest,
-    db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[User, Depends(get_current_active_user)],
-) -> list[SponsorResponse]:
-    """
-    Reorder sponsors by display_order.
-
-    Provide an array of sponsor IDs in the desired order.
-    """
-    # Verify event exists
-    event = await EventService.get_event_by_id(db, event_id)
-    if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Event with ID {event_id} not found",
-        )
-
-    # Reorder sponsors
-    reordered_sponsors = await SponsorService.reorder_sponsors(
-        db=db,
-        event_id=event_id,
-        sponsor_ids_ordered=request.sponsor_ids,
-    )
-
-    return [
-        SponsorResponse(
-            id=sponsor.id,
-            event_id=sponsor.event_id,
-            name=sponsor.name,
-            logo_url=sponsor.logo_url,
-            logo_blob_name=sponsor.logo_blob_name,
-            thumbnail_url=sponsor.thumbnail_url,
-            thumbnail_blob_name=sponsor.thumbnail_blob_name,
-            website_url=sponsor.website_url,
-            logo_size=sponsor.logo_size,
-            sponsor_level=sponsor.sponsor_level,
-            contact_name=sponsor.contact_name,
-            contact_email=sponsor.contact_email,
-            contact_phone=sponsor.contact_phone,
-            address_line1=sponsor.address_line1,
-            address_line2=sponsor.address_line2,
-            city=sponsor.city,
-            state=sponsor.state,
-            postal_code=sponsor.postal_code,
-            country=sponsor.country,
-            donation_amount=sponsor.donation_amount,
-            notes=sponsor.notes,
-            display_order=sponsor.display_order,
-            created_at=sponsor.created_at.isoformat(),
-            updated_at=sponsor.updated_at.isoformat(),
-            created_by=sponsor.created_by,
-        )
-        for sponsor in reordered_sponsors
-    ]
 
 
 @router.patch(

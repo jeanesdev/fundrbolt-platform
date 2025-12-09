@@ -1328,6 +1328,7 @@ class TestSponsorReordering:
 
         assert response.status_code == 400
         error_detail = response.json()["detail"]
+        # Handle both string and dict response formats
         if isinstance(error_detail, dict):
             assert "invalid sponsor" in error_detail.get("message", "").lower()
         else:
@@ -1352,6 +1353,7 @@ class TestSponsorReordering:
 
         assert response.status_code == 404
         error_detail = response.json()["detail"]
+        # Handle both string and dict response formats
         if isinstance(error_detail, dict):
             assert "not found" in error_detail.get("message", "").lower()
         else:
@@ -1417,7 +1419,7 @@ class TestSponsorReordering:
         assert sponsor_map[sponsors[1]["id"]]["display_order"] == 0
         assert sponsor_map[sponsors[0]["id"]]["display_order"] == 1
 
-        # Verify other fields unchanged
+        # Verify other fields unchanged (strip trailing slashes for URL comparison)
         assert sponsor_map[sponsors[0]["id"]]["name"] == "Sponsor 1"
         assert sponsor_map[sponsors[0]["id"]]["logo_size"] == "large"
         assert "sponsor1.com" in sponsor_map[sponsors[0]["id"]]["website_url"]

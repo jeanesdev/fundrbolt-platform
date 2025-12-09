@@ -1533,9 +1533,9 @@ async def test_approved_npo(db_session: AsyncSession, test_npo_admin_user: Any) 
     )
     db_session.add(member)
 
-    # Update user's npo_id to match the NPO they administer
+    # IMPORTANT: Update the user's npo_id to match this NPO
+    # This is needed for permission filtering in list_events
     test_npo_admin_user.npo_id = npo.id
-    db_session.add(test_npo_admin_user)
 
     await db_session.commit()
     await db_session.refresh(npo)
@@ -1640,6 +1640,19 @@ def mock_azure_storage(monkeypatch):
 
     # Clear settings cache to force reload with new env vars
     get_settings.cache_clear()
+
+    # IMPORTANT: Patch the module-level settings object in sponsor_logo_service
+    # It was already instantiated at import time, so env vars won't help
+    mock_connection_string = "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net"
+
+    # Import the module and patch its settings object directly
+    from app.services import sponsor_logo_service
+
+    monkeypatch.setattr(
+        sponsor_logo_service.settings,
+        "azure_storage_connection_string",
+        mock_connection_string,
+    )
 
     # Mock the BlobServiceClient with unique URLs per blob
     mock_blob_service = MagicMock()
