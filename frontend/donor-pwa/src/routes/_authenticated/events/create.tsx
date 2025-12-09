@@ -1,6 +1,9 @@
-import { EventCreatePage } from '@/features/events/EventCreatePage'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Navigate } from '@tanstack/react-router'
 
+/**
+ * Event Create Route - Disabled for Donor PWA
+ * Redirects to home - donors cannot create events
+ */
 export const Route = createFileRoute('/_authenticated/events/create')({
-  component: EventCreatePage,
+  component: () => <Navigate to="/home" />,
 })

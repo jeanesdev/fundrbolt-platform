@@ -1,6 +1,9 @@
-import NpoListPage from '@/pages/npo/list-npo'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Navigate } from '@tanstack/react-router'
 
+/**
+ * NPO List Route - Disabled for Donor PWA
+ * Redirects to home - donors view events, not NPOs directly
+ */
 export const Route = createFileRoute('/_authenticated/npos/')({
-  component: NpoListPage,
+  component: () => <Navigate to="/home" />,
 })

@@ -6,51 +6,48 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import { useLayout } from '@/context/layout-provider'
-import { Building2, Calendar, LayoutDashboard, Users } from 'lucide-react'
-import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
+import { Settings, User } from 'lucide-react'
 import { sidebarData } from './data/sidebar-data'
+import { EventSelector } from './EventSelector'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
-import { NpoSelector } from './NpoSelector'
 import type { NavGroup as NavGroupType } from './types'
 
-// Map icon string names to lucide-react icon components
-const iconMap = {
-  LayoutDashboard,
-  Building2,
-  Calendar,
-  Users,
-}
-
+/**
+ * Donor PWA Sidebar
+ *
+ * Simplified sidebar for donors:
+ * - Event selector dropdown (shows registered events)
+ * - Settings navigation only (profile, password, consent)
+ * - No dashboard, no NPO management, no user management
+ */
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
-  const { navItems } = useRoleBasedNav()
 
-  // Convert useRoleBasedNav items to sidebar structure
-  const roleBasedNavGroup: NavGroupType = {
-    title: 'General',
-    items: navItems.map((item) => ({
-      title: item.title,
-      url: item.href,
-      badge: typeof item.badge === 'number' ? String(item.badge) : item.badge,
-      icon: item.icon ? iconMap[item.icon as keyof typeof iconMap] : undefined,
-    })),
+  // Donor PWA only shows settings navigation
+  const donorNavGroup: NavGroupType = {
+    title: 'Account',
+    items: [
+      {
+        title: 'Profile',
+        url: '/settings',
+        icon: User,
+      },
+      {
+        title: 'Settings',
+        url: '/settings/password',
+        icon: Settings,
+      },
+    ],
   }
-
-  // Only show the role-based navigation group
-  const filteredNavGroups = [roleBasedNavGroup]
 
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>
-        <NpoSelector />
-
-        {/* NpoSelector replaces TeamSwitcher for NPO context selection */}
+        <EventSelector />
       </SidebarHeader>
       <SidebarContent>
-        {filteredNavGroups.map((props) => (
-          <NavGroup key={props.title} {...props} />
-        ))}
+        <NavGroup {...donorNavGroup} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={sidebarData.user} />
