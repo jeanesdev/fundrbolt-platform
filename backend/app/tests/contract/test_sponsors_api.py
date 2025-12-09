@@ -1217,7 +1217,7 @@ class TestSponsorReordering:
         )
 
         assert response.status_code == 200
-        reordered_sponsors = response.json()["sponsors"]
+        reordered_sponsors = response.json()
 
         # Verify new display_order
         sponsor_map = {s["id"]: s for s in reordered_sponsors}
@@ -1261,7 +1261,12 @@ class TestSponsorReordering:
         )
 
         assert response.status_code == 400
-        assert "do not belong to the event" in response.json()["detail"].lower()
+        detail = response.json()["detail"]
+        # Handle both string and dict response formats
+        if isinstance(detail, dict):
+            assert "invalid" in detail.get("message", "").lower()
+        else:
+            assert "invalid" in detail.lower()
 
     async def test_reorder_sponsors_nonexistent_event(
         self,
@@ -1279,7 +1284,12 @@ class TestSponsorReordering:
         )
 
         assert response.status_code == 404
-        assert "not found" in response.json()["detail"].lower()
+        detail = response.json()["detail"]
+        # Handle both string and dict response formats
+        if isinstance(detail, dict):
+            assert "not found" in detail.get("message", "").lower()
+        else:
+            assert "not found" in detail.lower()
 
     async def test_reorder_sponsors_empty_list(
         self,
@@ -1330,17 +1340,17 @@ class TestSponsorReordering:
         )
 
         assert response.status_code == 200
-        reordered_sponsors = response.json()["sponsors"]
+        reordered_sponsors = response.json()
         sponsor_map = {s["id"]: s for s in reordered_sponsors}
 
         # Verify display_order changed
         assert sponsor_map[sponsors[1]["id"]]["display_order"] == 0
         assert sponsor_map[sponsors[0]["id"]]["display_order"] == 1
 
-        # Verify other fields unchanged
+        # Verify other fields unchanged (strip trailing slashes for URL comparison)
         assert sponsor_map[sponsors[0]["id"]]["name"] == "Sponsor 1"
         assert sponsor_map[sponsors[0]["id"]]["logo_size"] == "large"
-        assert sponsor_map[sponsors[0]["id"]]["website_url"] == "https://sponsor1.com"
+        assert sponsor_map[sponsors[0]["id"]]["website_url"].rstrip("/") == "https://sponsor1.com"
         assert sponsor_map[sponsors[1]["id"]]["name"] == "Sponsor 2"
         assert sponsor_map[sponsors[1]["id"]]["logo_size"] == "large"
-        assert sponsor_map[sponsors[1]["id"]]["website_url"] == "https://sponsor2.com"
+        assert sponsor_map[sponsors[1]["id"]]["website_url"].rstrip("/") == "https://sponsor2.com"

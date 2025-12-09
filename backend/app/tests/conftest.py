@@ -1632,6 +1632,19 @@ def mock_azure_storage(monkeypatch):
     # Clear settings cache to force reload with new env vars
     get_settings.cache_clear()
 
+    # IMPORTANT: Patch the module-level settings object in sponsor_logo_service
+    # It was already instantiated at import time, so env vars won't help
+    mock_connection_string = "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net"
+
+    # Import the module and patch its settings object directly
+    from app.services import sponsor_logo_service
+
+    monkeypatch.setattr(
+        sponsor_logo_service.settings,
+        "azure_storage_connection_string",
+        mock_connection_string,
+    )
+
     # Mock the BlobServiceClient with unique URLs per blob
     mock_blob_service = MagicMock()
 
