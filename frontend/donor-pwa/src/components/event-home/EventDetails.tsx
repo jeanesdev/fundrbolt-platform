@@ -115,11 +115,11 @@ export function EventDetails({
   contactPhone,
   eventWebsite,
   isPast = false,
-  isUpcoming = false,
+  isUpcoming: _isUpcoming = false,
   className,
 }: EventDetailsProps) {
-  // Determine default open state: open if upcoming (within 30 days), closed if past
-  const defaultOpen = isUpcoming && !isPast;
+  // Determine default open state: open if event hasn't started yet
+  const defaultOpen = !isPast;
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   // Format date and time

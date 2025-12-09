@@ -305,14 +305,20 @@ export function EventHomePage() {
 
         {/* Event Description */}
         {currentEvent.description && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>About This Event</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">{currentEvent.description}</p>
-            </CardContent>
-          </Card>
+          <div
+            className="mb-6 rounded-lg p-4 sm:p-6"
+            style={{ backgroundColor: 'rgb(var(--event-card-bg, 147, 51, 234))' }}
+          >
+            <h3
+              className="font-semibold text-lg mb-3"
+              style={{ color: 'var(--event-card-text, #000000)' }}
+            >
+              About This Event
+            </h3>
+            <p style={{ color: 'var(--event-card-text-muted, #6B7280)' }}>
+              {currentEvent.description}
+            </p>
+          </div>
         )}
 
         {/* Auction Gallery */}

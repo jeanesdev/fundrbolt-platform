@@ -102,18 +102,20 @@ export function EventSwitcher({
   // If only one event, just show the event name without dropdown
   if (!hasMultipleEvents) {
     return (
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 p-2 max-w-[280px]">
         <EventThumbnail event={currentEvent} />
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-0 flex-1">
           <span
-            className="font-semibold text-sm leading-tight"
+            className="font-semibold text-sm leading-tight truncate"
             style={{ color: 'var(--event-text-on-background, #000000)' }}
+            title={currentEvent.name}
           >
             {currentEvent.name}
           </span>
           <span
-            className="text-xs"
+            className="text-xs truncate"
             style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+            title={currentEvent.npo_name}
           >
             {currentEvent.npo_name}
           </span>
