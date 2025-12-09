@@ -9,6 +9,7 @@ import { LayoutProvider } from '@/context/layout-provider'
 import { SearchProvider } from '@/context/search-provider'
 import { useAuth } from '@/hooks/use-auth'
 import { useEventContext } from '@/hooks/use-event-context'
+import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
 import apiClient from '@/lib/axios'
 import { getCookie } from '@/lib/cookies'
 import { cn } from '@/lib/utils'
@@ -46,15 +47,10 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run once on mount
 
-  // Fetch events the user is registered for or has admin access to
+  // Fetch events the user is registered for with branding
   const { data: registrationsData } = useQuery({
-    queryKey: ['registrations', 'my-events'],
-    queryFn: async () => {
-      const response = await apiClient.get('/registrations', {
-        params: { per_page: 100 }, // Get all registrations
-      })
-      return response.data
-    },
+    queryKey: ['registrations', 'events-with-branding'],
+    queryFn: getRegisteredEventsWithBranding,
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!user && !isRestoring,
   })
@@ -76,31 +72,26 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   useEffect(() => {
     const eventMap = new Map<string, EventContextOption>()
 
-    // Add events from registrations
-    if (registrationsData?.registrations) {
-      registrationsData.registrations.forEach(
-        (reg: {
-          event_id: string
-          event?: {
-            id: string
-            name: string
-            slug: string
-            event_date?: string
-            npo?: { name: string }
-            logo_url?: string
-          }
+    // Add events from registrations with branding
+    if (registrationsData?.events) {
+      registrationsData.events.forEach(
+        (event: {
+          id: string
+          name: string
+          slug: string
+          event_datetime: string
+          npo_name: string
+          thumbnail_url: string | null
         }) => {
-          if (reg.event) {
-            eventMap.set(reg.event.id, {
-              id: reg.event.id,
-              name: reg.event.name,
-              slug: reg.event.slug,
-              event_date: reg.event.event_date,
-              npo_name: reg.event.npo?.name,
-              logo_url: reg.event.logo_url,
-              has_admin_access: false,
-            })
-          }
+          eventMap.set(event.id, {
+            id: event.id,
+            name: event.name,
+            slug: event.slug,
+            event_date: event.event_datetime,
+            npo_name: event.npo_name,
+            logo_url: event.thumbnail_url,
+            has_admin_access: false,
+          })
         }
       )
     }

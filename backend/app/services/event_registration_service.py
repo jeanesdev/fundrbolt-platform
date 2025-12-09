@@ -2,7 +2,7 @@
 
 import logging
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy import and_, func, select
@@ -11,11 +11,13 @@ from sqlalchemy.orm import selectinload
 
 from app.models.event import Event, EventStatus
 from app.models.event_registration import EventRegistration, RegistrationStatus
+from app.models.npo import NPO
 from app.models.user import User
 from app.schemas.event_registration import (
     EventRegistrationCreateRequest,
     EventRegistrationUpdateRequest,
 )
+from app.schemas.event_with_branding import RegisteredEventWithBranding
 
 logger = logging.getLogger(__name__)
 
@@ -163,6 +165,140 @@ class EventRegistrationService:
         registrations = result.scalars().all()
 
         return list(registrations), total
+
+    @staticmethod
+    async def get_registered_events_with_branding(
+        db: AsyncSession,
+        user_id: uuid.UUID,
+    ) -> list[RegisteredEventWithBranding]:
+        """
+        Get events user is registered for with resolved branding.
+
+        Returns events sorted with upcoming events first (ascending by date),
+        then past events (descending by date). Branding resolves via
+        fallback chain: event → NPO → system defaults.
+
+        Args:
+            db: Database session
+            user_id: User ID
+
+        Returns:
+            List of RegisteredEventWithBranding objects
+        """
+        # Default branding colors (system fallback)
+        DEFAULT_PRIMARY = "#3B82F6"
+        DEFAULT_SECONDARY = "#9333EA"
+        DEFAULT_BACKGROUND = "#FFFFFF"
+        DEFAULT_ACCENT = "#3B82F6"
+
+        now = datetime.now(UTC)
+        upcoming_cutoff = now + timedelta(days=30)
+
+        # Query registrations with event, NPO, and branding data
+        query = (
+            select(EventRegistration)
+            .where(
+                and_(
+                    EventRegistration.user_id == user_id,
+                    EventRegistration.status.in_(
+                        [
+                            RegistrationStatus.PENDING,
+                            RegistrationStatus.CONFIRMED,
+                            RegistrationStatus.WAITLISTED,
+                        ]
+                    ),
+                )
+            )
+            .options(
+                selectinload(EventRegistration.event).options(
+                    selectinload(Event.npo).options(selectinload(NPO.branding)),
+                    selectinload(Event.media),
+                ),
+            )
+        )
+
+        result = await db.execute(query)
+        registrations = result.scalars().all()
+
+        # Transform to RegisteredEventWithBranding objects
+        events_with_branding: list[RegisteredEventWithBranding] = []
+
+        for reg in registrations:
+            event = reg.event
+            npo = event.npo
+            npo_branding = npo.branding if npo else None
+
+            # Resolve thumbnail: first event media, then NPO logo
+            thumbnail_url: str | None = None
+            if event.media and len(event.media) > 0:
+                thumbnail_url = event.media[0].file_url
+            elif event.logo_url:
+                thumbnail_url = event.logo_url
+            elif npo_branding and npo_branding.logo_url:
+                thumbnail_url = npo_branding.logo_url
+
+            # Resolve colors with fallback chain: event → NPO → defaults
+            primary_color = (
+                event.primary_color
+                or (npo_branding.primary_color if npo_branding else None)
+                or DEFAULT_PRIMARY
+            )
+            secondary_color = (
+                event.secondary_color
+                or (npo_branding.secondary_color if npo_branding else None)
+                or DEFAULT_SECONDARY
+            )
+            background_color = (
+                event.background_color
+                or (npo_branding.background_color if npo_branding else None)
+                or DEFAULT_BACKGROUND
+            )
+            accent_color = (
+                event.accent_color
+                or (npo_branding.accent_color if npo_branding else None)
+                or DEFAULT_ACCENT
+            )
+
+            # Determine is_past and is_upcoming
+            event_dt = event.event_datetime
+            if event_dt.tzinfo is None:
+                # Assume UTC if no timezone
+                event_dt = event_dt.replace(tzinfo=UTC)
+
+            is_past = event_dt < now
+            is_upcoming = not is_past and event_dt <= upcoming_cutoff
+
+            events_with_branding.append(
+                RegisteredEventWithBranding(
+                    id=event.id,
+                    name=event.name,
+                    slug=event.slug,
+                    event_datetime=event.event_datetime,
+                    timezone=event.timezone or "UTC",
+                    is_past=is_past,
+                    is_upcoming=is_upcoming,
+                    thumbnail_url=thumbnail_url,
+                    primary_color=primary_color,
+                    secondary_color=secondary_color,
+                    background_color=background_color,
+                    accent_color=accent_color,
+                    npo_name=npo.name if npo else "Unknown Organization",
+                    npo_logo_url=npo_branding.logo_url if npo_branding else None,
+                )
+            )
+
+        # Sort: upcoming events first (ascending by date), then past (descending)
+        # Separate into upcoming and past lists for cleaner sorting
+        upcoming_events = [e for e in events_with_branding if not e.is_past]
+        past_events = [e for e in events_with_branding if e.is_past]
+
+        # Sort upcoming by date ascending (soonest first)
+        upcoming_events.sort(key=lambda e: e.event_datetime)
+        # Sort past by date descending (most recent first)
+        past_events.sort(key=lambda e: e.event_datetime, reverse=True)
+
+        # Return upcoming first, then past
+        return upcoming_events + past_events
 
     @staticmethod
     async def get_event_registrations(

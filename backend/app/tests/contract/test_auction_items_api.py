@@ -1,5 +1,6 @@
 """Contract tests for auction items API endpoints."""
 
+from datetime import UTC
 from typing import Any
 
 import pytest
@@ -455,9 +456,306 @@ class TestAuctionItemList:
         assert "items" in data
         assert "pagination" in data
 
+    async def test_list_auction_items_sort_by_highest_bid(
+        self,
+        npo_admin_client: AsyncClient,
+        test_event: Any,
+        db_session: AsyncSession,
+    ) -> None:
+        """Test sorting auction items by highest bid (starting_bid) - default sort."""
+        from sqlalchemy import update
 
-@pytest.mark.asyncio
-class TestAuctionItemDetail:
+        from app.models.auction_item import AuctionItem, ItemStatus
+
+        # Create items with different starting bids
+        items_data = [
+            {"title": "Low Bid", "starting_bid": 100.00},
+            {"title": "High Bid", "starting_bid": 500.00},
+            {"title": "Medium Bid", "starting_bid": 250.00},
+        ]
+
+        created_ids = []
+        for item in items_data:
+            response = await npo_admin_client.post(
+                f"/api/v1/events/{test_event.id}/auction-items",
+                json={
+                    "title": item["title"],
+                    "description": "Test",
+                    "auction_type": "silent",
+                    "starting_bid": item["starting_bid"],
+                    "buy_now_enabled": False,
+                    "quantity_available": 1,
+                },
+            )
+            created_ids.append(response.json()["id"])
+
+        # Publish all items
+        for item_id in created_ids:
+            stmt = (
+                update(AuctionItem)
+                .where(AuctionItem.id == item_id)
+                .values(status=ItemStatus.PUBLISHED)
+            )
+            await db_session.execute(stmt)
+        await db_session.commit()
+
+        # Test sort_by=highest_bid (default)
+        response = await npo_admin_client.get(
+            f"/api/v1/events/{test_event.id}/auction-items",
+            params={"sort_by": "highest_bid"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 3
+
+        # Should be sorted by starting_bid DESC
+        starting_bids = [float(item["starting_bid"]) for item in data["items"]]
+        assert starting_bids == [500.00, 250.00, 100.00]
+        assert data["items"][0]["title"] == "High Bid"
+
+    async def test_list_auction_items_sort_by_newest(
+        self,
+        npo_admin_client: AsyncClient,
+        test_event: Any,
+        db_session: AsyncSession,
+    ) -> None:
+        """Test sorting auction items by newest (created_at DESC)."""
+        from datetime import datetime, timedelta
+
+        from sqlalchemy import update
+
+        from app.models.auction_item import AuctionItem, ItemStatus
+
+        # Create items
+        titles = ["First Item", "Second Item", "Third Item"]
+        created_ids = []
+
+        for title in titles:
+            response = await npo_admin_client.post(
+                f"/api/v1/events/{test_event.id}/auction-items",
+                json={
+                    "title": title,
+                    "description": "Test",
+                    "auction_type": "silent",
+                    "starting_bid": 100.00,
+                    "buy_now_enabled": False,
+                    "quantity_available": 1,
+                },
+            )
+            created_ids.append(response.json()["id"])
+
+        # Manually set different created_at timestamps and publish
+        base_time = datetime.now(UTC)
+        for idx, item_id in enumerate(created_ids):
+            # First item is oldest, third item is newest
+            timestamp = base_time - timedelta(minutes=len(created_ids) - idx)
+            stmt = (
+                update(AuctionItem)
+                .where(AuctionItem.id == item_id)
+                .values(status=ItemStatus.PUBLISHED, created_at=timestamp)
+            )
+            await db_session.execute(stmt)
+        await db_session.commit()
+
+        # Test sort_by=newest
+        response = await npo_admin_client.get(
+            f"/api/v1/events/{test_event.id}/auction-items",
+            params={"sort_by": "newest"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 3
+
+        # Should be sorted by created_at DESC (newest first)
+        assert data["items"][0]["title"] == "Third Item"
+        assert data["items"][2]["title"] == "First Item"
+
+    async def test_list_auction_items_default_sort_is_highest_bid(
+        self,
+        npo_admin_client: AsyncClient,
+        test_event: Any,
+        db_session: AsyncSession,
+    ) -> None:
+        """Test default sorting is highest_bid when no sort_by param provided."""
+        from sqlalchemy import update
+
+        from app.models.auction_item import AuctionItem, ItemStatus
+
+        # Create items with different starting bids
+        items_data = [
+            {"title": "Low Bid", "starting_bid": 50.00},
+            {"title": "High Bid", "starting_bid": 1000.00},
+        ]
+
+        created_ids = []
+        for item in items_data:
+            response = await npo_admin_client.post(
+                f"/api/v1/events/{test_event.id}/auction-items",
+                json={
+                    "title": item["title"],
+                    "description": "Test",
+                    "auction_type": "silent",
+                    "starting_bid": item["starting_bid"],
+                    "buy_now_enabled": False,
+                    "quantity_available": 1,
+                },
+            )
+            created_ids.append(response.json()["id"])
+
+        # Publish items
+        for item_id in created_ids:
+            stmt = (
+                update(AuctionItem)
+                .where(AuctionItem.id == item_id)
+                .values(status=ItemStatus.PUBLISHED)
+            )
+            await db_session.execute(stmt)
+        await db_session.commit()
+
+        # No sort_by param - should default to highest_bid
+        response = await npo_admin_client.get(
+            f"/api/v1/events/{test_event.id}/auction-items",
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 2
+        # High bid should come first
+        assert data["items"][0]["title"] == "High Bid"
+
+    async def test_list_auction_items_invalid_sort_by(
+        self,
+        npo_admin_client: AsyncClient,
+        test_event: Any,
+    ) -> None:
+        """Test invalid sort_by parameter returns 422."""
+        response = await npo_admin_client.get(
+            f"/api/v1/events/{test_event.id}/auction-items",
+            params={"sort_by": "invalid_sort"},
+        )
+
+        assert response.status_code == 422
+
+    async def test_list_auction_items_filter_auction_type_all(
+        self,
+        npo_admin_client: AsyncClient,
+        test_event: Any,
+        db_session: AsyncSession,
+    ) -> None:
+        """Test auction_type='all' returns both live and silent items."""
+        from sqlalchemy import update
+
+        from app.models.auction_item import AuctionItem, ItemStatus
+
+        # Create live auction item
+        live_response = await npo_admin_client.post(
+            f"/api/v1/events/{test_event.id}/auction-items",
+            json={
+                "title": "Live Item",
+                "description": "Live auction",
+                "auction_type": "live",
+                "starting_bid": 100.00,
+                "buy_now_enabled": False,
+                "quantity_available": 1,
+            },
+        )
+        live_id = live_response.json()["id"]
+
+        # Create silent auction item
+        silent_response = await npo_admin_client.post(
+            f"/api/v1/events/{test_event.id}/auction-items",
+            json={
+                "title": "Silent Item",
+                "description": "Silent auction",
+                "auction_type": "silent",
+                "starting_bid": 200.00,
+                "buy_now_enabled": False,
+                "quantity_available": 1,
+            },
+        )
+        silent_id = silent_response.json()["id"]
+
+        # Publish both items
+        for item_id in [live_id, silent_id]:
+            stmt = (
+                update(AuctionItem)
+                .where(AuctionItem.id == item_id)
+                .values(status=ItemStatus.PUBLISHED)
+            )
+            await db_session.execute(stmt)
+        await db_session.commit()
+
+        # Test auction_type=all returns both
+        response = await npo_admin_client.get(
+            f"/api/v1/events/{test_event.id}/auction-items",
+            params={"auction_type": "all"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 2
+
+        auction_types = {item["auction_type"] for item in data["items"]}
+        assert auction_types == {"live", "silent"}
+
+    async def test_list_auction_items_filter_auction_type_all_case_insensitive(
+        self,
+        npo_admin_client: AsyncClient,
+        test_event: Any,
+        db_session: AsyncSession,
+    ) -> None:
+        """Test auction_type='ALL' (uppercase) works correctly."""
+        from sqlalchemy import update
+
+        from app.models.auction_item import AuctionItem, ItemStatus
+
+        # Create items
+        for auction_type in ["live", "silent"]:
+            response = await npo_admin_client.post(
+                f"/api/v1/events/{test_event.id}/auction-items",
+                json={
+                    "title": f"{auction_type.title()} Item",
+                    "description": "Test",
+                    "auction_type": auction_type,
+                    "starting_bid": 100.00,
+                    "buy_now_enabled": False,
+                    "quantity_available": 1,
+                },
+            )
+            item_id = response.json()["id"]
+            stmt = (
+                update(AuctionItem)
+                .where(AuctionItem.id == item_id)
+                .values(status=ItemStatus.PUBLISHED)
+            )
+            await db_session.execute(stmt)
+        await db_session.commit()
+
+        # Test uppercase 'ALL'
+        response = await npo_admin_client.get(
+            f"/api/v1/events/{test_event.id}/auction-items",
+            params={"auction_type": "ALL"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 2
+
+    async def test_list_auction_items_invalid_auction_type(
+        self,
+        npo_admin_client: AsyncClient,
+        test_event: Any,
+    ) -> None:
+        """Test invalid auction_type returns 422."""
+        response = await npo_admin_client.get(
+            f"/api/v1/events/{test_event.id}/auction-items",
+            params={"auction_type": "invalid_type"},
+        )
+
+        assert response.status_code == 422
+
     """Test GET /api/v1/events/{event_id}/auction-items/{item_id} endpoint contract."""
 
     async def test_get_auction_item_success(

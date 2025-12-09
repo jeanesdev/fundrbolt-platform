@@ -93,16 +93,27 @@ async def create_auction_item(
     "",
     response_model=AuctionItemListResponse,
     summary="List auction items",
-    description="List auction items for an event with optional filtering.",
+    description="List auction items for an event with optional filtering and sorting.",
 )
 async def list_auction_items(
     event_id: UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
-    auction_type: Annotated[AuctionType | None, Query(description="Filter by auction type")] = None,
-    status: Annotated[ItemStatus | None, Query(description="Filter by status")] = None,
+    auction_type: Annotated[
+        str | None,
+        Query(description="Filter by auction type (silent, live, or 'all' for both)"),
+    ] = None,
+    item_status: Annotated[
+        ItemStatus | None, Query(description="Filter by status", alias="status")
+    ] = None,
     search: Annotated[
         str | None, Query(description="Search by title or bid number", max_length=200)
     ] = None,
+    sort_by: Annotated[
+        str,
+        Query(
+            description="Sort field: 'newest' (created_at DESC) or 'highest_bid' (current_bid DESC)"
+        ),
+    ] = "highest_bid",
     page: Annotated[int, Query(description="Page number (1-indexed)", ge=1)] = 1,
     limit: Annotated[int, Query(description="Items per page", ge=1, le=100)] = 50,
     current_user: Annotated[User | None, Depends(get_current_user_optional)] = None,
@@ -114,15 +125,20 @@ async def list_auction_items(
     - Authenticated: Returns all items including drafts (if authorized)
 
     **Filtering**:
-    - auction_type: live, silent
+    - auction_type: silent, live, or 'all' (returns both types)
     - status: draft, published, sold, withdrawn
     - search: Matches title or bid number
 
+    **Sorting**:
+    - highest_bid (default): Items with highest current bid first
+    - newest: Most recently created items first
+
     Args:
         event_id: UUID of the event
-        auction_type: Filter by auction type
-        status: Filter by status
+        auction_type: Filter by auction type (or 'all')
+        item_status: Filter by status
         search: Search term
+        sort_by: Sort field (highest_bid or newest)
         page: Page number
         limit: Items per page
         current_user: Optional authenticated user
@@ -136,12 +152,31 @@ async def list_auction_items(
     # Determine if user can see drafts (service will handle authorization)
     include_drafts = current_user is not None
 
+    # Handle 'all' auction_type - pass None to service to get both types
+    actual_auction_type: AuctionType | None = None
+    if auction_type and auction_type.lower() != "all":
+        try:
+            actual_auction_type = AuctionType(auction_type.lower())
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Invalid auction_type: {auction_type}. Must be 'silent', 'live', or 'all'.",
+            )
+
+    # Validate sort_by parameter
+    if sort_by not in ("newest", "highest_bid"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid sort_by: {sort_by}. Must be 'newest' or 'highest_bid'.",
+        )
+
     # List items
     items, total = await service.list_auction_items(
         event_id=event_id,
-        auction_type=auction_type,
-        status=status,
+        auction_type=actual_auction_type,
+        status=item_status,
         search=search,
+        sort_by=sort_by,
         page=page,
         limit=limit,
         include_drafts=include_drafts,

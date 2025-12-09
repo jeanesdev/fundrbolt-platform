@@ -1,10 +1,10 @@
-import { EventViewPage } from '@/features/events/EventViewPage'
+import { EventHomePage } from '@/features/events/EventHomePage'
 import { createFileRoute } from '@tanstack/react-router'
 
 /**
- * Event View Route
- * Read-only event view for donors - no editing
+ * Event Homepage Route
+ * Immersive, event-branded homepage for donors
  */
 export const Route = createFileRoute('/_authenticated/events/$eventId/')({
-  component: EventViewPage,
+  component: EventHomePage,
 })

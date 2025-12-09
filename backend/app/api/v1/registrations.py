@@ -17,6 +17,7 @@ from app.schemas.event_registration import (
     EventRegistrationResponse,
     EventRegistrationUpdateRequest,
 )
+from app.schemas.event_with_branding import RegisteredEventsResponse
 from app.schemas.meal_selection import (
     MealSelectionCreateRequest,
     MealSelectionListResponse,
@@ -89,6 +90,25 @@ async def list_user_registrations(
         per_page=per_page,
         total_pages=total_pages,
     )
+
+
+@router.get("/events-with-branding", response_model=RegisteredEventsResponse)
+async def get_registered_events_with_branding(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
+) -> RegisteredEventsResponse:
+    """
+    Get events user is registered for with resolved branding.
+
+    Returns events sorted with upcoming events first (ascending by date),
+    then past events (descending by date). Event branding resolves via
+    fallback chain: event → NPO → system defaults.
+
+    Use this endpoint for the donor PWA event homepage to display
+    a personalized list of events the user is attending.
+    """
+    events = await EventRegistrationService.get_registered_events_with_branding(db, current_user.id)
+    return RegisteredEventsResponse(events=events)
 
 
 @router.get("/{registration_id}", response_model=EventRegistrationResponse)
