@@ -59,6 +59,12 @@ export function EventHomePage() {
     const is_past = eventDate < now
     const is_upcoming = !is_past && eventDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
+    // Get thumbnail from banner_url or media array
+    const thumbnail_url =
+      ('banner_url' in currentEvent && currentEvent.banner_url) ||
+      currentEvent.media?.[0]?.file_url ||
+      null
+
     return {
       id: currentEvent.id,
       name: currentEvent.name,
@@ -67,7 +73,7 @@ export function EventHomePage() {
       timezone: currentEvent.timezone,
       is_past,
       is_upcoming,
-      thumbnail_url: currentEvent.media?.[0]?.file_url || null,
+      thumbnail_url,
       primary_color: currentEvent.primary_color || '#3B82F6',
       secondary_color: currentEvent.secondary_color || '#9333EA',
       background_color: currentEvent.background_color || '#FFFFFF',
@@ -249,9 +255,15 @@ export function EventHomePage() {
 
   const { date, time } = formatDateTime()
 
-  // Get banner image from media
+  // Get banner image from media or banner_url
   const getBannerUrl = () => {
-    if (!currentEvent.media) return null
+    // First check if there's a banner_url (from public API)
+    if ('banner_url' in currentEvent && currentEvent.banner_url) {
+      return currentEvent.banner_url
+    }
+
+    // Fall back to media array (from authenticated API)
+    if (!currentEvent.media || currentEvent.media.length === 0) return null
     const banner = currentEvent.media.find(
       (m) => m.media_type === 'image' && m.display_order === 0
     )

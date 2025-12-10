@@ -2,7 +2,7 @@ import { AuctionItemsIndexPage } from '@/features/events/auction-items/AuctionIt
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute(
-  '/_authenticated/events/$eventId/auction-items/'
+  '/_authenticated/events/$eventSlug/auction-items/'
 )({
   component: AuctionItemsIndexPage,
 });
