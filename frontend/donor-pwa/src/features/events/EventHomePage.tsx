@@ -61,10 +61,11 @@ export function EventHomePage() {
     const is_past = eventDate < now
     const is_upcoming = !is_past && eventDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
-    // Get thumbnail from banner_url or media array
+    // Get thumbnail from media array or logo_url
     const thumbnail_url =
       ('banner_url' in currentEvent && currentEvent.banner_url) ||
       currentEvent.media?.[0]?.file_url ||
+      currentEvent.logo_url ||
       null
 
     return {
@@ -259,19 +260,27 @@ export function EventHomePage() {
 
   const { date, time } = formatDateTime()
 
-  // Get banner image from media or banner_url
+  // Get banner image from media or logo_url
   const getBannerUrl = () => {
-    // First check if there's a banner_url (from public API)
+    // First check if there's a banner_url field (may not exist in current API)
     if ('banner_url' in currentEvent && currentEvent.banner_url) {
       return currentEvent.banner_url
     }
 
-    // Fall back to media array (from authenticated API)
-    if (!currentEvent.media || currentEvent.media.length === 0) return null
-    const banner = currentEvent.media.find(
-      (m) => m.media_type === 'image' && m.display_order === 0
-    )
-    return banner?.file_url || currentEvent.media[0]?.file_url
+    // Check media array for banner image
+    if (currentEvent.media && currentEvent.media.length > 0) {
+      const banner = currentEvent.media.find(
+        (m) => m.media_type === 'image' && m.display_order === 0
+      )
+      return banner?.file_url || currentEvent.media[0]?.file_url
+    }
+
+    // Fall back to logo_url if no media
+    if (currentEvent.logo_url) {
+      return currentEvent.logo_url
+    }
+
+    return null
   }
 
   const bannerUrl = getBannerUrl()
