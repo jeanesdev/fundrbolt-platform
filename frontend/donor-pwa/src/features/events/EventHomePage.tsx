@@ -21,6 +21,7 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEventBranding } from '@/hooks/use-event-branding'
 import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { useEventContextStore } from '@/stores/event-context-store'
 import { useEventStore } from '@/stores/event-store'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
 import { useQuery } from '@tanstack/react-query'
@@ -40,6 +41,7 @@ export function EventHomePage() {
   const { eventSlug } = useParams({ strict: false }) as { eventSlug: string }
   const { currentEvent, eventsLoading, eventsError, loadEventBySlug } = useEventStore()
   const { applyBranding, clearBranding } = useEventBranding()
+  const { setSelectedEvent } = useEventContextStore()
   const [selectedAuctionItemId, setSelectedAuctionItemId] = useState<string | null>(null)
 
   // Fetch all registered events for event switcher
@@ -96,10 +98,12 @@ export function EventHomePage() {
     if (eventSlug) {
       loadEventBySlug(eventSlug).catch(() => {
         toast.error('Failed to load event')
+        // Clear the selected event to prevent infinite redirect loop
+        setSelectedEvent(null, 'Select Event', null)
         navigate({ to: '/home' })
       })
     }
-  }, [eventSlug, loadEventBySlug, navigate])
+  }, [eventSlug, loadEventBySlug, navigate, setSelectedEvent])
 
   useEffect(() => {
     loadEvent()
