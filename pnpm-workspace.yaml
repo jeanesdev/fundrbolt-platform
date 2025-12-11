@@ -1,0 +1,5 @@
+packages:
+  - 'frontend/augeo-admin'
+  - 'frontend/donor-pwa'
+  - 'frontend/landing-site'
+  - 'frontend/shared'

@@ -191,6 +191,42 @@
       }
     },
     {
+      "label": "start-donor-pwa",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "source ~/.nvm/nvm.sh && nvm use 22 && pnpm dev --port 5174"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend/donor-pwa"
+      },
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^([^\\s].*)\\((\\d+|\\d+,\\d+|\\d+,\\d+,\\d+,\\d+)\\):\\s+(error|warning|info)\\s+(TS\\d+)\\s*:\\s*(.*)$",
+          "file": 1,
+          "location": 2,
+          "severity": 3,
+          "code": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*VITE.*",
+          "endsPattern": "^.*Local:.*http://localhost:5174.*"
+        }
+      }
+    },
+    {
       "label": "docker-up",
       "type": "shell",
       "command": "docker-compose",

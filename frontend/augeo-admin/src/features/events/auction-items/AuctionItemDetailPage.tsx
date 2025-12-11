@@ -41,7 +41,7 @@ export function AuctionItemDetailPage() {
       toast.error(
         err instanceof Error ? err.message : 'Failed to load auction item'
       );
-      navigate({ to: '/events/$eventId/auction-items', params: { eventId } });
+      navigate({ to: '/events/$eventId', params: { eventId }, search: { tab: 'auction-items' } });
     });
 
     return () => {
@@ -57,7 +57,7 @@ export function AuctionItemDetailPage() {
   };
 
   const handleBack = () => {
-    navigate({ to: '/events/$eventId/auction-items', params: { eventId } });
+    navigate({ to: '/events/$eventId', params: { eventId }, search: { tab: 'auction-items' } });
   };
 
   if (isLoading || !selectedItem) {

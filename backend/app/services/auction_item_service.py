@@ -269,6 +269,7 @@ class AuctionItemService:
         auction_type: AuctionType | None = None,
         status: ItemStatus | None = None,
         search: str | None = None,
+        sort_by: str = "highest_bid",
         page: int = 1,
         limit: int = 50,
         include_drafts: bool = False,
@@ -280,6 +281,7 @@ class AuctionItemService:
             auction_type: Filter by auction type (live/silent)
             status: Filter by status
             search: Search by title or bid number
+            sort_by: Sort field - 'highest_bid' (default) or 'newest'
             page: Page number (1-indexed)
             limit: Items per page (max 100)
             include_drafts: Whether to include draft items (requires auth)
@@ -324,8 +326,20 @@ class AuctionItemService:
         total_result = await self.db.execute(count_query)
         total = total_result.scalar() or 0
 
-        # Apply pagination and ordering
-        query = query.order_by(AuctionItem.bid_number.asc())
+        # Apply sorting based on sort_by parameter
+        if sort_by == "newest":
+            # Most recently created first
+            query = query.order_by(AuctionItem.created_at.desc(), AuctionItem.bid_number.asc())
+        else:  # Default: "highest_bid"
+            # Highest starting bid first (current_bid tracking will be added later)
+            # Secondary sort by display_priority and bid_number for consistent ordering
+            query = query.order_by(
+                AuctionItem.starting_bid.desc().nulls_last(),
+                AuctionItem.display_priority.asc().nulls_last(),
+                AuctionItem.bid_number.asc(),
+            )
+
+        # Apply pagination
         query = query.offset((page - 1) * limit).limit(limit)
 
         # Execute query

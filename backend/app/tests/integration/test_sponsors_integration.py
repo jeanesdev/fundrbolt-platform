@@ -7,8 +7,9 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+pytestmark = pytest.mark.asyncio
 
-@pytest.mark.asyncio
+
 class TestSponsorIntegration:
     """Test complete sponsor management workflows."""
 
@@ -17,6 +18,7 @@ class TestSponsorIntegration:
         npo_admin_client: AsyncClient,
         test_event: Any,
         db_session: AsyncSession,
+        mock_azure_storage: Any,
     ) -> None:
         """Test full workflow: create sponsor → get upload URL → upload logo → confirm → verify thumbnail."""
 
@@ -148,6 +150,8 @@ class TestSponsorIntegration:
         self,
         npo_admin_client: AsyncClient,
         test_event: Any,
+        db_session: AsyncSession,
+        mock_azure_storage: Any,
     ) -> None:
         """Test that duplicate sponsor names are rejected."""
 
@@ -191,6 +195,8 @@ class TestSponsorIntegration:
         self,
         npo_admin_client: AsyncClient,
         test_event: Any,
+        db_session: AsyncSession,
+        mock_azure_storage: Any,
     ) -> None:
         """Test that oversized files are rejected."""
 
@@ -218,6 +224,8 @@ class TestSponsorIntegration:
         self,
         npo_admin_client: AsyncClient,
         test_event: Any,
+        db_session: AsyncSession,
+        mock_azure_storage: Any,
     ) -> None:
         """Test that sponsors are returned in display_order."""
 

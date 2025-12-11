@@ -11,8 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
 
+pytestmark = [pytest.mark.asyncio, pytest.mark.requires_email]
 
-@pytest.mark.asyncio
+
 async def test_super_admin_can_verify_any_user_email(
     async_client: AsyncClient,
     test_super_admin_token: str,
@@ -40,7 +41,6 @@ async def test_super_admin_can_verify_any_user_email(
     assert test_donor_user.email_verified is True
 
 
-@pytest.mark.asyncio
 async def test_npo_admin_can_verify_their_npo_users(
     async_client: AsyncClient,
     test_npo_admin_token: str,
@@ -79,7 +79,6 @@ async def test_npo_admin_can_verify_their_npo_users(
     assert npo_user.email_verified is True
 
 
-@pytest.mark.asyncio
 async def test_npo_admin_cannot_verify_other_npo_users(
     async_client: AsyncClient,
     test_npo_admin_token: str,
@@ -119,7 +118,6 @@ async def test_npo_admin_cannot_verify_other_npo_users(
     assert other_npo_user.email_verified is False
 
 
-@pytest.mark.asyncio
 async def test_event_coordinator_cannot_verify_emails(
     async_client: AsyncClient,
     test_event_coordinator_token: str,
@@ -134,7 +132,6 @@ async def test_event_coordinator_cannot_verify_emails(
     assert response.status_code == 403
 
 
-@pytest.mark.asyncio
 async def test_staff_cannot_verify_emails(
     async_client: AsyncClient,
     test_staff_token: str,
@@ -149,7 +146,6 @@ async def test_staff_cannot_verify_emails(
     assert response.status_code == 403
 
 
-@pytest.mark.asyncio
 async def test_donor_cannot_verify_emails(
     async_client: AsyncClient,
     test_donor_token: str,
@@ -180,7 +176,6 @@ async def test_donor_cannot_verify_emails(
     assert response.status_code == 403
 
 
-@pytest.mark.asyncio
 async def test_verify_email_for_nonexistent_user(
     async_client: AsyncClient,
     test_super_admin_token: str,
@@ -196,7 +191,6 @@ async def test_verify_email_for_nonexistent_user(
     assert response.status_code == 404
 
 
-@pytest.mark.asyncio
 async def test_verify_email_without_authentication(
     async_client: AsyncClient,
     test_donor_user: User,
@@ -209,7 +203,6 @@ async def test_verify_email_without_authentication(
     assert response.status_code == 401
 
 
-@pytest.mark.asyncio
 async def test_verify_already_verified_email(
     async_client: AsyncClient,
     test_super_admin_token: str,
@@ -234,7 +227,6 @@ async def test_verify_already_verified_email(
     assert data["email_verified"] is True
 
 
-@pytest.mark.asyncio
 async def test_verify_email_updates_timestamp(
     async_client: AsyncClient,
     test_super_admin_token: str,
@@ -261,7 +253,6 @@ async def test_verify_email_updates_timestamp(
     assert test_donor_user.email_verified is True
 
 
-@pytest.mark.asyncio
 async def test_verify_email_response_includes_all_user_fields(
     async_client: AsyncClient,
     test_super_admin_token: str,

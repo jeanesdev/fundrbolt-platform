@@ -97,7 +97,7 @@ class TestEventLifecycle:
         db_event = result.scalar_one()
 
         assert db_event.status.value == "closed"
-        assert db_event.version == 2  # Version from update
+        assert db_event.version == 4  # Version: 1 (create) + 1 (update) + 1 (publish) + 1 (close)
         assert db_event.name == "Updated Lifecycle Event"
 
     async def test_draft_to_active_to_closed_transitions(
@@ -238,7 +238,7 @@ class TestEventLifecycle:
     ) -> None:
         """Test updating event preserves NPO relationship and created_by."""
         original_npo_id = str(test_event.npo_id)
-        original_created_by = str(test_event.created_by_user_id)
+        original_created_by = str(test_event.created_by)
         event_id = str(test_event.id)
 
         # Update event name
@@ -262,5 +262,5 @@ class TestEventLifecycle:
         # Verify database state
         await db_session.refresh(test_event)
         assert str(test_event.npo_id) == original_npo_id
-        assert str(test_event.created_by_user_id) == original_created_by
+        assert str(test_event.created_by) == original_created_by
         assert test_event.name == "New Name After Update"

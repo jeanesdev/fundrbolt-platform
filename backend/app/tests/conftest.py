@@ -50,17 +50,21 @@ def test_database_url() -> str:
     Uses separate test database to avoid conflicts with development data.
     Ensures asyncpg driver is used for async SQLAlchemy.
     """
-    # Replace database name with test database
+    # Get database URL from settings
     db_url: str = str(settings.database_url)
-    # Handle both /augeo and /augeo_db database names
-    if "/augeo_db" in db_url:
+
+    # If already using test database, keep it (for CI)
+    if "test" in db_url:
+        pass
+    # Otherwise, replace database name with test database
+    elif "/augeo_db" in db_url:
         db_url = db_url.replace("/augeo_db", "/augeo_test_db")
     elif db_url.endswith("/augeo"):
         db_url = db_url.replace("/augeo", "/augeo_test")
 
     # Ensure we're using postgresql+asyncpg:// not postgresql://
     if db_url.startswith("postgresql://"):
-        db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
+        db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
     return db_url
 
@@ -169,12 +173,11 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
 
     yield engine
 
-    # Drop all tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.execute(text("DROP TABLE IF EXISTS roles CASCADE"))
-
-    await engine.dispose()
+    # Skip cleanup to avoid test hangs
+    # The test database is ephemeral and will be cleaned up when
+    # the CI container exits. Attempting to drop tables and dispose
+    # the engine can hang indefinitely if connections are still open.
+    # Since we use NullPool, there should be no pooled connections anyway.
 
 
 @pytest_asyncio.fixture
@@ -1529,8 +1532,14 @@ async def test_approved_npo(db_session: AsyncSession, test_npo_admin_user: Any) 
         status=MemberStatus.ACTIVE,
     )
     db_session.add(member)
+
+    # IMPORTANT: Update the user's npo_id to match this NPO
+    # This is needed for permission filtering in list_events
+    test_npo_admin_user.npo_id = npo.id
+
     await db_session.commit()
     await db_session.refresh(npo)
+    await db_session.refresh(test_npo_admin_user)
 
     return npo
 
@@ -1631,6 +1640,19 @@ def mock_azure_storage(monkeypatch):
 
     # Clear settings cache to force reload with new env vars
     get_settings.cache_clear()
+
+    # IMPORTANT: Patch the module-level settings object in sponsor_logo_service
+    # It was already instantiated at import time, so env vars won't help
+    mock_connection_string = "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=dGVzdGtleQ==;EndpointSuffix=core.windows.net"
+
+    # Import the module and patch its settings object directly
+    from app.services import sponsor_logo_service
+
+    monkeypatch.setattr(
+        sponsor_logo_service.settings,
+        "azure_storage_connection_string",
+        mock_connection_string,
+    )
 
     # Mock the BlobServiceClient with unique URLs per blob
     mock_blob_service = MagicMock()

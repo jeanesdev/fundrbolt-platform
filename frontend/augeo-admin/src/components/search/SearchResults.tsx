@@ -59,7 +59,6 @@ export function SearchResults({ results, isLoading, onClose }: SearchResultsProp
             <Link
               key={user.id}
               to='/users'
-              search={{ name: `${user.first_name} ${user.last_name}` }}
               onClick={onClose}
               className='hover:bg-accent flex items-center gap-3 rounded p-2 transition-colors'
             >

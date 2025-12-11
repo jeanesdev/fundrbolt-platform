@@ -274,15 +274,38 @@ async def refresh_token(
         HTTPException 401: Invalid/expired token or session not found
     """
     try:
-        # Generate new access token using refresh token
-        access_token, expires_in = await AuthService.refresh_access_token(
-            refresh_token=refresh_data.refresh_token
+        # Generate new access token using refresh token and get user
+        access_token, expires_in, user = await AuthService.refresh_access_token(
+            refresh_token=refresh_data.refresh_token, db=db
+        )
+
+        # Construct UserPublic manually (role needs to be serialized as string)
+        user_public = UserPublic(
+            id=user.id,
+            email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            phone=user.phone,
+            organization_name=user.organization_name,
+            address_line1=user.address_line1,
+            address_line2=user.address_line2,
+            city=user.city,
+            state=user.state,
+            postal_code=user.postal_code,
+            country=user.country,
+            profile_picture_url=user.profile_picture_url,
+            email_verified=user.email_verified,
+            is_active=user.is_active,
+            role=user.role.name,
+            npo_id=user.npo_id,
+            created_at=user.created_at,
         )
 
         return RefreshResponse(
             access_token=access_token,
             token_type="bearer",
             expires_in=expires_in,
+            user=user_public,
         )
 
     except ValueError as e:

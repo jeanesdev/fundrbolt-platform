@@ -1,0 +1,630 @@
+openapi: 3.1.0
+info:
+  title: Event Registration API
+  version: 1.0.0
+  description: |
+    API endpoints for donor event registration and event public pages.
+
+    **Authentication**: Most endpoints require Bearer token (JWT) in Authorization header.
+    **Rate Limiting**: Registration endpoints limited to 10 requests/minute per user.
+    **CORS**: Frontend domain allowed for cross-origin requests.
+
+servers:
+  - url: https://api.augeo.app/api/v1
+    description: Production
+  - url: https://staging-api.augeo.app/api/v1
+    description: Staging
+  - url: http://localhost:8000/api/v1
+    description: Local development
+
+tags:
+  - name: Public Events
+    description: Public-facing event pages (no authentication required)
+  - name: Event Registration
+    description: Donor event registration management (authentication required)
+
+paths:
+  /events/public/{slug}:
+    get:
+      summary: Get public event page by slug
+      description: |
+        Retrieve event details for public display using URL-friendly slug.
+
+        **Use Case**: Render `/events/{slug}` donor PWA route with branding, details, registration button.
+
+        **No authentication required** - publicly accessible page.
+      operationId: getEventBySlug
+      tags:
+        - Public Events
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: URL-friendly event slug (e.g., "spring-gala-2025")
+          schema:
+            type: string
+            pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+            example: spring-gala-2025
+      responses:
+        '200':
+          description: Event found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicEventDetail'
+              examples:
+                springGala:
+                  summary: Spring Gala event
+                  value:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    slug: "spring-gala-2025"
+                    name: "Spring Gala 2025"
+                    event_datetime: "2025-04-15T18:00:00-05:00"
+                    description: "Join us for an elegant evening of fine dining and entertainment..."
+                    location_name: "Grand Ballroom"
+                    location_address: "123 Main St, Chicago, IL 60601"
+                    primary_color: "#1E40AF"
+                    secondary_color: "#FCD34D"
+                    logo_url: "https://storage.augeo.app/events/logos/spring-gala.png"
+                    banner_url: "https://storage.augeo.app/events/banners/spring-gala.jpg"
+                    npo_id: "a1b2c3d4-e5f6-4789-a012-3456789abcde"
+                    npo_name: "Children's Foundation"
+                    npo_logo_url: "https://storage.augeo.app/npos/logos/childrens-foundation.png"
+                    registration_status: "not_registered"
+                    confirmed_attendees: 47
+        '404':
+          description: Event not found (invalid slug)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Event with slug 'invalid-slug' not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /events/public:
+    get:
+      summary: List all public events
+      description: |
+        Retrieve paginated list of upcoming events for donor browsing.
+
+        **Use Case**: Render `/events` donor PWA route with browsable event cards.
+
+        **No authentication required** - publicly accessible list.
+      operationId: listPublicEvents
+      tags:
+        - Public Events
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: npo_id
+          in: query
+          description: Filter by NPO (for NPO-specific event listings)
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: upcoming_only
+          in: query
+          description: Show only future events (default true)
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PublicEventSummary'
+                  total:
+                    type: integer
+                    example: 127
+                  page:
+                    type: integer
+                    example: 1
+                  per_page:
+                    type: integer
+                    example: 20
+                  pages:
+                    type: integer
+                    example: 7
+              example:
+                items:
+                  - id: "550e8400-e29b-41d4-a716-446655440000"
+                    slug: "spring-gala-2025"
+                    name: "Spring Gala 2025"
+                    event_datetime: "2025-04-15T18:00:00-05:00"
+                    location_name: "Grand Ballroom"
+                    logo_url: "https://storage.augeo.app/events/logos/spring-gala.png"
+                    npo_name: "Children's Foundation"
+                  - id: "660e8400-e29b-41d4-a716-446655440001"
+                    slug: "charity-run-2025"
+                    name: "5K Charity Run"
+                    event_datetime: "2025-05-01T08:00:00-05:00"
+                    location_name: "Lakefront Park"
+                    logo_url: "https://storage.augeo.app/events/logos/charity-run.png"
+                    npo_name: "Health Initiative"
+                total: 127
+                page: 1
+                per_page: 20
+                pages: 7
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /registrations:
+    post:
+      summary: Register for event
+      description: |
+        Create new event registration for authenticated donor.
+
+        **Use Case**: "Register for Event" button on `/events/{slug}` page.
+
+        **Authentication required**: Bearer token with donor role.
+        **Rate limit**: 10 requests/minute.
+        **Idempotency**: Duplicate registrations return 409 Conflict.
+      operationId: createRegistration
+      tags:
+        - Event Registration
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRegistrationRequest'
+            examples:
+              singleGuest:
+                summary: Single attendee registration
+                value:
+                  event_id: "550e8400-e29b-41d4-a716-446655440000"
+                  number_of_guests: 1
+              multipleGuests:
+                summary: Attendee with guests
+                value:
+                  event_id: "550e8400-e29b-41d4-a716-446655440000"
+                  number_of_guests: 3
+                  ticket_type: "VIP Table"
+      responses:
+        '201':
+          description: Registration created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationDetail'
+              example:
+                id: "770e8400-e29b-41d4-a716-446655440002"
+                user_id: "880e8400-e29b-41d4-a716-446655440003"
+                event_id: "550e8400-e29b-41d4-a716-446655440000"
+                status: "confirmed"
+                ticket_type: null
+                number_of_guests: 1
+                created_at: "2025-01-20T14:32:00Z"
+                updated_at: "2025-01-20T14:32:00Z"
+                event:
+                  id: "550e8400-e29b-41d4-a716-446655440000"
+                  slug: "spring-gala-2025"
+                  name: "Spring Gala 2025"
+                  event_datetime: "2025-04-15T18:00:00-05:00"
+                  location_name: "Grand Ballroom"
+                  logo_url: "https://storage.augeo.app/events/logos/spring-gala.png"
+        '400':
+          description: Invalid request (missing required fields, invalid event_id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "number_of_guests must be at least 1"
+        '401':
+          description: Unauthorized (missing or invalid token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Not authenticated"
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Event not found"
+        '409':
+          description: Conflict (user already registered for this event)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "You are already registered for this event"
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Too many requests. Please try again later."
+
+    get:
+      summary: List user's registrations
+      description: |
+        Retrieve all event registrations for authenticated user.
+
+        **Use Case**: "My Events" page on `/profile/events` donor PWA route.
+
+        **Authentication required**: Bearer token.
+        **Returns**: All registrations (confirmed, pending, cancelled) with optional filtering.
+      operationId: listUserRegistrations
+      tags:
+        - Event Registration
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by registration status
+          required: false
+          schema:
+            type: string
+            enum: [pending, confirmed, cancelled, waitlisted]
+        - name: upcoming_only
+          in: query
+          description: Show only future events (default true)
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: List of user registrations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistrationDetail'
+              example:
+                - id: "770e8400-e29b-41d4-a716-446655440002"
+                  user_id: "880e8400-e29b-41d4-a716-446655440003"
+                  event_id: "550e8400-e29b-41d4-a716-446655440000"
+                  status: "confirmed"
+                  number_of_guests: 1
+                  created_at: "2025-01-20T14:32:00Z"
+                  updated_at: "2025-01-20T14:32:00Z"
+                  event:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    slug: "spring-gala-2025"
+                    name: "Spring Gala 2025"
+                    event_datetime: "2025-04-15T18:00:00-05:00"
+                    location_name: "Grand Ballroom"
+                    logo_url: "https://storage.augeo.app/events/logos/spring-gala.png"
+                - id: "770e8400-e29b-41d4-a716-446655440004"
+                  user_id: "880e8400-e29b-41d4-a716-446655440003"
+                  event_id: "660e8400-e29b-41d4-a716-446655440001"
+                  status: "confirmed"
+                  number_of_guests: 2
+                  created_at: "2025-01-18T09:15:00Z"
+                  updated_at: "2025-01-18T09:15:00Z"
+                  event:
+                    id: "660e8400-e29b-41d4-a716-446655440001"
+                    slug: "charity-run-2025"
+                    name: "5K Charity Run"
+                    event_datetime: "2025-05-01T08:00:00-05:00"
+                    location_name: "Lakefront Park"
+                    logo_url: "https://storage.augeo.app/events/logos/charity-run.png"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /registrations/{registration_id}:
+    delete:
+      summary: Cancel event registration
+      description: |
+        Cancel user's registration for an event (soft delete via status change).
+
+        **Use Case**: "Cancel Registration" button on `/profile/events` page.
+
+        **Authentication required**: Bearer token.
+        **Authorization**: User can only cancel their own registrations.
+        **Business rule**: Cannot cancel after event start time (returns 422).
+      operationId: cancelRegistration
+      tags:
+        - Event Registration
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: registration_id
+          in: path
+          required: true
+          description: Registration UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Registration cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationDetail'
+              example:
+                id: "770e8400-e29b-41d4-a716-446655440002"
+                user_id: "880e8400-e29b-41d4-a716-446655440003"
+                event_id: "550e8400-e29b-41d4-a716-446655440000"
+                status: "cancelled"
+                number_of_guests: 1
+                created_at: "2025-01-20T14:32:00Z"
+                updated_at: "2025-01-22T10:45:00Z"
+                event:
+                  id: "550e8400-e29b-41d4-a716-446655440000"
+                  slug: "spring-gala-2025"
+                  name: "Spring Gala 2025"
+                  event_datetime: "2025-04-15T18:00:00-05:00"
+                  location_name: "Grand Ballroom"
+                  logo_url: "https://storage.augeo.app/events/logos/spring-gala.png"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (user attempting to cancel someone else's registration)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "You can only cancel your own registrations"
+        '404':
+          description: Registration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Unprocessable Entity (event already started)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Cannot cancel registration after event has started"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT access token obtained from `/api/v1/auth/login` endpoint.
+        Include in Authorization header: `Authorization: Bearer <token>`
+
+  schemas:
+    PublicEventSummary:
+      type: object
+      description: Lightweight event data for list views
+      required:
+        - id
+        - slug
+        - name
+        - event_datetime
+        - location_name
+        - npo_name
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        slug:
+          type: string
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+          example: "spring-gala-2025"
+        name:
+          type: string
+          example: "Spring Gala 2025"
+        event_datetime:
+          type: string
+          format: date-time
+          example: "2025-04-15T18:00:00-05:00"
+        location_name:
+          type: string
+          example: "Grand Ballroom"
+        logo_url:
+          type: string
+          format: uri
+          nullable: true
+          example: "https://storage.augeo.app/events/logos/spring-gala.png"
+        npo_name:
+          type: string
+          example: "Children's Foundation"
+
+    PublicEventDetail:
+      type: object
+      description: Complete event data for detail page with branding
+      required:
+        - id
+        - slug
+        - name
+        - event_datetime
+        - description
+        - location_name
+        - location_address
+        - npo_id
+        - npo_name
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+        name:
+          type: string
+        event_datetime:
+          type: string
+          format: date-time
+        description:
+          type: string
+          description: Rich text event description (HTML or Markdown)
+        location_name:
+          type: string
+        location_address:
+          type: string
+        primary_color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          nullable: true
+          example: "#1E40AF"
+          description: Main brand color (header, buttons)
+        secondary_color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          nullable: true
+          example: "#FCD34D"
+          description: Accent brand color
+        logo_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Event logo (displayed in header)
+        banner_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Hero banner image (displayed at top of page)
+        npo_id:
+          type: string
+          format: uuid
+          description: NPO that owns this event
+        npo_name:
+          type: string
+          description: NPO display name
+        npo_logo_url:
+          type: string
+          format: uri
+          nullable: true
+          description: NPO logo (fallback if event logo missing)
+        registration_status:
+          type: string
+          enum: [not_registered, confirmed, pending, cancelled, waitlisted]
+          description: |
+            Current user's registration status for this event (if authenticated).
+            Returns "not_registered" if not authenticated or not registered.
+          example: "not_registered"
+        confirmed_attendees:
+          type: integer
+          minimum: 0
+          description: Number of confirmed registrations
+          example: 47
+
+    CreateRegistrationRequest:
+      type: object
+      required:
+        - event_id
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: UUID of event to register for
+        number_of_guests:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Number of guests (including registrant)
+          example: 1
+        ticket_type:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Ticket type (future use for VIP, General, etc.)
+          example: "VIP Table"
+
+    RegistrationDetail:
+      type: object
+      description: Complete registration data with nested event info
+      required:
+        - id
+        - user_id
+        - event_id
+        - status
+        - number_of_guests
+        - created_at
+        - updated_at
+        - event
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled, waitlisted]
+        ticket_type:
+          type: string
+          nullable: true
+        number_of_guests:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        event:
+          $ref: '#/components/schemas/PublicEventSummary'
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message
+          example: "Event not found"

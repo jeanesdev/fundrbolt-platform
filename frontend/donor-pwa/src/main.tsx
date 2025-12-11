@@ -1,18 +1,126 @@
-import welcome from '@/utils/welcome';
+import { SessionExpiryWarning } from '@/components/SessionExpiryWarning'
+import { handleServerError } from '@/lib/handle-server-error'
+import { useAuthStore } from '@/stores/auth-store'
+import {
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query'
+import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { AxiosError } from 'axios'
+import { StrictMode, useEffect } from 'react'
+import ReactDOM from 'react-dom/client'
+import { toast } from 'sonner'
+import { DirectionProvider } from './context/direction-provider'
+import { FontProvider } from './context/font-provider'
+import { ThemeProvider } from './context/theme-provider'
+// Generated Routes
+import { routeTree } from './routeTree.gen'
+// Styles
+import './styles/index.css'
 
-import './index.css';
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        // eslint-disable-next-line no-console
+        if (import.meta.env.DEV) console.log({ failureCount, error })
 
-// `root` contains the main dependencies and providers of the base app
-//  - React, ReactDom, Jotai, ThemeProvider, etc.)
-// App contains the main structure of the base app
+        if (failureCount >= 0 && import.meta.env.DEV) return false
+        if (failureCount > 3 && import.meta.env.PROD) return false
 
-// These are the two main chunks that are used to render the core structure of the app
-// Importing them with Promise.all (by using HTTP/2/3 multiplexing) we can load them in parallel
-// and achieve the best possible performance
+        return !(
+          error instanceof AxiosError &&
+          [401, 403].includes(error.response?.status ?? 0)
+        )
+      },
+      refetchOnWindowFocus: import.meta.env.PROD,
+      staleTime: 10 * 1000, // 10s
+    },
+    mutations: {
+      onError: (error) => {
+        handleServerError(error)
 
-Promise.all([import('@/root'), import('@/App')]).then(([{ default: render }, { default: App }]) => {
-  render(App);
-});
+        if (error instanceof AxiosError) {
+          if (error.response?.status === 304) {
+            toast.error('Content not modified!')
+          }
+        }
+      },
+    },
+  },
+  queryCache: new QueryCache({
+    onError: (error) => {
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 401) {
+          toast.error('Session expired!')
+          useAuthStore.getState().reset()
+          const redirect = `${router.history.location.href}`
+          router.navigate({ to: '/sign-in', search: { redirect } })
+        }
+        if (error.response?.status === 500) {
+          toast.error('Internal Server Error!')
+          router.navigate({ to: '/500' })
+        }
+        if (error.response?.status === 403) {
+          // router.navigate("/forbidden", { replace: true });
+        }
+      }
+    },
+  }),
+})
 
-// welcome message for users in the console
-welcome();
+// Create a new router instance
+const router = createRouter({
+  routeTree,
+  context: { queryClient },
+  defaultPreload: 'intent',
+  defaultPreloadStaleTime: 0,
+})
+
+// Register the router instance for type safety
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router
+  }
+}
+
+// Auto-login component - restores session from storage on app load
+function AutoLogin({ children }: { children: React.ReactNode }) {
+  const { initializeFromStorage } = useAuthStore()
+
+  useEffect(() => {
+    // Initialize auth state from localStorage (tokens, user data, etc.)
+    // Token refresh will be handled automatically by axios interceptors
+    // when the user makes their first authenticated request
+    initializeFromStorage()
+  }, [initializeFromStorage])
+
+  return (
+    <>
+      {children}
+      <SessionExpiryWarning />
+    </>
+  )
+}
+
+// Render the app
+const rootElement = document.getElementById('root')!
+if (!rootElement.innerHTML) {
+  const root = ReactDOM.createRoot(rootElement)
+  root.render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <FontProvider>
+            <DirectionProvider>
+              <AutoLogin>
+                <RouterProvider router={router} />
+              </AutoLogin>
+            </DirectionProvider>
+          </FontProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </StrictMode>
+  )
+}

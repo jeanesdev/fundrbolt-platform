@@ -112,12 +112,13 @@ class RefreshRequest(BaseModel):
 class RefreshResponse(BaseModel):
     """Schema for token refresh response.
 
-    Returns new access token (refresh token unchanged).
+    Returns new access token and user data (refresh token unchanged).
     """
 
     access_token: str = Field(..., description="New JWT access token (15-minute expiry)")
     token_type: str = Field(default="bearer", description="Token type")
     expires_in: int = Field(..., description="Access token expiry in seconds (900)")
+    user: UserPublic = Field(..., description="User information")
 
 
 class LogoutRequest(BaseModel):

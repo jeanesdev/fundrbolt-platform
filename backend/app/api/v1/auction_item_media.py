@@ -139,7 +139,40 @@ async def confirm_media_upload(
             media_type=request.media_type,
             video_url=request.video_url,
         )
-        return MediaResponse.model_validate(media)
+
+        # Convert media URLs to SAS URLs for secure access
+        media_dict = MediaResponse.model_validate(media).model_dump()
+
+        # Generate SAS URLs for file_path and thumbnail_path if using Azure Blob Storage
+        if media.file_path and media.file_path.startswith("https://"):
+            try:
+                # Extract blob path from URL
+                file_parts = media.file_path.split(f"{settings.azure_storage_container_name}/")
+                if len(file_parts) > 1:
+                    blob_path = "/".join(file_parts[1].split("?")[0].split("/"))
+                    media_dict["file_path"] = media_service._generate_blob_sas_url(
+                        blob_path, expiry_hours=24
+                    )
+            except (ValueError, IndexError):
+                # If SAS generation fails or URL format is unexpected, use original URL
+                pass
+
+        if media.thumbnail_path and media.thumbnail_path.startswith("https://"):
+            try:
+                # Extract blob path from thumbnail URL
+                thumb_parts = media.thumbnail_path.split(
+                    f"{settings.azure_storage_container_name}/"
+                )
+                if len(thumb_parts) > 1:
+                    thumb_blob_path = "/".join(thumb_parts[1].split("?")[0].split("/"))
+                    media_dict["thumbnail_path"] = media_service._generate_blob_sas_url(
+                        thumb_blob_path, expiry_hours=24
+                    )
+            except (ValueError, IndexError):
+                # If SAS generation fails or URL format is unexpected, use original URL
+                pass
+
+        return MediaResponse(**media_dict)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 

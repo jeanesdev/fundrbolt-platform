@@ -185,21 +185,21 @@ class TestConcurrentEdits:
         assert update_response.status_code == 200
         assert update_response.json()["version"] == initial_version + 1
 
-        # Publish (does not change version)
+        # Publish (increments version due to SQLAlchemy version_id_col)
         publish_response = await npo_admin_client.post(f"/api/v1/events/{event_id}/publish")
         assert publish_response.status_code == 200
 
-        # Verify version unchanged by publish
+        # Verify version incremented by publish
         get_response = await npo_admin_client.get(f"/api/v1/events/{event_id}")
-        assert get_response.json()["version"] == initial_version + 1
+        assert get_response.json()["version"] == initial_version + 2
 
-        # Close (does not change version)
+        # Close (also increments version)
         close_response = await npo_admin_client.post(f"/api/v1/events/{event_id}/close")
         assert close_response.status_code == 200
 
-        # Verify version still unchanged
+        # Verify version incremented by close
         await db_session.refresh(test_event)
-        assert test_event.version == initial_version + 1
+        assert test_event.version == initial_version + 3
 
     async def test_conflict_with_detailed_error_message(
         self,
@@ -227,7 +227,12 @@ class TestConcurrentEdits:
         assert "detail" in data
 
         # Error message should mention conflict or version
-        detail_lower = data["detail"].lower()
+        detail = data["detail"]
+        if isinstance(detail, dict):
+            # Try 'message' first, then 'error'
+            detail_lower = detail.get("message", detail.get("error", "")).lower()
+        else:
+            detail_lower = detail.lower()
         assert (
             "concurrent" in detail_lower or "version" in detail_lower or "conflict" in detail_lower
         )

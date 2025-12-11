@@ -31,6 +31,7 @@ from app.core.redis import get_redis
 from app.middleware.consent_check import ConsentCheckMiddleware
 from app.middleware.metrics import MetricsMiddleware
 from app.middleware.request_id import RequestIDMiddleware
+from app.middleware.slug_validator import SlugValidationMiddleware
 
 # Setup logging
 setup_logging()
@@ -134,6 +135,9 @@ app.add_middleware(RequestIDMiddleware)
 
 # Metrics middleware
 app.add_middleware(MetricsMiddleware)
+
+# Slug validation middleware
+app.add_middleware(SlugValidationMiddleware)
 
 # Consent check middleware
 app.add_middleware(ConsentCheckMiddleware)

@@ -180,7 +180,6 @@ class EventService:
 
         event.status = EventStatus.ACTIVE
         event.updated_by = current_user.id
-        event.version += 1
 
         await db.commit()
 
@@ -221,7 +220,6 @@ class EventService:
 
         event.status = EventStatus.CLOSED
         event.updated_by = current_user.id
-        event.version += 1
 
         await db.commit()
 

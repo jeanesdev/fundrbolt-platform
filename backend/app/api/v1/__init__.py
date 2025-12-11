@@ -9,6 +9,7 @@ from app.api.v1 import (
     auction_items,
     auth,
     branding,
+    checkin,
     consent,
     cookies,
     events,
@@ -20,11 +21,13 @@ from app.api.v1 import (
     members,
     npos,
     public_testimonials,
+    registrations,
     search,
     sponsors,
     users,
 )
 from app.api.v1.public import contact as public_contact
+from app.api.v1.public import events as public_events
 
 # Create v1 API router
 api_router = APIRouter()
@@ -41,6 +44,8 @@ api_router.include_router(events_links.router, tags=["events", "links"])
 api_router.include_router(events_media.router, tags=["events", "media"])
 api_router.include_router(events_food_options.router, tags=["events", "food-options"])
 api_router.include_router(sponsors.router, tags=["events", "sponsors"])
+api_router.include_router(registrations.router, tags=["registrations"])
+api_router.include_router(checkin.router, tags=["checkin"])
 api_router.include_router(auction_items.router, tags=["auction-items"])
 api_router.include_router(auction_item_media.router, tags=["auction-items", "media"])
 api_router.include_router(legal_documents.router, prefix="/legal", tags=["legal"])
@@ -48,6 +53,7 @@ api_router.include_router(consent.router, prefix="/consent", tags=["consent"])
 api_router.include_router(cookies.router, prefix="/cookies", tags=["cookies"])
 api_router.include_router(search.router, tags=["search"])
 api_router.include_router(public_contact.router, prefix="/public", tags=["public-contact"])
+api_router.include_router(public_events.router, prefix="/public", tags=["public-events"])
 api_router.include_router(public_testimonials.router, tags=["public-testimonials"])
 api_router.include_router(admin_testimonials.router, tags=["admin-testimonials"])
 api_router.include_router(admin.router, tags=["admin"])

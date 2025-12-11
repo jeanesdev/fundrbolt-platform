@@ -73,9 +73,9 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: test_db
+          POSTGRES_USER: augeo_user
+          POSTGRES_PASSWORD: augeo_password
+          POSTGRES_DB: augeo_test_db
         ports:
           - 5432:5432
         options: >-
@@ -126,15 +126,18 @@ jobs:
 
       - name: Run tests with coverage
         env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+          DATABASE_URL: postgresql://augeo_user:augeo_password@localhost:5432/augeo_test_db
           REDIS_URL: redis://localhost:6379/0
           JWT_SECRET_KEY: test-secret-key-for-ci-minimum-32-chars
           ENVIRONMENT: development
-          AZURE_COMMUNICATION_CONNECTION_STRING: endpoint=https://test.communication.azure.com/;accesskey=dGVzdC1rZXktZm9yLWNpLW9ubHktbWluaW11bS0zMi1jaGFyYWN0ZXJz
+          AZURE_COMMUNICATION_CONNECTION_STRING: ${{ secrets.AZURE_COMMUNICATION_CONNECTION_STRING_TEST }}
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING_TEST }}
+          AZURE_STORAGE_ACCOUNT_NAME: ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_TEST }}
           EMAIL_FROM_ADDRESS: noreply@test.example.com
           SUPER_ADMIN_EMAIL: admin@test.example.com
           SUPER_ADMIN_PASSWORD: Test123!@#TestPassword
-        run: poetry run pytest
+        run: poetry run pytest -v --tb=short
+        timeout-minutes: 10
 
       - name: Upload coverage reports to Codecov
         if: matrix.python-version == '3.11'

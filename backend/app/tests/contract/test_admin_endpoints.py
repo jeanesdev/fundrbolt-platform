@@ -107,14 +107,14 @@ class TestGetPendingApplications:
         assert response.status_code == 200
         data = response.json()
 
-        assert "applications" in data
+        assert "items" in data
         assert "total" in data
         assert data["total"] >= 2  # At least our 2 pending NPOs
-        assert len(data["applications"]) >= 2
+        assert len(data["items"]) >= 2
 
-        # Verify all returned NPOs are PENDING_APPROVAL
-        for app in data["applications"]:
-            assert app["status"] == "pending_approval"
+        # Verify all returned NPOs are in under_review status (mapped from PENDING_APPROVAL)
+        for app in data["items"]:
+            assert app["status"] == "under_review"
 
     @pytest.mark.asyncio
     async def test_get_pending_applications_with_pagination(
@@ -157,21 +157,23 @@ class TestGetPendingApplications:
         response1 = await super_admin_client.get("/api/v1/admin/npos/applications?skip=0&limit=2")
         assert response1.status_code == 200
         data1 = response1.json()
-        assert data1["skip"] == 0
-        assert data1["limit"] == 2
-        assert len(data1["applications"]) == 2
+        assert data1["page"] == 1
+        assert data1["page_size"] == 2
+        assert len(data1["items"]) == 2
 
         # Request second page
-        response2 = await super_admin_client.get("/api/v1/admin/npos/applications?skip=2&limit=2")
+        response2 = await super_admin_client.get(
+            "/api/v1/admin/npos/applications?page=2&page_size=2"
+        )
         assert response2.status_code == 200
         data2 = response2.json()
-        assert data2["skip"] == 2
-        assert data2["limit"] == 2
-        assert len(data2["applications"]) == 2
+        assert data2["page"] == 2
+        assert data2["page_size"] == 2
+        assert len(data2["items"]) == 2
 
         # Verify different NPOs returned
-        ids_page1 = {app["id"] for app in data1["applications"]}
-        ids_page2 = {app["id"] for app in data2["applications"]}
+        ids_page1 = {app["id"] for app in data1["items"]}
+        ids_page2 = {app["id"] for app in data2["items"]}
         assert ids_page1 != ids_page2  # Different sets of NPOs
 
     @pytest.mark.asyncio

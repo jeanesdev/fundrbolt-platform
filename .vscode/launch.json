@@ -134,6 +134,24 @@
       }
     },
     {
+      "name": "Frontend: Donor PWA (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5174",
+      "webRoot": "${workspaceFolder}/frontend/donor-pwa/src",
+      "sourceMaps": true,
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/node_modules/**"
+      ],
+      "preLaunchTask": "start-donor-pwa",
+      "serverReadyAction": {
+        "pattern": "Local:.*(http://localhost:[0-9]+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
+    },
+    {
       "name": "Frontend: Landing Site - Testimonials (Chrome)",
       "type": "chrome",
       "request": "launch",
