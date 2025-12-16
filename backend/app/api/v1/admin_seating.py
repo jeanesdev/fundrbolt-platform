@@ -63,7 +63,8 @@ async def configure_event_seating(
         HTTPException 400: Invalid configuration values
     """
     # Require NPO Admin or NPO Staff role
-    if current_user.role.name not in ["super_admin", "npo_admin", "npo_staff"]:
+    role_name = getattr(current_user, "role_name", "")
+    if role_name not in ["super_admin", "npo_admin", "npo_staff"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
@@ -84,7 +85,7 @@ async def configure_event_seating(
     # Super admins can manage any event, others must belong to the same NPO
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role.name != "super_admin":
+    if current_user.role_name != "super_admin":
         if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -155,7 +156,7 @@ async def get_available_bidder_numbers(
         HTTPException 403: User lacks permission to manage event
     """
     # Require NPO Admin or NPO Staff role
-    if current_user.role.name not in ["super_admin", "npo_admin", "npo_staff"]:
+    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
@@ -176,7 +177,7 @@ async def get_available_bidder_numbers(
     # Super admins can manage any event, others must belong to the same NPO
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role.name != "super_admin":
+    if current_user.role_name != "super_admin":
         if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -235,7 +236,7 @@ async def assign_bidder_number_manually(
         HTTPException 400: Guest does not belong to event or assignment failed
     """
     # Require NPO Admin or NPO Staff role
-    if current_user.role.name not in ["super_admin", "npo_admin", "npo_staff"]:
+    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
@@ -258,7 +259,7 @@ async def assign_bidder_number_manually(
 
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role.name != "super_admin":
+    if current_user.role_name != "super_admin":
         if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -367,7 +368,7 @@ async def assign_guest_to_table(
         HTTPException 400: Table assignment validation failed (invalid number or at capacity)
     """
     # Require NPO Admin or NPO Staff role
-    if current_user.role.name not in ["super_admin", "npo_admin", "npo_staff"]:
+    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
@@ -390,7 +391,7 @@ async def assign_guest_to_table(
 
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role.name != "super_admin":
+    if current_user.role_name != "super_admin":
         if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -452,7 +453,7 @@ async def remove_guest_from_table(
         HTTPException 403: User lacks permission to manage event
     """
     # Require NPO Admin or NPO Staff role
-    if current_user.role.name not in ["super_admin", "npo_admin", "npo_staff"]:
+    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
@@ -475,7 +476,7 @@ async def remove_guest_from_table(
 
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role.name != "super_admin":
+    if current_user.role_name != "super_admin":
         if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -529,7 +530,7 @@ async def get_table_occupancy(
         HTTPException 403: User lacks permission to manage event
     """
     # Require NPO Admin or NPO Staff role
-    if current_user.role.name not in ["super_admin", "npo_admin", "npo_staff"]:
+    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
@@ -552,7 +553,7 @@ async def get_table_occupancy(
 
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role.name != "super_admin":
+    if current_user.role_name != "super_admin":
         if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -629,7 +630,7 @@ async def get_seating_guests(
         HTTPException 403: User lacks permission to manage event
     """
     # Require NPO Admin or NPO Staff role
-    if current_user.role.name not in ["super_admin", "npo_admin", "npo_staff"]:
+    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
@@ -650,7 +651,7 @@ async def get_seating_guests(
     # Super admins can manage any event, others must belong to the same NPO
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role.name != "super_admin":
+    if current_user.role_name != "super_admin":
         if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -752,7 +753,7 @@ async def auto_assign_guests(
         HTTPException 400: Seating not configured or validation error
     """
     # Require NPO Admin or NPO Staff role
-    if current_user.role.name not in ["super_admin", "npo_admin", "npo_staff"]:
+    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
@@ -775,7 +776,7 @@ async def auto_assign_guests(
 
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role.name != "super_admin":
+    if current_user.role_name != "super_admin":
         if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
