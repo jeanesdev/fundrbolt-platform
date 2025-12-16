@@ -12,12 +12,14 @@ from sqlalchemy.orm import selectinload
 from app.models.event import Event, EventStatus
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.npo import NPO
+from app.models.registration_guest import RegistrationGuest
 from app.models.user import User
 from app.schemas.event_registration import (
     EventRegistrationCreateRequest,
     EventRegistrationUpdateRequest,
 )
 from app.schemas.event_with_branding import RegisteredEventWithBranding
+from app.services.bidder_number_service import BidderNumberService
 
 logger = logging.getLogger(__name__)
 
@@ -468,6 +470,20 @@ class EventRegistrationService:
 
         # Soft delete by setting status to cancelled
         registration.status = RegistrationStatus.CANCELLED
+
+        # Release bidder numbers for all guests in this registration
+        guests_result = await db.execute(
+            select(RegistrationGuest).where(RegistrationGuest.registration_id == registration_id)
+        )
+        guests = guests_result.scalars().all()
+
+        for guest in guests:
+            if guest.bidder_number is not None:
+                await BidderNumberService.handle_registration_cancellation(db, guest.id)
+                logger.info(
+                    f"Released bidder number {guest.bidder_number} for guest {guest.id} "
+                    f"due to registration cancellation"
+                )
 
         await db.commit()
         await db.refresh(registration)

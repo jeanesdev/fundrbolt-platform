@@ -22,6 +22,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Azure Database for PostgreSQL (3 new tables: event_registrations, registration_guests, meal_selections) (010-donor-pwa-and)
 - TypeScript 5.x (Frontend), Python 3.11+ (Backend) + React 18, Vite, TanStack Router, Radix UI, Tailwind CSS 4, FastAPI, SQLAlchemy 2.0 (011-donor-pwa-event)
 - Azure Database for PostgreSQL (existing), Azure Blob Storage (images) (011-donor-pwa-event)
+- Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, Alembic (Backend); React 18, Vite, TanStack Router, Zustand, Radix UI (Frontend) (012-seating-assignment)
+- Azure Database for PostgreSQL (existing event_registrations, registration_guests tables; new fields: table_number, bidder_number, table_count, max_guests_per_table) (012-seating-assignment)
 
 ## Project Structure
 ```
@@ -106,9 +108,9 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 012-seating-assignment: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, Alembic (Backend); React 18, Vite, TanStack Router, Zustand, Radix UI (Frontend)
 - 011-donor-pwa-event: Added TypeScript 5.x (Frontend), Python 3.11+ (Backend) + React 18, Vite, TanStack Router, Radix UI, Tailwind CSS 4, FastAPI, SQLAlchemy 2.0
 - 010-donor-pwa-and: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router
-- 010-donor-pwa-and: Added TypeScript 5.x (Frontend), Python 3.11+ (Backend)
   - ✅ Password change page: `/settings/password` route with PasswordChangeForm component
   - ✅ Settings menu: Added Password menu item with KeyRound icon
   - ✅ User list pagination: Server-side pagination with proper page count from API

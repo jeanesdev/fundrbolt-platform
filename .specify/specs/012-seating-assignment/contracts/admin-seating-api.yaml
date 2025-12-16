@@ -1,0 +1,688 @@
+openapi: 3.0.3
+info:
+  title: Admin Seating Management API
+  description: API endpoints for NPO admins and staff to manage event seating assignments and bidder numbers
+  version: 1.0.0
+
+servers:
+  - url: https://api.augeo.app/api/v1
+    description: Production API
+  - url: http://localhost:8000/api/v1
+    description: Local development
+
+tags:
+  - name: Seating Configuration
+    description: Event-level seating configuration
+  - name: Bidder Numbers
+    description: Bidder number assignment and management
+  - name: Table Assignments
+    description: Table seating assignments
+
+paths:
+  /admin/events/{event_id}/seating/config:
+    patch:
+      summary: Configure event seating
+      description: Set or update table count and max guests per table for an event
+      operationId: configureEventSeating
+      tags:
+        - Seating Configuration
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventSeatingConfigRequest'
+      responses:
+        '200':
+          description: Seating configuration updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventSeatingConfigResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/events/{event_id}/seating/guests:
+    get:
+      summary: Get all guests with seating status
+      description: Retrieve list of all registered guests with their current seating assignments
+      operationId: getGuestsSeatingStatus
+      tags:
+        - Table Assignments
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - name: table_number
+          in: query
+          description: Filter by specific table number
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: assigned
+          in: query
+          description: Filter by assignment status (true = assigned, false = unassigned)
+          required: false
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          description: Items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: List of guests with seating status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuestSeatingListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/events/{event_id}/guests/{guest_id}/table:
+    patch:
+      summary: Assign guest to table
+      description: Manually assign a guest to a specific table number
+      operationId: assignGuestToTable
+      tags:
+        - Table Assignments
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/GuestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TableAssignmentRequest'
+      responses:
+        '200':
+          description: Guest assigned to table successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableAssignmentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Remove guest from table
+      description: Unassign a guest from their current table
+      operationId: removeGuestFromTable
+      tags:
+        - Table Assignments
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/GuestId'
+      responses:
+        '204':
+          description: Guest removed from table successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/events/{event_id}/seating/auto-assign:
+    post:
+      summary: Auto-assign unassigned guests to tables
+      description: Automatically assign all unassigned guests using smart assignment algorithm (party-aware, sequential fill)
+      operationId: autoAssignGuests
+      tags:
+        - Table Assignments
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: Auto-assignment completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoAssignResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/events/{event_id}/seating/bulk-assign:
+    post:
+      summary: Bulk assign guests to tables
+      description: Assign multiple guests to their respective tables in a single operation
+      operationId: bulkAssignGuests
+      tags:
+        - Table Assignments
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkTableAssignmentRequest'
+      responses:
+        '200':
+          description: Bulk assignment completed (may include partial success)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkAssignmentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/events/{event_id}/guests/{guest_id}/bidder-number:
+    patch:
+      summary: Assign or change bidder number
+      description: Manually assign or change a guest's bidder number. If the number is already in use, the previous holder will be automatically reassigned a new number.
+      operationId: assignBidderNumber
+      tags:
+        - Bidder Numbers
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/GuestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BidderNumberAssignmentRequest'
+      responses:
+        '200':
+          description: Bidder number assigned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BidderNumberAssignmentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/events/{event_id}/seating/bidder-numbers/available:
+    get:
+      summary: Get available bidder numbers
+      description: Get list of available (unused) bidder numbers for the event
+      operationId: getAvailableBidderNumbers
+      tags:
+        - Bidder Numbers
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - name: limit
+          in: query
+          description: Maximum number of available numbers to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of available bidder numbers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailableBidderNumbersResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/events/{event_id}/seating/tables/{table_number}/occupancy:
+    get:
+      summary: Get table occupancy details
+      description: Get current occupancy and guest list for a specific table
+      operationId: getTableOccupancy
+      tags:
+        - Table Assignments
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - name: table_number
+          in: path
+          description: Table number
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Table occupancy details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableOccupancyResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    EventId:
+      name: event_id
+      in: path
+      description: Event UUID
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    GuestId:
+      name: guest_id
+      in: path
+      description: Registration guest UUID
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    EventSeatingConfigRequest:
+      type: object
+      required:
+        - table_count
+        - max_guests_per_table
+      properties:
+        table_count:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          description: Total number of tables
+          example: 20
+        max_guests_per_table:
+          type: integer
+          minimum: 1
+          maximum: 50
+          description: Maximum guests per table
+          example: 8
+
+    EventSeatingConfigResponse:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        table_count:
+          type: integer
+          example: 20
+        max_guests_per_table:
+          type: integer
+          example: 8
+        total_capacity:
+          type: integer
+          description: Calculated total seating capacity (table_count * max_guests_per_table)
+          example: 160
+        updated_at:
+          type: string
+          format: date-time
+
+    TableAssignmentRequest:
+      type: object
+      required:
+        - table_number
+      properties:
+        table_number:
+          type: integer
+          minimum: 1
+          description: Target table number
+          example: 5
+
+    TableAssignmentResponse:
+      type: object
+      properties:
+        guest_id:
+          type: string
+          format: uuid
+        guest_name:
+          type: string
+          example: "John Doe"
+        table_number:
+          type: integer
+          example: 5
+        bidder_number:
+          type: integer
+          nullable: true
+          example: 234
+        assigned_at:
+          type: string
+          format: date-time
+
+    BulkTableAssignmentRequest:
+      type: object
+      required:
+        - assignments
+      properties:
+        assignments:
+          type: array
+          items:
+            type: object
+            required:
+              - guest_id
+              - table_number
+            properties:
+              guest_id:
+                type: string
+                format: uuid
+              table_number:
+                type: integer
+                minimum: 1
+
+    BulkAssignmentResponse:
+      type: object
+      properties:
+        success_count:
+          type: integer
+          description: Number of successfully assigned guests
+          example: 42
+        failure_count:
+          type: integer
+          description: Number of failed assignments
+          example: 2
+        failures:
+          type: array
+          description: Details of failed assignments
+          items:
+            type: object
+            properties:
+              guest_id:
+                type: string
+                format: uuid
+              error:
+                type: string
+                example: "Table 5 is at capacity (8/8)"
+
+    BidderNumberAssignmentRequest:
+      type: object
+      required:
+        - bidder_number
+      properties:
+        bidder_number:
+          type: integer
+          minimum: 100
+          maximum: 999
+          description: Three-digit bidder number
+          example: 234
+
+    BidderNumberAssignmentResponse:
+      type: object
+      properties:
+        guest_id:
+          type: string
+          format: uuid
+        guest_name:
+          type: string
+          example: "Jane Smith"
+        bidder_number:
+          type: integer
+          example: 234
+        assigned_at:
+          type: string
+          format: date-time
+        previous_holder:
+          type: object
+          nullable: true
+          description: Information about the previous holder if reassignment occurred
+          properties:
+            guest_id:
+              type: string
+              format: uuid
+            guest_name:
+              type: string
+            old_bidder_number:
+              type: integer
+            new_bidder_number:
+              type: integer
+
+    AvailableBidderNumbersResponse:
+      type: object
+      properties:
+        available_numbers:
+          type: array
+          items:
+            type: integer
+          example: [100, 101, 102, 103, 104]
+        total_available:
+          type: integer
+          description: Total count of available numbers
+          example: 856
+        total_assigned:
+          type: integer
+          description: Total count of assigned numbers
+          example: 44
+
+    GuestSeatingListResponse:
+      type: object
+      properties:
+        guests:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuestSeatingInfo'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    GuestSeatingInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+          nullable: true
+        registration_id:
+          type: string
+          format: uuid
+        registration_name:
+          type: string
+          description: Name of primary registrant
+        bidder_number:
+          type: integer
+          nullable: true
+          example: 234
+        table_number:
+          type: integer
+          nullable: true
+          example: 5
+        checked_in:
+          type: boolean
+        check_in_time:
+          type: string
+          format: date-time
+          nullable: true
+
+    TableOccupancyResponse:
+      type: object
+      properties:
+        table_number:
+          type: integer
+          example: 5
+        current_occupancy:
+          type: integer
+          example: 6
+        max_capacity:
+          type: integer
+          example: 8
+        available_seats:
+          type: integer
+          example: 2
+        guests:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuestSeatingInfo'
+
+    AutoAssignResponse:
+      type: object
+      properties:
+        assigned_count:
+          type: integer
+          description: Number of guests successfully assigned
+          example: 48
+        unassigned_count:
+          type: integer
+          description: Number of guests that could not be assigned
+          example: 2
+        assignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/TableAssignmentResponse'
+        warnings:
+          type: array
+          description: Warnings about parties that couldn't be assigned
+          items:
+            type: string
+          example: ["2 parties could not be assigned due to insufficient capacity"]
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 50
+        total_items:
+          type: integer
+          example: 145
+        total_pages:
+          type: integer
+          example: 3
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message
+        errors:
+          type: array
+          description: Validation errors (if applicable)
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request (validation error, business rule violation)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            validationError:
+              value:
+                detail: "Validation error"
+                errors:
+                  - field: "table_number"
+                    message: "Table number must be between 1 and 20"
+            capacityExceeded:
+              value:
+                detail: "Table 5 is at capacity (8/8)"
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Authentication required"
+
+    Forbidden:
+      description: Insufficient permissions (requires NPO Admin or NPO Staff role)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "You do not have permission to manage seating for this event"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Event not found"

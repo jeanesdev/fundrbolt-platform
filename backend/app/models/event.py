@@ -197,6 +197,23 @@ class Event(Base, UUIDMixin, TimestampMixin):
         comment="Hex color code for accents (e.g., #FF5733)",
     )
 
+    # Seating Configuration (Feature 012)
+    table_count: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="Total number of tables for seating assignments (NULL = seating not configured)",
+    )
+    max_guests_per_table: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="Maximum seating capacity per table (NULL = seating not configured)",
+    )
+    seating_layout_image_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        comment="Azure Blob URL for event space layout image",
+    )
+
     # Optimistic Locking
     version: Mapped[int] = mapped_column(
         Integer,
@@ -254,6 +271,19 @@ class Event(Base, UUIDMixin, TimestampMixin):
         back_populates="event",
         cascade="all, delete-orphan",
     )
+
+    # Computed Properties (Feature 012)
+    @property
+    def has_seating_configuration(self) -> bool:
+        """Check if seating configuration is complete."""
+        return self.table_count is not None and self.max_guests_per_table is not None
+
+    @property
+    def total_seating_capacity(self) -> int | None:
+        """Calculate total seating capacity (tables * guests per table)."""
+        if self.has_seating_configuration:
+            return self.table_count * self.max_guests_per_table  # type: ignore
+        return None
 
     # Constraints
     __table_args__ = (

@@ -100,6 +100,13 @@ class EventUpdateRequest(BaseModel):
     secondary_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     background_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     accent_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    table_count: int | None = Field(default=None, ge=1, description="Number of tables for seating")
+    max_guests_per_table: int | None = Field(
+        default=None, ge=1, description="Maximum guests per table"
+    )
+    seating_layout_image_url: str | None = Field(
+        default=None, max_length=500, description="Azure Blob URL for event space layout image"
+    )
     version: int | None = Field(default=None, description="Current version for optimistic locking")
 
     @field_validator("name")
@@ -349,6 +356,9 @@ class EventDetailResponse(BaseModel):
     secondary_color: str | None
     background_color: str | None
     accent_color: str | None
+    table_count: int | None = None
+    max_guests_per_table: int | None = None
+    seating_layout_image_url: str | None = None
     version: int
     created_at: datetime
     updated_at: datetime

@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, String
+from sqlalchemy import Boolean, ForeignKey, Integer, String
 from sqlalchemy import DateTime as SADateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -83,6 +83,23 @@ class RegistrationGuest(Base, UUIDMixin, TimestampMixin):
         comment="Whether the guest has checked in at the event",
     )
 
+    # Seating and Bidder Number Fields (Feature 012)
+    bidder_number: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="Three-digit bidder number for auction participation (100-999)",
+    )
+    table_number: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="Assigned table number (NULL = unassigned)",
+    )
+    bidder_number_assigned_at: Mapped[datetime | None] = mapped_column(
+        SADateTime(timezone=True),
+        nullable=True,
+        comment="Timestamp of initial bidder number assignment (for audit trail)",
+    )
+
     # Relationships
     registration: Mapped["EventRegistration"] = relationship(
         "EventRegistration",
@@ -94,6 +111,22 @@ class RegistrationGuest(Base, UUIDMixin, TimestampMixin):
         back_populates="guest",
         cascade="all, delete-orphan",
     )
+
+    # Computed Properties (Feature 012)
+    @property
+    def has_bidder_number(self) -> bool:
+        """Check if bidder number is assigned."""
+        return self.bidder_number is not None
+
+    @property
+    def has_table_assignment(self) -> bool:
+        """Check if table assignment exists."""
+        return self.table_number is not None
+
+    @property
+    def is_seated(self) -> bool:
+        """Check if guest has complete seating (table + bidder number)."""
+        return self.has_table_assignment and self.has_bidder_number
 
     # Table Configuration
     __table_args__ = ()

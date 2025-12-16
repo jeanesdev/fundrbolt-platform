@@ -27,11 +27,12 @@ import type { EventCreateRequest, EventDetail, EventUpdateRequest } from '@/type
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Calendar, Clock, MapPin } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { ColorPicker } from './ColorPicker.tsx'
 import { RichTextEditor } from './RichTextEditor.tsx'
+import { SeatingConfigSection, type SeatingConfig } from './SeatingConfigSection.tsx'
 
 // Phone number formatting helper
 const formatPhoneNumber = (value: string): string => {
@@ -75,6 +76,8 @@ const eventFormSchema = z.object({
   secondary_color: z.string().optional(),
   background_color: z.string().optional(),
   accent_color: z.string().optional(),
+  table_count: z.number().nullable().optional(),
+  max_guests_per_table: z.number().nullable().optional(),
 })
 
 type EventFormValues = z.infer<typeof eventFormSchema>
@@ -100,6 +103,12 @@ export function EventForm({
   const venueAddressInputRef = useRef<HTMLInputElement>(null)
   const autocompleteRef = useRef<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
   const isGoogleMapsInitialized = useRef(false)
+
+  // Seating configuration state
+  const [seatingConfig, setSeatingConfig] = useState<SeatingConfig>({
+    table_count: event?.table_count ?? null,
+    max_guests_per_table: event?.max_guests_per_table ?? null,
+  })
 
   // Initialize form with existing event data or NPO branding defaults
   const form = useForm<EventFormValues>({
@@ -127,6 +136,8 @@ export function EventForm({
       secondary_color: event?.secondary_color || npoBranding?.secondary_color || '',
       background_color: event?.background_color || npoBranding?.background_color || '',
       accent_color: event?.accent_color || npoBranding?.accent_color || '',
+      table_count: event?.table_count ?? null,
+      max_guests_per_table: event?.max_guests_per_table ?? null,
     },
   })
 
@@ -229,6 +240,8 @@ export function EventForm({
       npo_id: npoId,
       // Convert datetime-local to ISO string
       event_datetime: new Date(values.event_datetime).toISOString(),
+      table_count: seatingConfig.table_count,
+      max_guests_per_table: seatingConfig.max_guests_per_table,
     }
 
     // Add version for optimistic locking on updates
@@ -648,6 +661,13 @@ export function EventForm({
             />
           </div>
         </div>
+
+        {/* Seating Configuration Section */}
+        <SeatingConfigSection
+          initialConfig={seatingConfig}
+          onConfigChange={setSeatingConfig}
+          disabled={isSubmitting}
+        />
 
         {/* Branding Colors Section */}
         <div className="space-y-4">

@@ -6,6 +6,7 @@
 import { AttendeeListTable } from '@/components/admin/AttendeeListTable'
 import { InviteGuestDialog } from '@/components/admin/InviteGuestDialog'
 import { MealSummaryCard } from '@/components/admin/MealSummaryCard'
+import { SeatingTabContent } from '@/components/seating/SeatingTabContent'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -233,7 +234,7 @@ export function EventEditPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={(value) => navigate({ to: '/events/$eventId', params: { eventId }, search: (prev) => ({ ...prev, tab: value }) })} className="space-y-4 md:space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7 h-auto">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8 h-auto">
           <TabsTrigger value="details" className="text-xs sm:text-sm">
             <span className="hidden sm:inline">Event </span>Details
           </TabsTrigger>
@@ -248,6 +249,9 @@ export function EventEditPage() {
           </TabsTrigger>
           <TabsTrigger value="registrations" className="text-xs sm:text-sm">
             Guest<span className="hidden sm:inline"> List</span>
+          </TabsTrigger>
+          <TabsTrigger value="seating" className="text-xs sm:text-sm">
+            Seating
           </TabsTrigger>
           <TabsTrigger value="sponsors" className="text-xs sm:text-sm">
             Sponsors<span className="hidden sm:inline"> ({sponsors.length})</span>
@@ -412,6 +416,36 @@ export function EventEditPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Seating Tab */}
+        <TabsContent value="seating">
+          <Card>
+            <CardHeader>
+              <CardTitle>Seating Assignments</CardTitle>
+              <CardDescription>
+                Assign guests to tables and manage seating arrangements
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SeatingTabContent
+                eventId={eventId}
+                tableCount={currentEvent?.table_count ?? undefined}
+                maxGuestsPerTable={currentEvent?.max_guests_per_table ?? undefined}
+                layoutImageUrl={currentEvent?.seating_layout_image_url ?? null}
+                onLayoutImageUpdate={async (url) => {
+                  try {
+                    await updateEvent(eventId, {
+                      seating_layout_image_url: url,
+                    })
+                    await refetch()
+                  } catch (error) {
+                    console.error('Failed to update layout image:', error)
+                  }
+                }}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Sponsors Tab */}

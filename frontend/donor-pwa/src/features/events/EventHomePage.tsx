@@ -15,11 +15,12 @@
  * - --event-accent: Accent/highlight color
  */
 
-import { AuctionGallery, CountdownTimer, EventDetails, EventSwitcher } from '@/components/event-home'
+import { AuctionGallery, CountdownTimer, EventDetails, EventSwitcher, MySeatingSection } from '@/components/event-home'
 import { AuctionItemDetailModal } from '@/components/event-home/AuctionItemDetailModal'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEventBranding } from '@/hooks/use-event-branding'
 import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { getMySeatingInfo, type SeatingInfoResponse } from '@/services/seating-service'
 import { useEventStore } from '@/stores/event-store'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
 import { useQuery } from '@tanstack/react-query'
@@ -46,6 +47,15 @@ export function EventHomePage() {
     queryKey: ['registrations', 'events-with-branding'],
     queryFn: getRegisteredEventsWithBranding,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+
+  // Fetch seating information for current event (T080)
+  const { data: seatingInfo, error: seatingError } = useQuery<SeatingInfoResponse>({
+    queryKey: ['seating', 'my-info', eventId],
+    queryFn: () => getMySeatingInfo(eventId),
+    enabled: !!eventId,
+    staleTime: 2 * 60 * 1000, // 2 minutes - seating can change
+    retry: 1, // Don't retry too many times if user has no registration
   })
 
   // Convert current event to RegisteredEventWithBranding for switcher
@@ -410,6 +420,13 @@ export function EventHomePage() {
           isUpcoming={currentEventForSwitcher?.is_upcoming}
           className="mb-6"
         />
+
+        {/* My Seating Information (T080) */}
+        {seatingInfo && !seatingError && (
+          <div className="mb-6">
+            <MySeatingSection seatingInfo={seatingInfo} />
+          </div>
+        )}
 
         {/* Event Description */}
         {currentEvent.description && (
