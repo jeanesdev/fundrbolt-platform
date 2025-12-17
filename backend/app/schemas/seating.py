@@ -11,23 +11,29 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class EventSeatingConfigRequest(BaseModel):
     """Request schema for configuring event seating (T007)."""
 
-    table_count: int = Field(..., gt=0, description="Total number of tables")
-    max_guests_per_table: int = Field(..., gt=0, description="Maximum guests per table")
+    table_count: int | None = Field(None, description="Total number of tables")
+    max_guests_per_table: int | None = Field(None, description="Maximum guests per table")
 
     @field_validator("table_count")
     @classmethod
-    def validate_table_count(cls, v: int) -> int:
+    def validate_table_count(cls, v: int | None) -> int | None:
         """Validate table count is within reasonable limits."""
-        if v > 1000:  # Reasonable upper limit
-            raise ValueError("Table count cannot exceed 1000")
+        if v is not None:
+            if v <= 0:
+                raise ValueError("Table count must be greater than 0")
+            if v > 1000:  # Reasonable upper limit
+                raise ValueError("Table count cannot exceed 1000")
         return v
 
     @field_validator("max_guests_per_table")
     @classmethod
-    def validate_max_guests(cls, v: int) -> int:
+    def validate_max_guests(cls, v: int | None) -> int | None:
         """Validate max guests per table is within reasonable limits."""
-        if v > 50:  # Reasonable upper limit
-            raise ValueError("Max guests per table cannot exceed 50")
+        if v is not None:
+            if v <= 0:
+                raise ValueError("Max guests per table must be greater than 0")
+            if v > 50:  # Reasonable upper limit
+                raise ValueError("Max guests per table cannot exceed 50")
         return v
 
 
@@ -35,8 +41,8 @@ class EventSeatingConfigResponse(BaseModel):
     """Response schema for event seating configuration (T007)."""
 
     event_id: UUID
-    table_count: int
-    max_guests_per_table: int
+    table_count: int | None
+    max_guests_per_table: int | None
     total_capacity: int
 
     model_config = ConfigDict(from_attributes=True)

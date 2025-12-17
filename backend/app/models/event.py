@@ -208,11 +208,12 @@ class Event(Base, UUIDMixin, TimestampMixin):
         nullable=True,
         comment="Maximum seating capacity per table (NULL = seating not configured)",
     )
-    seating_layout_image_url: Mapped[str | None] = mapped_column(
-        String(500),
-        nullable=True,
-        comment="Azure Blob URL for event space layout image",
-    )
+    # TODO: Uncomment after migration fc956ee403ec is applied in production
+    # seating_layout_image_url: Mapped[str | None] = mapped_column(
+    #     String(500),
+    #     nullable=True,
+    #     comment="Azure Blob URL for event space layout image",
+    # )
 
     # Optimistic Locking
     version: Mapped[int] = mapped_column(

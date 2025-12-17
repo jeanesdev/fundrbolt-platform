@@ -120,15 +120,15 @@ class TestSeatingAssignment:
         # Test 1: Only table_count set (should fail)
         response = await npo_admin_client.patch(
             f"/api/v1/admin/events/{event_id}/seating/config",
-            json={"table_count": 15, "max_guests_per_table": None},
+            json={"table_count": 15},
         )
         assert response.status_code == 422
-        assert "must be set together" in str(response.json())
+        assert "must be set together" in response.json()["detail"]
 
         # Test 2: Only max_guests_per_table set (should fail)
         response = await npo_admin_client.patch(
             f"/api/v1/admin/events/{event_id}/seating/config",
-            json={"table_count": None, "max_guests_per_table": 8},
+            json={"max_guests_per_table": 8},
         )
         assert response.status_code == 422
         assert "must be set together" in response.json()["detail"]

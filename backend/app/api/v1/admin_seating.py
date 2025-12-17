@@ -91,17 +91,25 @@ async def configure_event_seating(
                 detail="You do not have permission to manage this event",
             )
 
-    # Validate configuration
-    try:
-        await SeatingService.validate_seating_config(
-            config.table_count,
-            config.max_guests_per_table,
-        )
-    except ValueError as e:
+    # Validate both must be set together or both must be None
+    if (config.table_count is None) != (config.max_guests_per_table is None):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="table_count and max_guests_per_table must be set together or both must be null",
         )
+
+    # Validate configuration if both are set
+    if config.table_count is not None and config.max_guests_per_table is not None:
+        try:
+            await SeatingService.validate_seating_config(
+                config.table_count,
+                config.max_guests_per_table,
+            )
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e),
+            )
 
     # Update event seating configuration
     event.table_count = config.table_count
@@ -114,8 +122,8 @@ async def configure_event_seating(
     # Return response
     return EventSeatingConfigResponse(
         event_id=event.id,
-        table_count=event.table_count or 0,
-        max_guests_per_table=event.max_guests_per_table or 0,
+        table_count=event.table_count,
+        max_guests_per_table=event.max_guests_per_table,
         total_capacity=event.total_seating_capacity or 0,
     )
 
