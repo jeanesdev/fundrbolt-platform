@@ -110,6 +110,26 @@ class BidderNumberAssignmentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class RegistrationBidderNumberResponse(BaseModel):
+    """Response schema for registration-level bidder number assignment."""
+
+    registration_id: UUID
+    bidder_number: int
+    assigned_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RegistrationTableAssignmentResponse(BaseModel):
+    """Response schema for registration-level table assignment."""
+
+    registration_id: UUID
+    table_number: int
+    assigned_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class AvailableBidderNumbersResponse(BaseModel):
     """Response schema for available bidder numbers (T009)."""
 
@@ -205,20 +225,27 @@ class MySeatingInfo(BaseModel):
 class SeatingInfoResponse(BaseModel):
     """Response schema for donor PWA seating information display (T011)."""
 
-    my_info: MySeatingInfo = Field(
-        ...,
-        description="Current user's seating info (bidder_number null if not checked in)",
+    table_number: int | None = Field(
+        None,
+        description="Assigned table number (null if not assigned)",
+    )
+    bidder_number: int | None = Field(
+        None,
+        description="Bidder number (null if not checked in)",
     )
     tablemates: list[TablemateInfo] = Field(
-        ...,
+        default_factory=list,
         description="List of guests at the same table",
     )
-    table_capacity: dict[str, int] = Field(
+    capacity: int = Field(
         ...,
-        description="Current and maximum capacity for the table",
+        description="Maximum table capacity",
     )
-    has_table_assignment: bool
-    message: str | None = Field(
-        None,
+    has_table_assignment: bool = Field(
+        ...,
+        description="Whether table is assigned",
+    )
+    message: str = Field(
+        ...,
         description="Message to display (e.g., 'Check in at the event to see your bidder number')",
     )

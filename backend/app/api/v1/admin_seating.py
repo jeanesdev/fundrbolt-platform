@@ -1,12 +1,13 @@
 """Admin API endpoints for seating management."""
 
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.middleware.auth import get_current_user
@@ -841,3 +842,394 @@ async def auto_assign_guests(
         unassigned_count=result["unassigned_count"],
         warnings=result["warnings"],
     )
+
+
+# Registration-level endpoints
+
+
+@router.patch(
+    "/{event_id}/registrations/{registration_id}/bidder-number",
+    response_model=None,
+    status_code=status.HTTP_200_OK,
+)
+async def assign_registration_bidder_number(
+    event_id: UUID,
+    registration_id: UUID,
+    request: BidderNumberAssignmentRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> dict[str, Any]:
+    """
+    Assign bidder number to a registration's primary guest.
+
+    Requires NPO Admin or NPO Staff role.
+
+    Args:
+        event_id: Event UUID
+        registration_id: Registration UUID
+        request: BidderNumberAssignmentRequest with bidder_number
+        current_user: Authenticated user
+        db: Database session
+
+    Returns:
+        dict with registration_id, bidder_number, assigned_at
+
+    Raises:
+        HTTPException 404: Event or registration not found
+        HTTPException 403: User lacks permission
+        HTTPException 400: Bidder number already assigned
+    """
+    # Require NPO Admin or NPO Staff role
+    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:  # type: ignore[attr-defined]
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
+        )
+
+    # Get event
+    event_query = select(Event).where(Event.id == event_id)
+    event_result = await db.execute(event_query)
+    event = event_result.scalar_one_or_none()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event {event_id} not found",
+        )
+
+    # Verify user has permission
+    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
+        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to manage this event",
+            )
+
+    # Get registration with guests
+    from app.models.event_registration import EventRegistration
+
+    reg_query = (
+        select(EventRegistration)
+        .options(selectinload(EventRegistration.guests))
+        .where(EventRegistration.id == registration_id, EventRegistration.event_id == event_id)
+    )
+    reg_result = await db.execute(reg_query)
+    registration = reg_result.scalar_one_or_none()
+
+    if not registration:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Registration {registration_id} not found for event {event_id}",
+        )
+
+    # Get or create primary guest
+    if not registration.guests:
+        # Create primary guest
+        primary_guest = RegistrationGuest(
+            registration_id=registration.id,
+            user_id=registration.user_id,
+            checked_in=False,
+        )
+        db.add(primary_guest)
+        await db.flush()
+    else:
+        primary_guest = registration.guests[0]
+
+    # Assign bidder number
+    try:
+        await BidderNumberService.reassign_bidder_number(
+            db, event_id, primary_guest.id, request.bidder_number
+        )
+
+        return {
+            "registration_id": str(registration_id),
+            "bidder_number": request.bidder_number,
+            "assigned_at": datetime.now(UTC).isoformat(),
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.patch(
+    "/{event_id}/registrations/{registration_id}/table",
+    response_model=None,
+    status_code=status.HTTP_200_OK,
+)
+async def assign_registration_table(
+    event_id: UUID,
+    registration_id: UUID,
+    request: TableAssignmentRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> dict[str, Any]:
+    """
+    Assign table to a registration's primary guest.
+
+    Requires NPO Admin or NPO Staff role.
+
+    Args:
+        event_id: Event UUID
+        registration_id: Registration UUID
+        request: TableAssignmentRequest with table_number
+        current_user: Authenticated user
+        db: Database session
+
+    Returns:
+        dict with registration_id, table_number, assigned_at
+
+    Raises:
+        HTTPException 404: Event or registration not found
+        HTTPException 403: User lacks permission
+        HTTPException 400: Table validation failed
+    """
+    # Require NPO Admin or NPO Staff role
+    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:  # type: ignore[attr-defined]
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
+        )
+
+    # Get event
+    event_query = select(Event).where(Event.id == event_id)
+    event_result = await db.execute(event_query)
+    event = event_result.scalar_one_or_none()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event {event_id} not found",
+        )
+
+    # Verify user has permission
+    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
+        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to manage this event",
+            )
+
+    # Get registration with guests
+    from app.models.event_registration import EventRegistration
+
+    reg_query = (
+        select(EventRegistration)
+        .options(selectinload(EventRegistration.guests))
+        .where(EventRegistration.id == registration_id, EventRegistration.event_id == event_id)
+    )
+    reg_result = await db.execute(reg_query)
+    registration = reg_result.scalar_one_or_none()
+
+    if not registration:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Registration {registration_id} not found for event {event_id}",
+        )
+
+    # Get or create primary guest
+    if not registration.guests:
+        # Create primary guest
+        primary_guest = RegistrationGuest(
+            registration_id=registration.id,
+            user_id=registration.user_id,
+            checked_in=False,
+        )
+        db.add(primary_guest)
+        await db.flush()
+    else:
+        primary_guest = registration.guests[0]
+
+    # Assign table
+    try:
+        await SeatingService.assign_guest_to_table(
+            db, event_id, primary_guest.id, request.table_number
+        )
+
+        return {
+            "registration_id": str(registration_id),
+            "table_number": request.table_number,
+            "assigned_at": datetime.now(UTC).isoformat(),
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.delete(
+    "/{event_id}/registrations/{registration_id}/table",
+    status_code=status.HTTP_200_OK,
+)
+async def unassign_registration_table(
+    event_id: UUID,
+    registration_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> dict[str, str]:
+    """
+    Remove table assignment from a registration's primary guest.
+
+    Requires NPO Admin or NPO Staff role.
+
+    Args:
+        event_id: Event UUID
+        registration_id: Registration UUID
+        current_user: Authenticated user
+        db: Database session
+
+    Returns:
+        dict with message
+
+    Raises:
+        HTTPException 404: Event or registration not found
+        HTTPException 403: User lacks permission
+    """
+    # Require NPO Admin or NPO Staff role
+    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:  # type: ignore[attr-defined]
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
+        )
+
+    # Get event
+    event_query = select(Event).where(Event.id == event_id)
+    event_result = await db.execute(event_query)
+    event = event_result.scalar_one_or_none()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event {event_id} not found",
+        )
+
+    # Verify user has permission
+    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
+        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to manage this event",
+            )
+
+    # Get registration with guests
+    from app.models.event_registration import EventRegistration
+
+    reg_query = (
+        select(EventRegistration)
+        .options(selectinload(EventRegistration.guests))
+        .where(EventRegistration.id == registration_id, EventRegistration.event_id == event_id)
+    )
+    reg_result = await db.execute(reg_query)
+    registration = reg_result.scalar_one_or_none()
+
+    if not registration:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Registration {registration_id} not found for event {event_id}",
+        )
+
+    # Get primary guest
+    if not registration.guests:
+        # No guest to unassign, return success
+        return {"message": "Table assignment removed"}
+
+    primary_guest = registration.guests[0]
+
+    # Remove table assignment
+    await SeatingService.remove_guest_from_table(db, primary_guest.id)
+
+    return {"message": "Table assignment removed"}
+
+
+@router.get(
+    "/{event_id}/seating/tables",
+    response_model=None,
+    status_code=status.HTTP_200_OK,
+)
+async def get_all_table_occupancy(
+    event_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> dict[str, Any]:
+    """
+    Get table occupancy data for all tables.
+
+    Requires NPO Admin or NPO Staff role.
+
+    Args:
+        event_id: Event UUID
+        current_user: Authenticated user
+        db: Database session
+
+    Returns:
+        dict with tables list containing table_number, guest_count, capacity, guests
+
+    Raises:
+        HTTPException 404: Event not found
+        HTTPException 403: User lacks permission
+        HTTPException 400: Seating not configured
+    """
+    # Require NPO Admin or NPO Staff role
+    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:  # type: ignore[attr-defined]
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
+        )
+
+    # Get event
+    event_query = select(Event).where(Event.id == event_id)
+    event_result = await db.execute(event_query)
+    event = event_result.scalar_one_or_none()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event {event_id} not found",
+        )
+
+    # Verify user has permission
+    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
+        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to manage this event",
+            )
+
+    # Check if seating is configured
+    if event.table_count is None or event.max_guests_per_table is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Seating is not configured for this event",
+        )
+
+    # Build table occupancy response
+    tables = []
+    for table_num in range(1, event.table_count + 1):
+        guests_at_table = await SeatingService.get_guests_at_table(db, event_id, table_num)
+
+        guest_info = []
+        for guest in guests_at_table:
+            guest_info.append(
+                {
+                    "guest_id": str(guest.id),
+                    "name": guest.name,
+                    "email": guest.email,
+                    "bidder_number": guest.bidder_number,
+                    "table_number": guest.table_number,
+                    "registration_id": str(guest.registration_id),
+                    "checked_in": guest.checked_in,
+                }
+            )
+
+        tables.append(
+            {
+                "table_number": table_num,
+                "guest_count": len(guests_at_table),
+                "capacity": event.max_guests_per_table,
+                "guests": guest_info,
+            }
+        )
+
+    return {"tables": tables}

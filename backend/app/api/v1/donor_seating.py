@@ -42,7 +42,19 @@ async def get_my_seating_info(
     """
     try:
         seating_info = await SeatingService.get_donor_seating_info(db, current_user.id, event_id)
-        return SeatingInfoResponse(**seating_info)
+
+        # Transform to flat structure expected by tests
+        my_info = seating_info["my_info"]
+        table_capacity = seating_info["table_capacity"]
+
+        return SeatingInfoResponse(
+            table_number=my_info.table_number,
+            bidder_number=my_info.bidder_number,
+            tablemates=seating_info["tablemates"],
+            capacity=table_capacity.get("max", 0),
+            has_table_assignment=seating_info["has_table_assignment"],
+            message=seating_info["message"] or "",
+        )
     except ValueError as e:
         logger.warning(
             f"Failed to get seating info for user {current_user.id} at event {event_id}: {e}"

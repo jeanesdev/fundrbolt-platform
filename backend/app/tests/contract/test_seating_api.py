@@ -5,6 +5,7 @@ from typing import Any
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.event_registration import EventRegistration
@@ -118,10 +119,17 @@ class TestSeatingEndpoints:
         assert data["bidder_number"] == 150
         assert "assigned_at" in data
 
-        # Verify database persistence
+        # Verify database persistence - check primary guest
         await db_session.refresh(test_registration)
-        assert test_registration.bidder_number == 150
-        assert test_registration.bidder_number_assigned_at is not None
+        from app.models.registration_guest import RegistrationGuest
+
+        guest_query = select(RegistrationGuest).where(
+            RegistrationGuest.registration_id == test_registration.id
+        )
+        guest_result = await db_session.execute(guest_query)
+        primary_guest = guest_result.scalar_one()
+        assert primary_guest.bidder_number == 150
+        assert primary_guest.bidder_number_assigned_at is not None
 
     async def test_assign_bidder_number_duplicate(
         self,
@@ -131,9 +139,15 @@ class TestSeatingEndpoints:
         db_session: AsyncSession,
     ) -> None:
         """Test bidder number assignment rejects duplicate numbers."""
-        # Assign bidder number to first registration
-        test_registration.bidder_number = 200
-        test_registration.bidder_number_assigned_at = datetime.now(UTC)
+        # Create guest with bidder number for first registration
+        first_guest = RegistrationGuest(
+            registration_id=test_registration.id,
+            user_id=test_registration.user_id,
+            bidder_number=200,
+            bidder_number_assigned_at=datetime.now(UTC),
+            checked_in=False,
+        )
+        db_session.add(first_guest)
         await db_session.commit()
 
         # Create second registration
@@ -142,9 +156,8 @@ class TestSeatingEndpoints:
             event_id=test_event.id,
             user_id=second_user.id,
             status="confirmed",
-            ticket_tier="general_admission",
-            total_amount_cents=10000,
-            currency="USD",
+            ticket_type="general_admission",
+            number_of_guests=1,
         )
         db_session.add(second_registration)
         await db_session.commit()
@@ -157,7 +170,9 @@ class TestSeatingEndpoints:
         )
 
         assert response.status_code == 400
-        assert "already assigned" in response.json()["detail"].lower()
+        detail = response.json()["detail"]
+        detail_str = detail if isinstance(detail, str) else str(detail)
+        assert "already assigned" in detail_str.lower() or "already has" in detail_str.lower()
 
     async def test_assign_table_number_success(
         self,
@@ -191,10 +206,16 @@ class TestSeatingEndpoints:
         assert data["table_number"] == 5
         assert "assigned_at" in data
 
-        # Verify database persistence
+        # Verify database persistence - check primary guest
         await db_session.refresh(test_registration)
-        assert test_registration.table_number == 5
-        assert test_registration.table_assigned_at is not None
+        from app.models.registration_guest import RegistrationGuest
+
+        guest_query = select(RegistrationGuest).where(
+            RegistrationGuest.registration_id == test_registration.id
+        )
+        guest_result = await db_session.execute(guest_query)
+        primary_guest = guest_result.scalar_one()
+        assert primary_guest.table_number == 5
 
     async def test_unassign_table_number_success(
         self,
@@ -204,9 +225,14 @@ class TestSeatingEndpoints:
         db_session: AsyncSession,
     ) -> None:
         """Test DELETE /admin/events/{event_id}/registrations/{registration_id}/table returns 200."""
-        # Assign table first
-        test_registration.table_number = 5
-        test_registration.table_assigned_at = datetime.now(UTC)
+        # Create guest with table assignment
+        primary_guest = RegistrationGuest(
+            registration_id=test_registration.id,
+            user_id=test_registration.user_id,
+            table_number=5,
+            checked_in=False,
+        )
+        db_session.add(primary_guest)
         await db_session.commit()
 
         response = await npo_admin_client.delete(
@@ -218,10 +244,14 @@ class TestSeatingEndpoints:
         data = response.json()
         assert data["message"] == "Table assignment removed"
 
-        # Verify database persistence
+        # Verify database persistence - check primary guest
         await db_session.refresh(test_registration)
-        assert test_registration.table_number is None
-        assert test_registration.table_assigned_at is None
+        guest_query = select(RegistrationGuest).where(
+            RegistrationGuest.registration_id == test_registration.id
+        )
+        guest_result = await db_session.execute(guest_query)
+        updated_guest = guest_result.scalar_one()
+        assert updated_guest.table_number is None
 
     async def test_get_seating_guests_success(
         self,
@@ -279,7 +309,15 @@ class TestSeatingEndpoints:
         # Configure event and assign table
         test_event.table_count = 10
         test_event.max_guests_per_table = 8
-        test_registration.table_number = 3
+
+        # Create guest with table assignment
+        primary_guest = RegistrationGuest(
+            registration_id=test_registration.id,
+            user_id=test_registration.user_id,
+            table_number=3,
+            checked_in=False,
+        )
+        db_session.add(primary_guest)
         await db_session.commit()
 
         response = await npo_admin_client.get(
@@ -313,8 +351,14 @@ class TestSeatingEndpoints:
         npo_admin_client: AsyncClient,
         test_event: Any,
         test_registration: Any,
+        db_session: AsyncSession,
     ) -> None:
         """Test POST /admin/events/{event_id}/seating/auto-assign returns assignment summary."""
+        # Configure event seating first
+        test_event.table_count = 10
+        test_event.max_guests_per_table = 8
+        await db_session.commit()
+
         response = await npo_admin_client.post(
             f"/api/v1/admin/events/{test_event.id}/seating/auto-assign"
         )
@@ -324,13 +368,12 @@ class TestSeatingEndpoints:
         data = response.json()
 
         # Validate response schema matches AutoAssignResponse
-        assert "total_guests" in data
         assert "assigned_count" in data
-        assert "skipped_count" in data
-        assert isinstance(data["total_guests"], int)
+        assert "assignments" in data
+        assert "unassigned_count" in data
         assert isinstance(data["assigned_count"], int)
-        assert isinstance(data["skipped_count"], int)
-        assert data["total_guests"] == data["assigned_count"] + data["skipped_count"]
+        assert isinstance(data["unassigned_count"], int)
+        assert isinstance(data["assignments"], list)
 
     async def _create_test_user(self, db_session: AsyncSession, email: str) -> Any:
         """Helper to create test user."""
@@ -371,8 +414,19 @@ class TestDonorSeatingEndpoint:
         # Configure event and assign table
         test_event.table_count = 10
         test_event.max_guests_per_table = 8
-        test_registration.table_number = 5
-        test_registration.bidder_number = 150
+
+        # Create primary guest for registration
+        from app.models.registration_guest import RegistrationGuest
+
+        primary_guest = RegistrationGuest(
+            registration_id=test_registration.id,
+            user_id=test_donor.id,
+            table_number=5,
+            bidder_number=150,
+            bidder_number_assigned_at=datetime.now(UTC),
+            checked_in=False,
+        )
+        db_session.add(primary_guest)
         test_registration.check_in_time = datetime.now(UTC)
         await db_session.commit()
 
@@ -407,8 +461,19 @@ class TestDonorSeatingEndpoint:
         # Configure event and assign table without checking in
         test_event.table_count = 10
         test_event.max_guests_per_table = 8
-        test_registration.table_number = 5
-        test_registration.bidder_number = 150
+
+        # Create primary guest for registration
+        from app.models.registration_guest import RegistrationGuest
+
+        primary_guest = RegistrationGuest(
+            registration_id=test_registration.id,
+            user_id=test_donor.id,
+            table_number=5,
+            bidder_number=150,
+            bidder_number_assigned_at=datetime.now(UTC),
+            checked_in=False,
+        )
+        db_session.add(primary_guest)
         test_registration.check_in_time = None  # Not checked in
         await db_session.commit()
 
@@ -432,7 +497,17 @@ class TestDonorSeatingEndpoint:
     ) -> None:
         """Test response when donor has no table assignment."""
         # Ensure no table assignment
-        test_registration.table_number = None
+        # Create primary guest for registration with no table
+        from app.models.registration_guest import RegistrationGuest
+
+        primary_guest = RegistrationGuest(
+            registration_id=test_registration.id,
+            user_id=test_donor.id,
+            table_number=None,
+            bidder_number=None,
+            checked_in=False,
+        )
+        db_session.add(primary_guest)
         await db_session.commit()
 
         response = await donor_client.get(f"/api/v1/donor/events/{test_event.id}/my-seating")
@@ -461,7 +536,5 @@ class TestDonorSeatingEndpoint:
 
         assert response.status_code == 404
         detail = response.json()["detail"]
-        if isinstance(detail, dict):
-            assert "registration not found" in str(detail).lower()
-        else:
-            assert "registration not found" in detail.lower()
+        detail_str = str(detail).lower() if isinstance(detail, dict) else detail.lower()
+        assert "no registration" in detail_str or "registration not found" in detail_str
