@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { mediaApi } from '@/services/event-service'
-import { Loader2, Upload, X } from 'lucide-react'
+import { Loader2, Maximize2, Upload, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -38,6 +38,7 @@ export function SeatingLayoutModal({
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     currentImageUrl || null
   )
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,78 +102,132 @@ export function SeatingLayoutModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
-        <DialogHeader>
-          <DialogTitle>Event Space Layout</DialogTitle>
-          <DialogDescription>
-            Upload a floor plan or layout diagram to reference when assigning
-            seats
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Event Space Layout</DialogTitle>
+            <DialogDescription>
+              Upload a floor plan or layout diagram to reference when assigning
+              seats
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Upload Section */}
-          <div className="space-y-2">
-            <Label htmlFor="layout-image">Layout Image</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                id="layout-image"
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                disabled={uploading}
-                className="flex-1"
-              />
-              {previewUrl && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleRemove}
-                  disabled={uploading}
-                  title="Remove layout image"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Accepted formats: JPG, PNG, GIF. Max size: 10MB
-            </p>
-          </div>
-
-          {/* Upload Progress */}
-          {uploading && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Uploading layout image...
-            </div>
-          )}
-
-          {/* Preview Section */}
-          {previewUrl ? (
+          <div className="space-y-4">
+            {/* Upload Section */}
             <div className="space-y-2">
-              <Label>Preview</Label>
-              <div className="border rounded-lg overflow-hidden bg-muted/50">
-                <img
-                  src={previewUrl}
-                  alt="Event space layout"
-                  className="w-full h-auto object-contain max-h-[60vh]"
+              <Label htmlFor="layout-image">Layout Image</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="layout-image"
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  disabled={uploading}
+                  className="flex-1"
                 />
+                {previewUrl && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleRemove}
+                    disabled={uploading}
+                    title="Remove layout image"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
-            </div>
-          ) : (
-            <div className="border-2 border-dashed rounded-lg p-12 text-center text-muted-foreground">
-              <Upload className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No layout image uploaded</p>
-              <p className="text-sm mt-2">
-                Upload a floor plan to help with seating assignments
+              <p className="text-sm text-muted-foreground">
+                Accepted formats: JPG, PNG, GIF. Max size: 10MB
               </p>
             </div>
-          )}
+
+            {/* Upload Progress */}
+            {uploading && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Uploading layout image...
+              </div>
+            )}
+
+            {/* Preview Section */}
+            {previewUrl ? (
+              <div className="space-y-2">
+                <Label>Preview</Label>
+                <div className="border rounded-lg overflow-hidden bg-muted/50 relative group">
+                  <img
+                    src={previewUrl}
+                    alt="Event space layout"
+                    className="w-full h-auto object-contain max-h-[60vh] cursor-pointer transition-opacity hover:opacity-90"
+                    onClick={() => {
+                      setIsFullscreen(true)
+                      onOpenChange(false)
+                    }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-black/10">
+                    <div className="bg-white/90 rounded-full p-3 shadow-lg">
+                      <Maximize2 className="h-6 w-6 text-gray-700" />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Click image to view fullscreen
+                </p>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed rounded-lg p-12 text-center text-muted-foreground">
+                <Upload className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No layout image uploaded</p>
+                <p className="text-sm mt-2">
+                  Upload a floor plan to help with seating assignments
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fullscreen Image Overlay - Outside Dialog */}
+      {isFullscreen && (
+        <div
+          className="fixed inset-0 bg-black/95 flex items-center justify-center"
+          style={{
+            cursor: 'pointer',
+            zIndex: 9999,
+          }}
+          onClickCapture={(e) => {
+            if (e.target === e.currentTarget) {
+              e.stopPropagation()
+              setIsFullscreen(false)
+              onOpenChange(true)
+            }
+          }}
+        >
+          <button
+            type="button"
+            className="absolute top-4 right-4 p-3 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors border border-white/20"
+            style={{
+              cursor: 'pointer',
+              zIndex: 10000,
+            }}
+            onClickCapture={(e) => {
+              e.stopPropagation()
+              setIsFullscreen(false)
+              onOpenChange(true)
+            }}
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={previewUrl || ''}
+            alt="Event space layout - fullscreen"
+            className="max-w-full max-h-full object-contain p-4"
+            style={{ pointerEvents: 'none' }}
+          />
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+    </>
   )
 }

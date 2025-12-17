@@ -114,8 +114,8 @@ async def configure_event_seating(
     # Return response
     return EventSeatingConfigResponse(
         event_id=event.id,
-        table_count=event.table_count,
-        max_guests_per_table=event.max_guests_per_table,
+        table_count=event.table_count or 0,
+        max_guests_per_table=event.max_guests_per_table or 0,
         total_capacity=event.total_seating_capacity or 0,
     )
 
