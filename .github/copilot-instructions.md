@@ -22,6 +22,7 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Azure Database for PostgreSQL (3 new tables: event_registrations, registration_guests, meal_selections) (010-donor-pwa-and)
 - TypeScript 5.x (Frontend), Python 3.11+ (Backend) + React 18, Vite, TanStack Router, Radix UI, Tailwind CSS 4, FastAPI, SQLAlchemy 2.0 (011-donor-pwa-event)
 - Azure Database for PostgreSQL (existing), Azure Blob Storage (images) (011-donor-pwa-event)
+- Embla Carousel with autoplay for sponsor carousels (011-donor-pwa-event)
 
 ## Project Structure
 ```
@@ -162,6 +163,17 @@ git commit -m "message"
   - ✅ Middleware-based consent enforcement (409 Conflict on outdated consent)
   - ✅ Hybrid cookie storage: localStorage (anonymous) + PostgreSQL (authenticated) + Redis (cache)
   - ✅ EU Cookie Law compliance (strictest standard for global deployment)
+- 011-donor-pwa-event: Added slug-based routing and sponsors carousel
+  - ✅ Event routing: Migrated from `/events/$eventId` to `/events/$eventSlug` for SEO-friendly URLs
+  - ✅ EventSwitcher component: Always-visible dropdown on event homepage (single/multiple events)
+  - ✅ Event list sync: Sidebar EventSelector and homepage EventSwitcher use same `availableEvents` source
+  - ✅ Navigation fixes: All event navigation uses slug-based URLs instead of IDs
+  - ✅ Error handling: Prevents infinite redirect loops by clearing selectedEvent on load failure
+  - ✅ Sponsors carousel: Auto-playing carousel with 3-second transitions, transparent background
+  - ✅ Responsive layout: 1 sponsor (mobile), 3 sponsors (tablet), 4 sponsors (desktop)
+  - ✅ Sponsor logos: Increased sizes (xsmall: 64px, small: 96px, medium: 128px, large: 160px, xlarge: 192px)
+  - ✅ Shield icon: Indicates admin access in event selectors
+  - ✅ API client: `/api/v1/events/{event_id}/sponsors` endpoint integration
 
 ## API Endpoints (001-user-authentication-role)
 

@@ -6,7 +6,7 @@ import { createFileRoute, Outlet } from '@tanstack/react-router'
  * Parent layout bypasses sidebar for immersive event experience.
  * This route just passes through to child routes.
  */
-export const Route = createFileRoute('/_authenticated/events/$eventId')({
+export const Route = createFileRoute('/_authenticated/events/$eventSlug')({
   component: EventLayout,
 })
 

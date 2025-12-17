@@ -99,32 +99,7 @@ export function EventSwitcher({
 }: EventSwitcherProps) {
   const hasMultipleEvents = events.length > 1
 
-  // If only one event, just show the event name without dropdown
-  if (!hasMultipleEvents) {
-    return (
-      <div className="flex items-center gap-3 p-2 max-w-[280px]">
-        <EventThumbnail event={currentEvent} />
-        <div className="flex flex-col min-w-0 flex-1">
-          <span
-            className="font-semibold text-sm leading-tight truncate"
-            style={{ color: 'var(--event-text-on-background, #000000)' }}
-            title={currentEvent.name}
-          >
-            {currentEvent.name}
-          </span>
-          <span
-            className="text-xs truncate"
-            style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
-            title={currentEvent.npo_name}
-          >
-            {currentEvent.npo_name}
-          </span>
-        </div>
-      </div>
-    )
-  }
-
-  // Multiple events - show dropdown
+  // Always show as dropdown for consistency, even with single event
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -155,45 +130,65 @@ export function EventSwitcher({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="start" className="w-72">
-        <DropdownMenuLabel className="text-xs text-muted-foreground">
-          Your Events
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
+        {hasMultipleEvents ? (
+          <>
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              Your Events
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
 
-        {events.map((event) => {
-          const isSelected = event.id === currentEvent.id
+            {events.map((event) => {
+              const isSelected = event.id === currentEvent.id
 
-          return (
-            <DropdownMenuItem
-              key={event.id}
-              onClick={() => onEventSelect(event)}
-              className="flex items-center gap-3 cursor-pointer"
-            >
-              <EventThumbnail event={event} size="small" />
+              return (
+                <DropdownMenuItem
+                  key={event.id}
+                  onClick={() => onEventSelect(event)}
+                  className="flex items-center gap-3 cursor-pointer"
+                >
+                  <EventThumbnail event={event} size="small" />
 
-              <div className="flex flex-col flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm truncate">
-                    {event.name}
-                  </span>
-                  {event.is_past && (
-                    <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                      Past
-                    </Badge>
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm truncate">
+                        {event.name}
+                      </span>
+                      {event.is_past && (
+                        <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                          Past
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      <span>{formatEventDate(event.event_datetime)}</span>
+                    </div>
+                  </div>
+
+                  {isSelected && (
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
                   )}
-                </div>
+                </DropdownMenuItem>
+              )
+            })}
+          </>
+        ) : (
+          <>
+            <DropdownMenuItem disabled className="flex items-center gap-3">
+              <EventThumbnail event={currentEvent} size="small" />
+              <div className="flex flex-col flex-1 min-w-0">
+                <span className="font-medium text-sm truncate">
+                  {currentEvent.name}
+                </span>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />
-                  <span>{formatEventDate(event.event_datetime)}</span>
+                  <span>{formatEventDate(currentEvent.event_datetime)}</span>
                 </div>
               </div>
-
-              {isSelected && (
-                <Check className="h-4 w-4 text-primary flex-shrink-0" />
-              )}
+              <Check className="h-4 w-4 text-primary flex-shrink-0" />
             </DropdownMenuItem>
-          )
-        })}
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )

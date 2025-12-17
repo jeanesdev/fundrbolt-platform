@@ -22,3 +22,6 @@ export type { CountdownTimerProps } from './CountdownTimer'
 // Event Details Section
 export { EventDetails } from './EventDetails'
 export type { EventDetailsProps } from './EventDetails'
+
+// Sponsors Carousel
+export { SponsorsCarousel } from './SponsorsCarousel'
