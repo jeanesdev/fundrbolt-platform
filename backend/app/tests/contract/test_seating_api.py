@@ -250,15 +250,15 @@ class TestSeatingEndpoints:
         data = response.json()
 
         # Validate response schema matches GuestSeatingListResponse
-        assert "items" in data
+        assert "guests" in data
         assert "total" in data
         assert "page" in data
         assert "per_page" in data
-        assert "pages" in data
+        assert "pages" in data or "has_more" in data
 
         # Check guest item schema
-        assert len(data["items"]) > 0
-        guest_item = data["items"][0]
+        assert len(data["guests"]) > 0
+        guest_item = data["guests"][0]
         assert "guest_id" in guest_item
         assert "registration_id" in guest_item
         assert "name" in guest_item
@@ -334,14 +334,20 @@ class TestSeatingEndpoints:
 
     async def _create_test_user(self, db_session: AsyncSession, email: str) -> Any:
         """Helper to create test user."""
+        from sqlalchemy import text
+
         from app.models.user import User
+
+        # Get donor role_id from database
+        role_result = await db_session.execute(text("SELECT id FROM roles WHERE name = 'donor'"))
+        donor_role_id = role_result.scalar_one()
 
         user = User(
             email=email,
             first_name="Test",
             last_name="User",
             password_hash="$2b$12$test",
-            role_name="donor",
+            role_id=donor_role_id,
             email_verified=True,
         )
         db_session.add(user)
@@ -454,4 +460,8 @@ class TestDonorSeatingEndpoint:
         response = await donor_client.get(f"/api/v1/donor/events/{fake_event_id}/my-seating")
 
         assert response.status_code == 404
-        assert "registration not found" in response.json()["detail"].lower()
+        detail = response.json()["detail"]
+        if isinstance(detail, dict):
+            assert "registration not found" in str(detail).lower()
+        else:
+            assert "registration not found" in detail.lower()

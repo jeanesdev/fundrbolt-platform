@@ -21,6 +21,11 @@ async def test_super_admin_can_verify_any_user_email(
     db_session: AsyncSession,
 ) -> None:
     """Test that super admin can verify any user's email."""
+    # Set donor user's email_verified to False for this test
+    test_donor_user.email_verified = False
+    await db_session.commit()
+    await db_session.refresh(test_donor_user)
+
     # Verify donor user's email is initially false
     assert test_donor_user.email_verified is False
 

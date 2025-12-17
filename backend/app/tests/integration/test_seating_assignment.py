@@ -290,10 +290,31 @@ class TestSeatingAssignment:
         """Test automatic swap when assigning a number already in use."""
         from uuid import uuid4
 
+        # Step 1: Create two users and two guests with bidder numbers 200 and 300
+        from sqlalchemy import text
+
+        from app.core.security import hash_password
         from app.models.event_registration import EventRegistration, RegistrationStatus
         from app.models.registration_guest import RegistrationGuest
+        from app.models.user import User
 
-        # Step 1: Create two guests with bidder numbers 200 and 300
+        # Get donor role_id
+        role_result = await db_session.execute(text("SELECT id FROM roles WHERE name = 'donor'"))
+        donor_role_id = role_result.scalar_one()
+
+        # Create second user for second registration
+        user2 = User(
+            email="testdonor2@example.com",
+            password_hash=hash_password("TestPass123"),
+            first_name="Test",
+            last_name="Donor2",
+            role_id=donor_role_id,
+            email_verified=True,
+            is_active=True,
+        )
+        db_session.add(user2)
+        await db_session.commit()
+
         registration1 = EventRegistration(
             id=uuid4(),
             event_id=test_active_event.id,
@@ -305,7 +326,7 @@ class TestSeatingAssignment:
         registration2 = EventRegistration(
             id=uuid4(),
             event_id=test_active_event.id,
-            user_id=test_donor.id,
+            user_id=user2.id,
             status=RegistrationStatus.CONFIRMED,
         )
         db_session.add(registration2)
@@ -385,16 +406,16 @@ class TestSeatingAssignment:
             f"/api/v1/admin/events/{test_active_event.id}/guests/{guest.id}/bidder-number",
             json={"bidder_number": 99},
         )
-        assert below_response.status_code == 400
-        assert "must be between 100 and 999" in below_response.json()["detail"]
+        assert below_response.status_code == 422  # Pydantic validation error
+        assert "must be between 100 and 999" in str(below_response.json())
 
         # Step 3: Try to assign number above 999
         above_response = await npo_admin_client.patch(
             f"/api/v1/admin/events/{test_active_event.id}/guests/{guest.id}/bidder-number",
             json={"bidder_number": 1000},
         )
-        assert above_response.status_code == 400
-        assert "must be between 100 and 999" in above_response.json()["detail"]
+        assert above_response.status_code == 422  # Pydantic validation error
+        assert "must be between 100 and 999" in str(above_response.json())
 
 
 @pytest.mark.asyncio

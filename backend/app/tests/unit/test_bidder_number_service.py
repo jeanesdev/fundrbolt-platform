@@ -226,15 +226,12 @@ class TestBidderNumberService:
         db_session.add(guest)
         await db_session.commit()
 
-        is_unique = await BidderNumberService.validate_bidder_number_uniqueness(
-            db_session, event_id, 100
-        )
-        assert is_unique is False
+        # Should raise ValueError for duplicate number
+        with pytest.raises(ValueError, match="already assigned"):
+            await BidderNumberService.validate_bidder_number_uniqueness(db_session, event_id, 100)
 
-        is_unique = await BidderNumberService.validate_bidder_number_uniqueness(
-            db_session, event_id, 101
-        )
-        assert is_unique is True
+        # Should not raise for unique number
+        await BidderNumberService.validate_bidder_number_uniqueness(db_session, event_id, 101)
 
     @pytest.mark.asyncio
     async def test_reassign_available_number(
@@ -313,6 +310,8 @@ class TestBidderNumberService:
         )
         db_session.add_all([guest1, guest2])
         await db_session.commit()
+        await db_session.refresh(guest1)
+        await db_session.refresh(guest2)
 
         # Reassign guest1 to 200 (currently held by guest2)
         result = await BidderNumberService.reassign_bidder_number(
