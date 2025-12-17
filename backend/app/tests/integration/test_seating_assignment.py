@@ -123,7 +123,8 @@ class TestSeatingAssignment:
             json={"table_count": 15},
         )
         assert response.status_code == 422
-        assert "must be set together" in response.json()["detail"]
+        detail = response.json()["detail"]
+        assert "must be set together" in detail or "must be set together" in str(detail)
 
         # Test 2: Only max_guests_per_table set (should fail)
         response = await npo_admin_client.patch(
@@ -131,7 +132,8 @@ class TestSeatingAssignment:
             json={"max_guests_per_table": 8},
         )
         assert response.status_code == 422
-        assert "must be set together" in response.json()["detail"]
+        detail = response.json()["detail"]
+        assert "must be set together" in detail or "must be set together" in str(detail)
 
         # Test 3: table_count exceeds maximum (should fail)
         response = await npo_admin_client.patch(
