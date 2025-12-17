@@ -1,0 +1,286 @@
+openapi: 3.0.3
+info:
+  title: Donor Seating View API
+  description: API endpoints for donors to view their seating assignments and tablemates in the Donor PWA
+  version: 1.0.0
+
+servers:
+  - url: https://api.augeo.app/api/v1
+    description: Production API
+  - url: http://localhost:8000/api/v1
+    description: Local development
+
+tags:
+  - name: Donor Seating
+    description: View seating assignments from donor perspective
+
+paths:
+  /donor/events/{event_id}/my-seating:
+    get:
+      summary: Get my seating information
+      description: |
+        Retrieve current user's seating assignment including bidder number, table number, and list of tablemates.
+        Returns 404 if user is not registered for the event.
+        Returns 200 with null table_number if seating assignments are not yet configured.
+      operationId: getMySeating
+      tags:
+        - Donor Seating
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: Seating information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeatingInfoResponse'
+              examples:
+                checkedIn:
+                  summary: User has checked in (bidder number visible)
+                  value:
+                    my_info:
+                      bidder_number: 234
+                      full_name: "John Doe"
+                      table_number: 5
+                      first_name: "John"
+                      last_name: "Doe"
+                      email: "john.doe@example.com"
+                      checked_in: true
+                    tablemates:
+                      - id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+                        bidder_number: 235
+                        first_name: "Jane"
+                        last_name: "Smith"
+                        company: "Acme Corp"
+                        profile_image_url: "https://storage.augeo.app/profile-images/jane-smith.jpg"
+                        is_my_guest: false
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        bidder_number: 236
+                        first_name: "Bob"
+                        last_name: "Johnson"
+                        company: null
+                        profile_image_url: null
+                        is_my_guest: true
+                    table_capacity:
+                      current: 6
+                      maximum: 8
+                notCheckedIn:
+                  summary: User not yet checked in (bidder number hidden)
+                  value:
+                    my_info:
+                      bidder_number: null
+                      full_name: "John Doe"
+                      table_number: 5
+                      first_name: "John"
+                      last_name: "Doe"
+                      email: "john.doe@example.com"
+                      checked_in: false
+                    tablemates:
+                      - id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+                        bidder_number: 235
+                        first_name: "Jane"
+                        last_name: "Smith"
+                        company: "Acme Corp"
+                        profile_image_url: "https://storage.augeo.app/profile-images/jane-smith.jpg"
+                        is_my_guest: false
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        bidder_number: 236
+                        first_name: "Bob"
+                        last_name: "Johnson"
+                        company: null
+                        profile_image_url: null
+                        is_my_guest: true
+                    table_capacity:
+                      current: 6
+                      maximum: 8
+                noSeating:
+                  summary: Seating not yet assigned
+                  value:
+                    my_info:
+                      bidder_number: null
+                      full_name: "John Doe"
+                      table_number: null
+                      first_name: "John"
+                      last_name: "Doe"
+                      email: "john.doe@example.com"
+                    tablemates: []
+                    table_capacity: null
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    EventId:
+      name: event_id
+      in: path
+      description: Event UUID
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    SeatingInfoResponse:
+      type: object
+      required:
+        - my_info
+        - tablemates
+      properties:
+        my_info:
+          $ref: '#/components/schemas/MySeatingInfo'
+        tablemates:
+          type: array
+          description: List of other guests seated at the same table
+          items:
+            $ref: '#/components/schemas/TablemateInfo'
+        table_capacity:
+          $ref: '#/components/schemas/TableCapacity'
+          nullable: true
+
+    MySeatingInfo:
+      type: object
+      required:
+        - bidder_number
+        - full_name
+        - table_number
+        - first_name
+        - last_name
+        - email
+        - checked_in
+      properties:
+        bidder_number:
+          type: integer
+          nullable: true
+          description: Three-digit bidder number (only returned if checked_in is true)
+          minimum: 100
+          maximum: 999
+          example: 234
+        checked_in:
+          type: boolean
+          description: Whether the donor has checked in to the event
+          example: true
+        full_name:
+          type: string
+          description: Full name for display
+          example: "John Doe"
+        table_number:
+          type: integer
+          nullable: true
+          description: Assigned table number (null if not yet assigned)
+          minimum: 1
+          example: 5
+        first_name:
+          type: string
+          example: "John"
+        last_name:
+          type: string
+          example: "Doe"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+
+    TablemateInfo:
+      type: object
+      required:
+        - id
+        - bidder_number
+        - first_name
+        - last_name
+        - is_my_guest
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Guest ID
+        bidder_number:
+          type: integer
+          description: Bidder number
+          minimum: 100
+          maximum: 999
+          example: 235
+        first_name:
+          type: string
+          example: "Jane"
+        last_name:
+          type: string
+          example: "Smith"
+        company:
+          type: string
+          nullable: true
+          description: Company affiliation (if provided)
+          example: "Acme Corp"
+        profile_image_url:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to profile image
+          example: "https://storage.augeo.app/profile-images/jane-smith.jpg"
+        is_my_guest:
+          type: boolean
+          description: True if this guest is part of the current user's registration party
+          example: false
+
+    TableCapacity:
+      type: object
+      required:
+        - current
+        - maximum
+      properties:
+        current:
+          type: integer
+          description: Current number of guests seated at this table
+          minimum: 0
+          example: 6
+        maximum:
+          type: integer
+          description: Maximum capacity of the table
+          minimum: 1
+          example: 8
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message
+
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Authentication required"
+
+    Forbidden:
+      description: User is not registered for this event
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "You must be registered for this event to view seating information"
+
+    NotFound:
+      description: Event not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Event not found"

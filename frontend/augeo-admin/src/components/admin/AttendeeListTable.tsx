@@ -33,9 +33,10 @@ import {
   sendGuestInvitation,
 } from '@/lib/api/admin-attendees'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Download, Loader2, Mail, Trash2 } from 'lucide-react'
+import { Download, Hash, Loader2, Mail, PenLine, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { AssignBidderNumberDialog } from './AssignBidderNumberDialog'
 
 interface AttendeeListTableProps {
   eventId: string
@@ -53,6 +54,12 @@ export function AttendeeListTable({
   const [guestToDelete, setGuestToDelete] = useState<{
     id: string
     name: string
+  } | null>(null)
+  const [bidderNumberDialogOpen, setBidderNumberDialogOpen] = useState(false)
+  const [attendeeForBidderNumber, setAttendeeForBidderNumber] = useState<{
+    id: string
+    name: string
+    bidder_number?: number | null
   } | null>(null)
   const queryClient = useQueryClient()
 
@@ -114,6 +121,25 @@ export function AttendeeListTable({
   const handleDeleteClick = (guestId: string, guestName: string) => {
     setGuestToDelete({ id: guestId, name: guestName })
     setDeleteDialogOpen(true)
+  }
+
+  // Bidder number assignment handler
+  const handleAssignBidderNumber = (
+    attendeeId: string,
+    attendeeName: string,
+    currentBidderNumber?: number | null
+  ) => {
+    setAttendeeForBidderNumber({
+      id: attendeeId,
+      name: attendeeName,
+      bidder_number: currentBidderNumber,
+    })
+    setBidderNumberDialogOpen(true)
+  }
+
+  const handleBidderNumberAssignmentComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ['event-attendees', eventId] })
+    setAttendeeForBidderNumber(null)
   }
 
   const handleDeleteConfirm = () => {
@@ -202,6 +228,7 @@ export function AttendeeListTable({
               </TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Type</TableHead>
+              <TableHead>Bidder #</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
               {includeMealSelections && <TableHead>Meal Selection</TableHead>}
@@ -214,7 +241,7 @@ export function AttendeeListTable({
             {attendees.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={includeMealSelections ? 9 : 8}
+                  colSpan={includeMealSelections ? 10 : 9}
                   className='text-center'
                 >
                   <p className='py-8 text-muted-foreground'>
@@ -244,6 +271,40 @@ export function AttendeeListTable({
                     >
                       {attendee.attendee_type}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className='flex items-center gap-2'>
+                      {attendee.bidder_number ? (
+                        <Badge
+                          variant='outline'
+                          className='bg-amber-50 text-amber-700 border-amber-200 font-mono font-semibold'
+                        >
+                          <Hash className='mr-1 h-3 w-3' />
+                          {attendee.bidder_number}
+                        </Badge>
+                      ) : (
+                        <span className='text-muted-foreground'>—</span>
+                      )}
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        className='h-6 w-6 p-0'
+                        onClick={() =>
+                          handleAssignBidderNumber(
+                            attendee.id,
+                            attendee.name,
+                            attendee.bidder_number
+                          )
+                        }
+                        title={
+                          attendee.bidder_number
+                            ? 'Reassign bidder number'
+                            : 'Assign bidder number'
+                        }
+                      >
+                        <PenLine className='h-3 w-3' />
+                      </Button>
+                    </div>
                   </TableCell>
                   <TableCell className='max-w-[200px] truncate'>
                     {attendee.email || '—'}
@@ -334,6 +395,19 @@ export function AttendeeListTable({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bidder Number Assignment Dialog */}
+      {attendeeForBidderNumber && (
+        <AssignBidderNumberDialog
+          eventId={eventId}
+          guestId={attendeeForBidderNumber.id}
+          guestName={attendeeForBidderNumber.name}
+          currentBidderNumber={attendeeForBidderNumber.bidder_number}
+          open={bidderNumberDialogOpen}
+          onOpenChange={setBidderNumberDialogOpen}
+          onAssignmentComplete={handleBidderNumberAssignmentComplete}
+        />
+      )}
     </div>
   )
 }

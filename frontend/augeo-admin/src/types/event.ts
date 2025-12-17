@@ -39,6 +39,9 @@ export interface Event {
   secondary_color: string | null
   background_color: string | null
   accent_color: string | null
+  table_count: number | null
+  max_guests_per_table: number | null
+  seating_layout_image_url: string | null
   status: EventStatus
   version: number
   created_by: string
@@ -80,6 +83,8 @@ export interface EventCreateRequest {
   secondary_color?: string
   background_color?: string
   accent_color?: string
+  table_count?: number | null
+  max_guests_per_table?: number | null
 }
 
 export interface EventUpdateRequest {
@@ -102,6 +107,9 @@ export interface EventUpdateRequest {
   secondary_color?: string
   background_color?: string
   accent_color?: string
+  table_count?: number | null
+  max_guests_per_table?: number | null
+  seating_layout_image_url?: string | null
   version?: number
 }
 

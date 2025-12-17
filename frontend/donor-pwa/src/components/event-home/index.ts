@@ -19,6 +19,11 @@ export type { AuctionItemDetailModalProps } from './AuctionItemDetailModal'
 export { CountdownTimer } from './CountdownTimer'
 export type { CountdownTimerProps } from './CountdownTimer'
 
+// Seating Components (Phase 7)
+export { BidderNumberBadge } from './BidderNumberBadge'
+export { MySeatingSection } from './MySeatingSection'
+export { TablemateCard } from './TablemateCard'
+
 // Event Details Section
 export { EventDetails } from './EventDetails'
 export type { EventDetailsProps } from './EventDetails'

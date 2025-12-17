@@ -18,6 +18,7 @@ export interface Attendee {
   guest_of?: string
   meal_selection?: string | null
   meal_description?: string | null
+  bidder_number?: number | null
   status: string
   created_at: string
 }

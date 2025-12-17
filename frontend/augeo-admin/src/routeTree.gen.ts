@@ -35,6 +35,7 @@ import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedNposIndexRouteImport } from './routes/_authenticated/npos/index'
 import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events/index'
+import { Route as EventsEventIdSeatingRouteImport } from './routes/events/$eventId/seating'
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
@@ -185,6 +186,11 @@ const AuthenticatedEventsIndexRoute =
     path: '/events/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const EventsEventIdSeatingRoute = EventsEventIdSeatingRouteImport.update({
+  id: '/events/$eventId/seating',
+  path: '/events/$eventId/seating',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClerkAuthenticatedUserManagementRoute =
   ClerkAuthenticatedUserManagementRouteImport.update({
     id: '/user-management',
@@ -321,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/events/$eventId/seating': typeof EventsEventIdSeatingRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/npos': typeof AuthenticatedNposIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -363,6 +370,7 @@ export interface FileRoutesByTo {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/events/$eventId/seating': typeof EventsEventIdSeatingRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/npos': typeof AuthenticatedNposIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -410,6 +418,7 @@ export interface FileRoutesById {
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/events/$eventId/seating': typeof EventsEventIdSeatingRoute
   '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
   '/_authenticated/npos/': typeof AuthenticatedNposIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -456,6 +465,7 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
+    | '/events/$eventId/seating'
     | '/events'
     | '/npos'
     | '/settings/'
@@ -498,6 +508,7 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
+    | '/events/$eventId/seating'
     | '/events'
     | '/npos'
     | '/settings'
@@ -544,6 +555,7 @@ export interface FileRouteTypes {
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
     | '/clerk/_authenticated/user-management'
+    | '/events/$eventId/seating'
     | '/_authenticated/events/'
     | '/_authenticated/npos/'
     | '/_authenticated/settings/'
@@ -578,6 +590,7 @@ export interface RootRouteChildren {
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
   InvitationsAcceptRoute: typeof InvitationsAcceptRoute
+  EventsEventIdSeatingRoute: typeof EventsEventIdSeatingRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -763,6 +776,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/events'
       preLoaderRoute: typeof AuthenticatedEventsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/events/$eventId/seating': {
+      id: '/events/$eventId/seating'
+      path: '/events/$eventId/seating'
+      fullPath: '/events/$eventId/seating'
+      preLoaderRoute: typeof EventsEventIdSeatingRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/clerk/_authenticated/user-management': {
       id: '/clerk/_authenticated/user-management'
@@ -1023,6 +1043,7 @@ const rootRouteChildren: RootRouteChildren = {
   errors500Route: errors500Route,
   errors503Route: errors503Route,
   InvitationsAcceptRoute: InvitationsAcceptRoute,
+  EventsEventIdSeatingRoute: EventsEventIdSeatingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

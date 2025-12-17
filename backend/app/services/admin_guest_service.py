@@ -15,6 +15,7 @@ from app.models.event import Event, FoodOption
 from app.models.event_registration import EventRegistration
 from app.models.meal_selection import MealSelection
 from app.models.registration_guest import RegistrationGuest
+from app.services.bidder_number_service import BidderNumberService
 from app.services.email_service import EmailService, _create_email_html_template
 
 logger = logging.getLogger(__name__)
@@ -630,6 +631,12 @@ class AdminGuestService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Guest with ID {guest_id} not found",
             )
+
+        # Release bidder number if assigned
+        if guest.bidder_number is not None:
+            bidder_number = guest.bidder_number
+            await BidderNumberService.handle_registration_cancellation(db, guest_id)
+            logger.info(f"Released bidder number {bidder_number} for deleted guest {guest_id}")
 
         # Delete guest (meal selections will cascade)
         await db.delete(guest)

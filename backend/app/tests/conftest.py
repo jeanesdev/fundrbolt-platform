@@ -504,7 +504,7 @@ async def test_donor_user(db_session: AsyncSession) -> Any:
         last_name="Person",
         phone="+1-555-0005",
         password_hash=hash_password("TestPass123"),
-        email_verified=False,
+        email_verified=True,  # Set to True for authentication tests
         is_active=True,
         role_id=donor_role_id,
     )
@@ -707,6 +707,38 @@ async def event_coordinator_client(
         "/api/v1/auth/login",
         json={
             "email": test_event_coordinator_user.email,
+            "password": "TestPass123",
+        },
+    )
+
+    assert response.status_code == 200, f"Login failed: {response.json()}"
+    data = response.json()
+    access_token = data["access_token"]
+
+    # Set authorization header for subsequent requests
+    async_client.headers["Authorization"] = f"Bearer {access_token}"
+
+    return async_client
+
+
+@pytest_asyncio.fixture
+async def donor_client(async_client: AsyncClient, test_donor_user: Any) -> AsyncClient:
+    """
+    Create authenticated async test client with donor access token.
+
+    Returns AsyncClient with Authorization header set to donor token.
+    """
+    # Clear rate limiting from Redis to avoid conflicts from previous test runs
+    from app.core.redis import get_redis
+
+    redis_client = await get_redis()
+    await redis_client.flushdb()
+
+    # Login to get access token
+    response = await async_client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": test_donor_user.email,
             "password": "TestPass123",
         },
     )
@@ -1616,6 +1648,34 @@ async def test_active_event(
     await db_session.refresh(event)
 
     return event
+
+
+@pytest_asyncio.fixture
+async def test_registration(db_session: AsyncSession, test_event: Any, test_donor_user: Any) -> Any:
+    """
+    Create a test EventRegistration for seating and bidder number tests.
+
+    Returns an EventRegistration instance linking test_donor_user to test_event.
+    """
+    from app.models.event_registration import EventRegistration, RegistrationStatus
+
+    registration = EventRegistration(
+        event_id=test_event.id,
+        user_id=test_donor_user.id,
+        status=RegistrationStatus.CONFIRMED,
+        number_of_guests=2,
+    )
+    db_session.add(registration)
+    await db_session.commit()
+    await db_session.refresh(registration)
+
+    return registration
+
+
+@pytest_asyncio.fixture
+async def test_donor(test_donor_user: Any) -> Any:
+    """Alias for test_donor_user for backward compatibility."""
+    return test_donor_user
 
 
 # ================================

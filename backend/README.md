@@ -206,6 +206,31 @@ Interactive API documentation is automatically generated:
 - Logos stored in Azure Blob Storage with automatic cleanup on delete
 - Logo sizes: xlarge, large, medium, small, xsmall (controls display size/prominence)
 
+**Seating Assignment** (Admin):
+
+- `PATCH /api/v1/admin/events/{event_id}/seating/config` - Configure event seating (table count, max guests per table)
+- `GET /api/v1/admin/events/{event_id}/seating/bidder-numbers/available` - Get available bidder numbers (100-999 range)
+- `PATCH /api/v1/admin/events/{event_id}/registrations/{registration_id}/bidder-number` - Assign bidder number to registration
+- `PATCH /api/v1/admin/events/{event_id}/registrations/{registration_id}/table` - Assign table number to registration
+- `DELETE /api/v1/admin/events/{event_id}/registrations/{registration_id}/table` - Remove table assignment
+- `GET /api/v1/admin/events/{event_id}/seating/guests` - List all guests with seating info (paginated)
+- `GET /api/v1/admin/events/{event_id}/seating/tables` - Get table occupancy data
+- `POST /api/v1/admin/events/{event_id}/seating/auto-assign` - Auto-assign bidder numbers to unassigned registrations
+
+**Seating Features**:
+
+- **Event Configuration**: Set table count and max guests per table
+- **Bidder Numbers**: Automatic assignment (100-999 range), manual override, duplicate prevention
+- **Table Assignment**: Manual assignment with capacity validation, drag-and-drop UI support
+- **Auto-Assignment**: Party-aware algorithm keeps groups together, respects table capacity
+- **Guest Tracking**: Distinguishes between primary registrants and accompanying guests
+- **Check-in Integration**: Bidder numbers visible to donors only after check-in
+- **Donor View**: Donors can see their seating info, tablemates, and bidder number (after check-in)
+
+**Seating Assignment** (Donor):
+
+- `GET /api/v1/donor/events/{event_id}/my-seating` - Get donor's seating information, tablemates, and bidder number (gated by check-in)
+
 **Metrics** (Prometheus):
 
 - `GET /metrics` - Prometheus-formatted metrics
