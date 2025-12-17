@@ -458,6 +458,90 @@ function EventSponsorsTab({ eventId }: { eventId: string }) {
 - Interaction tests (add, edit, delete buttons)
 - Accessibility tests (keyboard navigation, screen reader support)
 
+### Seating Assignment (Admin)
+
+**Components**:
+
+- `components/seating/SeatingTabContent.tsx` - Main seating tab container with event configuration and guest list
+- `components/seating/EventSeatingConfig.tsx` - Event seating configuration form (table count, max guests per table)
+- `components/seating/GuestSeatingList.tsx` - Paginated guest list table with sorting and filtering
+- `components/seating/GuestCard.tsx` - Guest card with table/bidder assignment and guest-of-primary indicator
+- `components/seating/AutoAssignButton.tsx` - Auto-assign bidder numbers button with confirmation dialog
+- `components/seating/TableAssignmentDialog.tsx` - Modal for manual table assignment with capacity validation
+- `components/seating/BidderNumberDialog.tsx` - Modal for manual bidder number assignment with duplicate prevention
+- `components/seating/SeatingLayoutModal.tsx` - Event space layout image viewer with fullscreen support
+- `components/seating/TableOccupancyView.tsx` - Visual table occupancy grid showing all tables and guests
+
+**Features**:
+
+- **Event Configuration**: Configure table count and max guests per table for the event
+- **Auto-Assignment**: One-click auto-assign bidder numbers to all unassigned guests with party-aware algorithm
+- **Manual Assignment**: Drag-and-drop table assignment, manual bidder number assignment with validation
+- **Guest Management**: Paginated guest list with search, filter, and sort (by name, table, bidder number, check-in status)
+- **Guest Indicators**: Visual indicator for accompanying guests (guest-of-primary) with UserCheck icon
+- **Table Occupancy**: Grid view showing all tables, current occupancy, and capacity
+- **Capacity Validation**: Real-time capacity checks prevent over-assignment, warning dialogs
+- **Layout Upload**: Upload event space layout images (PNG, JPEG, WebP) with fullscreen viewer
+- **Fullscreen Viewer**: Click-to-fullscreen image viewer for layout inspection
+
+**State Management**:
+
+- `stores/seatingStore.ts` - Zustand store for seating data
+- Actions: `loadEventConfig`, `updateEventConfig`, `loadGuests`, `assignTable`, `assignBidderNumber`, `unassignTable`, `autoAssignBidders`
+- Real-time updates on all assignment operations
+- Automatic cache invalidation and refresh
+
+**API Services**:
+
+- `lib/api/admin-seating.ts` - Type-safe API client for seating endpoints
+- Functions: `getEventSeatingConfig`, `updateEventSeatingConfig`, `getSeatingGuests`, `assignTableNumber`, `assignBidderNumber`, `unassignTableNumber`, `autoAssignBidders`, `getTableOccupancy`
+- TypeScript interfaces for all request/response types
+
+**Routes**:
+
+- `/events/:eventId/seating` - Seating management tab (NPO Admin, NPO Staff)
+- Integrated into event detail page with role-based access control
+
+**Usage Example**:
+
+```typescript
+import { useSeatingStore } from '@/stores/seatingStore'
+import { SeatingTabContent } from '@/components/seating/SeatingTabContent'
+
+function EventSeatingTab({ eventId }: { eventId: string }) {
+  const { eventConfig, guests, isLoading, loadEventConfig, loadGuests, assignTable } =
+    useSeatingStore()
+
+  useEffect(() => {
+    loadEventConfig(eventId)
+    loadGuests(eventId)
+  }, [eventId])
+
+  const handleTableAssign = async (guestId: string, tableNumber: number) => {
+    await assignTable(eventId, guestId, tableNumber)
+  }
+
+  return (
+    <SeatingTabContent
+      eventId={eventId}
+      eventConfig={eventConfig}
+      guests={guests}
+      isLoading={isLoading}
+      onTableAssign={handleTableAssign}
+    />
+  )
+}
+```
+
+**Key Features**:
+
+- **Party-Aware Auto-Assignment**: Keeps accompanying guests with primary registrant
+- **Real-Time Validation**: Prevents duplicate bidder numbers and table over-capacity
+- **Guest-of-Primary Indicator**: Shows "Guest of [Name]" for accompanying guests with UserCheck icon
+- **Fullscreen Layout Viewer**: Click event space layout image to view fullscreen with click-anywhere-to-close
+- **Auto-Refresh**: Guest list auto-refreshes after auto-assign operation
+- **Drag-and-Drop Ready**: Architecture supports future drag-and-drop table assignment
+
 ### State Management
 
 **Auth Store** (Zustand):
