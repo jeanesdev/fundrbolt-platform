@@ -1,15 +1,12 @@
 """Contract tests for seating API endpoints."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
-from uuid import UUID
 
 import pytest
 from httpx import AsyncClient
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.event import Event
 from app.models.event_registration import EventRegistration
 from app.models.registration_guest import RegistrationGuest
 
