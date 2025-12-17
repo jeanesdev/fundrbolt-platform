@@ -80,12 +80,11 @@ export function SeatingLayoutModal({
       setPreviewUrl(media.file_url)
       onImageUploaded(media.file_url)
       toast.success('Layout image uploaded successfully')
-    } catch (error: any) {
-      console.error('Failed to upload layout image:', error)
-      toast.error(
-        error?.response?.data?.detail ||
-        'Failed to upload layout image. Please try again.'
-      )
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error
+        ? error.message
+        : 'Failed to upload layout image. Please try again.'
+      toast.error(errorMessage)
     } finally {
       setUploading(false)
       // Reset file input

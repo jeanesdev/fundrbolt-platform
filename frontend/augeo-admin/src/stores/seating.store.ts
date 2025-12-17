@@ -92,17 +92,14 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
   loadGuests: async () => {
     const { eventId, tableCount } = get()
     if (!eventId) {
-      console.warn('loadGuests: No eventId set')
       return
     }
 
     set({ isLoading: true })
 
     try {
-      console.log('Loading guests for event:', eventId)
       // Load all guests with pagination (max 200 per page)
       const response = await getSeatingGuests(eventId, 1, 200)
-      console.log('Guest response:', response)
       const allGuests = response.guests
 
       // Organize guests by table
@@ -121,16 +118,10 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
         }
       }
 
-      console.log('Organized guests - tables:', tables.size, 'unassigned:', unassigned.length)
       set({ tables, unassignedGuests: unassigned, isLoading: false })
-    } catch (error: any) {
-      console.error('Failed to load guests:', error)
-      console.error('Error details:', {
-        message: error?.message,
-        response: error?.response?.data,
-        status: error?.response?.status,
-      })
-      toast.error(`Failed to load guest seating information: ${error?.response?.data?.detail || error?.message || 'Unknown error'}`)
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      toast.error(`Failed to load guest seating information: ${errorMessage}`)
       set({ isLoading: false })
     }
   },
@@ -144,8 +135,7 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
       const newTables = new Map(tables)
       newTables.set(tableNumber, occupancy.guests)
       set({ tables: newTables })
-    } catch (error) {
-      console.error(`Failed to load table ${tableNumber} occupancy:`, error)
+    } catch {
       toast.error(`Failed to load table ${tableNumber} occupancy`)
     }
   },
@@ -222,8 +212,7 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
       await assignGuestToTable(eventId, guestId, tableNumber)
       toast.success(`${guest.name || 'Guest'} assigned to Table ${tableNumber}`)
       set({ rollbackState: null })
-    } catch (error) {
-      console.error('Failed to assign guest to table:', error)
+    } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to assign guest to table'
       toast.error(errorMessage)
@@ -282,8 +271,7 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
       await removeGuestFromTable(eventId, guestId)
       toast.success(`${guest.name || 'Guest'} removed from table`)
       set({ rollbackState: null })
-    } catch (error) {
-      console.error('Failed to remove guest from table:', error)
+    } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to remove guest from table'
       toast.error(errorMessage)

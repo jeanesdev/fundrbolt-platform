@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select'
 import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface TableOption {
   tableNumber: number
@@ -79,8 +80,8 @@ export function TableAssignmentModal({
       await onAssign(guest.guest_id, tableNumber)
       onOpenChange(false)
       setSelectedTable('')
-    } catch (error) {
-      console.error('Failed to assign table:', error)
+    } catch {
+      toast.error('Failed to assign guest to table')
     } finally {
       setIsAssigning(false)
     }
@@ -131,8 +132,8 @@ export function TableAssignmentModal({
                       <span>Table {table.tableNumber}</span>
                       <span
                         className={`text-xs ${table.isAvailable
-                            ? 'text-muted-foreground'
-                            : 'text-destructive font-medium'
+                          ? 'text-muted-foreground'
+                          : 'text-destructive font-medium'
                           }`}
                       >
                         {table.currentOccupancy}/{table.capacity}

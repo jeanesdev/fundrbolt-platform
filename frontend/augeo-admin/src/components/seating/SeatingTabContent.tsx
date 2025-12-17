@@ -17,12 +17,12 @@ import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
 import { useSeatingStore } from '@/stores/seating.store'
 import {
   DndContext,
-  DragEndEvent,
   DragOverlay,
-  DragStartEvent,
   PointerSensor,
   useSensor,
   useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core'
 import { Image, LayoutGrid, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -82,8 +82,7 @@ export function SeatingTabContent({
 
         initialize(eventId, finalTableCount, finalMaxGuests)
         await loadGuests()
-      } catch (error) {
-        console.error('Failed to load seating data:', error)
+      } catch {
         toast.error('Failed to load seating information')
       }
     }
@@ -135,18 +134,15 @@ export function SeatingTabContent({
         await removeGuestFromTable(guestId)
       }
 
+      // Track performance for monitoring
       const duration = performance.now() - startTime
-
-      // Log performance warning if operation takes >500ms
       if (duration > 500) {
-        console.warn(
-          `Drag-drop operation took ${duration.toFixed(0)}ms (target: <500ms)`
-        )
+        // Performance degradation detected
+        toast.warning('Seating update was slow, please refresh if needed')
       }
-    } catch (error) {
-      const duration = performance.now() - startTime
-      console.error(`Drag-drop failed after ${duration.toFixed(0)}ms:`, error)
-      throw error
+    } catch {
+      toast.error('Failed to update seating assignment')
+      throw new Error('Drag-drop operation failed')
     }
   }
 
@@ -159,7 +155,7 @@ export function SeatingTabContent({
     try {
       await loadGuests()
       toast.success('Seating chart refreshed')
-    } catch (error) {
+    } catch {
       toast.error('Failed to refresh seating chart')
     }
   }

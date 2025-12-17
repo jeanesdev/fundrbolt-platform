@@ -439,8 +439,8 @@ export function EventEditPage() {
                       seating_layout_image_url: url,
                     })
                     await refetch()
-                  } catch (error) {
-                    console.error('Failed to update layout image:', error)
+                  } catch {
+                    toast.error('Failed to update layout image')
                   }
                 }}
               />
