@@ -17,13 +17,16 @@
 
 import { AuctionGallery, CountdownTimer, EventDetails, EventSwitcher, MySeatingSection } from '@/components/event-home'
 import { AuctionItemDetailModal } from '@/components/event-home/AuctionItemDetailModal'
+import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
+import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEventBranding } from '@/hooks/use-event-branding'
 import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
 import { getMySeatingInfo, type SeatingInfoResponse } from '@/services/seating-service'
+import { useEventContext } from '@/hooks/use-event-context'
+import { useEventContextStore } from '@/stores/event-context-store'
 import { useEventStore } from '@/stores/event-store'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
-import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { AlertCircle, Calendar, Loader2, MapPin } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -37,17 +40,43 @@ import { toast } from 'sonner'
  */
 export function EventHomePage() {
   const navigate = useNavigate()
-  const { eventId } = useParams({ strict: false }) as { eventId: string }
-  const { currentEvent, eventsLoading, eventsError, loadEventById } = useEventStore()
+  const { eventSlug } = useParams({ strict: false }) as { eventSlug: string }
+  const { currentEvent, eventsLoading, eventsError, loadEventBySlug } = useEventStore()
   const { applyBranding, clearBranding } = useEventBranding()
+  const { setSelectedEvent } = useEventContextStore()
+  const { availableEvents } = useEventContext()
   const [selectedAuctionItemId, setSelectedAuctionItemId] = useState<string | null>(null)
 
-  // Fetch all registered events for event switcher
-  const { data: registeredEventsData } = useQuery({
-    queryKey: ['registrations', 'events-with-branding'],
-    queryFn: getRegisteredEventsWithBranding,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
+  // Convert available events from event context to RegisteredEventWithBranding format
+  const eventsForSwitcher = useMemo((): RegisteredEventWithBranding[] => {
+    return availableEvents.map((event) => {
+      // Check if event is past
+      const eventDate = event.event_date ? new Date(event.event_date) : null
+      const now = new Date()
+      const is_past = eventDate ? eventDate < now : false
+      const is_upcoming =
+        eventDate && !is_past
+          ? eventDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+          : false
+
+      return {
+        id: event.id,
+        name: event.name,
+        slug: event.slug,
+        event_datetime: event.event_date || null,
+        timezone: null,
+        is_past,
+        is_upcoming,
+        thumbnail_url: event.logo_url || null,
+        primary_color: '#3B82F6',
+        secondary_color: '#9333EA',
+        background_color: '#FFFFFF',
+        accent_color: '#3B82F6',
+        npo_name: event.npo_name || 'Organization',
+        npo_logo_url: null,
+      }
+    })
+  }, [availableEvents])
 
   // Fetch seating information for current event (T080)
   const { data: seatingInfo, error: seatingError } = useQuery<SeatingInfoResponse>({
@@ -68,6 +97,13 @@ export function EventHomePage() {
     const is_past = eventDate < now
     const is_upcoming = !is_past && eventDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
+    // Get thumbnail from media array or logo_url
+    const thumbnail_url =
+      ('banner_url' in currentEvent && currentEvent.banner_url) ||
+      currentEvent.media?.[0]?.file_url ||
+      currentEvent.logo_url ||
+      null
+
     return {
       id: currentEvent.id,
       name: currentEvent.name,
@@ -76,7 +112,7 @@ export function EventHomePage() {
       timezone: currentEvent.timezone,
       is_past,
       is_upcoming,
-      thumbnail_url: currentEvent.media?.[0]?.file_url || null,
+      thumbnail_url,
       primary_color: currentEvent.primary_color || '#3B82F6',
       secondary_color: currentEvent.secondary_color || '#9333EA',
       background_color: currentEvent.background_color || '#FFFFFF',
@@ -89,20 +125,22 @@ export function EventHomePage() {
   // Handle event switch from dropdown
   const handleEventSelect = useCallback(
     (event: RegisteredEventWithBranding) => {
-      navigate({ to: '/events/$eventId', params: { eventId: event.id } })
+      navigate({ to: '/events/$eventSlug', params: { eventSlug: event.slug } })
     },
     [navigate]
   )
 
   // Load event data
   const loadEvent = useCallback(() => {
-    if (eventId) {
-      loadEventById(eventId).catch(() => {
+    if (eventSlug) {
+      loadEventBySlug(eventSlug).catch(() => {
         toast.error('Failed to load event')
+        // Clear the selected event to prevent infinite redirect loop
+        setSelectedEvent(null, 'Select Event', null)
         navigate({ to: '/home' })
       })
     }
-  }, [eventId, loadEventById, navigate])
+  }, [eventSlug, loadEventBySlug, navigate, setSelectedEvent])
 
   useEffect(() => {
     loadEvent()
@@ -258,13 +296,27 @@ export function EventHomePage() {
 
   const { date, time } = formatDateTime()
 
-  // Get banner image from media
+  // Get banner image from media or logo_url
   const getBannerUrl = () => {
-    if (!currentEvent.media) return null
-    const banner = currentEvent.media.find(
-      (m) => m.media_type === 'image' && m.display_order === 0
-    )
-    return banner?.file_url || currentEvent.media[0]?.file_url
+    // First check if there's a banner_url field (may not exist in current API)
+    if ('banner_url' in currentEvent && currentEvent.banner_url) {
+      return currentEvent.banner_url
+    }
+
+    // Check media array for banner image
+    if (currentEvent.media && currentEvent.media.length > 0) {
+      const banner = currentEvent.media.find(
+        (m) => m.media_type === 'image' && m.display_order === 0
+      )
+      return banner?.file_url || currentEvent.media[0]?.file_url
+    }
+
+    // Fall back to logo_url if no media
+    if (currentEvent.logo_url) {
+      return currentEvent.logo_url
+    }
+
+    return null
   }
 
   const bannerUrl = getBannerUrl()
@@ -293,17 +345,24 @@ export function EventHomePage() {
         )}
 
         {/* Event Switcher - Top Left */}
-        {currentEventForSwitcher && registeredEventsData?.events && (
+        {currentEventForSwitcher && eventsForSwitcher.length > 0 && (
           <div className="absolute top-4 left-4">
             <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg">
               <EventSwitcher
                 currentEvent={currentEventForSwitcher}
-                events={registeredEventsData.events}
+                events={eventsForSwitcher}
                 onEventSelect={handleEventSelect}
               />
             </div>
           </div>
         )}
+
+        {/* Profile Dropdown - Top Right */}
+        <div className="absolute top-4 right-4">
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-1">
+            <ProfileDropdown />
+          </div>
+        </div>
 
         {/* Event Title Overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
@@ -455,7 +514,7 @@ export function EventHomePage() {
             Auction Items
           </h2>
           <AuctionGallery
-            eventId={eventId}
+            eventId={currentEvent?.id || ''}
             initialFilter="all"
             initialSort="highest_bid"
             eventStatus={currentEvent?.status}
@@ -466,9 +525,14 @@ export function EventHomePage() {
           />
         </section>
 
+        {/* Sponsors Carousel */}
+        <section className="mt-12 mb-8">
+          <SponsorsCarousel eventId={currentEvent?.id || ''} />
+        </section>
+
         {/* Auction Item Detail Modal */}
         <AuctionItemDetailModal
-          eventId={eventId}
+          eventId={currentEvent?.id || ''}
           itemId={selectedAuctionItemId}
           eventStatus={currentEvent?.status}
           eventDateTime={currentEvent?.event_datetime}

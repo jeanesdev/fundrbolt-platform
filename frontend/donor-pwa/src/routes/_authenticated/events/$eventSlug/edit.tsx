@@ -9,6 +9,6 @@ function RedirectToView() {
   return <Navigate to="/events/$eventId" params={{ eventId }} />
 }
 
-export const Route = createFileRoute('/_authenticated/events/$eventId/edit')({
+export const Route = createFileRoute('/_authenticated/events/$eventSlug/edit')({
   component: RedirectToView,
 })

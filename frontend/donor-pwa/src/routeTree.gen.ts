@@ -42,15 +42,15 @@ import { Route as AuthenticatedSettingsConsentRouteImport } from './routes/_auth
 import { Route as AuthenticatedNposCreateRouteImport } from './routes/_authenticated/npos/create'
 import { Route as AuthenticatedEventsCreateRouteImport } from './routes/_authenticated/events/create'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
-import { Route as AuthenticatedEventsEventIdRouteRouteImport } from './routes/_authenticated/events/$eventId/route'
+import { Route as AuthenticatedEventsEventSlugRouteRouteImport } from './routes/_authenticated/events/$eventSlug/route'
 import { Route as AuthenticatedNposNpoIdIndexRouteImport } from './routes/_authenticated/npos/$npoId.index'
-import { Route as AuthenticatedEventsEventIdIndexRouteImport } from './routes/_authenticated/events/$eventId/index'
+import { Route as AuthenticatedEventsEventSlugIndexRouteImport } from './routes/_authenticated/events/$eventSlug/index'
 import { Route as AuthenticatedNposNpoIdEditRouteImport } from './routes/_authenticated/npos/$npoId/edit'
-import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events/$eventId/edit'
-import { Route as AuthenticatedEventsEventIdAuctionItemsIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-items/index'
-import { Route as AuthenticatedEventsEventIdAuctionItemsCreateRouteImport } from './routes/_authenticated/events/$eventId/auction-items/create'
-import { Route as AuthenticatedEventsEventIdAuctionItemsItemIdIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-items/$itemId/index'
-import { Route as AuthenticatedEventsEventIdAuctionItemsItemIdEditRouteImport } from './routes/_authenticated/events/$eventId/auction-items/$itemId/edit'
+import { Route as AuthenticatedEventsEventSlugEditRouteImport } from './routes/_authenticated/events/$eventSlug/edit'
+import { Route as AuthenticatedEventsEventSlugAuctionItemsIndexRouteImport } from './routes/_authenticated/events/$eventSlug/auction-items/index'
+import { Route as AuthenticatedEventsEventSlugAuctionItemsCreateRouteImport } from './routes/_authenticated/events/$eventSlug/auction-items/create'
+import { Route as AuthenticatedEventsEventSlugAuctionItemsItemIdIndexRouteImport } from './routes/_authenticated/events/$eventSlug/auction-items/$itemId/index'
+import { Route as AuthenticatedEventsEventSlugAuctionItemsItemIdEditRouteImport } from './routes/_authenticated/events/$eventSlug/auction-items/$itemId/edit'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -225,10 +225,10 @@ const AuthenticatedErrorsErrorRoute =
     path: '/errors/$error',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedEventsEventIdRouteRoute =
-  AuthenticatedEventsEventIdRouteRouteImport.update({
-    id: '/events/$eventId',
-    path: '/events/$eventId',
+const AuthenticatedEventsEventSlugRouteRoute =
+  AuthenticatedEventsEventSlugRouteRouteImport.update({
+    id: '/events/$eventSlug',
+    path: '/events/$eventSlug',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedNposNpoIdIndexRoute =
@@ -237,11 +237,11 @@ const AuthenticatedNposNpoIdIndexRoute =
     path: '/npos/$npoId/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedEventsEventIdIndexRoute =
-  AuthenticatedEventsEventIdIndexRouteImport.update({
+const AuthenticatedEventsEventSlugIndexRoute =
+  AuthenticatedEventsEventSlugIndexRouteImport.update({
     id: '/',
     path: '/',
-    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+    getParentRoute: () => AuthenticatedEventsEventSlugRouteRoute,
   } as any)
 const AuthenticatedNposNpoIdEditRoute =
   AuthenticatedNposNpoIdEditRouteImport.update({
@@ -249,35 +249,35 @@ const AuthenticatedNposNpoIdEditRoute =
     path: '/npos/$npoId/edit',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedEventsEventIdEditRoute =
-  AuthenticatedEventsEventIdEditRouteImport.update({
+const AuthenticatedEventsEventSlugEditRoute =
+  AuthenticatedEventsEventSlugEditRouteImport.update({
     id: '/edit',
     path: '/edit',
-    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+    getParentRoute: () => AuthenticatedEventsEventSlugRouteRoute,
   } as any)
-const AuthenticatedEventsEventIdAuctionItemsIndexRoute =
-  AuthenticatedEventsEventIdAuctionItemsIndexRouteImport.update({
+const AuthenticatedEventsEventSlugAuctionItemsIndexRoute =
+  AuthenticatedEventsEventSlugAuctionItemsIndexRouteImport.update({
     id: '/auction-items/',
     path: '/auction-items/',
-    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+    getParentRoute: () => AuthenticatedEventsEventSlugRouteRoute,
   } as any)
-const AuthenticatedEventsEventIdAuctionItemsCreateRoute =
-  AuthenticatedEventsEventIdAuctionItemsCreateRouteImport.update({
+const AuthenticatedEventsEventSlugAuctionItemsCreateRoute =
+  AuthenticatedEventsEventSlugAuctionItemsCreateRouteImport.update({
     id: '/auction-items/create',
     path: '/auction-items/create',
-    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+    getParentRoute: () => AuthenticatedEventsEventSlugRouteRoute,
   } as any)
-const AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute =
-  AuthenticatedEventsEventIdAuctionItemsItemIdIndexRouteImport.update({
+const AuthenticatedEventsEventSlugAuctionItemsItemIdIndexRoute =
+  AuthenticatedEventsEventSlugAuctionItemsItemIdIndexRouteImport.update({
     id: '/auction-items/$itemId/',
     path: '/auction-items/$itemId/',
-    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+    getParentRoute: () => AuthenticatedEventsEventSlugRouteRoute,
   } as any)
-const AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute =
-  AuthenticatedEventsEventIdAuctionItemsItemIdEditRouteImport.update({
+const AuthenticatedEventsEventSlugAuctionItemsItemIdEditRoute =
+  AuthenticatedEventsEventSlugAuctionItemsItemIdEditRouteImport.update({
     id: '/auction-items/$itemId/edit',
     path: '/auction-items/$itemId/edit',
-    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+    getParentRoute: () => AuthenticatedEventsEventSlugRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -303,7 +303,7 @@ export interface FileRoutesByFullPath {
   '/events/$slug': typeof EventsSlugRouteWithChildren
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/checkin': typeof CheckinIndexRoute
-  '/events/$eventId': typeof AuthenticatedEventsEventIdRouteRouteWithChildren
+  '/events/$eventSlug': typeof AuthenticatedEventsEventSlugRouteRouteWithChildren
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/events/create': typeof AuthenticatedEventsCreateRoute
   '/npos/create': typeof AuthenticatedNposCreateRoute
@@ -314,14 +314,14 @@ export interface FileRoutesByFullPath {
   '/npos': typeof AuthenticatedNposIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/events/$slug/': typeof EventsSlugIndexRoute
-  '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
+  '/events/$eventSlug/edit': typeof AuthenticatedEventsEventSlugEditRoute
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
-  '/events/$eventId/': typeof AuthenticatedEventsEventIdIndexRoute
+  '/events/$eventSlug/': typeof AuthenticatedEventsEventSlugIndexRoute
   '/npos/$npoId': typeof AuthenticatedNposNpoIdIndexRoute
-  '/events/$eventId/auction-items/create': typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
-  '/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
-  '/events/$eventId/auction-items/$itemId/edit': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
-  '/events/$eventId/auction-items/$itemId': typeof AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute
+  '/events/$eventSlug/auction-items/create': typeof AuthenticatedEventsEventSlugAuctionItemsCreateRoute
+  '/events/$eventSlug/auction-items': typeof AuthenticatedEventsEventSlugAuctionItemsIndexRoute
+  '/events/$eventSlug/auction-items/$itemId/edit': typeof AuthenticatedEventsEventSlugAuctionItemsItemIdEditRoute
+  '/events/$eventSlug/auction-items/$itemId': typeof AuthenticatedEventsEventSlugAuctionItemsItemIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -354,14 +354,14 @@ export interface FileRoutesByTo {
   '/npos': typeof AuthenticatedNposIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/events/$slug': typeof EventsSlugIndexRoute
-  '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
+  '/events/$eventSlug/edit': typeof AuthenticatedEventsEventSlugEditRoute
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
-  '/events/$eventId': typeof AuthenticatedEventsEventIdIndexRoute
+  '/events/$eventSlug': typeof AuthenticatedEventsEventSlugIndexRoute
   '/npos/$npoId': typeof AuthenticatedNposNpoIdIndexRoute
-  '/events/$eventId/auction-items/create': typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
-  '/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
-  '/events/$eventId/auction-items/$itemId/edit': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
-  '/events/$eventId/auction-items/$itemId': typeof AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute
+  '/events/$eventSlug/auction-items/create': typeof AuthenticatedEventsEventSlugAuctionItemsCreateRoute
+  '/events/$eventSlug/auction-items': typeof AuthenticatedEventsEventSlugAuctionItemsIndexRoute
+  '/events/$eventSlug/auction-items/$itemId/edit': typeof AuthenticatedEventsEventSlugAuctionItemsItemIdEditRoute
+  '/events/$eventSlug/auction-items/$itemId': typeof AuthenticatedEventsEventSlugAuctionItemsItemIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -388,7 +388,7 @@ export interface FileRoutesById {
   '/events/$slug': typeof EventsSlugRouteWithChildren
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/checkin/': typeof CheckinIndexRoute
-  '/_authenticated/events/$eventId': typeof AuthenticatedEventsEventIdRouteRouteWithChildren
+  '/_authenticated/events/$eventSlug': typeof AuthenticatedEventsEventSlugRouteRouteWithChildren
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/events/create': typeof AuthenticatedEventsCreateRoute
   '/_authenticated/npos/create': typeof AuthenticatedNposCreateRoute
@@ -399,14 +399,14 @@ export interface FileRoutesById {
   '/_authenticated/npos/': typeof AuthenticatedNposIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/events/$slug/': typeof EventsSlugIndexRoute
-  '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
+  '/_authenticated/events/$eventSlug/edit': typeof AuthenticatedEventsEventSlugEditRoute
   '/_authenticated/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
-  '/_authenticated/events/$eventId/': typeof AuthenticatedEventsEventIdIndexRoute
+  '/_authenticated/events/$eventSlug/': typeof AuthenticatedEventsEventSlugIndexRoute
   '/_authenticated/npos/$npoId/': typeof AuthenticatedNposNpoIdIndexRoute
-  '/_authenticated/events/$eventId/auction-items/create': typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
-  '/_authenticated/events/$eventId/auction-items/': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
-  '/_authenticated/events/$eventId/auction-items/$itemId/edit': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
-  '/_authenticated/events/$eventId/auction-items/$itemId/': typeof AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute
+  '/_authenticated/events/$eventSlug/auction-items/create': typeof AuthenticatedEventsEventSlugAuctionItemsCreateRoute
+  '/_authenticated/events/$eventSlug/auction-items/': typeof AuthenticatedEventsEventSlugAuctionItemsIndexRoute
+  '/_authenticated/events/$eventSlug/auction-items/$itemId/edit': typeof AuthenticatedEventsEventSlugAuctionItemsItemIdEditRoute
+  '/_authenticated/events/$eventSlug/auction-items/$itemId/': typeof AuthenticatedEventsEventSlugAuctionItemsItemIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -433,7 +433,7 @@ export interface FileRouteTypes {
     | '/events/$slug'
     | '/invitations/accept'
     | '/checkin'
-    | '/events/$eventId'
+    | '/events/$eventSlug'
     | '/errors/$error'
     | '/events/create'
     | '/npos/create'
@@ -444,14 +444,14 @@ export interface FileRouteTypes {
     | '/npos'
     | '/settings/'
     | '/events/$slug/'
-    | '/events/$eventId/edit'
+    | '/events/$eventSlug/edit'
     | '/npos/$npoId/edit'
-    | '/events/$eventId/'
+    | '/events/$eventSlug/'
     | '/npos/$npoId'
-    | '/events/$eventId/auction-items/create'
-    | '/events/$eventId/auction-items'
-    | '/events/$eventId/auction-items/$itemId/edit'
-    | '/events/$eventId/auction-items/$itemId'
+    | '/events/$eventSlug/auction-items/create'
+    | '/events/$eventSlug/auction-items'
+    | '/events/$eventSlug/auction-items/$itemId/edit'
+    | '/events/$eventSlug/auction-items/$itemId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -484,14 +484,14 @@ export interface FileRouteTypes {
     | '/npos'
     | '/settings'
     | '/events/$slug'
-    | '/events/$eventId/edit'
+    | '/events/$eventSlug/edit'
     | '/npos/$npoId/edit'
-    | '/events/$eventId'
+    | '/events/$eventSlug'
     | '/npos/$npoId'
-    | '/events/$eventId/auction-items/create'
-    | '/events/$eventId/auction-items'
-    | '/events/$eventId/auction-items/$itemId/edit'
-    | '/events/$eventId/auction-items/$itemId'
+    | '/events/$eventSlug/auction-items/create'
+    | '/events/$eventSlug/auction-items'
+    | '/events/$eventSlug/auction-items/$itemId/edit'
+    | '/events/$eventSlug/auction-items/$itemId'
   id:
     | '__root__'
     | '/'
@@ -517,7 +517,7 @@ export interface FileRouteTypes {
     | '/events/$slug'
     | '/invitations/accept'
     | '/checkin/'
-    | '/_authenticated/events/$eventId'
+    | '/_authenticated/events/$eventSlug'
     | '/_authenticated/errors/$error'
     | '/_authenticated/events/create'
     | '/_authenticated/npos/create'
@@ -528,14 +528,14 @@ export interface FileRouteTypes {
     | '/_authenticated/npos/'
     | '/_authenticated/settings/'
     | '/events/$slug/'
-    | '/_authenticated/events/$eventId/edit'
+    | '/_authenticated/events/$eventSlug/edit'
     | '/_authenticated/npos/$npoId/edit'
-    | '/_authenticated/events/$eventId/'
+    | '/_authenticated/events/$eventSlug/'
     | '/_authenticated/npos/$npoId/'
-    | '/_authenticated/events/$eventId/auction-items/create'
-    | '/_authenticated/events/$eventId/auction-items/'
-    | '/_authenticated/events/$eventId/auction-items/$itemId/edit'
-    | '/_authenticated/events/$eventId/auction-items/$itemId/'
+    | '/_authenticated/events/$eventSlug/auction-items/create'
+    | '/_authenticated/events/$eventSlug/auction-items/'
+    | '/_authenticated/events/$eventSlug/auction-items/$itemId/edit'
+    | '/_authenticated/events/$eventSlug/auction-items/$itemId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -794,11 +794,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/events/$eventId': {
-      id: '/_authenticated/events/$eventId'
-      path: '/events/$eventId'
-      fullPath: '/events/$eventId'
-      preLoaderRoute: typeof AuthenticatedEventsEventIdRouteRouteImport
+    '/_authenticated/events/$eventSlug': {
+      id: '/_authenticated/events/$eventSlug'
+      path: '/events/$eventSlug'
+      fullPath: '/events/$eventSlug'
+      preLoaderRoute: typeof AuthenticatedEventsEventSlugRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/npos/$npoId/': {
@@ -808,12 +808,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNposNpoIdIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/events/$eventId/': {
-      id: '/_authenticated/events/$eventId/'
+    '/_authenticated/events/$eventSlug/': {
+      id: '/_authenticated/events/$eventSlug/'
       path: '/'
-      fullPath: '/events/$eventId/'
-      preLoaderRoute: typeof AuthenticatedEventsEventIdIndexRouteImport
-      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+      fullPath: '/events/$eventSlug/'
+      preLoaderRoute: typeof AuthenticatedEventsEventSlugIndexRouteImport
+      parentRoute: typeof AuthenticatedEventsEventSlugRouteRoute
     }
     '/_authenticated/npos/$npoId/edit': {
       id: '/_authenticated/npos/$npoId/edit'
@@ -822,40 +822,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNposNpoIdEditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/events/$eventId/edit': {
-      id: '/_authenticated/events/$eventId/edit'
+    '/_authenticated/events/$eventSlug/edit': {
+      id: '/_authenticated/events/$eventSlug/edit'
       path: '/edit'
-      fullPath: '/events/$eventId/edit'
-      preLoaderRoute: typeof AuthenticatedEventsEventIdEditRouteImport
-      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+      fullPath: '/events/$eventSlug/edit'
+      preLoaderRoute: typeof AuthenticatedEventsEventSlugEditRouteImport
+      parentRoute: typeof AuthenticatedEventsEventSlugRouteRoute
     }
-    '/_authenticated/events/$eventId/auction-items/': {
-      id: '/_authenticated/events/$eventId/auction-items/'
+    '/_authenticated/events/$eventSlug/auction-items/': {
+      id: '/_authenticated/events/$eventSlug/auction-items/'
       path: '/auction-items'
-      fullPath: '/events/$eventId/auction-items'
-      preLoaderRoute: typeof AuthenticatedEventsEventIdAuctionItemsIndexRouteImport
-      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+      fullPath: '/events/$eventSlug/auction-items'
+      preLoaderRoute: typeof AuthenticatedEventsEventSlugAuctionItemsIndexRouteImport
+      parentRoute: typeof AuthenticatedEventsEventSlugRouteRoute
     }
-    '/_authenticated/events/$eventId/auction-items/create': {
-      id: '/_authenticated/events/$eventId/auction-items/create'
+    '/_authenticated/events/$eventSlug/auction-items/create': {
+      id: '/_authenticated/events/$eventSlug/auction-items/create'
       path: '/auction-items/create'
-      fullPath: '/events/$eventId/auction-items/create'
-      preLoaderRoute: typeof AuthenticatedEventsEventIdAuctionItemsCreateRouteImport
-      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+      fullPath: '/events/$eventSlug/auction-items/create'
+      preLoaderRoute: typeof AuthenticatedEventsEventSlugAuctionItemsCreateRouteImport
+      parentRoute: typeof AuthenticatedEventsEventSlugRouteRoute
     }
-    '/_authenticated/events/$eventId/auction-items/$itemId/': {
-      id: '/_authenticated/events/$eventId/auction-items/$itemId/'
+    '/_authenticated/events/$eventSlug/auction-items/$itemId/': {
+      id: '/_authenticated/events/$eventSlug/auction-items/$itemId/'
       path: '/auction-items/$itemId'
-      fullPath: '/events/$eventId/auction-items/$itemId'
-      preLoaderRoute: typeof AuthenticatedEventsEventIdAuctionItemsItemIdIndexRouteImport
-      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+      fullPath: '/events/$eventSlug/auction-items/$itemId'
+      preLoaderRoute: typeof AuthenticatedEventsEventSlugAuctionItemsItemIdIndexRouteImport
+      parentRoute: typeof AuthenticatedEventsEventSlugRouteRoute
     }
-    '/_authenticated/events/$eventId/auction-items/$itemId/edit': {
-      id: '/_authenticated/events/$eventId/auction-items/$itemId/edit'
+    '/_authenticated/events/$eventSlug/auction-items/$itemId/edit': {
+      id: '/_authenticated/events/$eventSlug/auction-items/$itemId/edit'
       path: '/auction-items/$itemId/edit'
-      fullPath: '/events/$eventId/auction-items/$itemId/edit'
-      preLoaderRoute: typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRouteImport
-      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+      fullPath: '/events/$eventSlug/auction-items/$itemId/edit'
+      preLoaderRoute: typeof AuthenticatedEventsEventSlugAuctionItemsItemIdEditRouteImport
+      parentRoute: typeof AuthenticatedEventsEventSlugRouteRoute
     }
   }
 }
@@ -878,39 +878,41 @@ const AuthenticatedSettingsRouteRouteWithChildren =
     AuthenticatedSettingsRouteRouteChildren,
   )
 
-interface AuthenticatedEventsEventIdRouteRouteChildren {
-  AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
-  AuthenticatedEventsEventIdIndexRoute: typeof AuthenticatedEventsEventIdIndexRoute
-  AuthenticatedEventsEventIdAuctionItemsCreateRoute: typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
-  AuthenticatedEventsEventIdAuctionItemsIndexRoute: typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
-  AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute: typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
-  AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute: typeof AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute
+interface AuthenticatedEventsEventSlugRouteRouteChildren {
+  AuthenticatedEventsEventSlugEditRoute: typeof AuthenticatedEventsEventSlugEditRoute
+  AuthenticatedEventsEventSlugIndexRoute: typeof AuthenticatedEventsEventSlugIndexRoute
+  AuthenticatedEventsEventSlugAuctionItemsCreateRoute: typeof AuthenticatedEventsEventSlugAuctionItemsCreateRoute
+  AuthenticatedEventsEventSlugAuctionItemsIndexRoute: typeof AuthenticatedEventsEventSlugAuctionItemsIndexRoute
+  AuthenticatedEventsEventSlugAuctionItemsItemIdEditRoute: typeof AuthenticatedEventsEventSlugAuctionItemsItemIdEditRoute
+  AuthenticatedEventsEventSlugAuctionItemsItemIdIndexRoute: typeof AuthenticatedEventsEventSlugAuctionItemsItemIdIndexRoute
 }
 
-const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRouteRouteChildren =
+const AuthenticatedEventsEventSlugRouteRouteChildren: AuthenticatedEventsEventSlugRouteRouteChildren =
   {
-    AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
-    AuthenticatedEventsEventIdIndexRoute: AuthenticatedEventsEventIdIndexRoute,
-    AuthenticatedEventsEventIdAuctionItemsCreateRoute:
-      AuthenticatedEventsEventIdAuctionItemsCreateRoute,
-    AuthenticatedEventsEventIdAuctionItemsIndexRoute:
-      AuthenticatedEventsEventIdAuctionItemsIndexRoute,
-    AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute:
-      AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute,
-    AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute:
-      AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute,
+    AuthenticatedEventsEventSlugEditRoute:
+      AuthenticatedEventsEventSlugEditRoute,
+    AuthenticatedEventsEventSlugIndexRoute:
+      AuthenticatedEventsEventSlugIndexRoute,
+    AuthenticatedEventsEventSlugAuctionItemsCreateRoute:
+      AuthenticatedEventsEventSlugAuctionItemsCreateRoute,
+    AuthenticatedEventsEventSlugAuctionItemsIndexRoute:
+      AuthenticatedEventsEventSlugAuctionItemsIndexRoute,
+    AuthenticatedEventsEventSlugAuctionItemsItemIdEditRoute:
+      AuthenticatedEventsEventSlugAuctionItemsItemIdEditRoute,
+    AuthenticatedEventsEventSlugAuctionItemsItemIdIndexRoute:
+      AuthenticatedEventsEventSlugAuctionItemsItemIdIndexRoute,
   }
 
-const AuthenticatedEventsEventIdRouteRouteWithChildren =
-  AuthenticatedEventsEventIdRouteRoute._addFileChildren(
-    AuthenticatedEventsEventIdRouteRouteChildren,
+const AuthenticatedEventsEventSlugRouteRouteWithChildren =
+  AuthenticatedEventsEventSlugRouteRoute._addFileChildren(
+    AuthenticatedEventsEventSlugRouteRouteChildren,
   )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedRegistrationsRoute: typeof AuthenticatedRegistrationsRoute
-  AuthenticatedEventsEventIdRouteRoute: typeof AuthenticatedEventsEventIdRouteRouteWithChildren
+  AuthenticatedEventsEventSlugRouteRoute: typeof AuthenticatedEventsEventSlugRouteRouteWithChildren
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedEventsCreateRoute: typeof AuthenticatedEventsCreateRoute
   AuthenticatedNposCreateRoute: typeof AuthenticatedNposCreateRoute
@@ -924,8 +926,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedRegistrationsRoute: AuthenticatedRegistrationsRoute,
-  AuthenticatedEventsEventIdRouteRoute:
-    AuthenticatedEventsEventIdRouteRouteWithChildren,
+  AuthenticatedEventsEventSlugRouteRoute:
+    AuthenticatedEventsEventSlugRouteRouteWithChildren,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedEventsCreateRoute: AuthenticatedEventsCreateRoute,
   AuthenticatedNposCreateRoute: AuthenticatedNposCreateRoute,

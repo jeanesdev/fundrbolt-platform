@@ -27,3 +27,6 @@ export { TablemateCard } from './TablemateCard'
 // Event Details Section
 export { EventDetails } from './EventDetails'
 export type { EventDetailsProps } from './EventDetails'
+
+// Sponsors Carousel
+export { SponsorsCarousel } from './SponsorsCarousel'
