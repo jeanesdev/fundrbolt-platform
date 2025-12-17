@@ -49,8 +49,8 @@ class AutoAssignService:
         """
         # Get event configuration
         event_query = select(Event).where(Event.id == event_id)
-        result = await db.execute(event_query)
-        event = result.scalar_one_or_none()
+        event_result = await db.execute(event_query)
+        event = event_result.scalar_one_or_none()
 
         if not event:
             raise ValueError(f"Event {event_id} not found")
@@ -70,8 +70,8 @@ class AutoAssignService:
             .options(selectinload(RegistrationGuest.registration))
             .order_by(RegistrationGuest.registration_id, RegistrationGuest.created_at)
         )
-        result = await db.execute(unassigned_query)
-        unassigned_guests = list(result.scalars().all())
+        guests_result = await db.execute(unassigned_query)
+        unassigned_guests = list(guests_result.scalars().all())
 
         if not unassigned_guests:
             return {

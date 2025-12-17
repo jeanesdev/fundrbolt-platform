@@ -1,5 +1,6 @@
 """Seating assignment and table management service."""
 
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -316,7 +317,7 @@ class SeatingService:
         db: AsyncSession,
         user_id: UUID,
         event_id: UUID,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Get seating information for a donor's event registration.
 
