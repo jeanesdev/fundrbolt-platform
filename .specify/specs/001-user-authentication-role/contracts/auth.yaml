@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Augeo Authentication API
+  title: Fundrbolt Authentication API
   description: |
     Authentication endpoints for user registration, login, email verification,
     password reset, and session management.
@@ -12,15 +12,15 @@ info:
     - Rate limiting: 5 failed login attempts per 15 minutes per IP
   version: 1.0.0
   contact:
-    name: Augeo Platform Team
-    email: support@augeo.app
+    name: Fundrbolt Platform Team
+    email: support@fundrbolt.app
 
 servers:
   - url: http://localhost:8000/api/v1
     description: Local development
-  - url: https://api.staging.augeo.app/v1
+  - url: https://api.staging.fundrbolt.app/v1
     description: Staging environment
-  - url: https://api.augeo.app/v1
+  - url: https://api.fundrbolt.app/v1
     description: Production environment
 
 tags:
@@ -422,7 +422,7 @@ paths:
         1. Validates email exists
         2. Generates secure reset token (1-hour expiry)
         3. Stores token in Redis: `password_reset:{token_hash}` → `user_id`
-        4. Sends reset email with link: `https://app.augeo.app/reset-password?token={token}`
+        4. Sends reset email with link: `https://app.fundrbolt.app/reset-password?token={token}`
         5. Logs "password_reset_requested" audit event
 
         **Security**: Always returns 200 even if email doesn't exist (prevent enumeration)

@@ -5,7 +5,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: https://api.augeo.app/api/v1
+  - url: https://api.fundrbolt.app/api/v1
     description: Production API
   - url: http://localhost:8000/api/v1
     description: Local development
@@ -54,7 +54,7 @@ paths:
                         first_name: "Jane"
                         last_name: "Smith"
                         company: "Acme Corp"
-                        profile_image_url: "https://storage.augeo.app/profile-images/jane-smith.jpg"
+                        profile_image_url: "https://storage.fundrbolt.app/profile-images/jane-smith.jpg"
                         is_my_guest: false
                       - id: "550e8400-e29b-41d4-a716-446655440000"
                         bidder_number: 236
@@ -83,7 +83,7 @@ paths:
                         first_name: "Jane"
                         last_name: "Smith"
                         company: "Acme Corp"
-                        profile_image_url: "https://storage.augeo.app/profile-images/jane-smith.jpg"
+                        profile_image_url: "https://storage.fundrbolt.app/profile-images/jane-smith.jpg"
                         is_my_guest: false
                       - id: "550e8400-e29b-41d4-a716-446655440000"
                         bidder_number: 236
@@ -227,7 +227,7 @@ components:
           format: uri
           nullable: true
           description: URL to profile image
-          example: "https://storage.augeo.app/profile-images/jane-smith.jpg"
+          example: "https://storage.fundrbolt.app/profile-images/jane-smith.jpg"
         is_my_guest:
           type: boolean
           description: True if this guest is part of the current user's registration party

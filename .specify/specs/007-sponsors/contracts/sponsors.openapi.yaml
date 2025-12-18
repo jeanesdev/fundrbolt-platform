@@ -1,21 +1,21 @@
 openapi: 3.1.0
 info:
-  title: Augeo Platform - Event Sponsors API
+  title: Fundrbolt Platform - Event Sponsors API
   version: 1.0.0
   description: |
     API endpoints for managing event sponsors including logo uploads, contact information, and display ordering.
   contact:
-    name: Augeo Platform Support
-    email: support@augeo.app
+    name: Fundrbolt Platform Support
+    email: support@fundrbolt.app
 
 servers:
   - url: http://localhost:8000/api/v1
     description: Local development
-  - url: https://api-dev.augeo.app/api/v1
+  - url: https://api-dev.fundrbolt.app/api/v1
     description: Development environment
-  - url: https://api-staging.augeo.app/api/v1
+  - url: https://api-staging.fundrbolt.app/api/v1
     description: Staging environment
-  - url: https://api.augeo.app/api/v1
+  - url: https://api.fundrbolt.app/api/v1
     description: Production environment
 
 tags:

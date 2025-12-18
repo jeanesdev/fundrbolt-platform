@@ -4,13 +4,13 @@ info:
   description: API endpoints for Non-Profit Organization creation, management, and approval workflows
   version: 1.0.0
   contact:
-    name: Augeo Platform
-    email: support@augeo.app
+    name: Fundrbolt Platform
+    email: support@fundrbolt.app
 
 servers:
-  - url: https://api.augeo.app/v1
+  - url: https://api.fundrbolt.app/v1
     description: Production server
-  - url: https://api-staging.augeo.app/v1
+  - url: https://api-staging.fundrbolt.app/v1
     description: Staging server
 
 security:
