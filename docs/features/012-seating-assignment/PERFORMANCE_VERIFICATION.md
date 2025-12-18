@@ -18,7 +18,7 @@
 ### Performance Monitoring
 
 #### Implementation
-**File**: `frontend/augeo-admin/src/routes/events/$eventId/seating.tsx`
+**File**: `frontend/fundrbolt-admin/src/routes/events/$eventId/seating.tsx`
 
 ```typescript
 const handleDragEnd = async (event: DragEndEvent) => {
@@ -43,7 +43,7 @@ const handleDragEnd = async (event: DragEndEvent) => {
 ## Optimistic Updates
 
 ### Store Implementation
-**File**: `frontend/augeo-admin/src/stores/seating.store.ts`
+**File**: `frontend/fundrbolt-admin/src/stores/seating.store.ts`
 
 The seating store implements optimistic updates with rollback:
 

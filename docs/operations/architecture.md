@@ -1,11 +1,11 @@
-# Augeo Platform Infrastructure Architecture
+# Fundrbolt Platform Infrastructure Architecture
 
 **Last Updated**: 2025-10-27
 **Status**: Phase 9 - Production Ready
 
 ## Overview
 
-The Augeo Platform is deployed on Microsoft Azure using a modern, cloud-native architecture optimized for scalability, security, and cost-efficiency. The infrastructure supports three environments (dev, staging, production) with comprehensive monitoring, automated backups, disaster recovery, and cost optimization.
+The Fundrbolt Platform is deployed on Microsoft Azure using a modern, cloud-native architecture optimized for scalability, security, and cost-efficiency. The infrastructure supports three environments (dev, staging, production) with comprehensive monitoring, automated backups, disaster recovery, and cost optimization.
 
 ## Architecture Diagram
 
@@ -14,7 +14,7 @@ The Augeo Platform is deployed on Microsoft Azure using a modern, cloud-native a
 │                        Azure Subscription                        │
 │                                                                   │
 │  ┌───────────────────────────────────────────────────────────┐  │
-│  │  Resource Group: augeo-{environment}-rg                    │  │
+│  │  Resource Group: fundrbolt-{environment}-rg                    │  │
 │  │                                                             │  │
 │  │  ┌─────────────────┐    ┌──────────────────────────────┐  │  │
 │  │  │ Static Web App  │    │    App Service Plan (Linux)  │  │  │
@@ -71,9 +71,9 @@ The Augeo Platform is deployed on Microsoft Azure using a modern, cloud-native a
 │  └─────────────────────────────────────────────────────────────┘  │
 │                                                                   │
 │  ┌─────────────────────────────────────────────────────────────┐ │
-│  │                     DNS Zone (augeo.app)                     │ │
-│  │  - api.augeo.app → App Service                              │ │
-│  │  - admin.augeo.app → Static Web App                         │ │
+│  │                     DNS Zone (fundrbolt.app)                     │ │
+│  │  - api.fundrbolt.app → App Service                              │ │
+│  │  - admin.fundrbolt.app → Static Web App                         │ │
 │  └─────────────────────────────────────────────────────────────┘ │
 │                                                                   │
 └─────────────────────────────────────────────────────────────────┘
@@ -255,7 +255,7 @@ infrastructure/
 ### Resource Tagging
 All resources tagged with:
 - `Environment`: dev/staging/production
-- `Project`: augeo-platform
+- `Project`: fundrbolt-platform
 - `Owner`: operations
 - `CostCenter`: For chargeback
 
@@ -335,9 +335,9 @@ All resources tagged with:
 - **Test Locations**: East US, West US, North Europe
 
 ### Notification Channels
-- **Production**: ops@augeo.app, engineering@augeo.app
-- **Staging**: ops@augeo.app, devops@augeo.app
-- **Dev**: devops@augeo.app
+- **Production**: ops@fundrbolt.app, engineering@fundrbolt.app
+- **Staging**: ops@fundrbolt.app, devops@fundrbolt.app
+- **Dev**: devops@fundrbolt.app
 
 ### Dashboards
 1. **System Health Dashboard**: 10 tiles with request rate, latency, errors, availability, top endpoints
@@ -378,7 +378,7 @@ All resources tagged with:
 ### Resource Tagging
 All resources tagged with:
 - **Environment**: dev, staging, production
-- **Project**: augeo-platform
+- **Project**: fundrbolt-platform
 - **Owner**: Team responsible
 - **CostCenter**: Cost allocation
 - **ManagedBy**: Bicep (IaC)

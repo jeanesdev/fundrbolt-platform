@@ -33,7 +33,7 @@ This feature removes unnecessary template components from the admin PWA (Tasks, 
 
 ✅ **Architecture Pattern**: Maintains existing REST API pattern, OAuth2+JWT authentication, RBAC authorization. No new patterns required.
 
-✅ **No New Projects**: Works entirely within existing `frontend/augeo-admin` and `backend/app` codebases. No additional projects created.
+✅ **No New Projects**: Works entirely within existing `frontend/fundrbolt-admin` and `backend/app` codebases. No additional projects created.
 
 ✅ **Security Requirements**: Enforces role-based access control at both frontend (UI rendering) and backend (API filtering). Preserves existing JWT claims and session management.
 
@@ -60,7 +60,7 @@ This feature removes unnecessary template components from the admin PWA (Tasks, 
 
 - REST endpoints follow existing FastAPI patterns (GET /api/v1/resource, PATCH /api/v1/resource/{id})
 - TanStack Router guards use existing auth context (no new auth mechanism)
-- Zustand store follows existing state management pattern (see frontend/augeo-admin/src/stores/*)
+- Zustand store follows existing state management pattern (see frontend/fundrbolt-admin/src/stores/*)
 
 ✅ **API Contract Validation**:
 
@@ -121,7 +121,7 @@ backend/
     └── services/
         └── test_search.py       # (new) Search service unit tests
 
-frontend/augeo-admin/
+frontend/fundrbolt-admin/
 ├── src/
 │   ├── components/
 │   │   ├── layout/
@@ -169,7 +169,7 @@ frontend/augeo-admin/
         └── search.test.ts           # (new) Search service tests
 ```
 
-**Structure Decision**: Web application structure selected. Feature spans both `backend/` (FastAPI REST API with role-based filtering) and `frontend/augeo-admin/` (React PWA with component/page/service layers). Uses existing monorepo layout. No new projects created. Changes are modifications to existing admin PWA template plus new components for dashboards, NPO selector, profile form, and search.
+**Structure Decision**: Web application structure selected. Feature spans both `backend/` (FastAPI REST API with role-based filtering) and `frontend/fundrbolt-admin/` (React PWA with component/page/service layers). Uses existing monorepo layout. No new projects created. Changes are modifications to existing admin PWA template plus new components for dashboards, NPO selector, profile form, and search.
 
 ## Complexity Tracking
 

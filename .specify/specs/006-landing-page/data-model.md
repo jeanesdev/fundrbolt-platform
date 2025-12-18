@@ -488,14 +488,14 @@ def seed_testimonials():
     db = SessionLocal()
 
     # Get or create admin user
-    admin = db.query(User).filter(User.email == "admin@augeo.app").first()
+    admin = db.query(User).filter(User.email == "admin@fundrbolt.app").first()
     if not admin:
         print("Admin user not found. Run seed_test_users.py first.")
         return
 
     testimonials = [
         {
-            "quote_text": "Augeo helped us raise 40% more than last year's gala. The digital bid paddles were a huge hit with our donors!",
+            "quote_text": "Fundrbolt helped us raise 40% more than last year's gala. The digital bid paddles were a huge hit with our donors!",
             "author_name": "Sarah J.",
             "author_role": AuthorRole.DONOR,
             "organization_name": "Community Arts Foundation",
@@ -503,7 +503,7 @@ def seed_testimonials():
             "is_published": True,
         },
         {
-            "quote_text": "As an auctioneer, Augeo's real-time controls gave me confidence. The bid tracking is flawless.",
+            "quote_text": "As an auctioneer, Fundrbolt's real-time controls gave me confidence. The bid tracking is flawless.",
             "author_name": "Michael Chen",
             "author_role": AuthorRole.AUCTIONEER,
             "organization_name": "Elite Auctioneers",

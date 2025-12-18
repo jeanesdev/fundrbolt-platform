@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document consolidates technical research and design decisions for implementing table seating assignments and bidder number management in the Augeo fundraising platform. All decisions align with the project constitution and leverage existing infrastructure.
+This document consolidates technical research and design decisions for implementing table seating assignments and bidder number management in the Fundrbolt fundraising platform. All decisions align with the project constitution and leverage existing infrastructure.
 
 ---
 
@@ -319,7 +319,7 @@ async def auto_assign_guests(db: AsyncSession, event_id: UUID) -> dict:
 **Implementation**:
 
 ```typescript
-// frontend/augeo-admin/src/hooks/useSeatingDragDrop.ts
+// frontend/fundrbolt-admin/src/hooks/useSeatingDragDrop.ts
 export function useSeatingDragDrop(eventId: string) {
   const { moveGuest, rollbackMove } = useSeatingStore();
 

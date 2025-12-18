@@ -20,8 +20,8 @@ description: "Task list for NPO Creation and Management feature implementation"
 ## Path Conventions
 
 - **Backend**: `backend/app/` (following existing structure)
-- **Frontend**: `frontend/augeo-admin/src/`
-- **Tests**: `backend/app/tests/` and `frontend/augeo-admin/tests/`
+- **Frontend**: `frontend/fundrbolt-admin/src/`
+- **Tests**: `backend/app/tests/` and `frontend/fundrbolt-admin/tests/`
 
 ---
 
@@ -33,7 +33,7 @@ description: "Task list for NPO Creation and Management feature implementation"
 - [x] T002 [P] Setup Azure Blob Storage container for NPO assets (logo uploads)
 - [x] T003 [P] Configure email service (SendGrid/Azure Communication Services) credentials
 - [x] T004 Add Python dependencies to backend/pyproject.toml: Pillow, python-magic, azure-storage-blob, pydantic-extra-types
-- [x] T005 Add frontend dependencies to frontend/augeo-admin/package.json: react-colorful, react-dropzone, @tanstack/react-query
+- [x] T005 Add frontend dependencies to frontend/fundrbolt-admin/package.json: react-colorful, react-dropzone, @tanstack/react-query
 
 ---
 
@@ -61,8 +61,8 @@ description: "Task list for NPO Creation and Management feature implementation"
 - [x] T021 Create file upload service in backend/app/services/file_upload_service.py with Azure Blob integration and signed URLs ✅
 - [x] T022 Create email notification service in backend/app/services/email_service.py for invitations and status updates ✅
 - [x] T023 Extend audit logging in backend/app/services/audit_service.py for NPO operations ✅
-- [x] T024 [P] Setup frontend NPO store in frontend/augeo-admin/src/stores/npo-store.ts using Zustand ✅
-- [x] T025 [P] Create NPO API client in frontend/augeo-admin/src/services/npo-service.ts ✅
+- [x] T024 [P] Setup frontend NPO store in frontend/fundrbolt-admin/src/stores/npo-store.ts using Zustand ✅
+- [x] T025 [P] Create NPO API client in frontend/fundrbolt-admin/src/services/npo-service.ts ✅
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -100,14 +100,14 @@ description: "Task list for NPO Creation and Management feature implementation"
 - [x] T038 [US1] Create PUT /api/v1/npos/{id} endpoint in backend/app/api/v1/npos.py ✅ (PATCH endpoint implemented)
 - [x] T039 [US1] Add validation for NPO name uniqueness, tax ID format, and email in backend/app/services/npo_service.py ✅
 - [x] T040 [US1] Add audit logging for NPO creation and updates in backend/app/services/npo_service.py ✅
-- [x] T041 [P] [US1] Create NpoCreationForm component in frontend/augeo-admin/src/components/npo/npo-creation-form.tsx with react-hook-form ✅
+- [x] T041 [P] [US1] Create NpoCreationForm component in frontend/fundrbolt-admin/src/components/npo/npo-creation-form.tsx with react-hook-form ✅
 - [x] T042 [P] [US1] Create multi-step form navigation in NpoCreationForm (Basic Info, Contact, Branding, Review) ✅ (Single-page with sections implemented)
 - [x] T043 [US1] Implement form validation matching backend rules in frontend ✅ (Zod schema validates all fields)
-- [x] T044 [US1] Create CreateNpoPage in frontend/augeo-admin/src/pages/npo/create-npo.tsx ✅
-- [x] T045 [US1] Create NpoListPage in frontend/augeo-admin/src/pages/npo/list-npo.tsx with status filtering ✅ (Full featured: search, filter, pagination, cards)
-- [x] T046 [US1] Create useNpoCreation hook in frontend/augeo-admin/src/hooks/use-npo-creation.ts ✅ (Encapsulates workflow with navigation and toasts)
+- [x] T044 [US1] Create CreateNpoPage in frontend/fundrbolt-admin/src/pages/npo/create-npo.tsx ✅
+- [x] T045 [US1] Create NpoListPage in frontend/fundrbolt-admin/src/pages/npo/list-npo.tsx with status filtering ✅ (Full featured: search, filter, pagination, cards)
+- [x] T046 [US1] Create useNpoCreation hook in frontend/fundrbolt-admin/src/hooks/use-npo-creation.ts ✅ (Encapsulates workflow with navigation and toasts)
 - [x] T047 [US1] Add routing for NPO creation and list pages in frontend router ✅ (Routes: /npos, /npos/create, /npos/$npoId all protected under /_authenticated)
-- [x] T048 [US1] Create EditNpoPage in frontend/augeo-admin/src/pages/npo/edit-npo.tsx ✅ (Reuses NpoCreationForm with defaultValues)
+- [x] T048 [US1] Create EditNpoPage in frontend/fundrbolt-admin/src/pages/npo/edit-npo.tsx ✅ (Reuses NpoCreationForm with defaultValues)
 - [x] T049 [US1] Add routing for NPO edit page in frontend router ✅ (Route: /npos/$npoId/edit protected under /_authenticated)
 
 **Backend Details**:
@@ -157,7 +157,7 @@ description: "Task list for NPO Creation and Management feature implementation"
 - [x] T059 [US2] Create GET /api/v1/npos/{id}/branding endpoint in backend/app/api/v1/branding.py ✅
 - [x] T060 [US2] Create PUT /api/v1/npos/{id}/branding endpoint in backend/app/api/v1/branding.py ✅
 - [x] T061 [US2] Create POST /api/v1/npos/{id}/logo/upload-url endpoint in backend/app/api/v1/branding.py ✅
-- [x] T062 [P] [US2] Create BrandingConfiguration component in frontend/augeo-admin/src/components/npo/npo-branding-section.tsx ✅
+- [x] T062 [P] [US2] Create BrandingConfiguration component in frontend/fundrbolt-admin/src/components/npo/npo-branding-section.tsx ✅
 - [x] T063 [P] [US2] Integrate react-colorful color picker with accessibility contrast warnings ✅
 - [x] T064 [P] [US2] Create LogoUpload component with react-dropzone ✅ (integrated into NPOBrandingSection)
 - [x] T065 [US2] Implement direct-to-local upload with image cropping ✅ (react-easy-crop with canvas processing)
@@ -219,11 +219,11 @@ description: "Task list for NPO Creation and Management feature implementation"
 - [x] T087 [US3] Create PATCH /api/v1/npos/{id}/members/{memberId}/role endpoint in backend/app/api/v1/members.py ✅
 - [x] T088 [US3] Create DELETE /api/v1/npos/{id}/members/{memberId} endpoint in backend/app/api/v1/members.py ✅
 - [x] T089 [US3] Create POST /api/v1/invitations/accept endpoint in backend/app/api/v1/invitations.py ✅
-- [x] T090 [P] [US3] Create StaffInvitation component in frontend/augeo-admin/src/features/npo-management/components/StaffInvitation.tsx ✅
-- [x] T091 [P] [US3] Create MemberList component with role badges in frontend/augeo-admin/src/features/npo-management/components/MemberList.tsx ✅
+- [x] T090 [P] [US3] Create StaffInvitation component in frontend/fundrbolt-admin/src/features/npo-management/components/StaffInvitation.tsx ✅
+- [x] T091 [P] [US3] Create MemberList component with role badges in frontend/fundrbolt-admin/src/features/npo-management/components/MemberList.tsx ✅
 - [x] T092 [US3] Create invitation form with email and role selection ✅
 - [x] T093 [US3] Add member management to NpoSettingsPage ✅
-- [x] T094 [US3] Create InvitationAcceptancePage for token validation in frontend/augeo-admin/src/features/npo-management/pages/InvitationAcceptancePage.tsx ✅
+- [x] T094 [US3] Create InvitationAcceptancePage for token validation in frontend/fundrbolt-admin/src/features/npo-management/pages/InvitationAcceptancePage.tsx ✅
 - [x] T095 [US3] Add routing for invitation acceptance: /invitations/{id}/accept?token=xxx ✅
 
 **Backend Status**: ✅ **COMPLETE** - All backend infrastructure for team invitations implemented and tested
@@ -301,13 +301,13 @@ description: "Task list for NPO Creation and Management feature implementation"
 - [x] T109 [US4] Create GET /api/v1/admin/npos/applications endpoint with SuperAdmin guard in backend/app/api/v1/admin_endpoints.py ✅ (backend/app/api/v1/admin.py)
 - [x] T110 [US4] Create POST /api/v1/admin/npos/{id}/applications/{appId}/review endpoint in backend/app/api/v1/admin_endpoints.py ✅ (POST /api/v1/admin/npos/{id}/review)
 - [x] T111 [US4] Add SuperAdmin role check middleware in backend/app/middleware/ ✅ (require_superadmin dependency in admin.py)
-- [x] T112 [P] [US4] Create ApplicationStatus component in frontend/augeo-admin/src/features/npo-management/components/ApplicationStatus.tsx ✅ (ApplicationStatusBadge in src/components/npo/)
+- [x] T112 [P] [US4] Create ApplicationStatus component in frontend/fundrbolt-admin/src/features/npo-management/components/ApplicationStatus.tsx ✅ (ApplicationStatusBadge in src/components/npo/)
 - [x] T113 [P] [US4] Create application submission button with confirmation dialog ✅ (Submit for Approval on NPO detail page)
-- [x] T114 [P] [US4] Create SuperAdminReviewPage in frontend/augeo-admin/src/features/npo-management/pages/SuperAdminReviewPage.tsx ✅ (npo-applications.tsx in src/pages/admin/)
-- [x] T115 [US4] Create ApplicationReviewPanel with approve/reject actions in frontend/augeo-admin/src/features/npo-management/components/ApplicationReviewPanel.tsx ✅ (ApplicationReviewDialog in src/components/admin/)
+- [x] T114 [P] [US4] Create SuperAdminReviewPage in frontend/fundrbolt-admin/src/features/npo-management/pages/SuperAdminReviewPage.tsx ✅ (npo-applications.tsx in src/pages/admin/)
+- [x] T115 [US4] Create ApplicationReviewPanel with approve/reject actions in frontend/fundrbolt-admin/src/features/npo-management/components/ApplicationReviewPanel.tsx ✅ (ApplicationReviewDialog in src/components/admin/)
 - [x] T116 [US4] Create review notes textarea and required changes checklist ✅ (included in ApplicationReviewDialog)
 - [x] T117 [US4] Add routing for SuperAdmin review interface: /admin/npo-applications ✅ (route: /_authenticated/admin/npo-applications)
-- [x] T118 [US4] Create useApplicationStatus hook in frontend/augeo-admin/src/features/npo-management/hooks/useApplicationStatus.ts ✅ (integrated into page components)
+- [x] T118 [US4] Create useApplicationStatus hook in frontend/fundrbolt-admin/src/features/npo-management/hooks/useApplicationStatus.ts ✅ (integrated into page components)
 
 **Implementation Summary**:
 
@@ -388,7 +388,7 @@ description: "Task list for NPO Creation and Management feature implementation"
 - [x] T127 [US5] Create GET /api/v1/legal/documents endpoint in backend/app/api/v1/legal_endpoints.py ✅ (from feature 005)
 - [x] T128 [US5] Create POST /api/v1/legal/documents/{id}/accept endpoint in backend/app/api/v1/legal_endpoints.py ✅ (POST /api/v1/consent/accept)
 - [x] T129 [US5] Seed initial legal documents (EULA, Terms of Service, Privacy Policy) in backend/seed_legal_documents.py ✅ (290-line seed script exists)
-- [x] T130 [P] [US5] Create LegalAgreementModal component in frontend/augeo-admin/src/features/npo-management/components/LegalAgreementModal.tsx ✅ (NPOLegalAgreementModal in src/components/npo/)
+- [x] T130 [P] [US5] Create LegalAgreementModal component in frontend/fundrbolt-admin/src/features/npo-management/components/LegalAgreementModal.tsx ✅ (NPOLegalAgreementModal in src/components/npo/)
 - [x] T131 [P] [US5] Create legal document display with scrollable content and checkbox ✅ (integrated into NPOLegalAgreementModal)
 - [x] T132 [US5] Add legal agreement check before NPO submission in frontend ✅ (integrated into ApplicationStatusBadge component)
 - [x] T133 [US5] Create acceptance confirmation UI with timestamp display ✅ (shows document version and publication date)
@@ -471,8 +471,8 @@ description: "Task list for NPO Creation and Management feature implementation"
 - [ ] T139 Performance optimization: add database query monitoring for NPO endpoints (Monitoring infrastructure exists from 004)
 - [ ] T140 [P] Add unit tests for NPO permission checks in backend/app/tests/unit/test_npo_permissions.py (Future enhancement)
 - [ ] T141 [P] Add unit tests for file upload validation in backend/app/tests/unit/test_file_validation.py (Future enhancement)
-- [ ] T142 [P] Add frontend E2E tests for complete NPO creation in frontend/augeo-admin/tests/e2e/npo-creation.spec.ts (Future enhancement)
-- [ ] T143 [P] Add frontend E2E tests for invitation workflow in frontend/augeo-admin/tests/e2e/invitation-flow.spec.ts (Future enhancement)
+- [ ] T142 [P] Add frontend E2E tests for complete NPO creation in frontend/fundrbolt-admin/tests/e2e/npo-creation.spec.ts (Future enhancement)
+- [ ] T143 [P] Add frontend E2E tests for invitation workflow in frontend/fundrbolt-admin/tests/e2e/invitation-flow.spec.ts (Future enhancement)
 - [ ] T144 Security hardening: review all permission checks and data isolation (✅ Production-ready with multi-tenant isolation)
 - [ ] T145 Add rate limiting for invitation sending to prevent abuse (Future enhancement)
 - [ ] T146 Add monitoring metrics for NPO creation success/failure rates (Infrastructure exists, specific metrics pending)
@@ -535,7 +535,7 @@ description: "Task list for NPO Creation and Management feature implementation"
   - Full member teams with realistic roles (Admin, Co-Admin, Staff)
   - Branding configurations (colors, logos, social media)
   - Applications with review history
-  - SuperAdmin user (<superadmin@augeo.app>)
+  - SuperAdmin user (<superadmin@fundrbolt.app>)
 - **Usage**: `poetry run python seed_npo_demo_data.py`
 - **Password**: demo123 for all demo users
 - **Features**:

@@ -45,7 +45,7 @@ cd backend && poetry run uvicorn app.main:app --reload --port 8000
 ```bash
 make dev-frontend
 # or
-cd frontend/augeo-admin && pnpm dev
+cd frontend/fundrbolt-admin && pnpm dev
 ```
 
 ### 5. Verify Setup
@@ -218,7 +218,7 @@ function EventMediaSection({ eventId }: { eventId: string }) {
 make test
 # or
 cd backend && poetry run pytest
-cd frontend/augeo-admin && pnpm test
+cd frontend/fundrbolt-admin && pnpm test
 ```
 
 ### Run Specific Test Suites
@@ -274,7 +274,7 @@ poetry run pytest --cov=app --cov-report=html
 
 4. **Update OpenAPI contract** (`.specify/specs/003-event-creation-ability/contracts/openapi.yaml`)
 
-5. **Update frontend types** (`frontend/augeo-admin/src/types/event.ts`)
+5. **Update frontend types** (`frontend/fundrbolt-admin/src/types/event.ts`)
 
 6. **Add tests** for new field validation
 
@@ -322,7 +322,7 @@ telnet localhost 3310
 
 **View Celery logs**:
 ```bash
-docker logs -f augeo-celery-worker
+docker logs -f fundrbolt-celery-worker
 ```
 
 **Verify Azure Blob Storage**:
@@ -374,7 +374,7 @@ LOG_LEVEL=DEBUG
 
 **View structured logs**:
 ```bash
-docker logs -f augeo-backend | jq .
+docker logs -f fundrbolt-backend | jq .
 ```
 
 ### Inspect Database State
@@ -506,8 +506,8 @@ const handleNameChange = debounce((value: string) => {
 **Cause**: ClamAV daemon not running or outdated signatures
 **Solution**:
 ```bash
-docker restart augeo-clamav
-docker exec augeo-clamav freshclam  # Update virus definitions
+docker restart fundrbolt-clamav
+docker exec fundrbolt-clamav freshclam  # Update virus definitions
 ```
 
 ### Issue: "Event not appearing on public page after publish"

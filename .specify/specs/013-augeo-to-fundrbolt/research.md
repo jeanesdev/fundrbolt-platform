@@ -1,12 +1,12 @@
-# Phase 0: Research - Augeo to Fundrbolt Rename
+# Phase 0: Research - Fundrbolt to Fundrbolt Rename
 
 **Date**: 2025-12-17
-**Feature**: 013-augeo-to-fundrbolt
+**Feature**: 013-fundrbolt-to-fundrbolt
 **Status**: Complete
 
 ## Overview
 
-This document consolidates findings on Augeo references across the codebase, infrastructure, GitHub, and Azure resources. It identifies where renaming is required and any migration strategies needed.
+This document consolidates findings on Fundrbolt references across the codebase, infrastructure, GitHub, and Azure resources. It identifies where renaming is required and any migration strategies needed.
 
 ---
 
@@ -17,45 +17,45 @@ This document consolidates findings on Augeo references across the codebase, inf
 #### Backend (`/backend`)
 
 **File**: `pyproject.toml`
-- **Current**: `name = "augeo-platform"`
+- **Current**: `name = "fundrbolt-platform"`
 - **Decision**: Rename to `fundrbolt-platform`
 - **Impact**: Poetry package name; affects virtual environment path and dependency management
 - **Rationale**: Keep consistent with frontend package names and project identity
 
 **File**: `app/main.py`
-- **Current**: Application title/description contains "Augeo", contact email references Augeo
+- **Current**: Application title/description contains "Fundrbolt", contact email references Fundrbolt
 - **Decision**: Replace with Fundrbolt equivalents
 - **Impact**: OpenAPI documentation, API responses
 - **Rationale**: User-facing documentation and support continuity
 
 **Files**: `app/core/config.py`, `app/middleware/`.
-- **Current**: Configuration variables, logging, response headers may reference Augeo
+- **Current**: Configuration variables, logging, response headers may reference Fundrbolt
 - **Decision**: Search and replace all brand names
 - **Impact**: Runtime configuration, API responses, logs
 - **Rationale**: Full branding consistency
 
 #### Frontend Applications
 
-**Directory**: `frontend/augeo-admin`
-- **Current**: Folder name `augeo-admin`
+**Directory**: `frontend/fundrbolt-admin`
+- **Current**: Folder name `fundrbolt-admin`
 - **Decision**: Rename to `fundrbolt-admin`
 - **Impact**: Workspace structure, build configs, import paths
 - **Rationale**: Align admin tool with product branding
 
 **Files**: `package.json` across all frontends
-- **Current**: `"name": "augeo-admin"`, `"description": "..."` with Augeo branding
+- **Current**: `"name": "fundrbolt-admin"`, `"description": "..."` with Fundrbolt branding
 - **Decision**: Rename to `fundrbolt-admin`, update description
 - **Impact**: Package registry, builds, dependencies
 - **Rationale**: Consistency with backend package name strategy
 
 **Files**: UI components, pages, assets
-- **Current**: Strings like "Augeo Platform", logos, comments
+- **Current**: Strings like "Fundrbolt Platform", logos, comments
 - **Decision**: Replace with Fundrbolt equivalents
 - **Impact**: User-visible UI, documentation strings
 - **Rationale**: User-facing consistency
 
 **File**: `frontend/*/public/manifest.json`
-- **Current**: App name, description with Augeo branding
+- **Current**: App name, description with Fundrbolt branding
 - **Decision**: Update to Fundrbolt
 - **Impact**: PWA metadata, browser install prompts
 - **Rationale**: User installation experience
@@ -65,12 +65,12 @@ This document consolidates findings on Augeo references across the codebase, inf
 ### 2. Database & Data Model
 
 **Scope**: No schema changes required.
-- **Current State**: No tables or fields storing the product name "Augeo"
+- **Current State**: No tables or fields storing the product name "Fundrbolt"
 - **Decision**: No migrations needed for data; only config/metadata updates
 - **Impact**: Zero data migration risk
 - **Rationale**: Product name is external branding, not data
 
-**If applicable**: Configuration tables (if any) containing "Augeo"
+**If applicable**: Configuration tables (if any) containing "Fundrbolt"
 - **Decision**: Update config values directly or via migration script
 - **Impact**: Minimal; likely 1-5 rows
 - **Rationale**: Preserve audit trail if using soft-updates
@@ -82,19 +82,19 @@ This document consolidates findings on Augeo references across the codebase, inf
 #### Azure Resource Naming
 
 **Bicep Templates** (`infrastructure/bicep/`)
-- **Current**: Resource names contain `augeo` (e.g., `augeo-app-svc`, `augeo-kv`, `augeo-pg`)
+- **Current**: Resource names contain `fundrbolt` (e.g., `fundrbolt-app-svc`, `fundrbolt-kv`, `fundrbolt-pg`)
 - **Decision**: Rename to `fundrbolt-*` equivalents
 - **Impact**: Azure resource identifiers, DNS names, connection strings
 - **Rationale**: Infrastructure consistency; requires environment redeploy
 
 **Environment Parameter Files** (`infrastructure/bicep/environments/`)
-- **Current**: `*.augeo.bicepparam` files
+- **Current**: `*.fundrbolt.bicepparam` files
 - **Decision**: Rename to `*.fundrbolt.bicepparam`
 - **Impact**: Deployment parameter selection
 - **Rationale**: Clearer environment identification
 
 **Key Vault Secrets** (Azure Key Vault)
-- **Current**: Secrets may have `augeo-` prefix
+- **Current**: Secrets may have `fundrbolt-` prefix
 - **Decision**: Add new `fundrbolt-` secrets, retire old ones after cutover
 - **Impact**: Application configuration, connection strings
 - **Rationale**: Safe cutover with easy rollback
@@ -102,7 +102,7 @@ This document consolidates findings on Augeo references across the codebase, inf
 #### GitHub Actions & CI/CD
 
 **Workflow Files** (`.github/workflows/`)
-- **Current**: Job names, step descriptions, artifact names may reference Augeo
+- **Current**: Job names, step descriptions, artifact names may reference Fundrbolt
 - **Decision**: Replace with Fundrbolt equivalents
 - **Impact**: Build logs, artifact naming, clarity
 - **Rationale**: Consistency in automation
@@ -112,11 +112,11 @@ This document consolidates findings on Augeo references across the codebase, inf
 ### 4. GitHub Repositories
 
 **Current Repositories**:
-- Primary: `jeanesdev/augeo-platform`
-- Potential related: May have forks or reference Augeo
+- Primary: `jeanesdev/fundrbolt-platform`
+- Potential related: May have forks or reference Fundrbolt
 
 **Decision Strategy**:
-- Rename primary repo from `augeo-platform` to `fundrbolt-platform` (or similar)
+- Rename primary repo from `fundrbolt-platform` to `fundrbolt-platform` (or similar)
 - Update all remote references in local clones and CI/CD
 - Preserve git history via GitHub redirect
 
@@ -137,12 +137,12 @@ This document consolidates findings on Augeo references across the codebase, inf
 - Copilot instructions (`.github/copilot-instructions.md`)
 - All `.md` files in `.specify/memory/`
 
-**Current**: Extensive references to Augeo as project name/description
+**Current**: Extensive references to Fundrbolt as project name/description
 
 **Decision**: Full text search and replace
-- Replace "Augeo" → "Fundrbolt"
-- Replace "augeo" → "fundrbolt"
-- Review context to preserve intent (e.g., "from Augeo to Fundrbolt" explanations)
+- Replace "Fundrbolt" → "Fundrbolt"
+- Replace "fundrbolt" → "fundrbolt"
+- Review context to preserve intent (e.g., "from Fundrbolt to Fundrbolt" explanations)
 
 **Impact**: Clarity for new developers, user-facing guides
 
@@ -175,7 +175,7 @@ This document consolidates findings on Augeo references across the codebase, inf
 - Stripe (metadata, naming)
 - Third-party webhooks
 
-**Current**: App/sender name may be "Augeo" in external systems
+**Current**: App/sender name may be "Fundrbolt" in external systems
 
 **Decision**:
 - Update sender name in email templates
@@ -193,10 +193,10 @@ This document consolidates findings on Augeo references across the codebase, inf
 
 ### Phase 1: Code & Packages
 - [ ] Backend: Update `pyproject.toml`, `app/main.py`, config files
-- [ ] Frontend admin: Rename folder `augeo-admin` → `fundrbolt-admin`, update `package.json`
+- [ ] Frontend admin: Rename folder `fundrbolt-admin` → `fundrbolt-admin`, update `package.json`
 - [ ] Frontend PWAs: Update `package.json`, manifest files, UI strings
 - [ ] Shared: Update any shared package names/descriptions
-- [ ] Search & replace across all source files for "Augeo" → "Fundrbolt", "augeo" → "fundrbolt"
+- [ ] Search & replace across all source files for "Fundrbolt" → "Fundrbolt", "fundrbolt" → "fundrbolt"
 
 ### Phase 2: Infrastructure
 - [ ] Bicep: Rename resource names, parameter files
@@ -236,7 +236,7 @@ This document consolidates findings on Augeo references across the codebase, inf
 
 ## Best Practices Applied
 
-1. **No Backward Compatibility**: Direct cutover; no Augeo aliases maintained (per spec clarification)
+1. **No Backward Compatibility**: Direct cutover; no Fundrbolt aliases maintained (per spec clarification)
 2. **Atomic Commits**: Each rename phase packaged as logical commit(s)
 3. **Minimal Data Risk**: No schema changes; only string/config updates
 4. **Safe Infrastructure**: New Bicep resources with Fundrbolt names; old resources can be retired post-launch
@@ -258,4 +258,4 @@ This document consolidates findings on Augeo references across the codebase, inf
 
 ## Conclusion
 
-All Augeo references are textual/configurational; no algorithmic logic depends on the name. Rename is straightforward and low-risk. Execution can proceed in phases (code → infrastructure → docs → testing) with dry runs at each stage.
+All Fundrbolt references are textual/configurational; no algorithmic logic depends on the name. Rename is straightforward and low-risk. Execution can proceed in phases (code → infrastructure → docs → testing) with dry runs at each stage.

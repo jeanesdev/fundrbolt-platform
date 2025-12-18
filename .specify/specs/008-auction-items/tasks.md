@@ -14,7 +14,7 @@
 ## Path Conventions
 
 - Backend: `backend/app/` (models, schemas, services, api)
-- Frontend Admin: `frontend/augeo-admin/src/`
+- Frontend Admin: `frontend/fundrbolt-admin/src/`
 - Tests: `backend/app/tests/` (unit, integration, e2e)
 
 ---
@@ -85,12 +85,12 @@
 
 ### Frontend for User Story 1
 
-- [ ] T035 [P] [US1] Create AuctionItemList component in frontend/augeo-admin/src/components/auction-items/AuctionItemList.tsx
-- [ ] T036 [P] [US1] Create AuctionItemForm component in frontend/augeo-admin/src/components/auction-items/AuctionItemForm.tsx
-- [ ] T037 [US1] Create auction items list page in frontend/augeo-admin/src/pages/events/[eventId]/auction-items/index.tsx
-- [ ] T038 [P] [US1] Create auction item create page in frontend/augeo-admin/src/pages/events/[eventId]/auction-items/create.tsx
-- [ ] T039 [P] [US1] Create auction item edit page in frontend/augeo-admin/src/pages/events/[eventId]/auction-items/[itemId]/edit.tsx
-- [ ] T040 [US1] Implement auctionItemService API client in frontend/augeo-admin/src/services/auctionItemService.ts
+- [ ] T035 [P] [US1] Create AuctionItemList component in frontend/fundrbolt-admin/src/components/auction-items/AuctionItemList.tsx
+- [ ] T036 [P] [US1] Create AuctionItemForm component in frontend/fundrbolt-admin/src/components/auction-items/AuctionItemForm.tsx
+- [ ] T037 [US1] Create auction items list page in frontend/fundrbolt-admin/src/pages/events/[eventId]/auction-items/index.tsx
+- [ ] T038 [P] [US1] Create auction item create page in frontend/fundrbolt-admin/src/pages/events/[eventId]/auction-items/create.tsx
+- [ ] T039 [P] [US1] Create auction item edit page in frontend/fundrbolt-admin/src/pages/events/[eventId]/auction-items/[itemId]/edit.tsx
+- [ ] T040 [US1] Implement auctionItemService API client in frontend/fundrbolt-admin/src/services/auctionItemService.ts
 - [ ] T041 [US1] Add filters (auction type, status, search) to item list
 - [ ] T042 [US1] Add form validation with Zod schema matching Pydantic schema
 - [ ] T043 [US1] Display auto-assigned bid number (read-only field)
@@ -133,8 +133,8 @@
 
 ### Frontend for User Story 2
 
-- [ ] T064 [P] [US2] Create MediaUploadZone component with drag-drop in frontend/augeo-admin/src/components/auction-items/MediaUploadZone.tsx
-- [ ] T065 [P] [US2] Create MediaGallery component with reordering in frontend/augeo-admin/src/components/auction-items/MediaGallery.tsx
+- [ ] T064 [P] [US2] Create MediaUploadZone component with drag-drop in frontend/fundrbolt-admin/src/components/auction-items/MediaUploadZone.tsx
+- [ ] T065 [P] [US2] Create MediaGallery component with reordering in frontend/fundrbolt-admin/src/components/auction-items/MediaGallery.tsx
 - [ ] T066 [US2] Integrate MediaUploadZone into AuctionItemForm
 - [ ] T067 [US2] Add upload progress indicators for each file
 - [ ] T068 [US2] Implement drag-and-drop reordering with react-beautiful-dnd or dnd-kit
@@ -201,7 +201,7 @@
 - [ ] T101 [P] E2E test: Create item → upload media → publish → view as donor in backend/app/tests/e2e/test_auction_item_workflow.py
 - [ ] T102 [P] E2E test: Edit published item → verify changes reflected in backend/app/tests/e2e/test_auction_item_workflow.py
 - [ ] T103 [P] E2E test: Withdraw item → verify removed from public view in backend/app/tests/e2e/test_auction_item_workflow.py
-- [ ] T104 [P] Frontend E2E test with Playwright in frontend/augeo-admin/tests/e2e/auction-items.spec.ts
+- [ ] T104 [P] Frontend E2E test with Playwright in frontend/fundrbolt-admin/tests/e2e/auction-items.spec.ts
 - [ ] T105 Update API documentation with auction item endpoints
 - [ ] T106 Update README with auction items feature documentation
 - [ ] T107 Run full test suite and verify 80%+ coverage target

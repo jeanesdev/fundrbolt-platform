@@ -145,7 +145,7 @@ class ContactService:
         """Send email to platform team"""
         try:
             await self.email_service.send_contact_notification(
-                to="ops@augeo.app",
+                to="ops@fundrbolt.app",
                 sender_name=submission.sender_name,
                 sender_email=submission.sender_email,
                 subject=submission.subject,
@@ -506,7 +506,7 @@ export const LandingPage: React.FC = () => {
   return (
     <div className="landing-page">
       <header className="hero">
-        <h1>Augeo Fundraising Platform</h1>
+        <h1>Fundrbolt Fundraising Platform</h1>
         <p>World-class fundraising software that maximizes nonprofit revenue</p>
       </header>
 
@@ -529,7 +529,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       <section className="features">
-        <h2>Why Augeo?</h2>
+        <h2>Why Fundrbolt?</h2>
         <div className="feature-grid">
           <div className="feature">
             <h3>Mobile Bidding</h3>

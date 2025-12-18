@@ -8,10 +8,10 @@
 
 ## Overview
 
-Complete cloud infrastructure setup and deployment strategy for the Augeo Platform, including:
+Complete cloud infrastructure setup and deployment strategy for the Fundrbolt Platform, including:
 
 - ✅ Azure resource provisioning and configuration (14 Bicep modules)
-- ✅ Domain acquisition and DNS setup (augeo.app purchased and configured)
+- ✅ Domain acquisition and DNS setup (fundrbolt.app purchased and configured)
 - ✅ CI/CD pipeline implementation (4 GitHub Actions workflows)
 - ✅ Environment management (dev, staging, production parameters)
 - ✅ Secrets and configuration management (Key Vault integration)
@@ -62,12 +62,12 @@ Complete cloud infrastructure setup and deployment strategy for the Augeo Platfo
 ### Current Deployment Status
 
 **Minimal Infrastructure Deployed** (October 28, 2025):
-- Resource Group: augeo-dev-rg (East US)
-- Key Vault: augeo-dev-kv
-- DNS Zone: augeo.app (nameservers configured at Namecheap)
-- Application Insights: augeo-dev-insights (monitoring local backend)
-- Log Analytics: augeo-dev-logs
-- Storage Account: augeodevst
+- Resource Group: fundrbolt-dev-rg (East US)
+- Key Vault: fundrbolt-dev-kv
+- DNS Zone: fundrbolt.app (nameservers configured at Namecheap)
+- Application Insights: fundrbolt-dev-insights (monitoring local backend)
+- Log Analytics: fundrbolt-dev-logs
+- Storage Account: fundrboltdevst
 - **Monthly Cost**: ~$1.50
 
 **Local Development Environment**:
@@ -79,7 +79,7 @@ Complete cloud infrastructure setup and deployment strategy for the Augeo Platfo
 - Mock email mode for development
 
 **Domain Configuration**:
-- Domain: augeo.app (purchased from Namecheap, expires 10/28/2026)
+- Domain: fundrbolt.app (purchased from Namecheap, expires 10/28/2026)
 - Nameservers: Azure DNS nameservers configured
 - DNS propagation: In progress (24-48 hours)
 
@@ -109,11 +109,11 @@ This spec handles **all infrastructure concerns holistically** rather than imple
 
 ### Domain & DNS
 
-- [x] Domain acquisition/configuration (augeo.app purchased from Namecheap)
+- [x] Domain acquisition/configuration (fundrbolt.app purchased from Namecheap)
 - [x] DNS zone setup in Azure DNS (nameservers configured)
 - [x] SSL/TLS certificates (Let's Encrypt or Azure managed)
 - [x] Email DNS records (SPF, DKIM, DMARC, MX) - documented, not deployed
-- [x] Subdomain strategy (api.augeo.app, admin.augeo.app, etc.)
+- [x] Subdomain strategy (api.fundrbolt.app, admin.fundrbolt.app, etc.)
 
 ### Deployment & CI/CD
 

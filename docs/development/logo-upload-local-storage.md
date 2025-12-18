@@ -113,7 +113,7 @@ if static_dir.exists():
 
 ### 4. Frontend: Local Upload Method
 
-**File**: `frontend/augeo-admin/src/services/npo-service.ts`
+**File**: `frontend/fundrbolt-admin/src/services/npo-service.ts`
 
 **Added**: `uploadLogoLocal()` method in `brandingApi` service
 
@@ -143,7 +143,7 @@ async uploadLogoLocal(npoId: string, file: File): Promise<{ logo_url: string }> 
 
 ### 5. Frontend: Updated Logo Upload Flow
 
-**File**: `frontend/augeo-admin/src/pages/npo/branding-npo.tsx`
+**File**: `frontend/fundrbolt-admin/src/pages/npo/branding-npo.tsx`
 
 **Changed**: Simplified logo upload callback to use local endpoint
 
@@ -262,7 +262,7 @@ For production deployment, the system will **automatically use Azure** if creden
 ```bash
 # .env (production)
 AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=...
-AZURE_STORAGE_ACCOUNT_NAME=augeoplatform
+AZURE_STORAGE_ACCOUNT_NAME=fundrboltplatform
 AZURE_STORAGE_CONTAINER_NAME=npo-assets
 ```
 
@@ -315,8 +315,8 @@ No code changes needed - the service detects Azure configuration at runtime.
 - `backend/app/core/config.py` - Azure configuration settings
 
 ### Frontend
-- `frontend/augeo-admin/src/services/npo-service.ts` - API client
-- `frontend/augeo-admin/src/pages/npo/branding-npo.tsx` - UI component
+- `frontend/fundrbolt-admin/src/services/npo-service.ts` - API client
+- `frontend/fundrbolt-admin/src/pages/npo/branding-npo.tsx` - UI component
 
 ### Documentation
 - `infrastructure/README.md` - Azure infrastructure setup

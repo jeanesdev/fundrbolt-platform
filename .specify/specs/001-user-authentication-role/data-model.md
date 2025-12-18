@@ -192,7 +192,7 @@ CREATE UNIQUE INDEX idx_roles_name ON roles(name);
 **Seed Data** (created in migration):
 ```sql
 INSERT INTO roles (id, name, description, scope) VALUES
-    (gen_random_uuid(), 'super_admin', 'Augeo platform staff with full access to all NPOs and events', 'platform'),
+    (gen_random_uuid(), 'super_admin', 'Fundrbolt platform staff with full access to all NPOs and events', 'platform'),
     (gen_random_uuid(), 'npo_admin', 'Full management access within assigned nonprofit organization(s)', 'npo'),
     (gen_random_uuid(), 'event_coordinator', 'Event and auction management within assigned NPO', 'npo'),
     (gen_random_uuid(), 'staff', 'Donor registration and check-in within assigned events', 'event'),

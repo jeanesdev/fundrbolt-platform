@@ -1,14 +1,14 @@
 # Email Configuration Guide
 
-This guide explains how to set up email sending using Azure Communication Services (ACS) with custom domain authentication for the Augeo platform.
+This guide explains how to set up email sending using Azure Communication Services (ACS) with custom domain authentication for the Fundrbolt platform.
 
 ## Overview
 
-The Augeo platform uses a hybrid email architecture:
+The Fundrbolt platform uses a hybrid email architecture:
 - **Email Sending**: Azure Communication Services (ACS)
 - **Email Receiving**: ImprovMX (free email forwarding service)
-- **Custom domain**: `augeo.app`
-- **Sender addresses**: `DoNotReply@augeo.app`, `Legal@augeo.app`, `Privacy@augeo.app`, `DPO@augeo.app`, `admin@augeo.app`
+- **Custom domain**: `fundrbolt.app`
+- **Sender addresses**: `DoNotReply@fundrbolt.app`, `Legal@fundrbolt.app`, `Privacy@fundrbolt.app`, `DPO@fundrbolt.app`, `admin@fundrbolt.app`
 - **Authentication**: SPF, DKIM, DMARC for 10/10 deliverability score
 - **Delivery time**: < 30 seconds average
 - **Cost**: FREE (100 emails/month on ACS free tier, unlimited forwarding with ImprovMX)
@@ -20,7 +20,7 @@ Sending:  Application → Azure Communication Services → SPF/DKIM/DMARC → Re
 
 Receiving: Sender → MX Records (ImprovMX) → Email Forwarding → jeanes.dev@gmail.com
                           ↓
-                   DNS Records (augeo.app)
+                   DNS Records (fundrbolt.app)
 ```
 
 **Why This Architecture?**
@@ -31,7 +31,7 @@ Receiving: Sender → MX Records (ImprovMX) → Email Forwarding → jeanes.dev@
 
 ## Prerequisites
 
-- Azure DNS Zone configured for `augeo.app` (see [DNS Configuration Guide](./dns-configuration.md))
+- Azure DNS Zone configured for `fundrbolt.app` (see [DNS Configuration Guide](./dns-configuration.md))
 - Azure Communication Services deployed (automatic in production)
 - Access to Azure Portal
 - Domain registrar access (if not using Azure DNS)
@@ -57,20 +57,20 @@ After deployment, get the required DNS records and configuration:
 ```bash
 # Get deployment outputs
 az deployment sub show \
-  --name augeo-production-<timestamp> \
+  --name fundrbolt-production-<timestamp> \
   --query properties.outputs
 
 # Get ACS connection string (save to Key Vault)
 az communication show \
-  --name augeo-production-acs \
-  --resource-group augeo-production-rg \
+  --name fundrbolt-production-acs \
+  --resource-group fundrbolt-production-rg \
   --query "connectionString"
 
 # Get email domain verification token
 az communication email domain show \
-  --email-service-name augeo-production-email \
-  --domain-name augeo.app \
-  --resource-group augeo-production-rg \
+  --email-service-name fundrbolt-production-email \
+  --domain-name fundrbolt.app \
+  --resource-group fundrbolt-production-rg \
   --query "verificationStates.Domain.verificationToken"
 ```
 
@@ -81,8 +81,8 @@ Add the following DNS records to your Azure DNS Zone (or domain registrar):
 ### Domain Verification TXT Record
 ```bash
 az network dns record-set txt add-record \
-  --zone-name augeo.app \
-  --resource-group augeo-production-rg \
+  --zone-name fundrbolt.app \
+  --resource-group fundrbolt-production-rg \
   --record-set-name @ \
   --value "<verification-token-from-acs>"
 ```
@@ -93,8 +93,8 @@ az network dns record-set txt add-record \
 
 ```bash
 az network dns record-set txt add-record \
-  --zone-name augeo.app \
-  --resource-group augeo-production-rg \
+  --zone-name fundrbolt.app \
+  --resource-group fundrbolt-production-rg \
   --record-set-name @ \
   --value "v=spf1 include:spf.protection.outlook.com ~all"
 ```
@@ -108,15 +108,15 @@ az network dns record-set txt add-record \
 ```bash
 # Add ImprovMX MX records
 az network dns record-set mx add-record \
-  --zone-name augeo.app \
-  --resource-group augeo-production-rg \
+  --zone-name fundrbolt.app \
+  --resource-group fundrbolt-production-rg \
   --record-set-name @ \
   --exchange mx1.improvmx.com \
   --preference 10
 
 az network dns record-set mx add-record \
-  --zone-name augeo.app \
-  --resource-group augeo-production-rg \
+  --zone-name fundrbolt.app \
+  --resource-group fundrbolt-production-rg \
   --record-set-name @ \
   --exchange mx2.improvmx.com \
   --preference 20
@@ -127,10 +127,10 @@ az network dns record-set mx add-record \
 ### DMARC Record (Domain-based Message Authentication)
 ```bash
 az network dns record-set txt add-record \
-  --zone-name augeo.app \
-  --resource-group augeo-production-rg \
+  --zone-name fundrbolt.app \
+  --resource-group fundrbolt-production-rg \
   --record-set-name _dmarc \
-  --value "v=DMARC1; p=quarantine; rua=mailto:dmarc@augeo.app; pct=100; fo=1"
+  --value "v=DMARC1; p=quarantine; rua=mailto:dmarc@fundrbolt.app; pct=100; fo=1"
 ```
 
 ### DKIM Records (DomainKeys Identified Mail)
@@ -139,16 +139,16 @@ Retrieve DKIM selectors from ACS:
 ```bash
 # Get DKIM selector 1
 az communication email domain show \
-  --email-service-name augeo-production-email \
-  --domain-name augeo.app \
-  --resource-group augeo-production-rg \
+  --email-service-name fundrbolt-production-email \
+  --domain-name fundrbolt.app \
+  --resource-group fundrbolt-production-rg \
   --query "verificationStates.DKIM.domainKey1"
 
 # Get DKIM selector 2
 az communication email domain show \
-  --email-service-name augeo-production-email \
-  --domain-name augeo.app \
-  --resource-group augeo-production-rg \
+  --email-service-name fundrbolt-production-email \
+  --domain-name fundrbolt.app \
+  --resource-group fundrbolt-production-rg \
   --query "verificationStates.DKIM.domainKey2"
 ```
 
@@ -156,33 +156,33 @@ Add CNAME records:
 ```bash
 # DKIM selector 1
 az network dns record-set cname set-record \
-  --zone-name augeo.app \
-  --resource-group augeo-production-rg \
+  --zone-name fundrbolt.app \
+  --resource-group fundrbolt-production-rg \
   --record-set-name selector1-azurecomm-prod-net._domainkey \
   --cname "<dkim-selector-1-value>"
 
 # DKIM selector 2
 az network dns record-set cname set-record \
-  --zone-name augeo.app \
-  --resource-group augeo-production-rg \
+  --zone-name fundrbolt.app \
+  --resource-group fundrbolt-production-rg \
   --record-set-name selector2-azurecomm-prod-net._domainkey \
   --cname "<dkim-selector-2-value>"
 ```
 
 ## Step 4: Verify Domain in Azure Portal
 
-1. Navigate to Azure Portal → Communication Services → augeo-production-email
+1. Navigate to Azure Portal → Communication Services → fundrbolt-production-email
 2. Go to "Provision domains" → "Custom domains"
-3. Select `augeo.app`
+3. Select `fundrbolt.app`
 4. Click "Verify" button
 5. Wait 5-15 minutes for verification
 
 Check verification status:
 ```bash
 az communication email domain show \
-  --email-service-name augeo-production-email \
-  --domain-name augeo.app \
-  --resource-group augeo-production-rg \
+  --email-service-name fundrbolt-production-email \
+  --domain-name fundrbolt.app \
+  --resource-group fundrbolt-production-rg \
   --query "verificationStates"
 ```
 
@@ -212,7 +212,7 @@ ImprovMX provides free email forwarding to receive emails at your custom domain 
 
 1. Go to [https://improvmx.com/](https://improvmx.com/)
 2. Click "Get Started" (no account required initially)
-3. Enter your domain: `augeo.app`
+3. Enter your domain: `fundrbolt.app`
 4. ImprovMX will automatically detect your MX records
 
 ### 2. Configure Email Aliases
@@ -221,11 +221,11 @@ Add forwarding rules for each address:
 
 | Alias | Forwards To | Purpose |
 |-------|-------------|---------|
-| `admin@augeo.app` | `jeanes.dev@gmail.com` | Administrative emails |
-| `Legal@augeo.app` | `jeanes.dev@gmail.com` | Legal inquiries |
-| `Privacy@augeo.app` | `jeanes.dev@gmail.com` | Privacy requests |
-| `DPO@augeo.app` | `jeanes.dev@gmail.com` | Data Protection Officer |
-| `support@augeo.app` | `jeanes.dev@gmail.com` | Support inquiries |
+| `admin@fundrbolt.app` | `jeanes.dev@gmail.com` | Administrative emails |
+| `Legal@fundrbolt.app` | `jeanes.dev@gmail.com` | Legal inquiries |
+| `Privacy@fundrbolt.app` | `jeanes.dev@gmail.com` | Privacy requests |
+| `DPO@fundrbolt.app` | `jeanes.dev@gmail.com` | Data Protection Officer |
+| `support@fundrbolt.app` | `jeanes.dev@gmail.com` | Support inquiries |
 
 ### 3. Verify Your Gmail Address
 
@@ -238,7 +238,7 @@ Add forwarding rules for each address:
 To receive emails sent to any address at your domain:
 
 ```
-*@augeo.app → jeanes.dev@gmail.com
+*@fundrbolt.app → jeanes.dev@gmail.com
 ```
 
 ### 5. Test Email Receiving
@@ -247,7 +247,7 @@ After DNS propagation (5-15 minutes), test by sending an email:
 
 ```bash
 # From your personal email or another service
-echo "Test email body" | mail -s "Test Receiving" admin@augeo.app
+echo "Test email body" | mail -s "Test Receiving" admin@fundrbolt.app
 ```
 
 Check your Gmail inbox for the forwarded message.
@@ -277,11 +277,11 @@ The following sender addresses are configured in Azure Communication Services:
 
 | Address | Purpose | Display Name | Can Receive? |
 |---------|---------|--------------|--------------|
-| DoNotReply@augeo.app | System notifications, automated emails | Augeo Platform | ❌ No (by design) |
-| admin@augeo.app | Administrative communications | Augeo Admin | ✅ Yes (forwards to Gmail) |
-| Legal@augeo.app | Legal inquiries, terms updates | Augeo Legal | ✅ Yes (forwards to Gmail) |
-| Privacy@augeo.app | Privacy requests, GDPR inquiries | Augeo Privacy | ✅ Yes (forwards to Gmail) |
-| DPO@augeo.app | Data Protection Officer communications | Augeo DPO | ✅ Yes (forwards to Gmail) |
+| DoNotReply@fundrbolt.app | System notifications, automated emails | Fundrbolt Platform | ❌ No (by design) |
+| admin@fundrbolt.app | Administrative communications | Fundrbolt Admin | ✅ Yes (forwards to Gmail) |
+| Legal@fundrbolt.app | Legal inquiries, terms updates | Fundrbolt Legal | ✅ Yes (forwards to Gmail) |
+| Privacy@fundrbolt.app | Privacy requests, GDPR inquiries | Fundrbolt Privacy | ✅ Yes (forwards to Gmail) |
+| DPO@fundrbolt.app | Data Protection Officer communications | Fundrbolt DPO | ✅ Yes (forwards to Gmail) |
 
 ### Creating Sender Usernames in ACS
 
@@ -290,12 +290,12 @@ Sender usernames are created via Azure CLI (not Bicep):
 ```bash
 # Add sender username to email domain
 az communication email domain sender-username create \
-  --email-service-name augeo-production-email \
-  --domain-name augeo.app \
+  --email-service-name fundrbolt-production-email \
+  --domain-name fundrbolt.app \
   --sender-username admin \
   --username admin \
-  --display-name "Augeo Admin" \
-  --resource-group augeo-production-rg
+  --display-name "Fundrbolt Admin" \
+  --resource-group fundrbolt-production-rg
 ```
 
 Repeat for each sender address (DoNotReply, Legal, Privacy, DPO).
@@ -307,13 +307,13 @@ Securely store the connection string:
 ```bash
 # Get connection string
 ACS_CONNECTION_STRING=$(az communication list-key \
-  --name augeo-production-acs \
-  --resource-group augeo-production-rg \
+  --name fundrbolt-production-acs \
+  --resource-group fundrbolt-production-rg \
   --query "primaryConnectionString" -o tsv)
 
 # Store in Key Vault
 az keyvault secret set \
-  --vault-name augeo-production-kv \
+  --vault-name fundrbolt-production-kv \
   --name acs-connection-string \
   --value "$ACS_CONNECTION_STRING"
 ```
@@ -326,14 +326,14 @@ Update App Service configuration:
 
 ```bash
 az webapp config appsettings set \
-  --name augeo-production-api \
-  --resource-group augeo-production-rg \
+  --name fundrbolt-production-api \
+  --resource-group fundrbolt-production-rg \
   --settings \
     EMAIL_PROVIDER="azure_communication_services" \
-    ACS_CONNECTION_STRING="@Microsoft.KeyVault(SecretUri=https://augeo-production-kv.vault.azure.net/secrets/acs-connection-string/)" \
-    EMAIL_FROM="noreply@augeo.app" \
-    EMAIL_SUPPORT="support@augeo.app" \
-    EMAIL_BILLING="billing@augeo.app"
+    ACS_CONNECTION_STRING="@Microsoft.KeyVault(SecretUri=https://fundrbolt-production-kv.vault.azure.net/secrets/acs-connection-string/)" \
+    EMAIL_FROM="noreply@fundrbolt.app" \
+    EMAIL_SUPPORT="support@fundrbolt.app" \
+    EMAIL_BILLING="billing@fundrbolt.app"
 ```
 
 ### Backend Code Integration
@@ -354,7 +354,7 @@ class EmailService:
         to: str,
         subject: str,
         body: str,
-        from_address: str = "noreply@augeo.app"
+        from_address: str = "noreply@fundrbolt.app"
     ):
         message = {
             "senderAddress": from_address,
@@ -379,8 +379,8 @@ class EmailService:
 
 ```bash
 az communication email send \
-  --sender "noreply@augeo.app" \
-  --subject "Test Email from Augeo Platform" \
+  --sender "noreply@fundrbolt.app" \
+  --subject "Test Email from Fundrbolt Platform" \
   --text "This is a test email to verify email configuration." \
   --to "your-email@example.com" \
   --connection-string "$ACS_CONNECTION_STRING"
@@ -390,7 +390,7 @@ az communication email send \
 
 ```bash
 # SSH into App Service
-az webapp ssh --name augeo-production-api --resource-group augeo-production-rg
+az webapp ssh --name fundrbolt-production-api --resource-group fundrbolt-production-rg
 
 # Test email sending
 poetry run python -c "
@@ -401,7 +401,7 @@ async def test():
     service = EmailService()
     result = await service.send_email(
         to='your-email@example.com',
-        subject='Test from Augeo',
+        subject='Test from Fundrbolt',
         body='Testing email configuration'
     )
     print(f'Message ID: {result.message_id}')
@@ -432,7 +432,7 @@ TEST_EMAIL="test-abc123@srv1.mail-tester.com"
 
 # Send test email
 az communication email send \
-  --sender "noreply@augeo.app" \
+  --sender "noreply@fundrbolt.app" \
   --subject "Authentication Test" \
   --text "Testing SPF, DKIM, and DMARC configuration" \
   --to "$TEST_EMAIL" \
@@ -448,8 +448,8 @@ az communication email send \
 ```bash
 # Check App Insights for email events
 az monitor app-insights query \
-  --app augeo-production-insights \
-  --resource-group augeo-production-rg \
+  --app fundrbolt-production-insights \
+  --resource-group fundrbolt-production-rg \
   --analytics-query "
     traces
     | where message contains 'email'
@@ -471,10 +471,10 @@ Example of properly configured email:
 ```
 Received-SPF: pass
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-  d=augeo.app; s=selector1-azurecomm-prod-net;
-Authentication-Results: spf=pass smtp.mailfrom=augeo.app;
-  dkim=pass header.d=augeo.app;
-  dmarc=pass action=none header.from=augeo.app;
+  d=fundrbolt.app; s=selector1-azurecomm-prod-net;
+Authentication-Results: spf=pass smtp.mailfrom=fundrbolt.app;
+  dkim=pass header.d=fundrbolt.app;
+  dmarc=pass action=none header.from=fundrbolt.app;
 ```
 
 ## Troubleshooting
@@ -486,22 +486,22 @@ Authentication-Results: spf=pass smtp.mailfrom=augeo.app;
 **Solutions**:
 ```bash
 # 1. Check DNS records are published
-dig TXT augeo.app
-dig TXT _dmarc.augeo.app
-dig CNAME selector1-azurecomm-prod-net._domainkey.augeo.app
+dig TXT fundrbolt.app
+dig TXT _dmarc.fundrbolt.app
+dig CNAME selector1-azurecomm-prod-net._domainkey.fundrbolt.app
 
 # 2. Wait for DNS propagation (up to 48 hours)
 # 3. Verify TXT record matches exactly
 az communication email domain show \
-  --email-service-name augeo-production-email \
-  --domain-name augeo.app \
-  --resource-group augeo-production-rg
+  --email-service-name fundrbolt-production-email \
+  --domain-name fundrbolt.app \
+  --resource-group fundrbolt-production-rg
 
 # 4. Re-trigger verification
 az communication email domain update \
-  --email-service-name augeo-production-email \
-  --domain-name augeo.app \
-  --resource-group augeo-production-rg
+  --email-service-name fundrbolt-production-email \
+  --domain-name fundrbolt.app \
+  --resource-group fundrbolt-production-rg
 ```
 
 ### Emails Landing in Spam
@@ -534,8 +534,8 @@ az communication email domain update \
 ```bash
 # Check ACS service health
 az communication show \
-  --name augeo-production-acs \
-  --resource-group augeo-production-rg \
+  --name fundrbolt-production-acs \
+  --resource-group fundrbolt-production-rg \
   --query "provisioningState"
 
 # Review Application Insights for errors
@@ -550,8 +550,8 @@ az communication show \
 ```bash
 # Rotate connection string
 az communication regenerate-key \
-  --name augeo-production-acs \
-  --resource-group augeo-production-rg \
+  --name fundrbolt-production-acs \
+  --resource-group fundrbolt-production-rg \
   --key-type primary
 
 # Update Key Vault secret
@@ -564,25 +564,25 @@ Recommended email templates for common scenarios:
 
 ### Welcome Email
 ```python
-subject = "Welcome to Augeo Platform"
+subject = "Welcome to Fundrbolt Platform"
 body = """
 Hello {name},
 
-Welcome to Augeo! Your account has been successfully created.
+Welcome to Fundrbolt! Your account has been successfully created.
 
 Get started:
 - Complete your profile
 - Explore features
-- Contact support: support@augeo.app
+- Contact support: support@fundrbolt.app
 
 Best regards,
-The Augeo Team
+The Fundrbolt Team
 """
 ```
 
 ### Password Reset
 ```python
-subject = "Reset Your Augeo Password"
+subject = "Reset Your Fundrbolt Password"
 body = """
 Hello {name},
 
@@ -595,7 +595,7 @@ This link expires in 1 hour.
 If you didn't request this, please ignore this email.
 
 Best regards,
-The Augeo Team
+The Fundrbolt Team
 """
 ```
 
@@ -612,18 +612,18 @@ Please verify your email address by clicking:
 This link expires in 24 hours.
 
 Best regards,
-The Augeo Team
+The Fundrbolt Team
 """
 ```
 
 ## Best Practices
 
 1. **Use appropriate sender addresses**:
-   - `DoNotReply@augeo.app` for automated emails (no replies expected)
-   - `admin@augeo.app` for administrative communications
-   - `Legal@augeo.app` for terms updates and legal notices
-   - `Privacy@augeo.app` for GDPR/privacy requests
-   - `DPO@augeo.app` for data protection inquiries
+   - `DoNotReply@fundrbolt.app` for automated emails (no replies expected)
+   - `admin@fundrbolt.app` for administrative communications
+   - `Legal@fundrbolt.app` for terms updates and legal notices
+   - `Privacy@fundrbolt.app` for GDPR/privacy requests
+   - `DPO@fundrbolt.app` for data protection inquiries
 
 2. **Email receiving vs sending**:
    - Azure Communication Services: **Sending only**

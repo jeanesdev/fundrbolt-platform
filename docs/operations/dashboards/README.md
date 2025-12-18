@@ -102,15 +102,15 @@ Exportable dashboard and workbook definitions for Azure Portal visualization.
 ```bash
 # Import dashboard
 az portal dashboard create \
-    --name "augeo-system-health" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-system-health" \
+    --resource-group "fundrbolt-production-rg" \
     --input-path "./system-health-dashboard.json" \
     --location "eastus"
 
 # Import workbook
 az workbook create \
-    --name "augeo-infrastructure-health" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-infrastructure-health" \
+    --resource-group "fundrbolt-production-rg" \
     --location "eastus" \
     --category "workbook" \
     --template-data @infrastructure-workbook.json
@@ -125,14 +125,14 @@ Replace placeholders in JSON files with your actual resource IDs:
 ```bash
 # Get Application Insights resource ID
 az monitor app-insights component show \
-    --app "augeo-production-ai" \
-    --resource-group "augeo-production-rg" \
+    --app "fundrbolt-production-ai" \
+    --resource-group "fundrbolt-production-rg" \
     --query "id" -o tsv
 
 # Get Log Analytics workspace ID
 az monitor log-analytics workspace show \
-    --workspace-name "augeo-production-logs" \
-    --resource-group "augeo-production-rg" \
+    --workspace-name "fundrbolt-production-logs" \
+    --resource-group "fundrbolt-production-rg" \
     --query "id" -o tsv
 ```
 
@@ -201,14 +201,14 @@ Modify values based on your performance requirements.
 ```bash
 # Export dashboard
 az portal dashboard show \
-    --name "augeo-system-health" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-system-health" \
+    --resource-group "fundrbolt-production-rg" \
     > system-health-dashboard.json
 
 # Export workbook
 az workbook show \
-    --name "augeo-infrastructure-health" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-infrastructure-health" \
+    --resource-group "fundrbolt-production-rg" \
     > infrastructure-workbook.json
 ```
 

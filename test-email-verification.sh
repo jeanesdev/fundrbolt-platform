@@ -13,7 +13,7 @@ echo "=========================================="
 echo ""
 
 # Get email address from command line or use default
-EMAIL="${1:-test@augeo.app}"
+EMAIL="${1:-test@fundrbolt.app}"
 PASSWORD="TestPass123!"
 
 echo "Step 1: Register new user"

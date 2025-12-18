@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document consolidates research findings and technical decisions for implementing the public landing page feature. All decisions align with the Augeo Platform Constitution and leverage existing infrastructure from features 001 (authentication), 002 (NPO creation), and 005 (legal documentation).
+This document consolidates research findings and technical decisions for implementing the public landing page feature. All decisions align with the Fundrbolt Platform Constitution and leverage existing infrastructure from features 001 (authentication), 002 (NPO creation), and 005 (legal documentation).
 
 ## Technical Decisions
 
@@ -30,7 +30,7 @@ This document consolidates research findings and technical decisions for impleme
 
 ```typescript
 frontend/
-├── augeo-admin/          # Existing admin dashboard
+├── fundrbolt-admin/          # Existing admin dashboard
 └── landing-site/         # NEW - Public landing pages
     ├── src/
     │   ├── pages/
@@ -253,12 +253,12 @@ export const LandingPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Augeo - Fundraising Platform for Nonprofits</title>
+        <title>Fundrbolt - Fundraising Platform for Nonprofits</title>
         <meta name="description" content="World-class fundraising software..." />
-        <meta property="og:title" content="Augeo Fundraising Platform" />
+        <meta property="og:title" content="Fundrbolt Fundraising Platform" />
         <meta property="og:description" content="..." />
-        <meta property="og:image" content="https://augeo.app/og-image.jpg" />
-        <link rel="canonical" href="https://augeo.app" />
+        <meta property="og:image" content="https://fundrbolt.app/og-image.jpg" />
+        <link rel="canonical" href="https://fundrbolt.app" />
       </Helmet>
       {/* Page content */}
     </>

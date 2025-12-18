@@ -179,7 +179,7 @@
 
 **Verify in database**:
 ```bash
-docker exec -it augeo_postgres psql -U augeo_user -d augeo_db -c "SELECT * FROM contact_submissions ORDER BY created_at DESC LIMIT 1;"
+docker exec -it fundrbolt_postgres psql -U fundrbolt_user -d fundrbolt_db -c "SELECT * FROM contact_submissions ORDER BY created_at DESC LIMIT 1;"
 ```
 
 Expected fields: id, sender_name, sender_email, subject, message, ip_address, status='pending', created_at
@@ -188,7 +188,7 @@ Expected fields: id, sender_name, sender_email, subject, message, ip_address, st
 
 ### 2. Email Notification (Optional - requires email config)
 
-**Test**: Verify email sent to support@augeo.app
+**Test**: Verify email sent to support@fundrbolt.app
 
 **Prerequisites**:
 - Email configured in `.env` (SendGrid/ACS) OR
@@ -202,7 +202,7 @@ Expected fields: id, sender_name, sender_email, subject, message, ip_address, st
 5. Check MailHog UI: http://localhost:8025
 
 **Expected Results**:
-- [ ] Email received at support@augeo.app (or MailHog inbox)
+- [ ] Email received at support@fundrbolt.app (or MailHog inbox)
 - [ ] Email subject: "New Contact Form Submission: [Subject]"
 - [ ] Email body includes: sender name, email, subject, message
 - [ ] Submission status updated to 'processed' in database
@@ -308,7 +308,7 @@ Expected fields: id, sender_name, sender_email, subject, message, ip_address, st
 
 **Check Redis**:
 ```bash
-docker exec -it augeo_redis redis-cli KEYS "rate_limit:contact:*"
+docker exec -it fundrbolt_redis redis-cli KEYS "rate_limit:contact:*"
 ```
 
 ---
@@ -413,9 +413,9 @@ docker exec -it augeo_redis redis-cli KEYS "rate_limit:contact:*"
 
 **Expected Elements**:
 - [ ] Hero section heading: "Get in Touch"
-- [ ] Hero subtitle mentions "questions about Augeo"
+- [ ] Hero subtitle mentions "questions about Fundrbolt"
 - [ ] Contact information section heading: "Contact Information"
-- [ ] Support email: support@augeo.app
+- [ ] Support email: support@fundrbolt.app
 - [ ] Response time: "24-48 hours"
 - [ ] Support hours: "Monday - Friday, 9am - 5pm PST"
 - [ ] Resources section: "Looking for Something Specific?"
@@ -515,18 +515,18 @@ _Additional observations, edge cases, or recommendations:_
 
 ### Check database for submissions:
 ```bash
-docker exec -it augeo_postgres psql -U augeo_user -d augeo_db -c "SELECT id, sender_name, sender_email, subject, status, created_at FROM contact_submissions ORDER BY created_at DESC LIMIT 5;"
+docker exec -it fundrbolt_postgres psql -U fundrbolt_user -d fundrbolt_db -c "SELECT id, sender_name, sender_email, subject, status, created_at FROM contact_submissions ORDER BY created_at DESC LIMIT 5;"
 ```
 
 ### Check Redis rate limiting:
 ```bash
-docker exec -it augeo_redis redis-cli KEYS "rate_limit:contact:*"
-docker exec -it augeo_redis redis-cli ZRANGE "rate_limit:contact:127.0.0.1" 0 -1 WITHSCORES
+docker exec -it fundrbolt_redis redis-cli KEYS "rate_limit:contact:*"
+docker exec -it fundrbolt_redis redis-cli ZRANGE "rate_limit:contact:127.0.0.1" 0 -1 WITHSCORES
 ```
 
 ### Clear rate limit (for retesting):
 ```bash
-docker exec -it augeo_redis redis-cli DEL "rate_limit:contact:127.0.0.1"
+docker exec -it fundrbolt_redis redis-cli DEL "rate_limit:contact:127.0.0.1"
 ```
 
 ### Check backend logs:

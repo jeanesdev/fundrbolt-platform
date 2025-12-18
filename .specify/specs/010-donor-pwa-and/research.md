@@ -116,7 +116,7 @@ Deploy **two separate Azure Static Web Apps** from the monorepo using different 
 ```bicep
 // infrastructure/bicep/modules/donor-static-web-app.bicep
 resource donorStaticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
-  name: 'augeo-donor-${environment}'
+  name: 'fundrbolt-donor-${environment}'
   location: location
   sku: {
     name: skuConfig
@@ -169,8 +169,8 @@ resource donorStaticWebApp 'Microsoft.Web/staticSites@2022-09-01' = {
 
 **Custom Domain Setup**:
 
-- Admin PWA: `admin.augeo.app`
-- Donor PWA: `events.augeo.app` (or `app.augeo.app`)
+- Admin PWA: `admin.fundrbolt.app`
+- Donor PWA: `events.fundrbolt.app` (or `app.fundrbolt.app`)
 
 **Deployment Pipeline** (GitHub Actions):
 
@@ -210,7 +210,7 @@ jobs:
 
 ### Decision
 
-Use **pnpm workspaces** with a dedicated `@augeo/shared` package for components and types, leveraging TypeScript path aliases and Vite's dependency optimization.
+Use **pnpm workspaces** with a dedicated `@fundrbolt/shared` package for components and types, leveraging TypeScript path aliases and Vite's dependency optimization.
 
 ### Rationale
 
@@ -232,10 +232,10 @@ Use **pnpm workspaces** with a dedicated `@augeo/shared` package for components 
 
 ```json
 {
-  "name": "augeo-platform",
+  "name": "fundrbolt-platform",
   "private": true,
   "workspaces": [
-    "frontend/augeo-admin",
+    "frontend/fundrbolt-admin",
     "frontend/donor-pwa",
     "frontend/shared"
   ]
@@ -271,7 +271,7 @@ frontend/shared/
 
 ```json
 {
-  "name": "@augeo/shared",
+  "name": "@fundrbolt/shared",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -298,7 +298,7 @@ frontend/shared/
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@augeo/shared/*": ["../shared/*"]
+      "@fundrbolt/shared/*": ["../shared/*"]
     }
   }
 }
@@ -311,11 +311,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@augeo/shared': path.resolve(__dirname, '../shared'),
+      '@fundrbolt/shared': path.resolve(__dirname, '../shared'),
     },
   },
   optimizeDeps: {
-    include: ['@augeo/shared'],
+    include: ['@fundrbolt/shared'],
   },
 });
 ```
@@ -323,9 +323,9 @@ export default defineConfig({
 **Usage Example**:
 
 ```typescript
-import { Button } from '@augeo/shared/components/ui/button';
-import { useAuth } from '@augeo/shared/hooks/use-auth';
-import { User } from '@augeo/shared/types';
+import { Button } from '@fundrbolt/shared/components/ui/button';
+import { useAuth } from '@fundrbolt/shared/hooks/use-auth';
+import { User } from '@fundrbolt/shared/types';
 ```
 
 ---
@@ -545,7 +545,7 @@ export function EventPage() {
 |-------|----------|---------------------|
 | **Event Slugs** | python-slugify with uniqueness check | `python-slugify`, DB unique constraint |
 | **PWA Deployment** | Separate Azure SWAs with `staticwebapp.config.json` | Azure Static Web Apps, Bicep |
-| **Shared Components** | pnpm workspaces with `@augeo/shared` package | pnpm, TypeScript path aliases |
+| **Shared Components** | pnpm workspaces with `@fundrbolt/shared` package | pnpm, TypeScript path aliases |
 | **Event Registration** | `event_registrations` join table | SQLAlchemy, composite indexes |
 | **Dynamic Branding** | CSS custom properties at runtime | CSS variables, Tailwind v4 |
 

@@ -1,4 +1,4 @@
-# Augeo Architecture Overview
+# Fundrbolt Architecture Overview
 
 ## System Components
 

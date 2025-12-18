@@ -30,7 +30,7 @@ poetry run pytest
 
 **Frontend (TypeScript/React):**
 ```bash
-cd frontend/augeo-admin
+cd frontend/fundrbolt-admin
 pnpm lint
 pnpm type-check
 pnpm test
@@ -56,8 +56,8 @@ The pre-commit hooks (run automatically on `git commit` or via `make check-commi
 
 ### ⚠️ Not in Pre-commit (Run manually)
 - **Backend tests**: `cd backend && poetry run pytest`
-- **Frontend tests**: `cd frontend/augeo-admin && pnpm test`
-- **Frontend build**: `cd frontend/augeo-admin && pnpm build`
+- **Frontend tests**: `cd frontend/fundrbolt-admin && pnpm test`
+- **Frontend build**: `cd frontend/fundrbolt-admin && pnpm build`
 
 ## Common Issues
 

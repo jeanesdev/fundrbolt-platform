@@ -5,7 +5,7 @@
 
 ## Summary
 
-This feature adds legal compliance infrastructure to the Augeo platform: Terms of Service, Privacy Policy, and Cookie Consent management. The system will enforce acceptance of legal documents during registration, track consent history with audit trails for GDPR compliance, and provide granular cookie consent controls. Implementation includes backend API endpoints for document management and consent tracking, frontend components for document display and consent UI, and database models for versioned legal documents with immutable consent audit logs.
+This feature adds legal compliance infrastructure to the Fundrbolt platform: Terms of Service, Privacy Policy, and Cookie Consent management. The system will enforce acceptance of legal documents during registration, track consent history with audit trails for GDPR compliance, and provide granular cookie consent controls. Implementation includes backend API endpoints for document management and consent tracking, frontend components for document display and consent UI, and database models for versioned legal documents with immutable consent audit logs.
 
 ## Technical Context
 
@@ -115,7 +115,7 @@ backend/
     └── versions/
         └── [timestamp]_add_legal_compliance.py  # NEW: Migration script
 
-frontend/augeo-admin/
+frontend/fundrbolt-admin/
 ├── src/
 │   ├── components/
 │   │   ├── legal/
@@ -159,7 +159,7 @@ frontend/augeo-admin/
         └── consent-history.spec.ts          # NEW: E2E consent management
 ```
 
-**Structure Decision**: Following existing Augeo monorepo pattern with clear backend/frontend separation. Backend uses FastAPI with layered architecture (models → services → API), frontend uses React with Zustand for state management. This matches the existing authentication feature structure (001-user-authentication-role) and maintains consistency with the codebase.
+**Structure Decision**: Following existing Fundrbolt monorepo pattern with clear backend/frontend separation. Backend uses FastAPI with layered architecture (models → services → API), frontend uses React with Zustand for state management. This matches the existing authentication feature structure (001-user-authentication-role) and maintains consistency with the codebase.
 
 ## Complexity Tracking
 

@@ -78,9 +78,9 @@ Each task follows this format:
 
 ### Frontend Implementation
 
-- [X] T017 [P] [US1] Create SeatingConfigSection component with table count and max guests inputs in frontend/augeo-admin/src/features/events/components/SeatingConfigSection.tsx
-- [X] T018 [P] [US1] Add seating configuration fields to EventEditForm component in frontend/augeo-admin/src/features/events/components/EventForm.tsx
-- [X] T019 [US1] Implement updateEventSeating() API call in seating service in frontend/augeo-admin/src/services/seating-service.ts
+- [X] T017 [P] [US1] Create SeatingConfigSection component with table count and max guests inputs in frontend/fundrbolt-admin/src/features/events/components/SeatingConfigSection.tsx
+- [X] T018 [P] [US1] Add seating configuration fields to EventEditForm component in frontend/fundrbolt-admin/src/features/events/components/EventForm.tsx
+- [X] T019 [US1] Implement updateEventSeating() API call in seating service in frontend/fundrbolt-admin/src/services/seating-service.ts
 
 ### Integration & Testing
 
@@ -109,8 +109,8 @@ Each task follows this format:
 
 ### Frontend Display
 
-- [ ] T027 [P] [US2] Add bidder_number column to guest list table in Admin PWA in frontend/augeo-admin/src/components/guests/GuestListTable.tsx
-- [ ] T028 [P] [US2] Display bidder number badge in guest detail view in frontend/augeo-admin/src/routes/events/$eventId/guests/$guestId.tsx
+- [ ] T027 [P] [US2] Add bidder_number column to guest list table in Admin PWA in frontend/fundrbolt-admin/src/components/guests/GuestListTable.tsx
+- [ ] T028 [P] [US2] Display bidder number badge in guest detail view in frontend/fundrbolt-admin/src/routes/events/$eventId/guests/$guestId.tsx
 
 ### Integration & Testing
 
@@ -142,9 +142,9 @@ Each task follows this format:
 
 ### Frontend Implementation
 
-- [ ] T038 [P] [US3] Create BidderNumberEdit component with input field and validation in frontend/augeo-admin/src/components/seating/BidderNumberEdit.tsx
-- [ ] T039 [P] [US3] Add bidder number edit button to guest detail view in frontend/augeo-admin/src/routes/events/$eventId/guests/$guestId.tsx
-- [ ] T040 [US3] Implement assignBidderNumber() API call in seating service in frontend/augeo-admin/src/services/seating.service.ts
+- [ ] T038 [P] [US3] Create BidderNumberEdit component with input field and validation in frontend/fundrbolt-admin/src/components/seating/BidderNumberEdit.tsx
+- [ ] T039 [P] [US3] Add bidder number edit button to guest detail view in frontend/fundrbolt-admin/src/routes/events/$eventId/guests/$guestId.tsx
+- [ ] T040 [US3] Implement assignBidderNumber() API call in seating service in frontend/fundrbolt-admin/src/services/seating.service.ts
 
 ### Donor Notification UI
 
@@ -181,22 +181,22 @@ Each task follows this format:
 
 ### Frontend State Management
 
-- [ ] T051 [US4] Create Zustand seating store with table assignments, unassigned guests, and drag-drop state in frontend/augeo-admin/src/stores/seating.store.ts
-- [ ] T052 [US4] Implement optimistic UI updates with rollback on error in seating store in frontend/augeo-admin/src/stores/seating.store.ts
+- [ ] T051 [US4] Create Zustand seating store with table assignments, unassigned guests, and drag-drop state in frontend/fundrbolt-admin/src/stores/seating.store.ts
+- [ ] T052 [US4] Implement optimistic UI updates with rollback on error in seating store in frontend/fundrbolt-admin/src/stores/seating.store.ts
 
 ### Frontend UI Components
 
-- [ ] T053 [P] [US4] Create SeatingTab main container component in frontend/augeo-admin/src/routes/events/$eventId/seating.tsx
-- [ ] T054 [P] [US4] Create TableCard component showing table number, capacity, and guest cards in frontend/augeo-admin/src/components/seating/TableCard.tsx
-- [ ] T055 [P] [US4] Create GuestCard draggable component with guest info and bidder number in frontend/augeo-admin/src/components/seating/GuestCard.tsx
-- [ ] T056 [P] [US4] Create UnassignedSection component listing guests without table assignments in frontend/augeo-admin/src/components/seating/UnassignedSection.tsx
-- [ ] T057 [US4] Implement drag-and-drop handlers using react-beautiful-dnd or dnd-kit in frontend/augeo-admin/src/hooks/useSeatingDragDrop.ts
-- [ ] T058 [US4] Add capacity validation and visual feedback (full table indicators) in TableCard component in frontend/augeo-admin/src/components/seating/TableCard.tsx
-- [ ] T059 [US4] Implement party grouping visual indicators in GuestCard component in frontend/augeo-admin/src/components/seating/GuestCard.tsx
+- [ ] T053 [P] [US4] Create SeatingTab main container component in frontend/fundrbolt-admin/src/routes/events/$eventId/seating.tsx
+- [ ] T054 [P] [US4] Create TableCard component showing table number, capacity, and guest cards in frontend/fundrbolt-admin/src/components/seating/TableCard.tsx
+- [ ] T055 [P] [US4] Create GuestCard draggable component with guest info and bidder number in frontend/fundrbolt-admin/src/components/seating/GuestCard.tsx
+- [ ] T056 [P] [US4] Create UnassignedSection component listing guests without table assignments in frontend/fundrbolt-admin/src/components/seating/UnassignedSection.tsx
+- [ ] T057 [US4] Implement drag-and-drop handlers using react-beautiful-dnd or dnd-kit in frontend/fundrbolt-admin/src/hooks/useSeatingDragDrop.ts
+- [ ] T058 [US4] Add capacity validation and visual feedback (full table indicators) in TableCard component in frontend/fundrbolt-admin/src/components/seating/TableCard.tsx
+- [ ] T059 [US4] Implement party grouping visual indicators in GuestCard component in frontend/fundrbolt-admin/src/components/seating/GuestCard.tsx
 
 ### API Integration
 
-- [ ] T060 [US4] Implement assignGuestToTable(), removeGuestFromTable(), getSeatingGuests() in seating service in frontend/augeo-admin/src/services/seating.service.ts
+- [ ] T060 [US4] Implement assignGuestToTable(), removeGuestFromTable(), getSeatingGuests() in seating service in frontend/fundrbolt-admin/src/services/seating.service.ts
 
 ### Integration & Testing
 
@@ -210,7 +210,7 @@ Each task follows this format:
 
 - [ ] T066 [US4] Create AutoAssignService with auto_assign_guests() party-aware algorithm in backend/app/services/auto_assign_service.py
 - [ ] T067 [US4] Add POST /admin/events/{event_id}/seating/auto-assign endpoint in backend/app/api/v1/admin/seating.py
-- [ ] T068 [P] [US4] Create AutoAssignButton component with confirmation dialog in frontend/augeo-admin/src/components/seating/AutoAssignButton.tsx
+- [ ] T068 [P] [US4] Create AutoAssignButton component with confirmation dialog in frontend/fundrbolt-admin/src/components/seating/AutoAssignButton.tsx
 - [ ] T069 [US4] Create unit test test_auto_assign_keeps_parties_together() in backend/app/tests/unit/test_auto_assign_service.py
 - [ ] T070 [US4] Create unit test test_auto_assign_fills_tables_sequentially() in backend/app/tests/unit/test_auto_assign_service.py
 
@@ -230,7 +230,7 @@ Each task follows this format:
 
 ### Frontend Implementation
 
-- [x] T071 [P] [US5] Create TableAssignmentModal component with table dropdown in frontend/augeo-admin/src/components/seating/TableAssignmentModal.tsx
+- [x] T071 [P] [US5] Create TableAssignmentModal component with table dropdown in frontend/fundrbolt-admin/src/components/seating/TableAssignmentModal.tsx
   - **Completed**: 184-line modal with Select dropdown, capacity validation, assignment preview
   - **Files**: TableAssignmentModal.tsx (new)
   - **Features**: Table selection dropdown with occupancy display (X/Y format), disabled full tables, preview of post-assignment occupancy, loading states
@@ -352,7 +352,7 @@ Each task follows this format:
   - **Features Section**: Event config, bidder numbers (100-999), table assignment with validation, auto-assignment algorithm, guest tracking, check-in integration, donor view
 - [x] T090 [P] Update frontend README.md with seating component usage examples
   - **Completed**: Added comprehensive seating section (68 lines)
-  - **Files**: frontend/augeo-admin/README.md (updated)
+  - **Files**: frontend/fundrbolt-admin/README.md (updated)
   - **Components**: 9 documented (SeatingTabContent, EventSeatingConfig, GuestSeatingList, GuestCard, AutoAssignButton, TableAssignmentDialog, BidderNumberDialog, SeatingLayoutModal, TableOccupancyView)
   - **Features**: Event config, auto-assign, manual assignment, guest indicators, fullscreen viewer, capacity validation, layout upload
   - **State Management**: Zustand store documented with actions

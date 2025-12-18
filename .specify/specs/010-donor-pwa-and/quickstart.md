@@ -22,8 +22,8 @@ Before starting, ensure you have:
 
 ```bash
 # If not already cloned
-git clone https://github.com/your-org/augeo-platform.git
-cd augeo-platform
+git clone https://github.com/your-org/fundrbolt-platform.git
+cd fundrbolt-platform
 
 # Switch to feature branch
 git checkout 010-donor-pwa-and
@@ -51,10 +51,10 @@ docker ps
 
 ```bash
 # PostgreSQL (should connect without error)
-docker exec -it augeo-postgres psql -U augeo_user -d augeo_db -c "SELECT 1;"
+docker exec -it fundrbolt-postgres psql -U fundrbolt_user -d fundrbolt_db -c "SELECT 1;"
 
 # Redis (should return PONG)
-docker exec -it augeo-redis redis-cli ping
+docker exec -it fundrbolt-redis redis-cli ping
 ```
 
 ---
@@ -102,10 +102,10 @@ poetry run python seed_npo_demo_data.py
 poetry run python seed_food_options.py
 
 # Verify data
-docker exec -it augeo-postgres psql -U augeo_user -d augeo_db -c "SELECT slug, name FROM events LIMIT 5;"
+docker exec -it fundrbolt-postgres psql -U fundrbolt_user -d fundrbolt_db -c "SELECT slug, name FROM events LIMIT 5;"
 # Should show events with slugs like "spring-gala-2025"
 
-docker exec -it augeo-postgres psql -U augeo_user -d augeo_db -c "SELECT name FROM event_food_options WHERE event_id IN (SELECT id FROM events LIMIT 1);"
+docker exec -it fundrbolt-postgres psql -U fundrbolt_user -d fundrbolt_db -c "SELECT name FROM event_food_options WHERE event_id IN (SELECT id FROM events LIMIT 1);"
 # Should show meal options: Chicken Marsala, Vegetarian Pasta, Salmon Fillet
 ```
 
@@ -142,8 +142,8 @@ pnpm install
 
 This installs:
 
-- `@augeo/shared` - Shared components, hooks, utilities
-- All dependencies for `augeo-admin`, `donor-pwa`, `landing-site`
+- `@fundrbolt/shared` - Shared components, hooks, utilities
+- All dependencies for `fundrbolt-admin`, `donor-pwa`, `landing-site`
 
 ### Start Donor PWA
 
@@ -247,7 +247,7 @@ curl http://localhost:8000/api/v1/events/public/spring-gala-2025 | jq
   "name": "Spring Gala 2025",
   "event_datetime": "2025-04-15T18:00:00-05:00",
   "primary_color": "#1E40AF",
-  "logo_url": "https://storage.augeo.app/events/logos/spring-gala.png",
+  "logo_url": "https://storage.fundrbolt.app/events/logos/spring-gala.png",
   "npo_name": "Children's Foundation",
   "registration_status": "not_registered",
   "confirmed_attendees": 0
@@ -355,7 +355,7 @@ make docker-down
 make docker-up
 
 # Verify connection
-docker exec -it augeo-postgres psql -U augeo_user -d augeo_db -c "SELECT 1;"
+docker exec -it fundrbolt-postgres psql -U fundrbolt_user -d fundrbolt_db -c "SELECT 1;"
 ```
 
 ### Frontend can't reach backend
@@ -398,7 +398,7 @@ poetry run alembic upgrade head
 
 1. Verify events have slugs in database:
    ```bash
-   docker exec -it augeo-postgres psql -U augeo_user -d augeo_db -c "SELECT id, slug, name FROM events;"
+   docker exec -it fundrbolt-postgres psql -U fundrbolt_user -d fundrbolt_db -c "SELECT id, slug, name FROM events;"
    ```
 2. If slugs are missing, re-run seed script:
    ```bash
@@ -408,7 +408,7 @@ poetry run alembic upgrade head
 
 ### pnpm workspace issues
 
-**Error**: `Cannot find module '@augeo/shared'`
+**Error**: `Cannot find module '@fundrbolt/shared'`
 
 **Solution**:
 
@@ -421,7 +421,7 @@ rm -rf node_modules pnpm-lock.yaml
 pnpm install
 
 # Verify shared package is linked
-ls -la node_modules/@augeo
+ls -la node_modules/@fundrbolt
 # Should show symlink to ../shared
 ```
 
@@ -451,7 +451,7 @@ git push origin 010-donor-pwa-and
 
 - **Backend**: Uvicorn auto-reloads on file changes (--reload flag)
 - **Frontend**: Vite HMR updates instantly (no page refresh needed)
-- **Shared components**: Changes in `@augeo/shared` auto-update in donor-pwa
+- **Shared components**: Changes in `@fundrbolt/shared` auto-update in donor-pwa
 
 ### Database Schema Changes
 
@@ -502,7 +502,7 @@ git commit -m "chore(db): add event capacity field migration"
 
 ```bash
 # Database
-DATABASE_URL=postgresql://augeo_user:augeo_pass@localhost:5432/augeo_db
+DATABASE_URL=postgresql://fundrbolt_user:fundrbolt_pass@localhost:5432/fundrbolt_db
 
 # Redis
 REDIS_URL=redis://localhost:6379/0

@@ -19,7 +19,7 @@
 
 ### User Story 1 - Event Registration via Link (Priority: P1)
 
-A donor receives an event registration link via email (e.g., `https://augeo.app/events/spring-gala-2025/register`), clicks it, and completes registration to access the event page.
+A donor receives an event registration link via email (e.g., `https://fundrbolt.app/events/spring-gala-2025/register`), clicks it, and completes registration to access the event page.
 
 **Why this priority**: This is the primary entry point for donors and the core user flow. Without this, donors cannot access events.
 
@@ -53,7 +53,7 @@ A donor views an event home page that displays event-specific branding (colors, 
 2. **Given** an event with a logo uploaded, **When** the event page loads, **Then** the event logo displays prominently in the header
 3. **Given** an event with a banner image, **When** the donor views the page, **Then** the banner displays at the top of the event page
 4. **Given** an event with event details (title, date, description, venue), **When** the page loads, **Then** all event information displays clearly
-5. **Given** an event without custom branding, **When** the page loads, **Then** default Augeo branding is used
+5. **Given** an event without custom branding, **When** the page loads, **Then** default Fundrbolt branding is used
 
 ---
 
@@ -162,7 +162,7 @@ The donor PWA is built as a separate application following the same standards, t
 - **FR-025**: System MUST display event logo in the page header if configured
 - **FR-026**: System MUST display event banner image at the top of the page if configured
 - **FR-027**: System MUST display event details including title, date, time, description, and venue
-- **FR-028**: System MUST fall back to default Augeo branding when event branding is not configured
+- **FR-028**: System MUST fall back to default Fundrbolt branding when event branding is not configured
 - **FR-029**: System MUST handle missing or failed-to-load branding assets gracefully
 - **FR-030**: System MUST support both slug-based URLs (`/events/{slug}`) and ID-based URLs (`/events/{id}`)
 

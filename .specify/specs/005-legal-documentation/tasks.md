@@ -15,7 +15,7 @@
 
 ## Path Conventions
 
-Based on plan.md: Web application with `backend/` and `frontend/augeo-admin/` structure
+Based on plan.md: Web application with `backend/` and `frontend/fundrbolt-admin/` structure
 
 ---
 
@@ -82,17 +82,17 @@ Based on plan.md: Web application with `backend/` and `frontend/augeo-admin/` st
 
 ### Frontend Implementation for US1
 
-- [ ] T027 [P] [US1] Create LegalDocument types in frontend/augeo-admin/src/types/legal.ts
-- [ ] T028 [P] [US1] Create Consent types in frontend/augeo-admin/src/types/consent.ts
-- [ ] T029 [P] [US1] Create legalService API client in frontend/augeo-admin/src/services/legalService.ts (fetchDocument, fetchDocuments)
-- [ ] T030 [P] [US1] Create consentService API client in frontend/augeo-admin/src/services/consentService.ts (acceptConsent, getStatus, getHistory)
-- [ ] T031 [US1] Create legalStore Zustand store in frontend/augeo-admin/src/stores/legalStore.ts (documents state, loading state)
-- [ ] T032 [P] [US1] Create useLegalDocuments hook in frontend/augeo-admin/src/hooks/useLegalDocuments.ts
-- [ ] T033 [P] [US1] Create useConsentCheck hook in frontend/augeo-admin/src/hooks/useConsentCheck.ts
-- [ ] T034 [US1] Create LegalDocumentViewer component in frontend/augeo-admin/src/components/legal/LegalDocumentViewer.tsx (display markdown content, version, date)
-- [ ] T035 [US1] Create TermsOfServiceModal component in frontend/augeo-admin/src/components/legal/TermsOfServiceModal.tsx (modal with accept button)
-- [ ] T036 [US1] Update Register.tsx to show TOS modal in frontend/augeo-admin/src/pages/auth/Register.tsx (require acceptance before submit)
-- [ ] T037 [US1] Add axios interceptor for 409 consent_required in frontend/augeo-admin/src/services/api.ts (show consent modal on outdated)
+- [ ] T027 [P] [US1] Create LegalDocument types in frontend/fundrbolt-admin/src/types/legal.ts
+- [ ] T028 [P] [US1] Create Consent types in frontend/fundrbolt-admin/src/types/consent.ts
+- [ ] T029 [P] [US1] Create legalService API client in frontend/fundrbolt-admin/src/services/legalService.ts (fetchDocument, fetchDocuments)
+- [ ] T030 [P] [US1] Create consentService API client in frontend/fundrbolt-admin/src/services/consentService.ts (acceptConsent, getStatus, getHistory)
+- [ ] T031 [US1] Create legalStore Zustand store in frontend/fundrbolt-admin/src/stores/legalStore.ts (documents state, loading state)
+- [ ] T032 [P] [US1] Create useLegalDocuments hook in frontend/fundrbolt-admin/src/hooks/useLegalDocuments.ts
+- [ ] T033 [P] [US1] Create useConsentCheck hook in frontend/fundrbolt-admin/src/hooks/useConsentCheck.ts
+- [ ] T034 [US1] Create LegalDocumentViewer component in frontend/fundrbolt-admin/src/components/legal/LegalDocumentViewer.tsx (display markdown content, version, date)
+- [ ] T035 [US1] Create TermsOfServiceModal component in frontend/fundrbolt-admin/src/components/legal/TermsOfServiceModal.tsx (modal with accept button)
+- [ ] T036 [US1] Update Register.tsx to show TOS modal in frontend/fundrbolt-admin/src/pages/auth/Register.tsx (require acceptance before submit)
+- [ ] T037 [US1] Add axios interceptor for 409 consent_required in frontend/fundrbolt-admin/src/services/api.ts (show consent modal on outdated)
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - new users must accept TOS during registration
 
@@ -113,9 +113,9 @@ Based on plan.md: Web application with `backend/` and `frontend/augeo-admin/` st
 
 ### Frontend Implementation for US2
 
-- [ ] T042 [P] [US2] Create PrivacyPolicyModal component in frontend/augeo-admin/src/components/legal/PrivacyPolicyModal.tsx
-- [ ] T043 [US2] Update Register.tsx to show both TOS and Privacy Policy modals in frontend/augeo-admin/src/pages/auth/Register.tsx
-- [ ] T044 [US2] Update consent interceptor to handle both document types in frontend/augeo-admin/src/services/api.ts
+- [ ] T042 [P] [US2] Create PrivacyPolicyModal component in frontend/fundrbolt-admin/src/components/legal/PrivacyPolicyModal.tsx
+- [ ] T043 [US2] Update Register.tsx to show both TOS and Privacy Policy modals in frontend/fundrbolt-admin/src/pages/auth/Register.tsx
+- [ ] T044 [US2] Update consent interceptor to handle both document types in frontend/fundrbolt-admin/src/services/api.ts
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - new users accept TOS and Privacy Policy during registration
 
@@ -139,16 +139,16 @@ Based on plan.md: Web application with `backend/` and `frontend/augeo-admin/` st
 
 ### Frontend Implementation for US3
 
-- [ ] T052 [P] [US3] Create Cookie types in frontend/augeo-admin/src/types/cookie.ts
-- [ ] T053 [P] [US3] Create cookieService API client in frontend/augeo-admin/src/services/cookieService.ts (getConsent, setConsent, updateConsent, revokeConsent)
-- [ ] T054 [US3] Create cookieStore Zustand store in frontend/augeo-admin/src/stores/cookieStore.ts (consent state, session ID generation)
-- [ ] T055 [P] [US3] Create useCookieConsent hook in frontend/augeo-admin/src/hooks/useCookieConsent.ts
-- [ ] T056 [P] [US3] Create cookieManager utility in frontend/augeo-admin/src/utils/cookieManager.ts (localStorage operations, session ID generation)
-- [ ] T057 [US3] Create CookieConsentBanner component in frontend/augeo-admin/src/components/legal/CookieConsentBanner.tsx (modal with 3 categories, Accept All, Reject All, Customize)
-- [ ] T058 [US3] Create CookiePreferences component in frontend/augeo-admin/src/components/legal/CookiePreferences.tsx (settings page for changing preferences)
-- [ ] T059 [US3] Add cookie consent banner to App root in frontend/augeo-admin/src/App.tsx (show on first visit only)
-- [ ] T060 [US3] Implement cookie blocking logic in frontend/augeo-admin/src/utils/analytics.ts (only initialize GA if analytics_cookies=true)
-- [ ] T061 [US3] Add consent check before loading marketing scripts in frontend/augeo-admin/src/utils/marketing.ts
+- [ ] T052 [P] [US3] Create Cookie types in frontend/fundrbolt-admin/src/types/cookie.ts
+- [ ] T053 [P] [US3] Create cookieService API client in frontend/fundrbolt-admin/src/services/cookieService.ts (getConsent, setConsent, updateConsent, revokeConsent)
+- [ ] T054 [US3] Create cookieStore Zustand store in frontend/fundrbolt-admin/src/stores/cookieStore.ts (consent state, session ID generation)
+- [ ] T055 [P] [US3] Create useCookieConsent hook in frontend/fundrbolt-admin/src/hooks/useCookieConsent.ts
+- [ ] T056 [P] [US3] Create cookieManager utility in frontend/fundrbolt-admin/src/utils/cookieManager.ts (localStorage operations, session ID generation)
+- [ ] T057 [US3] Create CookieConsentBanner component in frontend/fundrbolt-admin/src/components/legal/CookieConsentBanner.tsx (modal with 3 categories, Accept All, Reject All, Customize)
+- [ ] T058 [US3] Create CookiePreferences component in frontend/fundrbolt-admin/src/components/legal/CookiePreferences.tsx (settings page for changing preferences)
+- [ ] T059 [US3] Add cookie consent banner to App root in frontend/fundrbolt-admin/src/App.tsx (show on first visit only)
+- [ ] T060 [US3] Implement cookie blocking logic in frontend/fundrbolt-admin/src/utils/analytics.ts (only initialize GA if analytics_cookies=true)
+- [ ] T061 [US3] Add consent check before loading marketing scripts in frontend/fundrbolt-admin/src/utils/marketing.ts
 
 **Checkpoint**: Cookie consent popup works, preferences persist, and non-essential cookies are blocked without consent
 
@@ -169,11 +169,11 @@ Based on plan.md: Web application with `backend/` and `frontend/augeo-admin/` st
 
 ### Frontend Implementation for US4
 
-- [ ] T066 [P] [US4] Create TermsOfService page in frontend/augeo-admin/src/pages/legal/TermsOfService.tsx (standalone page with full document)
-- [ ] T067 [P] [US4] Create PrivacyPolicy page in frontend/augeo-admin/src/pages/legal/PrivacyPolicy.tsx (standalone page with full document)
-- [ ] T068 [US4] Create LegalFooter component in frontend/augeo-admin/src/components/legal/LegalFooter.tsx (links to TOS and Privacy pages)
-- [ ] T069 [US4] Update Footer component to include LegalFooter in frontend/augeo-admin/src/components/layout/Footer.tsx
-- [ ] T070 [US4] Add routes for /legal/terms and /legal/privacy in frontend/augeo-admin/src/App.tsx
+- [ ] T066 [P] [US4] Create TermsOfService page in frontend/fundrbolt-admin/src/pages/legal/TermsOfService.tsx (standalone page with full document)
+- [ ] T067 [P] [US4] Create PrivacyPolicy page in frontend/fundrbolt-admin/src/pages/legal/PrivacyPolicy.tsx (standalone page with full document)
+- [ ] T068 [US4] Create LegalFooter component in frontend/fundrbolt-admin/src/components/legal/LegalFooter.tsx (links to TOS and Privacy pages)
+- [ ] T069 [US4] Update Footer component to include LegalFooter in frontend/fundrbolt-admin/src/components/layout/Footer.tsx
+- [ ] T070 [US4] Add routes for /legal/terms and /legal/privacy in frontend/fundrbolt-admin/src/App.tsx
 
 **Checkpoint**: Users can access legal documents from footer on all pages, view current versions without re-acceptance
 
@@ -198,11 +198,11 @@ Based on plan.md: Web application with `backend/` and `frontend/augeo-admin/` st
 
 ### Frontend Implementation for US5
 
-- [ ] T079 [P] [US5] Create ConsentHistory component in frontend/augeo-admin/src/components/legal/ConsentHistory.tsx (table with pagination)
-- [ ] T080 [P] [US5] Create DataRightsForm component in frontend/augeo-admin/src/components/legal/DataRightsForm.tsx (export/delete request buttons)
-- [ ] T081 [US5] Create ConsentSettings page in frontend/augeo-admin/src/pages/legal/ConsentSettings.tsx (history + data rights)
-- [ ] T082 [US5] Add link to Consent Settings in user account menu in frontend/augeo-admin/src/components/layout/Header.tsx
-- [ ] T083 [US5] Add route for /settings/consent in frontend/augeo-admin/src/App.tsx
+- [ ] T079 [P] [US5] Create ConsentHistory component in frontend/fundrbolt-admin/src/components/legal/ConsentHistory.tsx (table with pagination)
+- [ ] T080 [P] [US5] Create DataRightsForm component in frontend/fundrbolt-admin/src/components/legal/DataRightsForm.tsx (export/delete request buttons)
+- [ ] T081 [US5] Create ConsentSettings page in frontend/fundrbolt-admin/src/pages/legal/ConsentSettings.tsx (history + data rights)
+- [ ] T082 [US5] Add link to Consent Settings in user account menu in frontend/fundrbolt-admin/src/components/layout/Header.tsx
+- [ ] T083 [US5] Add route for /settings/consent in frontend/fundrbolt-admin/src/App.tsx
 
 **Checkpoint**: All user stories complete - full GDPR compliance with consent history and data rights
 
@@ -224,12 +224,12 @@ Based on plan.md: Web application with `backend/` and `frontend/augeo-admin/` st
 - [ ] T088 [P] Add database indexes verification in backend/alembic/versions/[timestamp]_add_legal_compliance.py
 - [ ] T089 [P] Add Redis cache warming for legal documents on app startup in backend/app/main.py
 - [ ] T090 [P] Optimize consent status query with JOIN optimization in backend/app/services/consent_service.py
-- [ ] T091 [P] Add frontend lazy loading for legal document pages in frontend/augeo-admin/src/App.tsx
+- [ ] T091 [P] Add frontend lazy loading for legal document pages in frontend/fundrbolt-admin/src/App.tsx
 
 ### Documentation & Validation
 
 - [ ] T092 [P] Update backend README with legal endpoints in backend/README.md
-- [ ] T093 [P] Update frontend README with legal components in frontend/augeo-admin/README.md
+- [ ] T093 [P] Update frontend README with legal components in frontend/fundrbolt-admin/README.md
 - [ ] T094 Add OpenAPI documentation for legal endpoints in backend/app/main.py
 - [ ] T095 Run quickstart.md validation following .specify/specs/005-legal-documentation/quickstart.md
 

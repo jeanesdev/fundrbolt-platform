@@ -1,4 +1,4 @@
-# Augeo Platform
+# Fundrbolt Platform
 
 **Status**: Phase 9 Complete - Production Ready Infrastructure
 
@@ -6,7 +6,7 @@ A comprehensive nonprofit donation tracking platform built with modern cloud-nat
 
 ## Overview
 
-Augeo Platform enables nonprofit organizations to track donations, manage donors, coordinate volunteers, and engage their communities. The platform consists of:
+Fundrbolt Platform enables nonprofit organizations to track donations, manage donors, coordinate volunteers, and engage their communities. The platform consists of:
 
 - **Admin Portal**: React-based dashboard for NPO staff
 - **Donor PWA**: Progressive web app for donor engagement
@@ -28,8 +28,8 @@ Augeo Platform enables nonprofit organizations to track donations, manage donors
 
 ```bash
 # Clone repository
-git clone https://github.com/jeanesdev/augeo-platform.git
-cd augeo-platform
+git clone https://github.com/jeanesdev/fundrbolt-platform.git
+cd fundrbolt-platform
 
 # Start backend (API server on http://localhost:8000)
 make dev-backend  # or make b
@@ -62,7 +62,7 @@ make deploy-frontend ENV=production TAG=v1.0.0
 ## Project Structure
 
 ```
-augeo-platform/
+fundrbolt-platform/
 ├── backend/                 # FastAPI backend application
 │   ├── app/
 │   │   ├── api/            # REST API endpoints
@@ -75,7 +75,7 @@ augeo-platform/
 │   └── pyproject.toml      # Python dependencies (Poetry)
 │
 ├── frontend/
-│   ├── augeo-admin/        # React admin dashboard
+│   ├── fundrbolt-admin/        # React admin dashboard
 │   │   ├── src/
 │   │   │   ├── components/ # React components
 │   │   │   ├── pages/      # Page components
@@ -272,7 +272,7 @@ poetry run uvicorn app.main:app --reload
 
 ```bash
 # Install dependencies
-cd frontend/augeo-admin && pnpm install
+cd frontend/fundrbolt-admin && pnpm install
 
 # Run dev server
 pnpm dev
@@ -291,7 +291,7 @@ pnpm preview
 
 ```bash
 # Connect to local database (Docker)
-docker-compose exec postgres psql -U augeo_user -d augeo_db
+docker-compose exec postgres psql -U fundrbolt_user -d fundrbolt_db
 
 # Run migrations
 make migrate  # or make m
@@ -310,8 +310,8 @@ make db-seed
 | Environment | Purpose | URL | Auto-deploy |
 |-------------|---------|-----|-------------|
 | Development | Local testing | localhost | No |
-| Staging | Pre-production validation | staging.augeo.app | Yes (on merge to main) |
-| Production | Live application | augeo.app | Manual approval |
+| Staging | Pre-production validation | staging.fundrbolt.app | Yes (on merge to main) |
+| Production | Live application | fundrbolt.app | Manual approval |
 
 ### Deployment Process
 
@@ -362,10 +362,10 @@ make logs-infra ENV=production
 make health-check
 
 # Backend only
-curl https://api.augeo.app/health
+curl https://api.fundrbolt.app/health
 
 # Frontend only
-curl https://admin.augeo.app
+curl https://admin.fundrbolt.app
 ```
 
 ### Scaling
@@ -373,8 +373,8 @@ curl https://admin.augeo.app
 ```bash
 # Manual scale
 az appservice plan update \
-    --name augeo-production-asp \
-    --resource-group augeo-production-rg \
+    --name fundrbolt-production-asp \
+    --resource-group fundrbolt-production-rg \
     --number-of-workers 5
 
 # View auto-scale settings
@@ -435,7 +435,7 @@ make budget-status ENV=production
 
 - [Infrastructure Setup](./infrastructure/README.md) - Complete deployment guide
 - [Backend README](./backend/README.md) - Backend development guide
-- [Frontend README](./frontend/augeo-admin/README.md) - Frontend development guide
+- [Frontend README](./frontend/fundrbolt-admin/README.md) - Frontend development guide
 - [Architecture Overview](./docs/operations/architecture.md) - Infrastructure details
 - [CI/CD Guide](./docs/operations/ci-cd-guide.md) - Deployment procedures
 - [Monitoring Guide](./docs/operations/monitoring-guide.md) - Monitoring & alerting
@@ -447,7 +447,7 @@ make budget-status ENV=production
 
 ## Domain Information
 
-- **Domain**: `augeo.app`
+- **Domain**: `fundrbolt.app`
 - **Registrar**: Namecheap
 - **Registered**: October 28, 2025
 - **Expires**: October 28, 2026
@@ -465,10 +465,10 @@ make budget-status ENV=production
 
 ## Support
 
-- **Email**: engineering@augeo.app
-- **On-call**: ops@augeo.app
-- **GitHub Issues**: [augeo-platform/issues](https://github.com/jeanesdev/augeo-platform/issues)
+- **Email**: engineering@fundrbolt.app
+- **On-call**: ops@fundrbolt.app
+- **GitHub Issues**: [fundrbolt-platform/issues](https://github.com/jeanesdev/fundrbolt-platform/issues)
 
 ## License
 
-Copyright © 2025 Augeo Platform. All rights reserved.
+Copyright © 2025 Fundrbolt Platform. All rights reserved.

@@ -7,7 +7,7 @@
 
 ## Summary
 
-Add comprehensive auction item management to the Augeo platform, enabling event coordinators to create and manage auction items for both live and silent auctions. Items support rich media uploads (images/videos), detailed descriptions, sponsor attribution, buy-now functionality, and automatic 3-digit bid number assignment starting at 100. Media files stored in Azure Blob Storage with pre-signed URLs for secure access. Follows existing patterns from events and sponsors features.
+Add comprehensive auction item management to the Fundrbolt platform, enabling event coordinators to create and manage auction items for both live and silent auctions. Items support rich media uploads (images/videos), detailed descriptions, sponsor attribution, buy-now functionality, and automatic 3-digit bid number assignment starting at 100. Media files stored in Azure Blob Storage with pre-signed URLs for secure access. Follows existing patterns from events and sponsors features.
 
 ## Technical Context
 
@@ -113,7 +113,7 @@ backend/
 └── static/
     └── uploads/                                # Local dev only (Azure Blob in prod)
 
-frontend/augeo-admin/
+frontend/fundrbolt-admin/
 ├── src/
 │   ├── components/
 │   │   └── auction-items/

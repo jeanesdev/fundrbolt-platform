@@ -1,6 +1,6 @@
 # Cost Optimization Guide
 
-Comprehensive guide for optimizing Azure costs for the Augeo Platform.
+Comprehensive guide for optimizing Azure costs for the Fundrbolt Platform.
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ Comprehensive guide for optimizing Azure costs for the Augeo Platform.
 
 ## Overview
 
-The Augeo Platform is designed with cost optimization in mind, implementing multiple strategies to minimize Azure spending while maintaining performance and reliability.
+The Fundrbolt Platform is designed with cost optimization in mind, implementing multiple strategies to minimize Azure spending while maintaining performance and reliability.
 
 ### Monthly Budget Targets
 
@@ -51,16 +51,16 @@ Budgets are automatically deployed via Bicep templates with three alert types:
 
 ### Alert Recipients
 
-- **Dev**: devops@augeo.app
-- **Staging**: ops@augeo.app, devops@augeo.app
-- **Production**: ops@augeo.app, engineering@augeo.app
+- **Dev**: devops@fundrbolt.app
+- **Staging**: ops@fundrbolt.app, devops@fundrbolt.app
+- **Production**: ops@fundrbolt.app, engineering@fundrbolt.app
 
 ### Managing Budgets
 
 ```bash
 # View current budget status
 az consumption budget list \
-    --resource-group augeo-production-rg
+    --resource-group fundrbolt-production-rg
 
 # Update budget amount
 az deployment sub create \
@@ -107,14 +107,14 @@ Auto-scaling saves approximately **30-50%** on compute costs during off-peak hou
 ```bash
 # Check current instance count
 az appservice plan show \
-    --name augeo-production-asp \
-    --resource-group augeo-production-rg \
+    --name fundrbolt-production-asp \
+    --resource-group fundrbolt-production-rg \
     --query "sku.capacity"
 
 # Manually scale (overrides auto-scale temporarily)
 az appservice plan update \
-    --name augeo-production-asp \
-    --resource-group augeo-production-rg \
+    --name fundrbolt-production-asp \
+    --resource-group fundrbolt-production-rg \
     --number-of-workers 4
 ```
 
@@ -126,7 +126,7 @@ Tags enable cost tracking and allocation across teams and projects.
 
 All resources are tagged with:
 - **Environment**: dev, staging, production
-- **Project**: augeo-platform
+- **Project**: fundrbolt-platform
 - **Owner**: Team responsible (devops-team, platform-team)
 - **CostCenter**: Cost allocation (engineering, operations)
 - **ManagedBy**: Bicep (infrastructure as code)
@@ -259,7 +259,7 @@ AzureDiagnostics
 # Current month costs
 az costmanagement query \
     --type ActualCost \
-    --scope /subscriptions/{subscription-id}/resourceGroups/augeo-production-rg \
+    --scope /subscriptions/{subscription-id}/resourceGroups/fundrbolt-production-rg \
     --timeframe MonthToDate \
     --dataset-aggregation name=PreTaxCost function=Sum
 
@@ -389,7 +389,7 @@ Create custom dashboard in Azure Portal:
 # Create cost anomaly alert
 az monitor metrics alert create \
     --name high-cost-anomaly \
-    --resource-group augeo-production-rg \
+    --resource-group fundrbolt-production-rg \
     --scopes /subscriptions/{subscription-id} \
     --condition "total Cost > 50" \
     --description "Alert when daily cost exceeds $50" \

@@ -19,7 +19,7 @@ poetry run uvicorn app.main:app --reload --host 0.0.0.0
 
 **Terminal 2 - Frontend:**
 ```bash
-cd frontend/augeo-admin
+cd frontend/fundrbolt-admin
 pnpm dev --host
 ```
 
@@ -51,7 +51,7 @@ Forwarding: https://abcd-ef-gh-ij-kl.ngrok-free.app -> http://localhost:5173
 
 ### 4. Update Frontend Environment
 
-Create or update `frontend/augeo-admin/.env.local`:
+Create or update `frontend/fundrbolt-admin/.env.local`:
 
 ```env
 VITE_API_URL=https://YOUR-BACKEND-NGROK-URL/api/v1
@@ -66,7 +66,7 @@ VITE_API_URL=https://1234-56-78-90-12.ngrok-free.app/api/v1
 ```bash
 # Stop frontend (Ctrl+C in Terminal 2)
 # Then restart:
-cd frontend/augeo-admin
+cd frontend/fundrbolt-admin
 pnpm dev --host
 ```
 
@@ -74,7 +74,7 @@ pnpm dev --host
 
 1. Open your phone's browser
 2. Navigate to the **frontend ngrok URL**: `https://abcd-ef-gh-ij-kl.ngrok-free.app`
-3. You should see the Augeo admin portal!
+3. You should see the Fundrbolt admin portal!
 
 ## Testing Session Management Features
 

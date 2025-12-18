@@ -7,7 +7,7 @@ Event Creation. Ability for NPO administrator and Event coordinator to create an
 
 ## Summary
 
-Enable users to create and manage Non-Profit Organizations (NPOs) with comprehensive onboarding, branding customization, staff management, and SuperAdmin approval workflow. This feature implements the foundation for multi-tenant NPO management within the Augeo fundraising platform, ensuring proper verification and compliance before NPOs can host events or send invitations.
+Enable users to create and manage Non-Profit Organizations (NPOs) with comprehensive onboarding, branding customization, staff management, and SuperAdmin approval workflow. This feature implements the foundation for multi-tenant NPO management within the Fundrbolt fundraising platform, ensuring proper verification and compliance before NPOs can host events or send invitations.
 
 ## Technical Context
 
@@ -123,7 +123,7 @@ frontend/
         └── application-approval.spec.ts
 ```
 
-**Structure Decision**: Web application structure selected to match existing Augeo platform architecture with backend/frontend separation. NPO management is implemented as a feature module within the existing monorepo structure, leveraging shared authentication and multi-tenant patterns.
+**Structure Decision**: Web application structure selected to match existing Fundrbolt platform architecture with backend/frontend separation. NPO management is implemented as a feature module within the existing monorepo structure, leveraging shared authentication and multi-tenant patterns.
 
 ## Complexity Tracking
 

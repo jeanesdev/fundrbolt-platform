@@ -1,11 +1,11 @@
-# API Contracts - Augeo to Fundrbolt Rename
+# API Contracts - Fundrbolt to Fundrbolt Rename
 
 **Date**: 2025-12-17
-**Feature**: 013-augeo-to-fundrbolt
+**Feature**: 013-fundrbolt-to-fundrbolt
 
 ## Overview
 
-This document specifies all API-level changes required for the Augeo → Fundrbolt rename. Per the specification, there is **no backward compatibility** maintained; APIs cut over entirely to Fundrbolt naming.
+This document specifies all API-level changes required for the Fundrbolt → Fundrbolt rename. Per the specification, there is **no backward compatibility** maintained; APIs cut over entirely to Fundrbolt naming.
 
 ---
 
@@ -17,8 +17,8 @@ All API responses MUST include updated branding headers:
 
 **Before**:
 ```http
-X-Powered-By: Augeo Platform
-X-API-Title: Augeo Fundraising API
+X-Powered-By: Fundrbolt Platform
+X-API-Title: Fundrbolt Fundraising API
 ```
 
 **After**:
@@ -40,12 +40,12 @@ X-API-Title: Fundrbolt Fundraising API
 ```yaml
 openapi: 3.0.2
 info:
-  title: "Fundrbolt Platform API"  # was "Augeo Platform API"
+  title: "Fundrbolt Platform API"  # was "Fundrbolt Platform API"
   description: "Fundrbolt fundraising platform API for nonprofits and auctioneers"  # updated
   version: "1.0.0"
   contact:
-    name: "Fundrbolt Support"  # was "Augeo Support"
-    email: "support@fundrbolt.app"  # was "support@augeo.app"
+    name: "Fundrbolt Support"  # was "Fundrbolt Support"
+    email: "support@fundrbolt.app"  # was "support@fundrbolt.app"
   license:
     name: "Proprietary"
 ```
@@ -105,7 +105,7 @@ Error messages MAY be updated to reflect Fundrbolt branding:
 **Before**:
 ```json
 {
-  "detail": "Unauthorized. Please log in to Augeo."
+  "detail": "Unauthorized. Please log in to Fundrbolt."
 }
 ```
 
@@ -138,7 +138,7 @@ Error messages MAY be updated to reflect Fundrbolt branding:
 **Before**:
 ```json
 {
-  "app": "Augeo",
+  "app": "Fundrbolt",
   "version": "1.0.0"
 }
 ```
@@ -159,13 +159,13 @@ Error messages MAY be updated to reflect Fundrbolt branding:
 
 **No changes** to JWT structure; claims remain unchanged.
 
-However, if JWT includes any `iss` (issuer) or `aud` (audience) claims with Augeo references, update:
+However, if JWT includes any `iss` (issuer) or `aud` (audience) claims with Fundrbolt references, update:
 
 **Before**:
 ```json
 {
-  "iss": "https://augeo.app",
-  "aud": "augeo-api",
+  "iss": "https://fundrbolt.app",
+  "aud": "fundrbolt-api",
   "sub": "user-123"
 }
 ```
@@ -185,7 +185,7 @@ However, if JWT includes any `iss` (issuer) or `aud` (audience) claims with Auge
 
 **No changes** to cookie structure; names remain unchanged.
 
-If cookie is named `augeo_session`, consider renaming to `fundrbolt_session` (optional):
+If cookie is named `fundrbolt_session`, consider renaming to `fundrbolt_session` (optional):
 
 **Location**: Update in `app/middleware/sessions.py`.
 
@@ -207,8 +207,8 @@ Response headers (e.g., `X-RateLimit-Remaining`) remain unchanged in format.
 
 **Before**:
 ```
-From: Augeo Support <noreply@augeo.app>
-Subject: Welcome to Augeo
+From: Fundrbolt Support <noreply@fundrbolt.app>
+Subject: Welcome to Fundrbolt
 ```
 
 **After**:
@@ -227,7 +227,7 @@ Subject: Welcome to Fundrbolt
 ```json
 {
   "event": "bid.placed",
-  "app": "augeo",
+  "app": "fundrbolt",
   "timestamp": "2025-12-17T10:00:00Z"
 }
 ```
@@ -263,7 +263,7 @@ Subject: Welcome to Fundrbolt
 |-------|------|--------|
 | Announcement | 2025-12-17 | Notify all consumers of rename |
 | Cutover | 2026-01-15 | Production deployment with Fundrbolt APIs |
-| Monitoring | 2026-01-15 – 2026-03-15 | Track stale Augeo client requests |
+| Monitoring | 2026-01-15 – 2026-03-15 | Track stale Fundrbolt client requests |
 | Support | Until 2026-03-15 | Assist clients migrating to Fundrbolt |
 
 ---
@@ -286,7 +286,7 @@ Subject: Welcome to Fundrbolt
 ### For REST API Clients
 
 1. **No endpoint changes**: All URLs remain the same (unless base domain changed)
-2. **Update branding expectations**: Code checking for "Augeo" in responses should now expect "Fundrbolt"
+2. **Update branding expectations**: Code checking for "Fundrbolt" in responses should now expect "Fundrbolt"
 3. **Verify headers**: Check that `X-Powered-By` header is received correctly
 4. **Test thoroughly**: Run integration tests against staging environment first
 
@@ -308,7 +308,7 @@ Subject: Welcome to Fundrbolt
 ## Support & Questions
 
 For API migration questions:
-- **Email**: support@fundrbolt.app (changed from support@augeo.app)
+- **Email**: support@fundrbolt.app (changed from support@fundrbolt.app)
 - **Docs**: https://fundrbolt.app/api/docs (if domain changed)
 - **Support Portal**: [URL TBD]
 

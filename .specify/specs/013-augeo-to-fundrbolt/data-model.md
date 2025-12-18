@@ -1,7 +1,7 @@
-# Phase 1: Data Model & Entity Changes - Augeo to Fundrbolt Rename
+# Phase 1: Data Model & Entity Changes - Fundrbolt to Fundrbolt Rename
 
 **Date**: 2025-12-17
-**Feature**: 013-augeo-to-fundrbolt
+**Feature**: 013-fundrbolt-to-fundrbolt
 **Status**: Complete
 
 ## Overview
@@ -14,7 +14,7 @@ This document captures any changes to data entities, database schemas, and confi
 
 ### No Schema Changes
 
-**Rationale**: The PostgreSQL database does not store the product name "Augeo" or "Fundrbolt" in any data rows or schema. The product name is external branding applied to UI, documentation, and configuration only.
+**Rationale**: The PostgreSQL database does not store the product name "Fundrbolt" or "Fundrbolt" in any data rows or schema. The product name is external branding applied to UI, documentation, and configuration only.
 
 **Impact**: Zero risk of data corruption or loss.
 
@@ -28,9 +28,9 @@ This document captures any changes to data entities, database schemas, and confi
 
 | Field | Current | Updated | Notes |
 |-------|---------|---------|-------|
-| `PROJECT_NAME` | `"Augeo Platform"` | `"Fundrbolt Platform"` | Used in OpenAPI docs and email templates |
-| `PROJECT_DESCRIPTION` | `"Augeo Fundraising..."` | `"Fundrbolt Fundraising..."` | OpenAPI, API responses |
-| `CONTACT_EMAIL` | `support@augeo.app` | `support@fundrbolt.app` | Support contact in API docs |
+| `PROJECT_NAME` | `"Fundrbolt Platform"` | `"Fundrbolt Platform"` | Used in OpenAPI docs and email templates |
+| `PROJECT_DESCRIPTION` | `"Fundrbolt Fundraising..."` | `"Fundrbolt Fundraising..."` | OpenAPI, API responses |
+| `CONTACT_EMAIL` | `support@fundrbolt.app` | `support@fundrbolt.app` | Support contact in API docs |
 | `APP_NAME` | (if exists) | Updated to `"Fundrbolt"` | Used in logging, notifications |
 
 **Handling**: Direct string replacement in config file; no migration needed.
@@ -44,8 +44,8 @@ This document captures any changes to data entities, database schemas, and confi
 **Location**: Auto-generated from FastAPI `FastAPI(title=..., description=...)`
 
 **Changes**:
-- Update `title` parameter: `"Augeo Platform API"` → `"Fundrbolt Platform API"`
-- Update `description`: Replace Augeo branding
+- Update `title` parameter: `"Fundrbolt Platform API"` → `"Fundrbolt Platform API"`
+- Update `description`: Replace Fundrbolt branding
 - Update `contact.name`, `contact.email` to Fundrbolt support
 
 **Handling**: Update `app/main.py` FastAPI instantiation.
@@ -60,8 +60,8 @@ This document captures any changes to data entities, database schemas, and confi
 
 ```json
 {
-  "name": "Fundrbolt Admin",              // was "Augeo Admin"
-  "short_name": "Fundrbolt",              // was "Augeo"
+  "name": "Fundrbolt Admin",              // was "Fundrbolt Admin"
+  "short_name": "Fundrbolt",              // was "Fundrbolt"
   "description": "Fundrbolt fundraising...", // update branding
   "start_url": "/",
   "icons": [...]                          // logos updated separately
@@ -77,8 +77,8 @@ This document captures any changes to data entities, database schemas, and confi
 **Location**: Backend email service templates (SendGrid, Azure Communication Services)
 
 **Changes**:
-- Sender name: `"Augeo Support"` → `"Fundrbolt Support"`
-- Subject lines: Remove Augeo branding, add Fundrbolt
+- Sender name: `"Fundrbolt Support"` → `"Fundrbolt Support"`
+- Subject lines: Remove Fundrbolt branding, add Fundrbolt
 - Body text: Brand name updates
 - Logo/branding assets: Point to Fundrbolt logos (URL updates)
 
@@ -108,7 +108,7 @@ def upgrade():
 **Examples**:
 - `GET /api/v1/events` — unchanged
 - `POST /api/v1/auth/login` — unchanged
-- Response headers: `X-Powered-By: Augeo` → `X-Powered-By: Fundrbolt`
+- Response headers: `X-Powered-By: Fundrbolt` → `X-Powered-By: Fundrbolt`
 
 **Handling**: Update any hardcoded response headers or metadata in middleware.
 
@@ -118,7 +118,7 @@ def upgrade():
 
 **Current**:
 ```
-X-Powered-By: Augeo Platform
+X-Powered-By: Fundrbolt Platform
 X-API-Version: 1.0
 ```
 
@@ -165,8 +165,8 @@ These entities remain structurally unchanged; only human-readable metadata updat
 services:
   backend:
     labels:
-      com.augeo.project: "augeo-platform"
-      com.augeo.service: "api"
+      com.fundrbolt.project: "fundrbolt-platform"
+      com.fundrbolt.service: "api"
 ```
 
 **Updated**:

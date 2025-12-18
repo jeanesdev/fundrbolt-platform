@@ -81,7 +81,7 @@
 
 ### T082: Manual Testing
 ❌ **Not Started** - Need end-to-end manual validation
-- Submit valid form, verify email received at support@augeo.app
+- Submit valid form, verify email received at support@fundrbolt.app
 - Test rate limiting (submit 6 times, verify 6th fails with 429)
 - Test honeypot detection (fill hidden field, verify rejection)
 - Test validation errors display correctly
@@ -141,7 +141,7 @@ cd backend && poetry run pytest app/tests/contract/test_contact_api.py::test_con
 cd backend && poetry run pytest --cov=app --cov-report=html
 
 # Frontend tests (when created)
-cd frontend/augeo-admin && pnpm test
+cd frontend/fundrbolt-admin && pnpm test
 cd frontend/landing-site && pnpm test
 ```
 

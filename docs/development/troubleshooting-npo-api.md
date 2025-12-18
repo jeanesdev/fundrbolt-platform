@@ -20,7 +20,7 @@ The seed script created demo users with password `demo123`:
 
 **Super Admin** (can see all NPOs):
 
-- Email: `superadmin@augeo.app`
+- Email: `superadmin@fundrbolt.app`
 - Password: `demo123`
 
 **NPO Admins** (can see their own NPOs):
@@ -100,7 +100,7 @@ Once logged in with the super admin account, you should see:
 
 ## Next Steps
 
-1. Log in with `superadmin@augeo.app` / `demo123`
+1. Log in with `superadmin@fundrbolt.app` / `demo123`
 2. View the Organizations page - should load successfully
 3. Click on any organization to see details
 4. Try filtering by status (Approved, Pending, Draft, Rejected)

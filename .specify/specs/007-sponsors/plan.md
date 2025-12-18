@@ -77,7 +77,7 @@ backend/
 │   └── versions/
 │       └── XXXX_add_sponsors_table.py    # Migration (new)
 
-frontend/augeo-admin/
+frontend/fundrbolt-admin/
 ├── src/
 │   ├── types/
 │   │   └── sponsor.ts                    # TypeScript types (new)

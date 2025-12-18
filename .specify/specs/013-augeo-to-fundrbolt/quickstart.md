@@ -1,18 +1,18 @@
-# Phase 1: Quickstart - Augeo to Fundrbolt Rename Execution
+# Phase 1: Quickstart - Fundrbolt to Fundrbolt Rename Execution
 
 **Date**: 2025-12-17
-**Feature**: 013-augeo-to-fundrbolt
+**Feature**: 013-fundrbolt-to-fundrbolt
 **Status**: Complete
 
 ## Quick Reference: Rename Steps
 
-This quickstart provides a step-by-step walkthrough to execute the Augeo → Fundrbolt rename with minimal risk.
+This quickstart provides a step-by-step walkthrough to execute the Fundrbolt → Fundrbolt rename with minimal risk.
 
 ---
 
 ## Prerequisites
 
-- All team members on branch `013-augeo-to-fundrbolt`
+- All team members on branch `013-fundrbolt-to-fundrbolt`
 - Local repos freshly cloned/pulled
 - Azure CLI authenticated (`az login`)
 - GitHub CLI authenticated (`gh auth login`)
@@ -29,15 +29,15 @@ This quickstart provides a step-by-step walkthrough to execute the Augeo → Fun
 **Commands**:
 ```bash
 # Update pyproject.toml
-sed -i 's/name = "augeo-platform"/name = "fundrbolt-platform"/' pyproject.toml
+sed -i 's/name = "fundrbolt-platform"/name = "fundrbolt-platform"/' pyproject.toml
 
-# Search for Augeo references in Python files
-grep -r "Augeo" app/ | head -20  # Review manually
-grep -r "augeo" app/ | head -20  # Review manually
+# Search for Fundrbolt references in Python files
+grep -r "Fundrbolt" app/ | head -20  # Review manually
+grep -r "fundrbolt" app/ | head -20  # Review manually
 
 # Replace in app/main.py
-sed -i 's/Augeo Platform/Fundrbolt Platform/g' app/main.py
-sed -i 's/augeo.app/fundrbolt.app/g' app/main.py
+sed -i 's/Fundrbolt Platform/Fundrbolt Platform/g' app/main.py
+sed -i 's/fundrbolt.app/fundrbolt.app/g' app/main.py
 
 # Update app/core/config.py (manual review recommended)
 # Look for PROJECT_NAME, PROJECT_DESCRIPTION, CONTACT_EMAIL
@@ -49,29 +49,29 @@ sed -i 's/augeo.app/fundrbolt.app/g' app/main.py
 
 ### 1.2 Frontend: Admin Application
 
-**Location**: `/frontend/augeo-admin`
+**Location**: `/frontend/fundrbolt-admin`
 
 **Commands**:
 ```bash
 # Rename directory
-mv frontend/augeo-admin frontend/fundrbolt-admin
+mv frontend/fundrbolt-admin frontend/fundrbolt-admin
 
 # Update package.json
 cd frontend/fundrbolt-admin
-sed -i 's/"name": "augeo-admin"/"name": "fundrbolt-admin"/' package.json
-sed -i 's/Augeo Admin/Fundrbolt Admin/g' package.json
+sed -i 's/"name": "fundrbolt-admin"/"name": "fundrbolt-admin"/' package.json
+sed -i 's/Fundrbolt Admin/Fundrbolt Admin/g' package.json
 
-# Search for Augeo in source
-grep -r "Augeo" src/ | head -20  # Review
-grep -r "augeo" src/ | head -20  # Review
+# Search for Fundrbolt in source
+grep -r "Fundrbolt" src/ | head -20  # Review
+grep -r "fundrbolt" src/ | head -20  # Review
 
 # Replace common strings
 find src -type f \( -name "*.tsx" -o -name "*.ts" -o -name "*.jsx" -o -name "*.js" \) \
-  -exec sed -i 's/Augeo/Fundrbolt/g' {} +
+  -exec sed -i 's/Fundrbolt/Fundrbolt/g' {} +
 
 # Update manifest.json
-sed -i 's/Augeo Admin/Fundrbolt Admin/g' public/manifest.json
-sed -i 's/Augeo/Fundrbolt/g' public/manifest.json
+sed -i 's/Fundrbolt Admin/Fundrbolt Admin/g' public/manifest.json
+sed -i 's/Fundrbolt/Fundrbolt/g' public/manifest.json
 ```
 
 ### 1.3 Frontend: PWAs (Donor, Landing)
@@ -83,14 +83,14 @@ sed -i 's/Augeo/Fundrbolt/g' public/manifest.json
 # For each PWA:
 cd frontend/donor-pwa (or landing-site)
 
-sed -i 's/Augeo/Fundrbolt/g' package.json
-sed -i 's/Augeo/Fundrbolt/g' public/manifest.json
+sed -i 's/Fundrbolt/Fundrbolt/g' package.json
+sed -i 's/Fundrbolt/Fundrbolt/g' public/manifest.json
 
 find src -type f \( -name "*.tsx" -o -name "*.ts" -o -name "*.jsx" -o -name "*.js" \) \
-  -exec sed -i 's/Augeo/Fundrbolt/g' {} +
+  -exec sed -i 's/Fundrbolt/Fundrbolt/g' {} +
 
 find public -type f \( -name "*.html" -o -name "*.json" \) \
-  -exec sed -i 's/Augeo/Fundrbolt/g' {} +
+  -exec sed -i 's/Fundrbolt/Fundrbolt/g' {} +
 ```
 
 ### 1.4 Update Build & Config Files
@@ -105,16 +105,16 @@ find public -type f \( -name "*.html" -o -name "*.json" \) \
 **Commands**:
 ```bash
 # Root level
-sed -i 's/augeo/fundrbolt/g' docker-compose.yml
-sed -i 's/Augeo/Fundrbolt/g' Makefile
-sed -i 's/augeo/fundrbolt/g' .env.example
+sed -i 's/fundrbolt/fundrbolt/g' docker-compose.yml
+sed -i 's/Fundrbolt/Fundrbolt/g' Makefile
+sed -i 's/fundrbolt/fundrbolt/g' .env.example
 
 # Update workspace package names references
-sed -i 's/augeo-admin/fundrbolt-admin/g' pnpm-workspace.yaml
+sed -i 's/fundrbolt-admin/fundrbolt-admin/g' pnpm-workspace.yaml
 
 cd backend
-sed -i 's/augeo/fundrbolt/g' pyproject.toml
-sed -i 's/Augeo/Fundrbolt/g' README.md
+sed -i 's/fundrbolt/fundrbolt/g' pyproject.toml
+sed -i 's/Fundrbolt/Fundrbolt/g' README.md
 ```
 
 ---
@@ -131,13 +131,13 @@ cd infrastructure
 
 # Rename parameter files
 for file in bicep/environments/*.bicepparam; do
-  newfile=$(echo "$file" | sed 's/augeo/fundrbolt/g')
+  newfile=$(echo "$file" | sed 's/fundrbolt/fundrbolt/g')
   [ "$file" != "$newfile" ] && mv "$file" "$newfile"
 done
 
 # Update resource names in bicep files
-find bicep -name "*.bicep" -exec sed -i 's/augeo-/fundrbolt-/g' {} +
-find bicep -name "*.bicep" -exec sed -i 's/'Augeo'/'Fundrbolt'/g' {} +
+find bicep -name "*.bicep" -exec sed -i 's/fundrbolt-/fundrbolt-/g' {} +
+find bicep -name "*.bicep" -exec sed -i 's/'Fundrbolt'/'Fundrbolt'/g' {} +
 
 # Verify param files reference new names
 grep -r "fundrbolt" bicep/environments/ | head -5
@@ -148,7 +148,7 @@ grep -r "fundrbolt" bicep/environments/ | head -5
 **Commands** (manual for safety):
 ```bash
 # List current secrets
-az keyvault secret list --vault-name augeo-kv --query "[].name" -o tsv
+az keyvault secret list --vault-name fundrbolt-kv --query "[].name" -o tsv
 
 # For each secret, create new Fundrbolt version:
 # az keyvault secret set --vault-name fundrbolt-kv --name fundrbolt-db-password --value <value>
@@ -189,8 +189,8 @@ cd .github/workflows
 
 # Update job names, artifact names, comments
 for file in *.yml *.yaml; do
-  sed -i 's/augeo/fundrbolt/g' "$file"
-  sed -i 's/Augeo/Fundrbolt/g' "$file"
+  sed -i 's/fundrbolt/fundrbolt/g' "$file"
+  sed -i 's/Fundrbolt/Fundrbolt/g' "$file"
 done
 
 # Verify workflow syntax
@@ -207,17 +207,17 @@ gh workflow list
 
 **Commands**:
 ```bash
-cd /home/jjeanes/augeo-platform
+cd /home/jjeanes/fundrbolt-platform
 
 # Root README
-sed -i 's/Augeo/Fundrbolt/g' README.md
-sed -i 's/augeo/fundrbolt/g' README.md
+sed -i 's/Fundrbolt/Fundrbolt/g' README.md
+sed -i 's/fundrbolt/fundrbolt/g' README.md
 
 # Copilot instructions
-sed -i 's/Augeo/Fundrbolt/g' .github/copilot-instructions.md
+sed -i 's/Fundrbolt/Fundrbolt/g' .github/copilot-instructions.md
 
 # Project constitution
-sed -i 's/Augeo/Fundrbolt/g' .specify/memory/constitution.md
+sed -i 's/Fundrbolt/Fundrbolt/g' .specify/memory/constitution.md
 ```
 
 ### 4.2 Docs Directory
@@ -225,8 +225,8 @@ sed -i 's/Augeo/Fundrbolt/g' .specify/memory/constitution.md
 **Commands**:
 ```bash
 find docs -type f -name "*.md" \
-  -exec sed -i 's/Augeo/Fundrbolt/g' {} + \
-  -exec sed -i 's/augeo/fundrbolt/g' {} +
+  -exec sed -i 's/Fundrbolt/Fundrbolt/g' {} + \
+  -exec sed -i 's/fundrbolt/fundrbolt/g' {} +
 ```
 
 ### 4.3 Developer & Operations Guides
@@ -266,7 +266,7 @@ ls -la dist/ | head -10
 ### 5.2 Docker Compose Test
 
 ```bash
-cd /home/jjeanes/augeo-platform
+cd /home/jjeanes/fundrbolt-platform
 docker-compose build
 docker-compose up -d
 
@@ -305,16 +305,16 @@ Create logical, atomic commits:
 
 ```bash
 git add backend/pyproject.toml backend/app/
-git commit -m "refactor(branding): rename augeo to fundrbolt in backend"
+git commit -m "refactor(branding): rename fundrbolt to fundrbolt in backend"
 
-git add frontend/augeo-admin frontend/donor-pwa frontend/landing-site
-git commit -m "refactor(branding): rename augeo to fundrbolt in frontend"
+git add frontend/fundrbolt-admin frontend/donor-pwa frontend/landing-site
+git commit -m "refactor(branding): rename fundrbolt to fundrbolt in frontend"
 
 git add infrastructure/
-git commit -m "refactor(branding): rename augeo to fundrbolt in infrastructure"
+git commit -m "refactor(branding): rename fundrbolt to fundrbolt in infrastructure"
 
 git add docs/ .github/ README.md
-git commit -m "docs(branding): rename augeo to fundrbolt in documentation"
+git commit -m "docs(branding): rename fundrbolt to fundrbolt in documentation"
 
 git add .specify/
 git commit -m "docs(branding): update specification context for fundrbolt"
@@ -334,7 +334,7 @@ make format-frontend
 ### 6.3 Push to Feature Branch
 
 ```bash
-git push origin 013-augeo-to-fundrbolt
+git push origin 013-fundrbolt-to-fundrbolt
 ```
 
 ---
@@ -345,15 +345,15 @@ git push origin 013-augeo-to-fundrbolt
 
 ```bash
 gh pr create \
-  --title "Rename: Augeo to Fundrbolt" \
-  --body "Comprehensive brand rename across all source, infrastructure, and documentation. No functional changes; pre-production state allows immediate cutover. See spec at .specify/specs/013-augeo-to-fundrbolt/spec.md" \
+  --title "Rename: Fundrbolt to Fundrbolt" \
+  --body "Comprehensive brand rename across all source, infrastructure, and documentation. No functional changes; pre-production state allows immediate cutover. See spec at .specify/specs/013-fundrbolt-to-fundrbolt/spec.md" \
   --base main \
-  --head 013-augeo-to-fundrbolt
+  --head 013-fundrbolt-to-fundrbolt
 ```
 
 ### 7.2 Code Review Checklist
 
-- [ ] All Augeo references replaced with Fundrbolt (search both cases)
+- [ ] All Fundrbolt references replaced with Fundrbolt (search both cases)
 - [ ] Package names, folder names, resource names updated
 - [ ] Tests pass (backend pytest, frontend build)
 - [ ] Docker compose still starts cleanly
@@ -403,7 +403,7 @@ curl -s https://staging.fundrbolt.app | grep -i fundrbolt
 ### 9.1 Cutover Approval Checklist
 
 - [ ] All tests pass on staging
-- [ ] No unplanned Augeo references remain
+- [ ] No unplanned Fundrbolt references remain
 - [ ] Customer & partner communications sent
 - [ ] Support team trained on new branding
 - [ ] Monitoring dashboards updated (show Fundrbolt resources)
@@ -416,7 +416,7 @@ curl -s https://staging.fundrbolt.app | grep -i fundrbolt
 # OR via CLI:
 git checkout main
 git pull origin main
-gh pr merge 013-augeo-to-fundrbolt --merge
+gh pr merge 013-fundrbolt-to-fundrbolt --merge
 
 # Verify merge
 git log --oneline | head -5
@@ -450,7 +450,7 @@ az containerapp logs show --resource-group fundrbolt-prod --name fundrbolt-api-p
 ```bash
 # Revert to previous commit
 git revert HEAD --no-edit
-git push origin 013-augeo-to-fundrbolt
+git push origin 013-fundrbolt-to-fundrbolt
 
 # Rebuild & redeploy old infrastructure
 az containerapp update --resource-group fundrbolt-prod \
@@ -489,35 +489,35 @@ If you prefer a bulk rename approach, create `/scripts/rename-to-fundrbolt.sh`:
 #!/bin/bash
 # Bulk rename script (USE WITH CAUTION)
 
-REPO_ROOT="/home/jjeanes/augeo-platform"
+REPO_ROOT="/home/jjeanes/fundrbolt-platform"
 cd "$REPO_ROOT"
 
-echo "=== Starting Augeo → Fundrbolt Rename ==="
+echo "=== Starting Fundrbolt → Fundrbolt Rename ==="
 
 # Backend
 echo "Renaming backend..."
 cd backend
-sed -i 's/Augeo/Fundrbolt/g' pyproject.toml
-find app -type f -name "*.py" -exec sed -i 's/Augeo/Fundrbolt/g; s/augeo/fundrbolt/g' {} +
+sed -i 's/Fundrbolt/Fundrbolt/g' pyproject.toml
+find app -type f -name "*.py" -exec sed -i 's/Fundrbolt/Fundrbolt/g; s/fundrbolt/fundrbolt/g' {} +
 cd ..
 
 # Frontend
 echo "Renaming frontend..."
-mv frontend/augeo-admin frontend/fundrbolt-admin
+mv frontend/fundrbolt-admin frontend/fundrbolt-admin
 find frontend -type f \( -name "*.tsx" -o -name "*.ts" -o -name "*.json" -o -name "*.md" \) \
-  -exec sed -i 's/Augeo/Fundrbolt/g; s/augeo/fundrbolt/g' {} +
+  -exec sed -i 's/Fundrbolt/Fundrbolt/g; s/fundrbolt/fundrbolt/g' {} +
 
 # Infrastructure
 echo "Renaming infrastructure..."
 find infrastructure -type f \( -name "*.bicep" -o -name "*.bicepparam" \) \
-  -exec sed -i 's/Augeo/Fundrbolt/g; s/augeo/fundrbolt/g' {} +
+  -exec sed -i 's/Fundrbolt/Fundrbolt/g; s/fundrbolt/fundrbolt/g' {} +
 
 # Docs
 echo "Renaming documentation..."
-find docs .github -type f -name "*.md" -exec sed -i 's/Augeo/Fundrbolt/g; s/augeo/fundrbolt/g' {} +
+find docs .github -type f -name "*.md" -exec sed -i 's/Fundrbolt/Fundrbolt/g; s/fundrbolt/fundrbolt/g' {} +
 
 # Root
-sed -i 's/Augeo/Fundrbolt/g' README.md docker-compose.yml
+sed -i 's/Fundrbolt/Fundrbolt/g' README.md docker-compose.yml
 
 echo "=== Rename Complete ==="
 echo "Next: Review changes, run tests, commit."

@@ -1,20 +1,20 @@
 # Email Architecture Summary
 
 **Last Updated**: 2025-10-31
-**Environment**: Development (augeo-dev-rg)
-**Domain**: augeo.app
+**Environment**: Development (fundrbolt-dev-rg)
+**Domain**: fundrbolt.app
 
 ## Overview
 
-The Augeo platform uses a **hybrid email architecture** combining Azure Communication Services for sending and ImprovMX for receiving/forwarding emails.
+The Fundrbolt platform uses a **hybrid email architecture** combining Azure Communication Services for sending and ImprovMX for receiving/forwarding emails.
 
 ## Architecture Components
 
 ### Email Sending: Azure Communication Services
 
-- **Service**: augeo-dev-acs (Azure Communication Services)
-- **Email Service**: augeo-dev-email
-- **Domain**: augeo.app (CustomerManaged)
+- **Service**: fundrbolt-dev-acs (Azure Communication Services)
+- **Email Service**: fundrbolt-dev-email
+- **Domain**: fundrbolt.app (CustomerManaged)
 - **Status**: Verified (Domain, SPF, DKIM all verified)
 - **Cost**: FREE (up to 100 emails/month on free tier)
 - **Authentication Score**: 10/10 on mail-tester.com
@@ -36,12 +36,12 @@ The Augeo platform uses a **hybrid email architecture** combining Azure Communic
 
 ## DNS Configuration
 
-### Current DNS Records (augeo.app)
+### Current DNS Records (fundrbolt.app)
 
 ```
 Type    Name                                          Value                                           TTL
 ----    ----                                          -----                                           ---
-TXT     @                                             augeo-domain-verification                       3600
+TXT     @                                             fundrbolt-domain-verification                       3600
 TXT     @                                             ms-domain-verification=a809df6d-4ccc-4afb...    3600
 TXT     @                                             v=spf1 include:spf.protection.outlook.com ~all  3600
 TXT     _dmarc                                        v=DMARC1; p=quarantine; rua=mailto:dmarc@...   3600
@@ -61,9 +61,9 @@ MX      @                                             20 mx2.improvmx.com       
   - selector1-azurecomm-prod-net._domainkey
   - selector2-azurecomm-prod-net._domainkey
 
-- **DMARC**: `v=DMARC1; p=quarantine; rua=mailto:dmarc@augeo.app; pct=100; fo=1`
+- **DMARC**: `v=DMARC1; p=quarantine; rua=mailto:dmarc@fundrbolt.app; pct=100; fo=1`
   - Policy: Quarantine suspicious emails
-  - Reports sent to dmarc@augeo.app
+  - Reports sent to dmarc@fundrbolt.app
 
 - **MX**: Points to ImprovMX servers for incoming email
 
@@ -73,22 +73,22 @@ MX      @                                             20 mx2.improvmx.com       
 
 | Address | Purpose | Can Send? | Can Receive? |
 |---------|---------|-----------|--------------|
-| DoNotReply@augeo.app | Automated system emails | ✅ Yes | ❌ No (by design) |
-| admin@augeo.app | Administrative communications | ✅ Yes | ✅ Yes (forwards to Gmail) |
-| Legal@augeo.app | Legal inquiries, terms updates | ✅ Yes | ✅ Yes (forwards to Gmail) |
-| Privacy@augeo.app | Privacy requests, GDPR | ✅ Yes | ✅ Yes (forwards to Gmail) |
-| DPO@augeo.app | Data Protection Officer | ✅ Yes | ✅ Yes (forwards to Gmail) |
+| DoNotReply@fundrbolt.app | Automated system emails | ✅ Yes | ❌ No (by design) |
+| admin@fundrbolt.app | Administrative communications | ✅ Yes | ✅ Yes (forwards to Gmail) |
+| Legal@fundrbolt.app | Legal inquiries, terms updates | ✅ Yes | ✅ Yes (forwards to Gmail) |
+| Privacy@fundrbolt.app | Privacy requests, GDPR | ✅ Yes | ✅ Yes (forwards to Gmail) |
+| DPO@fundrbolt.app | Data Protection Officer | ✅ Yes | ✅ Yes (forwards to Gmail) |
 
 ### ImprovMX Forwarding Configuration
 
 All emails to the following addresses are forwarded to `jeanes.dev@gmail.com`:
 
-- admin@augeo.app
-- Legal@augeo.app
-- Privacy@augeo.app
-- DPO@augeo.app
+- admin@fundrbolt.app
+- Legal@fundrbolt.app
+- Privacy@fundrbolt.app
+- DPO@fundrbolt.app
 
-**DoNotReply@augeo.app** is intentionally excluded from forwarding (no-reply by design).
+**DoNotReply@fundrbolt.app** is intentionally excluded from forwarding (no-reply by design).
 
 ## Email Flow Diagrams
 
@@ -99,7 +99,7 @@ Application Code
     ↓
 ACS Connection String (from Key Vault)
     ↓
-Azure Communication Services (augeo-dev-acs)
+Azure Communication Services (fundrbolt-dev-acs)
     ↓
 SPF/DKIM/DMARC Authentication
     ↓
@@ -126,7 +126,7 @@ jeanes.dev@gmail.com
 
 ### Connection String Storage
 
-- Stored in: augeo-dev-kv (Azure Key Vault)
+- Stored in: fundrbolt-dev-kv (Azure Key Vault)
 - Secret name: acs-connection-string
 - Access: App Service uses Managed Identity to retrieve
 - Rotation: Manual (quarterly recommended)
@@ -150,13 +150,13 @@ Verified checks:
 ```bash
 # Get connection string from Key Vault
 ACS_CONNECTION_STRING=$(az keyvault secret show \
-  --vault-name augeo-dev-kv \
+  --vault-name fundrbolt-dev-kv \
   --name acs-connection-string \
   --query value -o tsv)
 
 # Send test email
 az communication email send \
-  --sender "DoNotReply@augeo.app" \
+  --sender "DoNotReply@fundrbolt.app" \
   --subject "Test Email" \
   --text "Testing Azure Communication Services" \
   --to "test@example.com" \
@@ -167,7 +167,7 @@ az communication email send \
 
 ```bash
 # From personal email, send to:
-echo "Test receiving" | mail -s "Test" admin@augeo.app
+echo "Test receiving" | mail -s "Test" admin@fundrbolt.app
 
 # Should appear in jeanes.dev@gmail.com inbox within 5-15 minutes
 ```
@@ -180,7 +180,7 @@ TEST_EMAIL="test-abc123@srv1.mail-tester.com"
 
 # Send test
 az communication email send \
-  --sender "admin@augeo.app" \
+  --sender "admin@fundrbolt.app" \
   --subject "Authentication Test" \
   --text "Testing SPF/DKIM/DMARC" \
   --to "$TEST_EMAIL" \
@@ -254,7 +254,7 @@ az communication email send \
 
 ### Email Not Being Received
 
-1. Verify MX records: `nslookup -type=MX augeo.app`
+1. Verify MX records: `nslookup -type=MX fundrbolt.app`
 2. Check ImprovMX dashboard for forwarding rules
 3. Verify Gmail address in ImprovMX is confirmed
 4. Check spam folder in Gmail
@@ -262,19 +262,19 @@ az communication email send \
 
 ### Low Authentication Score
 
-1. Verify SPF record: `nslookup -type=TXT augeo.app`
-2. Verify DKIM CNAMEs: `nslookup -type=CNAME selector1-azurecomm-prod-net._domainkey.augeo.app`
-3. Verify DMARC: `nslookup -type=TXT _dmarc.augeo.app`
+1. Verify SPF record: `nslookup -type=TXT fundrbolt.app`
+2. Verify DKIM CNAMEs: `nslookup -type=CNAME selector1-azurecomm-prod-net._domainkey.fundrbolt.app`
+3. Verify DMARC: `nslookup -type=TXT _dmarc.fundrbolt.app`
 4. Re-test on mail-tester.com
 
 ## Production Deployment Notes
 
-When deploying to production (augeo-production-rg):
+When deploying to production (fundrbolt-production-rg):
 
 1. **Update environment parameter**: All scripts accept `--env production`
-2. **Use production Key Vault**: augeo-production-kv
+2. **Use production Key Vault**: fundrbolt-production-kv
 3. **Create production sender addresses**: Same usernames in production ACS
-4. **Configure ImprovMX**: Add augeo.app with production MX records
+4. **Configure ImprovMX**: Add fundrbolt.app with production MX records
 5. **Test thoroughly**: Use mail-tester.com before going live
 6. **Monitor deliverability**: Track bounce rates, spam complaints
 

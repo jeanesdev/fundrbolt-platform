@@ -120,7 +120,7 @@ backend/
         └── 013_add_seating_and_bidder_fields.py  # [NEW] Migration
 
 frontend/
-├── augeo-admin/
+├── fundrbolt-admin/
 │   └── src/
 │       ├── components/
 │       │   └── seating/

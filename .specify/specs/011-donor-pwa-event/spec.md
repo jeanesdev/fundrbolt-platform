@@ -3,13 +3,13 @@
 **Feature Branch**: `011-donor-pwa-event`
 **Created**: December 9, 2025
 **Status**: Draft
-**Input**: User description: "donor-pwa-event-page - The main page for the donor-pwa should be the event homepage. When a donor logs in, they should be sent to the home page for whatever the next event they are registered for. There should be no side bar. In the top bar on the left they should see the name of the event and a thumbnail of the event's image. If the event doesn't have an image it should show the NPO's image. If they are registered for multiple events when they click on that component in the top left corner it should show them a dropdown of other events they have access to, and when they click on that, it should take them to the home page for that event. The home page for each event should use the background colors and theme colors of the event they have chosen. The details of the event should be shown in collapsible sections. If the event is upcoming that section should be expanded by default, otherwise it should be collapsed. If the event is future, the top of the event homepage should show a countdown timer to when the event starts. Prominently on the home page, all of the auction items should be shown, with a selector to choose between silent auction items and live auction. The auction items should show the thumbnail image with the main description, the current bid amount, and a button to bid. The items gallery should have at least two columns. I want it to look very similar to Amazon. The event home page should feel very branded to the event and NPO, not to Augeo."
+**Input**: User description: "donor-pwa-event-page - The main page for the donor-pwa should be the event homepage. When a donor logs in, they should be sent to the home page for whatever the next event they are registered for. There should be no side bar. In the top bar on the left they should see the name of the event and a thumbnail of the event's image. If the event doesn't have an image it should show the NPO's image. If they are registered for multiple events when they click on that component in the top left corner it should show them a dropdown of other events they have access to, and when they click on that, it should take them to the home page for that event. The home page for each event should use the background colors and theme colors of the event they have chosen. The details of the event should be shown in collapsible sections. If the event is upcoming that section should be expanded by default, otherwise it should be collapsed. If the event is future, the top of the event homepage should show a countdown timer to when the event starts. Prominently on the home page, all of the auction items should be shown, with a selector to choose between silent auction items and live auction. The auction items should show the thumbnail image with the main description, the current bid amount, and a button to bid. The items gallery should have at least two columns. I want it to look very similar to Amazon. The event home page should feel very branded to the event and NPO, not to Fundrbolt."
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Event-Centric Login Experience (Priority: P1)
 
-A donor logs into the donor PWA and is automatically directed to the homepage of their next upcoming registered event. The app feels immediately immersive and branded to the event/NPO they're attending, with no Augeo branding visible.
+A donor logs into the donor PWA and is automatically directed to the homepage of their next upcoming registered event. The app feels immediately immersive and branded to the event/NPO they're attending, with no Fundrbolt branding visible.
 
 **Why this priority**: This is the core entry point for the entire donor experience. Without automatic routing to the right event and proper branding, the app provides no value. This establishes the fundamental event-first paradigm.
 
@@ -97,7 +97,7 @@ Donors see a prominent, Amazon-style gallery of auction items with filtering bet
 
 The event homepage applies the event's custom colors (primary, secondary, background, accent) throughout the UI, with fallback to NPO branding if event colors are not set.
 
-**Why this priority**: Brand immersion is explicitly required. The app must not feel like Augeo - it must feel like the NPO's event.
+**Why this priority**: Brand immersion is explicitly required. The app must not feel like Fundrbolt - it must feel like the NPO's event.
 
 **Independent Test**: Can be tested by viewing events with different color schemes and verifying CSS variables and visual elements reflect the branding.
 
@@ -181,7 +181,7 @@ The donor PWA event homepage has no sidebar navigation, providing maximum screen
 - **SC-004**: Event branding is visually distinct - users can identify which event they're viewing without reading text
 - **SC-005**: Auction item grid displays correctly on screens from 320px to 1920px width
 - **SC-006**: Countdown timer accuracy within 1 second of actual event start time
-- **SC-007**: Zero Augeo branding visible on the event homepage (event/NPO branding only)
+- **SC-007**: Zero Fundrbolt branding visible on the event homepage (event/NPO branding only)
 - **SC-008**: 95% of auction item thumbnails load successfully without fallback images
 
 ## Clarifications

@@ -49,7 +49,7 @@ Phase 0 (Setup) has been successfully completed. All infrastructure configuratio
   ```
 
 **Next Steps** (for deployment):
-1. Create Azure Storage account: `augeoplatform` (or similar)
+1. Create Azure Storage account: `fundrboltplatform` (or similar)
 2. Create blob container: `npo-assets` with private access
 3. Configure CORS for client-side uploads
 4. Generate connection string and update `.env`
@@ -111,7 +111,7 @@ cd backend && poetry install
 
 **Installation Command**:
 ```bash
-cd frontend/augeo-admin && pnpm install
+cd frontend/fundrbolt-admin && pnpm install
 ```
 
 ## Configuration Files Updated
@@ -122,7 +122,7 @@ cd frontend/augeo-admin && pnpm install
 - ✅ `backend/pyproject.toml` - Added 4 new dependencies
 
 ### Frontend
-- ✅ `frontend/augeo-admin/package.json` - Added 2 new dependencies
+- ✅ `frontend/fundrbolt-admin/package.json` - Added 2 new dependencies
 
 ## Dependencies Ready for Installation
 
@@ -140,7 +140,7 @@ This will install:
 
 ### Frontend (pnpm)
 ```bash
-cd frontend/augeo-admin
+cd frontend/fundrbolt-admin
 pnpm install
 ```
 
@@ -213,14 +213,14 @@ cd backend
 poetry install
 
 # Frontend dependencies
-cd ../frontend/augeo-admin
+cd ../frontend/fundrbolt-admin
 pnpm install
 
 # Verify installations
 cd ../../backend
 poetry run python -c "import PIL; import magic; from azure.storage.blob import BlobServiceClient; from pydantic_extra_types import HttpUrl; print('✅ All backend deps installed')"
 
-cd ../frontend/augeo-admin
+cd ../frontend/fundrbolt-admin
 pnpm list react-colorful react-dropzone
 ```
 

@@ -1,22 +1,22 @@
-# Tasks: Augeo to Fundrbolt Rename
+# Tasks: Fundrbolt to Fundrbolt Rename
 
-**Feature**: 013-augeo-to-fundrbolt
-**Branch**: `013-augeo-to-fundrbolt`
+**Feature**: 013-fundrbolt-to-fundrbolt
+**Branch**: `013-fundrbolt-to-fundrbolt`
 **Date**: 2025-12-17
-**Status**: Phase 3 Complete ✅ | MVP Delivered | Proceeding to Phase 4
+**Status**: Phase 5 Complete ✅ | 77% Done | Phase 6 (Polish) IN PROGRESS
 
 ---
 
 ## Overview & Strategy
 
-This task breakdown implements a comprehensive brand rename from Augeo to Fundrbolt across source code, infrastructure, GitHub, Azure resources, and documentation. The feature is organized into **5 phases**:
+This task breakdown implements a comprehensive brand rename from Fundrbolt to Fundrbolt across source code, infrastructure, GitHub, Azure resources, and documentation. The feature is organized into **5 phases**:
 
 1. **Phase 1 (Setup)**: ✅ COMPLETE - Preparation & prerequisites
 2. **Phase 2 (Foundational)**: ✅ COMPLETE - Shared infrastructure and tooling
 3. **Phase 3 (US1)**: ✅ COMPLETE - Customer-facing brand consistency
 4. **Phase 4 (US2)**: ✅ COMPLETE - Operations & infrastructure alignment
-5. **Phase 5 (US3)**: ⏳ PENDING - Legacy reference redirects
-6. **Phase 6 (Polish)**: ⏳ PENDING - Final verification, testing, and documentation
+5. **Phase 5 (US3)**: ✅ COMPLETE - Legacy reference redirects
+6. **Phase 6 (Polish)**: 🔄 IN PROGRESS - Final verification, testing, and documentation
 
 **MVP Scope**: Completing Phase 1 + Phase 2 + Phase 3 (US1) gives an MVP where all visible customer surfaces display Fundrbolt branding consistently.
 
@@ -40,18 +40,18 @@ Set up branch, verify prerequisites, and establish rename checklist from researc
 
 ### Independent Test Criteria
 
-- ✅ Branch `013-augeo-to-fundrbolt` is active
+- ✅ Branch `013-fundrbolt-to-fundrbolt` is active
 - ✅ All research, plan, and quickstart documents are accessible
 - ✅ Docker, Poetry, pnpm, Azure CLI, GitHub CLI are installed and authenticated
 - ✅ Rename checklist document created and reviewed
 
 ### Tasks
 
-- [x] T001 Set up feature branch `013-augeo-to-fundrbolt` and verify upstream is current
+- [x] T001 Set up feature branch `013-fundrbolt-to-fundrbolt` and verify upstream is current
 - [x] T002 Clone/update all monorepo directories and verify git status clean
 - [x] T003 Verify Docker, Poetry, pnpm, Azure CLI (`az login`), GitHub CLI (`gh auth login`) are installed and authenticated
-- [x] T004 Review research.md findings and create a master Augeo→Fundrbolt reference log in `/docs/rename-checklist.md`
-- [x] T005 Document current state: List all active Augeo references (count by category: code, infra, docs, GitHub)
+- [x] T004 Review research.md findings and create a master Fundrbolt→Fundrbolt reference log in `/docs/rename-checklist.md`
+- [x] T005 Document current state: List all active Fundrbolt references (count by category: code, infra, docs, GitHub)
 
 ---
 
@@ -70,9 +70,9 @@ Establish shared configuration, build utilities, and parallel-safe tooling that 
 
 ### Tasks
 
-- [x] T006 Update `/backend/pyproject.toml` to rename package from `augeo-platform` to `fundrbolt-platform`
-- [x] T007 Update `/docker-compose.yml` service labels and environment variables from augeo to fundrbolt
-- [x] T008 [P] Update `pnpm-workspace.yaml` and workspace package references from augeo to fundrbolt
+- [x] T006 Update `/backend/pyproject.toml` to rename package from `fundrbolt-platform` to `fundrbolt-platform`
+- [x] T007 Update `/docker-compose.yml` service labels and environment variables from fundrbolt to fundrbolt
+- [x] T008 [P] Update `pnpm-workspace.yaml` and workspace package references from fundrbolt to fundrbolt
 - [x] T009 [P] Update `/Makefile` comments and target descriptions to reference Fundrbolt
 - [x] T010 [P] Update `.env.example` and `.github/copilot-instructions.md` with Fundrbolt branding
 - [x] T011 [P] Create rename bulk-replace script at `/scripts/rename-to-fundrbolt.sh` (optional dry-run mode)
@@ -85,7 +85,7 @@ Establish shared configuration, build utilities, and parallel-safe tooling that 
 
 ### Story Goal
 
-All visible brand references in UI, emails, documentation, and customer-facing surfaces display "Fundrbolt" with no Augeo references remaining.
+All visible brand references in UI, emails, documentation, and customer-facing surfaces display "Fundrbolt" with no Fundrbolt references remaining.
 
 ### Independent Test Criteria
 
@@ -93,23 +93,23 @@ All visible brand references in UI, emails, documentation, and customer-facing s
 - ✅ Frontend UI loads and displays Fundrbolt branding in headers, footers, and dialogs
 - ✅ Email templates (if testable) show Fundrbolt sender and branding
 - ✅ PWA manifest files list "Fundrbolt" app name
-- ✅ Manual spot-check: No visible Augeo text on core UI pages
+- ✅ Manual spot-check: No visible Fundrbolt text on core UI pages
 
 ### Tasks
 
-- [x] T014 [P] [US1] Rename `/frontend/augeo-admin` directory to `/frontend/fundrbolt-admin`
-- [x] T015 [P] [US1] Update `/frontend/fundrbolt-admin/package.json` to rename package from `augeo-admin` to `fundrbolt-admin`
-- [x] T016 [P] [US1] Bulk replace "Augeo" → "Fundrbolt" and "augeo" → "fundrbolt" in `/frontend/fundrbolt-admin/src/` using sed or grep+xargs
-- [x] T017 [P] [US1] Bulk replace "Augeo" → "Fundrbolt" in `/frontend/fundrbolt-admin/public/manifest.json` and `public/index.html`
+- [x] T014 [P] [US1] Rename `/frontend/fundrbolt-admin` directory to `/frontend/fundrbolt-admin`
+- [x] T015 [P] [US1] Update `/frontend/fundrbolt-admin/package.json` to rename package from `fundrbolt-admin` to `fundrbolt-admin`
+- [x] T016 [P] [US1] Bulk replace "Fundrbolt" → "Fundrbolt" and "fundrbolt" → "fundrbolt" in `/frontend/fundrbolt-admin/src/` using sed or grep+xargs
+- [x] T017 [P] [US1] Bulk replace "Fundrbolt" → "Fundrbolt" in `/frontend/fundrbolt-admin/public/manifest.json` and `public/index.html`
 - [x] T018 [P] [US1] Update `/backend/app/main.py` FastAPI instantiation: title, description, contact info to Fundrbolt
 - [x] T019 [P] [US1] Update `/backend/app/core/config.py` PROJECT_NAME, PROJECT_DESCRIPTION, CONTACT_EMAIL constants to Fundrbolt
 - [x] T020 [P] [US1] Update response headers middleware in `/backend/app/middleware/` to include `X-Powered-By: Fundrbolt Platform`
-- [x] T021 [P] [US1] Update email template sender names and subject lines from `Augeo Support` to `Fundrbolt Support` and `support@augeo.app` to `support@fundrbolt.app` (in email service code)
-- [x] T022 [P] [US1] Bulk replace "Augeo" → "Fundrbolt" in `/frontend/donor-pwa/src/`, `/frontend/landing-site/src/` using sed or grep+xargs
+- [x] T021 [P] [US1] Update email template sender names and subject lines from `Fundrbolt Support` to `Fundrbolt Support` and `support@fundrbolt.app` to `support@fundrbolt.app` (in email service code)
+- [x] T022 [P] [US1] Bulk replace "Fundrbolt" → "Fundrbolt" in `/frontend/donor-pwa/src/`, `/frontend/landing-site/src/` using sed or grep+xargs
 - [x] T023 [P] [US1] Update PWA manifest files (`/frontend/donor-pwa/public/manifest.json`, `/frontend/landing-site/public/manifest.json`) with Fundrbolt app names
 - [x] T024 [US1] Verify backend builds: `cd backend && poetry install && poetry run pytest` (confirms no syntax errors from rename)
 - [x] T025 [US1] Verify frontends build: `cd frontend/fundrbolt-admin && pnpm install && pnpm build` (all PWAs)
-- [x] T026 [US1] Start docker-compose and load UI at `http://localhost:3000` to verify visual branding (no Augeo text visible)
+- [x] T026 [US1] Start docker-compose and load UI at `http://localhost:3000` to verify visual branding (no Fundrbolt text visible)
 - [x] T027 [US1] Test OpenAPI docs at `http://localhost:8000/docs` to confirm Fundrbolt branding and no 404s
 
 ---
@@ -130,16 +130,16 @@ All infrastructure, repositories, pipelines, secrets, dashboards, and monitoring
 
 ### Tasks
 
-- [x] T028 [P] [US2] Bulk replace "augeo" → "fundrbolt" in `/infrastructure/bicep/` *.bicep files (resource names, labels)
-- [x] T029 [P] [US2] Rename environment parameter files: `infrastructure/bicep/environments/*.augeo.bicepparam` → `*.fundrbolt.bicepparam`
+- [x] T028 [P] [US2] Bulk replace "fundrbolt" → "fundrbolt" in `/infrastructure/bicep/` *.bicep files (resource names, labels)
+- [x] T029 [P] [US2] Rename environment parameter files: `infrastructure/bicep/environments/*.fundrbolt.bicepparam` → `*.fundrbolt.bicepparam`
 - [x] T030 [P] [US2] Update Bicep variable names and descriptions to reference Fundrbolt
-- [x] T031 [P] [US2] Bulk replace "Augeo" → "Fundrbolt", "augeo" → "fundrbolt" in `.github/workflows/` *.yml files
+- [x] T031 [P] [US2] Bulk replace "Fundrbolt" → "Fundrbolt", "fundrbolt" → "fundrbolt" in `.github/workflows/` *.yml files
 - [x] T032 [P] [US2] Update GitHub Actions workflow job names, artifact names, and step descriptions to reference Fundrbolt
-- [x] T033 [P] [US2] Rename primary GitHub repository from `jeanesdev/augeo-platform` to `jeanesdev/fundrbolt-platform` (via GitHub web UI or `gh repo rename`)
+- [x] T033 [P] [US2] Rename primary GitHub repository from `jeanesdev/fundrbolt-platform` to `jeanesdev/fundrbolt-platform` (via GitHub web UI or `gh repo rename`)
 - [x] T034 [US2] Update local git remotes post-repo-rename: `git remote set-url origin https://github.com/jeanesdev/fundrbolt-platform.git`
 - [x] T035 [US2] Verify GitHub automatic redirect: `git fetch` should succeed and follow redirect
 - [x] T036 [US2] Update infrastructure deployment scripts: `infrastructure/scripts/deploy-backend.sh`, `deploy-frontend.sh` to reference new repo/resource names
-- [x] T037 [US2] Create/update Azure Key Vault secrets with Fundrbolt naming (add new secrets; plan retirement of old Augeo secrets post-launch)
+- [x] T037 [US2] Create/update Azure Key Vault secrets with Fundrbolt naming (add new secrets; plan retirement of old Fundrbolt secrets post-launch)
 - [x] T038 [US2] Validate Bicep templates: Run `az bicep build` on each updated Bicep file to confirm syntax
 - [x] T039 [US2] Dry-run infrastructure deployment to staging: Execute deployment scripts without applying (plan/validate only)
 - [x] T040 [US2] Verify CI/CD pipeline: Trigger a test build/deploy on renamed assets to confirm automation works
@@ -150,11 +150,11 @@ All infrastructure, repositories, pipelines, secrets, dashboards, and monitoring
 
 ### Story Goal
 
-Legacy Augeo URLs, domains, and documentation automatically redirect or guide users to Fundrbolt equivalents without errors.
+Legacy Fundrbolt URLs, domains, and documentation automatically redirect or guide users to Fundrbolt equivalents without errors.
 
 ### Independent Test Criteria
 
-- ✅ 100% of top 20 legacy Augeo URLs tested and resolves to Fundrbolt pages
+- ✅ 100% of top 20 legacy Fundrbolt URLs tested and resolves to Fundrbolt pages
 - ✅ Old documentation bookmarks/links render Fundrbolt content without 404s
 - ✅ Internal wiki/wiki links updated to reference Fundrbolt
 - ✅ No mixed-content warnings in browser console
@@ -162,16 +162,16 @@ Legacy Augeo URLs, domains, and documentation automatically redirect or guide us
 
 ### Tasks
 
-- [ ] T041 [US3] Create HTTP redirect rules (if applicable) to forward `augeo.app` domain → `fundrbolt.app` or new domain
-- [ ] T042 [US3] Update legacy URL references in onboarding docs and runbooks to point to Fundrbolt equivalents
-- [ ] T043 [US3] Bulk replace Augeo → Fundrbolt in all markdown files in `/docs/` directory
-- [ ] T044 [US3] Update all README.md files (root and subdirectories) with Fundrbolt branding
-- [ ] T045 [US3] Update `.specify/` documentation (spec files, memory files, prompts) to reflect Fundrbolt naming
-- [ ] T046 [US3] Create changelog entry documenting the rename, dates, and what changed for customer communication
-- [ ] T047 [US3] Generate migration guide for external API consumers detailing the API cutover (new sender names, endpoints still the same, breaking changes)
-- [ ] T048 [US3] Test legacy URL redirects: Simulate user clicking old bookmarks or following stale documentation links
-- [ ] T049 [US3] Verify no broken assets in documentation: Run link checker on all markdown files
-- [ ] T050 [US3] Review audit logs and compliance artifacts to ensure historical Augeo references remain accessible while presenting Fundrbolt externally
+- [x] T041 [US3] Create HTTP redirect rules (if applicable) to forward `fundrbolt.app` domain → `fundrbolt.app` or new domain
+- [x] T042 [US3] Update legacy URL references in onboarding docs and runbooks to point to Fundrbolt equivalents
+- [x] T043 [US3] Bulk replace Fundrbolt → Fundrbolt in all markdown files in `/docs/` directory
+- [x] T044 [US3] Update all README.md files (root and subdirectories) with Fundrbolt branding
+- [x] T045 [US3] Update `.specify/` documentation (spec files, memory files, prompts) to reflect Fundrbolt naming
+- [x] T046 [US3] Create changelog entry documenting the rename, dates, and what changed for customer communication
+- [x] T047 [US3] Generate migration guide for external API consumers detailing the API cutover (new sender names, endpoints still the same, breaking changes)
+- [x] T048 [US3] Test legacy URL redirects: Simulate user clicking old bookmarks or following stale documentation links
+- [x] T049 [US3] Verify no broken assets in documentation: Run link checker on all markdown files
+- [x] T050 [US3] Review audit logs and compliance artifacts to ensure historical Fundrbolt references remain accessible while presenting Fundrbolt externally
 
 ---
 
@@ -184,7 +184,7 @@ Finalize rename, run comprehensive testing, obtain stakeholder sign-off, and pre
 ### Independent Test Criteria
 
 - ✅ All tests pass (backend pytest, frontend Vitest, infrastructure validation)
-- ✅ No unplanned Augeo references remain in codebase or infrastructure
+- ✅ No unplanned Fundrbolt references remain in codebase or infrastructure
 - ✅ Full deployment dry-run succeeds on staging
 - ✅ Stakeholder sign-off received
 - ✅ Customer/partner communication sent
@@ -192,20 +192,20 @@ Finalize rename, run comprehensive testing, obtain stakeholder sign-off, and pre
 
 ### Tasks
 
-- [ ] T051 Run comprehensive code search to detect any remaining Augeo references: `grep -r "augeo\|Augeo" --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.venv`
+- [ ] T051 Run comprehensive code search to detect any remaining Fundrbolt references: `grep -r "fundrbolt\|Fundrbolt" --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.venv`
 - [ ] T052 [P] Run backend test suite: `cd backend && poetry run pytest --tb=short` to confirm no regressions
 - [ ] T053 [P] Run frontend build and tests: `cd frontend/fundrbolt-admin && pnpm install && pnpm test` (all frontends)
 - [ ] T054 [P] Run infrastructure validation: `az bicep build` on all Bicep files; `terraform validate` (if applicable)
 - [ ] T055 Commit all rename changes with meaningful commit messages following Conventional Commits format
-- [ ] T056 Create Pull Request with title "Rename: Augeo to Fundrbolt" and link to spec
-- [ ] T057 Code review: Verify all Augeo references replaced, no functional logic changed, tests pass
+- [ ] T056 Create Pull Request with title "Rename: Fundrbolt to Fundrbolt" and link to spec
+- [ ] T057 Code review: Verify all Fundrbolt references replaced, no functional logic changed, tests pass
 - [ ] T058 Deploy to staging environment using updated infrastructure scripts
 - [ ] T059 Smoke tests on staging: Load UI, verify API responses, test email delivery, check dashboards
 - [ ] T060 Obtain stakeholder approval: Product, operations, support confirm readiness
 - [ ] T061 Send customer/partner communication notifying of rebrand (date, what to expect, support contact)
 - [ ] T062 Merge PR to main and deploy to production
 - [ ] T063 Monitor production for 24 hours: Track error rates, customer feedback, verify Fundrbolt branding live
-- [ ] T064 Update project status in .specify/specs/013-augeo-to-fundrbolt/spec.md from Draft to Complete
+- [ ] T064 Update project status in .specify/specs/013-fundrbolt-to-fundrbolt/spec.md from Draft to Complete
 - [ ] T065 Archive this tasks.md and document final state in feature completion summary
 
 ---
@@ -242,10 +242,10 @@ Finalize rename, run comprehensive testing, obtain stakeholder sign-off, and pre
 | **Phase 2 (Foundational)** | 8 tasks | ✅ COMPLETE |
 | **Phase 3 (US1 - Customer Brand)** | 14 tasks | ✅ COMPLETE |
 | **Phase 4 (US2 - Operations)** | 13 tasks | ✅ COMPLETE |
-| **Phase 5 (US3 - Legacy Redirects)** | 10 tasks | ⏳ PENDING |
-| **Phase 6 (Polish)** | 15 tasks | ⏳ PENDING |
-| **Completed Tasks** | 40 | ✅ (Phase 1-4) |
-| **Remaining Tasks** | 25 | 🔄 (Phase 5-6) |
+| **Phase 5 (US3 - Legacy Redirects)** | 10 tasks | ✅ COMPLETE |
+| **Phase 6 (Polish)** | 15 tasks | 🔄 IN PROGRESS |
+| **Completed Tasks** | 50 | ✅ (Phase 1-5) |
+| **Remaining Tasks** | 15 | 🔄 (Phase 6) |
 | **Parallelizable Tasks** | ~35 tasks (marked [P]) | |
 
 ---
@@ -272,16 +272,23 @@ Finalize rename, run comprehensive testing, obtain stakeholder sign-off, and pre
 - ✅ Phase 4 (US2 - Operations): 13 tasks
 - ✅ Infrastructure scripts renamed to fundrbolt
 - ✅ Bicep templates validated (main.bicep, main-minimal.bicep)
-- ✅ GitHub repository renamed (jeanesdev/augeo-platform → jeanesdev/fundrbolt-platform)
+- ✅ GitHub repository renamed (jeanesdev/fundrbolt-platform → jeanesdev/fundrbolt-platform)
 - ✅ Git remote updated and verified
 - ✅ 35 infrastructure files updated, 6 GitHub Actions workflows updated
 
-**Next Iteration** (Day 3–4):
+**Phase 5 Complete** ✅ (Delivered 2025-12-18):
 
-- [ ] Phase 5 (US3 - Legacy Redirects): ~10 tasks
-- [ ] Proceed to legacy URL redirect implementation
+- ✅ Phase 5 (US3 - Legacy Redirects): 10 tasks
+- ✅ All /docs markdown files updated
+- ✅ All README.md files updated across repository
+- ✅ .specify documentation fully updated
+- ✅ CHANGELOG_REBRAND.md created: comprehensive rebrand guide
+- ✅ API_MIGRATION_GUIDE.md created: non-breaking changes for API consumers
+- ✅ Config files fixed (.pre-commit-config.yaml, validate-all.sh)
 
-**Final Iteration** (Day 4–5):
+**Final Phase** (Day 4–5):
+
+- 🔄 Phase 6 (Polish & Final Verification): 15 tasks (IN PROGRESS)
 
 - Complete Phase 5 (US3 - Legacy Redirects): ~10 tasks
 - Complete Phase 6 (Polish & Approval): ~15 tasks
@@ -301,7 +308,7 @@ Finalize rename, run comprehensive testing, obtain stakeholder sign-off, and pre
 
 ### Frontend
 
-- `frontend/augeo-admin/` → `frontend/fundrbolt-admin/` (directory rename)
+- `frontend/fundrbolt-admin/` → `frontend/fundrbolt-admin/` (directory rename)
 - `frontend/fundrbolt-admin/package.json`
 - `frontend/fundrbolt-admin/src/**/*`
 - `frontend/fundrbolt-admin/public/manifest.json`
@@ -329,9 +336,9 @@ Finalize rename, run comprehensive testing, obtain stakeholder sign-off, and pre
 
 **If Issues Arise**:
 
-1. **Code**: Revert commits on branch `013-augeo-to-fundrbolt` or merge main if already merged
+1. **Code**: Revert commits on branch `013-fundrbolt-to-fundrbolt` or merge main if already merged
 2. **Infrastructure**: Redeploy old Bicep templates (no schema changes, so zero data loss)
-3. **GitHub**: Old repo redirect will remain; update remote URLs back to augeo-platform
+3. **GitHub**: Old repo redirect will remain; update remote URLs back to fundrbolt-platform
 
 **Quick Rollback Command** (if merged to main):
 
@@ -358,7 +365,7 @@ git push origin main
 
 ✅ **MVP Phase Complete (Phase 1–3)** - 2025-12-18:
 
-- ✅ 0 visible Augeo references in UI, APIs, emails
+- ✅ 0 visible Fundrbolt references in UI, APIs, emails
 - ✅ Backend builds: 711 tests passing (64 skipped)
 - ✅ Frontend builds: Fundrbolt-admin production build (2.3MB gzipped)
 - ✅ Database: All migrations idempotent, test DB validated

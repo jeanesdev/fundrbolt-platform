@@ -1,8 +1,8 @@
-# Specification Quality Checklist: Augeo to Fundrbolt Rename
+# Specification Quality Checklist: Fundrbolt to Fundrbolt Rename
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2025-12-17
-**Feature**: [spec.md](.specify/specs/013-augeo-to-fundrbolt/spec.md)
+**Feature**: [spec.md](.specify/specs/013-fundrbolt-to-fundrbolt/spec.md)
 
 ## Content Quality
 

@@ -6,7 +6,7 @@
 
 ## Overview
 
-This guide walks through setting up the complete Azure cloud infrastructure for the Augeo Platform from scratch. Follow these steps to provision all required resources and deploy the application to a new environment.
+This guide walks through setting up the complete Azure cloud infrastructure for the Fundrbolt Platform from scratch. Follow these steps to provision all required resources and deploy the application to a new environment.
 
 ## Prerequisites
 
@@ -27,7 +27,7 @@ This guide walks through setting up the complete Azure cloud infrastructure for 
 
 ### GitHub Access
 
-- GitHub repository access (jeanesdev/augeo-platform)
+- GitHub repository access (jeanesdev/fundrbolt-platform)
 - Personal Access Token (PAT) with `repo` and `workflow` scopes
 
 ## Step 1: Provision Azure Infrastructure
@@ -41,11 +41,11 @@ LOCATION=eastus
 
 # Create resource group
 az group create \
-  --name augeo-${ENVIRONMENT}-rg \
+  --name fundrbolt-${ENVIRONMENT}-rg \
   --location ${LOCATION} \
   --tags \
     Environment=${ENVIRONMENT} \
-    Project=augeo-platform \
+    Project=fundrbolt-platform \
     Owner=operations
 ```
 
@@ -57,13 +57,13 @@ cd infrastructure/bicep
 
 # Preview changes (what-if)
 az deployment group what-if \
-  --resource-group augeo-${ENVIRONMENT}-rg \
+  --resource-group fundrbolt-${ENVIRONMENT}-rg \
   --template-file main.bicep \
   --parameters @parameters/${ENVIRONMENT}.bicepparam
 
 # Deploy infrastructure
 az deployment group create \
-  --resource-group augeo-${ENVIRONMENT}-rg \
+  --resource-group fundrbolt-${ENVIRONMENT}-rg \
   --template-file main.bicep \
   --parameters @parameters/${ENVIRONMENT}.bicepparam \
   --output json > deployment-output.json
@@ -80,13 +80,13 @@ REDIS_URL=$(jq -r '.properties.outputs.redisUrl.value' deployment-output.json)
 ```bash
 # List all resources in resource group
 az resource list \
-  --resource-group augeo-${ENVIRONMENT}-rg \
+  --resource-group fundrbolt-${ENVIRONMENT}-rg \
   --output table
 
 # Verify App Service is running
 az webapp show \
-  --name augeo-${ENVIRONMENT}-api \
-  --resource-group augeo-${ENVIRONMENT}-rg \
+  --name fundrbolt-${ENVIRONMENT}-api \
+  --resource-group fundrbolt-${ENVIRONMENT}-rg \
   --query "state" --output tsv
 # Expected output: Running
 ```
@@ -106,19 +106,19 @@ DB_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
 ### 2.2 Store Secrets in Key Vault
 
 ```bash
-KEY_VAULT_NAME=augeo-${ENVIRONMENT}-kv
+KEY_VAULT_NAME=fundrbolt-${ENVIRONMENT}-kv
 
 # Store database URL
 az keyvault secret set \
   --vault-name ${KEY_VAULT_NAME} \
   --name database-url \
-  --value "postgresql://augeouser:${DB_PASSWORD}@augeo-${ENVIRONMENT}-postgres.postgres.database.azure.com/augeodb?sslmode=require"
+  --value "postgresql://fundrboltuser:${DB_PASSWORD}@fundrbolt-${ENVIRONMENT}-postgres.postgres.database.azure.com/fundrboltdb?sslmode=require"
 
 # Store Redis URL
 az keyvault secret set \
   --vault-name ${KEY_VAULT_NAME} \
   --name redis-url \
-  --value "$(az redis show --name augeo-${ENVIRONMENT}-redis --resource-group augeo-${ENVIRONMENT}-rg --query 'hostName' -o tsv):6380?ssl=true"
+  --value "$(az redis show --name fundrbolt-${ENVIRONMENT}-redis --resource-group fundrbolt-${ENVIRONMENT}-rg --query 'hostName' -o tsv):6380?ssl=true"
 
 # Store JWT secret
 az keyvault secret set \
@@ -132,8 +132,8 @@ az keyvault secret set \
 ```bash
 # Get App Service managed identity principal ID
 PRINCIPAL_ID=$(az webapp identity show \
-  --name augeo-${ENVIRONMENT}-api \
-  --resource-group augeo-${ENVIRONMENT}-rg \
+  --name fundrbolt-${ENVIRONMENT}-api \
+  --resource-group fundrbolt-${ENVIRONMENT}-rg \
   --query principalId --output tsv)
 
 # Grant Key Vault Secrets User role
@@ -151,8 +151,8 @@ Option 1: Use Azure App Service Domain
 
 ```bash
 az appservice domain create \
-  --resource-group augeo-prod-rg \
-  --hostname augeo.app \
+  --resource-group fundrbolt-prod-rg \
+  --hostname fundrbolt.app \
   --contact-info @contact-info.json \
   --accept-terms
 ```
@@ -167,13 +167,13 @@ Option 2: Use external registrar (Namecheap, GoDaddy, etc.)
 ```bash
 # Create DNS zone (if not created by Bicep)
 az network dns zone create \
-  --resource-group augeo-prod-rg \
-  --name augeo.app
+  --resource-group fundrbolt-prod-rg \
+  --name fundrbolt.app
 
 # Get nameservers
 az network dns zone show \
-  --resource-group augeo-prod-rg \
-  --name augeo.app \
+  --resource-group fundrbolt-prod-rg \
+  --name fundrbolt.app \
   --query "nameServers" --output tsv
 
 # Update domain registrar nameservers with the values above
@@ -184,15 +184,15 @@ az network dns zone show \
 ```bash
 # Add custom domain to App Service (backend)
 az webapp config hostname add \
-  --webapp-name augeo-prod-api \
-  --resource-group augeo-prod-rg \
-  --hostname api.augeo.app
+  --webapp-name fundrbolt-prod-api \
+  --resource-group fundrbolt-prod-rg \
+  --hostname api.fundrbolt.app
 
 # Add custom domain to Static Web App (frontend)
 az staticwebapp hostname set \
-  --name augeo-prod-admin \
-  --resource-group augeo-prod-rg \
-  --hostname admin.augeo.app
+  --name fundrbolt-prod-admin \
+  --resource-group fundrbolt-prod-rg \
+  --hostname admin.fundrbolt.app
 
 # SSL certificates will auto-provision within 10-15 minutes
 ```
@@ -202,23 +202,23 @@ az staticwebapp hostname set \
 ```bash
 # Get domain verification token
 VERIFICATION_TOKEN=$(az communication email domain show \
-  --email-service-name augeo-prod-acs \
-  --domain-name augeo.app \
-  --resource-group augeo-prod-rg \
+  --email-service-name fundrbolt-prod-acs \
+  --domain-name fundrbolt.app \
+  --resource-group fundrbolt-prod-rg \
   --query "verificationRecords.domain.value" --output tsv)
 
 # Add TXT record for domain verification
 az network dns record-set txt add-record \
-  --resource-group augeo-prod-rg \
-  --zone-name augeo.app \
+  --resource-group fundrbolt-prod-rg \
+  --zone-name fundrbolt.app \
   --record-set-name @ \
   --value ${VERIFICATION_TOKEN}
 
 # Verify domain (wait 5-10 minutes for DNS propagation)
 az communication email domain show \
-  --email-service-name augeo-prod-acs \
-  --domain-name augeo.app \
-  --resource-group augeo-prod-rg \
+  --email-service-name fundrbolt-prod-acs \
+  --domain-name fundrbolt.app \
+  --resource-group fundrbolt-prod-rg \
   --query "domainManagement"
 # Expected: "AzureManaged" or "CustomerManaged"
 ```
@@ -230,9 +230,9 @@ az communication email domain show \
 ```bash
 # Create Azure service principal for GitHub Actions
 az ad sp create-for-rbac \
-  --name "github-actions-augeo-${ENVIRONMENT}" \
+  --name "github-actions-fundrbolt-${ENVIRONMENT}" \
   --role contributor \
-  --scopes /subscriptions/${AZURE_SUBSCRIPTION_ID}/resourceGroups/augeo-${ENVIRONMENT}-rg \
+  --scopes /subscriptions/${AZURE_SUBSCRIPTION_ID}/resourceGroups/fundrbolt-${ENVIRONMENT}-rg \
   --sdk-auth > azure-credentials.json
 
 # Output AZURE_CREDENTIALS JSON
@@ -308,7 +308,7 @@ print(inspector.get_table_names())
 ```bash
 # Create superadmin user
 poetry run python scripts/create_superadmin.py \
-  --email admin@augeo.app \
+  --email admin@fundrbolt.app \
   --password <secure-password> \
   --name "Admin User"
 
@@ -323,22 +323,22 @@ poetry run python scripts/seed_test_data.py
 ```bash
 # Create action group for notifications
 az monitor action-group create \
-  --name augeo-${ENVIRONMENT}-alerts \
-  --resource-group augeo-${ENVIRONMENT}-rg \
-  --short-name augeo-alert \
+  --name fundrbolt-${ENVIRONMENT}-alerts \
+  --resource-group fundrbolt-${ENVIRONMENT}-rg \
+  --short-name fundrbolt-alert \
   --email-receiver \
     name=ops-team \
-    email-address=ops@augeo.app
+    email-address=ops@fundrbolt.app
 
 # Create metric alert for high error rate
 az monitor metrics alert create \
   --name high-error-rate \
-  --resource-group augeo-${ENVIRONMENT}-rg \
-  --scopes $(az webapp show --name augeo-${ENVIRONMENT}-api --resource-group augeo-${ENVIRONMENT}-rg --query id -o tsv) \
+  --resource-group fundrbolt-${ENVIRONMENT}-rg \
+  --scopes $(az webapp show --name fundrbolt-${ENVIRONMENT}-api --resource-group fundrbolt-${ENVIRONMENT}-rg --query id -o tsv) \
   --condition "avg requests/failed > 5" \
   --window-size 5m \
   --evaluation-frequency 1m \
-  --action augeo-${ENVIRONMENT}-alerts
+  --action fundrbolt-${ENVIRONMENT}-alerts
 ```
 
 ### 6.2 Create Monitoring Dashboard
@@ -346,7 +346,7 @@ az monitor metrics alert create \
 ```bash
 # Import pre-built dashboard
 az portal dashboard import \
-  --resource-group augeo-${ENVIRONMENT}-rg \
+  --resource-group fundrbolt-${ENVIRONMENT}-rg \
   --input-path dashboards/system-health.json
 ```
 
@@ -361,21 +361,21 @@ Access dashboards:
 
 ```bash
 # Check backend health
-curl https://api.augeo.app/health
+curl https://api.fundrbolt.app/health
 # Expected: {"status": "healthy", "timestamp": "..."}
 
 # Check detailed health
-curl https://api.augeo.app/health/detailed
+curl https://api.fundrbolt.app/health/detailed
 # Expected: {"status": "healthy", "database": "connected", "redis": "connected", ...}
 
 # Check frontend
-curl https://admin.augeo.app
+curl https://admin.fundrbolt.app
 # Expected: HTML page with React app
 ```
 
 ### 7.2 Test Application Flow
 
-1. Open `https://admin.augeo.app` in browser
+1. Open `https://admin.fundrbolt.app` in browser
 2. Register new user account
 3. Check email delivery (verify inbox)
 4. Log in to admin panel
@@ -387,13 +387,13 @@ curl https://admin.augeo.app
 ```bash
 # Stream application logs
 az webapp log tail \
-  --name augeo-${ENVIRONMENT}-api \
-  --resource-group augeo-${ENVIRONMENT}-rg
+  --name fundrbolt-${ENVIRONMENT}-api \
+  --resource-group fundrbolt-${ENVIRONMENT}-rg
 
 # Query Application Insights logs
 az monitor app-insights query \
-  --app augeo-${ENVIRONMENT}-appinsights \
-  --resource-group augeo-${ENVIRONMENT}-rg \
+  --app fundrbolt-${ENVIRONMENT}-appinsights \
+  --resource-group fundrbolt-${ENVIRONMENT}-rg \
   --analytics-query "requests | where timestamp > ago(1h) | summarize count() by resultCode"
 ```
 
@@ -421,7 +421,7 @@ az monitor app-insights query \
 
 ```bash
 # Check logs
-az webapp log tail --name augeo-${ENVIRONMENT}-api --resource-group augeo-${ENVIRONMENT}-rg
+az webapp log tail --name fundrbolt-${ENVIRONMENT}-api --resource-group fundrbolt-${ENVIRONMENT}-rg
 
 # Common issues:
 # - Key Vault access denied → verify managed identity has role assignment
@@ -434,21 +434,21 @@ az webapp log tail --name augeo-${ENVIRONMENT}-api --resource-group augeo-${ENVI
 ```bash
 # Verify domain verification status
 az communication email domain show \
-  --email-service-name augeo-${ENVIRONMENT}-acs \
-  --domain-name augeo.app \
-  --resource-group augeo-${ENVIRONMENT}-rg
+  --email-service-name fundrbolt-${ENVIRONMENT}-acs \
+  --domain-name fundrbolt.app \
+  --resource-group fundrbolt-${ENVIRONMENT}-rg
 
 # Check DNS records
-dig TXT augeo.app
-dig TXT _dmarc.augeo.app
-dig CNAME selector1._domainkey.augeo.app
+dig TXT fundrbolt.app
+dig TXT _dmarc.fundrbolt.app
+dig CNAME selector1._domainkey.fundrbolt.app
 ```
 
 ### Database Connection Issues
 
 ```bash
 # Test database connectivity from App Service
-az webapp ssh --name augeo-${ENVIRONMENT}-api --resource-group augeo-${ENVIRONMENT}-rg
+az webapp ssh --name fundrbolt-${ENVIRONMENT}-api --resource-group fundrbolt-${ENVIRONMENT}-rg
 
 # Inside container:
 apt update && apt install postgresql-client -y
@@ -477,17 +477,17 @@ az consumption usage list \
 ```bash
 # Swap deployment slots (if blue-green deployment)
 az webapp deployment slot swap \
-  --name augeo-${ENVIRONMENT}-api \
-  --resource-group augeo-${ENVIRONMENT}-rg \
+  --name fundrbolt-${ENVIRONMENT}-api \
+  --resource-group fundrbolt-${ENVIRONMENT}-rg \
   --slot staging \
   --target-slot production
 
 # Or redeploy previous Docker image
 PREVIOUS_TAG=v1.2.3
 az webapp config container set \
-  --name augeo-${ENVIRONMENT}-api \
-  --resource-group augeo-${ENVIRONMENT}-rg \
-  --docker-custom-image-name ghcr.io/jeanesdev/augeo-backend:${PREVIOUS_TAG}
+  --name fundrbolt-${ENVIRONMENT}-api \
+  --resource-group fundrbolt-${ENVIRONMENT}-rg \
+  --docker-custom-image-name ghcr.io/jeanesdev/fundrbolt-backend:${PREVIOUS_TAG}
 ```
 
 ### Rollback Database Migration
@@ -499,9 +499,9 @@ poetry run alembic downgrade -1
 
 # Or restore from backup
 az postgres flexible-server restore \
-  --resource-group augeo-${ENVIRONMENT}-rg \
-  --name augeo-${ENVIRONMENT}-postgres \
-  --source-server augeo-${ENVIRONMENT}-postgres \
+  --resource-group fundrbolt-${ENVIRONMENT}-rg \
+  --name fundrbolt-${ENVIRONMENT}-postgres \
+  --source-server fundrbolt-${ENVIRONMENT}-postgres \
   --restore-time "2025-10-27T10:00:00Z"
 ```
 

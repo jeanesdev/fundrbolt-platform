@@ -68,7 +68,7 @@ Get all current published legal documents (Terms of Service and Privacy Policy).
 
 ```http
 GET /api/v1/legal/documents HTTP/1.1
-Host: api.augeo.app
+Host: api.fundrbolt.app
 ```
 
 **Response** (200 OK):
@@ -115,7 +115,7 @@ Get the current published version of a specific legal document.
 
 ```http
 GET /api/v1/legal/documents/terms_of_service HTTP/1.1
-Host: api.augeo.app
+Host: api.fundrbolt.app
 ```
 
 **Response** (200 OK):
@@ -165,7 +165,7 @@ Get a specific version of a legal document (for viewing version history).
 
 ```http
 GET /api/v1/legal/documents/terms_of_service/version/1.0 HTTP/1.1
-Host: api.augeo.app
+Host: api.fundrbolt.app
 ```
 
 **Response** (200 OK):
@@ -195,7 +195,7 @@ Create a new legal document (starts in draft status).
 
 ```http
 POST /api/v1/legal/documents HTTP/1.1
-Host: api.augeo.app
+Host: api.fundrbolt.app
 Authorization: Bearer <admin_access_token>
 Content-Type: application/json
 
@@ -250,7 +250,7 @@ Accept one or more legal documents. Called during registration or when prompted 
 
 ```http
 POST /api/v1/consent/accept HTTP/1.1
-Host: api.augeo.app
+Host: api.fundrbolt.app
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -325,7 +325,7 @@ Get user's current consent status for all legal documents.
 
 ```http
 GET /api/v1/consent/status HTTP/1.1
-Host: api.augeo.app
+Host: api.fundrbolt.app
 Authorization: Bearer <access_token>
 ```
 
@@ -372,7 +372,7 @@ Get user's complete consent history (all acceptances, withdrawals, updates).
 
 ```http
 GET /api/v1/consent/history HTTP/1.1
-Host: api.augeo.app
+Host: api.fundrbolt.app
 Authorization: Bearer <access_token>
 ```
 
@@ -428,7 +428,7 @@ Request GDPR data export (all personal data in machine-readable format).
 
 ```http
 POST /api/v1/consent/data-export HTTP/1.1
-Host: api.augeo.app
+Host: api.fundrbolt.app
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -462,7 +462,7 @@ Request GDPR account and data deletion (soft delete with 30-day grace period).
 
 ```http
 POST /api/v1/consent/data-deletion HTTP/1.1
-Host: api.augeo.app
+Host: api.fundrbolt.app
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -498,7 +498,7 @@ Get current cookie consent preferences for user (authenticated) or session (anon
 
 ```http
 GET /api/v1/cookies/consent HTTP/1.1
-Host: api.augeo.app
+Host: api.fundrbolt.app
 X-Session-ID: <anonymous_session_uuid>
 ```
 
@@ -541,7 +541,7 @@ Set cookie preferences (initial consent).
 
 ```http
 POST /api/v1/cookies/consent HTTP/1.1
-Host: api.augeo.app
+Host: api.fundrbolt.app
 Authorization: Bearer <access_token>
 X-Session-ID: <anonymous_session_uuid>
 Content-Type: application/json
@@ -580,7 +580,7 @@ Update cookie preferences (change existing consent).
 
 ```http
 PUT /api/v1/cookies/consent HTTP/1.1
-Host: api.augeo.app
+Host: api.fundrbolt.app
 Authorization: Bearer <access_token>
 Content-Type: application/json
 

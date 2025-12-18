@@ -119,7 +119,7 @@
 
 ## Phase 6: User Story 6 - Event-Branded Visual Theme (Priority: P1)
 
-**Goal**: Full UI theming with event colors, NPO fallback, and zero Augeo branding
+**Goal**: Full UI theming with event colors, NPO fallback, and zero Fundrbolt branding
 
 **Independent Test**: View events with different color schemes → verify CSS variables reflect branding, buttons/headers use theme colors
 
@@ -128,7 +128,7 @@
 - [x] T038 [US6] Apply CSS variable consumption: `AuctionItemCard.tsx` uses `var(--event-primary)` for bid price/button, `EventHomePage.tsx` uses CSS vars for gradient/borders/icons
 - [x] T039 [US6] Verify branding fallback chain works (event → NPO → system defaults) via existing T011 hook extension
 - [x] T040 [US6] Add instant theme switch when event changes (applyBranding called in useEffect on currentEvent change) in `EventHomePage.tsx`
-- [x] T041 [US6] Audit `EventHomePage.tsx` and child components - no Augeo branding references found in event-home components
+- [x] T041 [US6] Audit `EventHomePage.tsx` and child components - no Fundrbolt branding references found in event-home components
 
 **Checkpoint**: User Story 6 complete - event homepage is fully themed with event/NPO branding
 
