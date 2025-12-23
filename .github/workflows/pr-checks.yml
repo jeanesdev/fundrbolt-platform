@@ -87,25 +87,11 @@ jobs:
           virtualenvs-in-project: true
 
       # Disable cache temporarily to force a clean venv
-      - name: Install dependencies (no cache)
-        run: poetry install --no-interaction --with dev --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction --with dev
-
-      - name: Debug Poetry setup
+      - name: Install all dependencies
         run: |
-          echo "=== Poetry version ==="
-          poetry --version
-          echo "=== Poetry config ==="
-          poetry config --list
-          echo "=== Checking venv ==="
-          poetry env info
-          echo "=== Listing installed packages ==="
-          poetry run pip list | grep -E 'mypy|pytest|ruff'
-          echo "=== Checking PATH ==="
-          poetry run which python
-          poetry run which pip
+          poetry install --no-interaction --with dev
+          poetry run which mypy
+          poetry run which pytest
 
       - name: Run Ruff linter
         run: poetry run ruff check .
