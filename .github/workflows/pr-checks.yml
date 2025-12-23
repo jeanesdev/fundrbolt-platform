@@ -87,23 +87,18 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Cache Poetry virtualenv
+        id: cached-poetry-dependencies
         uses: actions/cache@v3
         with:
           path: backend/.venv
-          key: venv-${{ runner.os }}-3.11-${{ hashFiles('backend/poetry.lock') }}
-          restore-keys: |
-            venv-${{ runner.os }}-3.11-
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
 
-      - name: Install all dependencies (including dev)
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Install project
         run: poetry install --no-interaction
-
-      - name: Verify poetry environment
-        run: |
-          poetry --version
-          poetry env info
-          poetry run python --version
-          poetry run which mypy || echo "mypy not found"
-          poetry run which pytest || echo "pytest not found"
 
       - name: Run Ruff linter
         run: poetry run ruff check .
@@ -112,7 +107,7 @@ jobs:
         run: poetry run ruff format --check .
 
       - name: Run MyPy type checker
-        run: poetry run mypy app
+        run: poetry run mypy app --strict --ignore-missing-imports --exclude 'app/tests'
         continue-on-error: true
 
       - name: Run tests
