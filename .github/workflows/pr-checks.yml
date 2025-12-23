@@ -89,9 +89,20 @@ jobs:
       # Disable cache temporarily to force a clean venv
       - name: Install all dependencies
         run: |
+          echo "Current directory: $(pwd)"
+          echo "Listing backend dir:"
+          ls -la
+          echo "Running poetry install..."
           poetry install --no-interaction --with dev
-          poetry run which mypy
-          poetry run which pytest
+          echo "Poetry install exit code: $?"
+          echo ""
+          echo "Checking if .venv exists:"
+          ls -la .venv/bin/ | head -20
+          echo ""
+          echo "Trying to run mypy:"
+          poetry run which mypy || echo "ERROR: mypy not found!"
+          poetry run which pytest || echo "ERROR: pytest not found!"
+          poetry run pip list | grep -E "mypy|pytest|ruff"
 
       - name: Run Ruff linter
         run: poetry run ruff check .
