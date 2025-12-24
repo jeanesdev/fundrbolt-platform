@@ -1,5 +1,5 @@
 // Development environment parameters for Fundrbolt Platform
-using './main.bicep'
+using '../main.bicep'
 
 param environment = 'dev'
 param location = 'eastus'
