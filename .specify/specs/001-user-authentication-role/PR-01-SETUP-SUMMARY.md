@@ -69,13 +69,13 @@
   - Poetry caching for faster builds
 
 ### Frontend Setup (T009)
-- [x] Verified `frontend/augeo-admin` already initialized with:
+- [x] Verified `frontend/fundrbolt-admin` already initialized with:
   - Vite + React 18 + TypeScript 5
   - All required dependencies present (Zustand, React Query, axios)
   - No changes needed - already configured
 
 ### Frontend Dependencies (T010)
-- [x] Verified `frontend/augeo-admin/package.json` includes:
+- [x] Verified `frontend/fundrbolt-admin/package.json` includes:
   - zustand@5.0.8
   - @tanstack/react-query@5.90.2
   - axios@1.12.2
@@ -157,7 +157,7 @@ poetry install  # Should complete without errors
 poetry run ruff check .  # Should complete (no files to check yet)
 
 # 4. Verify TypeScript types compile
-cd ../frontend/augeo-admin
+cd ../frontend/fundrbolt-admin
 pnpm install
 pnpm run build  # Should complete without type errors
 
@@ -189,7 +189,7 @@ pre-commit run --all-files  # Should pass
 ## 📝 Notes
 
 - **No breaking changes**: All files are new, no existing code modified
-- **Frontend already set up**: augeo-admin has all dependencies, just added shared types
+- **Frontend already set up**: fundrbolt-admin has all dependencies, just added shared types
 - **Type safety**: Shared TypeScript types ensure frontend/backend contract alignment
 - **CI ready**: GitHub Actions will run on next push
 - **Docker ready**: Services configured per quickstart.md

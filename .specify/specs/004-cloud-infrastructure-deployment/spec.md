@@ -14,7 +14,7 @@
 - 8 deployment and management scripts
 - 12+ comprehensive operational documentation guides
 - Minimal deployment template (~$1.50/month) for cost-effective local development
-- Domain purchased (augeo.app) and DNS zone configured
+- Domain purchased (fundrbolt.com) and DNS zone configured
 - Application Insights monitoring operational
 - All 161 core tasks complete (T001-T161)
 
@@ -34,7 +34,7 @@
 
 ### User Story 1 - Platform Operations Team Deploys Application (Priority: P1)
 
-The operations team needs to provision and configure all required Azure cloud resources to host the Augeo Platform backend and frontend applications in a production-ready environment with proper monitoring and security controls.
+The operations team needs to provision and configure all required Azure cloud resources to host the Fundrbolt Platform backend and frontend applications in a production-ready environment with proper monitoring and security controls.
 
 **Why this priority**: Without cloud infrastructure, the application cannot be deployed to production or accessed by real users. This is the foundation for all other deployment activities.
 
@@ -72,7 +72,7 @@ The development team needs automated CI/CD pipelines that build, test, and deplo
 The operations team needs to configure a custom domain with proper DNS records to provide branded URLs for the application and enable email sending through Azure Communication Services with full email authentication (SPF, DKIM, DMARC).
 
 **Domain Information**:
-- **Domain**: `augeo.app` (purchased from Namecheap)
+- **Domain**: `fundrbolt.com` (purchased from Namecheap)
 - **Registration Date**: October 28, 2025
 - **Expiration Date**: October 28, 2026
 - **Auto-Renewal**: Enabled
@@ -80,11 +80,11 @@ The operations team needs to configure a custom domain with proper DNS records t
 
 **Why this priority**: Custom domain provides professional branding and is required for production email sending. However, applications can initially deploy using Azure-provided URLs while domain configuration is completed.
 
-**Independent Test**: Can be fully tested by purchasing/configuring a domain (e.g., augeo.app), setting up Azure DNS, pointing domain records to Azure services, configuring Azure Communication Services with domain verification, and sending test emails. Success delivers fully functional branded URLs and email capability.
+**Independent Test**: Can be fully tested by purchasing/configuring a domain (e.g., fundrbolt.com), setting up Azure DNS, pointing domain records to Azure services, configuring Azure Communication Services with domain verification, and sending test emails. Success delivers fully functional branded URLs and email capability.
 
 **Acceptance Scenarios**:
 
-1. **Given** domain is registered, **When** operations team configures Azure DNS, **Then** domain successfully points to frontend and backend services (e.g., admin.augeo.app, api.augeo.app) with SSL/TLS certificates auto-provisioned
+1. **Given** domain is registered, **When** operations team configures Azure DNS, **Then** domain successfully points to frontend and backend services (e.g., admin.fundrbolt.com, api.fundrbolt.com) with SSL/TLS certificates auto-provisioned
 2. **Given** Azure Communication Services is provisioned, **When** operations team adds custom domain, **Then** domain ownership is verified and email sending is enabled
 3. **Given** email domain is configured, **When** operations team adds DNS records (SPF, DKIM, DMARC), **Then** email authentication tests pass with 100% deliverability score on mail-tester.com
 4. **Given** email services are configured, **When** application sends verification emails, **Then** emails arrive in user inboxes (not spam) within 30 seconds with correct sender branding
@@ -245,7 +245,7 @@ The development and operations teams need comprehensive monitoring dashboards sh
 
 ### Key Entities
 
-- **Azure Resource Group**: Logical container grouping all Azure resources for the Augeo Platform in a specific environment (dev, staging, production). Contains: name, location (region), tags for cost tracking and organization
+- **Azure Resource Group**: Logical container grouping all Azure resources for the Fundrbolt Platform in a specific environment (dev, staging, production). Contains: name, location (region), tags for cost tracking and organization
 
 - **App Service Plan**: Compute resource pool providing CPU, memory, and scaling capabilities for backend API. Contains: SKU/pricing tier, operating system (Linux), scaling rules, deployment slots configuration
 
@@ -277,7 +277,7 @@ The development and operations teams need comprehensive monitoring dashboards sh
 
 - **SC-002**: CI/CD pipeline deploys code changes from commit to staging environment within 15 minutes including all build, test, and deployment steps
 
-- **SC-003**: Applications are accessible via custom domain URLs (e.g., admin.augeo.app, api.augeo.app) with valid SSL certificates and 99.9% uptime
+- **SC-003**: Applications are accessible via custom domain URLs (e.g., admin.fundrbolt.com, api.fundrbolt.com) with valid SSL certificates and 99.9% uptime
 
 - **SC-004**: Email delivery through Azure Communication Services achieves 95%+ deliverability rate with emails arriving within 30 seconds and passing all authentication checks (SPF, DKIM, DMARC)
 

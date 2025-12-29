@@ -18,8 +18,8 @@ export const Navigation = () => {
       <div className="container">
         <div className="nav-wrapper">
           {/* Logo */}
-          <Link to="/" className="nav-logo" aria-label="Augeo Home">
-            <span className="logo-text">Augeo</span>
+          <Link to="/" className="nav-logo" aria-label="Fundrbolt Home">
+            <span className="logo-text">Fundrbolt</span>
           </Link>
 
           {/* Mobile menu button */}

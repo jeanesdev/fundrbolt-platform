@@ -4,14 +4,14 @@
   "parameters": {
     "resourceGroup": {
       "type": "string",
-      "defaultValue": "augeo-production-rg",
+      "defaultValue": "fundrbolt-production-rg",
       "metadata": {
         "description": "Resource group name"
       }
     },
     "appInsightsName": {
       "type": "string",
-      "defaultValue": "augeo-production-ai",
+      "defaultValue": "fundrbolt-production-ai",
       "metadata": {
         "description": "Application Insights name"
       }
@@ -21,11 +21,11 @@
   "outputs": {
     "dashboardId": {
       "type": "string",
-      "value": "[resourceId('Microsoft.Portal/dashboards', 'augeo-system-health')]"
+      "value": "[resourceId('Microsoft.Portal/dashboards', 'fundrbolt-system-health')]"
     }
   },
   "metadata": {
-    "name": "Augeo System Health Dashboard",
+    "name": "Fundrbolt System Health Dashboard",
     "description": "Real-time system health metrics including request rate, response time, error rate, and availability",
     "version": "1.0.0",
     "tiles": [

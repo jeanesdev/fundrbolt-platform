@@ -6,10 +6,10 @@ set -euo pipefail
 
 # Accept environment parameter (default: production)
 ENVIRONMENT="${1:-production}"
-DOMAIN="augeo.app"
-RESOURCE_GROUP="augeo-${ENVIRONMENT}-rg"
-EMAIL_SERVICE="augeo-${ENVIRONMENT}-email"
-ZONE_NAME="augeo.app"
+DOMAIN="fundrbolt.com"
+RESOURCE_GROUP="fundrbolt-${ENVIRONMENT}-rg"
+EMAIL_SERVICE="fundrbolt-${ENVIRONMENT}-email"
+ZONE_NAME="fundrbolt.com"
 
 echo "🔍 Retrieving email configuration from Azure Communication Services..."
 

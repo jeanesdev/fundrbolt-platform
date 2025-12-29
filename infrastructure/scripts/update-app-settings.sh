@@ -23,10 +23,10 @@ fi
 echo "⚙️  Updating App Service settings for $ENVIRONMENT environment..."
 
 # Resource names
-RESOURCE_GROUP="augeo-${ENVIRONMENT}-rg"
-KEY_VAULT_NAME="augeo-${ENVIRONMENT}-kv"
-APP_SERVICE_NAME="augeo-${ENVIRONMENT}-api"
-STATIC_WEB_APP_NAME="augeo-${ENVIRONMENT}-admin"
+RESOURCE_GROUP="fundrbolt-${ENVIRONMENT}-rg"
+KEY_VAULT_NAME="fundrbolt-${ENVIRONMENT}-kv"
+APP_SERVICE_NAME="fundrbolt-${ENVIRONMENT}-api"
+STATIC_WEB_APP_NAME="fundrbolt-${ENVIRONMENT}-admin"
 
 # Get Key Vault URI
 KEY_VAULT_URI=$(az keyvault show \
@@ -45,16 +45,16 @@ kv_ref() {
 # Environment-specific frontend URL
 case $ENVIRONMENT in
     dev)
-        FRONTEND_URL="https://augeo-dev-admin.azurestaticapps.net"
-        CORS_ORIGINS="http://localhost:5173,https://augeo-dev-admin.azurestaticapps.net"
+        FRONTEND_URL="https://fundrbolt-dev-admin.azurestaticapps.net"
+        CORS_ORIGINS="http://localhost:5173,https://fundrbolt-dev-admin.azurestaticapps.net"
         ;;
     staging)
-        FRONTEND_URL="https://augeo-staging-admin.azurestaticapps.net"
-        CORS_ORIGINS="https://augeo-staging-admin.azurestaticapps.net"
+        FRONTEND_URL="https://fundrbolt-staging-admin.azurestaticapps.net"
+        CORS_ORIGINS="https://fundrbolt-staging-admin.azurestaticapps.net"
         ;;
     production)
-        FRONTEND_URL="https://admin.augeo.app"
-        CORS_ORIGINS="https://admin.augeo.app,https://augeo.app"
+        FRONTEND_URL="https://admin.fundrbolt.com"
+        CORS_ORIGINS="https://admin.fundrbolt.com,https://fundrbolt.com"
         ;;
 esac
 
@@ -76,7 +76,7 @@ az webapp config appsettings set \
         SESSION_TIMEOUT="900" \
         ACCESS_TOKEN_EXPIRE_MINUTES="15" \
         REFRESH_TOKEN_EXPIRE_DAYS="7" \
-        EMAIL_FROM="noreply@augeo.app" \
+        EMAIL_FROM="noreply@fundrbolt.com" \
         PYTHON_VERSION="3.11" \
         WEBSITES_PORT="8000" \
         WEBSITES_ENABLE_APP_SERVICE_STORAGE="false" \

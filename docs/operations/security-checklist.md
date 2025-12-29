@@ -1,6 +1,6 @@
 # Security Checklist
 
-Comprehensive security checklist for production deployments of the Augeo platform.
+Comprehensive security checklist for production deployments of the Fundrbolt platform.
 
 ## 1. Secrets Management
 

@@ -1,0 +1,32 @@
+{
+  "name": "Fundrbolt Admin",
+  "short_name": "Fundrbolt",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "description": "Fundrbolt Admin Portal - Manage nonprofits, events, and fundraising campaigns.",
+  "icons": [
+    {
+      "src": "/images/favicon.png",
+      "sizes": "any",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/favicon_light.png",
+      "sizes": "any",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/images/favicon_light.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

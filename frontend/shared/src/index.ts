@@ -1,2 +1,2 @@
-// Shared components, hooks, and utilities for Augeo Platform
+// Shared components, hooks, and utilities for Fundrbolt Platform
 export * from './types';

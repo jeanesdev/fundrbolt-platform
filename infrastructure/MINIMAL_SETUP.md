@@ -11,7 +11,7 @@ This guide helps you deploy only the essential Azure resources needed for local 
 | Storage Account | Backups, logs (if needed) | ~$0.10/month for first 5GB |
 | Application Insights | Telemetry and monitoring | First 5GB/month free |
 | Log Analytics | Log storage | First 5GB/month free |
-| **DNS Zone** | Manage augeo.app domain | **$0.50/month + $0.40 per million queries** |
+| **DNS Zone** | Manage fundrbolt.com domain | **$0.50/month + $0.40 per million queries** |
 
 **Total Estimated Cost: ~$1.50/month**
 
@@ -53,7 +53,7 @@ This guide helps you deploy only the essential Azure resources needed for local 
 
 This will:
 - Validate the Bicep template
-- Show you what will be deployed (including DNS zone for augeo.app)
+- Show you what will be deployed (including DNS zone for fundrbolt.com)
 - Ask for confirmation
 - Deploy resources (takes 3-5 minutes)
 - **Output Azure nameservers for your domain**
@@ -63,7 +63,7 @@ This will:
 After deployment completes, you'll see 4 Azure nameservers. Configure them at Namecheap:
 
 1. Login to [Namecheap](https://www.namecheap.com/)
-2. Go to **Domain List** → **Manage** (for augeo.app)
+2. Go to **Domain List** → **Manage** (for fundrbolt.com)
 3. Find **NAMESERVERS** section
 4. Select **Custom DNS**
 5. Add all 4 Azure nameservers (e.g., ns1-01.azure-dns.com, ns2-01.azure-dns.net, etc.)
@@ -71,7 +71,7 @@ After deployment completes, you'll see 4 Azure nameservers. Configure them at Na
 
 **DNS propagation takes 24-48 hours**. Verify with:
 ```bash
-dig NS augeo.app
+dig NS fundrbolt.com
 # Should show Azure nameservers after propagation
 ```
 
@@ -83,7 +83,7 @@ Generate and store secrets:
 # Generate JWT secret and store in Key Vault
 JWT_SECRET=$(openssl rand -base64 32)
 az keyvault secret set \
-    --vault-name augeo-dev-kv \
+    --vault-name fundrbolt-dev-kv \
     --name jwt-secret \
     --value "$JWT_SECRET"
 
@@ -102,7 +102,7 @@ docker-compose up -d
 docker-compose ps
 
 # Get PostgreSQL connection string
-echo "postgresql://augeo_user:augeo_password@localhost:5432/augeo_db"
+echo "postgresql://fundrbolt_user:fundrbolt_password@localhost:5432/fundrbolt_db"
 
 # Get Redis connection string
 echo "redis://localhost:6379"
@@ -113,13 +113,13 @@ echo "redis://localhost:6379"
 ```bash
 # Store database URL
 az keyvault secret set \
-    --vault-name augeo-dev-kv \
+    --vault-name fundrbolt-dev-kv \
     --name database-url \
-    --value "postgresql://augeo_user:augeo_password@localhost:5432/augeo_db"
+    --value "postgresql://fundrbolt_user:fundrbolt_password@localhost:5432/fundrbolt_db"
 
 # Store Redis URL
 az keyvault secret set \
-    --vault-name augeo-dev-kv \
+    --vault-name fundrbolt-dev-kv \
     --name redis-url \
     --value "redis://localhost:6379"
 ```
@@ -152,7 +152,7 @@ Backend will be available at: http://localhost:8000
 make dev-frontend
 
 # Or manually:
-cd frontend/augeo-admin
+cd frontend/fundrbolt-admin
 pnpm install
 pnpm dev
 ```
@@ -166,8 +166,8 @@ To enable telemetry in your local backend:
 ```bash
 # Get connection string
 APPINSIGHTS_CONNECTION_STRING=$(az monitor app-insights component show \
-    --app augeo-dev-insights \
-    --resource-group augeo-dev-rg \
+    --app fundrbolt-dev-insights \
+    --resource-group fundrbolt-dev-rg \
     --query connectionString -o tsv)
 
 # Add to backend/.env file
@@ -185,7 +185,7 @@ SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 # View costs for dev resource group
 az costmanagement query \
     --type ActualCost \
-    --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/augeo-dev-rg" \
+    --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/fundrbolt-dev-rg" \
     --timeframe MonthToDate \
     --dataset-aggregation name=PreTaxCost function=Sum
 
@@ -199,7 +199,7 @@ az costmanagement query \
 ```bash
 # List all resources in dev resource group
 az resource list \
-    --resource-group augeo-dev-rg \
+    --resource-group fundrbolt-dev-rg \
     --output table
 ```
 
@@ -208,12 +208,12 @@ az resource list \
 ```bash
 # List secrets
 az keyvault secret list \
-    --vault-name augeo-dev-kv \
+    --vault-name fundrbolt-dev-kv \
     --output table
 
 # Get a secret value
 az keyvault secret show \
-    --vault-name augeo-dev-kv \
+    --vault-name fundrbolt-dev-kv \
     --name jwt-secret \
     --query value -o tsv
 ```
@@ -223,14 +223,14 @@ az keyvault secret show \
 ```bash
 # View recent requests
 az monitor app-insights query \
-    --app augeo-dev-insights \
-    --resource-group augeo-dev-rg \
+    --app fundrbolt-dev-insights \
+    --resource-group fundrbolt-dev-rg \
     --analytics-query "requests | where timestamp > ago(1h) | top 10 by timestamp desc"
 
 # View recent exceptions
 az monitor app-insights query \
-    --app augeo-dev-insights \
-    --resource-group augeo-dev-rg \
+    --app fundrbolt-dev-insights \
+    --resource-group fundrbolt-dev-rg \
     --analytics-query "exceptions | where timestamp > ago(1h) | top 10 by timestamp desc"
 ```
 
@@ -283,7 +283,7 @@ This will:
 3. **Monitor Daily**:
    ```bash
    # Add this to your .bashrc or .zshrc
-   alias azure-costs='az costmanagement query --type ActualCost --scope "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/augeo-dev-rg" --timeframe MonthToDate'
+   alias azure-costs='az costmanagement query --type ActualCost --scope "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/fundrbolt-dev-rg" --timeframe MonthToDate'
    ```
 
 4. **Delete When Not Needed**:
@@ -298,7 +298,7 @@ Make sure you're logged in and have access:
 
 ```bash
 az login
-az keyvault show --name augeo-dev-kv --resource-group augeo-dev-rg
+az keyvault show --name fundrbolt-dev-kv --resource-group fundrbolt-dev-rg
 ```
 
 If you get permission errors, you may need to add yourself:
@@ -311,7 +311,7 @@ USER_ID=$(az ad signed-in-user show --query id -o tsv)
 az role assignment create \
     --assignee $USER_ID \
     --role "Key Vault Secrets Officer" \
-    --scope "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/augeo-dev-rg/providers/Microsoft.KeyVault/vaults/augeo-dev-kv"
+    --scope "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/fundrbolt-dev-rg/providers/Microsoft.KeyVault/vaults/fundrbolt-dev-kv"
 ```
 
 ### Database Connection Errors
@@ -329,12 +329,12 @@ Make sure the database URL in Key Vault points to localhost:
 
 ```bash
 az keyvault secret show \
-    --vault-name augeo-dev-kv \
+    --vault-name fundrbolt-dev-kv \
     --name database-url \
     --query value -o tsv
 ```
 
-Should be: `postgresql://augeo_user:augeo_password@localhost:5432/augeo_db`
+Should be: `postgresql://fundrbolt_user:fundrbolt_password@localhost:5432/fundrbolt_db`
 
 ## Next Steps
 

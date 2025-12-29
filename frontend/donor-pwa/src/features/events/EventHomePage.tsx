@@ -21,9 +21,8 @@ import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEventBranding } from '@/hooks/use-event-branding'
-import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
-import { getMySeatingInfo, type SeatingInfoResponse } from '@/services/seating-service'
 import { useEventContext } from '@/hooks/use-event-context'
+import { getMySeatingInfo, type SeatingInfoResponse } from '@/services/seating-service'
 import { useEventContextStore } from '@/stores/event-context-store'
 import { useEventStore } from '@/stores/event-store'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
@@ -205,7 +204,7 @@ export function EventHomePage() {
     const icsContent = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//Augeo//Event Calendar//EN',
+      'PRODID:-//Fundrbolt//Event Calendar//EN',
       'BEGIN:VEVENT',
       `DTSTART:${startDate}`,
       `DTEND:${endDate}`,
@@ -213,7 +212,7 @@ export function EventHomePage() {
       `SUMMARY:${currentEvent.name}`,
       `DESCRIPTION:${(currentEvent.description || '').replace(/\n/g, '\\n')}`,
       `LOCATION:${location}`,
-      `UID:${currentEvent.id}@augeo.app`,
+      `UID:${currentEvent.id}@fundrbolt.com`,
       'STATUS:CONFIRMED',
       'END:VEVENT',
       'END:VCALENDAR',

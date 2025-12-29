@@ -1,4 +1,4 @@
-// Azure Key Vault module for Augeo Platform
+// Azure Key Vault module for Fundrbolt Platform
 
 @description('Name of the Key Vault')
 param keyVaultName string

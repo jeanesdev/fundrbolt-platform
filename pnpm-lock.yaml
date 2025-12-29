@@ -6,7 +6,7 @@ settings:
 
 importers:
 
-  frontend/augeo-admin:
+  frontend/donor-pwa:
     dependencies:
       '@clerk/clerk-react':
         specifier: ^5.51.0
@@ -72,7 +72,7 @@ importers:
         specifier: ^1.1.7
         version: 1.1.8(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@radix-ui/react-slot':
-        specifier: ^1.2.3
+        specifier: ^1.2.4
         version: 1.2.4(@types/react@19.2.7)(react@19.2.0)
       '@radix-ui/react-switch':
         specifier: ^1.2.6
@@ -110,6 +110,12 @@ importers:
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
+      embla-carousel-autoplay:
+        specifier: ^8.6.0
+        version: 8.6.0(embla-carousel@8.6.0)
+      embla-carousel-react:
+        specifier: ^8.6.0
+        version: 8.6.0(react@19.2.0)
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -244,7 +250,7 @@ importers:
         specifier: ^4.0.8
         version: 4.0.13(@types/node@24.10.1)(@vitest/ui@4.0.13)(jiti@2.6.1)(jsdom@27.2.0)(lightningcss@1.30.2)(tsx@4.20.6)
 
-  frontend/donor-pwa:
+  frontend/fundrbolt-admin:
     dependencies:
       '@clerk/clerk-react':
         specifier: ^5.51.0
@@ -310,7 +316,7 @@ importers:
         specifier: ^1.1.7
         version: 1.1.8(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@radix-ui/react-slot':
-        specifier: ^1.2.4
+        specifier: ^1.2.3
         version: 1.2.4(@types/react@19.2.7)(react@19.2.0)
       '@radix-ui/react-switch':
         specifier: ^1.2.6
@@ -348,12 +354,6 @@ importers:
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
-      embla-carousel-autoplay:
-        specifier: ^8.6.0
-        version: 8.6.0(embla-carousel@8.6.0)
-      embla-carousel-react:
-        specifier: ^8.6.0
-        version: 8.6.0(react@19.2.0)
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)

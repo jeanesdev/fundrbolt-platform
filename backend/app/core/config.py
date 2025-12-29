@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     )
 
     # Project
-    project_name: str = "Augeo Platform API"
+    project_name: str = "Fundrbolt Platform API"
 
     # Environment
     environment: Literal["development", "staging", "production", "test"] = "development"
@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     # Azure Communication Services (Email) - Optional for local dev
     azure_communication_connection_string: str | None = None
     email_from_address: EmailStr
-    email_from_name: str = "Augeo Platform"
+    email_from_name: str = "Fundrbolt Platform"
 
     # Azure Blob Storage (for NPO logo uploads) - Optional for local dev
     azure_storage_connection_string: str | None = None

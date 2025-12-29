@@ -1,6 +1,6 @@
 # Rollback Procedures
 
-This document provides step-by-step instructions for rolling back failed deployments in the Augeo platform.
+This document provides step-by-step instructions for rolling back failed deployments in the Fundrbolt platform.
 
 ## Quick Reference
 
@@ -36,23 +36,23 @@ The production deployment workflow includes automatic rollback if health checks 
 1. **Verify current slot status**
    ```bash
    az webapp show \
-     --name augeo-production-api \
-     --resource-group augeo-production-rg \
+     --name fundrbolt-production-api \
+     --resource-group fundrbolt-production-rg \
      --query "siteConfig.{slot: name}"
    ```
 
 2. **Swap staging slot to production**
    ```bash
    az webapp deployment slot swap \
-     --name augeo-production-api \
-     --resource-group augeo-production-rg \
+     --name fundrbolt-production-api \
+     --resource-group fundrbolt-production-rg \
      --slot staging \
      --target-slot production
    ```
 
 3. **Verify health**
    ```bash
-   curl -f https://augeo-production-api.azurewebsites.net/health
+   curl -f https://fundrbolt-production-api.azurewebsites.net/health
    ```
 
 4. **Monitor Application Insights**
@@ -79,7 +79,7 @@ The production deployment workflow includes automatic rollback if health checks 
 1. **Find previous stable version**
    ```bash
    # List recent Docker images
-   gh api repos/your-org/augeo-platform/packages/container/augeo-backend/versions
+   gh api repos/your-org/fundrbolt-platform/packages/container/fundrbolt-backend/versions
 
    # Or check GitHub releases
    git tag -l "v*" | sort -V | tail -5
@@ -92,14 +92,14 @@ The production deployment workflow includes automatic rollback if health checks 
 
 3. **Verify deployment**
    ```bash
-   curl -f https://augeo-production-api.azurewebsites.net/health
+   curl -f https://fundrbolt-production-api.azurewebsites.net/health
    ```
 
 4. **Check logs**
    ```bash
    az webapp log tail \
-     --name augeo-production-api \
-     --resource-group augeo-production-rg
+     --name fundrbolt-production-api \
+     --resource-group fundrbolt-production-rg
    ```
 
 **Time to complete:** ~5 minutes
@@ -119,7 +119,7 @@ Static Web Apps don't support slot swapping, so rollback requires redeploying a 
 
 1. **Find previous stable commit/tag**
    ```bash
-   git log --oneline frontend/augeo-admin/ | head -10
+   git log --oneline frontend/fundrbolt-admin/ | head -10
    ```
 
 2. **Checkout previous version**
@@ -140,7 +140,7 @@ Static Web Apps don't support slot swapping, so rollback requires redeploying a 
 
 5. **Verify deployment**
    ```bash
-   curl -I https://augeo-production-web.azurestaticapps.net/
+   curl -I https://fundrbolt-production-web.azurestaticapps.net/
    ```
 
 6. **Return to main branch**
@@ -174,8 +174,8 @@ Static Web Apps don't support slot swapping, so rollback requires redeploying a 
 1. **SSH into App Service**
    ```bash
    az webapp ssh \
-     --name augeo-production-api \
-     --resource-group augeo-production-rg
+     --name fundrbolt-production-api \
+     --resource-group fundrbolt-production-rg
    ```
 
 2. **Check current migration version**
@@ -218,24 +218,24 @@ Static Web Apps don't support slot swapping, so rollback requires redeploying a 
 1. **List available backups**
    ```bash
    az postgres flexible-server backup list \
-     --resource-group augeo-production-rg \
-     --name augeo-production-db
+     --resource-group fundrbolt-production-rg \
+     --name fundrbolt-production-db
    ```
 
 2. **Create restore request**
    ```bash
    az postgres flexible-server restore \
-     --resource-group augeo-production-rg \
-     --name augeo-production-db-restored \
-     --source-server augeo-production-db \
+     --resource-group fundrbolt-production-rg \
+     --name fundrbolt-production-db-restored \
+     --source-server fundrbolt-production-db \
      --restore-time "2024-01-15T10:30:00Z"
    ```
 
 3. **Wait for restore to complete**
    ```bash
    az postgres flexible-server show \
-     --resource-group augeo-production-rg \
-     --name augeo-production-db-restored \
+     --resource-group fundrbolt-production-rg \
+     --name fundrbolt-production-db-restored \
      --query "state"
    ```
 
@@ -243,27 +243,27 @@ Static Web Apps don't support slot swapping, so rollback requires redeploying a 
    ```bash
    # Get new connection string
    NEW_DB_HOST=$(az postgres flexible-server show \
-     --resource-group augeo-production-rg \
-     --name augeo-production-db-restored \
+     --resource-group fundrbolt-production-rg \
+     --name fundrbolt-production-db-restored \
      --query "fullyQualifiedDomainName" -o tsv)
 
    # Update Key Vault secret
    az keyvault secret set \
-     --vault-name augeo-production-kv \
+     --vault-name fundrbolt-production-kv \
      --name database-url \
-     --value "postgresql://admin:password@$NEW_DB_HOST:5432/augeo"
+     --value "postgresql://admin:password@$NEW_DB_HOST:5432/fundrbolt"
    ```
 
 5. **Restart App Service**
    ```bash
    az webapp restart \
-     --name augeo-production-api \
-     --resource-group augeo-production-rg
+     --name fundrbolt-production-api \
+     --resource-group fundrbolt-production-rg
    ```
 
 6. **Verify connectivity**
    ```bash
-   curl -f https://augeo-production-api.azurewebsites.net/health/detailed
+   curl -f https://fundrbolt-production-api.azurewebsites.net/health/detailed
    ```
 
 **Time to complete:** 30-60 minutes
@@ -307,7 +307,7 @@ Static Web Apps don't support slot swapping, so rollback requires redeploying a 
 5. **Verify resources**
    ```bash
    az resource list \
-     --resource-group augeo-production-rg \
+     --resource-group fundrbolt-production-rg \
      --output table
    ```
 
@@ -330,7 +330,7 @@ Static Web Apps don't support slot swapping, so rollback requires redeploying a 
    ```bash
    az <resource-type> update \
      --name <resource-name> \
-     --resource-group augeo-production-rg \
+     --resource-group fundrbolt-production-rg \
      --<property> <previous-value>
    ```
 
@@ -338,7 +338,7 @@ Static Web Apps don't support slot swapping, so rollback requires redeploying a 
    ```bash
    az <resource-type> show \
      --name <resource-name> \
-     --resource-group augeo-production-rg
+     --resource-group fundrbolt-production-rg
    ```
 
 ## Redis Rollback
@@ -354,13 +354,13 @@ Static Web Apps don't support slot swapping, so rollback requires redeploying a 
 1. **Connect to Redis**
    ```bash
    REDIS_HOST=$(az redis show \
-     --resource-group augeo-production-rg \
-     --name augeo-production-redis \
+     --resource-group fundrbolt-production-rg \
+     --name fundrbolt-production-redis \
      --query "hostName" -o tsv)
 
    REDIS_KEY=$(az redis list-keys \
-     --resource-group augeo-production-rg \
-     --name augeo-production-redis \
+     --resource-group fundrbolt-production-rg \
+     --name fundrbolt-production-redis \
      --query "primaryKey" -o tsv)
 
    redis-cli -h $REDIS_HOST -p 6380 -a $REDIS_KEY --tls
@@ -384,8 +384,8 @@ Static Web Apps don't support slot swapping, so rollback requires redeploying a 
 4. **Restart App Service** (to clear in-memory state)
    ```bash
    az webapp restart \
-     --name augeo-production-api \
-     --resource-group augeo-production-rg
+     --name fundrbolt-production-api \
+     --resource-group fundrbolt-production-rg
    ```
 
 **Time to complete:** ~2 minutes
@@ -416,7 +416,7 @@ Static Web Apps don't support slot swapping, so rollback requires redeploying a 
 
 3. **Rollback database migration** (if applicable)
    ```bash
-   az webapp ssh --name augeo-production-api --resource-group augeo-production-rg
+   az webapp ssh --name fundrbolt-production-api --resource-group fundrbolt-production-rg
    poetry run alembic downgrade -1
    ```
 
@@ -427,8 +427,8 @@ Static Web Apps don't support slot swapping, so rollback requires redeploying a 
 
 5. **Verify all services**
    ```bash
-   curl -f https://augeo-production-api.azurewebsites.net/health/detailed
-   curl -I https://augeo-production-web.azurestaticapps.net/
+   curl -f https://fundrbolt-production-api.azurewebsites.net/health/detailed
+   curl -I https://fundrbolt-production-web.azurestaticapps.net/
    ```
 
 **Time to complete:** ~10 minutes

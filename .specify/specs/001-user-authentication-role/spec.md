@@ -9,7 +9,7 @@
 
 ### Session 2025-10-18
 
-- Q: What specific roles should the system start with and what are their core permissions? → A: Multi-tier structure with Super Admin (Augeo staff), NPO Admin (full NPO access), Event Coordinator (event management), Staff (registration/checkin), and Donor (bidding only)
+- Q: What specific roles should the system start with and what are their core permissions? → A: Multi-tier structure with Super Admin (Fundrbolt staff), NPO Admin (full NPO access), Event Coordinator (event management), Staff (registration/checkin), and Donor (bidding only)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -139,7 +139,7 @@ The system manages user sessions securely, including automatic logout for inacti
 - **BR-006**: Role changes MUST be effective immediately for new requests (no caching delay)
 - **BR-007**: Account deletion MUST revoke all active sessions immediately
 - **BR-008**: Password reset links MUST be invalidated after successful password change
-- **BR-009**: Super Admin role MUST be restricted to Augeo platform staff only
+- **BR-009**: Super Admin role MUST be restricted to Fundrbolt platform staff only
 - **BR-010**: NPO Admin role MUST be scoped to specific nonprofit organizations
 - **BR-011**: Event Coordinator and Staff roles MUST be scoped to specific events within an NPO
 

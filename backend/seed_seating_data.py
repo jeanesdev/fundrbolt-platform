@@ -31,7 +31,7 @@ from app.models.user import User
 
 async def get_or_create_demo_npo(db: AsyncSession) -> NPO:
     """Get existing demo NPO or create one."""
-    stmt = select(NPO).where(NPO.email == "demo@augeo.app")
+    stmt = select(NPO).where(NPO.email == "demo@fundrbolt.com")
     result = await db.execute(stmt)
     npo = result.scalar_one_or_none()
 
@@ -44,7 +44,7 @@ async def get_or_create_demo_npo(db: AsyncSession) -> NPO:
         id=uuid4(),
         name="Demo Charity Organization",
         description="Demo NPO for seating assignment testing",
-        email="demo@augeo.app",
+        email="demo@fundrbolt.com",
         phone="+1 (555) 999-0000",
         address={
             "street": "123 Demo St",
@@ -55,7 +55,7 @@ async def get_or_create_demo_npo(db: AsyncSession) -> NPO:
         },
         tax_id="99-9999999",
         registration_number="NPO-DEMO",
-        website_url="https://demo.augeo.app",
+        website_url="https://demo.fundrbolt.com",
         status=NPOStatus.APPROVED,
         approved_at=datetime.now(UTC),
     )

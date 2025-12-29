@@ -19,10 +19,10 @@ async def test_database_connection():
     db_url = str(settings.database_url)
 
     # Replace with test database
-    if "/augeo_db" in db_url:
-        db_url = db_url.replace("/augeo_db", "/augeo_test_db")
-    elif db_url.endswith("/augeo"):
-        db_url = db_url.replace("/augeo", "/augeo_test")
+    if "/fundrbolt_db" in db_url:
+        db_url = db_url.replace("/fundrbolt_db", "/fundrbolt_test_db")
+    elif db_url.endswith("/fundrbolt"):
+        db_url = db_url.replace("/fundrbolt", "/fundrbolt_test")
 
     # Ensure asyncpg
     if db_url.startswith("postgresql://"):

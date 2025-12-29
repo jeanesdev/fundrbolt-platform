@@ -1,10 +1,10 @@
 # CI/CD Pipeline Guide
 
-This guide explains the automated CI/CD pipelines for the Augeo platform.
+This guide explains the automated CI/CD pipelines for the Fundrbolt platform.
 
 ## Overview
 
-The Augeo platform uses GitHub Actions for continuous integration and deployment across three environments:
+The Fundrbolt platform uses GitHub Actions for continuous integration and deployment across three environments:
 
 - **Development**: Automatic deployment on every merge to `main`
 - **Staging**: Automatic deployment after successful dev deployment
@@ -163,14 +163,14 @@ on:
   push:
     branches: [main]
     paths:
-      - 'frontend/augeo-admin/**'
+      - 'frontend/fundrbolt-admin/**'
       - '.github/workflows/frontend-deploy.yml'
 ```
 
 **API URLs by Environment:**
-- Dev: `https://augeo-dev-api.azurewebsites.net`
-- Staging: `https://augeo-staging-api.azurewebsites.net`
-- Production: `https://api.augeo.app`
+- Dev: `https://fundrbolt-dev-api.azurewebsites.net`
+- Staging: `https://fundrbolt-staging-api.azurewebsites.net`
+- Production: `https://api.fundrbolt.com`
 
 ### 4. Infrastructure Deployment (`infrastructure-deploy.yml`)
 
@@ -249,7 +249,7 @@ GITHUB_TOKEN - Automatically provided by GitHub Actions
 
 1. Create Azure AD App Registration:
 ```bash
-az ad app create --display-name "augeo-github-actions"
+az ad app create --display-name "fundrbolt-github-actions"
 ```
 
 2. Create Service Principal:
@@ -262,9 +262,9 @@ az ad sp create --id <app-id>
 az ad app federated-credential create \
   --id <app-id> \
   --parameters '{
-    "name": "augeo-github-actions",
+    "name": "fundrbolt-github-actions",
     "issuer": "https://token.actions.githubusercontent.com",
-    "subject": "repo:your-org/augeo-platform:ref:refs/heads/main",
+    "subject": "repo:your-org/fundrbolt-platform:ref:refs/heads/main",
     "audiences": ["api://AzureADTokenExchange"]
   }'
 ```
@@ -355,8 +355,8 @@ Rolls back failed production deployments.
 1. Build and push Docker image:
 ```bash
 cd backend
-docker build -t ghcr.io/your-org/augeo-backend:v1.0.0 .
-docker push ghcr.io/your-org/augeo-backend:v1.0.0
+docker build -t ghcr.io/your-org/fundrbolt-backend:v1.0.0 .
+docker push ghcr.io/your-org/fundrbolt-backend:v1.0.0
 ```
 
 2. Deploy to environment:
@@ -426,12 +426,12 @@ All deployments verify application health:
 
 **Backend:**
 ```bash
-curl https://augeo-production-api.azurewebsites.net/health
+curl https://fundrbolt-production-api.azurewebsites.net/health
 ```
 
 **Frontend:**
 ```bash
-curl https://augeo-production-web.azurestaticapps.net/
+curl https://fundrbolt-production-web.azurestaticapps.net/
 ```
 
 ## Troubleshooting
@@ -446,10 +446,10 @@ curl https://augeo-production-web.azurestaticapps.net/
 2. **Check Azure logs**
    ```bash
    # App Service logs
-   az webapp log tail --name augeo-production-api --resource-group augeo-production-rg
+   az webapp log tail --name fundrbolt-production-api --resource-group fundrbolt-production-rg
 
    # Container logs
-   az webapp log download --name augeo-production-api --resource-group augeo-production-rg
+   az webapp log download --name fundrbolt-production-api --resource-group fundrbolt-production-rg
    ```
 
 3. **Verify secrets**
@@ -470,8 +470,8 @@ curl https://augeo-production-web.azurestaticapps.net/
 1. **Manual slot swap**
    ```bash
    az webapp deployment slot swap \
-     --name augeo-production-api \
-     --resource-group augeo-production-rg \
+     --name fundrbolt-production-api \
+     --resource-group fundrbolt-production-rg \
      --slot staging \
      --target-slot production
    ```

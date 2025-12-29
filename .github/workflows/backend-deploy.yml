@@ -46,7 +46,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/augeo-backend
+          images: ghcr.io/${{ github.repository_owner }}/fundrbolt-backend
           tags: |
             type=ref,event=branch
             type=sha,prefix={{branch}}-
@@ -73,7 +73,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment:
       name: dev
-      url: https://augeo-dev-api.azurewebsites.net
+      url: https://fundrbolt-dev-api.azurewebsites.net
 
     steps:
       - name: Checkout code
@@ -96,13 +96,13 @@ jobs:
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: augeo-dev-api
-          images: ghcr.io/${{ github.repository_owner }}/augeo-backend:main-${{ github.sha }}
+          app-name: fundrbolt-dev-api
+          images: ghcr.io/${{ github.repository_owner }}/fundrbolt-backend:main-${{ github.sha }}
 
       - name: Verify deployment
         run: |
           sleep 30
-          curl -f https://augeo-dev-api.azurewebsites.net/health || exit 1
+          curl -f https://fundrbolt-dev-api.azurewebsites.net/health || exit 1
 
   deploy-staging:
     name: Deploy to Staging
@@ -111,7 +111,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment:
       name: staging
-      url: https://augeo-staging-api.azurewebsites.net
+      url: https://fundrbolt-staging-api.azurewebsites.net
 
     steps:
       - name: Checkout code
@@ -134,13 +134,13 @@ jobs:
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: augeo-staging-api
-          images: ghcr.io/${{ github.repository_owner }}/augeo-backend:main-${{ github.sha }}
+          app-name: fundrbolt-staging-api
+          images: ghcr.io/${{ github.repository_owner }}/fundrbolt-backend:main-${{ github.sha }}
 
       - name: Verify deployment
         run: |
           sleep 30
-          curl -f https://augeo-staging-api.azurewebsites.net/health || exit 1
+          curl -f https://fundrbolt-staging-api.azurewebsites.net/health || exit 1
 
   deploy-production:
     name: Deploy to Production
@@ -149,7 +149,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
-      url: https://api.augeo.app
+      url: https://api.fundrbolt.com
 
     steps:
       - name: Checkout code
@@ -172,34 +172,34 @@ jobs:
       - name: Deploy to staging slot
         uses: azure/webapps-deploy@v3
         with:
-          app-name: augeo-production-api
+          app-name: fundrbolt-production-api
           slot-name: staging
-          images: ghcr.io/${{ github.repository_owner }}/augeo-backend:main-${{ github.sha }}
+          images: ghcr.io/${{ github.repository_owner }}/fundrbolt-backend:main-${{ github.sha }}
 
       - name: Verify staging slot
         run: |
           sleep 30
-          curl -f https://augeo-production-api-staging.azurewebsites.net/health || exit 1
+          curl -f https://fundrbolt-production-api-staging.azurewebsites.net/health || exit 1
 
       - name: Swap slots (Blue-Green deployment)
         run: |
           az webapp deployment slot swap \
-            --resource-group augeo-production-rg \
-            --name augeo-production-api \
+            --resource-group fundrbolt-production-rg \
+            --name fundrbolt-production-api \
             --slot staging \
             --target-slot production
 
       - name: Verify production deployment
         run: |
           sleep 30
-          curl -f https://api.augeo.app/health || exit 1
+          curl -f https://api.fundrbolt.com/health || exit 1
 
       - name: Rollback on failure
         if: failure()
         run: |
           echo "Deployment failed, swapping back to previous version"
           az webapp deployment slot swap \
-            --resource-group augeo-production-rg \
-            --name augeo-production-api \
+            --resource-group fundrbolt-production-rg \
+            --name fundrbolt-production-api \
             --slot staging \
             --target-slot production

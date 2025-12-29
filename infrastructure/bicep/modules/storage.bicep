@@ -1,4 +1,4 @@
-// Storage Account module for Augeo Platform
+// Storage Account module for Fundrbolt Platform
 
 @description('Name of the Storage Account')
 param storageAccountName string

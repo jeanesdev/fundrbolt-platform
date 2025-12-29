@@ -25,7 +25,9 @@ async def test_login():
     from app.models.user import User
 
     print("1. Creating test engine...")
-    db_url = "postgresql+asyncpg://augeo_user:augeo_password@localhost:5432/augeo_test_db"
+    db_url = (
+        "postgresql+asyncpg://fundrbolt_user:fundrbolt_password@localhost:5432/fundrbolt_test_db"
+    )
     engine = create_async_engine(db_url, poolclass=NullPool, echo=False)
 
     print("2. Creating tables...")

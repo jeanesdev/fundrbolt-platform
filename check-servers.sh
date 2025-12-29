@@ -1,7 +1,7 @@
 #!/bin/bash
-# Quick health check for Augeo Platform servers
+# Quick health check for Fundr Platform servers
 
-echo "=== Augeo Platform Server Status ==="
+echo "=== Fundr Platform Server Status ==="
 echo ""
 
 # Check Backend
@@ -33,7 +33,7 @@ echo ""
 
 # Check Database
 echo "🔍 Checking Database..."
-if docker ps | grep augeo_postgres > /dev/null 2>&1; then
+if docker ps | grep Fundr_postgres > /dev/null 2>&1; then
     echo "✅ PostgreSQL container is running"
 else
     echo "❌ PostgreSQL container is NOT running"
@@ -43,7 +43,7 @@ echo ""
 
 # Check Redis
 echo "🔍 Checking Redis..."
-if docker ps | grep augeo_redis > /dev/null 2>&1; then
+if docker ps | grep Fundr_redis > /dev/null 2>&1; then
     echo "✅ Redis container is running"
 else
     echo "❌ Redis container is NOT running"

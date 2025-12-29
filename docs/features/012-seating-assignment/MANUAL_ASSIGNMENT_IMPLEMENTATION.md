@@ -22,7 +22,7 @@ Administrators can now manually assign individual guests to specific tables usin
 
 ### Frontend Component
 
-**File**: `frontend/augeo-admin/src/components/seating/TableAssignmentModal.tsx` (184 lines)
+**File**: `frontend/fundrbolt-admin/src/components/seating/TableAssignmentModal.tsx` (184 lines)
 
 **Main Features**:
 1. **Table Dropdown** - Select component with table numbers and capacity
@@ -64,21 +64,21 @@ interface TableAssignmentModalProps {
 
 ### Integration Points
 
-**File**: `frontend/augeo-admin/src/components/seating/GuestCard.tsx`
+**File**: `frontend/fundrbolt-admin/src/components/seating/GuestCard.tsx`
 
 **Changes**:
 - Added TableAssignmentModal as "Assign to table" button
 - Passes guest details and current table assignment
 - Triggers seating view refresh on success
 
-**File**: `frontend/augeo-admin/src/components/seating/UnassignedGuestCard.tsx`
+**File**: `frontend/fundrbolt-admin/src/components/seating/UnassignedGuestCard.tsx`
 
 **Changes**:
 - Added TableAssignmentModal as "Assign" button
 - Similar integration as GuestCard
 - Displays in unassigned guests section
 
-**File**: `frontend/augeo-admin/src/routes/events/$eventId/seating.tsx`
+**File**: `frontend/fundrbolt-admin/src/routes/events/$eventId/seating.tsx`
 
 **Changes**:
 - Imported TableAssignmentModal component
@@ -87,7 +87,7 @@ interface TableAssignmentModalProps {
 
 ### Testing
 
-**File**: `frontend/augeo-admin/src/components/seating/__tests__/TableAssignmentModal.test.tsx`
+**File**: `frontend/fundrbolt-admin/src/components/seating/__tests__/TableAssignmentModal.test.tsx`
 
 **Test Coverage**: 10/10 tests passing
 

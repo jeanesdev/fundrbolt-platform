@@ -397,10 +397,10 @@ class PermissionService:
 
         Args:
             user: User making the request
-            requested_npo_id: NPO ID from NPO context selector (None = "Augeo Platform" for SuperAdmin)
+            requested_npo_id: NPO ID from NPO context selector (None = "Fundrbolt Platform" for SuperAdmin)
 
         Returns:
-            - None: No filtering (show all NPOs) - SuperAdmin with "Augeo Platform" selected
+            - None: No filtering (show all NPOs) - SuperAdmin with "Fundrbolt Platform" selected
             - UUID: Filter to single NPO - All other users or SuperAdmin with specific NPO selected
 
         Rules:

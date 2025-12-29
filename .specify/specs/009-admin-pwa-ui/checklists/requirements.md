@@ -42,7 +42,7 @@
 - Clear scope boundaries, assumptions, and dependencies
 
 ### Clarifications Resolved
-- **SuperAdmin editing with "Augeo Platform" selected**: Resolved - System allows inline NPO selection in edit form
+- **SuperAdmin editing with "Fundrbolt Platform" selected**: Resolved - System allows inline NPO selection in edit form
 - **Multiple role assignments**: Resolved - Display highest privilege role with role switching capability
 - **Session persistence**: Resolved - NPO selection persists across sessions
 - **Unauthorized access handling**: Resolved - 403 page with 3-second redirect

@@ -24,6 +24,14 @@ depends_on = None
 def upgrade() -> None:
     """Add performance indexes for frequently queried columns."""
 
+    # Drop any pre-existing indexes to make the migration idempotent when rerun
+    op.execute("DROP INDEX IF EXISTS idx_users_npo_id")
+    op.execute("DROP INDEX IF EXISTS idx_users_role_npo")
+    op.execute("DROP INDEX IF EXISTS idx_sessions_expires_at")
+    op.execute("DROP INDEX IF EXISTS idx_sessions_user_expires")
+    op.execute("DROP INDEX IF EXISTS idx_audit_logs_user_created")
+    op.execute("DROP INDEX IF EXISTS idx_audit_logs_action_created")
+
     # Users table - only create missing indexes
     # idx_users_email, idx_users_role_id, idx_users_created_at,
     # idx_users_email_verified already exist

@@ -3,13 +3,13 @@ using '../main-minimal.bicep'
 
 param environment = 'dev'
 param location = 'eastus'
-param appName = 'augeo'
-param customDomain = 'augeo.app'
+param appName = 'fundrbolt'
+param customDomain = 'fundrbolt.com'
 param enableDns = true
 
 param tags = {
   Environment: 'dev'
-  Project: 'augeo-platform'
+  Project: 'fundrbolt-platform'
   ManagedBy: 'Bicep'
   CostCenter: 'development'
   Owner: 'devops-team'

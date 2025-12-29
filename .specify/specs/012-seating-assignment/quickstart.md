@@ -2,7 +2,7 @@
 
 **Feature**: 012-seating-assignment
 **Estimated Setup Time**: 30 minutes
-**Prerequisites**: Augeo platform running locally (see root README.md)
+**Prerequisites**: Fundrbolt platform running locally (see root README.md)
 
 ---
 
@@ -140,7 +140,7 @@ poetry run pytest --cov=app --cov-report=html
 
 ```bash
 # Admin PWA
-cd frontend/augeo-admin
+cd frontend/fundrbolt-admin
 pnpm install
 
 # Donor PWA
@@ -155,7 +155,7 @@ pnpm install
 ```bash
 make dev-frontend
 # OR manually:
-cd frontend/augeo-admin && pnpm dev
+cd frontend/fundrbolt-admin && pnpm dev
 ```
 
 Runs at: `http://localhost:5173`
@@ -174,7 +174,7 @@ Runs at: `http://localhost:5174`
 
 ```bash
 # Terminal 1: Admin PWA
-cd frontend/augeo-admin && pnpm dev
+cd frontend/fundrbolt-admin && pnpm dev
 
 # Terminal 2: Donor PWA
 cd frontend/donor-pwa && pnpm dev --port 5174
@@ -209,7 +209,7 @@ cd frontend/donor-pwa && pnpm dev --port 5174
 
 ```bash
 # Admin PWA tests
-cd frontend/augeo-admin
+cd frontend/fundrbolt-admin
 pnpm test
 
 # Donor PWA tests
@@ -261,7 +261,7 @@ poetry run python seed_seating_data.py --scenario empty_event # No assignments
 # Look for: "Drag-drop operation took Xms (target: 500ms)"
 
 # Enable debug logging in frontend
-# frontend/augeo-admin/src/hooks/useSeatingDragDrop.ts
+# frontend/fundrbolt-admin/src/hooks/useSeatingDragDrop.ts
 const DEBUG = true; // Set to true
 ```
 
@@ -434,7 +434,7 @@ After completing this quickstart:
 git checkout 012-seating-assignment
 
 # 2. Make code changes
-# Edit files in backend/app/ or frontend/augeo-admin/src/
+# Edit files in backend/app/ or frontend/fundrbolt-admin/src/
 
 # 3. Run tests
 make test-backend  # Backend tests
@@ -477,8 +477,8 @@ git push origin 012-seating-assignment
 
 ## Additional Resources
 
-- **Main README**: `/home/jjeanes/augeo-platform/README.md`
-- **Backend README**: `/home/jjeanes/augeo-platform/backend/README.md`
+- **Main README**: `/home/jjeanes/fundrbolt-platform/README.md`
+- **Backend README**: `/home/jjeanes/fundrbolt-platform/backend/README.md`
 - **API Documentation**: `http://localhost:8000/docs` (when backend is running)
 - **Makefile Help**: Run `make help` in project root for all available commands
 

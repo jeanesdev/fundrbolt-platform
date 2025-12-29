@@ -1,10 +1,10 @@
 # Monitoring Guide
 
-Comprehensive guide for monitoring the Augeo platform using Azure Application Insights and Log Analytics.
+Comprehensive guide for monitoring the Fundrbolt platform using Azure Application Insights and Log Analytics.
 
 ## Overview
 
-The Augeo platform uses Azure Application Insights for application performance monitoring (APM) and Azure Log Analytics for centralized log aggregation. This provides:
+The Fundrbolt platform uses Azure Application Insights for application performance monitoring (APM) and Azure Log Analytics for centralized log aggregation. This provides:
 
 - **Real-time metrics**: Request rate, response time, error rate, dependencies
 - **Distributed tracing**: End-to-end request tracing across services
@@ -99,11 +99,11 @@ requests
 
 **Response Procedure**:
 
-1. Verify App Service is running: `az webapp show --name augeo-production-api --resource-group augeo-production-rg --query state`
+1. Verify App Service is running: `az webapp show --name fundrbolt-production-api --resource-group fundrbolt-production-rg --query state`
 2. Check App Service logs for errors
 3. Verify database connectivity
 4. Check Redis connectivity
-5. Restart App Service if needed: `az webapp restart --name augeo-production-api --resource-group augeo-production-rg`
+5. Restart App Service if needed: `az webapp restart --name fundrbolt-production-api --resource-group fundrbolt-production-rg`
 
 #### Frontend Availability Failure
 
@@ -352,13 +352,13 @@ customEvents
 
 ```bash
 # Backend health
-curl -f https://api.augeo.app/health/detailed
+curl -f https://api.fundrbolt.com/health/detailed
 
 # Frontend availability
-curl -I https://admin.augeo.app
+curl -I https://admin.fundrbolt.com
 
 # Check service status
-az webapp show --name augeo-production-api --resource-group augeo-production-rg --query state
+az webapp show --name fundrbolt-production-api --resource-group fundrbolt-production-rg --query state
 ```
 
 **Metrics Check**:
@@ -443,8 +443,8 @@ az webapp show --name augeo-production-api --resource-group augeo-production-rg 
 ```bash
 # Verify App Service application settings
 az webapp config appsettings list \
-    --name augeo-production-api \
-    --resource-group augeo-production-rg \
+    --name fundrbolt-production-api \
+    --resource-group fundrbolt-production-rg \
     --query "[?name=='APPLICATIONINSIGHTS_CONNECTION_STRING'].value"
 ```
 
@@ -462,8 +462,8 @@ az webapp config appsettings list \
 ```bash
 # Check current ingestion volume
 az monitor app-insights component show \
-    --app augeo-production-ai \
-    --resource-group augeo-production-rg \
+    --app fundrbolt-production-ai \
+    --resource-group fundrbolt-production-rg \
     --query "properties.{sampling:SamplingPercentage,cap:IngestionMode}"
 ```
 
@@ -481,12 +481,12 @@ az monitor app-insights component show \
 ```bash
 # List alert rules
 az monitor metrics alert list \
-    --resource-group augeo-production-rg
+    --resource-group fundrbolt-production-rg
 
 # Check alert rule status
 az monitor metrics alert show \
-    --name augeo-production-ai-high-error-rate \
-    --resource-group augeo-production-rg
+    --name fundrbolt-production-ai-high-error-rate \
+    --resource-group fundrbolt-production-rg
 ```
 
 ### Slow Query Performance

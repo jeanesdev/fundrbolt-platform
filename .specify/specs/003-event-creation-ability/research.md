@@ -154,10 +154,10 @@ This document consolidates research findings for implementing the Event Creation
 
 **Implementation Notes**:
 - Add Prometheus counters:
-  - `augeo_events_created_total` (labels: npo_id, user_role)
-  - `augeo_events_edited_total` (labels: npo_id, user_role, field_changed)
-  - `augeo_events_media_upload_total` (labels: file_type, status=success/failure)
-  - `augeo_events_form_submission_duration_seconds` (histogram)
+  - `fundrbolt_events_created_total` (labels: npo_id, user_role)
+  - `fundrbolt_events_edited_total` (labels: npo_id, user_role, field_changed)
+  - `fundrbolt_events_media_upload_total` (labels: file_type, status=success/failure)
+  - `fundrbolt_events_form_submission_duration_seconds` (histogram)
 - Grafana dashboard: "Event Management" with graphs for creation rate, upload success rate, avg form time
 
 ### 8. Food Options Data Model

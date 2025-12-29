@@ -79,7 +79,7 @@ class TestEventPublish:
         metrics_response = await npo_admin_client.get("/metrics")
         metrics = metrics_response.text
 
-        assert "augeo_events_published_total" in metrics
+        assert "fundrbolt_events_published_total" in metrics
 
 
 @pytest.mark.asyncio
@@ -174,6 +174,6 @@ class TestEventClose:
         metrics_response = await npo_admin_client.get("/metrics")
         metrics = metrics_response.text
 
-        assert "augeo_events_closed_total" in metrics
+        assert "fundrbolt_events_closed_total" in metrics
         # Manual closure should have closure_type="manual" label
         assert 'closure_type="manual"' in metrics

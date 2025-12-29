@@ -282,6 +282,6 @@ class TestEventCreation:
         updated_metrics = metrics_response.text
 
         # Verify EVENTS_CREATED_TOTAL incremented
-        assert "augeo_events_created_total" in updated_metrics
+        assert "fundrbolt_events_created_total" in updated_metrics
         # Verify npo_id label is present
         assert str(test_approved_npo.id) in updated_metrics

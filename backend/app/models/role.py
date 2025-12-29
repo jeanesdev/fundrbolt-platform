@@ -15,7 +15,7 @@ class Role(Base, UUIDMixin, TimestampMixin):
     """Role model representing user authorization levels.
 
     Five role types:
-    - super_admin: Augeo platform staff with full access
+    - super_admin: Fundrbolt platform staff with full access
     - npo_admin: Full management within assigned NPO(s)
     - event_coordinator: Event/auction management within NPO
     - staff: Donor registration/check-in within assigned events

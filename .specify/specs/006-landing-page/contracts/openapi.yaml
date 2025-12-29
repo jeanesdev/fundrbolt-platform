@@ -1,20 +1,20 @@
 openapi: 3.1.0
 info:
-  title: Augeo Landing Page API
+  title: Fundrbolt Landing Page API
   description: Public API endpoints for landing page contact form and testimonials
   version: 1.0.0
   contact:
-    name: Augeo Platform Team
-    email: engineering@augeo.app
+    name: Fundrbolt Platform Team
+    email: engineering@fundrbolt.com
 
 servers:
   - url: http://localhost:8000/api/v1
     description: Development server
-  - url: https://augeo-dev.azurewebsites.net/api/v1
+  - url: https://fundrbolt-dev.azurewebsites.net/api/v1
     description: Development environment
-  - url: https://augeo-staging.azurewebsites.net/api/v1
+  - url: https://fundrbolt-staging.azurewebsites.net/api/v1
     description: Staging environment
-  - url: https://api.augeo.app/api/v1
+  - url: https://api.fundrbolt.com/api/v1
     description: Production server
 
 tags:
@@ -136,7 +136,7 @@ paths:
                   $ref: '#/components/schemas/TestimonialResponse'
               example:
                 - id: "660e8400-e29b-41d4-a716-446655440000"
-                  quote_text: "Augeo helped us raise 40% more than last year's gala!"
+                  quote_text: "Fundrbolt helped us raise 40% more than last year's gala!"
                   author_name: "Sarah J."
                   author_role: "donor"
                   organization_name: "Community Arts Foundation"
@@ -149,7 +149,7 @@ paths:
                   author_name: "Michael Chen"
                   author_role: "auctioneer"
                   organization_name: "Elite Auctioneers"
-                  photo_url: "https://augeo.blob.core.windows.net/photos/michael-chen.jpg"
+                  photo_url: "https://fundrbolt.blob.core.windows.net/photos/michael-chen.jpg"
                   display_order: 2
                   is_published: true
                   created_at: "2025-11-02T11:00:00Z"
@@ -217,7 +217,7 @@ paths:
             schema:
               $ref: '#/components/schemas/TestimonialCreate'
             example:
-              quote_text: "Augeo transformed our fundraising events!"
+              quote_text: "Fundrbolt transformed our fundraising events!"
               author_name: "Emily R."
               author_role: "npo_admin"
               organization_name: "Hope Shelter"

@@ -92,7 +92,7 @@ pnpm dev
 ```
 
 **"Wrong app is running"**:
-- augeo-admin runs on port **5173**
+- fundrbolt-admin runs on port **5173**
 - landing-site runs on port **3001**
 - Make sure you're accessing the right port!
 

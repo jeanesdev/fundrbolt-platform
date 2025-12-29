@@ -1,14 +1,14 @@
 #!/bin/bash
-# Setup email forwarding for augeo.app using CloudFlare Email Routing
-# This allows receiving emails at augeo.app and forwarding them to Gmail
+# Setup email forwarding for fundrbolt.com using CloudFlare Email Routing
+# This allows receiving emails at fundrbolt.com and forwarding them to Gmail
 
 set -euo pipefail
 
 ENVIRONMENT="${1:-dev}"
-DOMAIN="augeo.app"
-RESOURCE_GROUP="augeo-${ENVIRONMENT}-rg"
+DOMAIN="fundrbolt.com"
+RESOURCE_GROUP="fundrbolt-${ENVIRONMENT}-rg"
 
-echo "📧 Setting up Email Forwarding for augeo.app"
+echo "📧 Setting up Email Forwarding for fundrbolt.com"
 echo "============================================="
 echo ""
 echo "This script will configure MX records for CloudFlare Email Routing"
@@ -73,15 +73,15 @@ echo "   https://dash.cloudflare.com/?to=/:account/:zone/email/routing/overview"
 echo ""
 echo "2. Click 'Get Started' or 'Add Email Routing'"
 echo ""
-echo "3. Add your domain: augeo.app"
+echo "3. Add your domain: fundrbolt.com"
 echo ""
 echo "4. Verify domain ownership (CloudFlare will check DNS records)"
 echo ""
 echo "5. Create forwarding rules:"
-echo "   Legal@augeo.app     → jeanes.dev@gmail.com"
-echo "   Privacy@augeo.app   → jeanes.dev@gmail.com"
-echo "   DPO@augeo.app       → jeanes.dev@gmail.com"
-echo "   admin@augeo.app     → jeanes.dev@gmail.com"
+echo "   Legal@fundrbolt.com     → jeanes.dev@gmail.com"
+echo "   Privacy@fundrbolt.com   → jeanes.dev@gmail.com"
+echo "   DPO@fundrbolt.com       → jeanes.dev@gmail.com"
+echo "   admin@fundrbolt.com     → jeanes.dev@gmail.com"
 echo ""
 echo "6. Optional: Add catch-all rule for all other emails"
 echo ""
@@ -91,7 +91,7 @@ echo "   ✅ Unlimited forwarding"
 echo "   ✅ Spam protection included"
 echo "   ✅ No credit card required"
 echo ""
-echo "📧 Note: DoNotReply@augeo.app won't accept incoming emails (by design)"
+echo "📧 Note: DoNotReply@fundrbolt.com won't accept incoming emails (by design)"
 echo ""
 echo "⏳ DNS propagation: 5-30 minutes"
-echo "   After that, test by sending email to Legal@augeo.app"
+echo "   After that, test by sending email to Legal@fundrbolt.com"

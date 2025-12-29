@@ -29,7 +29,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'dev'
     environment:
       name: dev
-      url: https://augeo-dev-donor.azurestaticapps.net
+      url: https://fundrbolt-dev-donor.azurestaticapps.net
 
     steps:
       - name: Checkout code
@@ -53,7 +53,7 @@ jobs:
         working-directory: ./frontend/donor-pwa
         run: pnpm build
         env:
-          VITE_API_URL: https://augeo-dev-api.azurewebsites.net
+          VITE_API_URL: https://fundrbolt-dev-api.azurewebsites.net
           VITE_ENVIRONMENT: dev
 
       - name: Deploy to Azure Static Web Apps
@@ -73,7 +73,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
     environment:
       name: staging
-      url: https://augeo-staging-donor.azurestaticapps.net
+      url: https://fundrbolt-staging-donor.azurestaticapps.net
 
     steps:
       - name: Checkout code
@@ -97,7 +97,7 @@ jobs:
         working-directory: ./frontend/donor-pwa
         run: pnpm build
         env:
-          VITE_API_URL: https://augeo-staging-api.azurewebsites.net
+          VITE_API_URL: https://fundrbolt-staging-api.azurewebsites.net
           VITE_ENVIRONMENT: staging
 
       - name: Deploy to Azure Static Web Apps
@@ -117,7 +117,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'production'
     environment:
       name: production
-      url: https://donor.augeo.app
+      url: https://donor.fundrbolt.com
 
     steps:
       - name: Checkout code
@@ -141,7 +141,7 @@ jobs:
         working-directory: ./frontend/donor-pwa
         run: pnpm build
         env:
-          VITE_API_URL: https://api.augeo.app
+          VITE_API_URL: https://api.fundrbolt.com
           VITE_ENVIRONMENT: production
 
       - name: Deploy to Azure Static Web Apps
@@ -157,4 +157,4 @@ jobs:
       - name: Verify production deployment
         run: |
           sleep 30
-          curl -f https://donor.augeo.app || exit 1
+          curl -f https://donor.fundrbolt.com || exit 1

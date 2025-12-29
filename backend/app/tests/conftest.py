@@ -57,10 +57,10 @@ def test_database_url() -> str:
     if "test" in db_url:
         pass
     # Otherwise, replace database name with test database
-    elif "/augeo_db" in db_url:
-        db_url = db_url.replace("/augeo_db", "/augeo_test_db")
-    elif db_url.endswith("/augeo"):
-        db_url = db_url.replace("/augeo", "/augeo_test")
+    elif "/fundrbolt_db" in db_url:
+        db_url = db_url.replace("/fundrbolt_db", "/fundrbolt_test_db")
+    elif db_url.endswith("/fundrbolt"):
+        db_url = db_url.replace("/fundrbolt", "/fundrbolt_test")
 
     # Ensure we're using postgresql+asyncpg:// not postgresql://
     if db_url.startswith("postgresql://"):
@@ -110,7 +110,7 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
                 """
                 INSERT INTO roles (name, description, scope) VALUES
                     ('super_admin',
-                     'Augeo platform staff with full access to all NPOs and events',
+                     'Fundrbolt platform staff with full access to all NPOs and events',
                      'platform'),
                     ('npo_admin',
                      'Full management access within assigned nonprofit organization(s)',

@@ -1,6 +1,6 @@
 # Infrastructure Contracts
 
-This directory contains Infrastructure as Code templates and CI/CD workflow definitions for the Augeo Platform.
+This directory contains Infrastructure as Code templates and CI/CD workflow definitions for the Fundrbolt Platform.
 
 ## Contents
 
@@ -34,19 +34,19 @@ This directory contains Infrastructure as Code templates and CI/CD workflow defi
 ```bash
 # Deploy to development
 az deployment group create \
-  --resource-group augeo-dev-rg \
+  --resource-group fundrbolt-dev-rg \
   --template-file main.bicep \
   --parameters @parameters/dev.bicepparam
 
 # Deploy to production (with what-if preview)
 az deployment group what-if \
-  --resource-group augeo-prod-rg \
+  --resource-group fundrbolt-prod-rg \
   --template-file main.bicep \
   --parameters @parameters/production.bicepparam
 
 # After review, deploy
 az deployment group create \
-  --resource-group augeo-prod-rg \
+  --resource-group fundrbolt-prod-rg \
   --template-file main.bicep \
   --parameters @parameters/production.bicepparam
 ```

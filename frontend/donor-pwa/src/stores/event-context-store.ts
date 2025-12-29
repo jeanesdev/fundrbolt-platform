@@ -93,7 +93,7 @@ export const useEventContextStore = create<EventContextState>()(
       },
     }),
     {
-      name: 'augeo-event-context-storage',
+      name: 'fundrbolt-event-context-storage',
       partialize: (state) => ({
         selectedEventId: state.selectedEventId,
         selectedEventName: state.selectedEventName,

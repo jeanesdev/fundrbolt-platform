@@ -2,7 +2,7 @@
 
 # Default target
 help:
-	@echo "Augeo Platform - Available Commands"
+	@echo "Fundrbolt Platform - Available Commands"
 	@echo ""
 	@echo "Development:"
 	@echo "  make install          - Install all dependencies (backend + frontend)"
@@ -58,7 +58,7 @@ install-backend:
 
 install-frontend:
 	@echo "Installing frontend dependencies..."
-	cd frontend/augeo-admin && pnpm install
+	cd frontend/fundrbolt-admin && pnpm install
 
 # Development servers
 dev-backend:
@@ -67,7 +67,7 @@ dev-backend:
 
 dev-frontend:
 	@echo "Starting frontend development server..."
-	cd frontend/augeo-admin && bash -c "source ~/.nvm/nvm.sh && nvm use 22 && pnpm dev"
+	cd frontend/fundrbolt-admin && bash -c "source ~/.nvm/nvm.sh && nvm use 22 && pnpm dev"
 
 dev-fullstack:
 	@echo "Starting full stack (use separate terminals or Ctrl+C to stop)"
@@ -84,7 +84,7 @@ test-backend:
 
 test-frontend:
 	@echo "Running frontend tests..."
-	cd frontend/augeo-admin && pnpm test
+	cd frontend/fundrbolt-admin && pnpm test
 
 test-watch:
 	@echo "Running backend tests in watch mode..."
@@ -105,7 +105,7 @@ lint-backend:
 
 lint-frontend:
 	@echo "Linting frontend..."
-	cd frontend/augeo-admin && pnpm lint
+	cd frontend/fundrbolt-admin && pnpm lint
 
 format: format-backend format-frontend
 
@@ -116,12 +116,12 @@ format-backend:
 
 format-frontend:
 	@echo "Formatting frontend..."
-	cd frontend/augeo-admin && pnpm format
+	cd frontend/fundrbolt-admin && pnpm format
 
 type-check:
 	@echo "Type checking..."
 	cd backend && poetry run mypy app
-	cd frontend/augeo-admin && pnpm type-check
+	cd frontend/fundrbolt-admin && pnpm type-check
 
 check-commits:
 	@echo "Running pre-commit hooks..."
@@ -286,18 +286,18 @@ ngrok-start:
 	@nohup ngrok start --all --config ngrok.yml > /tmp/ngrok.log 2>&1 & echo $$! > /tmp/ngrok.pid
 	@sleep 3
 	@echo "Configuring frontend to use ngrok backend..."
-	@sed -i 's|VITE_API_URL=http://localhost:8000/api/v1|VITE_API_URL=https://augeo-backend.ngrok.io/api/v1|g' frontend/augeo-admin/.env
+	@sed -i 's|VITE_API_URL=http://localhost:8000/api/v1|VITE_API_URL=https://fundrbolt-backend.ngrok.io/api/v1|g' frontend/fundrbolt-admin/.env
 	@echo "Restarting frontend..."
 	@pkill -f 'vite/bin/vite.js' || true
 	@sleep 1
-	@(bash -c "cd frontend/augeo-admin && source ~/.nvm/nvm.sh && nvm use 22 && nohup pnpm dev > /tmp/frontend-ngrok.log 2>&1 &") || true
+	@(bash -c "cd frontend/fundrbolt-admin && source ~/.nvm/nvm.sh && nvm use 22 && nohup pnpm dev > /tmp/frontend-ngrok.log 2>&1 &") || true
 	@sleep 3
 	@echo ""
 	@echo "✅ Ngrok tunnels started!"
 	@echo ""
-	@curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[] | "  \(.public_url) -> \(.config.addr)"' || echo "  Frontend: https://augeo-frontend.ngrok.io\n  Backend: https://augeo-backend.ngrok.io"
+	@curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[] | "  \(.public_url) -> \(.config.addr)"' || echo "  Frontend: https://fundrbolt-frontend.ngrok.io\n  Backend: https://fundrbolt-backend.ngrok.io"
 	@echo ""
-	@echo "📱 Open https://augeo-frontend.ngrok.io on your phone"
+	@echo "📱 Open https://fundrbolt-frontend.ngrok.io on your phone"
 	@echo ""
 
 ngrok-stop:
@@ -312,11 +312,11 @@ ngrok-status:
 
 ngrok-local:
 	@echo "Switching frontend back to localhost..."
-	@sed -i 's|VITE_API_URL=https://augeo-backend.ngrok.io/api/v1|VITE_API_URL=http://localhost:8000/api/v1|g' frontend/augeo-admin/.env
+	@sed -i 's|VITE_API_URL=https://fundrbolt-backend.ngrok.io/api/v1|VITE_API_URL=http://localhost:8000/api/v1|g' frontend/fundrbolt-admin/.env
 	@echo "Restarting frontend..."
 	@pkill -f 'vite/bin/vite.js' || true
 	@sleep 1
-	@(bash -c "cd frontend/augeo-admin && source ~/.nvm/nvm.sh && nvm use 22 && nohup pnpm dev > /tmp/frontend.log 2>&1 &") || true
+	@(bash -c "cd frontend/fundrbolt-admin && source ~/.nvm/nvm.sh && nvm use 22 && nohup pnpm dev > /tmp/frontend.log 2>&1 &") || true
 	@sleep 2
 	@echo "✅ Frontend configured for localhost:8000"
 

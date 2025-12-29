@@ -30,6 +30,7 @@ from app.core.metrics import set_up
 from app.core.redis import get_redis
 from app.middleware.consent_check import ConsentCheckMiddleware
 from app.middleware.metrics import MetricsMiddleware
+from app.middleware.powered_by import PoweredByMiddleware
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.slug_validator import SlugValidationMiddleware
 
@@ -56,7 +57,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     # Startup
     logger.info(
-        "Starting Augeo Platform API",
+        "Starting Fundrbolt Platform API",
         extra={
             "environment": settings.environment,
             "debug": settings.debug,
@@ -74,7 +75,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
     # Shutdown
-    logger.info("Shutting down Augeo Platform API")
+    logger.info("Shutting down Fundrbolt Platform API")
 
     # Close database engine
     await async_engine.dispose()
@@ -91,15 +92,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 # Create FastAPI app
 app = FastAPI(
     title=settings.project_name,
-    description="Augeo Platform API for nonprofit auction management",
+    description="Fundrbolt Platform API for nonprofit auction management",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
     lifespan=lifespan,
     contact={
-        "name": "Augeo Platform Support",
-        "email": "support@augeo.app",
+        "name": "Fundrbolt Platform Support",
+        "email": "support@fundrbolt.com",
     },
     license_info={
         "name": "Proprietary",
@@ -136,6 +137,9 @@ app.add_middleware(RequestIDMiddleware)
 
 # Metrics middleware
 app.add_middleware(MetricsMiddleware)
+
+# Powered-By header middleware
+app.add_middleware(PoweredByMiddleware)
 
 # Slug validation middleware
 app.add_middleware(SlugValidationMiddleware)
@@ -175,7 +179,7 @@ async def root() -> JSONResponse:
     """
     return JSONResponse(
         content={
-            "message": "Augeo Platform API",
+            "message": "Fundrbolt Platform API",
             "version": "1.0.0",
             "docs": "/docs",
             "health": "/health",

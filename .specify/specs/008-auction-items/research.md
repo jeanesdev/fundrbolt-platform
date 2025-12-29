@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document captures research findings, technical decisions, and rationale for implementing the auction items feature. All decisions follow existing patterns from the Augeo platform (events, sponsors, media uploads).
+This document captures research findings, technical decisions, and rationale for implementing the auction items feature. All decisions follow existing patterns from the Fundrbolt platform (events, sponsors, media uploads).
 
 ---
 

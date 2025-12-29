@@ -1,4 +1,4 @@
-# augeo-platform Development Guidelines
+# fundrbolt-platform Development Guidelines
 
 Auto-generated from all feature plans. Last updated: 2025-10-25
 
@@ -25,6 +25,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, Alembic (Backend); React 18, Vite, TanStack Router, Zustand, Radix UI (Frontend) (012-seating-assignment)
 - Azure Database for PostgreSQL (existing event_registrations, registration_guests tables; new fields: table_number, bidder_number, table_count, max_guests_per_table) (012-seating-assignment)
 - Embla Carousel with autoplay for sponsor carousels (011-donor-pwa-event)
+- Python 3.11+ (backend), TypeScript 5.x (frontend), Bash/YAML (infrastructure) + FastAPI, React, Vite, SQLAlchemy, Pydantic, Azure CLI, Bicep, GitHub Actions (013-fundrbolt-to-fundrbolt)
+- Azure Database for PostgreSQL, Azure Blob Storage (013-fundrbolt-to-fundrbolt)
 
 ## Project Structure
 ```
@@ -57,10 +59,10 @@ tests/
 - Run any Python command: `cd backend && poetry run <command>`
 
 ### Frontend
-- Install: `make install-frontend` or `cd frontend/augeo-admin && pnpm install`
-- Dev server: `make dev-frontend` or `cd frontend/augeo-admin && pnpm dev`
-- Build: `cd frontend/augeo-admin && pnpm build`
-- Test: `make test-frontend` or `cd frontend/augeo-admin && pnpm test`
+- Install: `make install-frontend` or `cd frontend/fundrbolt-admin && pnpm install`
+- Dev server: `make dev-frontend` or `cd frontend/fundrbolt-admin && pnpm dev`
+- Build: `cd frontend/fundrbolt-admin && pnpm build`
+- Test: `make test-frontend` or `cd frontend/fundrbolt-admin && pnpm test`
 
 ## Development Environment
 
@@ -109,9 +111,9 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 013-fundrbolt-to-fundrbolt: Added Python 3.11+ (backend), TypeScript 5.x (frontend), Bash/YAML (infrastructure) + FastAPI, React, Vite, SQLAlchemy, Pydantic, Azure CLI, Bicep, GitHub Actions
 - 012-seating-assignment: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, Alembic (Backend); React 18, Vite, TanStack Router, Zustand, Radix UI (Frontend)
 - 011-donor-pwa-event: Added TypeScript 5.x (Frontend), Python 3.11+ (Backend) + React 18, Vite, TanStack Router, Radix UI, Tailwind CSS 4, FastAPI, SQLAlchemy 2.0
-- 010-donor-pwa-and: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router
   - ✅ Password change page: `/settings/password` route with PasswordChangeForm component
   - ✅ Settings menu: Added Password menu item with KeyRound icon
   - ✅ User list pagination: Server-side pagination with proper page count from API
@@ -124,7 +126,7 @@ git commit -m "message"
   - ✅ Deployment scripts: deploy-backend.sh, deploy-frontend.sh, run-migrations.sh, rollback.sh
   - ✅ Blue-green deployment for production with automatic rollback
   - ✅ CI/CD documentation and rollback procedures
-  - ✅ DNS Zone module with Azure DNS for custom domain augeo.app
+  - ✅ DNS Zone module with Azure DNS for custom domain fundrbolt.com
   - ✅ Communication Services module for email with SPF/DKIM/DMARC
   - ✅ DNS and email configuration documentation
   - ✅ Secrets management scripts: configure-secrets.sh, update-app-settings.sh
@@ -135,7 +137,7 @@ git commit -m "message"
   - ✅ DR drills: Quarterly procedures with Q1-Q4 schedules
   - ✅ Application Insights: Sampling (10% prod, 100% dev/staging), daily cap (5GB prod, 1GB staging)
   - ✅ Alert rules: High error rate (>5%), high latency (P95 >500ms), availability failures
-  - ✅ Action groups: Email notifications (ops@augeo.app, engineering@augeo.app)
+  - ✅ Action groups: Email notifications (ops@fundrbolt.com, engineering@fundrbolt.com)
   - ✅ Availability tests: Backend /health and frontend homepage (5-min intervals, 3 locations)
   - ✅ Dashboards: System health (10 tiles), infrastructure health (4 sections) with KQL queries
   - ✅ Monitoring guide: 551-line comprehensive guide with alert procedures and troubleshooting
@@ -165,7 +167,6 @@ git commit -m "message"
   - ✅ Middleware-based consent enforcement (409 Conflict on outdated consent)
   - ✅ Hybrid cookie storage: localStorage (anonymous) + PostgreSQL (authenticated) + Redis (cache)
   - ✅ EU Cookie Law compliance (strictest standard for global deployment)
-- 011-donor-pwa-event: Added slug-based routing and sponsors carousel
   - ✅ Event routing: Migrated from `/events/$eventId` to `/events/$eventSlug` for SEO-friendly URLs
   - ✅ EventSwitcher component: Always-visible dropdown on event homepage (single/multiple events)
   - ✅ Event list sync: Sidebar EventSelector and homepage EventSwitcher use same `availableEvents` source
@@ -232,11 +233,11 @@ git commit -m "message"
 ## Monitoring & Observability
 
 ### Metrics (Prometheus)
-- `augeo_http_requests_total` - HTTP requests by method/path/status
-- `augeo_db_failures_total` - Database connection failures
-- `augeo_redis_failures_total` - Redis connection failures
-- `augeo_email_failures_total` - Email send failures
-- `augeo_up` - Application up/down status (1=up, 0=down)
+- `fundrbolt_http_requests_total` - HTTP requests by method/path/status
+- `fundrbolt_db_failures_total` - Database connection failures
+- `fundrbolt_redis_failures_total` - Redis connection failures
+- `fundrbolt_email_failures_total` - Email send failures
+- `fundrbolt_up` - Application up/down status (1=up, 0=down)
 
 ### Structured Logging
 - JSON format with request IDs for distributed tracing

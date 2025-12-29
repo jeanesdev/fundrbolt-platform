@@ -3,7 +3,7 @@
  * Manages NPO context state with query invalidation and role-based NPO selection
  *
  * Business Rules:
- * - SuperAdmin: Can select any NPO or "Augeo Platform" (shows all NPOs)
+ * - SuperAdmin: Can select any NPO or "Fundrbolt Platform" (shows all NPOs)
  * - NPO Admin: Auto-select their assigned NPO, disable selector
  * - Event Coordinator: Show NPOs they're registered with
  * - Staff: Auto-select their assigned NPO, disable selector
@@ -27,7 +27,7 @@ export interface UseNpoContextReturn {
   setAvailableNpos: (npos: NPOContextOption[]) => void
 
   // Helpers
-  isAugeoPlatformView: boolean
+  isFundrBoltPlatformView: boolean
   isSingleNpoUser: boolean // True if user has only one NPO (disable selector)
   canChangeNpo: boolean // True if user can change NPO selection
 }
@@ -44,10 +44,10 @@ export function useNpoContext(): UseNpoContextReturn {
     error,
     setSelectedNpo,
     setAvailableNpos: storeSetAvailableNpos,
-    isAugeoPlatformView: isAugeoView,
+    isFundrBoltPlatformView: isFundrBoltView,
   } = useNPOContextStore()
 
-  const isAugeoPlatformView = isAugeoView()
+  const isFundrBoltPlatformView = isFundrBoltView()
 
   // Single NPO users (NPO Admin and Staff) should have only their NPO
   const isSingleNpoUser = (isNpoAdmin || isStaff) && userNpoId !== null
@@ -92,7 +92,7 @@ export function useNpoContext(): UseNpoContextReturn {
     error,
     selectNpo,
     setAvailableNpos,
-    isAugeoPlatformView,
+    isFundrBoltPlatformView,
     isSingleNpoUser,
     canChangeNpo,
   }

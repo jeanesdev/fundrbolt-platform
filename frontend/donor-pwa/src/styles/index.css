@@ -21,7 +21,7 @@
 
   /* Event Branding CSS Variables (dynamic, injected by useEventBranding hook) */
   :root {
-    /* Default to Augeo branding - overridden per event */
+    /* Default to Fundrbolt branding - overridden per event */
     --event-primary: 59, 130, 246;
     /* rgb(59, 130, 246) - blue-500 */
     --event-secondary: 147, 51, 234;

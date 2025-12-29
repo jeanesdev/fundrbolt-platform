@@ -1,4 +1,4 @@
-// Application Insights module for Augeo Platform
+// Application Insights module for Fundrbolt Platform
 
 @description('Name of the Application Insights instance')
 param appInsightsName string
@@ -84,13 +84,15 @@ resource actionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = if (length(a
   location: 'Global'
   tags: tags
   properties: {
-    groupShortName: substring('${environment}-alert', 0, 12)
+    groupShortName: substring('${environment}-alert', 0, min(length('${environment}-alert'), 12))
     enabled: true
-    emailReceivers: [for (email, i) in alertEmailAddresses: {
-      name: 'Email${i}'
-      emailAddress: email
-      useCommonAlertSchema: true
-    }]
+    emailReceivers: [
+      for (email, i) in alertEmailAddresses: {
+        name: 'Email${i}'
+        emailAddress: email
+        useCommonAlertSchema: true
+      }
+    ]
   }
 }
 
@@ -166,7 +168,7 @@ resource backendAvailabilityAlert 'Microsoft.Insights/metricAlerts@2018-03-01' =
 }
 
 // Alert Rule - Frontend Availability
-resource frontendAvailabilityAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = if (length(alertEmailAddresses) > 0) {
+resource frontendAvailabilityAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = if (enableAvailabilityTests && length(alertEmailAddresses) > 0) {
   name: '${appInsightsName}-frontend-availability'
   location: 'Global'
   tags: tags
@@ -203,7 +205,7 @@ resource highErrorRateAlert 'Microsoft.Insights/scheduledQueryRules@2023-03-15-p
     description: 'Error rate exceeded 5% for 5 minutes'
     severity: 1 // Critical
     enabled: true
-    evaluationFrequency: 'PT1M'
+    evaluationFrequency: 'PT5M'
     windowSize: 'PT5M'
     scopes: [
       appInsights.id
@@ -239,7 +241,7 @@ resource highLatencyAlert 'Microsoft.Insights/scheduledQueryRules@2023-03-15-pre
     description: 'P95 latency exceeded 500ms for 5 minutes'
     severity: 1 // Critical
     enabled: true
-    evaluationFrequency: 'PT1M'
+    evaluationFrequency: 'PT5M'
     windowSize: 'PT5M'
     scopes: [
       appInsights.id
@@ -271,5 +273,5 @@ output appInsightsName string = appInsights.name
 output appInsightsInstrumentationKey string = appInsights.properties.InstrumentationKey
 output appInsightsConnectionString string = appInsights.properties.ConnectionString
 output actionGroupId string = length(alertEmailAddresses) > 0 ? actionGroup.id : ''
-output backendAvailabilityTestId string = backendAvailabilityTest.id
-output frontendAvailabilityTestId string = frontendAvailabilityTest.id
+output backendAvailabilityTestId string = enableAvailabilityTests ? backendAvailabilityTest.id : ''
+output frontendAvailabilityTestId string = enableAvailabilityTests ? frontendAvailabilityTest.id : ''

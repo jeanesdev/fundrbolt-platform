@@ -23,11 +23,11 @@ fi
 echo "🔐 Configuring secrets for $ENVIRONMENT environment..."
 
 # Resource names
-RESOURCE_GROUP="augeo-${ENVIRONMENT}-rg"
-KEY_VAULT_NAME="augeo-${ENVIRONMENT}-kv"
-APP_SERVICE_NAME="augeo-${ENVIRONMENT}-api"
-POSTGRES_SERVER="augeo-${ENVIRONMENT}-postgres"
-REDIS_CACHE="augeo-${ENVIRONMENT}-redis"
+RESOURCE_GROUP="fundrbolt-${ENVIRONMENT}-rg"
+KEY_VAULT_NAME="fundrbolt-${ENVIRONMENT}-kv"
+APP_SERVICE_NAME="fundrbolt-${ENVIRONMENT}-api"
+POSTGRES_SERVER="fundrbolt-${ENVIRONMENT}-postgres"
+REDIS_CACHE="fundrbolt-${ENVIRONMENT}-redis"
 
 # Check if Key Vault exists
 if ! az keyvault show --name "$KEY_VAULT_NAME" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
@@ -90,7 +90,7 @@ else
             --name "$POSTGRES_SERVER" \
             --query "fullyQualifiedDomainName" -o tsv)
 
-        DATABASE_URL="postgresql://augeo_admin:${POSTGRES_PASSWORD}@${POSTGRES_FQDN}:5432/augeo?sslmode=require"
+        DATABASE_URL="postgresql://fundrbolt_admin:${POSTGRES_PASSWORD}@${POSTGRES_FQDN}:5432/fundrbolt?sslmode=require"
         store_secret "database-url" "$DATABASE_URL" "PostgreSQL database connection string"
         echo "  ✅ Stored database-url"
     else
@@ -124,7 +124,7 @@ fi
 # 4. Azure Communication Services Connection String (if exists)
 echo ""
 echo "4️⃣  Azure Communication Services"
-ACS_NAME="augeo-${ENVIRONMENT}-acs"
+ACS_NAME="fundrbolt-${ENVIRONMENT}-acs"
 if az communication show --name "$ACS_NAME" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
     if az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "acs-connection-string" &> /dev/null; then
         echo "  ⏭️  ACS connection string already exists, skipping..."

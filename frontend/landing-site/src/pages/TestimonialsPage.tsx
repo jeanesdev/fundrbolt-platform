@@ -68,15 +68,15 @@ export const TestimonialsPage = () => {
   return (
     <>
       <Helmet>
-        <title>Success Stories - Augeo Platform</title>
+        <title>Success Stories - Fundrbolt Platform</title>
         <meta
           name="description"
-          content="Hear from nonprofits, donors, and auctioneers who have transformed their fundraising with Augeo's mobile silent auction platform."
+          content="Hear from nonprofits, donors, and auctioneers who have transformed their fundraising with Fundrbolt's mobile silent auction platform."
         />
-        <meta property="og:title" content="Success Stories - Augeo Platform" />
+        <meta property="og:title" content="Success Stories - Fundrbolt Platform" />
         <meta
           property="og:description"
-          content="Hear from nonprofits, donors, and auctioneers who have transformed their fundraising with Augeo's mobile silent auction platform."
+          content="Hear from nonprofits, donors, and auctioneers who have transformed their fundraising with Fundrbolt's mobile silent auction platform."
         />
         <meta property="og:type" content="website" />
       </Helmet>
@@ -87,7 +87,7 @@ export const TestimonialsPage = () => {
           <h1>Success Stories</h1>
           <p className="hero-subtitle">
             Hear from nonprofits, donors, and auctioneers who are transforming
-            fundraising with Augeo
+            fundraising with Fundrbolt
           </p>
         </div>
       </section>
@@ -199,7 +199,7 @@ export const TestimonialsPage = () => {
         <div className="container">
           <h2>Ready to Create Your Own Success Story?</h2>
           <p>
-            Join hundreds of nonprofits, donors, and auctioneers using Augeo to
+            Join hundreds of nonprofits, donors, and auctioneers using Fundrbolt to
             raise more funds and create unforgettable experiences.
           </p>
           <div className="cta-buttons">

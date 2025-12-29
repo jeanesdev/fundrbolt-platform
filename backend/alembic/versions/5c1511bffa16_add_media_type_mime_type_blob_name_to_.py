@@ -351,7 +351,7 @@ def upgrade() -> None:
     )
     op.drop_index(op.f("ix_npo_members_npo_status"), table_name="npo_members")
     op.drop_index(op.f("ix_npo_members_user_status"), table_name="npo_members")
-    op.drop_index(op.f("ix_npos_deleted_at"), table_name="npos")
+    op.execute("DROP INDEX IF EXISTS ix_npos_deleted_at")
     op.drop_constraint(op.f("npos_name_key"), "npos", type_="unique")
     op.drop_index(op.f("ix_npos_name"), table_name="npos")
     op.create_index(op.f("ix_npos_name"), "npos", ["name"], unique=True)

@@ -1,9 +1,9 @@
 openapi: 3.0.3
 
 info:
-  title: Augeo Platform - Auction Items API
+  title: Fundrbolt Platform - Auction Items API
   description: |
-    API endpoints for managing auction items (live and silent auctions) in the Augeo fundraising platform.
+    API endpoints for managing auction items (live and silent auctions) in the Fundrbolt fundraising platform.
 
     **Features**:
     - CRUD operations for auction items
@@ -15,20 +15,20 @@ info:
 
   version: 1.0.0
   contact:
-    name: Augeo Platform Team
-    email: dev@augeo.app
+    name: Fundrbolt Platform Team
+    email: dev@fundrbolt.com
   license:
     name: Proprietary
-    url: https://augeo.app/terms
+    url: https://fundrbolt.com/terms
 
 servers:
   - url: http://localhost:8000/api/v1
     description: Local development
-  - url: https://api-dev.augeo.app/api/v1
+  - url: https://api-dev.fundrbolt.com/api/v1
     description: Development environment
-  - url: https://api-staging.augeo.app/api/v1
+  - url: https://api-staging.fundrbolt.com/api/v1
     description: Staging environment
-  - url: https://api.augeo.app/api/v1
+  - url: https://api.fundrbolt.com/api/v1
     description: Production
 
 tags:

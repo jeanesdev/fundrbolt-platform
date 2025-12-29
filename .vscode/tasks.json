@@ -127,7 +127,7 @@
         "source ~/.nvm/nvm.sh && nvm use 22 && pnpm dev"
       ],
       "options": {
-        "cwd": "${workspaceFolder}/frontend/augeo-admin"
+        "cwd": "${workspaceFolder}/frontend/fundrbolt-admin"
       },
       "isBackground": true,
       "presentation": {

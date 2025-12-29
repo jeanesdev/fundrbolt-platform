@@ -26,7 +26,7 @@
  *   accent_color: '#FF5733'
  * })
  *
- * // Clear branding (reset to Augeo defaults)
+ * // Clear branding (reset to Fundrbolt defaults)
  * clearBranding()
  * ```
  *
@@ -60,7 +60,7 @@ export interface EventBranding {
 }
 
 /**
- * Default Augeo branding colors (hex and RGB tuples)
+ * Default Fundrbolt branding colors (hex and RGB tuples)
  */
 const DEFAULT_COLORS = {
   primary: '#3B82F6', // blue-500
@@ -134,7 +134,7 @@ export function useEventBranding() {
   }
 
   /**
-   * Clear event branding and reset to Augeo defaults
+   * Clear event branding and reset to Fundrbolt defaults
    */
   const clearBranding = () => {
     applyDefaultBranding(document.documentElement)

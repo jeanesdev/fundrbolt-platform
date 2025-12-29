@@ -32,7 +32,7 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "⚛️  Frontend (TypeScript/React)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-if cd frontend/augeo-admin && pnpm lint && pnpm type-check; then
+if cd frontend/fundrbolt-admin && pnpm lint && pnpm type-check; then
     echo -e "${GREEN}✅ Frontend validation passed${NC}"
 else
     echo -e "${RED}❌ Frontend validation failed${NC}"

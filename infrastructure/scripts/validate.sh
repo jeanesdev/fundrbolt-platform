@@ -1,5 +1,5 @@
 #!/bin/bash
-# Infrastructure validation script for Augeo Platform
+# Infrastructure validation script for Fundrbolt Platform
 set -e
 
 # Colors
@@ -12,7 +12,7 @@ ENVIRONMENT=${1:-dev}
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BICEP_DIR="$(dirname "$SCRIPT_DIR")/bicep"
 
-echo -e "${GREEN}=== Augeo Platform Infrastructure Validation ===${NC}"
+echo -e "${GREEN}=== Fundrbolt Platform Infrastructure Validation ===${NC}"
 echo "Environment: $ENVIRONMENT"
 echo ""
 

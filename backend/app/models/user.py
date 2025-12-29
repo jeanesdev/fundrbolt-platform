@@ -23,7 +23,7 @@ class User(Base, UUIDMixin, TimestampMixin):
     """User model representing any person using the platform.
 
     Supports five role types:
-    - super_admin: Augeo platform staff with full access
+    - super_admin: Fundrbolt platform staff with full access
     - npo_admin: Full management within assigned NPO(s)
     - event_coordinator: Event/auction management within NPO
     - staff: Donor registration/check-in within assigned events

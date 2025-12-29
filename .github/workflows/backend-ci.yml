@@ -41,7 +41,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: backend/.venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-v4-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
@@ -73,9 +73,9 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_USER: augeo_user
-          POSTGRES_PASSWORD: augeo_password
-          POSTGRES_DB: augeo_test_db
+          POSTGRES_USER: fundrbolt_user
+          POSTGRES_PASSWORD: fundrbolt_password
+          POSTGRES_DB: fundrbolt_test_db
         ports:
           - 5432:5432
         options: >-
@@ -115,7 +115,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: backend/.venv
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-v4-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
@@ -126,7 +126,7 @@ jobs:
 
       - name: Run tests with coverage
         env:
-          DATABASE_URL: postgresql://augeo_user:augeo_password@localhost:5432/augeo_test_db
+          DATABASE_URL: postgresql://fundrbolt_user:fundrbolt_password@localhost:5432/fundrbolt_test_db
           REDIS_URL: redis://localhost:6379/0
           JWT_SECRET_KEY: test-secret-key-for-ci-minimum-32-chars
           ENVIRONMENT: development

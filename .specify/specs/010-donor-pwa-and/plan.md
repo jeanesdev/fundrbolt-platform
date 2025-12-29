@@ -76,7 +76,7 @@ backend/
     ├── test_guest_management.py
     └── test_meal_selections.py
 
-frontend/donor-pwa/                     # New React PWA (separate from augeo-admin)
+frontend/donor-pwa/                     # New React PWA (separate from fundrbolt-admin)
 ├── src/
 │   ├── features/
 │   │   ├── event-browse/               # Public event listing

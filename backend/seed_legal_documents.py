@@ -43,11 +43,11 @@ async def seed_legal_documents() -> None:
 
 ## 1. Acceptance of Terms
 
-By accessing and using the Augeo Platform ("Platform"), you accept and agree to be bound by the terms and provisions of this agreement.
+By accessing and using the Fundrbolt Platform ("Platform"), you accept and agree to be bound by the terms and provisions of this agreement.
 
 ## 2. Description of Service
 
-Augeo Platform is a nonprofit management and donor engagement system that provides:
+Fundrbolt Platform is a nonprofit management and donor engagement system that provides:
 
 - Event management and volunteer coordination
 - Donation tracking and receipt generation
@@ -85,7 +85,7 @@ You agree NOT to:
 
 ## 6. Intellectual Property
 
-- The Platform and its original content are owned by Augeo and protected by copyright
+- The Platform and its original content are owned by Fundrbolt and protected by copyright
 - User-generated content remains the property of the respective users
 - By posting content, you grant us a license to use, display, and distribute it
 
@@ -111,7 +111,7 @@ We reserve the right to:
 ## 10. Contact Information
 
 Questions about these Terms of Service?
-- Email: legal@augeo.app
+- Email: legal@fundrbolt.com
 - Address: 309 Woodhall Lane, Piedmont, SC 29673, USA
 
 ## 11. Governing Law
@@ -120,7 +120,7 @@ These terms are governed by the laws of South Carolina, without regard to confli
 
 ---
 
-By using the Augeo Platform, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
+By using the Fundrbolt Platform, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
 """.format(date=datetime.now().strftime("%B %d, %Y"))
 
         # Privacy Policy
@@ -130,7 +130,7 @@ By using the Augeo Platform, you acknowledge that you have read, understood, and
 
 ## 1. Introduction
 
-Augeo Platform ("we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.
+Fundrbolt Platform ("we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.
 
 ## 2. Information We Collect
 
@@ -192,7 +192,7 @@ You have the right to:
 - **Restrict**: Limit how we process your data
 - **Withdraw Consent**: Revoke consent at any time
 
-To exercise these rights, contact us at privacy@augeo.app or use the in-platform data management tools.
+To exercise these rights, contact us at privacy@fundrbolt.com or use the in-platform data management tools.
 
 ## 7. Data Retention
 
@@ -234,18 +234,18 @@ Continued use after changes constitutes acceptance.
 ## 12. Contact Us
 
 Questions or concerns about privacy?
-- **Email**: privacy@augeo.app
-- **Data Protection Officer**: dpo@augeo.app
+- **Email**: privacy@fundrbolt.com
+- **Data Protection Officer**: dpo@fundrbolt.com
 - **Address**: 309 Woodhall Lane, Piedmont, SC 29673, USA
 
 ## 13. Regulatory Information
 
 For EU users:
-- **Data Controller**: Augeo Platform
+- **Data Controller**: Fundrbolt Platform
 
 ---
 
-By using the Augeo Platform, you acknowledge that you have read and understood this Privacy Policy.
+By using the Fundrbolt Platform, you acknowledge that you have read and understood this Privacy Policy.
 """.format(date=datetime.now().strftime("%B %d, %Y"))
 
         # Create Terms of Service

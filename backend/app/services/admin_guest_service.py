@@ -349,7 +349,7 @@ class AdminGuestService:
                 f"<strong>Date:</strong> {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({event.timezone})<br>"
                 f"<strong>Venue:</strong> {event.venue_name}<br>"
                 f"{event.venue_address}",
-                "To confirm your attendance, you'll need to create your Augeo account (or log in if you already have one), "
+                "To confirm your attendance, you'll need to create your Fundrbolt account (or log in if you already have one), "
                 "complete your registration, and select your meal preferences.",
                 "Click the button below to get started:",
             ]
@@ -366,7 +366,7 @@ class AdminGuestService:
                 f"{event.venue_address}",
                 "",
                 "To confirm your attendance, you'll need to:",
-                "1. Create your Augeo account (or log in if you already have one)",
+                "1. Create your Fundrbolt account (or log in if you already have one)",
                 "2. Complete your registration and select your meal preferences",
                 "3. RSVP for the event",
                 "",
@@ -376,7 +376,7 @@ class AdminGuestService:
                 "This invitation is specifically for you. Please complete your registration to confirm your attendance.",
                 "",
                 "Best regards,",
-                "The Augeo Team",
+                "The Fundrbolt Team",
             ]
 
             body = "\n".join(plain_body_parts)
@@ -521,7 +521,7 @@ class AdminGuestService:
                     f"<strong>Date:</strong> {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')} ({event.timezone})<br>"
                     f"<strong>Venue:</strong> {event.venue_name}<br>"
                     f"{event.venue_address}",
-                    "To confirm your attendance, you'll need to create your Augeo account (or log in if you already have one), "
+                    "To confirm your attendance, you'll need to create your Fundrbolt account (or log in if you already have one), "
                     "complete your registration, and select your meal preferences.",
                     "Click the button below to get started:",
                 ]
@@ -546,7 +546,7 @@ class AdminGuestService:
                     f"{event.venue_address}",
                     "",
                     "To confirm your attendance, you'll need to:",
-                    "1. Create your Augeo account (or log in if you already have one)",
+                    "1. Create your Fundrbolt account (or log in if you already have one)",
                     "2. Complete your registration and select your meal preferences",
                     "3. RSVP for the event",
                     "",
@@ -556,7 +556,7 @@ class AdminGuestService:
                     "This invitation is specifically for you. Please complete your registration to confirm your attendance.",
                     "",
                     "Best regards,",
-                    "The Augeo Team",
+                    "The Fundrbolt Team",
                 ]
             )
 

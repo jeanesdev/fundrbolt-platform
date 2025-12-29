@@ -1,4 +1,4 @@
-// App Service Plan module for Augeo Platform
+// App Service Plan module for Fundrbolt Platform
 
 @description('Name of the App Service Plan')
 param appServicePlanName string

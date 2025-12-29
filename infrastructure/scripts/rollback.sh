@@ -28,12 +28,12 @@ if [[ ! "$COMPONENT" =~ ^(backend|frontend)$ ]]; then
 fi
 
 ENVIRONMENT="production"
-RESOURCE_GROUP="augeo-${ENVIRONMENT}-rg"
+RESOURCE_GROUP="fundrbolt-${ENVIRONMENT}-rg"
 
 echo "Rolling back $COMPONENT in $ENVIRONMENT environment..."
 
 if [ "$COMPONENT" == "backend" ]; then
-    APP_NAME="augeo-${ENVIRONMENT}-api"
+    APP_NAME="fundrbolt-${ENVIRONMENT}-api"
 
     # Check if we should swap slots or redeploy
     if [ -z "$IMAGE_TAG" ]; then
@@ -50,7 +50,7 @@ if [ "$COMPONENT" == "backend" ]; then
     else
         # Redeploy specific image version
         echo "Redeploying previous image: $IMAGE_TAG"
-        IMAGE_NAME="ghcr.io/augeo-platform/augeo-backend:${IMAGE_TAG}"
+        IMAGE_NAME="ghcr.io/fundrbolt-platform/fundrbolt-backend:${IMAGE_TAG}"
 
         # Deploy to staging slot first
         az webapp config container set \

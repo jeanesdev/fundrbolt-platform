@@ -26,7 +26,7 @@ This feature removes unnecessary template components from the admin PWA and impl
 
 1. **Identify and delete unused components**:
    ```bash
-   cd frontend/augeo-admin
+   cd frontend/fundrbolt-admin
 
    # Remove entire directories (Tasks, Chats, Apps, etc.)
    rm -rf src/pages/tasks
@@ -181,14 +181,14 @@ This feature removes unnecessary template components from the admin PWA and impl
 
 3. **Create NpoSelector component** (`src/components/layout/NpoSelector.tsx`):
    - Render dropdown with available NPOs
-   - SuperAdmin: Show "Augeo Platform" + all NPOs
+   - SuperAdmin: Show "Fundrbolt Platform" + all NPOs
    - NPO Admin/Staff: Show only assigned NPO (disabled if single NPO)
    - Event Coordinator: Show registered NPOs
    - On selection change: Call `selectNpo(npoId)` → invalidates queries
 
 4. **Add to AppShell** (`src/components/layout/AppShell.tsx`):
    - Place in top-left corner (replacing Teams icon)
-   - Display selected NPO name or "Augeo Platform"
+   - Display selected NPO name or "Fundrbolt Platform"
 
 5. **Update data fetching queries**:
    - Modify `useQuery` calls in NPO, Event, User list pages
@@ -200,7 +200,7 @@ This feature removes unnecessary template components from the admin PWA and impl
    - Apply role-based filtering logic (see `data-model.md` for rules)
 
 7. **Test**:
-   - Log in as SuperAdmin → select "Augeo Platform" → see all NPOs/events/users
+   - Log in as SuperAdmin → select "Fundrbolt Platform" → see all NPOs/events/users
    - Select specific NPO → see only that NPO's data
    - Log in as NPO Admin → selector shows only assigned NPO
    - Change NPO selection → verify data refetches and updates

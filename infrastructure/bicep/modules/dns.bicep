@@ -1,7 +1,7 @@
 // DNS Zone Module
 // Creates Azure DNS Zone for custom domain management
 
-@description('Custom domain name (e.g., augeo.app)')
+@description('Custom domain name (e.g., fundrbolt.com)')
 param domainName string
 
 @description('Resource tags')

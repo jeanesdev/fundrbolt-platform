@@ -63,7 +63,7 @@ POST /admin/events/{event_id}/seating/auto-assign
 
 ### Frontend Component
 
-**File**: `frontend/augeo-admin/src/components/seating/AutoAssignButton.tsx`
+**File**: `frontend/fundrbolt-admin/src/components/seating/AutoAssignButton.tsx`
 
 **Features**:
 - Confirmation dialog with algorithm explanation
@@ -83,7 +83,7 @@ POST /admin/events/{event_id}/seating/auto-assign
 
 ### API Client
 
-**File**: `frontend/augeo-admin/src/lib/api/admin-seating.ts`
+**File**: `frontend/fundrbolt-admin/src/lib/api/admin-seating.ts`
 
 **Interface** (lines 79-85):
 ```typescript

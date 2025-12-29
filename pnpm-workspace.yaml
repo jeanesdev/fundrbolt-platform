@@ -1,5 +1,5 @@
 packages:
-  - 'frontend/augeo-admin'
+  - 'frontend/fundrbolt-admin'
   - 'frontend/donor-pwa'
   - 'frontend/landing-site'
   - 'frontend/shared'

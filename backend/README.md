@@ -1,6 +1,6 @@
-# Augeo Platform - Backend API
+# Fundrbolt Platform - Backend API
 
-FastAPI-based backend API for the Augeo nonprofit auction platform, featuring authentication, role-based access control, and multi-tenant data isolation.
+FastAPI-based backend API for the Fundrbolt nonprofit auction platform, featuring authentication, role-based access control, and multi-tenant data isolation.
 
 ## 🚀 Quick Start
 
@@ -234,11 +234,11 @@ Interactive API documentation is automatically generated:
 **Metrics** (Prometheus):
 
 - `GET /metrics` - Prometheus-formatted metrics
-  - `augeo_http_requests_total` - HTTP requests by method/path/status
-  - `augeo_db_failures_total` - Database connection failures
-  - `augeo_redis_failures_total` - Redis connection failures
-  - `augeo_email_failures_total` - Email send failures
-  - `augeo_up` - Application up/down status (1=up, 0=down)
+  - `fundrbolt_http_requests_total` - HTTP requests by method/path/status
+  - `fundrbolt_db_failures_total` - Database connection failures
+  - `fundrbolt_redis_failures_total` - Redis connection failures
+  - `fundrbolt_email_failures_total` - Email send failures
+  - `fundrbolt_up` - Application up/down status (1=up, 0=down)
 
 ## 🛠️ Tech Stack
 

@@ -46,7 +46,7 @@
 - **Redis only**: Rejected because lacks durability for audit compliance
 
 **Implementation Details**:
-- Frontend: `localStorage.setItem('augeo_cookie_consent', JSON.stringify({...}))` with 12-month timestamp
+- Frontend: `localStorage.setItem('fundrbolt_cookie_consent', JSON.stringify({...}))` with 12-month timestamp
 - On registration/login: Read localStorage, call POST `/api/v1/cookies/consent`, clear localStorage entry
 - Backend: Check Redis cache first (`user:{user_id}:cookie_consent`), fallback to PostgreSQL
 - Cache TTL: 1 hour (balance between performance and consistency)
@@ -94,7 +94,7 @@
 
 **Implementation Details**:
 - Frontend: `useCookieConsent()` hook checks Zustand store before `ReactGA.initialize()`
-- Essential cookies: `augeo_session`, `augeo_csrf`, `augeo_cookie_consent_status` (exempt from consent)
+- Essential cookies: `fundrbolt_session`, `fundrbolt_csrf`, `fundrbolt_cookie_consent_status` (exempt from consent)
 - Analytics cookies: Google Analytics 4 with consent mode integration
 - Marketing cookies: Facebook Pixel, LinkedIn Insight with conditional loading
 - Cookie banner dismissal without choice = reject all (safest default)
@@ -193,7 +193,7 @@
 **Consider adding**:
 - **react-cookie-consent**: Pre-built cookie banner component (MIT license)
   - **Alternative**: Build custom component for full control over UX
-  - **Decision**: Build custom component to match Augeo branding and UX requirements
+  - **Decision**: Build custom component to match Fundrbolt branding and UX requirements
 
 ### Testing Dependencies
 

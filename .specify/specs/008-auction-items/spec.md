@@ -6,7 +6,7 @@
 
 ## Overview
 
-Add comprehensive auction item management capabilities to the Augeo platform, enabling event organizers to create, manage, and display auction items for both live and silent auctions. This feature supports rich media uploads, detailed item information, sponsor attribution, and automated bid number assignment.
+Add comprehensive auction item management capabilities to the Fundrbolt platform, enabling event organizers to create, manage, and display auction items for both live and silent auctions. This feature supports rich media uploads, detailed item information, sponsor attribution, and automated bid number assignment.
 
 ## User Story
 

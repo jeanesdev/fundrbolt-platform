@@ -182,7 +182,7 @@ Test data: **5 published testimonials** available (2 donors, 2 NPO admins, 1 auc
 2. Check `<head>` section
 
 **Expected Results**:
-- [ ] `<title>` tag: "What Our Community Says | Augeo"
+- [ ] `<title>` tag: "What Our Community Says | Fundrbolt"
 - [ ] Meta description present
 - [ ] Open Graph tags (og:title, og:description) if configured
 - [ ] Proper semantic HTML5 structure
@@ -207,7 +207,7 @@ print('Password: Check seed_test_users.py or reset password')
 ```
 
 **Default Test User** (from seed_test_users.py):
-- Email: `superadmin@augeo.app`
+- Email: `superadmin@fundrbolt.com`
 - Password: `SuperAdmin123!`
 
 ---
@@ -236,7 +236,7 @@ print('Password: Check seed_test_users.py or reset password')
 TOKEN=$(curl -s -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "superadmin@augeo.app",
+    "email": "superadmin@fundrbolt.com",
     "password": "SuperAdmin123!"
   }' | python3 -m json.tool | grep '"access_token"' | cut -d'"' -f4)
 

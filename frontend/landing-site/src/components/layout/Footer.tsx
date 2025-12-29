@@ -14,7 +14,7 @@ export const Footer = () => {
         <div className="footer-content">
           {/* Brand */}
           <div className="footer-section footer-brand">
-            <h3 className="footer-logo">Augeo</h3>
+            <h3 className="footer-logo">Fundrbolt</h3>
             <p className="footer-tagline">
               World-class fundraising software that maximizes nonprofit revenue
             </p>
@@ -54,7 +54,7 @@ export const Footer = () => {
         {/* Bottom bar */}
         <div className="footer-bottom">
           <p className="footer-copyright">
-            © {currentYear} Augeo. All rights reserved.
+            © {currentYear} Fundrbolt. All rights reserved.
           </p>
         </div>
       </div>

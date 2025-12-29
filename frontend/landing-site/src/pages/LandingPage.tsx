@@ -10,18 +10,18 @@ export const LandingPage = () => {
   return (
     <>
       <Helmet>
-        <title>Augeo - Fundraising Platform for Nonprofits</title>
+        <title>Fundrbolt - Fundraising Platform for Nonprofits</title>
         <meta
           name="description"
           content="World-class fundraising software that maximizes nonprofit revenue. Mobile bidding, real-time updates, and easy setup for your next gala or auction."
         />
-        <meta property="og:title" content="Augeo - Fundraising Platform for Nonprofits" />
+        <meta property="og:title" content="Fundrbolt - Fundraising Platform for Nonprofits" />
         <meta
           property="og:description"
           content="World-class fundraising software that maximizes nonprofit revenue."
         />
         <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://augeo.app" />
+        <link rel="canonical" href="https://fundrbolt.com" />
       </Helmet>
 
       {/* Hero Section */}
@@ -50,7 +50,7 @@ export const LandingPage = () => {
       {/* Features Section */}
       <section className="features">
         <div className="container">
-          <h2 className="section-title text-center">Why Choose Augeo?</h2>
+          <h2 className="section-title text-center">Why Choose Fundrbolt?</h2>
           <p className="section-subtitle text-center">
             Everything you need to run a successful fundraising event
           </p>

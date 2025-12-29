@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Augeo User Management API
+  title: Fundrbolt User Management API
   description: |
     User management endpoints for listing, creating, updating, and managing users and their roles.
 
@@ -11,15 +11,15 @@ info:
     - Staff/Donor: No access to user management
   version: 1.0.0
   contact:
-    name: Augeo Platform Team
-    email: support@augeo.app
+    name: Fundrbolt Platform Team
+    email: support@fundrbolt.com
 
 servers:
   - url: http://localhost:8000/api/v1
     description: Local development
-  - url: https://api.staging.augeo.app/v1
+  - url: https://api.staging.fundrbolt.com/v1
     description: Staging environment
-  - url: https://api.augeo.app/v1
+  - url: https://api.fundrbolt.com/v1
     description: Production environment
 
 tags:

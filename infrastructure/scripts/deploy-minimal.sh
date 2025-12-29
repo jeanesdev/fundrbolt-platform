@@ -56,7 +56,7 @@ fi
 
 echo ""
 echo "🚀 Deploying minimal infrastructure..."
-DEPLOYMENT_NAME="augeo-dev-minimal-$(date +%Y%m%d-%H%M%S)"
+DEPLOYMENT_NAME="fundrbolt-dev-minimal-$(date +%Y%m%d-%H%M%S)"
 
 az deployment sub create \
     --name "$DEPLOYMENT_NAME" \
@@ -91,7 +91,7 @@ if [ $? -eq 0 ]; then
     echo "   make dev-frontend"
     echo ""
     echo "5. View costs (should be <\$1/month):"
-    echo "   az costmanagement query --type ActualCost --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/augeo-dev-rg --timeframe MonthToDate"
+    echo "   az costmanagement query --type ActualCost --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/fundrbolt-dev-rg --timeframe MonthToDate"
     echo ""
 
 else

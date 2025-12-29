@@ -163,7 +163,7 @@ async def test_send_email_notification_success(
     call_args = mock_email_service._send_email_with_retry.call_args
 
     # Verify email parameters
-    assert call_args.kwargs["to_email"] == "support@augeo.app"
+    assert call_args.kwargs["to_email"] == "support@fundrbolt.com"
     assert "New Contact Form Submission" in call_args.kwargs["subject"]
     assert "Test Subject" in call_args.kwargs["subject"]
     assert "Test User" in call_args.kwargs["body"]

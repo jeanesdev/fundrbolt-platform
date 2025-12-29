@@ -1,4 +1,4 @@
-// Azure Cache for Redis module for Augeo Platform
+// Azure Cache for Redis module for Fundrbolt Platform
 
 @description('Name of the Redis cache')
 param redisCacheName string

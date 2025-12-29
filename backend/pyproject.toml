@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "augeo-backend"
+name = "fundrbolt-backend"
 version = "0.1.0"
-description = "Augeo Platform - Backend API"
-authors = ["Augeo Team <dev@augeo.app>"]
+description = "Fundrbolt Platform - Backend API"
+authors = ["Fundrbolt Team <dev@fundrbolt.com>"]
 readme = "README.md"
 packages = [{include = "app"}]
 
