@@ -75,18 +75,18 @@ description: "Implementation tasks for Table Details Management feature"
 - [x] T024 [US1] Modify PATCH /admin/events/{event_id}/guests/{guest_id}/seating endpoint to check capacity before assignment
 - [x] T025 [US1] Add 409 Conflict response for over-capacity in admin seating endpoint
 - [x] T026 [US1] Implement GET /admin/events/{event_id}/tables endpoint for seating page in backend/app/api/v1/endpoints/admin/seating.py
-- [ ] T027 [P] [US1] Create TableDetailsPanel component in frontend/fundrbolt-admin/src/components/admin/seating/TableDetailsPanel.tsx
-- [ ] T028 [P] [US1] Create TableCapacityTooltip component in frontend/fundrbolt-admin/src/components/admin/seating/TableCapacityTooltip.tsx
-- [ ] T029 [US1] Add capacity input field to TableDetailsPanel with 1-20 validation
-- [ ] T030 [US1] Add updateTableDetails API function in frontend/fundrbolt-admin/src/services/api/seating.ts
-- [ ] T031 [US1] Add fetchEventTables API function in frontend/fundrbolt-admin/src/services/api/seating.ts
-- [ ] T032 [US1] Integrate TableDetailsPanel with SeatingChartTable component (add popover trigger)
-- [ ] T033 [US1] Add capacity display to table cards in admin seating chart
-- [ ] T034 [US1] Disable "Assign to Table" button when table full, show TableCapacityTooltip
-- [ ] T035 [US1] Add optimistic update logic for capacity changes in admin UI
-- [ ] T036 [US1] Handle error responses (400, 404, 409, 422) in admin UI with user-friendly messages
+- [x] T027 [P] [US1] Create TableDetailsPanel component in frontend/fundrbolt-admin/src/components/admin/seating/TableDetailsPanel.tsx
+- [x] T028 [P] [US1] Create TableCapacityTooltip component in frontend/fundrbolt-admin/src/components/admin/seating/TableCapacityTooltip.tsx
+- [x] T029 [US1] Add capacity input field to TableDetailsPanel with 1-20 validation
+- [x] T030 [US1] Add updateTableDetails API function in frontend/fundrbolt-admin/src/services/api/seating.ts
+- [x] T031 [US1] Add fetchEventTables API function in frontend/fundrbolt-admin/src/services/api/seating.ts
+- [x] T032 [US1] Integrate TableDetailsPanel with SeatingChartTable component (add popover trigger)
+- [x] T033 [US1] Add capacity display to table cards in admin seating chart
+- [x] T034 [US1] Disable "Assign to Table" button when table full, show TableCapacityTooltip
+- [x] T035 [US1] Add optimistic update logic for capacity changes in admin UI
+- [x] T036 [US1] Handle error responses (400, 404, 409, 422) in admin UI with user-friendly messages
 
-**Checkpoint**: Custom table capacity fully functional - coordinators can set limits and system prevents over-assignment
+**Checkpoint**: Custom table capacity fully functional - coordinators can set limits and system prevents over-assignment ✅
 
 ---
 

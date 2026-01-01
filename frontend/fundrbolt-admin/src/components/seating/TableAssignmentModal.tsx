@@ -3,6 +3,7 @@
  *
  * Modal dialog for manually assigning a guest to a specific table via dropdown selection.
  * Provides an alternative to drag-and-drop for accessibility and precision.
+ * Feature 014: Updated to respect custom table capacities.
  */
 
 import { Button } from '@/components/ui/button'
@@ -22,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
+import type { EventTableDetails } from '@/services/seating-service'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -30,6 +32,7 @@ interface TableOption {
   currentOccupancy: number
   capacity: number
   isAvailable: boolean
+  tableName?: string | null
 }
 
 interface TableAssignmentModalProps {
@@ -39,6 +42,7 @@ interface TableAssignmentModalProps {
   tableCount: number
   maxGuestsPerTable: number
   tableOccupancy: Map<number, number>
+  tableDetails?: Map<number, EventTableDetails>
   onAssign: (guestId: string, tableNumber: number) => Promise<void>
 }
 
@@ -49,6 +53,7 @@ export function TableAssignmentModal({
   tableCount,
   maxGuestsPerTable,
   tableOccupancy,
+  tableDetails,
   onAssign,
 }: TableAssignmentModalProps) {
   const [selectedTable, setSelectedTable] = useState<string>('')
@@ -60,13 +65,18 @@ export function TableAssignmentModal({
     (_, i) => {
       const tableNumber = i + 1
       const currentOccupancy = tableOccupancy.get(tableNumber) || 0
-      const isAvailable = currentOccupancy < maxGuestsPerTable
+
+      // Use effective capacity from tableDetails if available (Feature 014)
+      const detail = tableDetails?.get(tableNumber)
+      const capacity = detail?.effective_capacity ?? maxGuestsPerTable
+      const isAvailable = currentOccupancy < capacity
 
       return {
         tableNumber,
         currentOccupancy,
-        capacity: maxGuestsPerTable,
+        capacity,
         isAvailable,
+        tableName: detail?.table_name,
       }
     }
   )
@@ -129,7 +139,10 @@ export function TableAssignmentModal({
                     disabled={!table.isAvailable}
                   >
                     <div className="flex items-center justify-between w-full gap-2">
-                      <span>Table {table.tableNumber}</span>
+                      <span>
+                        Table {table.tableNumber}
+                        {table.tableName && ` - ${table.tableName}`}
+                      </span>
                       <span
                         className={`text-xs ${table.isAvailable
                           ? 'text-muted-foreground'

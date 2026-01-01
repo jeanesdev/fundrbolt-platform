@@ -5,6 +5,7 @@
  * Can be used both as a standalone page and within a tab.
  */
 
+import { TableDetailsPanel } from '@/components/admin/seating/TableDetailsPanel'
 import { AutoAssignButton } from '@/components/seating/AutoAssignButton'
 import { GuestCard } from '@/components/seating/GuestCard'
 import { SeatingLayoutModal } from '@/components/seating/SeatingLayoutModal'
@@ -14,6 +15,7 @@ import { UnassignedSection } from '@/components/seating/UnassignedSection'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
+import type { EventTableDetails } from '@/services/seating-service'
 import { useSeatingStore } from '@/stores/seating.store'
 import {
   DndContext,
@@ -49,9 +51,12 @@ export function SeatingTabContent({
   const [selectedGuest, setSelectedGuest] = useState<GuestSeatingInfo | null>(
     null
   )
+  const [detailsPanelOpen, setDetailsPanelOpen] = useState(false)
+  const [selectedTableNumber, setSelectedTableNumber] = useState<number | null>(null)
 
   const {
     tables,
+    tableDetails,
     unassignedGuests,
     isLoading,
     tableCount,
@@ -61,6 +66,7 @@ export function SeatingTabContent({
     assignGuestToTable,
     removeGuestFromTable,
     setDragging,
+    updateTableCustomization,
   } = useSeatingStore()
 
   // Initialize sensors for drag-and-drop
@@ -167,6 +173,17 @@ export function SeatingTabContent({
 
   const handleModalAssign = async (guestId: string, tableNumber: number) => {
     await assignGuestToTable(guestId, tableNumber)
+  }
+
+  const handleEditTable = (tableNumber: number) => {
+    setSelectedTableNumber(tableNumber)
+    setDetailsPanelOpen(true)
+  }
+
+  const handleTableUpdate = async (_updatedTable: EventTableDetails) => {
+    // Optimistic update is handled by the store via updateTableCustomization
+    // Just close the panel
+    setDetailsPanelOpen(false)
   }
 
   // Calculate table occupancy for modal
@@ -284,6 +301,8 @@ export function SeatingTabContent({
                     tableNumber={table.number}
                     guests={table.guests}
                     maxCapacity={maxGuestsPerTable}
+                    tableDetails={tableDetails.get(table.number)}
+                    onEditTable={handleEditTable}
                   />
                 ))}
               </div>
@@ -313,6 +332,7 @@ export function SeatingTabContent({
         tableCount={tableCount}
         maxGuestsPerTable={maxGuestsPerTable}
         tableOccupancy={tableOccupancy}
+        tableDetails={tableDetails}
         onAssign={handleModalAssign}
       />
 
@@ -327,6 +347,15 @@ export function SeatingTabContent({
             onLayoutImageUpdate(url)
           }
         }}
+      />
+
+      {/* Table Details Panel (Feature 014) */}
+      <TableDetailsPanel
+        eventId={eventId}
+        table={selectedTableNumber ? tableDetails.get(selectedTableNumber) ?? null : null}
+        isOpen={detailsPanelOpen}
+        onClose={() => setDetailsPanelOpen(false)}
+        onUpdate={handleTableUpdate}
       />
     </DndContext>
   )

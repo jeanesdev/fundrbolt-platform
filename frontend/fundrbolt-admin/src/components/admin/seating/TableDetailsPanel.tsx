@@ -17,7 +17,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { updateTableDetails, type EventTableDetails } from '@/services/seating-service'
 import { Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface TableDetailsPanelProps {
   eventId: string
@@ -40,12 +40,12 @@ export function TableDetailsPanel({
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Reset form when table changes
-  useState(() => {
+  useEffect(() => {
     if (table) {
       setCustomCapacity(table.custom_capacity?.toString() ?? '')
       setTableName(table.table_name ?? '')
     }
-  })
+  }, [table])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
