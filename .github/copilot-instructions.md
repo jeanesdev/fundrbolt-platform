@@ -27,6 +27,7 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Embla Carousel with autoplay for sponsor carousels (011-donor-pwa-event)
 - Python 3.11+ (backend), TypeScript 5.x (frontend), Bash/YAML (infrastructure) + FastAPI, React, Vite, SQLAlchemy, Pydantic, Azure CLI, Bicep, GitHub Actions (013-fundrbolt-to-fundrbolt)
 - Azure Database for PostgreSQL, Azure Blob Storage (013-fundrbolt-to-fundrbolt)
+- Azure Database for PostgreSQL (existing tables: events, registration_guests; new table: event_tables) (014-table-details-management)
 
 ## Project Structure
 ```
@@ -111,9 +112,9 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 014-table-details-management: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, Alembic (Backend); React 18, Vite, TanStack Router, Zustand, Radix UI (Frontend)
 - 013-fundrbolt-to-fundrbolt: Added Python 3.11+ (backend), TypeScript 5.x (frontend), Bash/YAML (infrastructure) + FastAPI, React, Vite, SQLAlchemy, Pydantic, Azure CLI, Bicep, GitHub Actions
 - 012-seating-assignment: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, Alembic (Backend); React 18, Vite, TanStack Router, Zustand, Radix UI (Frontend)
-- 011-donor-pwa-event: Added TypeScript 5.x (Frontend), Python 3.11+ (Backend) + React 18, Vite, TanStack Router, Radix UI, Tailwind CSS 4, FastAPI, SQLAlchemy 2.0
   - ✅ Password change page: `/settings/password` route with PasswordChangeForm component
   - ✅ Settings menu: Added Password menu item with KeyRound icon
   - ✅ User list pagination: Server-side pagination with proper page count from API
