@@ -7,6 +7,10 @@ backend/static/uploads/
 node_modules/
 **/node_modules/
 
+# Vite cache
+.vite/
+**/.vite/
+
 # Python
 __pycache__/
 *.py[cod]
