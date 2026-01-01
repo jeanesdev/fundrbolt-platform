@@ -6,6 +6,7 @@ from app.models.base import Base, TimestampMixin, UUIDMixin
 from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
 from app.models.event import Event, EventLink, EventMedia, FoodOption
 from app.models.event_registration import EventRegistration, RegistrationStatus
+from app.models.event_table import EventTable
 from app.models.invitation import Invitation
 from app.models.legal_document import LegalDocument
 from app.models.meal_selection import MealSelection
@@ -31,6 +32,7 @@ __all__ = [
     "EventLink",
     "EventMedia",
     "EventRegistration",
+    "EventTable",
     "FoodOption",
     "Invitation",
     "LegalDocument",

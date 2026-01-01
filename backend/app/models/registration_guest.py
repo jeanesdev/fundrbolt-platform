@@ -13,6 +13,7 @@ from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from app.models.event_registration import EventRegistration
+    from app.models.event_table import EventTable
     from app.models.meal_selection import MealSelection
     from app.models.user import User
 
@@ -100,6 +101,14 @@ class RegistrationGuest(Base, UUIDMixin, TimestampMixin):
         comment="Timestamp of initial bidder number assignment (for audit trail)",
     )
 
+    # Table Captain Field (Feature 014)
+    is_table_captain: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        comment="Whether this guest is designated as captain of their assigned table",
+    )
+
     # Relationships
     registration: Mapped["EventRegistration"] = relationship(
         "EventRegistration",
@@ -110,6 +119,13 @@ class RegistrationGuest(Base, UUIDMixin, TimestampMixin):
         "MealSelection",
         back_populates="guest",
         cascade="all, delete-orphan",
+    )
+    # Feature 014: Relationship to table where this guest is captain
+    captained_table: Mapped["EventTable | None"] = relationship(
+        "EventTable",
+        back_populates="captain",
+        foreign_keys="EventTable.table_captain_id",
+        uselist=False,
     )
 
     # Computed Properties (Feature 012)

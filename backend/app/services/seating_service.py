@@ -27,7 +27,7 @@ class SeatingService:
 
         Checks:
         - Table number is within configured range
-        - Table has enough capacity for guests
+        - Table has enough capacity for guests (Feature 014: Uses effective_capacity)
 
         Args:
             db: Database session
@@ -54,16 +54,13 @@ class SeatingService:
                 f"Event has {event.table_count} tables."
             )
 
-        # Check current table occupancy
-        current_occupancy = await SeatingService.get_table_occupancy(db, event_id, table_number)
+        # Feature 014: Use validate_table_capacity for capacity checks
+        is_valid, error_message = await SeatingService.validate_table_capacity(
+            db, event_id, table_number, guest_count
+        )
 
-        # Check if table has capacity
-        available_capacity = event.max_guests_per_table - current_occupancy
-        if guest_count > available_capacity:
-            raise ValueError(
-                f"Table {table_number} is at or near capacity. "
-                f"Available: {available_capacity}, Requested: {guest_count}"
-            )
+        if not is_valid:
+            raise ValueError(error_message)
 
     @staticmethod
     async def get_table_occupancy(
@@ -444,4 +441,260 @@ class SeatingService:
             "table_capacity": table_capacity,
             "has_table_assignment": has_table_assignment,
             "message": message,
+        }
+
+    # Feature 014: Table Customization Methods (T018-T020)
+
+    @staticmethod
+    async def get_effective_capacity(
+        db: AsyncSession,
+        event_id: UUID,
+        table_number: int,
+    ) -> int:
+        """
+        Get effective capacity for a table (custom or event default).
+
+        Args:
+            db: Database session
+            event_id: Event UUID
+            table_number: Table number
+
+        Returns:
+            int: Effective capacity (custom_capacity if set, else event.max_guests_per_table)
+        """
+        from app.models.event_table import EventTable
+
+        # Try to get EventTable with custom capacity
+        table_query = select(EventTable).where(
+            EventTable.event_id == event_id,
+            EventTable.table_number == table_number,
+        )
+        table_result = await db.execute(table_query)
+        event_table = table_result.scalar_one_or_none()
+
+        if event_table and event_table.custom_capacity is not None:
+            return event_table.custom_capacity
+
+        # Fall back to event default
+        event_query = select(Event).where(Event.id == event_id)
+        event_result = await db.execute(event_query)
+        event = event_result.scalar_one()
+
+        if event.max_guests_per_table is None:
+            return 0
+        return event.max_guests_per_table
+
+    @staticmethod
+    async def validate_table_capacity(
+        db: AsyncSession,
+        event_id: UUID,
+        table_number: int,
+        additional_guests: int = 1,
+    ) -> tuple[bool, str | None]:
+        """
+        Validate if table has capacity for additional guests.
+
+        Args:
+            db: Database session
+            event_id: Event UUID
+            table_number: Table number
+            additional_guests: Number of guests to add (default 1)
+
+        Returns:
+            tuple[bool, str | None]: (is_valid, error_message)
+                - (True, None) if capacity available
+                - (False, error_message) if table full
+        """
+        effective_capacity = await SeatingService.get_effective_capacity(db, event_id, table_number)
+        current_occupancy = await SeatingService.get_table_occupancy(db, event_id, table_number)
+
+        available = effective_capacity - current_occupancy
+        if additional_guests > available:
+            from app.models.event_table import EventTable
+
+            # Get table name for error message
+            table_query = select(EventTable).where(
+                EventTable.event_id == event_id,
+                EventTable.table_number == table_number,
+            )
+            result = await db.execute(table_query)
+            event_table = result.scalar_one_or_none()
+
+            table_name = event_table.table_name if event_table else None
+            table_display = (
+                f"Table {table_number} - {table_name}" if table_name else f"Table {table_number}"
+            )
+
+            return (
+                False,
+                f"{table_display} is full ({current_occupancy}/{effective_capacity} seats)",
+            )
+
+        return (True, None)
+
+    @staticmethod
+    async def validate_captain_assignment(
+        db: AsyncSession,
+        event_id: UUID,
+        table_number: int,
+        captain_id: UUID,
+    ) -> tuple[bool, str | None]:
+        """
+        Validate that a guest can be assigned as table captain.
+
+        Checks:
+        - Guest exists and belongs to this event
+        - Guest is assigned to the specified table
+
+        Args:
+            db: Database session
+            event_id: Event UUID
+            table_number: Table number
+            captain_id: Guest UUID to validate
+
+        Returns:
+            tuple[bool, str | None]: (is_valid, error_message)
+                - (True, None) if valid
+                - (False, error_message) if invalid
+        """
+        # Get guest
+        guest_query = (
+            select(RegistrationGuest)
+            .join(EventRegistration)
+            .where(
+                EventRegistration.event_id == event_id,
+                RegistrationGuest.id == captain_id,
+            )
+        )
+        result = await db.execute(guest_query)
+        guest = result.scalar_one_or_none()
+
+        if not guest:
+            return (False, "Captain must be a guest at this event")
+
+        if guest.table_number != table_number:
+            return (
+                False,
+                f"Captain must be assigned to this table (currently at table {guest.table_number})",
+            )
+
+        return (True, None)
+
+    @staticmethod
+    async def update_table_details(
+        db: AsyncSession,
+        event_id: UUID,
+        table_number: int,
+        custom_capacity: int | None = None,
+        table_name: str | None = None,
+        table_captain_id: UUID | None = None,
+    ) -> dict[str, Any]:
+        """
+        Update table customization details (capacity, name, captain).
+
+        Args:
+            db: Database session
+            event_id: Event UUID
+            table_number: Table number
+            custom_capacity: Custom capacity (1-20) or None
+            table_name: Friendly table name or None
+            table_captain_id: Captain guest UUID or None
+
+        Returns:
+            dict: Updated table details with occupancy info
+
+        Raises:
+            ValueError: If validation fails
+        """
+        from app.models.event_table import EventTable
+
+        # Get or create EventTable record
+        table_query = select(EventTable).where(
+            EventTable.event_id == event_id,
+            EventTable.table_number == table_number,
+        )
+        result = await db.execute(table_query)
+        event_table = result.scalar_one_or_none()
+
+        if not event_table:
+            # Create new EventTable record (should exist from migration)
+            event_table = EventTable(
+                event_id=event_id,
+                table_number=table_number,
+                custom_capacity=custom_capacity,
+                table_name=table_name,
+                table_captain_id=table_captain_id,
+            )
+            db.add(event_table)
+        else:
+            # Update existing record
+            if custom_capacity is not None or custom_capacity is False:
+                event_table.custom_capacity = custom_capacity
+            if table_name is not None or table_name is False:
+                event_table.table_name = table_name
+            if table_captain_id is not None or table_captain_id is False:
+                # Validate captain if provided
+                if table_captain_id:
+                    is_valid, error = await SeatingService.validate_captain_assignment(
+                        db, event_id, table_number, table_captain_id
+                    )
+                    if not is_valid:
+                        raise ValueError(error)
+
+                    # Clear is_table_captain from old captain
+                    if event_table.table_captain_id:
+                        old_captain_query = select(RegistrationGuest).where(
+                            RegistrationGuest.id == event_table.table_captain_id
+                        )
+                        old_captain_result = await db.execute(old_captain_query)
+                        old_captain = old_captain_result.scalar_one_or_none()
+                        if old_captain:
+                            old_captain.is_table_captain = False
+
+                    # Set is_table_captain for new captain
+                    new_captain_query = select(RegistrationGuest).where(
+                        RegistrationGuest.id == table_captain_id
+                    )
+                    new_captain_result = await db.execute(new_captain_query)
+                    new_captain = new_captain_result.scalar_one_or_none()
+                    if new_captain:
+                        new_captain.is_table_captain = True
+
+                event_table.table_captain_id = table_captain_id
+
+        await db.commit()
+        await db.refresh(event_table)
+
+        # Build response with occupancy info
+        effective_capacity = await SeatingService.get_effective_capacity(db, event_id, table_number)
+        current_occupancy = await SeatingService.get_table_occupancy(db, event_id, table_number)
+
+        # Get captain info if exists
+        captain_info = None
+        if event_table.table_captain_id:
+            captain_query = select(RegistrationGuest).where(
+                RegistrationGuest.id == event_table.table_captain_id
+            )
+            captain_result = await db.execute(captain_query)
+            captain = captain_result.scalar_one_or_none()
+            if captain:
+                captain_info = {
+                    "id": str(captain.id),
+                    "first_name": captain.name.split()[0] if captain.name else "",
+                    "last_name": " ".join(captain.name.split()[1:])
+                    if captain.name and len(captain.name.split()) > 1
+                    else "",
+                }
+
+        return {
+            "id": str(event_table.id),
+            "event_id": str(event_table.event_id),
+            "table_number": event_table.table_number,
+            "custom_capacity": event_table.custom_capacity,
+            "table_name": event_table.table_name,
+            "table_captain": captain_info,
+            "current_occupancy": current_occupancy,
+            "effective_capacity": effective_capacity,
+            "is_full": current_occupancy >= effective_capacity,
+            "updated_at": event_table.updated_at.isoformat(),
         }

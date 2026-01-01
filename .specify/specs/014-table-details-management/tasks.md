@@ -27,13 +27,13 @@ description: "Implementation tasks for Table Details Management feature"
 
 **Purpose**: Database schema and model setup for table customization
 
-- [ ] T001 Create Alembic migration for event_tables table in backend/alembic/versions/[timestamp]_add_table_customization.py
-- [ ] T002 Add is_table_captain field to registration_guests table in same migration file
-- [ ] T003 Add unique constraint (event_id, table_number) to event_tables in migration
-- [ ] T004 Add check constraints for capacity range (1-20) and non-empty table names in migration
-- [ ] T005 Add indexes: event_tables(event_id), event_tables(table_captain_id), registration_guests(table_number, is_table_captain)
-- [ ] T006 Create backfill data migration for existing events with table_count > 0
-- [ ] T007 Apply migration with `poetry run alembic upgrade head`
+- [x] T001 Create Alembic migration for event_tables table in backend/alembic/versions/[timestamp]_add_table_customization.py
+- [x] T002 Add is_table_captain field to registration_guests table in same migration file
+- [x] T003 Add unique constraint (event_id, table_number) to event_tables in migration
+- [x] T004 Add check constraints for capacity range (1-20) and non-empty table names in migration
+- [x] T005 Add indexes: event_tables(event_id), event_tables(table_captain_id), registration_guests(table_number, is_table_captain)
+- [x] T006 Create backfill data migration for existing events with table_count > 0
+- [x] T007 Apply migration with `poetry run alembic upgrade head`
 
 ---
 
@@ -43,19 +43,19 @@ description: "Implementation tasks for Table Details Management feature"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T008 [P] Create EventTable model in backend/app/models/event_table.py with all fields and relationships
-- [ ] T009 [P] Add is_table_captain field to RegistrationGuest model in backend/app/models/registration_guest.py
-- [ ] T010 [P] Add tables relationship to Event model in backend/app/models/event.py
-- [ ] T011 Export EventTable from backend/app/models/__init__.py
-- [ ] T012 [P] Create EventTableBase Pydantic schema in backend/app/schemas/event_table.py
-- [ ] T013 [P] Create EventTableUpdate schema with validators in backend/app/schemas/event_table.py
-- [ ] T014 [P] Create EventTableResponse schema in backend/app/schemas/event_table.py
-- [ ] T015 [P] Create TableCaptainSummary schema in backend/app/schemas/event_table.py
-- [ ] T016 [P] Add is_table_captain field to RegistrationGuestResponse schema in backend/app/schemas/registration_guest.py
-- [ ] T017 Create SeatingService class in backend/app/services/seating_service.py (if doesn't exist)
-- [ ] T018 Add get_effective_capacity method to SeatingService
-- [ ] T019 Add validate_table_capacity method to SeatingService
-- [ ] T020 Add validate_captain_assignment method to SeatingService
+- [x] T008 [P] Create EventTable model in backend/app/models/event_table.py with all fields and relationships
+- [x] T009 [P] Add is_table_captain field to RegistrationGuest model in backend/app/models/registration_guest.py
+- [x] T010 [P] Add tables relationship to Event model in backend/app/models/event.py
+- [x] T011 Export EventTable from backend/app/models/__init__.py
+- [x] T012 [P] Create EventTableBase Pydantic schema in backend/app/schemas/event_table.py
+- [x] T013 [P] Create EventTableUpdate schema with validators in backend/app/schemas/event_table.py
+- [x] T014 [P] Create EventTableResponse schema in backend/app/schemas/event_table.py
+- [x] T015 [P] Create TableCaptainSummary schema in backend/app/schemas/event_table.py
+- [x] T016 [P] Add is_table_captain field to RegistrationGuestResponse schema in backend/app/schemas/registration_guest.py
+- [x] T017 Create SeatingService class in backend/app/services/seating_service.py (if doesn't exist)
+- [x] T018 Add get_effective_capacity method to SeatingService
+- [x] T019 Add validate_table_capacity method to SeatingService
+- [x] T020 Add validate_captain_assignment method to SeatingService
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
