@@ -20,6 +20,8 @@ import { Separator } from '@/components/ui/separator';
 import { ChevronDown, ChevronUp, MapPin, Users } from 'lucide-react';
 import { useState } from 'react';
 import { BidderNumberBadge } from './BidderNumberBadge';
+import { TableAssignmentCard } from './TableAssignmentCard';
+import { TableCaptainBadge } from './TableCaptainBadge';
 import { TablemateCard } from './TablemateCard';
 
 interface MySeatingInfo {
@@ -38,6 +40,13 @@ interface TablemateInfo {
   profileImageUrl?: string | null;
 }
 
+interface TableAssignment {
+  tableNumber: number;
+  tableName: string | null;
+  captainFullName: string | null;
+  youAreCaptain: boolean;
+}
+
 interface SeatingInfoResponse {
   myInfo: MySeatingInfo;
   tablemates: TablemateInfo[];
@@ -47,6 +56,7 @@ interface SeatingInfoResponse {
   };
   hasTableAssignment: boolean;
   message?: string | null;
+  tableAssignment?: TableAssignment | null;
 }
 
 interface MySeatingProps {
@@ -55,7 +65,7 @@ interface MySeatingProps {
 
 export function MySeatingSection({ seatingInfo }: MySeatingProps) {
   const [isOpen, setIsOpen] = useState(true);
-  const { myInfo, tablemates, tableCapacity, hasTableAssignment, message } = seatingInfo;
+  const { myInfo, tablemates, tableCapacity, hasTableAssignment, message, tableAssignment } = seatingInfo;
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
@@ -88,18 +98,38 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
             {/* Table Assignment */}
             {hasTableAssignment && myInfo.tableNumber && (
               <div className="space-y-4">
-                {/* Table Number */}
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Table Number</p>
-                    <Badge variant="outline" className="text-lg font-semibold px-4 py-1 mt-1">
-                      Table {myInfo.tableNumber}
-                    </Badge>
-                  </div>
-                </div>
+                {/* Table Customization Details (T063-T067) */}
+                {tableAssignment && (
+                  <>
+                    <TableAssignmentCard
+                      tableNumber={tableAssignment.tableNumber}
+                      tableName={tableAssignment.tableName}
+                      currentOccupancy={tableCapacity.current}
+                      maxCapacity={tableCapacity.max}
+                    />
+                    <TableCaptainBadge
+                      captainFullName={tableAssignment.captainFullName}
+                      youAreCaptain={tableAssignment.youAreCaptain}
+                    />
+                    <Separator />
+                  </>
+                )}
 
-                <Separator />
+                {/* Fallback to basic table number if no customization (T068) */}
+                {!tableAssignment && (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <MapPin className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Table Number</p>
+                        <Badge variant="outline" className="text-lg font-semibold px-4 py-1 mt-1">
+                          Table {myInfo.tableNumber}
+                        </Badge>
+                      </div>
+                    </div>
+                    <Separator />
+                  </>
+                )}
 
                 {/* Bidder Number */}
                 <BidderNumberBadge

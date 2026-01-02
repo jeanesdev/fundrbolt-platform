@@ -1,5 +1,6 @@
 """Seating assignment and table management service."""
 
+import logging
 from datetime import UTC
 from typing import Any
 from uuid import UUID
@@ -11,6 +12,8 @@ from sqlalchemy.orm import selectinload
 from app.models.event import Event
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.registration_guest import RegistrationGuest
+
+logger = logging.getLogger(__name__)
 
 
 class SeatingService:
@@ -337,162 +340,190 @@ class SeatingService:
         Raises:
             ValueError: If user has no registration for this event
         """
-        # Get user's registration with relationships
-        registration_query = (
-            select(EventRegistration)
-            .options(
-                selectinload(EventRegistration.guests),
-                selectinload(EventRegistration.event),
-            )
-            .where(
-                EventRegistration.user_id == user_id,
-                EventRegistration.event_id == event_id,
-            )
-        )
-        result = await db.execute(registration_query)
-        registration = result.scalar_one_or_none()
+        logger.info(f"Fetching seating info for user={user_id}, event={event_id}")
 
-        if not registration:
-            raise ValueError(f"User {user_id} has no registration for event {event_id}")
-
-        # Find user's guest record (first guest or guest linked to user)
-        my_guest = next(
-            (g for g in registration.guests if g.user_id == user_id),
-            registration.guests[0] if registration.guests else None,
-        )
-
-        if not my_guest:
-            raise ValueError(f"No guest record found for user {user_id} at event {event_id}")
-
-        # Check if user is checked in
-        is_checked_in = registration.check_in_time is not None
-
-        # Build my_info (hide bidder number if not checked in)
-        from app.schemas.seating import MySeatingInfo
-
-        my_info = MySeatingInfo(
-            guest_id=my_guest.id,
-            full_name=my_guest.name,
-            bidder_number=my_guest.bidder_number if is_checked_in else None,
-            table_number=my_guest.table_number,
-            checked_in=is_checked_in,
-        )
-
-        # Get tablemates if table assigned
-        tablemates = []
-        table_capacity = {"current": 0, "max": 0}
-        table_assignment = None
-        has_table_assignment = my_guest.table_number is not None
-
-        if has_table_assignment and my_guest.table_number is not None:
-            # Get all guests at the same table (excluding self)
-            tablemates_query = (
-                select(RegistrationGuest)
-                .join(EventRegistration)
+        try:
+            # Get user's registration with relationships
+            registration_query = (
+                select(EventRegistration)
+                .options(
+                    selectinload(EventRegistration.guests),
+                    selectinload(EventRegistration.event),
+                )
                 .where(
+                    EventRegistration.user_id == user_id,
                     EventRegistration.event_id == event_id,
-                    RegistrationGuest.table_number == my_guest.table_number,
-                    RegistrationGuest.id != my_guest.id,
                 )
             )
-            tablemates_result = await db.execute(tablemates_query)
-            tablemate_guests = tablemates_result.scalars().all()
+            result = await db.execute(registration_query)
+            registration = result.scalar_one_or_none()
 
-            # Build tablemate info (show bidder numbers only for checked-in guests)
-            from app.schemas.seating import TablemateInfo
+            if not registration:
+                logger.warning(f"No registration found for user={user_id}, event={event_id}")
+                raise ValueError(f"User {user_id} has no registration for event {event_id}")
 
-            for tm_guest in tablemate_guests:
-                # Get registration to check check-in status
-                tm_reg_query = select(EventRegistration).where(
-                    EventRegistration.id == tm_guest.registration_id
+            # Find user's guest record (first guest or guest linked to user)
+            my_guest = next(
+                (g for g in registration.guests if g.user_id == user_id),
+                registration.guests[0] if registration.guests else None,
+            )
+
+            if not my_guest:
+                logger.error(
+                    f"No guest record found for user={user_id}, event={event_id}, registration={registration.id}"
                 )
-                tm_reg_result = await db.execute(tm_reg_query)
-                tm_registration = tm_reg_result.scalar_one()
+                raise ValueError(f"No guest record found for user {user_id} at event {event_id}")
 
-                tm_is_checked_in = tm_registration.check_in_time is not None
+            # Check if user is checked in
+            is_checked_in = registration.check_in_time is not None
 
-                tablemates.append(
-                    TablemateInfo(
-                        guest_id=tm_guest.id,
-                        name=tm_guest.name,
-                        bidder_number=tm_guest.bidder_number if tm_is_checked_in else None,
-                        company=None,  # TODO: Add company field to guest model if needed
-                        profile_image_url=None,  # TODO: Add profile image URL if available
+            # Build my_info (hide bidder number if not checked in)
+            from app.schemas.seating import MySeatingInfo
+
+            my_info = MySeatingInfo(
+                guest_id=my_guest.id,
+                full_name=my_guest.name,
+                bidder_number=my_guest.bidder_number if is_checked_in else None,
+                table_number=my_guest.table_number,
+                checked_in=is_checked_in,
+            )
+
+            # Get tablemates if table assigned
+            tablemates = []
+            table_capacity = {"current": 0, "max": 0}
+            table_assignment = None
+            has_table_assignment = my_guest.table_number is not None
+
+            if has_table_assignment and my_guest.table_number is not None:
+                # Get all guests at the same table (excluding self)
+                tablemates_query = (
+                    select(RegistrationGuest)
+                    .join(EventRegistration)
+                    .where(
+                        EventRegistration.event_id == event_id,
+                        RegistrationGuest.table_number == my_guest.table_number,
+                        RegistrationGuest.id != my_guest.id,
                     )
                 )
+                tablemates_result = await db.execute(tablemates_query)
+                tablemate_guests = tablemates_result.scalars().all()
 
-            # Get table capacity using effective capacity (Feature 014)
-            current_occupancy = await SeatingService.get_table_occupancy(
-                db, event_id, my_guest.table_number
+                # Build tablemate info (show bidder numbers only for checked-in guests)
+                from app.schemas.seating import TablemateInfo
+
+                for tm_guest in tablemate_guests:
+                    # Get registration to check check-in status
+                    tm_reg_query = select(EventRegistration).where(
+                        EventRegistration.id == tm_guest.registration_id
+                    )
+                    tm_reg_result = await db.execute(tm_reg_query)
+                    tm_registration = tm_reg_result.scalar_one()
+
+                    tm_is_checked_in = tm_registration.check_in_time is not None
+
+                    tablemates.append(
+                        TablemateInfo(
+                            guest_id=tm_guest.id,
+                            name=tm_guest.name,
+                            bidder_number=tm_guest.bidder_number if tm_is_checked_in else None,
+                            company=None,  # TODO: Add company field to guest model if needed
+                            profile_image_url=None,  # TODO: Add profile image URL if available
+                        )
+                    )
+
+                # Get table capacity using effective capacity (Feature 014)
+                current_occupancy = await SeatingService.get_table_occupancy(
+                    db, event_id, my_guest.table_number
+                )
+                effective_capacity = await SeatingService.get_effective_capacity(
+                    db, event_id, my_guest.table_number
+                )
+                table_capacity = {
+                    "current": current_occupancy,
+                    "max": effective_capacity,
+                }
+
+                # Get table customization details (Feature 014: US4)
+                # Only show after event has started
+                from datetime import datetime
+
+                event_has_started = (
+                    registration.event.event_datetime is not None
+                    and registration.event.event_datetime <= datetime.now(UTC)
+                )
+
+                if event_has_started:
+                    logger.debug(f"Event {event_id} has started, fetching table customization")
+                    from app.models.event_table import EventTable
+                    from app.schemas.seating import TableAssignment
+
+                    table_query = select(EventTable).where(
+                        EventTable.event_id == event_id,
+                        EventTable.table_number == my_guest.table_number,
+                    )
+                    table_result = await db.execute(table_query)
+                    event_table = table_result.scalar_one_or_none()
+
+                    if event_table:
+                        # Get captain info if exists
+                        captain_name = None
+                        you_are_captain = False
+
+                        if event_table.table_captain_id:
+                            if event_table.table_captain_id == my_guest.id:
+                                you_are_captain = True
+                                captain_name = my_guest.name
+                                logger.debug(
+                                    f"User {user_id} is captain of table {my_guest.table_number}"
+                                )
+                            else:
+                                captain_query = select(RegistrationGuest).where(
+                                    RegistrationGuest.id == event_table.table_captain_id
+                                )
+                                captain_result = await db.execute(captain_query)
+                                captain = captain_result.scalar_one_or_none()
+                                if captain:
+                                    captain_name = captain.name
+                                    logger.debug(
+                                        f"Table {my_guest.table_number} captain: {captain_name}"
+                                    )
+
+                        table_assignment = TableAssignment(
+                            table_number=my_guest.table_number,
+                            table_name=event_table.table_name,
+                            captain_full_name=captain_name,
+                            you_are_captain=you_are_captain,
+                        )
+                else:
+                    logger.debug(
+                        f"Event {event_id} has not started yet, hiding table customization"
+                    )
+
+            # Generate message if needed
+            message = None
+            if not has_table_assignment:
+                message = "Your table assignment is pending. Please check back later."
+            elif not is_checked_in:
+                message = "Check in at the event to see your bidder number."
+            logger.info(
+                f"Seating info retrieved for user={user_id}, table={my_guest.table_number}, checked_in={is_checked_in}"
             )
-            effective_capacity = await SeatingService.get_effective_capacity(
-                db, event_id, my_guest.table_number
-            )
-            table_capacity = {
-                "current": current_occupancy,
-                "max": effective_capacity,
+
+            return {
+                "my_info": my_info,
+                "tablemates": tablemates,
+                "table_capacity": table_capacity,
+                "table_assignment": table_assignment,
+                "has_table_assignment": has_table_assignment,
+                "message": message,
             }
 
-            # Get table customization details (Feature 014: US4)
-            # Only show after event has started
-            from datetime import datetime
-
-            event_has_started = (
-                registration.event.event_datetime is not None
-                and registration.event.event_datetime <= datetime.now(UTC)
+        except Exception as e:
+            logger.error(
+                f"Error fetching seating info for user={user_id}, event={event_id}: {str(e)}",
+                exc_info=True,
             )
-
-            if event_has_started:
-                from app.models.event_table import EventTable
-                from app.schemas.seating import TableAssignment
-
-                table_query = select(EventTable).where(
-                    EventTable.event_id == event_id,
-                    EventTable.table_number == my_guest.table_number,
-                )
-                table_result = await db.execute(table_query)
-                event_table = table_result.scalar_one_or_none()
-
-                if event_table:
-                    # Get captain info if exists
-                    captain_name = None
-                    you_are_captain = False
-
-                    if event_table.table_captain_id:
-                        if event_table.table_captain_id == my_guest.id:
-                            you_are_captain = True
-                            captain_name = my_guest.name
-                        else:
-                            captain_query = select(RegistrationGuest).where(
-                                RegistrationGuest.id == event_table.table_captain_id
-                            )
-                            captain_result = await db.execute(captain_query)
-                            captain = captain_result.scalar_one_or_none()
-                            if captain:
-                                captain_name = captain.name
-
-                    table_assignment = TableAssignment(
-                        table_number=my_guest.table_number,
-                        table_name=event_table.table_name,
-                        captain_full_name=captain_name,
-                        you_are_captain=you_are_captain,
-                    )
-
-        # Generate message if needed
-        message = None
-        if not has_table_assignment:
-            message = "Your table assignment is pending. Please check back later."
-        elif not is_checked_in:
-            message = "Check in at the event to see your bidder number."
-
-        return {
-            "my_info": my_info,
-            "tablemates": tablemates,
-            "table_capacity": table_capacity,
-            "table_assignment": table_assignment,
-            "has_table_assignment": has_table_assignment,
-            "message": message,
-        }
+            raise
 
     # Feature 014: Table Customization Methods (T018-T020)
 

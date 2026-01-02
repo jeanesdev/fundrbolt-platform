@@ -22,6 +22,13 @@ export interface TablemateInfo {
   profileImageUrl?: string | null;
 }
 
+export interface TableAssignment {
+  tableNumber: number;
+  tableName: string | null;
+  captainFullName: string | null;
+  youAreCaptain: boolean;
+}
+
 export interface SeatingInfoResponse {
   myInfo: MySeatingInfo;
   tablemates: TablemateInfo[];
@@ -31,6 +38,7 @@ export interface SeatingInfoResponse {
   };
   hasTableAssignment: boolean;
   message?: string | null;
+  tableAssignment?: TableAssignment | null;
 }
 
 /**
