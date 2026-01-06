@@ -54,6 +54,11 @@ class AuditEventType(str, Enum):
     AUCTION_ITEM_DELETED = "auction_item_deleted"
     AUCTION_ITEM_PUBLISHED = "auction_item_published"
     AUCTION_ITEM_WITHDRAWN = "auction_item_withdrawn"
+    # Table customization events (Feature 014)
+    TABLE_CAPACITY_CHANGED = "table_capacity_changed"
+    TABLE_NAME_CHANGED = "table_name_changed"
+    TABLE_CAPTAIN_ASSIGNED = "table_captain_assigned"
+    TABLE_CAPTAIN_REMOVED = "table_captain_removed"
 
 
 class AuditService:
@@ -1131,6 +1136,78 @@ class AuditService:
                 "title": title,
                 "is_soft_delete": is_soft_delete,
                 "deleted_by_user_id": str(deleted_by_user_id),
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+    @staticmethod
+    async def log_table_customization_change(
+        db: AsyncSession,
+        event_id: uuid.UUID,
+        table_number: int,
+        admin_user_id: uuid.UUID,
+        admin_email: str,
+        change_type: str,  # "capacity", "name", "captain"
+        old_value: Any | None,
+        new_value: Any | None,
+        ip_address: str | None = None,
+    ) -> None:
+        """Log table customization changes (capacity, name, captain) - Feature 014 T078.
+
+        Args:
+            db: Database session for persisting audit log
+            event_id: UUID of the event
+            table_number: Table number being customized
+            admin_user_id: UUID of admin making the change
+            admin_email: Email of admin making the change
+            change_type: Type of change ("capacity", "name", "captain")
+            old_value: Previous value (None if first time setting)
+            new_value: New value (None if clearing)
+            ip_address: Optional IP address of admin
+        """
+        from app.models.audit_log import AuditLog
+
+        # Map change_type to audit event type
+        action_map = {
+            "capacity": "table_capacity_changed",
+            "name": "table_name_changed",
+            "captain_assigned": "table_captain_assigned",
+            "captain_removed": "table_captain_removed",
+        }
+        action = action_map.get(change_type, "table_capacity_changed")
+
+        # Create database record
+        audit_log = AuditLog(
+            user_id=admin_user_id,
+            action=action,
+            resource_type="event_table",
+            resource_id=event_id,
+            ip_address=ip_address or "unknown",
+            user_agent=None,
+            event_metadata={
+                "event_id": str(event_id),
+                "table_number": table_number,
+                "admin_email": admin_email,
+                "change_type": change_type,
+                "old_value": str(old_value) if old_value is not None else None,
+                "new_value": str(new_value) if new_value is not None else None,
+            },
+        )
+        db.add(audit_log)
+        await db.commit()
+
+        # Also log to structured logger
+        logger.info(
+            f"Table customization changed: {change_type}",
+            extra={
+                "event_type": action,
+                "event_id": str(event_id),
+                "table_number": table_number,
+                "admin_user_id": str(admin_user_id),
+                "admin_email": admin_email,
+                "change_type": change_type,
+                "old_value": old_value,
+                "new_value": new_value,
                 "timestamp": datetime.utcnow().isoformat(),
             },
         )

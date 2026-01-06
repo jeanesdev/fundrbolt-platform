@@ -166,7 +166,7 @@ class TestSeatingService:
         await db_session.refresh(guest3)
 
         # Try to assign guest3 to full table 5
-        with pytest.raises(ValueError, match="Table 5 is at or near capacity"):
+        with pytest.raises(ValueError, match=r"Table 5 is full \(\d+/\d+ seats\)"):
             await SeatingService.assign_guest_to_table(
                 db_session, test_active_event.id, guest3.id, 5
             )

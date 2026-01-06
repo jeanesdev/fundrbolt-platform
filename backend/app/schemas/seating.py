@@ -157,6 +157,10 @@ class GuestSeatingInfo(BaseModel):
     checked_in: bool
     is_guest_of_primary: bool  # True if this is a guest of the primary registrant
     primary_registrant_name: str | None  # Name of the primary registrant if this is a guest
+    is_table_captain: bool = Field(
+        default=False,
+        description="Whether this guest is designated as table captain (Feature 014)",
+    )
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -222,6 +226,17 @@ class MySeatingInfo(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class TableAssignment(BaseModel):
+    """Table assignment details for donor view (Feature 014: US4)."""
+
+    table_number: int
+    table_name: str | None
+    captain_full_name: str | None
+    you_are_captain: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class TableCapacityInfo(BaseModel):
     """Table capacity information."""
 
@@ -243,6 +258,10 @@ class SeatingInfoResponse(BaseModel):
     table_capacity: TableCapacityInfo = Field(
         ...,
         description="Table capacity information",
+    )
+    table_assignment: TableAssignment | None = Field(
+        None,
+        description="Table customization details (visible after event starts)",
     )
     has_table_assignment: bool = Field(
         ...,

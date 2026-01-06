@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -429,9 +429,16 @@ async def assign_guest_to_table(
             bidder_number=updated_guest.bidder_number,
         )
     except ValueError as e:
+        # Feature 014: Return 409 Conflict for capacity issues
+        error_msg = str(e)
+        if "full" in error_msg.lower() or "capacity" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=error_msg,
+            )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
+            detail=error_msg,
         )
 
 
@@ -1233,3 +1240,518 @@ async def get_all_table_occupancy(
         )
 
     return {"tables": tables}
+
+
+# Feature 014: Table Customization Endpoints (T022, T026)
+
+
+@router.patch(
+    "/{event_id}/tables/{table_number}",
+    status_code=status.HTTP_200_OK,
+    summary="Update table customization details",
+    description="""
+    Update individual table customization including capacity, name, and captain assignment.
+
+    **Feature 014: Table Details Management**
+
+    This endpoint allows event coordinators to:
+    - Set custom capacity per table (1-20 guests, overrides event default)
+    - Assign friendly names to tables (e.g., "VIP Sponsors", max 50 chars)
+    - Designate a table captain from assigned guests
+
+    **User Stories:**
+    - US1: Customize Table Capacity - Set table 5 to seat 6 guests instead of default 8
+    - US2: Assign Table Names - Name table 1 as "VIP Sponsors" for easy identification
+    - US3: Designate Table Captain - Assign Jane Doe as captain for table coordination
+
+    **Validation Rules:**
+    - `custom_capacity`: Must be 1-20, cannot exceed event's max_guests_per_table
+    - `table_name`: Max 50 characters, automatically trimmed, empty string becomes null
+    - `table_captain_id`: Must reference a guest currently assigned to this table
+
+    **Capacity Enforcement:**
+    - If new capacity is less than current occupancy, request fails with 409 Conflict
+    - Example: Table has 7 guests, cannot reduce capacity to 6
+
+    **Request Body Examples:**
+    ```json
+    {
+        "custom_capacity": 6,
+        "table_name": "VIP Sponsors",
+        "table_captain_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    }
+    ```
+
+    Or update just one field:
+    ```json
+    {"table_name": "Executive Board"}
+    ```
+
+    Clear a field by setting to null:
+    ```json
+    {"table_name": null, "table_captain_id": null}
+    ```
+    """,
+    responses={
+        200: {
+            "description": "Table updated successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "event_id": "10adb96b-75b8-4a43-8a44-c593cb853e3c",
+                        "table_number": 5,
+                        "custom_capacity": 6,
+                        "table_name": "VIP Sponsors",
+                        "table_captain_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                        "table_captain": {
+                            "guest_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                            "full_name": "Jane Doe",
+                            "email": "jane@example.com",
+                        },
+                        "effective_capacity": 6,
+                        "current_occupancy": 5,
+                        "is_full": False,
+                        "created_at": "2026-01-02T10:00:00Z",
+                        "updated_at": "2026-01-05T14:30:00Z",
+                    }
+                }
+            },
+        },
+        400: {
+            "description": "Validation error (invalid UUID, empty name after trim, etc.)",
+            "content": {
+                "application/json": {"example": {"detail": "Invalid table_captain_id format"}}
+            },
+        },
+        403: {
+            "description": "Insufficient permissions or wrong NPO",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "You do not have permission to manage this event"}
+                }
+            },
+        },
+        404: {
+            "description": "Event or table not found, or seating not configured",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Table 5 not found for event (table_count=3)"}
+                }
+            },
+        },
+        409: {
+            "description": "Capacity constraint violated (new capacity < current occupancy)",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Cannot set capacity to 5: table currently has 7 guests assigned"
+                    }
+                }
+            },
+        },
+        422: {
+            "description": "Unprocessable entity (capacity out of range 1-20, name > 50 chars)",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "custom_capacity must be between 1 and 20"}
+                }
+            },
+        },
+    },
+)
+async def update_table_details(
+    event_id: UUID,
+    table_number: int,
+    updates: dict[str, Any],
+    request: Request,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> dict[str, Any]:
+    """
+    Update table customization details (capacity, name, captain).
+
+    Feature 014: Allows event coordinators to customize individual tables.
+    T078: Audit logging tracks who changed what when.
+
+    Args:
+        event_id: Event UUID
+        table_number: Table number (1..table_count)
+        updates: Dictionary with optional keys: custom_capacity, table_name, table_captain_id
+        request: FastAPI request object (for IP address)
+        current_user: Authenticated user
+        db: Database session
+
+    Returns:
+        EventTableResponse with updated table details
+
+    Raises:
+        HTTPException 404: Event or table not found
+        HTTPException 403: User lacks permission
+        HTTPException 400: Validation errors
+        HTTPException 409: Capacity constraint violated
+    """
+    # Require event coordinator role
+    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:  # type: ignore[attr-defined]
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions. Event Coordinator role required.",
+        )
+
+    # Get event
+    query = select(Event).where(Event.id == event_id)
+    result = await db.execute(query)
+    event = result.scalar_one_or_none()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event {event_id} not found",
+        )
+
+    # Verify user has permission to manage this event
+    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
+        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to manage this event",
+            )
+
+    # Validate table number is within range
+    if event.table_count is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event does not have seating configured",
+        )
+
+    if not (1 <= table_number <= event.table_count):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Table {table_number} not found for event (table_count={event.table_count})",
+        )
+
+    # Extract and validate updates
+    custom_capacity = updates.get("custom_capacity")
+    table_name = updates.get("table_name")
+    table_captain_id = updates.get("table_captain_id")
+
+    # Validate custom_capacity range
+    if custom_capacity is not None and custom_capacity is not False:
+        if not (1 <= custom_capacity <= 20):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="custom_capacity must be between 1 and 20",
+            )
+
+    # Validate table_name length
+    if table_name is not None and isinstance(table_name, str):
+        table_name = table_name.strip()
+        if len(table_name) > 50:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="table_name must not exceed 50 characters",
+            )
+        if len(table_name) == 0:
+            table_name = None
+
+    # Parse captain_id if provided
+    captain_uuid = None
+    if table_captain_id:
+        try:
+            captain_uuid = UUID(str(table_captain_id))
+        except (ValueError, TypeError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid table_captain_id format",
+            )
+
+    # Update table details using service
+    try:
+        # Get client IP address for audit logging
+        client_ip = request.client.host if request.client else "unknown"
+
+        table_result = await SeatingService.update_table_details(
+            db=db,
+            event_id=event_id,
+            table_number=table_number,
+            custom_capacity=custom_capacity,
+            table_name=table_name,
+            table_captain_id=captain_uuid,
+            admin_user_id=current_user.id,
+            admin_email=current_user.email,
+            ip_address=client_ip,
+        )
+        return table_result
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.get(
+    "/{event_id}/tables",
+    status_code=status.HTTP_200_OK,
+    summary="Get all event tables with customization details",
+    description="""
+    Retrieve all tables for an event with their customization details and current occupancy.
+
+    **Feature 014: Table Details Management**
+
+    This endpoint provides comprehensive table information for the admin seating page:
+    - Table numbers with custom/default capacity
+    - Friendly table names (if assigned)
+    - Table captain assignments
+    - Current occupancy and availability status
+    - Optionally includes assigned guest details
+
+    **Use Cases:**
+    - Display seating chart in admin UI with all table details
+    - Show capacity indicators (5/8 guests assigned)
+    - Highlight tables with custom names ("VIP Sponsors")
+    - Identify table captains with badges
+
+    **Query Parameters:**
+    - `include_guests=true`: Returns guest details for each table (name, email, bidder number)
+    - `include_guests=false` (default): Returns only table metadata and occupancy counts
+
+    **Response Includes:**
+    - Per-table: number, capacity (effective), name, captain, occupancy, is_full flag
+    - Event-level summary: total tables, total guests, average occupancy
+    - Sorted by table number (1, 2, 3, ...)
+
+    **Example Response:**
+    ```json
+    {
+        "event_id": "10adb96b-75b8-4a43-8a44-c593cb853e3c",
+        "tables": [
+            {
+                "table_number": 1,
+                "custom_capacity": 6,
+                "table_name": "VIP Sponsors",
+                "effective_capacity": 6,
+                "current_occupancy": 6,
+                "is_full": true,
+                "table_captain": {
+                    "guest_id": "a1b2...",
+                    "full_name": "Jane Doe",
+                    "email": "jane@example.com"
+                }
+            },
+            {
+                "table_number": 2,
+                "custom_capacity": null,
+                "table_name": null,
+                "effective_capacity": 8,
+                "current_occupancy": 5,
+                "is_full": false,
+                "table_captain": null
+            }
+        ],
+        "summary": {
+            "total_tables": 20,
+            "total_guests_assigned": 142,
+            "tables_full": 18,
+            "tables_empty": 0,
+            "average_occupancy": 7.1
+        }
+    }
+    ```
+    """,
+    responses={
+        200: {
+            "description": "Tables retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "event_id": "10adb96b-75b8-4a43-8a44-c593cb853e3c",
+                        "tables": [
+                            {
+                                "table_number": 1,
+                                "custom_capacity": 6,
+                                "table_name": "VIP Sponsors",
+                                "effective_capacity": 6,
+                                "current_occupancy": 6,
+                                "is_full": True,
+                                "table_captain": {
+                                    "guest_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                                    "full_name": "Jane Doe",
+                                    "email": "jane@example.com",
+                                },
+                            }
+                        ],
+                        "summary": {"total_tables": 20, "total_guests_assigned": 142},
+                    }
+                }
+            },
+        },
+        403: {
+            "description": "Insufficient permissions",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Insufficient permissions. Event Coordinator role required."
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "Event not found or seating not configured",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Event does not have seating configured"}
+                }
+            },
+        },
+    },
+)
+async def get_event_tables(
+    event_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    include_guests: bool = Query(default=False, description="Include guest details for each table"),
+) -> dict[str, Any]:
+    """
+    Get all tables for an event with customization details.
+
+    Feature 014: Provides table list for admin seating page.
+
+    Args:
+        event_id: Event UUID
+        current_user: Authenticated user
+        db: Database session
+        include_guests: Whether to include guest details
+
+    Returns:
+        EventTablesListResponse with all tables and summary
+
+    Raises:
+        HTTPException 404: Event not found or seating not configured
+        HTTPException 403: User lacks permission
+    """
+    # Require event coordinator role
+    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:  # type: ignore[attr-defined]
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions. Event Coordinator role required.",
+        )
+
+    # Get event
+    query = select(Event).where(Event.id == event_id)
+    result = await db.execute(query)
+    event = result.scalar_one_or_none()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event {event_id} not found",
+        )
+
+    # Verify user has permission to manage this event
+    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
+        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to view this event",
+            )
+
+    # Check if seating is configured
+    if event.table_count is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event does not have seating configured",
+        )
+
+    # Get all EventTable records for this event
+    from app.models.event_table import EventTable
+
+    tables_query = (
+        select(EventTable).where(EventTable.event_id == event_id).order_by(EventTable.table_number)
+    )
+    tables_result = await db.execute(tables_query)
+    event_tables = list(tables_result.scalars().all())
+
+    # Build table responses
+    tables_list = []
+    total_capacity = 0
+    total_assigned = 0
+    tables_full = 0
+    tables_with_captains = 0
+
+    for table_num in range(1, event.table_count + 1):
+        # Find matching EventTable record
+        event_table = next((t for t in event_tables if t.table_number == table_num), None)
+
+        # Get effective capacity and occupancy
+        effective_capacity = await SeatingService.get_effective_capacity(db, event_id, table_num)
+        current_occupancy = await SeatingService.get_table_occupancy(db, event_id, table_num)
+
+        # Get captain info if exists
+        captain_info = None
+        if event_table and event_table.table_captain_id:
+            captain_query = select(RegistrationGuest).where(
+                RegistrationGuest.id == event_table.table_captain_id
+            )
+            captain_result = await db.execute(captain_query)
+            captain = captain_result.scalar_one_or_none()
+            if captain:
+                captain_info = {
+                    "id": str(captain.id),
+                    "first_name": captain.name.split()[0] if captain.name else "",
+                    "last_name": " ".join(captain.name.split()[1:])
+                    if captain.name and len(captain.name.split()) > 1
+                    else "",
+                }
+                tables_with_captains += 1
+
+        # Get guests if requested
+        guests_list = []
+        if include_guests:
+            guests = await SeatingService.get_guests_at_table(db, event_id, table_num)
+            for guest in guests:
+                guests_list.append(
+                    {
+                        "id": str(guest.id),
+                        "first_name": guest.name.split()[0] if guest.name else "",
+                        "last_name": " ".join(guest.name.split()[1:])
+                        if guest.name and len(guest.name.split()) > 1
+                        else "",
+                        "bidder_number": guest.bidder_number,
+                        "is_table_captain": guest.is_table_captain,
+                    }
+                )
+
+        is_full = current_occupancy >= effective_capacity
+        if is_full:
+            tables_full += 1
+
+        total_capacity += effective_capacity
+        total_assigned += current_occupancy
+
+        table_response: dict[str, Any] = {
+            "id": str(event_table.id) if event_table else None,
+            "table_number": table_num,
+            "custom_capacity": event_table.custom_capacity if event_table else None,
+            "table_name": event_table.table_name if event_table else None,
+            "table_captain": captain_info,
+            "current_occupancy": current_occupancy,
+            "effective_capacity": effective_capacity,
+            "is_full": is_full,
+        }
+
+        if include_guests:
+            table_response["guests"] = guests_list
+
+        tables_list.append(table_response)
+
+    return {
+        "event_id": str(event_id),
+        "event_max_guests_per_table": event.max_guests_per_table,
+        "tables": tables_list,
+        "summary": {
+            "total_tables": event.table_count,
+            "total_capacity": total_capacity,
+            "total_assigned": total_assigned,
+            "tables_full": tables_full,
+            "tables_with_captains": tables_with_captains,
+        },
+    }

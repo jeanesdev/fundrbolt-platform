@@ -67,7 +67,7 @@ Complete cloud infrastructure setup and deployment strategy for the Fundrbolt Pl
 - DNS Zone: fundrbolt.com (nameservers configured at Namecheap)
 - Application Insights: fundrbolt-dev-insights (monitoring local backend)
 - Log Analytics: fundrbolt-dev-logs
-- Storage Account: fundrboltdevst
+- Storage Account: fundrboltdevstor
 - **Monthly Cost**: ~$1.50
 
 **Local Development Environment**:

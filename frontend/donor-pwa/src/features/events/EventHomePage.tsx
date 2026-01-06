@@ -26,6 +26,7 @@ import { getMySeatingInfo, type SeatingInfoResponse } from '@/services/seating-s
 import { useEventContextStore } from '@/stores/event-context-store'
 import { useEventStore } from '@/stores/event-store'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { AlertCircle, Calendar, Loader2, MapPin } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -77,12 +78,13 @@ export function EventHomePage() {
     })
   }, [availableEvents])
 
-  // Fetch seating information for current event (T080)
-  const { data: seatingInfo, error: seatingError } = useQuery<SeatingInfoResponse>({
-    queryKey: ['seating', 'my-info', eventId],
-    queryFn: () => getMySeatingInfo(eventId),
-    enabled: !!eventId,
-    staleTime: 2 * 60 * 1000, // 2 minutes - seating can change
+  // Fetch seating information for current event (T080, T065)
+  const { data: seatingInfo, error: seatingError, isLoading: seatingLoading } = useQuery<SeatingInfoResponse>({
+    queryKey: ['seating', 'my-info', currentEvent?.id],
+    queryFn: () => getMySeatingInfo(currentEvent!.id),
+    enabled: !!currentEvent?.id,
+    staleTime: 10 * 1000, // 10 seconds
+    refetchInterval: 10 * 1000, // Poll every 10 seconds (T065)
     retry: 1, // Don't retry too many times if user has no registration
   })
 
@@ -479,8 +481,30 @@ export function EventHomePage() {
           className="mb-6"
         />
 
-        {/* My Seating Information (T080) */}
-        {seatingInfo && !seatingError && (
+        {/* My Seating Information (T080, T070-T071) */}
+        {seatingLoading && (
+          <div className="mb-6">
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">Loading seating information...</span>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {seatingError && (
+          <div className="mb-6">
+            <Card className="border-destructive">
+              <CardContent className="flex items-center gap-2 py-4 text-destructive">
+                <AlertCircle className="h-5 w-5" />
+                <span className="text-sm">Unable to load seating information. Please try again later.</span>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {seatingInfo && !seatingError && !seatingLoading && (
           <div className="mb-6">
             <MySeatingSection seatingInfo={seatingInfo} />
           </div>

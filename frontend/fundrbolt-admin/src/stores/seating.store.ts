@@ -11,12 +11,20 @@ import {
   removeGuestFromTable,
   type GuestSeatingInfo
 } from '@/lib/api/admin-seating'
+import {
+  fetchEventTables,
+  updateTableDetails,
+  type EventTableDetails
+} from '@/services/seating-service'
 import { toast } from 'sonner'
 import { create } from 'zustand'
 
 interface SeatingState {
   // Table assignments: tableNumber -> list of guests
   tables: Map<number, GuestSeatingInfo[]>
+
+  // Table customization details (Feature 014)
+  tableDetails: Map<number, EventTableDetails>
 
   // Unassigned guests
   unassignedGuests: GuestSeatingInfo[]
@@ -34,6 +42,7 @@ interface SeatingState {
   rollbackState: {
     tables: Map<number, GuestSeatingInfo[]>
     unassignedGuests: GuestSeatingInfo[]
+    tableDetails: Map<number, EventTableDetails>
   } | null
 }
 
@@ -44,6 +53,9 @@ interface SeatingActions {
   // Load all guests and their assignments
   loadGuests: () => Promise<void>
 
+  // Load table customization details (Feature 014)
+  loadTableDetails: () => Promise<void>
+
   // Load specific table occupancy
   loadTableOccupancy: (tableNumber: number) => Promise<void>
 
@@ -52,6 +64,12 @@ interface SeatingActions {
 
   // Remove guest from table (optimistic)
   removeGuestFromTable: (guestId: string) => Promise<void>
+
+  // Update table customization (Feature 014, optimistic)
+  updateTableCustomization: (
+    tableNumber: number,
+    updates: { custom_capacity?: number | null; table_name?: string | null }
+  ) => Promise<void>
 
   // Drag-and-drop state
   setDragging: (isDragging: boolean) => void
@@ -67,6 +85,7 @@ type SeatingStore = SeatingState & SeatingActions
 
 const initialState: SeatingState = {
   tables: new Map(),
+  tableDetails: new Map(),
   unassignedGuests: [],
   isLoading: false,
   isDragging: false,
@@ -119,10 +138,32 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
       }
 
       set({ tables, unassignedGuests: unassigned, isLoading: false })
+
+      // Load table details after guests are loaded
+      await get().loadTableDetails()
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       toast.error(`Failed to load guest seating information: ${errorMessage}`)
       set({ isLoading: false })
+    }
+  },
+
+  loadTableDetails: async () => {
+    const { eventId } = get()
+    if (!eventId) return
+
+    try {
+      const response = await fetchEventTables(eventId, false)
+      const details = new Map<number, EventTableDetails>()
+
+      for (const table of response.tables) {
+        details.set(table.table_number, table)
+      }
+
+      set({ tableDetails: details })
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      toast.error(`Failed to load table details: ${errorMessage}`)
     }
   },
 
@@ -141,7 +182,7 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
   },
 
   assignGuestToTable: async (guestId: string, tableNumber: number) => {
-    const { eventId, tables, unassignedGuests, maxGuestsPerTable } = get()
+    const { eventId, tables, unassignedGuests, tableDetails } = get()
     if (!eventId) return
 
     // Find guest
@@ -166,10 +207,13 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
       return
     }
 
-    // Check capacity
+    // Check capacity using table details (Feature 014)
+    const tableDetail = tableDetails.get(tableNumber)
+    const maxCapacity = tableDetail?.effective_capacity ?? get().maxGuestsPerTable
     const targetTableGuests = tables.get(tableNumber) || []
-    if (targetTableGuests.length >= maxGuestsPerTable) {
-      toast.error(`Table ${tableNumber} is at capacity (${maxGuestsPerTable} guests)`)
+
+    if (targetTableGuests.length >= maxCapacity) {
+      toast.error(`Table ${tableNumber} is at capacity (${maxCapacity} guests)`)
       return
     }
 
@@ -178,6 +222,7 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
       rollbackState: {
         tables: new Map(tables),
         unassignedGuests: [...unassignedGuests],
+        tableDetails: new Map(tableDetails),
       },
     })
 
@@ -205,7 +250,17 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
     newTableGuests.push(updatedGuest)
     newTables.set(tableNumber, newTableGuests)
 
-    set({ tables: newTables, unassignedGuests: newUnassigned })
+    // Update table details occupancy (optimistic)
+    const newTableDetails = new Map(tableDetails)
+    if (tableDetail) {
+      newTableDetails.set(tableNumber, {
+        ...tableDetail,
+        current_occupancy: newTableGuests.length,
+        is_full: newTableGuests.length >= maxCapacity,
+      })
+    }
+
+    set({ tables: newTables, unassignedGuests: newUnassigned, tableDetails: newTableDetails })
 
     // Make API call
     try {
@@ -221,7 +276,7 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
   },
 
   removeGuestFromTable: async (guestId: string) => {
-    const { eventId, tables, unassignedGuests } = get()
+    const { eventId, tables, unassignedGuests, tableDetails } = get()
     if (!eventId) return
 
     // Find guest in tables
@@ -246,6 +301,7 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
       rollbackState: {
         tables: new Map(tables),
         unassignedGuests: [...unassignedGuests],
+        tableDetails: new Map(tableDetails),
       },
     })
 
@@ -255,16 +311,26 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
 
     // Remove from table
     const tableGuests = newTables.get(previousTableNumber) || []
-    newTables.set(
-      previousTableNumber,
-      tableGuests.filter((g) => g.guest_id !== guestId)
-    )
+    const updatedTableGuests = tableGuests.filter((g) => g.guest_id !== guestId)
+    newTables.set(previousTableNumber, updatedTableGuests)
 
     // Add to unassigned
     const updatedGuest = { ...guest, table_number: null }
     newUnassigned.push(updatedGuest)
 
-    set({ tables: newTables, unassignedGuests: newUnassigned })
+    // Update table details occupancy (optimistic)
+    const newTableDetails = new Map(tableDetails)
+    const tableDetail = tableDetails.get(previousTableNumber)
+    if (tableDetail) {
+      const maxCapacity = tableDetail.effective_capacity
+      newTableDetails.set(previousTableNumber, {
+        ...tableDetail,
+        current_occupancy: updatedTableGuests.length,
+        is_full: updatedTableGuests.length >= maxCapacity,
+      })
+    }
+
+    set({ tables: newTables, unassignedGuests: newUnassigned, tableDetails: newTableDetails })
 
     // Make API call
     try {
@@ -274,6 +340,63 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to remove guest from table'
+      toast.error(errorMessage)
+      get().rollback()
+    }
+  },
+
+  updateTableCustomization: async (
+    tableNumber: number,
+    updates: { custom_capacity?: number | null; table_name?: string | null }
+  ) => {
+    const { eventId, tableDetails } = get()
+    if (!eventId) return
+
+    const currentDetail = tableDetails.get(tableNumber)
+    if (!currentDetail) {
+      toast.error(`Table ${tableNumber} details not found`)
+      return
+    }
+
+    // Save rollback state
+    set({
+      rollbackState: {
+        tables: new Map(get().tables),
+        unassignedGuests: [...get().unassignedGuests],
+        tableDetails: new Map(tableDetails),
+      },
+    })
+
+    // Optimistic update
+    const newTableDetails = new Map(tableDetails)
+    const updatedDetail: EventTableDetails = {
+      ...currentDetail,
+      custom_capacity: updates.custom_capacity ?? currentDetail.custom_capacity,
+      table_name: updates.table_name ?? currentDetail.table_name,
+    }
+
+    // Recalculate effective capacity and is_full
+    updatedDetail.effective_capacity =
+      updatedDetail.custom_capacity ?? get().maxGuestsPerTable
+    updatedDetail.is_full =
+      updatedDetail.current_occupancy >= updatedDetail.effective_capacity
+
+    newTableDetails.set(tableNumber, updatedDetail)
+    set({ tableDetails: newTableDetails })
+
+    // Make API call
+    try {
+      const result = await updateTableDetails(eventId, tableNumber, updates)
+
+      // Update with server response
+      const finalTableDetails = new Map(get().tableDetails)
+      finalTableDetails.set(tableNumber, result)
+      set({ tableDetails: finalTableDetails, rollbackState: null })
+
+      toast.success(`Table ${tableNumber} customization updated`)
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update table customization'
       toast.error(errorMessage)
       get().rollback()
     }
@@ -289,6 +412,7 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
       set({
         tables: rollbackState.tables,
         unassignedGuests: rollbackState.unassignedGuests,
+        tableDetails: rollbackState.tableDetails,
         rollbackState: null,
       })
       toast.info('Changes reverted')
