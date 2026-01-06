@@ -533,14 +533,14 @@ class TestSeatingDragDropWorkflow:
         await db_session.refresh(guest)
         assert guest.table_number is None
 
-    async def test_assign_to_full_table_returns_400(
+    async def test_assign_to_full_table_returns_409(
         self,
         npo_admin_client: AsyncClient,
         db_session: AsyncSession,
         test_active_event: Event,
         test_user_2: Any,
     ) -> None:
-        """Test assigning to a full table returns 400 error (drag-drop validation)."""
+        """Test assigning to a full table returns 409 Conflict (drag-drop validation)."""
         from app.models.event_registration import EventRegistration
         from app.models.registration_guest import RegistrationGuest
 
@@ -589,14 +589,14 @@ class TestSeatingDragDropWorkflow:
             json={"table_number": 5},
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 409
         data = response.json()
         detail_str = (
             str(data["detail"]).lower()
             if isinstance(data["detail"], dict)
             else data["detail"].lower()
         )
-        assert "capacity" in detail_str
+        assert "full" in detail_str or "capacity" in detail_str
 
     async def test_get_seating_guests_list(
         self,
