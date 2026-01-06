@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -1363,6 +1363,7 @@ async def update_table_details(
     event_id: UUID,
     table_number: int,
     updates: dict[str, Any],
+    request: Request,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict[str, Any]:
@@ -1370,11 +1371,13 @@ async def update_table_details(
     Update table customization details (capacity, name, captain).
 
     Feature 014: Allows event coordinators to customize individual tables.
+    T078: Audit logging tracks who changed what when.
 
     Args:
         event_id: Event UUID
         table_number: Table number (1..table_count)
         updates: Dictionary with optional keys: custom_capacity, table_name, table_captain_id
+        request: FastAPI request object (for IP address)
         current_user: Authenticated user
         db: Database session
 
@@ -1463,6 +1466,9 @@ async def update_table_details(
 
     # Update table details using service
     try:
+        # Get client IP address for audit logging
+        client_ip = request.client.host if request.client else "unknown"
+
         table_result = await SeatingService.update_table_details(
             db=db,
             event_id=event_id,
@@ -1470,6 +1476,9 @@ async def update_table_details(
             custom_capacity=custom_capacity,
             table_name=table_name,
             table_captain_id=captain_uuid,
+            admin_user_id=current_user.id,
+            admin_email=current_user.email,
+            ip_address=client_ip,
         )
         return table_result
     except ValueError as e:

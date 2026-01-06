@@ -670,9 +670,14 @@ class SeatingService:
         custom_capacity: int | None = None,
         table_name: str | None = None,
         table_captain_id: UUID | None = None,
+        admin_user_id: UUID | None = None,
+        admin_email: str | None = None,
+        ip_address: str | None = None,
     ) -> dict[str, Any]:
         """
         Update table customization details (capacity, name, captain).
+
+        Feature 014 T078: Audit logging for table customization changes.
 
         Args:
             db: Database session
@@ -681,6 +686,9 @@ class SeatingService:
             custom_capacity: Custom capacity (1-20) or None
             table_name: Friendly table name or None
             table_captain_id: Captain guest UUID or None
+            admin_user_id: UUID of admin making changes (for audit logging)
+            admin_email: Email of admin making changes (for audit logging)
+            ip_address: IP address of admin (for audit logging)
 
         Returns:
             dict: Updated table details with occupancy info
@@ -689,6 +697,7 @@ class SeatingService:
             ValueError: If validation fails
         """
         from app.models.event_table import EventTable
+        from app.services.audit_service import AuditService
 
         # Get or create EventTable record
         table_query = select(EventTable).where(
@@ -697,6 +706,11 @@ class SeatingService:
         )
         result = await db.execute(table_query)
         event_table = result.scalar_one_or_none()
+
+        # Track old values for audit logging
+        old_capacity = event_table.custom_capacity if event_table else None
+        old_name = event_table.table_name if event_table else None
+        old_captain_id = event_table.table_captain_id if event_table else None
 
         if not event_table:
             # Create new EventTable record (should exist from migration)
@@ -746,6 +760,65 @@ class SeatingService:
 
         await db.commit()
         await db.refresh(event_table)
+
+        # Audit logging (T078) - log each change separately for clarity
+        if admin_user_id and admin_email:
+            # Log capacity change
+            if custom_capacity is not None and old_capacity != custom_capacity:
+                await AuditService.log_table_customization_change(
+                    db=db,
+                    event_id=event_id,
+                    table_number=table_number,
+                    admin_user_id=admin_user_id,
+                    admin_email=admin_email,
+                    change_type="capacity",
+                    old_value=old_capacity,
+                    new_value=custom_capacity,
+                    ip_address=ip_address,
+                )
+
+            # Log name change
+            if table_name is not None and old_name != table_name:
+                await AuditService.log_table_customization_change(
+                    db=db,
+                    event_id=event_id,
+                    table_number=table_number,
+                    admin_user_id=admin_user_id,
+                    admin_email=admin_email,
+                    change_type="name",
+                    old_value=old_name,
+                    new_value=table_name,
+                    ip_address=ip_address,
+                )
+
+            # Log captain change
+            if table_captain_id is not None and old_captain_id != table_captain_id:
+                if table_captain_id:
+                    # Captain assigned
+                    await AuditService.log_table_customization_change(
+                        db=db,
+                        event_id=event_id,
+                        table_number=table_number,
+                        admin_user_id=admin_user_id,
+                        admin_email=admin_email,
+                        change_type="captain_assigned",
+                        old_value=str(old_captain_id) if old_captain_id else None,
+                        new_value=str(table_captain_id),
+                        ip_address=ip_address,
+                    )
+                else:
+                    # Captain removed
+                    await AuditService.log_table_customization_change(
+                        db=db,
+                        event_id=event_id,
+                        table_number=table_number,
+                        admin_user_id=admin_user_id,
+                        admin_email=admin_email,
+                        change_type="captain_removed",
+                        old_value=str(old_captain_id) if old_captain_id else None,
+                        new_value=None,
+                        ip_address=ip_address,
+                    )
 
         # Build response with occupancy info
         effective_capacity = await SeatingService.get_effective_capacity(db, event_id, table_number)
