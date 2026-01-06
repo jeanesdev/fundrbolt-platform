@@ -170,20 +170,20 @@ description: "Implementation tasks for Table Details Management feature"
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T072 [P] Add ETag caching support to GET /donor/events/{slug} endpoint for bandwidth optimization
+- [-] T072 [P] Add ETag caching support to GET /donor/events/{slug} endpoint for bandwidth optimization (deferred: optional performance optimization)
 - [x] T073 [P] Add comprehensive error logging for all table operations in SeatingService
 - [x] T074 [P] Update API documentation (OpenAPI schema) with new endpoints and fields
 - [x] T075 [P] Add database query optimization: use SELECT COUNT vs loading all guests (already optimized)
 - [x] T076 [P] Update EventTable and RegistrationGuest TypeScript types in frontend/fundrbolt-admin/src/types/seating.ts
 - [x] T077 [P] Update EventTable and RegistrationGuest TypeScript types in frontend/donor-pwa/src/types/events.ts
-- [ ] T078 [P] Add audit logging for table customization changes (who changed what when)
+- [x] T078 [P] Add audit logging for table customization changes (who changed what when)
 - [x] T079 Verify all acceptance scenarios from spec.md pass manually
 - [x] T080 Run backend linter: `cd backend && poetry run ruff check .`
 - [x] T081 Run backend formatter: `cd backend && poetry run black .`
 - [x] T082 Run frontend linters: `cd frontend/fundrbolt-admin && pnpm lint && cd ../donor-pwa && pnpm lint`
 - [x] T083 Verify database migration rollback works: `poetry run alembic downgrade -1 && alembic upgrade head`
 - [x] T084 Update .github/copilot-instructions.md with feature completion summary
-- [ ] T085 Run quickstart.md validation (follow setup steps, verify they work)
+- [-] T085 Run quickstart.md validation (deferred: documentation testing for later)
 
 ---
 
