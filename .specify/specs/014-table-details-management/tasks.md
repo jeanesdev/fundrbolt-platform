@@ -173,7 +173,7 @@ description: "Implementation tasks for Table Details Management feature"
 - [ ] T072 [P] Add ETag caching support to GET /donor/events/{slug} endpoint for bandwidth optimization
 - [x] T073 [P] Add comprehensive error logging for all table operations in SeatingService
 - [x] T074 [P] Update API documentation (OpenAPI schema) with new endpoints and fields
-- [ ] T075 [P] Add database query optimization: use SELECT COUNT vs loading all guests
+- [x] T075 [P] Add database query optimization: use SELECT COUNT vs loading all guests (already optimized)
 - [x] T076 [P] Update EventTable and RegistrationGuest TypeScript types in frontend/fundrbolt-admin/src/types/seating.ts
 - [x] T077 [P] Update EventTable and RegistrationGuest TypeScript types in frontend/donor-pwa/src/types/events.ts
 - [ ] T078 [P] Add audit logging for table customization changes (who changed what when)
@@ -181,7 +181,7 @@ description: "Implementation tasks for Table Details Management feature"
 - [x] T080 Run backend linter: `cd backend && poetry run ruff check .`
 - [x] T081 Run backend formatter: `cd backend && poetry run black .`
 - [x] T082 Run frontend linters: `cd frontend/fundrbolt-admin && pnpm lint && cd ../donor-pwa && pnpm lint`
-- [ ] T083 Verify database migration rollback works: `poetry run alembic downgrade -1 && alembic upgrade head`
+- [x] T083 Verify database migration rollback works: `poetry run alembic downgrade -1 && alembic upgrade head`
 - [x] T084 Update .github/copilot-instructions.md with feature completion summary
 - [ ] T085 Run quickstart.md validation (follow setup steps, verify they work)
 
@@ -339,14 +339,14 @@ With multiple developers (after Foundational complete):
 - User Story 2 (Phase 4): 8 tasks ✅
 - User Story 3 (Phase 5): 11 tasks ✅
 - User Story 4 (Phase 6): 16 tasks ✅
-- Polish (Phase 7): 5 of 14 tasks ⏳
+- Polish (Phase 7): 11 of 14 tasks ✅
 
 **Parallel Opportunities**: 18 tasks marked [P]
 
 **MVP Scope** (Recommended): Setup + Foundational + US1 + US4 = 52 tasks (61% of total)
 
-**Completed Tasks**: 78 of 85 (92%)
-**Remaining Tasks**: 7 (optional polish/optimization)
+**Completed Tasks**: 82 of 85 (96%)
+**Remaining Tasks**: 3 (optional polish: T072 ETag, T078 audit logging, T085 quickstart validation)
 
 **Independent Test Criteria**:
 
