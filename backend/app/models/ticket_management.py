@@ -4,7 +4,7 @@ import enum
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import (
     Boolean,
@@ -82,7 +82,7 @@ class CustomTicketOption(Base, UUIDMixin):
         SQLEnum(OptionType, name="option_type_enum", native_enum=False),
         nullable=False,
     )
-    choices: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    choices: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     is_required: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 

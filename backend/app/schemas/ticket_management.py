@@ -30,7 +30,8 @@ class TicketPackageBase(BaseModel):
     @classmethod
     def validate_price(cls, v: Decimal) -> Decimal:
         """Ensure price has max 2 decimal places."""
-        if v.as_tuple().exponent < -2:
+        exponent = v.as_tuple().exponent
+        if isinstance(exponent, int) and exponent < -2:
             raise ValueError("Price must have at most 2 decimal places")
         return v
 
@@ -59,8 +60,10 @@ class TicketPackageUpdate(BaseModel):
     @classmethod
     def validate_price(cls, v: Decimal | None) -> Decimal | None:
         """Ensure price has max 2 decimal places."""
-        if v is not None and v.as_tuple().exponent < -2:
-            raise ValueError("Price must have at most 2 decimal places")
+        if v is not None:
+            exponent = v.as_tuple().exponent
+            if isinstance(exponent, int) and exponent < -2:
+                raise ValueError("Price must have at most 2 decimal places")
         return v
 
 
@@ -179,7 +182,8 @@ class PromoCodeBase(BaseModel):
         discount_type = info.data.get("discount_type")
         if discount_type == DiscountType.PERCENTAGE and v > 100:
             raise ValueError("Percentage discount cannot exceed 100%")
-        if v.as_tuple().exponent < -2:
+        exponent = v.as_tuple().exponent
+        if isinstance(exponent, int) and exponent < -2:
             raise ValueError("Discount value must have at most 2 decimal places")
         return v
 

@@ -83,7 +83,9 @@ class ImageService:
         try:
             image = Image.open(BytesIO(file_content))
             image.verify()  # Verify it's a valid image
-            mime_type = Image.MIME.get(image.format, "application/octet-stream")
+            mime_type = Image.MIME.get(
+                image.format if image.format else "UNKNOWN", "application/octet-stream"
+            )
             if mime_type not in self.ALLOWED_MIME_TYPES:
                 raise ValueError(f"Invalid image format: {image.format}")
         except Exception as e:
@@ -120,7 +122,7 @@ class ImageService:
                 },
             )
 
-            blob_url = blob_client.url
+            blob_url: str = str(blob_client.url)
             logger.info(f"Uploaded image to Azure Blob Storage: {blob_url}")
             return blob_url
 
@@ -189,4 +191,5 @@ class ImageService:
         parts = url.split(f"/{ImageService.CONTAINER_NAME}/")
         if len(parts) != 2:
             raise ValueError("Invalid Azure Blob Storage URL")
-        return parts[1]
+        blob_name: str = parts[1]
+        return blob_name

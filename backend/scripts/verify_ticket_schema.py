@@ -202,7 +202,7 @@ async def verify_ticket_schema():
             AND trigger_name = 'prevent_ticket_audit_log_update'
         """)
         )
-        trigger_rows = [row for row in result]
+        trigger_rows = list(result)
         if len(trigger_rows) > 0:
             print("✓ ticket_audit_logs immutability trigger exists")
         else:

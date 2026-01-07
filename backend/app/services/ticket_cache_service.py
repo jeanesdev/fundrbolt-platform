@@ -27,7 +27,7 @@ class TicketCacheService:
     SALES_COUNT_TTL = timedelta(seconds=5)
     PROMO_VALIDATION_TTL = timedelta(seconds=60)
 
-    def __init__(self, redis_client: Redis | None = None):
+    def __init__(self, redis_client: Redis[bytes] | None = None):
         """Initialize TicketCacheService with optional Redis client override (for testing)."""
         self.redis = redis_client  # Will be injected by dependency
 
@@ -42,6 +42,8 @@ class TicketCacheService:
         Returns:
             Cached sold count or None if not in cache
         """
+        if self.redis is None:
+            return None
         try:
             key = self._sales_count_key(package_id)
             value = await self.redis.get(key)
@@ -59,6 +61,8 @@ class TicketCacheService:
             package_id: Ticket package UUID
             sold_count: Current sold count
         """
+        if self.redis is None:
+            return
         try:
             key = self._sales_count_key(package_id)
             await self.redis.setex(
@@ -79,6 +83,8 @@ class TicketCacheService:
         Returns:
             New sold count or None if cache update failed
         """
+        if self.redis is None:
+            return None
         try:
             key = self._sales_count_key(package_id)
             new_count = await self.redis.incrby(key, quantity)
@@ -95,6 +101,8 @@ class TicketCacheService:
         Args:
             package_id: Ticket package UUID
         """
+        if self.redis is None:
+            return
         try:
             key = self._sales_count_key(package_id)
             await self.redis.delete(key)
@@ -116,11 +124,13 @@ class TicketCacheService:
             Cached validation result dict or None if not in cache
             Format: {"valid": bool, "discount_amount": Decimal, "error_message": str}
         """
+        if self.redis is None:
+            return None
         try:
             key = self._promo_validation_key(promo_code, event_id)
             value = await self.redis.get(key)
             if value:
-                data = json.loads(value)
+                data: dict[str, Any] = json.loads(value)
                 # Convert discount_amount back to Decimal
                 if data.get("discount_amount"):
                     data["discount_amount"] = Decimal(data["discount_amount"])
@@ -143,6 +153,8 @@ class TicketCacheService:
             event_id: Event UUID
             validation_result: Validation result dict
         """
+        if self.redis is None:
+            return
         try:
             key = self._promo_validation_key(promo_code, event_id)
             # Convert Decimal to string for JSON serialization
@@ -165,6 +177,8 @@ class TicketCacheService:
             promo_code: Promo code string
             event_id: Event UUID
         """
+        if self.redis is None:
+            return
         try:
             key = self._promo_validation_key(promo_code, event_id)
             await self.redis.delete(key)

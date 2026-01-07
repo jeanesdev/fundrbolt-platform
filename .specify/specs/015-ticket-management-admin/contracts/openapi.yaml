@@ -1233,7 +1233,7 @@ components:
               response_value:
                 type: string
                 nullable: true
-                description: Response value (boolean: "true"/"false", multi_select: choice, text_input: text, or null for skipped optional)
+                description: 'Response value (boolean: "true"/"false", multi_select: choice, text_input: text, or null for skipped optional)'
 
     TicketPurchaseResponse:
       type: object
