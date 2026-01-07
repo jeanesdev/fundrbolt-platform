@@ -18,9 +18,23 @@ from app.models.registration_guest import RegistrationGuest
 from app.models.role import Role
 from app.models.session import Session
 from app.models.sponsor import Sponsor
+from app.models.ticket_management import (
+    AssignedTicket,
+    CustomTicketOption,
+    DiscountType,
+    OptionResponse,
+    OptionType,
+    PaymentStatus,
+    PromoCode,
+    PromoCodeApplication,
+    TicketAuditLog,
+    TicketPurchase,
+)
+from app.models.ticket_package import TicketPackage
 from app.models.user import User
 
 __all__ = [
+    "AssignedTicket",
     "AuctionItem",
     "AuditLog",
     "Base",
@@ -28,6 +42,8 @@ __all__ = [
     "UUIDMixin",
     "ConsentAuditLog",
     "CookieConsent",
+    "CustomTicketOption",
+    "DiscountType",
     "Event",
     "EventLink",
     "EventMedia",
@@ -41,11 +57,19 @@ __all__ = [
     "NPOApplication",
     "NPOBranding",
     "NPOMember",
+    "OptionResponse",
+    "OptionType",
+    "PaymentStatus",
+    "PromoCode",
+    "PromoCodeApplication",
     "RegistrationGuest",
     "RegistrationStatus",
     "Role",
     "Session",
     "Sponsor",
+    "TicketAuditLog",
+    "TicketPackage",
+    "TicketPurchase",
     "User",
     "UserConsent",
 ]

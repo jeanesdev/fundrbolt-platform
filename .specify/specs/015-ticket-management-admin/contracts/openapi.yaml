@@ -1,0 +1,1395 @@
+openapi: 3.1.0
+info:
+  title: Ticket Package Management API
+  version: 1.0.0
+  description: |
+    API endpoints for managing ticket packages, custom options, promo codes, and ticket purchases
+    in the Fundrbolt Admin PWA and donor-facing flows.
+  contact:
+    name: Fundrbolt Platform
+    url: https://fundrbolt.com
+
+servers:
+  - url: https://api.fundrbolt.com/api/v1
+    description: Production
+  - url: https://staging-api.fundrbolt.com/api/v1
+    description: Staging
+  - url: http://localhost:8000/api/v1
+    description: Local development
+
+tags:
+  - name: Ticket Packages (Admin)
+    description: Create, update, and manage ticket packages (Event Coordinators only)
+  - name: Custom Options (Admin)
+    description: Add and configure custom registration options for ticket packages
+  - name: Promo Codes (Admin)
+    description: Create and manage promotional discount codes
+  - name: Ticket Purchases (Public)
+    description: Purchase tickets and apply promo codes (donor-facing)
+  - name: Sales Tracking (Admin)
+    description: View real-time sales data and export CSV reports
+
+paths:
+  # ==================== TICKET PACKAGES (ADMIN) ====================
+  /admin/events/{event_id}/tickets/packages:
+    get:
+      summary: List ticket packages for event
+      description: Get all ticket packages with sales counts, ordered by display_order
+      tags: [Ticket Packages (Admin)]
+      operationId: listTicketPackages
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of ticket packages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  packages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TicketPackageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/EventNotFound'
+
+    post:
+      summary: Create ticket package
+      description: Create new ticket package for event
+      tags: [Ticket Packages (Admin)]
+      operationId: createTicketPackage
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketPackageCreate'
+      responses:
+        '201':
+          description: Package created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketPackageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/EventNotFound'
+
+  /admin/events/{event_id}/tickets/packages/{package_id}:
+    get:
+      summary: Get ticket package details
+      description: Get single ticket package with custom options and sales data
+      tags: [Ticket Packages (Admin)]
+      operationId: getTicketPackage
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/PackageIdPath'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Package details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketPackageDetailResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/PackageNotFound'
+
+    patch:
+      summary: Update ticket package
+      description: Update ticket package fields (logs changes if sold_count > 0)
+      tags: [Ticket Packages (Admin)]
+      operationId: updateTicketPackage
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/PackageIdPath'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketPackageUpdate'
+      responses:
+        '200':
+          description: Package updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketPackageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/PackageNotFound'
+        '409':
+          $ref: '#/components/responses/ConcurrencyConflict'
+
+    delete:
+      summary: Delete ticket package
+      description: Delete package (only if sold_count = 0)
+      tags: [Ticket Packages (Admin)]
+      operationId: deleteTicketPackage
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/PackageIdPath'
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Package deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/PackageNotFound'
+        '409':
+          description: Cannot delete package with sold tickets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/events/{event_id}/tickets/packages/{package_id}/enable:
+    post:
+      summary: Enable ticket package
+      description: Make package visible and available for purchase
+      tags: [Ticket Packages (Admin)]
+      operationId: enableTicketPackage
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/PackageIdPath'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Package enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketPackageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/PackageNotFound'
+
+  /admin/events/{event_id}/tickets/packages/{package_id}/disable:
+    post:
+      summary: Disable ticket package
+      description: Hide package from purchase flow (preserves data)
+      tags: [Ticket Packages (Admin)]
+      operationId: disableTicketPackage
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/PackageIdPath'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Package disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketPackageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/PackageNotFound'
+
+  /admin/events/{event_id}/tickets/packages/{package_id}/image:
+    post:
+      summary: Upload ticket package image
+      description: Upload image to Azure Blob Storage with virus scanning
+      tags: [Ticket Packages (Admin)]
+      operationId: uploadPackageImage
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/PackageIdPath'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file (JPG, PNG, WebP, max 5MB)
+      responses:
+        '200':
+          description: Image uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image_url:
+                    type: string
+                    format: uri
+                    description: Azure Blob Storage URL
+        '400':
+          description: Invalid file format or size
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/PackageNotFound'
+
+    delete:
+      summary: Delete ticket package image
+      description: Remove image from Azure Blob Storage and database
+      tags: [Ticket Packages (Admin)]
+      operationId: deletePackageImage
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/PackageIdPath'
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Image deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/PackageNotFound'
+
+  /admin/events/{event_id}/tickets/packages/reorder:
+    post:
+      summary: Reorder ticket packages
+      description: Update display_order for drag-and-drop UI
+      tags: [Ticket Packages (Admin)]
+      operationId: reorderPackages
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [package_ids]
+              properties:
+                package_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: Package IDs in desired order (first = display_order 0)
+      responses:
+        '200':
+          description: Packages reordered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  packages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TicketPackageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/EventNotFound'
+
+  # ==================== CUSTOM OPTIONS (ADMIN) ====================
+  /admin/events/{event_id}/tickets/packages/{package_id}/options:
+    get:
+      summary: List custom options for package
+      description: Get all custom registration options (up to 4)
+      tags: [Custom Options (Admin)]
+      operationId: listCustomOptions
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/PackageIdPath'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of custom options
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  options:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CustomOptionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/PackageNotFound'
+
+    post:
+      summary: Create custom option
+      description: Add new custom option (max 4 per package)
+      tags: [Custom Options (Admin)]
+      operationId: createCustomOption
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/PackageIdPath'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomOptionCreate'
+      responses:
+        '201':
+          description: Option created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomOptionResponse'
+        '400':
+          description: Validation error or max 4 options exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/PackageNotFound'
+
+  /admin/events/{event_id}/tickets/packages/{package_id}/options/{option_id}:
+    patch:
+      summary: Update custom option
+      description: Update option fields
+      tags: [Custom Options (Admin)]
+      operationId: updateCustomOption
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/PackageIdPath'
+        - $ref: '#/components/parameters/OptionIdPath'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomOptionUpdate'
+      responses:
+        '200':
+          description: Option updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomOptionResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/OptionNotFound'
+
+    delete:
+      summary: Delete custom option
+      description: Delete option (only if package has no sold tickets)
+      tags: [Custom Options (Admin)]
+      operationId: deleteCustomOption
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/PackageIdPath'
+        - $ref: '#/components/parameters/OptionIdPath'
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Option deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/OptionNotFound'
+        '409':
+          description: Cannot delete option for package with sold tickets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ==================== PROMO CODES (ADMIN) ====================
+  /admin/events/{event_id}/promo-codes:
+    get:
+      summary: List promo codes for event
+      description: Get all promo codes with usage statistics
+      tags: [Promo Codes (Admin)]
+      operationId: listPromoCodes
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of promo codes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  promo_codes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PromoCodeResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/EventNotFound'
+
+    post:
+      summary: Create promo code
+      description: Create new promotional discount code
+      tags: [Promo Codes (Admin)]
+      operationId: createPromoCode
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromoCodeCreate'
+      responses:
+        '201':
+          description: Promo code created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromoCodeResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/EventNotFound'
+        '409':
+          description: Promo code already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/events/{event_id}/promo-codes/{code_id}:
+    get:
+      summary: Get promo code details
+      description: Get promo code with usage history
+      tags: [Promo Codes (Admin)]
+      operationId: getPromoCode
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/CodeIdPath'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Promo code details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromoCodeDetailResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/PromoCodeNotFound'
+
+    patch:
+      summary: Update promo code
+      description: Update promo code fields
+      tags: [Promo Codes (Admin)]
+      operationId: updatePromoCode
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/CodeIdPath'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromoCodeUpdate'
+      responses:
+        '200':
+          description: Promo code updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromoCodeResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/PromoCodeNotFound'
+        '409':
+          description: Promo code conflict (duplicate or concurrency)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete promo code
+      description: Delete code (only if never used)
+      tags: [Promo Codes (Admin)]
+      operationId: deletePromoCode
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/CodeIdPath'
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Promo code deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/PromoCodeNotFound'
+        '409':
+          description: Cannot delete code with redemptions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ==================== TICKET PURCHASES (PUBLIC) ====================
+  /events/{event_id}/tickets/packages:
+    get:
+      summary: List available ticket packages (public)
+      description: Get enabled packages for purchase (donor-facing)
+      tags: [Ticket Purchases (Public)]
+      operationId: listAvailablePackages
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+      responses:
+        '200':
+          description: List of available packages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  packages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TicketPackagePublicResponse'
+        '404':
+          $ref: '#/components/responses/EventNotFound'
+
+  /events/{event_id}/tickets/purchase:
+    post:
+      summary: Purchase ticket package
+      description: Create ticket purchase with optional promo code and custom option responses
+      tags: [Ticket Purchases (Public)]
+      operationId: purchaseTickets
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketPurchaseRequest'
+      responses:
+        '201':
+          description: Purchase created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketPurchaseResponse'
+        '400':
+          description: Validation error (missing required options, invalid promo code, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/PackageNotFound'
+        '409':
+          description: Sold out or promo code usage limit reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /events/{event_id}/promo-codes/{code}/validate:
+    get:
+      summary: Validate promo code
+      description: Check if promo code is valid and return discount info
+      tags: [Ticket Purchases (Public)]
+      operationId: validatePromoCode
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Promo code to validate
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Promo code valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromoCodeValidationResponse'
+        '400':
+          description: Invalid, expired, or maxed promo code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/PromoCodeNotFound'
+
+  # ==================== SALES TRACKING (ADMIN) ====================
+  /admin/events/{event_id}/tickets/sales:
+    get:
+      summary: Get real-time sales counts
+      description: Poll endpoint for sales count updates (3-second refresh)
+      tags: [Sales Tracking (Admin)]
+      operationId: getSalesCounts
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Sales counts by package
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  counts:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                    description: Map of package_id to sold_count
+                  last_updated:
+                    type: string
+                    format: date-time
+                    description: Timestamp of last update
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/EventNotFound'
+
+  /admin/events/{event_id}/tickets/sales/export:
+    get:
+      summary: Export sales data as CSV
+      description: Download CSV with all ticket purchases and responses
+      tags: [Sales Tracking (Admin)]
+      operationId: exportSalesData
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: attachment; filename=ticket-sales-{event_id}.csv
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/EventNotFound'
+
+  /admin/events/{event_id}/tickets/packages/{package_id}/audit:
+    get:
+      summary: Get audit trail for package
+      description: View all changes made to package after first sale
+      tags: [Sales Tracking (Admin)]
+      operationId: getPackageAuditTrail
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/PackageIdPath'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  audit_logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditLogEntry'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/PackageNotFound'
+
+# ==================== COMPONENTS ====================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    EventIdPath:
+      name: event_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique event identifier
+
+    PackageIdPath:
+      name: package_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique ticket package identifier
+
+    OptionIdPath:
+      name: option_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique custom option identifier
+
+    CodeIdPath:
+      name: code_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique promo code identifier
+
+  schemas:
+    # ========== TICKET PACKAGE SCHEMAS ==========
+    TicketPackageCreate:
+      type: object
+      required: [name, price]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "VIP Table for 8"
+        description:
+          type: string
+          nullable: true
+          example: "Premium seating near stage with complimentary wine service"
+        price:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 1200.00
+        quantity_limit:
+          type: integer
+          nullable: true
+          minimum: 0
+          example: 10
+        display_order:
+          type: integer
+          default: 0
+          example: 0
+
+    TicketPackageUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+        price:
+          type: number
+          format: decimal
+          minimum: 0
+        quantity_limit:
+          type: integer
+          nullable: true
+          minimum: 0
+
+    TicketPackageResponse:
+      type: object
+      required: [id, event_id, name, price, sold_count, display_order, is_enabled, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        price:
+          type: number
+          format: decimal
+        quantity_limit:
+          type: integer
+          nullable: true
+        sold_count:
+          type: integer
+        display_order:
+          type: integer
+        image_url:
+          type: string
+          format: uri
+          nullable: true
+        is_enabled:
+          type: boolean
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    TicketPackageDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/TicketPackageResponse'
+        - type: object
+          properties:
+            custom_options:
+              type: array
+              items:
+                $ref: '#/components/schemas/CustomOptionResponse'
+            has_sold_tickets:
+              type: boolean
+              description: Whether package has any sold tickets (triggers audit logging)
+
+    TicketPackagePublicResponse:
+      type: object
+      required: [id, name, price, available_quantity]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        price:
+          type: number
+          format: decimal
+        image_url:
+          type: string
+          format: uri
+          nullable: true
+        available_quantity:
+          type: integer
+          nullable: true
+          description: Remaining quantity (quantity_limit - sold_count), null = unlimited
+        custom_options:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomOptionResponse'
+
+    # ========== CUSTOM OPTION SCHEMAS ==========
+    CustomOptionCreate:
+      type: object
+      required: [label, option_type]
+      properties:
+        label:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: "What is your meal preference?"
+        option_type:
+          type: string
+          enum: [boolean, multi_select, text_input]
+          example: "multi_select"
+        choices:
+          type: array
+          items:
+            type: string
+          nullable: true
+          example: ["Chicken", "Beef", "Vegan"]
+          description: Required for multi_select, null for boolean/text_input
+        is_required:
+          type: boolean
+          default: true
+          example: true
+        display_order:
+          type: integer
+          default: 0
+          example: 0
+
+    CustomOptionUpdate:
+      type: object
+      properties:
+        label:
+          type: string
+          minLength: 1
+          maxLength: 200
+        choices:
+          type: array
+          items:
+            type: string
+          nullable: true
+        is_required:
+          type: boolean
+
+    CustomOptionResponse:
+      type: object
+      required: [id, package_id, label, option_type, is_required, display_order, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        package_id:
+          type: string
+          format: uuid
+        label:
+          type: string
+        option_type:
+          type: string
+          enum: [boolean, multi_select, text_input]
+        choices:
+          type: array
+          items:
+            type: string
+          nullable: true
+        is_required:
+          type: boolean
+        display_order:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    # ========== PROMO CODE SCHEMAS ==========
+    PromoCodeCreate:
+      type: object
+      required: [code, discount_type, discount_value]
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: "EARLYBIRD2026"
+        discount_type:
+          type: string
+          enum: [percentage, fixed_amount]
+          example: "percentage"
+        discount_value:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 20.00
+          description: Percentage (0-100) or fixed amount (USD)
+        max_total_uses:
+          type: integer
+          nullable: true
+          minimum: 1
+          example: 100
+        max_uses_per_donor:
+          type: integer
+          nullable: true
+          minimum: 1
+          example: 1
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-12-31T23:59:59Z"
+
+    PromoCodeUpdate:
+      type: object
+      properties:
+        discount_value:
+          type: number
+          format: decimal
+          minimum: 0
+        max_total_uses:
+          type: integer
+          nullable: true
+          minimum: 1
+        max_uses_per_donor:
+          type: integer
+          nullable: true
+          minimum: 1
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        is_active:
+          type: boolean
+
+    PromoCodeResponse:
+      type: object
+      required: [id, event_id, code, discount_type, discount_value, current_uses, is_active, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        discount_type:
+          type: string
+          enum: [percentage, fixed_amount]
+        discount_value:
+          type: number
+          format: decimal
+        max_total_uses:
+          type: integer
+          nullable: true
+        current_uses:
+          type: integer
+        max_uses_per_donor:
+          type: integer
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        is_active:
+          type: boolean
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PromoCodeDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/PromoCodeResponse'
+        - type: object
+          properties:
+            usage_history:
+              type: array
+              items:
+                type: object
+                properties:
+                  user_email:
+                    type: string
+                  purchase_id:
+                    type: string
+                    format: uuid
+                  discount_applied:
+                    type: number
+                    format: decimal
+                  created_at:
+                    type: string
+                    format: date-time
+
+    PromoCodeValidationResponse:
+      type: object
+      required: [valid, discount_type, discount_value]
+      properties:
+        valid:
+          type: boolean
+        code:
+          type: string
+        discount_type:
+          type: string
+          enum: [percentage, fixed_amount]
+        discount_value:
+          type: number
+          format: decimal
+        message:
+          type: string
+          example: "20% discount applied"
+
+    # ========== TICKET PURCHASE SCHEMAS ==========
+    TicketPurchaseRequest:
+      type: object
+      required: [package_id, quantity]
+      properties:
+        package_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+        promo_code:
+          type: string
+          nullable: true
+          example: "EARLYBIRD2026"
+        option_responses:
+          type: array
+          items:
+            type: object
+            required: [option_id, response_value]
+            properties:
+              option_id:
+                type: string
+                format: uuid
+              response_value:
+                type: string
+                nullable: true
+                description: Response value (boolean: "true"/"false", multi_select: choice, text_input: text, or null for skipped optional)
+
+    TicketPurchaseResponse:
+      type: object
+      required: [id, event_id, package_id, quantity, base_price, discount_amount, total_price, payment_status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        package_id:
+          type: string
+          format: uuid
+        package_name:
+          type: string
+        quantity:
+          type: integer
+        base_price:
+          type: number
+          format: decimal
+        discount_amount:
+          type: number
+          format: decimal
+        total_price:
+          type: number
+          format: decimal
+        payment_status:
+          type: string
+          enum: [pending, completed, failed, refunded]
+        payment_intent_id:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        assigned_tickets:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              ticket_number:
+                type: string
+              qr_code:
+                type: string
+
+    # ========== AUDIT LOG SCHEMA ==========
+    AuditLogEntry:
+      type: object
+      required: [id, entity_type, entity_id, action, user_id, timestamp]
+      properties:
+        id:
+          type: string
+          format: uuid
+        entity_type:
+          type: string
+          example: "ticket_package"
+        entity_id:
+          type: string
+          format: uuid
+        action:
+          type: string
+          enum: [created, updated, deleted, enabled, disabled]
+        user_id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+          example: "Jane Coordinator"
+        timestamp:
+          type: string
+          format: date-time
+        field_name:
+          type: string
+          nullable: true
+          example: "price"
+        old_value:
+          type: string
+          nullable: true
+          example: "1000.00"
+        new_value:
+          type: string
+          nullable: true
+          example: "1200.00"
+
+    # ========== ERROR SCHEMAS ==========
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          example: "ValidationError"
+        message:
+          type: string
+          example: "Package name is required"
+        details:
+          type: object
+          nullable: true
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - invalid or missing JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Forbidden - user lacks required role (Event Coordinator)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    EventNotFound:
+      description: Event not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    PackageNotFound:
+      description: Ticket package not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    OptionNotFound:
+      description: Custom option not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    PromoCodeNotFound:
+      description: Promo code not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ValidationError:
+      description: Validation error in request body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ConcurrencyConflict:
+      description: Concurrency conflict - resource modified by another request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

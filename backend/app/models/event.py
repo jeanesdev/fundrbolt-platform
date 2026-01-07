@@ -25,6 +25,8 @@ if TYPE_CHECKING:
     from app.models.event_table import EventTable
     from app.models.npo import NPO
     from app.models.sponsor import Sponsor
+    from app.models.ticket_management import PromoCode, TicketPurchase
+    from app.models.ticket_package import TicketPackage
 
 
 class EventStatus(str, enum.Enum):
@@ -279,6 +281,23 @@ class Event(Base, UUIDMixin, TimestampMixin):
         back_populates="event",
         cascade="all, delete-orphan",
         order_by="EventTable.table_number",
+    )
+    # Feature 015: Ticket management relationships
+    ticket_packages: Mapped[list["TicketPackage"]] = relationship(
+        "TicketPackage",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        order_by="TicketPackage.display_order",
+    )
+    promo_codes: Mapped[list["PromoCode"]] = relationship(
+        "PromoCode",
+        back_populates="event",
+        cascade="all, delete-orphan",
+    )
+    ticket_purchases: Mapped[list["TicketPurchase"]] = relationship(
+        "TicketPurchase",
+        back_populates="event",
+        cascade="all, delete-orphan",
     )
 
     # Computed Properties (Feature 012)
