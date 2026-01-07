@@ -28,7 +28,6 @@ from app.models.base import Base, UUIDMixin
 
 if TYPE_CHECKING:
     from app.models.event import Event
-    from app.models.ticket_package import TicketPackage
     from app.models.user import User
 
 
@@ -54,6 +53,102 @@ class PaymentStatus(str, enum.Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     REFUNDED = "refunded"
+
+
+class TicketPackage(Base, UUIDMixin):
+    """Ticket package for an event.
+
+    Business Rules:
+    - price must be >= 0
+    - seats_per_package: 1-100
+    - quantity_limit: NULL (unlimited) or >= sold_count
+    - sold_count: auto-incremented on purchase
+    - version: optimistic locking for concurrent updates
+    """
+
+    __tablename__ = "ticket_packages"
+
+    # Foreign Keys
+    event_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("events.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    created_by: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    # Package Details
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    price: Mapped[Decimal] = mapped_column(
+        Numeric(10, 2), nullable=False, info={"check": "price >= 0"}
+    )
+
+    # Capacity
+    seats_per_package: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        info={"check": "seats_per_package >= 1 AND seats_per_package <= 100"},
+    )
+    quantity_limit: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    sold_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0", info={"check": "sold_count >= 0"}
+    )
+
+    # Display
+    display_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    is_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+
+    # Metadata
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+
+    # Relationships
+    event: Mapped["Event"] = relationship("Event", back_populates="ticket_packages")
+    created_by_user: Mapped["User"] = relationship("User")
+    custom_options: Mapped[list["CustomTicketOption"]] = relationship(
+        "CustomTicketOption",
+        back_populates="ticket_package",
+        cascade="all, delete-orphan",
+    )
+    purchases: Mapped[list["TicketPurchase"]] = relationship(
+        "TicketPurchase",
+        back_populates="package",
+        cascade="all, delete-orphan",
+    )
+
+    # Constraints
+    __table_args__ = (
+        CheckConstraint("price >= 0", name="check_ticket_package_price_positive"),
+        CheckConstraint(
+            "seats_per_package >= 1 AND seats_per_package <= 100",
+            name="check_seats_per_package_range",
+        ),
+        CheckConstraint(
+            "quantity_limit IS NULL OR quantity_limit >= sold_count",
+            name="check_quantity_limit_vs_sold",
+        ),
+        CheckConstraint("sold_count >= 0", name="check_sold_count_positive"),
+        UniqueConstraint("event_id", "display_order", name="uq_ticket_package_event_display_order"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<TicketPackage(id={self.id}, name={self.name}, event_id={self.event_id})>"
 
 
 class CustomTicketOption(Base, UUIDMixin):
@@ -457,3 +552,16 @@ class TicketAuditLog(Base, UUIDMixin):
 
     def __repr__(self) -> str:
         return f"<TicketAuditLog(id={self.id}, entity={self.entity_type}, field={self.field_name})>"
+
+
+__all__ = [
+    "OptionType",
+    "DiscountType",
+    "PaymentStatus",
+    "TicketPackage",
+    "CustomTicketOption",
+    "OptionResponse",
+    "PromoCode",
+    "TicketPurchase",
+    "TicketAuditLog",
+]

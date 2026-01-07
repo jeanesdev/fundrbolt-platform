@@ -3,6 +3,7 @@
 import json
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.ticket_management import TicketAuditLog
 
 
-class AuditService:
+class TicketAuditService:
     """Service for creating ticket management audit log entries.
 
     Business Rules:
@@ -20,9 +21,12 @@ class AuditService:
     - old_value/new_value are JSON-encoded strings for complex types
     """
 
-    @staticmethod
+    def __init__(self, db: AsyncSession):
+        """Initialize TicketAuditService with database session."""
+        self.db = db
+
     async def create_audit_entry(
-        db: AsyncSession,
+        self,
         entity_type: str,
         entity_id: uuid.UUID,
         coordinator_id: uuid.UUID,
@@ -33,7 +37,6 @@ class AuditService:
         """Create a new audit log entry.
 
         Args:
-            db: Database session
             entity_type: Type of entity (e.g., "ticket_package", "promo_code")
             entity_id: UUID of the entity
             coordinator_id: UUID of the user making the change
@@ -45,8 +48,8 @@ class AuditService:
             Created TicketAuditLog instance
         """
         # Convert complex types to JSON strings
-        old_value_str = AuditService._serialize_value(old_value)
-        new_value_str = AuditService._serialize_value(new_value)
+        old_value_str = self._serialize_value(old_value)
+        new_value_str = self._serialize_value(new_value)
 
         audit_log = TicketAuditLog(
             entity_type=entity_type,
@@ -57,13 +60,12 @@ class AuditService:
             new_value=new_value_str,
         )
 
-        db.add(audit_log)
-        await db.flush()  # Get ID without committing transaction
+        self.db.add(audit_log)
+        await self.db.flush()  # Get ID without committing transaction
         return audit_log
 
-    @staticmethod
     async def create_audit_entries_bulk(
-        db: AsyncSession,
+        self,
         entity_type: str,
         entity_id: uuid.UUID,
         coordinator_id: uuid.UUID,
@@ -72,7 +74,6 @@ class AuditService:
         """Create multiple audit log entries for a single update operation.
 
         Args:
-            db: Database session
             entity_type: Type of entity
             entity_id: UUID of the entity
             coordinator_id: UUID of the user making the change
@@ -84,8 +85,7 @@ class AuditService:
         audit_logs = []
 
         for field_name, (old_value, new_value) in changes.items():
-            audit_log = await AuditService.create_audit_entry(
-                db=db,
+            audit_log = await self.create_audit_entry(
                 entity_type=entity_type,
                 entity_id=entity_id,
                 coordinator_id=coordinator_id,
@@ -96,6 +96,66 @@ class AuditService:
             audit_logs.append(audit_log)
 
         return audit_logs
+
+    # Helper methods for common operations
+
+    async def log_package_created(
+        self,
+        package_id: uuid.UUID,
+        event_id: uuid.UUID,
+        user_id: uuid.UUID,
+        package_name: str,
+        price: Decimal,
+        quantity: int,
+    ) -> TicketAuditLog:
+        """Log creation of a new ticket package."""
+        return await self.create_audit_entry(
+            entity_type="ticket_package",
+            entity_id=package_id,
+            coordinator_id=user_id,
+            field_name="created",
+            old_value=None,
+            new_value=json.dumps(
+                {
+                    "event_id": str(event_id),
+                    "package_name": package_name,
+                    "price": str(price),
+                    "quantity": quantity,
+                }
+            ),
+        )
+
+    async def log_package_updated(
+        self,
+        package_id: uuid.UUID,
+        event_id: uuid.UUID,
+        user_id: uuid.UUID,
+        changes: dict[str, tuple[Any, Any]],
+    ) -> list[TicketAuditLog]:
+        """Log updates to a ticket package."""
+        return await self.create_audit_entries_bulk(
+            entity_type="ticket_package",
+            entity_id=package_id,
+            coordinator_id=user_id,
+            changes=changes,
+        )
+
+    async def log_package_deleted(
+        self,
+        package_id: uuid.UUID,
+        event_id: uuid.UUID,
+        user_id: uuid.UUID,
+        package_name: str,
+    ) -> TicketAuditLog:
+        """Log soft deletion of a ticket package."""
+        return await self.create_audit_entry(
+            entity_type="ticket_package",
+            entity_id=package_id,
+            coordinator_id=user_id,
+            field_name="deleted",
+            old_value=package_name,
+            new_value="soft_deleted",
+        )
 
     @staticmethod
     def _serialize_value(value: Any) -> str | None:

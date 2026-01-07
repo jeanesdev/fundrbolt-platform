@@ -28,6 +28,7 @@ from app.api.v1 import (
     sponsors,
     users,
 )
+from app.api.v1.admin import ticket_packages
 from app.api.v1.public import contact as public_contact
 from app.api.v1.public import events as public_events
 
@@ -60,6 +61,7 @@ api_router.include_router(public_testimonials.router, tags=["public-testimonials
 api_router.include_router(admin_testimonials.router, tags=["admin-testimonials"])
 api_router.include_router(admin_seating.router, tags=["admin-seating"])
 api_router.include_router(donor_seating.router, tags=["donor-seating"])
+api_router.include_router(ticket_packages.router, prefix="/admin", tags=["admin-tickets"])
 api_router.include_router(admin.router, tags=["admin"])
 
 __all__ = ["api_router"]
