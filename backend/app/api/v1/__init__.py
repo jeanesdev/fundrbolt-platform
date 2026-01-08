@@ -22,6 +22,7 @@ from app.api.v1 import (
     legal_documents,
     members,
     npos,
+    promo_codes,
     public_testimonials,
     registrations,
     search,
@@ -64,6 +65,7 @@ api_router.include_router(admin_seating.router, tags=["admin-seating"])
 api_router.include_router(donor_seating.router, tags=["donor-seating"])
 api_router.include_router(ticket_packages.router, prefix="/admin", tags=["admin-tickets"])
 api_router.include_router(ticket_options.router, tags=["admin-tickets"])
+api_router.include_router(promo_codes.router, tags=["admin-tickets"])
 api_router.include_router(admin.router, tags=["admin"])
 
 __all__ = ["api_router"]
