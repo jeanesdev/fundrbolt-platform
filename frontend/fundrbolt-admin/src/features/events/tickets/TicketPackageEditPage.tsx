@@ -25,6 +25,7 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { CustomOptionsManager } from './components/CustomOptionsManager';
 
 const packageSchema = z.object({
   name: z.string().min(1, 'Package name is required').max(100).optional(),
@@ -320,6 +321,11 @@ export function TicketPackageEditPage() {
           </Form>
         </CardContent>
       </Card>
+
+      {/* Custom Options Section */}
+      <div className="mt-6">
+        <CustomOptionsManager packageId={packageId} eventId={eventId} />
+      </div>
     </div>
   );
 }
