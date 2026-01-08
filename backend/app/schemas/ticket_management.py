@@ -125,6 +125,16 @@ class CustomTicketOptionCreate(CustomTicketOptionBase):
     ticket_package_id: uuid.UUID
 
 
+class CustomTicketOptionUpdate(BaseModel):
+    """Schema for updating a custom option."""
+
+    option_label: str | None = Field(None, min_length=1, max_length=200)
+    option_type: OptionType | None = None
+    choices: list[str] | None = None
+    is_required: bool | None = None
+    display_order: int | None = Field(None, ge=0)
+
+
 class CustomTicketOptionRead(CustomTicketOptionBase):
     """Schema for reading a custom option."""
 
