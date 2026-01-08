@@ -19,7 +19,7 @@ import type {
   FoodOptionCreateRequest,
 } from '@/types/event'
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
-import { ArrowLeft, Clock } from 'lucide-react'
+import { ArrowLeft, Clock, Ticket } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { AuctionItemList } from './components/AuctionItemList'
@@ -234,7 +234,7 @@ export function EventEditPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={(value) => navigate({ to: '/events/$eventId', params: { eventId }, search: (prev) => ({ ...prev, tab: value }) })} className="space-y-4 md:space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8 h-auto">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-9 h-auto">
           <TabsTrigger value="details" className="text-xs sm:text-sm">
             <span className="hidden sm:inline">Event </span>Details
           </TabsTrigger>
@@ -252,6 +252,10 @@ export function EventEditPage() {
           </TabsTrigger>
           <TabsTrigger value="seating" className="text-xs sm:text-sm">
             Seating
+          </TabsTrigger>
+          <TabsTrigger value="tickets" className="text-xs sm:text-sm">
+            <Ticket className="h-3 w-3 sm:mr-1 inline" />
+            <span className="hidden sm:inline">Tickets</span>
           </TabsTrigger>
           <TabsTrigger value="sponsors" className="text-xs sm:text-sm">
             Sponsors<span className="hidden sm:inline"> ({sponsors.length})</span>
@@ -444,6 +448,34 @@ export function EventEditPage() {
                   }
                 }}
               />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tickets Tab */}
+        <TabsContent value="tickets">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Ticket Packages</CardTitle>
+                  <CardDescription>
+                    Manage ticket packages, pricing, and sales for your event
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={() => navigate({ to: '/events/$eventId/tickets', params: { eventId } })}
+                  variant="outline"
+                >
+                  <Ticket className="h-4 w-4 mr-2" />
+                  Manage Tickets
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Click "Manage Tickets" to view and edit ticket packages, custom options, and promo codes.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
