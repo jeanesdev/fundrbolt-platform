@@ -28,9 +28,9 @@ from app.models.ticket_management import (
     PromoCode,
     PromoCodeApplication,
     TicketAuditLog,
+    TicketPackage,
     TicketPurchase,
 )
-from app.models.ticket_package import TicketPackage
 from app.models.user import User
 
 __all__ = [

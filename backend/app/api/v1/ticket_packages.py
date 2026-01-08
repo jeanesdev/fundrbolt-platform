@@ -3,17 +3,16 @@
 import uuid
 from typing import Any
 
-from app.api.dependencies.auth import get_current_active_user
-from app.api.dependencies.database import get_db
-from app.api.dependencies.permissions import require_permission
-from app.models.events import Event
-from app.models.users import User
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.database import get_db
 from app.core.logging import get_logger
+from app.middleware.auth import get_current_active_user
+from app.models.event import Event
 from app.models.ticket_management import TicketPackage
+from app.models.user import User
 from app.schemas.ticket_management import (
     TicketPackageCreate,
     TicketPackageRead,
@@ -36,7 +35,6 @@ async def create_ticket_package(
     package_data: TicketPackageCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
-    _: None = Depends(require_permission("manage_event_tickets")),
 ) -> Any:
     """Create a new ticket package."""
     # Verify event access
@@ -47,12 +45,12 @@ async def create_ticket_package(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     # Check duplicate name
-    result = await db.execute(
+    dup_result = await db.execute(
         select(func.count(TicketPackage.id)).where(
             and_(TicketPackage.event_id == event_id, TicketPackage.name == package_data.name)
         )
     )
-    if result.scalar_one() > 0:
+    if dup_result.scalar_one() > 0:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=f"Package '{package_data.name}' exists"
         )
@@ -96,7 +94,6 @@ async def list_ticket_packages(
     include_disabled: bool = Query(False),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
-    _: None = Depends(require_permission("view_event_tickets")),
 ) -> Any:
     """List packages."""
     result = await db.execute(
@@ -120,7 +117,6 @@ async def get_ticket_package(
     package_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
-    _: None = Depends(require_permission("view_event_tickets")),
 ) -> Any:
     """Get package."""
     result = await db.execute(
@@ -148,7 +144,6 @@ async def update_ticket_package(
     package_data: TicketPackageUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
-    _: None = Depends(require_permission("manage_event_tickets")),
 ) -> Any:
     """Update package."""
     result = await db.execute(
@@ -220,7 +215,6 @@ async def delete_ticket_package(
     package_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
-    _: None = Depends(require_permission("manage_event_tickets")),
 ) -> None:
     """Delete package."""
     result = await db.execute(

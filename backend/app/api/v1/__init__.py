@@ -26,9 +26,9 @@ from app.api.v1 import (
     registrations,
     search,
     sponsors,
+    ticket_packages,
     users,
 )
-from app.api.v1.admin import ticket_packages
 from app.api.v1.public import contact as public_contact
 from app.api.v1.public import events as public_events
 
