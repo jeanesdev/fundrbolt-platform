@@ -1,0 +1,281 @@
+"""Sales tracking service for ticket management analytics."""
+
+import csv
+import io
+import uuid
+from decimal import Decimal
+from typing import Any
+
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload, selectinload
+
+from app.core.logging import get_logger
+from app.models.ticket_management import PromoCode, TicketPackage, TicketPurchase
+
+logger = get_logger(__name__)
+
+
+class SalesTrackingService:
+    """Service for tracking and reporting ticket sales analytics."""
+
+    def __init__(self, db: AsyncSession):
+        """Initialize service with database session."""
+        self.db = db
+
+    async def get_package_sales_summary(self, package_id: uuid.UUID) -> dict[str, Any]:
+        """Get sales summary for a specific ticket package.
+
+        Returns:
+            dict with keys: package_id, package_name, quantity_sold, total_revenue,
+            quantity_limit, available_quantity, is_sold_out
+        """
+        # Get package with sales data
+        result = await self.db.execute(select(TicketPackage).where(TicketPackage.id == package_id))
+        package = result.scalar_one_or_none()
+        if not package:
+            return {}
+
+        # Calculate revenue from purchases
+        revenue_result = await self.db.execute(
+            select(func.sum(TicketPurchase.total_price))
+            .where(TicketPurchase.ticket_package_id == package_id)
+            .where(TicketPurchase.payment_status == "completed")
+        )
+        total_revenue = revenue_result.scalar_one() or Decimal("0.00")
+
+        # Calculate availability
+        available_quantity = None
+        is_sold_out = False
+        if package.quantity_limit is not None:
+            available_quantity = max(0, package.quantity_limit - package.sold_count)
+            is_sold_out = package.sold_count >= package.quantity_limit
+
+        return {
+            "package_id": str(package.id),
+            "package_name": package.name,
+            "quantity_sold": package.sold_count,
+            "total_revenue": total_revenue,
+            "quantity_limit": package.quantity_limit,
+            "available_quantity": available_quantity,
+            "is_sold_out": is_sold_out,
+        }
+
+    async def get_event_revenue_summary(self, event_id: uuid.UUID) -> dict[str, Any]:
+        """Get aggregated revenue summary for entire event.
+
+        Returns:
+            dict with keys: event_id, total_packages_sold, total_tickets_sold,
+            total_revenue, packages_sold_out_count
+        """
+        # Get all packages for event
+        packages_result = await self.db.execute(
+            select(TicketPackage).where(TicketPackage.event_id == event_id)
+        )
+        packages = packages_result.scalars().all()
+
+        # Calculate totals
+        total_packages_sold = len(packages)
+        total_tickets_sold = sum(pkg.sold_count for pkg in packages)
+        packages_sold_out_count = sum(
+            1
+            for pkg in packages
+            if pkg.quantity_limit is not None and pkg.sold_count >= pkg.quantity_limit
+        )
+
+        # Calculate total revenue from completed purchases
+        revenue_result = await self.db.execute(
+            select(func.sum(TicketPurchase.total_price))
+            .where(TicketPurchase.event_id == event_id)
+            .where(TicketPurchase.payment_status == "completed")
+        )
+        total_revenue = revenue_result.scalar_one() or Decimal("0.00")
+
+        return {
+            "event_id": str(event_id),
+            "total_packages_sold": total_packages_sold,
+            "total_tickets_sold": total_tickets_sold,
+            "total_revenue": total_revenue,
+            "packages_sold_out_count": packages_sold_out_count,
+        }
+
+    async def get_purchasers_list(
+        self,
+        package_id: uuid.UUID,
+        page: int = 1,
+        per_page: int = 50,
+    ) -> dict[str, Any]:
+        """Get list of purchasers for a package with pagination.
+
+        Returns:
+            dict with keys: purchasers (list), total_count, page, per_page
+        """
+        # Calculate offset
+        offset = (page - 1) * per_page
+
+        # Get total count
+        count_result = await self.db.execute(
+            select(func.count(TicketPurchase.id)).where(
+                TicketPurchase.ticket_package_id == package_id
+            )
+        )
+        total_count = count_result.scalar_one()
+
+        # Get purchases with related data
+        result = await self.db.execute(
+            select(TicketPurchase)
+            .where(TicketPurchase.ticket_package_id == package_id)
+            .options(
+                joinedload(TicketPurchase.user),
+                joinedload(TicketPurchase.promo_application).joinedload(
+                    PromoCode  # type: ignore
+                ),
+                selectinload(TicketPurchase.assigned_tickets),
+            )
+            .order_by(TicketPurchase.purchased_at.desc())
+            .limit(per_page)
+            .offset(offset)
+        )
+        purchases = result.unique().scalars().all()
+
+        # Format purchaser data
+        purchasers = []
+        for purchase in purchases:
+            promo_code = None
+            discount_amount = None
+            if purchase.promo_application:
+                promo_code = purchase.promo_application.promo_code.code
+                discount_amount = purchase.promo_application.discount_amount
+
+            purchasers.append(
+                {
+                    "purchase_id": str(purchase.id),
+                    "purchaser_name": f"{purchase.user.first_name} {purchase.user.last_name}",
+                    "purchaser_email": purchase.user.email,
+                    "quantity": purchase.quantity,
+                    "total_price": purchase.total_price,
+                    "payment_status": purchase.payment_status.value,
+                    "purchased_at": purchase.purchased_at.isoformat(),
+                    "promo_code": promo_code,
+                    "discount_amount": discount_amount,
+                    "assigned_tickets_count": len(purchase.assigned_tickets),
+                }
+            )
+
+        return {
+            "purchasers": purchasers,
+            "total_count": total_count,
+            "page": page,
+            "per_page": per_page,
+        }
+
+    async def get_assigned_guests_list(
+        self,
+        purchase_id: uuid.UUID,
+        page: int = 1,
+        per_page: int = 50,
+    ) -> dict[str, Any]:
+        """Get list of assigned tickets for a purchase.
+
+        Returns:
+            dict with keys: assigned_tickets (list), total_count, page, per_page
+        """
+        # Get purchase with assigned tickets
+        result = await self.db.execute(
+            select(TicketPurchase)
+            .where(TicketPurchase.id == purchase_id)
+            .options(selectinload(TicketPurchase.assigned_tickets))
+        )
+        purchase = result.scalar_one_or_none()
+        if not purchase:
+            return {"assigned_tickets": [], "total_count": 0, "page": page, "per_page": per_page}
+
+        # Calculate offset and slice
+        offset = (page - 1) * per_page
+        assigned_tickets = purchase.assigned_tickets[offset : offset + per_page]
+
+        # Format ticket data
+        tickets_data = [
+            {
+                "ticket_id": str(ticket.id),
+                "ticket_number": ticket.ticket_number,
+                "qr_code": ticket.qr_code,
+                "assigned_at": ticket.assigned_at.isoformat(),
+            }
+            for ticket in assigned_tickets
+        ]
+
+        return {
+            "assigned_tickets": tickets_data,
+            "total_count": len(purchase.assigned_tickets),
+            "page": page,
+            "per_page": per_page,
+        }
+
+    async def generate_sales_csv_export(self, event_id: uuid.UUID) -> str:
+        """Generate CSV export of all ticket sales for an event.
+
+        Returns:
+            CSV string with columns: package_name, purchaser_name, purchaser_email,
+            quantity, total_price, payment_status, purchased_at, promo_code, discount_amount
+        """
+        # Get all purchases for event with related data
+        result = await self.db.execute(
+            select(TicketPurchase)
+            .where(TicketPurchase.event_id == event_id)
+            .options(
+                joinedload(TicketPurchase.user),
+                joinedload(TicketPurchase.ticket_package),
+                joinedload(TicketPurchase.promo_application).joinedload(
+                    PromoCode  # type: ignore
+                ),
+            )
+            .order_by(TicketPurchase.purchased_at.desc())
+        )
+        purchases = result.unique().scalars().all()
+
+        # Generate CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # Write header
+        writer.writerow(
+            [
+                "Package Name",
+                "Purchaser Name",
+                "Purchaser Email",
+                "Quantity",
+                "Total Price",
+                "Payment Status",
+                "Purchased At",
+                "Promo Code",
+                "Discount Amount",
+            ]
+        )
+
+        # Write data rows
+        for purchase in purchases:
+            promo_code = ""
+            discount_amount = ""
+            if purchase.promo_application:
+                promo_code = purchase.promo_application.promo_code.code
+                discount_amount = str(purchase.promo_application.discount_amount)
+
+            writer.writerow(
+                [
+                    purchase.ticket_package.name,
+                    f"{purchase.user.first_name} {purchase.user.last_name}",
+                    purchase.user.email,
+                    purchase.quantity,
+                    str(purchase.total_price),
+                    purchase.payment_status.value,
+                    purchase.purchased_at.isoformat(),
+                    promo_code,
+                    discount_amount,
+                ]
+            )
+
+        return output.getvalue()
+
+
+__all__ = ["SalesTrackingService"]

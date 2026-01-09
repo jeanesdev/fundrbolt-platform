@@ -7,6 +7,11 @@ import { PromoCodesManager } from '@/components/PromoCodesManager';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +20,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { Eye, EyeOff, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { PurchasersList } from './components/PurchasersList';
+import { SalesExportButton } from './components/SalesExportButton';
+import { SalesSummaryCard } from './components/SalesSummaryCard';
 
 interface TicketPackage {
   id: string;
@@ -42,6 +50,19 @@ export function TicketPackagesIndexPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showDisabled, setShowDisabled] = useState(false);
+  const [expandedPackages, setExpandedPackages] = useState<Set<string>>(new Set());
+
+  const togglePackageExpand = (packageId: string) => {
+    setExpandedPackages((prev) => {
+      const next = new Set(prev);
+      if (next.has(packageId)) {
+        next.delete(packageId);
+      } else {
+        next.add(packageId);
+      }
+      return next;
+    });
+  };
 
   // Fetch packages
   const { data: packages, isLoading } = useQuery({
@@ -114,6 +135,11 @@ export function TicketPackagesIndexPage() {
         </div>
       </div>
 
+      {/* Sales Summary */}
+      <div className="mb-6">
+        <SalesSummaryCard eventId={eventId} />
+      </div>
+
       <Tabs defaultValue="packages" className="space-y-6">
         <TabsList>
           <TabsTrigger value="packages">Ticket Packages</TabsTrigger>
@@ -132,17 +158,20 @@ export function TicketPackagesIndexPage() {
                 {showDisabled ? 'Hide Disabled' : 'Show Disabled'}
               </Button>
             </div>
-            <Button
-              onClick={() =>
-                navigate({
-                  to: '/events/$eventId/tickets/create',
-                  params: { eventId },
-                })
-              }
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              New Package
-            </Button>
+            <div className="flex gap-2">
+              <SalesExportButton eventId={eventId} eventName="Event" />
+              <Button
+                onClick={() =>
+                  navigate({
+                    to: '/events/$eventId/tickets/create',
+                    params: { eventId },
+                  })
+                }
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                New Package
+              </Button>
+            </div>
           </div>
 
           {!packages || packages.length === 0 ? (
@@ -164,99 +193,120 @@ export function TicketPackagesIndexPage() {
             </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {packages.map((pkg) => (
-                <Card key={pkg.id} className={!pkg.is_enabled ? 'opacity-60' : ''}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg">{pkg.name}</CardTitle>
-                      <div className="flex gap-1">
-                        {!pkg.is_enabled && (
-                          <Badge variant="secondary">Disabled</Badge>
-                        )}
-                        {pkg.is_sold_out && (
-                          <Badge variant="destructive">Sold Out</Badge>
-                        )}
-                        {!pkg.quantity_limit && (
-                          <Badge variant="outline">Unlimited</Badge>
-                        )}
-                        {pkg.sold_count > 0 && !pkg.is_sold_out && (
-                          <Badge variant="default">{pkg.sold_count} Sold</Badge>
-                        )}
-                      </div>
-                    </div>
-                    <CardDescription>
-                      {pkg.description?.substring(0, 100)}
-                      {pkg.description && pkg.description.length > 100 ? '...' : ''}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3 mb-4">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Price:</span>
-                        <span className="font-semibold">${pkg.price}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Seats per package:</span>
-                        <span>{pkg.seats_per_package}</span>
-                      </div>
+              {packages.map((pkg) => {
+                const isExpanded = expandedPackages.has(pkg.id);
 
-                      {/* Availability with progress bar */}
-                      {pkg.quantity_limit !== null ? (
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Availability:</span>
-                            <span className="font-medium">
-                              {pkg.available_quantity} / {pkg.quantity_limit}
-                            </span>
-                          </div>
-                          <Progress
-                            value={(pkg.sold_count / pkg.quantity_limit) * 100}
-                            className="h-2"
-                          />
-                          <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>{pkg.sold_count} sold</span>
-                            <span>
-                              {pkg.is_sold_out
-                                ? 'Sold out'
-                                : `${pkg.available_quantity} remaining`}
-                            </span>
-                          </div>
+                return (
+                  <Card key={pkg.id} className={!pkg.is_enabled ? 'opacity-60' : ''}>
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-lg">{pkg.name}</CardTitle>
+                        <div className="flex gap-1">
+                          {!pkg.is_enabled && (
+                            <Badge variant="secondary">Disabled</Badge>
+                          )}
+                          {pkg.is_sold_out && (
+                            <Badge variant="destructive">Sold Out</Badge>
+                          )}
+                          {!pkg.quantity_limit && (
+                            <Badge variant="outline">Unlimited</Badge>
+                          )}
+                          {pkg.sold_count > 0 && !pkg.is_sold_out && (
+                            <Badge variant="default">{pkg.sold_count} Sold</Badge>
+                          )}
                         </div>
-                      ) : (
+                      </div>
+                      <CardDescription>
+                        {pkg.description?.substring(0, 100)}
+                        {pkg.description && pkg.description.length > 100 ? '...' : ''}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3 mb-4">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Sold:</span>
-                          <span>{pkg.sold_count} packages</span>
+                          <span className="text-muted-foreground">Price:</span>
+                          <span className="font-semibold">${pkg.price}</span>
                         </div>
-                      )}
-                    </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Seats per package:</span>
+                          <span>{pkg.seats_per_package}</span>
+                        </div>
 
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() =>
-                          navigate({
-                            to: '/events/$eventId/tickets/$packageId/edit',
-                            params: { eventId, packageId: pkg.id },
-                          })
-                        }
-                      >
-                        <Pencil className="mr-2 h-3 w-3" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(pkg)}
-                        disabled={pkg.sold_count > 0 || deleteMutation.isPending}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                        {/* Availability with progress bar */}
+                        {pkg.quantity_limit !== null ? (
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Availability:</span>
+                              <span className="font-medium">
+                                {pkg.available_quantity} / {pkg.quantity_limit}
+                              </span>
+                            </div>
+                            <Progress
+                              value={(pkg.sold_count / pkg.quantity_limit) * 100}
+                              className="h-2"
+                            />
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>{pkg.sold_count} sold</span>
+                              <span>
+                                {pkg.is_sold_out
+                                  ? 'Sold out'
+                                  : `${pkg.available_quantity} remaining`}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Sold:</span>
+                            <span>{pkg.sold_count} packages</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2 mb-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() =>
+                            navigate({
+                              to: '/events/$eventId/tickets/$packageId/edit',
+                              params: { eventId, packageId: pkg.id },
+                            })
+                          }
+                        >
+                          <Pencil className="mr-2 h-3 w-3" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(pkg)}
+                          disabled={pkg.sold_count > 0 || deleteMutation.isPending}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+
+                      {/* Expandable Sales Details */}
+                      {pkg.sold_count > 0 && (
+                        <Collapsible open={isExpanded} onOpenChange={() => togglePackageExpand(pkg.id)}>
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm" className="w-full">
+                              {isExpanded ? 'Hide' : 'Show'} Purchasers
+                            </Button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="mt-3">
+                            <PurchasersList
+                              eventId={eventId}
+                              packageId={pkg.id}
+                            />
+                          </CollapsibleContent>
+                        </Collapsible>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
