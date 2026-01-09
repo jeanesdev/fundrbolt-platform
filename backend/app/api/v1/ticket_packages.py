@@ -85,7 +85,7 @@ async def create_ticket_package(
     await db.refresh(new_package)
 
     logger.info(f"Created package {new_package.id}")
-    return new_package
+    return TicketPackageRead.from_orm_with_availability(new_package)
 
 
 @router.get("/events/{event_id}/packages", response_model=list[TicketPackageRead])
@@ -95,7 +95,7 @@ async def list_ticket_packages(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
-    """List packages."""
+    """List packages with availability status."""
     result = await db.execute(
         select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
     )
@@ -108,7 +108,10 @@ async def list_ticket_packages(
 
     query = query.order_by(TicketPackage.display_order, TicketPackage.created_at)
     result = await db.execute(query)
-    return result.scalars().all()
+    packages = result.scalars().all()
+
+    # Return packages with computed availability
+    return [TicketPackageRead.from_orm_with_availability(pkg) for pkg in packages]
 
 
 @router.get("/events/{event_id}/packages/{package_id}", response_model=TicketPackageRead)
@@ -118,7 +121,7 @@ async def get_ticket_package(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
-    """Get package."""
+    """Get package with availability status."""
     result = await db.execute(
         select(TicketPackage).where(
             and_(TicketPackage.id == package_id, TicketPackage.event_id == event_id)
@@ -134,7 +137,7 @@ async def get_ticket_package(
     if not result.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    return package
+    return TicketPackageRead.from_orm_with_availability(package)
 
 
 @router.patch("/events/{event_id}/packages/{package_id}", response_model=TicketPackageRead)
@@ -206,7 +209,7 @@ async def update_ticket_package(
     await db.refresh(package)
 
     logger.info(f"Updated package {package_id}")
-    return package
+    return TicketPackageRead.from_orm_with_availability(package)
 
 
 @router.delete("/events/{event_id}/packages/{package_id}", status_code=status.HTTP_204_NO_CONTENT)

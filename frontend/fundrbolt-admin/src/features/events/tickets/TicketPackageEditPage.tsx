@@ -55,6 +55,8 @@ interface TicketPackage {
   created_at: string;
   updated_at: string;
   version: number;
+  is_sold_out: boolean;
+  available_quantity: number | null;
 }
 
 export function TicketPackageEditPage() {

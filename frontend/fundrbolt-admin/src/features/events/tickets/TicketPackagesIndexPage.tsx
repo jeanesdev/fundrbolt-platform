@@ -3,9 +3,11 @@
  * Lists all ticket packages for an event with CRUD operations
  */
 
+import { PromoCodesManager } from '@/components/PromoCodesManager';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api-client';
@@ -13,7 +15,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { Eye, EyeOff, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { PromoCodesManager } from '@/components/PromoCodesManager';
 
 interface TicketPackage {
   id: string;
@@ -31,6 +32,8 @@ interface TicketPackage {
   created_at: string;
   updated_at: string;
   version: number;
+  is_sold_out: boolean;
+  available_quantity: number | null;
 }
 
 export function TicketPackagesIndexPage() {
@@ -170,7 +173,13 @@ export function TicketPackagesIndexPage() {
                         {!pkg.is_enabled && (
                           <Badge variant="secondary">Disabled</Badge>
                         )}
-                        {pkg.sold_count > 0 && (
+                        {pkg.is_sold_out && (
+                          <Badge variant="destructive">Sold Out</Badge>
+                        )}
+                        {!pkg.quantity_limit && (
+                          <Badge variant="outline">Unlimited</Badge>
+                        )}
+                        {pkg.sold_count > 0 && !pkg.is_sold_out && (
                           <Badge variant="default">{pkg.sold_count} Sold</Badge>
                         )}
                       </div>
@@ -181,7 +190,7 @@ export function TicketPackagesIndexPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2 mb-4">
+                    <div className="space-y-3 mb-4">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Price:</span>
                         <span className="font-semibold">${pkg.price}</span>
@@ -190,14 +199,35 @@ export function TicketPackagesIndexPage() {
                         <span className="text-muted-foreground">Seats per package:</span>
                         <span>{pkg.seats_per_package}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Available:</span>
-                        <span>
-                          {pkg.quantity_limit
-                            ? `${pkg.quantity_limit - pkg.sold_count} / ${pkg.quantity_limit}`
-                            : 'Unlimited'}
-                        </span>
-                      </div>
+
+                      {/* Availability with progress bar */}
+                      {pkg.quantity_limit !== null ? (
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Availability:</span>
+                            <span className="font-medium">
+                              {pkg.available_quantity} / {pkg.quantity_limit}
+                            </span>
+                          </div>
+                          <Progress
+                            value={(pkg.sold_count / pkg.quantity_limit) * 100}
+                            className="h-2"
+                          />
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>{pkg.sold_count} sold</span>
+                            <span>
+                              {pkg.is_sold_out
+                                ? 'Sold out'
+                                : `${pkg.available_quantity} remaining`}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Sold:</span>
+                          <span>{pkg.sold_count} packages</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex gap-2">

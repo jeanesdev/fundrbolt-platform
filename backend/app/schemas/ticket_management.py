@@ -79,8 +79,42 @@ class TicketPackageRead(TicketPackageBase):
     created_at: datetime
     updated_at: datetime
     version: int
+    is_sold_out: bool = Field(False, description="True if sold_count >= quantity_limit")
+    available_quantity: int | None = Field(
+        None, description="Remaining packages available (NULL = unlimited)"
+    )
 
     model_config = ConfigDict(from_attributes=True)
+
+    @classmethod
+    def from_orm_with_availability(cls, package: Any) -> "TicketPackageRead":
+        """Create schema with computed availability fields."""
+        data = {
+            "id": package.id,
+            "event_id": package.event_id,
+            "name": package.name,
+            "description": package.description,
+            "price": package.price,
+            "seats_per_package": package.seats_per_package,
+            "quantity_limit": package.quantity_limit,
+            "is_enabled": package.is_enabled,
+            "sold_count": package.sold_count,
+            "display_order": package.display_order,
+            "image_url": package.image_url,
+            "created_by": package.created_by,
+            "created_at": package.created_at,
+            "updated_at": package.updated_at,
+            "version": package.version,
+            "is_sold_out": False,
+            "available_quantity": None,
+        }
+
+        # Calculate availability
+        if package.quantity_limit is not None:
+            data["is_sold_out"] = package.sold_count >= package.quantity_limit
+            data["available_quantity"] = max(0, package.quantity_limit - package.sold_count)
+
+        return cls(**data)
 
 
 class TicketPackageWithSales(TicketPackageRead):
