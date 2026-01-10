@@ -2,6 +2,7 @@
 
 import csv
 import io
+import json
 import uuid
 from decimal import Decimal
 from typing import Any
@@ -11,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.core.logging import get_logger
+from app.core.redis import get_redis
 from app.models.ticket_management import PromoCode, TicketPackage, TicketPurchase
 
 logger = get_logger(__name__)
@@ -18,6 +20,9 @@ logger = get_logger(__name__)
 
 class SalesTrackingService:
     """Service for tracking and reporting ticket sales analytics."""
+
+    # Cache TTL in seconds
+    SALES_SUMMARY_CACHE_TTL = 60  # 60 seconds for sales summaries
 
     def __init__(self, db: AsyncSession):
         """Initialize service with database session."""
@@ -30,6 +35,18 @@ class SalesTrackingService:
             dict with keys: package_id, package_name, quantity_sold, total_revenue,
             quantity_limit, available_quantity, is_sold_out
         """
+        # Try to get from cache first
+        cache_key = f"sales:package:{package_id}"
+        try:
+            redis_client = await get_redis()
+            cached_data = await redis_client.get(cache_key)
+            if cached_data:
+                logger.debug(f"Cache hit for package sales summary: {package_id}")
+                cached_dict: dict[str, Any] = json.loads(cached_data)
+                return cached_dict
+        except Exception as e:
+            logger.warning(f"Redis cache read failed for {cache_key}: {e}")
+
         # Get package with sales data
         result = await self.db.execute(select(TicketPackage).where(TicketPackage.id == package_id))
         package = result.scalar_one_or_none()
@@ -51,15 +68,25 @@ class SalesTrackingService:
             available_quantity = max(0, package.quantity_limit - package.sold_count)
             is_sold_out = package.sold_count >= package.quantity_limit
 
-        return {
+        summary = {
             "package_id": str(package.id),
             "package_name": package.name,
             "quantity_sold": package.sold_count,
-            "total_revenue": total_revenue,
+            "total_revenue": float(total_revenue),  # Convert Decimal for JSON serialization
             "quantity_limit": package.quantity_limit,
             "available_quantity": available_quantity,
             "is_sold_out": is_sold_out,
         }
+
+        # Cache the result
+        try:
+            redis_client = await get_redis()
+            await redis_client.setex(cache_key, self.SALES_SUMMARY_CACHE_TTL, json.dumps(summary))
+            logger.debug(f"Cached package sales summary: {package_id}")
+        except Exception as e:
+            logger.warning(f"Redis cache write failed for {cache_key}: {e}")
+
+        return summary
 
     async def get_event_revenue_summary(self, event_id: uuid.UUID) -> dict[str, Any]:
         """Get aggregated revenue summary for entire event.
@@ -68,6 +95,18 @@ class SalesTrackingService:
             dict with keys: event_id, total_packages_sold, total_tickets_sold,
             total_revenue, packages_sold_out_count
         """
+        # Try to get from cache first
+        cache_key = f"sales:event:{event_id}"
+        try:
+            redis_client = await get_redis()
+            cached_data = await redis_client.get(cache_key)
+            if cached_data:
+                logger.debug(f"Cache hit for event revenue summary: {event_id}")
+                cached_dict: dict[str, Any] = json.loads(cached_data)
+                return cached_dict
+        except Exception as e:
+            logger.warning(f"Redis cache read failed for {cache_key}: {e}")
+
         # Get all packages for event
         packages_result = await self.db.execute(
             select(TicketPackage).where(TicketPackage.event_id == event_id)
@@ -91,13 +130,23 @@ class SalesTrackingService:
         )
         total_revenue = revenue_result.scalar_one() or Decimal("0.00")
 
-        return {
+        summary = {
             "event_id": str(event_id),
             "total_packages_sold": total_packages_sold,
             "total_tickets_sold": total_tickets_sold,
-            "total_revenue": total_revenue,
+            "total_revenue": float(total_revenue),  # Convert Decimal for JSON serialization
             "packages_sold_out_count": packages_sold_out_count,
         }
+
+        # Cache the result
+        try:
+            redis_client = await get_redis()
+            await redis_client.setex(cache_key, self.SALES_SUMMARY_CACHE_TTL, json.dumps(summary))
+            logger.debug(f"Cached event revenue summary: {event_id}")
+        except Exception as e:
+            logger.warning(f"Redis cache write failed for {cache_key}: {e}")
+
+        return summary
 
     async def get_purchasers_list(
         self,
@@ -276,6 +325,32 @@ class SalesTrackingService:
             )
 
         return output.getvalue()
+
+    async def invalidate_sales_cache(
+        self, event_id: uuid.UUID, package_id: uuid.UUID | None = None
+    ) -> None:
+        """Invalidate sales cache for event and optionally specific package.
+
+        Args:
+            event_id: Event ID to invalidate cache for
+            package_id: Optional package ID to invalidate specific package cache
+        """
+        try:
+            redis_client = await get_redis()
+
+            # Always invalidate event summary
+            event_cache_key = f"sales:event:{event_id}"
+            await redis_client.delete(event_cache_key)
+            logger.debug(f"Invalidated event sales cache: {event_id}")
+
+            # Invalidate specific package if provided
+            if package_id:
+                package_cache_key = f"sales:package:{package_id}"
+                await redis_client.delete(package_cache_key)
+                logger.debug(f"Invalidated package sales cache: {package_id}")
+
+        except Exception as e:
+            logger.warning(f"Failed to invalidate sales cache: {e}")
 
 
 __all__ = ["SalesTrackingService"]
