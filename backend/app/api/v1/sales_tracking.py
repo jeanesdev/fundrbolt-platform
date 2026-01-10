@@ -24,6 +24,7 @@ router = APIRouter()
 )
 async def get_event_sales_summary(
     event_id: uuid.UUID,
+    sponsorships_only: bool = Query(False, description="Filter to sponsorship packages only"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
@@ -36,7 +37,7 @@ async def get_event_sales_summary(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     service = SalesTrackingService(db)
-    summary = await service.get_event_revenue_summary(event_id)
+    summary = await service.get_event_revenue_summary(event_id, sponsorships_only=sponsorships_only)
 
     logger.info(f"Retrieved sales summary for event {event_id}")
     return summary

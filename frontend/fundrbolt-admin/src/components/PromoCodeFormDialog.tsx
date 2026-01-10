@@ -1,9 +1,9 @@
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { apiClient } from "@/lib/api-client";
+import { DiscountType, type PromoCodeCreate, type PromoCodeRead, type PromoCodeUpdate } from "@/types/ticket-management";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
-import { apiClient } from "@/lib/api-client";
-import { DiscountType, type PromoCodeRead, type PromoCodeCreate, type PromoCodeUpdate } from "@/types/ticket-management";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 
 interface PromoCodeFormDialogProps {
   eventId: string;
@@ -139,7 +139,7 @@ export function PromoCodeFormDialog({
       const err = error as { response?: { data?: { detail?: string } } };
       alert(
         err.response?.data?.detail ||
-          "An error occurred while saving the promo code."
+        "An error occurred while saving the promo code."
       );
     }
   };
@@ -330,8 +330,8 @@ export function PromoCodeFormDialog({
               {createMutation.isPending || updateMutation.isPending
                 ? "Saving..."
                 : isEditing
-                ? "Update"
-                : "Create"}
+                  ? "Update"
+                  : "Create"}
             </button>
           </div>
         </form>

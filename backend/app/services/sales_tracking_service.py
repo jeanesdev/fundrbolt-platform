@@ -88,15 +88,21 @@ class SalesTrackingService:
 
         return summary
 
-    async def get_event_revenue_summary(self, event_id: uuid.UUID) -> dict[str, Any]:
+    async def get_event_revenue_summary(
+        self, event_id: uuid.UUID, sponsorships_only: bool = False
+    ) -> dict[str, Any]:
         """Get aggregated revenue summary for entire event.
+
+        Args:
+            event_id: The event ID
+            sponsorships_only: If True, only include sponsorship packages
 
         Returns:
             dict with keys: event_id, total_packages_sold, total_tickets_sold,
             total_revenue, packages_sold_out_count
         """
-        # Try to get from cache first
-        cache_key = f"sales:event:{event_id}"
+        # Try to get from cache first (cache key includes sponsorships_only flag)
+        cache_key = f"sales:event:{event_id}:sponsorships_only={sponsorships_only}"
         try:
             redis_client = await get_redis()
             cached_data = await redis_client.get(cache_key)
@@ -107,10 +113,12 @@ class SalesTrackingService:
         except Exception as e:
             logger.warning(f"Redis cache read failed for {cache_key}: {e}")
 
-        # Get all packages for event
-        packages_result = await self.db.execute(
-            select(TicketPackage).where(TicketPackage.event_id == event_id)
-        )
+        # Get all packages for event, optionally filtering by sponsorships
+        query = select(TicketPackage).where(TicketPackage.event_id == event_id)
+        if sponsorships_only:
+            query = query.where(TicketPackage.is_sponsorship == True)  # noqa: E712
+
+        packages_result = await self.db.execute(query)
         packages = packages_result.scalars().all()
 
         # Calculate totals

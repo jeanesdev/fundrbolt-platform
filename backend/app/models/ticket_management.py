@@ -103,6 +103,9 @@ class TicketPackage(Base, UUIDMixin):
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     is_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    is_sponsorship: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false", index=True
+    )
 
     # Metadata
     created_at: Mapped[datetime] = mapped_column(

@@ -64,6 +64,7 @@ async def create_ticket_package(
         seats_per_package=package_data.seats_per_package,
         quantity_limit=package_data.quantity_limit,
         is_enabled=package_data.is_enabled,
+        is_sponsorship=package_data.is_sponsorship,
         created_by=current_user.id,
     )
 

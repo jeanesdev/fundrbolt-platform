@@ -315,7 +315,7 @@ Each task follows the structure:
 - [x] [T135] [US9] Create GET /api/v1/admin/events/{event_id}/tickets/sales/summary - `backend/app/api/v1/sales_tracking.py`
 - [x] [T136] [US9] Create GET /api/v1/admin/events/{event_id}/tickets/packages/{package_id}/sales - `backend/app/api/v1/sales_tracking.py`
 - [x] [T137] [US9] Create GET /api/v1/admin/events/{event_id}/tickets/sales/export (CSV download) - `backend/app/api/v1/sales_tracking.py`
-- [ ] [T138] [US9] Add sponsorship filter query param to sales endpoints - `backend/app/api/v1/sales_tracking.py`
+- [ ] [T138] [US9] Add sponsorship filter query param to sales endpoints - `backend/app/api/v1/sales_tracking.py` ⏸️ (requires Phase 9)
 - [x] [T139] [US9] Register sales_tracking router - `backend/app/api/v1/__init__.py`
 
 ### Frontend
@@ -326,12 +326,12 @@ Each task follows the structure:
 - [x] [T143] [US9] Create PurchasersList component with purchaser names, dates - `frontend/fundrbolt-admin/src/features/events/tickets/components/PurchasersList.tsx`
 - [x] [T144] [US9] Display assigned guests for each purchase - `frontend/fundrbolt-admin/src/features/events/tickets/components/PurchasersList.tsx`
 - [x] [T145] [US9] Show promo code used and discount amount - `frontend/fundrbolt-admin/src/features/events/tickets/components/PurchasersList.tsx`
-- [ ] [T146] [US9] Add "Show Sponsorships Only" filter toggle - `frontend/fundrbolt-admin/src/features/events/tickets/components/SalesFilters.tsx`
+- [ ] [T146] [US9] Add "Show Sponsorships Only" filter toggle - `frontend/fundrbolt-admin/src/features/events/tickets/components/SalesFilters.tsx` ⏸️ (requires Phase 9)
 - [x] [T147] [US9] Add "Export CSV" button with download logic - `frontend/fundrbolt-admin/src/features/events/tickets/components/SalesExportButton.tsx`
 - [x] [T148] [US9] Integrate sales summary into TicketPackagesIndexPage header - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackagesIndexPage.tsx`
 - [x] [T149] [US9] Add expandable sales details panel to package cards - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackagesIndexPage.tsx`
 - [x] [T150] [US9] Add real-time sales count updates (10-second polling with React Query) - `frontend/fundrbolt-admin/src/features/events/tickets/components/SalesSummaryCard.tsx`
-- [ ] [T151] [US9] Show loading skeletons during sales data fetch - `frontend/fundrbolt-admin/src/features/events/tickets/components/SalesDataSkeleton.tsx`
+- [x] [T151] [US9] Show loading skeletons during sales data fetch - `frontend/fundrbolt-admin/src/features/events/tickets/components/SalesDataSkeleton.tsx`
 
 **Checkpoint**: Sales tracking complete - coordinators have full visibility into ticket sales, purchasers, and revenue
 
@@ -504,8 +504,8 @@ Each task follows the structure:
 ## Summary: All Tasks (203 total)
 
 **Total Tasks**: 203
-**Completed**: 108 tasks (53%)
-**Remaining**: 95 tasks (47%)
+**Completed**: 109 tasks (54%)
+**Remaining**: 94 tasks (46%)
 
 ### By Phase
 
@@ -515,8 +515,8 @@ Each task follows the structure:
 - ✅ **Phase 4: US2 Edit/Delete (P1)** - 15 tasks (100% complete)
 - ✅ **Phase 5: US7 Promo Codes (P2)** - 33 tasks (100% complete)
 - ✅ **Phase 6: US4 Custom Options (P2)** - 18 tasks (100% complete)
-- 🔄 **Phase 7: US3 Quantity Limits (P2)** - 17 tasks (41% complete - 7/17)
-- 🔄 **Phase 8: US9 Sales Tracking (P1)** ⚠️ - 23 tasks (83% complete - 19/23) **HIGH PRIORITY**
+- 🔄 **Phase 7: US3 Quantity Limits (P2)** - 17 tasks (41% complete - 7/17) ⏸️ (purchase flow pending)
+- 🔄 **Phase 8: US9 Sales Tracking (P1)** ⚠️ - 23 tasks (87% complete - 20/23) ✅ CORE COMPLETE
 - ⏸️ **Phase 9: US5 Sponsorship (P3)** - 10 tasks (0% complete)
 - ⏸️ **Phase 10: US6 Upload Images (P3)** - 16 tasks (0% complete)
 - ⏸️ **Phase 11: US8 Reorder Packages (P3)** - 15 tasks (0% complete)
@@ -524,15 +524,15 @@ Each task follows the structure:
 
 ### By Priority
 
-- **P1 (Critical)**: 54 tasks total → 50 complete (93%), **4 remaining** ⚠️
+- **P1 (Critical)**: 54 tasks total → 51 complete (94%), **3 remaining** ⚠️
   - US1: Create Packages (16 tasks) ✅
   - US2: Edit/Delete (15 tasks) ✅
-  - US9: Sales Tracking (23 tasks) 🔄 19/23 complete (83%) **← IN PROGRESS**
+  - US9: Sales Tracking (23 tasks) ✅ 20/23 complete (87%) **CORE COMPLETE** (3 tasks require Phase 9)
 
 - **P2 (Important)**: 68 tasks total → 58 complete (85%), 10 remaining
   - US7: Promo Codes (33 tasks) ✅
   - US4: Custom Options (18 tasks) ✅
-  - US3: Quantity Limits (17 tasks) 🔄 7/17 complete (41%)
+  - US3: Quantity Limits (17 tasks) 🔄 7/17 complete (41%) (10 tasks require purchase flow)
 
 - **P3 (Nice-to-have)**: 41 tasks total → 0 complete (0%), 41 remaining
   - US5: Sponsorship (10 tasks) ⏸️

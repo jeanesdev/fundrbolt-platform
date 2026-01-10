@@ -25,6 +25,7 @@ class TicketPackageBase(BaseModel):
         None, ge=1, description="Maximum packages available (NULL = unlimited)"
     )
     is_enabled: bool = Field(True, description="Visibility to donors")
+    is_sponsorship: bool = Field(False, description="Whether this package includes sponsorship")
 
     @field_validator("price")
     @classmethod
@@ -51,6 +52,7 @@ class TicketPackageUpdate(BaseModel):
     seats_per_package: int | None = Field(None, ge=1, le=100)
     quantity_limit: int | None = Field(None, ge=1)
     is_enabled: bool | None = None
+    is_sponsorship: bool | None = None
     image_url: str | None = Field(None, max_length=500)
     version: int = Field(..., description="Current version for optimistic locking")
 

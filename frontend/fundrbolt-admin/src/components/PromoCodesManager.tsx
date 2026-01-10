@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Tag, Calendar, Percent, DollarSign } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { DiscountType, type PromoCodeRead } from "@/types/ticket-management";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Calendar, DollarSign, Edit, Percent, Plus, Tag, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { PromoCodeFormDialog } from "./PromoCodeFormDialog";
 
 interface PromoCodesManagerProps {
@@ -152,11 +152,10 @@ export function PromoCodesManager({ eventId }: PromoCodesManagerProps) {
           {promoCodes.map((code) => (
             <div
               key={code.id}
-              className={`p-4 border rounded-lg space-y-3 ${
-                !code.is_active || isExpired(code)
+              className={`p-4 border rounded-lg space-y-3 ${!code.is_active || isExpired(code)
                   ? "bg-muted/50 border-dashed"
                   : "bg-card"
-              }`}
+                }`}
             >
               {/* Code Header */}
               <div className="flex justify-between items-start">
