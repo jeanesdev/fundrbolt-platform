@@ -19,6 +19,7 @@ import {
   User,
 } from 'lucide-react';
 import { useState } from 'react';
+import { PurchasersListSkeleton } from './SalesDataSkeleton';
 
 interface PurchasersListProps {
   eventId: string;
@@ -47,13 +48,7 @@ export function PurchasersList({ eventId, packageId }: PurchasersListProps) {
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-2">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-20 bg-gray-100 rounded animate-pulse"></div>
-        ))}
-      </div>
-    );
+    return <PurchasersListSkeleton />;
   }
 
   if (!data || data.purchasers.length === 0) {

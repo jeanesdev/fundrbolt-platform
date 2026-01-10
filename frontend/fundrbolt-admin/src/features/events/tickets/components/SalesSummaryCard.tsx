@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, AlertTriangle, DollarSign, Package, TrendingUp } from 'lucide-react';
+import { SalesSummarySkeleton } from './SalesDataSkeleton';
 
 interface SalesSummaryCardProps {
   eventId: string;
@@ -21,20 +22,7 @@ export function SalesSummaryCard({ eventId }: SalesSummaryCardProps) {
   });
 
   if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Sales Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="animate-pulse space-y-4">
-            <div className="h-16 bg-gray-200 rounded"></div>
-            <div className="h-16 bg-gray-200 rounded"></div>
-            <div className="h-16 bg-gray-200 rounded"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <SalesSummarySkeleton />;
   }
 
   if (error) {
