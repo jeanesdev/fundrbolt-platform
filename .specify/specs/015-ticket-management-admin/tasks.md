@@ -1,7 +1,7 @@
 # Tasks: Ticket Package Management
 
 **Date**: 2026-01-06 | **Feature**: 015-ticket-management-admin
-**Generated**: 2026-01-08 | **Status**: In Progress (91/203 tasks complete - 45%)
+**Generated**: 2026-01-08 | **Status**: In Progress (159/203 tasks complete - 78%)
 
 ---
 
@@ -231,7 +231,7 @@ Each task follows the structure:
 
 ---
 
-## Completed Work Summary (91 tasks - 45%)
+## Completed Work Summary (159 tasks - 78%)
 
 **✅ Phases Complete:**
 
@@ -367,7 +367,7 @@ Each task follows the structure:
 
 ---
 
-## Phase 10: US6 - Upload Images (P3) (T162-T177) ⏸️ NOT STARTED
+## Phase 10: US6 - Upload Images (P3) (T162-T177) 🔄 IN PROGRESS (12/16 tasks)
 
 **Goal**: Coordinators can upload images to packages for visual presentation on purchase page
 
@@ -377,25 +377,25 @@ Each task follows the structure:
 
 ### Backend
 
-- [ ] [T162] [US6] Implement upload_package_image() using BlobStorageService - `backend/app/services/ticket_package_service.py`
-- [ ] [T163] [US6] Add image validation (format: JPG/PNG/WebP, size: max 5MB) - `backend/app/services/ticket_package_service.py`
-- [ ] [T164] [US6] Implement delete_package_image() with blob cleanup - `backend/app/services/ticket_package_service.py`
-- [ ] [T165] [US6] Create POST /api/v1/admin/events/{event_id}/tickets/packages/{package_id}/image - `backend/app/api/v1/ticket_packages.py`
-- [ ] [T166] [US6] Create DELETE /api/v1/admin/events/{event_id}/tickets/packages/{package_id}/image - `backend/app/api/v1/ticket_packages.py`
+- [x] [T162] [US6] Implement upload_package_image() using BlobStorageService - `backend/app/services/ticket_package_service.py`
+- [x] [T163] [US6] Add image validation (format: JPG/PNG/WebP, size: max 5MB) - `backend/app/services/ticket_package_service.py`
+- [x] [T164] [US6] Implement delete_package_image() with blob cleanup - `backend/app/services/ticket_package_service.py`
+- [x] [T165] [US6] Create POST /api/v1/admin/events/{event_id}/tickets/packages/{package_id}/image - `backend/app/api/v1/ticket_packages.py`
+- [x] [T166] [US6] Create DELETE /api/v1/admin/events/{event_id}/tickets/packages/{package_id}/image - `backend/app/api/v1/ticket_packages.py`
 - [ ] [T167] [US6] Generate thumbnail (256x256) on upload using Pillow - `backend/app/services/image_processing_service.py`
 - [ ] [T168] [US6] Add virus scanning with Azure Defender integration - `backend/app/services/image_processing_service.py`
-- [ ] [T169] [US6] Handle Azure Blob Storage errors (upload failures, network issues) - `backend/app/services/ticket_package_service.py`
+- [x] [T169] [US6] Handle Azure Blob Storage errors (upload failures, network issues) - `backend/app/services/ticket_package_service.py`
 
 ### Frontend
 
-- [ ] [T170] [US6] Add image upload input to package form - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageForm.tsx`
-- [ ] [T171] [US6] Implement drag-and-drop image upload - `frontend/fundrbolt-admin/src/features/events/tickets/components/ImageUploadZone.tsx`
-- [ ] [T172] [US6] Show upload progress bar during upload - `frontend/fundrbolt-admin/src/features/events/tickets/components/ImageUploadProgress.tsx`
-- [ ] [T173] [US6] Display image thumbnail preview in form - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageForm.tsx`
+- [x] [T170] [US6] Add image upload input to package form - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageForm.tsx`
+- [x] [T171] [US6] Implement drag-and-drop image upload - `frontend/fundrbolt-admin/src/features/events/tickets/components/ImageUploadZone.tsx`
+- [x] [T172] [US6] Show upload progress bar during upload - `frontend/fundrbolt-admin/src/features/events/tickets/components/ImageUploadProgress.tsx`
+- [x] [T173] [US6] Display image thumbnail preview in form - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageForm.tsx`
 - [ ] [T174] [US6] Display image thumbnail in package cards - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageCard.tsx`
 - [ ] [T175] [US6] Add "Remove Image" button with confirmation - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageForm.tsx`
-- [ ] [T176] [US6] Handle image upload errors with clear messages - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageForm.tsx`
-- [ ] [T177] [US6] Add image validation (file type, size) before upload - `frontend/fundrbolt-admin/src/features/events/tickets/components/ImageUploadZone.tsx`
+- [x] [T176] [US6] Handle image upload errors with clear messages - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageForm.tsx`
+- [x] [T177] [US6] Add image validation (file type, size) before upload - `frontend/fundrbolt-admin/src/features/events/tickets/components/ImageUploadZone.tsx`
 
 **Checkpoint**: Image uploads functional - coordinators can add visual appeal to packages
 
@@ -506,8 +506,8 @@ Each task follows the structure:
 ## Summary: All Tasks (203 total)
 
 **Total Tasks**: 203
-**Completed**: 109 tasks (54%)
-**Remaining**: 94 tasks (46%)
+**Completed**: 159 tasks (78%)
+**Remaining**: 44 tasks (22%)
 
 ### By Phase
 
@@ -519,8 +519,8 @@ Each task follows the structure:
 - ✅ **Phase 6: US4 Custom Options (P2)** - 18 tasks (100% complete)
 - 🔄 **Phase 7: US3 Quantity Limits (P2)** - 17 tasks (41% complete - 7/17) ⏸️ (purchase flow pending)
 - ✅ **Phase 8: US9 Sales Tracking (P1)** ⚠️ - 23 tasks (100% complete) ✅ FULLY OPERATIONAL
-- ✅ **Phase 9: US5 Sponsorship (P3)** - 10 tasks (50% complete - 5 backend/5 frontend pending)
-- ⏸️ **Phase 10: US6 Upload Images (P3)** - 16 tasks (0% complete)
+- ✅ **Phase 9: US5 Sponsorship (P3)** - 10 tasks (100% complete)
+- 🔄 **Phase 10: US6 Upload Images (P3)** - 16 tasks (75% complete - 12/16)
 - ⏸️ **Phase 11: US8 Reorder Packages (P3)** - 15 tasks (0% complete)
 - ⏸️ **Phase 12: Polish** - 43 tasks (0% complete)
 
@@ -536,9 +536,9 @@ Each task follows the structure:
   - US4: Custom Options (18 tasks) ✅
   - US3: Quantity Limits (17 tasks) 🔄 7/17 complete (41%) (10 tasks require purchase flow)
 
-- **P3 (Nice-to-have)**: 41 tasks total → 5 complete (12%), 36 remaining
-  - US5: Sponsorship (10 tasks) 🔄 5/10 backend complete, 5/5 frontend pending
-  - US6: Images (16 tasks) ⏸️
+- **P3 (Nice-to-have)**: 41 tasks total → 22 complete (54%), 19 remaining
+  - US5: Sponsorship (10 tasks) ✅
+  - US6: Images (16 tasks) 🔄 12/16 complete (75%)
   - US8: Reordering (15 tasks) ⏸️
 
 - **Cross-cutting**: 40 tasks (Polish/Testing/Docs) → 0 complete
@@ -562,9 +562,9 @@ Each task follows the structure:
 - **US7 (Promo Codes - P2)**: Can start after Foundational ✅ DONE
 - **US4 (Custom Options - P2)**: Can start after Foundational ✅ DONE (integrates with US1)
 - **US3 (Quantity Limits - P2)**: Can start after Foundational ⏸️ (integrates with US1)
-- **US9 (Sales Tracking - P1)** ⚠️: Can start after Foundational ⏸️ **NEXT RECOMMENDED**
-- **US5 (Sponsorship - P3)**: Can start after Foundational ⏸️
-- **US6 (Images - P3)**: Can start after Foundational ⏸️
+- **US9 (Sales Tracking - P1)**: Completed ✅
+- **US5 (Sponsorship - P3)**: Completed ✅
+- **US6 (Images - P3)**: In progress (Phase 10)
 - **US8 (Reordering - P3)**: Can start after Foundational ⏸️
 
 ### Within Each User Story
