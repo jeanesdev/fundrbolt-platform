@@ -3,6 +3,7 @@
  * Form for creating new ticket packages
  */
 
+import { packageImagesApi } from '@/api/packageImages';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -23,8 +24,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { ImageUploadProgress } from './components/ImageUploadProgress';
+import { ImageUploadZone } from './components/ImageUploadZone';
 
 const packageSchema = z.object({
   name: z.string().min(1, 'Package name is required').max(100),
@@ -43,6 +47,11 @@ export function TicketPackageCreatePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [createdPackageId, setCreatedPackageId] = useState<string | null>(null);
 
   const form = useForm<PackageFormData>({
     resolver: zodResolver(packageSchema),
@@ -65,16 +74,24 @@ export function TicketPackageCreatePage() {
       });
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (pkg) => {
       queryClient.invalidateQueries({ queryKey: ['ticket-packages', eventId] });
-      toast({
-        title: 'Package created',
-        description: 'Ticket package has been created successfully.',
-      });
-      navigate({
-        to: '/events/$eventId/tickets',
-        params: { eventId },
-      });
+      setCreatedPackageId(pkg.id);
+
+      // If file selected, upload image before navigating
+      if (selectedFile) {
+        setUploadStatus('uploading');
+        setUploadProgress(0);
+      } else {
+        toast({
+          title: 'Package created',
+          description: 'Ticket package has been created successfully.',
+        });
+        navigate({
+          to: '/events/$eventId/tickets',
+          params: { eventId },
+        });
+      }
     },
     onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       toast({
@@ -87,6 +104,62 @@ export function TicketPackageCreatePage() {
 
   const onSubmit = (data: PackageFormData) => {
     createMutation.mutate(data);
+  };
+
+  // Upload image after package creation
+  const _imageUploadMutation = useMutation({
+    mutationFn: async () => {
+      if (!createdPackageId || !selectedFile) return;
+
+      const response = await packageImagesApi.uploadImage(
+        eventId,
+        createdPackageId,
+        selectedFile,
+        (progress) => setUploadProgress(progress)
+      );
+      return response;
+    },
+    onSuccess: () => {
+      setUploadStatus('success');
+      setUploadProgress(100);
+      toast({
+        title: 'Image uploaded',
+        description: 'Package image has been uploaded successfully.',
+      });
+      setTimeout(() => {
+        navigate({
+          to: '/events/$eventId/tickets',
+          params: { eventId },
+        });
+      }, 1500);
+    },
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
+      setUploadStatus('error');
+      toast({
+        title: 'Image upload failed',
+        description: error.response?.data?.detail || 'Failed to upload image',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Trigger image upload after package creation
+  const handleImageFile = (file: File) => {
+    setSelectedFile(file);
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Handle navigation after image upload
+  const handleRemoveImage = () => {
+    setSelectedFile(null);
+    setImagePreview(null);
+    setUploadProgress(0);
+    setUploadStatus('idle');
   };
 
   return (
@@ -248,6 +321,32 @@ export function TicketPackageCreatePage() {
                 )}
               />
 
+              <div className="space-y-3 rounded-lg border p-4 bg-blue-50">
+                <div>
+                  <FormLabel className="text-base">Package Image</FormLabel>
+                  <FormDescription className="mt-1">
+                    Add a visual image for your package (optional)
+                  </FormDescription>
+                </div>
+
+                {uploadStatus === 'idle' || uploadStatus === 'success' ? (
+                  <ImageUploadZone
+                    onFileSelected={handleImageFile}
+                    disabled={createMutation.isPending}
+                    preview={imagePreview}
+                    onRemovePreview={handleRemoveImage}
+                  />
+                ) : null}
+
+                {uploadStatus !== 'idle' && (
+                  <ImageUploadProgress
+                    progress={uploadProgress}
+                    status={uploadStatus === 'uploading' ? 'uploading' : uploadStatus === 'success' ? 'success' : 'error'}
+                    fileName={selectedFile?.name}
+                  />
+                )}
+              </div>
+
               <div className="flex justify-end gap-2">
                 <Button
                   type="button"
@@ -261,7 +360,7 @@ export function TicketPackageCreatePage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending}>
+                <Button type="submit" disabled={createMutation.isPending || uploadStatus === 'uploading'}>
                   {createMutation.isPending ? 'Creating...' : 'Create Package'}
                 </Button>
               </div>

@@ -3,7 +3,7 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,6 +19,7 @@ from app.schemas.ticket_management import (
     TicketPackageUpdate,
 )
 from app.services.ticket_audit_service import TicketAuditService
+from app.services.ticket_image_service import ImageService
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -250,3 +251,118 @@ async def delete_ticket_package(
 
     await db.commit()
     logger.info(f"Deleted package {package_id}")
+
+
+@router.post(
+    "/events/{event_id}/packages/{package_id}/image",
+    response_model=TicketPackageRead,
+    summary="Upload package image",
+)
+async def upload_package_image(
+    event_id: uuid.UUID,
+    package_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """Upload image for ticket package.
+
+    - Supported formats: JPG, PNG, WebP
+    - Max size: 5 MB
+    - Image is stored in Azure Blob Storage
+    """
+    # Verify access
+    pkg_result = await db.execute(
+        select(TicketPackage).where(
+            and_(TicketPackage.id == package_id, TicketPackage.event_id == event_id)
+        )
+    )
+    package: TicketPackage | None = pkg_result.scalar_one_or_none()
+    if not package:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
+
+    result = await db.execute(
+        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    try:
+        # Use ImageService to upload
+        image_service = ImageService()
+        image_url = await image_service.upload_image(
+            file=file.file,
+            filename=file.filename or "image",
+            event_id=event_id,
+            package_id=package_id,
+        )
+
+        # Update package with image URL
+        package.image_url = image_url
+        await db.commit()
+        await db.refresh(package)
+
+        logger.info(f"Uploaded image for package {package_id}: {image_url}")
+        return TicketPackageRead.from_orm_with_availability(package)
+
+    except ValueError as e:
+        logger.error(f"Image validation failed for package {package_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(f"Image upload failed for package {package_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to upload image"
+        )
+
+
+@router.delete(
+    "/events/{event_id}/packages/{package_id}/image",
+    response_model=TicketPackageRead,
+    summary="Delete package image",
+)
+async def delete_package_image(
+    event_id: uuid.UUID,
+    package_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """Delete image for ticket package."""
+    # Verify access
+    pkg_result = await db.execute(
+        select(TicketPackage).where(
+            and_(TicketPackage.id == package_id, TicketPackage.event_id == event_id)
+        )
+    )
+    package: TicketPackage | None = pkg_result.scalar_one_or_none()
+    if not package:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
+
+    result = await db.execute(
+        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    if not package.image_url:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No image to delete")
+
+    try:
+        # Delete from blob storage
+        image_service = ImageService()
+        await image_service.delete_image(package.image_url)
+
+        # Clear image URL
+        package.image_url = None
+        await db.commit()
+        await db.refresh(package)
+
+        logger.info(f"Deleted image for package {package_id}")
+        return TicketPackageRead.from_orm_with_availability(package)
+
+    except Exception as e:
+        logger.error(f"Image deletion failed for package {package_id}: {e}")
+        # Don't fail the request - image may be orphaned but package should still update
+        package.image_url = None
+        await db.commit()
+        await db.refresh(package)
+        return TicketPackageRead.from_orm_with_availability(package)

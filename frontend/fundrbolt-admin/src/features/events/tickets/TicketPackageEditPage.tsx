@@ -3,6 +3,7 @@
  * Form for editing existing ticket packages with optimistic locking
  */
 
+import { packageImagesApi } from '@/api/packageImages';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -23,9 +24,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { CustomOptionsManager } from './components/CustomOptionsManager';
+import { ImageUploadProgress } from './components/ImageUploadProgress';
+import { ImageUploadZone } from './components/ImageUploadZone';
 
 const packageSchema = z.object({
   name: z.string().min(1, 'Package name is required').max(100).optional(),
@@ -68,6 +72,10 @@ export function TicketPackageEditPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Fetch package
   const { data: pkg, isLoading } = useQuery({
@@ -79,6 +87,15 @@ export function TicketPackageEditPage() {
       return response.data;
     },
   });
+
+  // Set initial image preview from package
+  const handleSetInitialImage = () => {
+    if (pkg?.image_url && !imagePreview) {
+      setImagePreview(pkg.image_url);
+    }
+  };
+
+  handleSetInitialImage();
 
   const form = useForm<PackageFormData>({
     resolver: zodResolver(packageSchema),
@@ -136,6 +153,83 @@ export function TicketPackageEditPage() {
 
   const onSubmit = (data: PackageFormData) => {
     updateMutation.mutate(data);
+  };
+
+  const imageUploadMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedFile) return;
+
+      const response = await packageImagesApi.uploadImage(
+        eventId,
+        packageId,
+        selectedFile,
+        (progress) => setUploadProgress(progress)
+      );
+      return response;
+    },
+    onSuccess: () => {
+      setUploadStatus('success');
+      setUploadProgress(100);
+      queryClient.invalidateQueries({ queryKey: ['ticket-package', eventId, packageId] });
+      toast({
+        title: 'Image uploaded',
+        description: 'Package image has been uploaded successfully.',
+      });
+    },
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
+      setUploadStatus('error');
+      toast({
+        title: 'Image upload failed',
+        description: error.response?.data?.detail || 'Failed to upload image',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const imageDeleteMutation = useMutation({
+    mutationFn: async () => {
+      const response = await packageImagesApi.deleteImage(eventId, packageId);
+      return response;
+    },
+    onSuccess: () => {
+      setImagePreview(null);
+      setSelectedFile(null);
+      setUploadProgress(0);
+      setUploadStatus('idle');
+      queryClient.invalidateQueries({ queryKey: ['ticket-package', eventId, packageId] });
+      toast({
+        title: 'Image deleted',
+        description: 'Package image has been removed.',
+      });
+    },
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
+      toast({
+        title: 'Delete failed',
+        description: error.response?.data?.detail || 'Failed to delete image',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleImageFile = (file: File) => {
+    setSelectedFile(file);
+    setUploadStatus('uploading');
+    setUploadProgress(0);
+    // Trigger upload immediately
+    imageUploadMutation.mutate();
+  };
+
+  const handleRemoveImage = () => {
+    if (imagePreview && !imagePreview.startsWith('blob:')) {
+      // Remove from server
+      imageDeleteMutation.mutate();
+    } else {
+      // Just reset local state
+      setImagePreview(null);
+      setSelectedFile(null);
+      setUploadProgress(0);
+      setUploadStatus('idle');
+    }
   };
 
   if (isLoading) {
@@ -323,6 +417,32 @@ export function TicketPackageEditPage() {
                 )}
               />
 
+              <div className="space-y-3 rounded-lg border p-4 bg-blue-50">
+                <div>
+                  <FormLabel className="text-base">Package Image</FormLabel>
+                  <FormDescription className="mt-1">
+                    Upload or update your package image
+                  </FormDescription>
+                </div>
+
+                {uploadStatus === 'idle' || uploadStatus === 'success' ? (
+                  <ImageUploadZone
+                    onFileSelected={handleImageFile}
+                    disabled={updateMutation.isPending || imageUploadMutation.isPending || imageDeleteMutation.isPending}
+                    preview={imagePreview}
+                    onRemovePreview={handleRemoveImage}
+                  />
+                ) : null}
+
+                {uploadStatus !== 'idle' && (
+                  <ImageUploadProgress
+                    progress={uploadProgress}
+                    status={uploadStatus}
+                    fileName={selectedFile?.name}
+                  />
+                )}
+              </div>
+
               <div className="flex justify-end gap-2">
                 <Button
                   type="button"
@@ -336,7 +456,7 @@ export function TicketPackageEditPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={updateMutation.isPending}>
+                <Button type="submit" disabled={updateMutation.isPending || uploadStatus === 'uploading'}>
                   {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
                 </Button>
               </div>
