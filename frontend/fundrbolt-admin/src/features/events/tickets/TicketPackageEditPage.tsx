@@ -34,6 +34,7 @@ const packageSchema = z.object({
   seats_per_package: z.coerce.number().min(1).max(100).optional(),
   quantity_limit: z.coerce.number().min(1).optional().nullable(),
   is_enabled: z.boolean().optional(),
+  is_sponsorship: z.boolean().optional(),
   version: z.number(),
 });
 
@@ -57,6 +58,7 @@ interface TicketPackage {
   version: number;
   is_sold_out: boolean;
   available_quantity: number | null;
+  is_sponsorship?: boolean;
 }
 
 export function TicketPackageEditPage() {
@@ -88,6 +90,7 @@ export function TicketPackageEditPage() {
         seats_per_package: pkg.seats_per_package,
         quantity_limit: pkg.quantity_limit,
         is_enabled: pkg.is_enabled,
+        is_sponsorship: pkg.is_sponsorship,
         version: pkg.version,
       }
       : undefined,
@@ -297,6 +300,24 @@ export function TicketPackageEditPage() {
                         checked={field.value}
                         onCheckedChange={field.onChange}
                       />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="is_sponsorship"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Sponsorship Package</FormLabel>
+                      <FormDescription>
+                        Mark this package as a sponsorship for reporting
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
                   </FormItem>
                 )}

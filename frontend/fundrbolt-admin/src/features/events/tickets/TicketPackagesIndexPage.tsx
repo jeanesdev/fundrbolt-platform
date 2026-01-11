@@ -42,6 +42,7 @@ interface TicketPackage {
   version: number;
   is_sold_out: boolean;
   available_quantity: number | null;
+  is_sponsorship?: boolean;
 }
 
 export function TicketPackagesIndexPage() {
@@ -202,6 +203,9 @@ export function TicketPackagesIndexPage() {
                       <div className="flex justify-between items-start">
                         <CardTitle className="text-lg">{pkg.name}</CardTitle>
                         <div className="flex gap-1">
+                          {pkg.is_sponsorship && (
+                            <Badge variant="secondary">Sponsorship</Badge>
+                          )}
                           {!pkg.is_enabled && (
                             <Badge variant="secondary">Disabled</Badge>
                           )}

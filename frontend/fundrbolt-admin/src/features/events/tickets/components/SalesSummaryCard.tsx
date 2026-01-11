@@ -6,8 +6,10 @@
 import { salesTrackingApi } from '@/api/salesTracking';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, AlertTriangle, DollarSign, Package, TrendingUp } from 'lucide-react';
+import { useState } from 'react';
 import { SalesSummarySkeleton } from './SalesDataSkeleton';
 
 interface SalesSummaryCardProps {
@@ -15,9 +17,10 @@ interface SalesSummaryCardProps {
 }
 
 export function SalesSummaryCard({ eventId }: SalesSummaryCardProps) {
+  const [sponsorshipsOnly, setSponsorshipsOnly] = useState(false);
   const { data: summary, isLoading, error } = useQuery({
-    queryKey: ['sales-summary', eventId],
-    queryFn: () => salesTrackingApi.getEventSalesSummary(eventId),
+    queryKey: ['sales-summary', eventId, sponsorshipsOnly],
+    queryFn: () => salesTrackingApi.getEventSalesSummary(eventId, sponsorshipsOnly),
     refetchInterval: 10000, // Refresh every 10 seconds
   });
 
@@ -50,9 +53,15 @@ export function SalesSummaryCard({ eventId }: SalesSummaryCardProps) {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Sales Overview</span>
-          <Badge variant="outline" className="text-xs">
-            Live
-          </Badge>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Sponsorships only</span>
+              <Switch checked={sponsorshipsOnly} onCheckedChange={setSponsorshipsOnly} />
+            </div>
+            <Badge variant="outline" className="text-xs">
+              Live
+            </Badge>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

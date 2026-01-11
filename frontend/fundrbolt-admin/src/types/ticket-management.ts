@@ -41,3 +41,35 @@ export interface PromoCodeValidationResponse {
   promo_code?: PromoCodeRead;
   discount_amount?: number;
 }
+
+// Ticket Package Types
+export interface TicketPackageBase {
+  name: string;
+  description: string | null;
+  price: string; // decimal as string
+  seats_per_package: number;
+  quantity_limit: number | null;
+  is_enabled: boolean;
+  is_sponsorship: boolean;
+}
+
+export type TicketPackageCreate = TicketPackageBase;
+
+export type TicketPackageUpdate = Partial<Omit<TicketPackageBase, 'is_enabled'>> & {
+  is_enabled?: boolean;
+  version?: number;
+};
+
+export interface TicketPackageRead extends TicketPackageBase {
+  id: string;
+  event_id: string;
+  sold_count: number;
+  display_order: number;
+  image_url: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  version: number;
+  is_sold_out: boolean;
+  available_quantity: number | null;
+}

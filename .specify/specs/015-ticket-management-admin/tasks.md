@@ -355,15 +355,15 @@ Each task follows the structure:
 
 ### Frontend
 
-- [ ] [T157] [US5] Add "Includes Sponsorship" checkbox to package forms - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageForm.tsx`
-- [ ] [T158] [US5] Display sponsorship badge (icon + label) on package cards - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageCard.tsx`
-- [ ] [T159] [US5] Add sponsorship indicator icon to package list - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackagesIndexPage.tsx`
-- [ ] [T160] [US5] Filter sponsorships in sales report (integrate with existing filter) - `frontend/fundrbolt-admin/src/features/events/tickets/components/SalesFilters.tsx`
-- [ ] [T161] [US5] Update TypeScript interfaces for is_sponsorship - `frontend/fundrbolt-admin/src/types/ticket-management.ts`
+- [x] [T157] [US5] Add "Includes Sponsorship" checkbox to package forms - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageCreatePage.tsx`, `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageEditPage.tsx` ✅
+- [x] [T158] [US5] Display sponsorship badge (icon + label) on package cards - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackagesIndexPage.tsx` ✅
+- [x] [T159] [US5] Add sponsorship indicator icon to package list - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackagesIndexPage.tsx` ✅
+- [x] [T160] [US5] Filter sponsorships in sales report (integrate with existing filter) - `frontend/fundrbolt-admin/src/features/events/tickets/components/SalesSummaryCard.tsx` ✅
+- [x] [T161] [US5] Update TypeScript interfaces for is_sponsorship - `frontend/fundrbolt-admin/src/types/ticket-management.ts` ✅
 
 **Checkpoint**: Sponsorship indicator backend complete - API ready for frontend implementation and filtering
 
-**Phase 9 Status**: Backend 100% (5/5), Frontend ready for implementation (0/5 UI components)
+**Phase 9 Status**: Backend 100% (5/5), Frontend 100% (5/5) - Sponsorship UI complete
 
 ---
 

@@ -47,9 +47,12 @@ export const salesTrackingApi = {
   /**
    * Get event-wide sales summary
    */
-  async getEventSalesSummary(eventId: string): Promise<SalesSummary> {
+  async getEventSalesSummary(eventId: string, sponsorshipsOnly = false): Promise<SalesSummary> {
     const response = await apiClient.get<SalesSummary>(
-      `/admin/events/${eventId}/tickets/sales/summary`
+      `/admin/events/${eventId}/tickets/sales/summary`,
+      {
+        params: sponsorshipsOnly ? { sponsorships_only: true } : undefined,
+      }
     );
     return response.data;
   },
