@@ -1,11 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { TicketPackageCreatePage } from '@/features/events/tickets/TicketPackageCreatePage';
+import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute(
-  '/_authenticated/events/$eventId/tickets/create',
+  '/_authenticated/events/$eventId/tickets/create'
 )({
-  component: RouteComponent,
-})
-
-function RouteComponent() {
-  return <div>Hello "/_authenticated/events/$eventId/tickets/create"!</div>
-}
+  component: TicketPackageCreatePage,
+});
