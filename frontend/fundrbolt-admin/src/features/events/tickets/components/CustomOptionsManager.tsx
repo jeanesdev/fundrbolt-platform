@@ -6,7 +6,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import apiClient from '@/lib/apiClient';
+import apiClient from '@/lib/axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';

@@ -1,4 +1,4 @@
-import { apiClient } from "@/lib/api-client";
+import apiClient from '@/lib/axios';
 import { DiscountType, type PromoCodeRead } from "@/types/ticket-management";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Calendar, DollarSign, Edit, Percent, Plus, Tag, Trash2 } from "lucide-react";

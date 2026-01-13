@@ -1,4 +1,4 @@
-import { apiClient } from "@/lib/api-client";
+import apiClient from '@/lib/axios';
 import { DiscountType, type PromoCodeCreate, type PromoCodeRead, type PromoCodeUpdate } from "@/types/ticket-management";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
