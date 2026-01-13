@@ -131,7 +131,7 @@ class TicketPackage(Base, UUIDMixin):
     )
     purchases: Mapped[list["TicketPurchase"]] = relationship(
         "TicketPurchase",
-        back_populates="package",
+        back_populates="ticket_package",
         cascade="all, delete-orphan",
     )
 

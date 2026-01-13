@@ -4,9 +4,9 @@
  */
 
 import { packageImagesApi } from '@/api/packageImages';
+import { ConflictDialog } from '@/components/ConflictDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ConflictDialog } from '@/components/ConflictDialog';
 import {
   Form,
   FormControl,

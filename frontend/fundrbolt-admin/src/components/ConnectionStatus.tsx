@@ -1,5 +1,5 @@
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { AlertTriangle, WifiOff } from 'lucide-react';
 
 /**

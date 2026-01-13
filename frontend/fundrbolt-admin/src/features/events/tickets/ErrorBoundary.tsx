@@ -1,7 +1,7 @@
-import React, { type ReactNode } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import React, { type ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;

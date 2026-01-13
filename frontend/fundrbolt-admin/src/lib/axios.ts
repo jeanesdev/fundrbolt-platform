@@ -1,5 +1,5 @@
+import { isRetryableError, retryWithBackoff } from '@/lib/retry'
 import { useAuthStore } from '@/stores/auth-store'
-import { retryWithBackoff, isRetryableError } from '@/lib/retry'
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 // Global flag to track if consent modal is already shown
@@ -56,10 +56,13 @@ apiClient.interceptors.response.use(
       _retryCount?: number
     }
 
+    // Skip retry for auth endpoints to avoid infinite loops
+    const isAuthEndpoint = originalRequest.url?.includes('/auth/')
+
     // Don't retry if already retried
     if (originalRequest._retryCount) {
       // Already retried via retryWithBackoff, process error normally
-    } else if (isRetryableError(error, { maxRetries: 3, retryableStatusCodes: [408, 429, 500, 502, 503, 504] })) {
+    } else if (!isAuthEndpoint && isRetryableError(error, { maxRetries: 3, retryableStatusCodes: [408, 429, 500, 502, 503, 504] })) {
       // Mark that we're attempting retry
       originalRequest._retryCount = 0
 
