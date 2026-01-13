@@ -455,7 +455,7 @@ export function EventEditPage() {
 
         {/* Tickets Tab */}
         <TabsContent value="tickets">
-          <TicketPackagesIndexPage />
+          <TicketPackagesIndexPage eventId={eventId} />
         </TabsContent>
 
         {/* Sponsors Tab */}

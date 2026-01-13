@@ -61,8 +61,13 @@ interface TicketPackage {
   is_sponsorship?: boolean;
 }
 
-export function TicketPackagesIndexPage() {
-  const { eventId } = useParams({ from: '/_authenticated/events/$eventId/tickets/' });
+interface TicketPackagesIndexPageProps {
+  eventId?: string;
+}
+
+export function TicketPackagesIndexPage({ eventId: propEventId }: TicketPackagesIndexPageProps = {}) {
+  const routeParams = useParams({ from: '/_authenticated/events/$eventId/tickets/', strict: false });
+  const eventId = propEventId || routeParams.eventId;
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
