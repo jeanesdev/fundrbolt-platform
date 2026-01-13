@@ -3,7 +3,7 @@
  * Handles image upload/delete operations for ticket packages
  */
 
-import { apiClient } from '@/lib/api-client';
+import apiClient from '@/lib/axios';
 import type { TicketPackageRead } from '@/types/ticket-management';
 
 export const packageImagesApi = {

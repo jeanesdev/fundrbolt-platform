@@ -153,8 +153,8 @@ export function PromoCodesManager({ eventId }: PromoCodesManagerProps) {
             <div
               key={code.id}
               className={`p-4 border rounded-lg space-y-3 ${!code.is_active || isExpired(code)
-                  ? "bg-muted/50 border-dashed"
-                  : "bg-card"
+                ? "bg-muted/50 border-dashed"
+                : "bg-card"
                 }`}
             >
               {/* Code Header */}

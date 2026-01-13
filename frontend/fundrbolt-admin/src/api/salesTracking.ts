@@ -3,7 +3,7 @@
  * Handles ticket sales analytics and reporting
  */
 
-import { apiClient } from '@/lib/api-client';
+import apiClient from '@/lib/axios';
 
 export interface SalesSummary {
   event_id: string;
