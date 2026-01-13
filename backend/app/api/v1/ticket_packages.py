@@ -16,6 +16,7 @@ from app.models.user import User
 from app.schemas.ticket_management import (
     TicketPackageCreate,
     TicketPackageRead,
+    TicketPackageReorder,
     TicketPackageUpdate,
 )
 from app.services.ticket_audit_service import TicketAuditService
@@ -366,3 +367,75 @@ async def delete_package_image(
         await db.commit()
         await db.refresh(package)
         return TicketPackageRead.from_orm_with_availability(package)
+
+
+@router.post(
+    "/events/{event_id}/packages/reorder",
+    response_model=list[TicketPackageRead],
+    summary="Reorder ticket packages",
+)
+async def reorder_packages(
+    event_id: uuid.UUID,
+    reorder_data: TicketPackageReorder,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """Reorder ticket packages by updating display_order based on provided sequence.
+
+    - **package_ids**: List of package IDs in desired display order
+    - Updates display_order field for each package (0-indexed)
+    - Validates all IDs belong to the event
+    - Logs audit trail for reorder operation
+    """
+    # Verify event access
+    result = await db.execute(
+        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    # Fetch all packages for this event to validate IDs
+    packages_result = await db.execute(
+        select(TicketPackage).where(TicketPackage.event_id == event_id)
+    )
+    all_packages: dict[uuid.UUID, TicketPackage] = {
+        pkg.id: pkg for pkg in packages_result.scalars().all()
+    }
+
+    # Validate all package IDs belong to this event
+    invalid_ids = [pid for pid in reorder_data.package_ids if pid not in all_packages]
+    if invalid_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid package IDs: {invalid_ids}",
+        )
+
+    # Update display_order for each package
+    for index, package_id in enumerate(reorder_data.package_ids):
+        package = all_packages[package_id]
+        old_order = package.display_order
+        package.display_order = index
+
+        # Log if order changed
+        if old_order != index:
+            logger.info(
+                f"Package {package_id} reordered: {old_order} -> {index} (event {event_id})"
+            )
+
+    # Audit log
+    audit_service = TicketAuditService(db)
+    await audit_service.log_package_updated(
+        package_id=event_id,  # Using event_id as identifier for multi-package operation
+        event_id=event_id,
+        user_id=current_user.id,
+        changes={
+            "action": ("reorder", "reorder"),
+            "package_ids": ([], [str(pid) for pid in reorder_data.package_ids]),
+        },
+    )
+
+    await db.commit()
+
+    # Return updated packages in new order
+    ordered_packages = [all_packages[pid] for pid in reorder_data.package_ids]
+    return [TicketPackageRead.from_orm_with_availability(pkg) for pkg in ordered_packages]

@@ -69,6 +69,14 @@ class TicketPackageUpdate(BaseModel):
         return v
 
 
+class TicketPackageReorder(BaseModel):
+    """Schema for reordering ticket packages."""
+
+    package_ids: list[uuid.UUID] = Field(
+        ..., min_length=1, description="Package IDs in desired display order"
+    )
+
+
 class TicketPackageRead(TicketPackageBase):
     """Schema for reading a ticket package."""
 
