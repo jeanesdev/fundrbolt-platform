@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/stores/auth-store'
+import { retryWithBackoff, isRetryableError } from '@/lib/retry'
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 // Global flag to track if consent modal is already shown
@@ -52,6 +53,32 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean
+      _retryCount?: number
+    }
+
+    // Don't retry if already retried
+    if (originalRequest._retryCount) {
+      // Already retried via retryWithBackoff, process error normally
+    } else if (isRetryableError(error, { maxRetries: 3, retryableStatusCodes: [408, 429, 500, 502, 503, 504] })) {
+      // Mark that we're attempting retry
+      originalRequest._retryCount = 0
+
+      try {
+        // Retry the request with exponential backoff
+        return await retryWithBackoff(
+          () => apiClient(originalRequest),
+          {
+            maxRetries: 3,
+            initialDelayMs: 1000,
+            maxDelayMs: 10000,
+            backoffMultiplier: 2,
+            retryableStatusCodes: [408, 429, 500, 502, 503, 504],
+          }
+        )
+      } catch (retryError) {
+        // Retry exhausted, process error below
+        return Promise.reject(retryError)
+      }
     }
 
     // Handle 401 Unauthorized - token expired or invalid

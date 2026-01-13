@@ -6,6 +6,7 @@
 import { packageImagesApi } from '@/api/packageImages';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConflictDialog } from '@/components/ConflictDialog';
 import {
   Form,
   FormControl,
@@ -76,6 +77,7 @@ export function TicketPackageEditPage() {
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
 
   // Fetch package
   const { data: pkg, isLoading } = useQuery({
@@ -133,14 +135,13 @@ export function TicketPackageEditPage() {
         params: { eventId },
       });
     },
-    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
+    onError: (error: Error & { response?: { status?: number; data?: { detail?: string } } }) => {
+      const status = error.response?.status;
       const detail = error.response?.data?.detail;
-      if (detail?.includes('Version mismatch')) {
-        toast({
-          title: 'Conflict detected',
-          description: 'Package was modified by another user. Please refresh and try again.',
-          variant: 'destructive',
-        });
+
+      // Handle 409 Conflict - concurrent edit
+      if (status === 409 || detail?.includes('Version mismatch')) {
+        setShowConflictDialog(true);
       } else {
         toast({
           title: 'Update failed',
@@ -469,6 +470,24 @@ export function TicketPackageEditPage() {
       <div className="mt-6">
         <CustomOptionsManager packageId={packageId} eventId={eventId} />
       </div>
+
+      {/* Conflict Dialog for concurrent edits */}
+      <ConflictDialog
+        isOpen={showConflictDialog}
+        onRefresh={() => {
+          queryClient.invalidateQueries({ queryKey: ['ticket-package', eventId, packageId] });
+          setShowConflictDialog(false);
+          // Reset form to latest values
+          form.reset();
+        }}
+        onCancel={() => {
+          setShowConflictDialog(false);
+          navigate({
+            to: '/events/$eventId/tickets',
+            params: { eventId },
+          });
+        }}
+      />
     </div>
   );
 }
