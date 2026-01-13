@@ -66,8 +66,10 @@ interface TicketPackagesIndexPageProps {
 }
 
 export function TicketPackagesIndexPage({ eventId: propEventId }: TicketPackagesIndexPageProps = {}) {
-  const routeParams = useParams({ from: '/_authenticated/events/$eventId/tickets/', strict: false });
-  const eventId = propEventId || routeParams.eventId;
+  // Get eventId from props (when embedded) or route params (when standalone)
+  const routeParams = useParams({ strict: false }) as { eventId?: string };
+  const eventId = propEventId || routeParams.eventId || '';
+
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
