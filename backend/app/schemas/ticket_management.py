@@ -108,6 +108,7 @@ class TicketPackageRead(TicketPackageBase):
             "seats_per_package": package.seats_per_package,
             "quantity_limit": package.quantity_limit,
             "is_enabled": package.is_enabled,
+            "is_sponsorship": package.is_sponsorship,
             "sold_count": package.sold_count,
             "display_order": package.display_order,
             "image_url": package.image_url,
