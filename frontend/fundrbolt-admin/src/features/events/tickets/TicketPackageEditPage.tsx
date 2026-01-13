@@ -37,7 +37,10 @@ const packageSchema = z.object({
   description: z.string().max(5000).optional().nullable(),
   price: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid price format').optional(),
   seats_per_package: z.coerce.number().min(1).max(100).optional(),
-  quantity_limit: z.coerce.number().min(1).optional().nullable(),
+  quantity_limit: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? null : val),
+    z.coerce.number().min(1).nullable().optional()
+  ),
   is_enabled: z.boolean().optional(),
   is_sponsorship: z.boolean().optional(),
   version: z.number(),
