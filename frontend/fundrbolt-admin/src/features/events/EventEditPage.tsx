@@ -19,7 +19,7 @@ import type {
   FoodOptionCreateRequest,
 } from '@/types/event'
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
-import { ArrowLeft, Clock, Ticket } from 'lucide-react'
+import { ArrowLeft, Clock } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { AuctionItemList } from './components/AuctionItemList'
@@ -255,8 +255,7 @@ export function EventEditPage() {
             Seating
           </TabsTrigger>
           <TabsTrigger value="tickets" className="text-xs sm:text-sm">
-            <Ticket className="h-3 w-3 sm:mr-1 inline" />
-            <span className="hidden sm:inline">Tickets</span>
+            Tickets
           </TabsTrigger>
           <TabsTrigger value="sponsors" className="text-xs sm:text-sm">
             Sponsors<span className="hidden sm:inline"> ({sponsors.length})</span>
