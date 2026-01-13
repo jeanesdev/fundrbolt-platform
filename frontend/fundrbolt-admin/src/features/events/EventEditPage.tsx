@@ -19,7 +19,7 @@ import type {
   FoodOptionCreateRequest,
 } from '@/types/event'
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
-import { ArrowLeft, Clock, Ticket } from 'lucide-react'
+import { ArrowLeft, Clock } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { AuctionItemList } from './components/AuctionItemList'
@@ -28,6 +28,7 @@ import { EventLinkForm } from './components/EventLinkForm'
 import { FoodOptionSelector } from './components/FoodOptionSelector'
 import { MediaUploader } from './components/MediaUploader'
 import { SponsorsTab } from './components/SponsorsTab'
+import { TicketPackagesIndexPage } from './tickets/TicketPackagesIndexPage'
 
 export function EventEditPage() {
   const navigate = useNavigate()
@@ -454,30 +455,7 @@ export function EventEditPage() {
 
         {/* Tickets Tab */}
         <TabsContent value="tickets">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Ticket Packages</CardTitle>
-                  <CardDescription>
-                    Manage ticket packages, pricing, and sales for your event
-                  </CardDescription>
-                </div>
-                <Button
-                  onClick={() => navigate({ to: '/events/$eventId/tickets', params: { eventId } })}
-                  variant="outline"
-                >
-                  <Ticket className="h-4 w-4 mr-2" />
-                  Manage Tickets
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Click "Manage Tickets" to view and edit ticket packages, custom options, and promo codes.
-              </p>
-            </CardContent>
-          </Card>
+          <TicketPackagesIndexPage />
         </TabsContent>
 
         {/* Sponsors Tab */}
