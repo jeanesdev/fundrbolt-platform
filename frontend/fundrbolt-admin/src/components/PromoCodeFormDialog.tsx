@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 interface PromoCodeFormDialogProps {
   eventId: string;
@@ -86,14 +87,19 @@ export function PromoCodeFormDialog({
   const createMutation = useMutation({
     mutationFn: async (data: PromoCodeCreate) => {
       const response = await apiClient.post<PromoCodeRead>(
-        `/api/v1/admin/events/${eventId}/promo-codes`,
+        `/admin/events/${eventId}/promo-codes`,
         data
       );
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["promoCodes", eventId] });
+      toast.success("Promo code created successfully");
       onClose();
+    },
+    onError: (error: any) => {
+      const detail = error.response?.data?.detail;
+      toast.error(detail || "Failed to create promo code");
     },
   });
 
@@ -101,20 +107,45 @@ export function PromoCodeFormDialog({
   const updateMutation = useMutation({
     mutationFn: async (data: PromoCodeUpdate) => {
       const response = await apiClient.patch<PromoCodeRead>(
-        `/api/v1/admin/events/${eventId}/promo-codes/${editingCode!.id}`,
+        `/admin/events/${eventId}/promo-codes/${editingCode!.id}`,
         data
       );
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["promoCodes", eventId] });
+      toast.success("Promo code updated successfully");
       onClose();
+    },
+    onError: (error: any) => {
+      const detail = error.response?.data?.detail;
+      toast.error(detail || "Failed to update promo code");
     },
   });
 
   const onSubmit = async (data: FormData) => {
-    try {
-      const payload: PromoCodeCreate | PromoCodeUpdate = {
+    if (isEditing) {
+      // Build update payload with version for optimistic locking
+      const updatePayload: PromoCodeUpdate = {
+        discount_type: data.discount_type,
+        discount_value: data.discount_value,
+        max_uses: data.max_uses || null,
+        valid_from: data.valid_from || null,
+        valid_until: data.valid_until || null,
+        is_active: data.is_active,
+        version: editingCode.version,
+      };
+
+      // Remove code and discount fields if promo has been used
+      if (editingCode.used_count > 0) {
+        delete updatePayload.discount_type;
+        delete updatePayload.discount_value;
+      }
+
+      await updateMutation.mutateAsync(updatePayload);
+    } else {
+      // Build create payload
+      const createPayload: PromoCodeCreate = {
         code: data.code.toUpperCase(),
         discount_type: data.discount_type,
         discount_value: data.discount_value,
@@ -124,23 +155,7 @@ export function PromoCodeFormDialog({
         is_active: data.is_active,
       };
 
-      if (isEditing) {
-        // Remove code and discount fields if promo has been used
-        if (editingCode.used_count > 0) {
-          const { code, discount_type, discount_value, ...rest } = payload;
-          await updateMutation.mutateAsync(rest as PromoCodeUpdate);
-        } else {
-          await updateMutation.mutateAsync(payload as PromoCodeUpdate);
-        }
-      } else {
-        await createMutation.mutateAsync(payload as PromoCodeCreate);
-      }
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { detail?: string } } };
-      alert(
-        err.response?.data?.detail ||
-        "An error occurred while saving the promo code."
-      );
+      await createMutation.mutateAsync(createPayload);
     }
   };
 
@@ -210,7 +225,7 @@ export function PromoCodeFormDialog({
             <select
               {...register("discount_type", { required: true })}
               disabled={hasBeenUsed}
-              className="w-full px-3 py-2 border rounded-md disabled:bg-muted disabled:cursor-not-allowed"
+              className="w-full px-3 py-2 border rounded-md bg-background text-foreground disabled:bg-muted disabled:cursor-not-allowed"
             >
               <option value={DiscountType.PERCENTAGE}>Percentage (%)</option>
               <option value={DiscountType.FIXED_AMOUNT}>
@@ -227,16 +242,20 @@ export function PromoCodeFormDialog({
             <input
               type="number"
               step="0.01"
+              min="0.01"
+              max={discountType === DiscountType.PERCENTAGE ? "100" : undefined}
               {...register("discount_value", {
                 required: "Discount value is required",
                 min: {
                   value: 0.01,
                   message: "Discount must be greater than 0",
                 },
-                max:
-                  discountType === DiscountType.PERCENTAGE
-                    ? { value: 100, message: "Percentage cannot exceed 100" }
-                    : undefined,
+                validate: (value) => {
+                  if (discountType === DiscountType.PERCENTAGE && value > 100) {
+                    return "Percentage cannot exceed 100";
+                  }
+                  return true;
+                },
               })}
               disabled={hasBeenUsed}
               className="w-full px-3 py-2 border rounded-md disabled:bg-muted disabled:cursor-not-allowed"

@@ -177,10 +177,10 @@ class CustomTicketOption(Base, UUIDMixin):
     # Option Details
     option_label: Mapped[str] = mapped_column(String(200), nullable=False)
     option_type: Mapped[OptionType] = mapped_column(
-        SQLEnum(OptionType, name="option_type_enum", native_enum=False),
+        SQLEnum(OptionType, name="option_type_enum", native_enum=False, values_callable=lambda obj: [e.value for e in obj]),
         nullable=False,
     )
-    choices: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    choices: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
     is_required: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 
@@ -290,7 +290,12 @@ class PromoCode(Base, UUIDMixin):
     # Promo Code Details
     code: Mapped[str] = mapped_column(String(50), nullable=False)
     discount_type: Mapped[DiscountType] = mapped_column(
-        SQLEnum(DiscountType, name="discount_type_enum", native_enum=False),
+        SQLEnum(
+            DiscountType,
+            name="discount_type_enum",
+            native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=False,
     )
     discount_value: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
@@ -433,7 +438,12 @@ class TicketPurchase(Base, UUIDMixin):
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     total_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     payment_status: Mapped[PaymentStatus] = mapped_column(
-        SQLEnum(PaymentStatus, name="payment_status_enum", native_enum=False),
+        SQLEnum(
+            PaymentStatus,
+            name="payment_status_enum",
+            native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=False,
     )
 

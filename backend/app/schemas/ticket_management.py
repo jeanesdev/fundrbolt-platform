@@ -165,9 +165,12 @@ class CustomTicketOptionBase(BaseModel):
 
 
 class CustomTicketOptionCreate(CustomTicketOptionBase):
-    """Schema for creating a custom option."""
+    """Schema for creating a custom option.
+    
+    Note: ticket_package_id comes from URL path parameter, not request body.
+    """
 
-    ticket_package_id: uuid.UUID
+    pass
 
 
 class CustomTicketOptionUpdate(BaseModel):
@@ -250,9 +253,12 @@ class PromoCodeBase(BaseModel):
 
 
 class PromoCodeCreate(PromoCodeBase):
-    """Schema for creating a promo code."""
+    """Schema for creating a promo code.
+    
+    Note: event_id comes from URL path parameter, not request body.
+    """
 
-    event_id: uuid.UUID
+    pass
 
 
 class PromoCodeUpdate(BaseModel):

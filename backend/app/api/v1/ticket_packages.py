@@ -57,6 +57,15 @@ async def create_ticket_package(
             status_code=status.HTTP_409_CONFLICT, detail=f"Package '{package_data.name}' exists"
         )
 
+    # Get next display_order value
+    max_order_result = await db.execute(
+        select(func.max(TicketPackage.display_order)).where(TicketPackage.event_id == event_id)
+    )
+    max_order = max_order_result.scalar_one_or_none()
+    next_display_order = (max_order + 1) if max_order is not None else 0
+    
+    logger.info(f"Creating package: max_order={max_order}, next_display_order={next_display_order}")
+
     # Create package
     new_package = TicketPackage(
         event_id=event_id,
@@ -67,6 +76,7 @@ async def create_ticket_package(
         quantity_limit=package_data.quantity_limit,
         is_enabled=package_data.is_enabled,
         is_sponsorship=package_data.is_sponsorship,
+        display_order=next_display_order,
         created_by=current_user.id,
     )
 
@@ -387,6 +397,8 @@ async def reorder_packages(
     - Validates all IDs belong to the event
     - Logs audit trail for reorder operation
     """
+    logger.info(f"🔄 REORDER ENDPOINT HIT - Event: {event_id}, Package IDs: {reorder_data.package_ids}")
+    
     # Verify event access
     result = await db.execute(
         select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
@@ -410,17 +422,37 @@ async def reorder_packages(
             detail=f"Invalid package IDs: {invalid_ids}",
         )
 
-    # Update display_order for each package
+    # Store original orders before modifying
+    original_orders = {pid: all_packages[pid].display_order for pid in reorder_data.package_ids}
+    
+    # Update display_order using raw SQL to avoid unique constraint violations
+    # Set all to negative temp values first, then to final values
+    from sqlalchemy import text
+    
+    # Phase 1: Set all to negative temporary values
     for index, package_id in enumerate(reorder_data.package_ids):
-        package = all_packages[package_id]
-        old_order = package.display_order
-        package.display_order = index
-
+        await db.execute(
+            text("UPDATE ticket_packages SET display_order = :temp_order WHERE id = :pkg_id"),
+            {"temp_order": -(index + 1), "pkg_id": package_id}
+        )
+    
+    # Phase 2: Set to final positive values
+    for index, package_id in enumerate(reorder_data.package_ids):
+        await db.execute(
+            text("UPDATE ticket_packages SET display_order = :final_order, updated_at = now() WHERE id = :pkg_id"),
+            {"final_order": index, "pkg_id": package_id}
+        )
+        
         # Log if order changed
+        old_order = original_orders[package_id]
         if old_order != index:
             logger.info(
                 f"Package {package_id} reordered: {old_order} -> {index} (event {event_id})"
             )
+    
+    # Refresh all package objects from the database to sync with raw SQL changes
+    for package_id in reorder_data.package_ids:
+        await db.refresh(all_packages[package_id])
 
     # Audit log
     audit_service = TicketAuditService(db)

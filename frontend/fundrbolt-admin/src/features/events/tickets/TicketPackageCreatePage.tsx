@@ -4,6 +4,7 @@
  */
 
 import { packageImagesApi } from '@/api/packageImages';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -20,6 +21,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import apiClient from '@/lib/axios';
+import { getErrorMessage } from '@/lib/error-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
@@ -31,13 +33,20 @@ import { ImageUploadProgress } from './components/ImageUploadProgress';
 import { ImageUploadZone } from './components/ImageUploadZone';
 
 const packageSchema = z.object({
-  name: z.string().min(1, 'Package name is required').max(100),
-  description: z.string().max(5000).optional().nullable(),
-  price: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid price format'),
-  seats_per_package: z.coerce.number().min(1).max(100),
+  name: z.string().min(1, 'Package name is required').max(100, 'Name must be 100 characters or less'),
+  description: z.string().max(5000, 'Description must be 5000 characters or less').optional().nullable(),
+  price: z.string()
+    .min(1, 'Price is required')
+    .regex(/^\d+(\.\d{1,2})?$/, 'Price must be a valid number (e.g., 50.00)'),
+  seats_per_package: z.coerce.number({
+    required_error: 'Seats per package is required',
+    invalid_type_error: 'Seats must be a number',
+  }).min(1, 'Must have at least 1 seat').max(100, 'Maximum 100 seats per package'),
   quantity_limit: z.preprocess(
     (val) => (val === '' || val === null || val === undefined ? null : val),
-    z.coerce.number().min(1).nullable().optional()
+    z.coerce.number({
+      invalid_type_error: 'Quantity must be a number',
+    }).min(1, 'Quantity must be at least 1').nullable().optional()
   ),
   is_enabled: z.boolean().default(true),
   is_sponsorship: z.boolean().default(false),
@@ -58,6 +67,8 @@ export function TicketPackageCreatePage() {
 
   const form = useForm<PackageFormData>({
     resolver: zodResolver(packageSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
     defaultValues: {
       name: '',
       description: '',
@@ -88,18 +99,18 @@ export function TicketPackageCreatePage() {
       } else {
         toast({
           title: 'Package created',
-          description: 'Ticket package has been created successfully.',
+          description: 'You can now add custom options and finalize your package.',
         });
         navigate({
-          to: '/events/$eventId/tickets',
-          params: { eventId },
+          to: '/events/$eventId/tickets/$packageId/edit',
+          params: { eventId, packageId: pkg.id },
         });
       }
     },
-    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
+    onError: (error) => {
       toast({
         title: 'Creation failed',
-        description: error.response?.data?.detail || 'Failed to create package',
+        description: getErrorMessage(error, 'Failed to create package'),
         variant: 'destructive',
       });
     },
@@ -127,20 +138,20 @@ export function TicketPackageCreatePage() {
       setUploadProgress(100);
       toast({
         title: 'Image uploaded',
-        description: 'Package image has been uploaded successfully.',
+        description: 'You can now add custom options and finalize your package.',
       });
       setTimeout(() => {
         navigate({
-          to: '/events/$eventId/tickets',
-          params: { eventId },
+          to: '/events/$eventId/tickets/$packageId/edit',
+          params: { eventId, packageId: createdPackageId },
         });
       }, 1500);
     },
-    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
+    onError: (error) => {
       setUploadStatus('error');
       toast({
         title: 'Image upload failed',
-        description: error.response?.data?.detail || 'Failed to upload image',
+        description: getErrorMessage(error, 'Failed to upload image'),
         variant: 'destructive',
       });
     },
@@ -194,11 +205,15 @@ export function TicketPackageCreatePage() {
               <FormField
                 control={form.control}
                 name="name"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel>Package Name *</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., VIP Table, General Admission" {...field} />
+                      <Input 
+                        placeholder="e.g., VIP Table, General Admission" 
+                        {...field}
+                        className={fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                      />
                     </FormControl>
                     <FormDescription>
                       A descriptive name for this ticket package (max 100 characters)
@@ -234,13 +249,18 @@ export function TicketPackageCreatePage() {
                 <FormField
                   control={form.control}
                   name="price"
-                  render={({ field }) => (
+                  render={({ field, fieldState }) => (
                     <FormItem>
                       <FormLabel>Price (USD) *</FormLabel>
                       <FormControl>
-                        <Input type="text" placeholder="0.00" {...field} />
+                        <Input 
+                          type="text" 
+                          placeholder="0.00" 
+                          {...field}
+                          className={fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                        />
                       </FormControl>
-                      <FormDescription>Price per package</FormDescription>
+                      <FormDescription>Price per package (e.g., 50.00)</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -249,11 +269,17 @@ export function TicketPackageCreatePage() {
                 <FormField
                   control={form.control}
                   name="seats_per_package"
-                  render={({ field }) => (
+                  render={({ field, fieldState }) => (
                     <FormItem>
                       <FormLabel>Seats per Package *</FormLabel>
                       <FormControl>
-                        <Input type="number" min="1" max="100" {...field} />
+                        <Input 
+                          type="number" 
+                          min="1" 
+                          max="100" 
+                          {...field}
+                          className={fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                        />
                       </FormControl>
                       <FormDescription>1-100 seats</FormDescription>
                       <FormMessage />
@@ -265,7 +291,7 @@ export function TicketPackageCreatePage() {
               <FormField
                 control={form.control}
                 name="quantity_limit"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel>Quantity Limit</FormLabel>
                     <FormControl>
@@ -275,6 +301,7 @@ export function TicketPackageCreatePage() {
                         placeholder="Unlimited"
                         {...field}
                         value={field.value || ''}
+                        className={fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''}
                       />
                     </FormControl>
                     <FormDescription>
@@ -350,7 +377,38 @@ export function TicketPackageCreatePage() {
                 )}
               </div>
 
-              <div className="flex justify-end gap-2">
+              {/* Custom Options Preview (Disabled) */}
+              <div className="mt-6 pt-6 border-t">
+                <Card className="bg-muted/30">
+                  <CardHeader>
+                    <CardTitle className="text-muted-foreground">
+                      Custom Options
+                    </CardTitle>
+                    <CardDescription>
+                      Add custom fields like "Dietary Restrictions" or "T-Shirt Size" after creating the package.
+                      You'll be able to manage these options on the edit page.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/50"></div>
+                        <span>Add up to 4 custom fields</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/50"></div>
+                        <span>Choose from boolean, multi-select, or text input types</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/50"></div>
+                        <span>Mark fields as required or optional</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-6">
                 <Button
                   type="button"
                   variant="outline"

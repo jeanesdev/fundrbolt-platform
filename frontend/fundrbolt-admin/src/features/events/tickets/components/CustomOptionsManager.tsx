@@ -9,21 +9,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import apiClient from '@/lib/axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CustomOptionFormDialog } from './CustomOptionFormDialog';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface CustomOption {
   id: string;
-  package_id: string;
+  ticket_package_id: string;
   option_type: 'boolean' | 'multi_select' | 'text_input';
-  label: string;
-  description?: string;
+  option_label: string;
   choices?: string[];
   is_required: boolean;
   display_order: number;
   created_at: string;
-  updated_at: string;
 }
 
 interface CustomOptionsManagerProps {
@@ -35,6 +50,7 @@ export function CustomOptionsManager({ packageId }: CustomOptionsManagerProps) {
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingOption, setEditingOption] = useState<CustomOption | null>(null);
+  const [localOptions, setLocalOptions] = useState<CustomOption[]>([]);
 
   // Fetch options
   const { data: options = [], isLoading } = useQuery({
@@ -44,6 +60,53 @@ export function CustomOptionsManager({ packageId }: CustomOptionsManagerProps) {
       return response.data as CustomOption[];
     },
   });
+
+  // Update local options when data changes
+  useEffect(() => {
+    setLocalOptions(options);
+  }, [options]);
+
+  // Reorder mutation
+  const reorderMutation = useMutation({
+    mutationFn: async (reorderedOptions: CustomOption[]) => {
+      // Update display_order for each option
+      await Promise.all(
+        reorderedOptions.map((option, index) =>
+          apiClient.patch(`/admin/packages/${packageId}/options/${option.id}`, {
+            display_order: index,
+          })
+        )
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['custom-options', packageId] });
+    },
+    onError: () => {
+      toast.error('Failed to reorder options');
+      setLocalOptions(options); // Revert to original order
+    },
+  });
+
+  // Configure drag sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = localOptions.findIndex((opt) => opt.id === active.id);
+      const newIndex = localOptions.findIndex((opt) => opt.id === over.id);
+
+      const reordered = arrayMove(localOptions, oldIndex, newIndex);
+      setLocalOptions(reordered);
+      reorderMutation.mutate(reordered);
+    }
+  };
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -76,7 +139,7 @@ export function CustomOptionsManager({ packageId }: CustomOptionsManagerProps) {
   });
 
   const handleDelete = (option: CustomOption) => {
-    if (confirm(`Delete "${option.label}"? This action cannot be undone.`)) {
+    if (confirm(`Delete "${option.option_label}"? This action cannot be undone.`)) {
       deleteMutation.mutate(option.id);
     }
   };
@@ -116,6 +179,72 @@ export function CustomOptionsManager({ packageId }: CustomOptionsManagerProps) {
 
   const canAddMore = options.length < 4;
 
+  // Sortable Item Component
+  function SortableOptionItem({ option }: { option: CustomOption }) {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: option.id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="flex items-start gap-3 p-4 border rounded-lg hover:bg-muted/30 transition-colors"
+      >
+        <div className="cursor-move pt-1" {...attributes} {...listeners}>
+          <GripVertical className="h-5 w-5 text-gray-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h4 className="font-medium">{option.option_label}</h4>
+            {option.is_required && (
+              <Badge variant="destructive" className="text-xs">
+                Required
+              </Badge>
+            )}
+            {getOptionTypeBadge(option.option_type)}
+          </div>
+          {option.option_type === 'multi_select' && option.choices && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {option.choices.map((choice, idx) => (
+                <Badge key={idx} variant="outline" className="text-xs">
+                  {choice}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setEditingOption(option)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDelete(option)}
+          >
+            <Trash2 className="h-4 w-4 text-red-600" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -145,59 +274,22 @@ export function CustomOptionsManager({ packageId }: CustomOptionsManagerProps) {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {options.map((option) => (
-              <div
-                key={option.id}
-                className="flex items-start gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="cursor-move pt-1">
-                  <GripVertical className="h-5 w-5 text-gray-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-medium">{option.label}</h4>
-                    {option.is_required && (
-                      <Badge variant="destructive" className="text-xs">
-                        Required
-                      </Badge>
-                    )}
-                    {getOptionTypeBadge(option.option_type)}
-                  </div>
-                  {option.description && (
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {option.description}
-                    </p>
-                  )}
-                  {option.option_type === 'multi_select' && option.choices && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {option.choices.map((choice, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {choice}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditingOption(option)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(option)}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-600" />
-                  </Button>
-                </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={localOptions.map((opt) => opt.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-3">
+                {localOptions.map((option) => (
+                  <SortableOptionItem key={option.id} option={option} />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         )}
       </CardContent>
 

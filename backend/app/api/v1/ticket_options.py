@@ -73,7 +73,7 @@ async def create_custom_option(
         ticket_package_id=package_id,
         option_label=option_data.option_label,
         option_type=option_data.option_type,
-        choices={"choices": option_data.choices} if option_data.choices else None,
+        choices=option_data.choices,
         is_required=option_data.is_required,
         display_order=option_data.display_order,
     )
@@ -166,18 +166,16 @@ async def update_custom_option(
 
     Note: Cannot update if option has responses from donors.
     """
-    # Fetch option
+    # Verify package access and fetch option
     result = await db.execute(
         select(CustomTicketOption)
-        .join(CustomTicketOption.ticket_package)
-        .join(CustomTicketOption.ticket_package.event)
+        .join(TicketPackage, CustomTicketOption.ticket_package_id == TicketPackage.id)
+        .join(TicketPackage.event)
         .where(
             and_(
                 CustomTicketOption.id == option_id,
                 CustomTicketOption.ticket_package_id == package_id,
-                CustomTicketOption.ticket_package.has(
-                    TicketPackage.event.has(npo_id=current_user.npo_id)
-                ),
+                TicketPackage.event.has(npo_id=current_user.npo_id),
             )
         )
     )
@@ -206,7 +204,7 @@ async def update_custom_option(
     if option_data.option_type is not None:
         option.option_type = option_data.option_type
     if option_data.choices is not None:
-        option.choices = {"choices": option_data.choices}
+        option.choices = option_data.choices
     if option_data.is_required is not None:
         option.is_required = option_data.is_required
     if option_data.display_order is not None:

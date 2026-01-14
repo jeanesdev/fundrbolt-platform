@@ -42,8 +42,7 @@ import { z } from 'zod';
 
 const optionSchema = z.object({
   option_type: z.enum(['boolean', 'multi_select', 'text_input']),
-  label: z.string().min(1, 'Label is required').max(100, 'Label too long'),
-  description: z.string().max(500, 'Description too long').optional(),
+  option_label: z.string().min(1, 'Label is required').max(100, 'Label too long'),
   choices: z.array(z.string()).optional(),
   is_required: z.boolean().default(false),
   display_order: z.number().optional(),
@@ -53,15 +52,13 @@ type OptionFormData = z.infer<typeof optionSchema>;
 
 interface CustomOption {
   id: string;
-  package_id: string;
+  ticket_package_id: string;
   option_type: 'boolean' | 'multi_select' | 'text_input';
-  label: string;
-  description?: string;
+  option_label: string;
   choices?: string[];
   is_required: boolean;
   display_order: number;
   created_at: string;
-  updated_at: string;
 }
 
 interface CustomOptionFormDialogProps {
@@ -87,8 +84,7 @@ export function CustomOptionFormDialog({
     resolver: zodResolver(optionSchema),
     defaultValues: {
       option_type: option?.option_type || 'boolean',
-      label: option?.label || '',
-      description: option?.description || '',
+      option_label: option?.option_label || '',
       choices: option?.choices || [],
       is_required: option?.is_required || false,
       display_order: option?.display_order,
@@ -103,8 +99,7 @@ export function CustomOptionFormDialog({
     if (open && option) {
       form.reset({
         option_type: option.option_type,
-        label: option.label,
-        description: option.description || '',
+        option_label: option.option_label,
         choices: option.choices || [],
         is_required: option.is_required,
         display_order: option.display_order,
@@ -112,8 +107,7 @@ export function CustomOptionFormDialog({
     } else if (open && !option) {
       form.reset({
         option_type: 'boolean',
-        label: '',
-        description: '',
+        option_label: '',
         choices: [],
         is_required: false,
       });
@@ -128,26 +122,15 @@ export function CustomOptionFormDialog({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custom-options', packageId] });
-      toast({
-        title: 'Option created',
-        description: 'Custom option has been created successfully.',
-      });
+      toast.success('Custom option has been created successfully.');
       onOpenChange(false);
     },
     onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       const detail = error.response?.data?.detail;
       if (detail?.includes('maximum')) {
-        toast({
-          title: 'Limit reached',
-          description: 'Maximum 4 options per package allowed.',
-          variant: 'destructive',
-        });
+        toast.error('Maximum 4 options per package allowed.');
       } else {
-        toast({
-          title: 'Creation failed',
-          description: detail || 'Failed to create option',
-          variant: 'destructive',
-        });
+        toast.error(detail || 'Failed to create option');
       }
     },
   });
@@ -163,26 +146,15 @@ export function CustomOptionFormDialog({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custom-options', packageId] });
-      toast({
-        title: 'Option updated',
-        description: 'Custom option has been updated successfully.',
-      });
+      toast.success('Custom option has been updated successfully.');
       onOpenChange(false);
     },
     onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       const detail = error.response?.data?.detail;
       if (detail?.includes('responses')) {
-        toast({
-          title: 'Cannot update',
-          description: 'This option has responses and cannot be modified.',
-          variant: 'destructive',
-        });
+        toast.error('This option has responses and cannot be modified.');
       } else {
-        toast({
-          title: 'Update failed',
-          description: detail || 'Failed to update option',
-          variant: 'destructive',
-        });
+        toast.error(detail || 'Failed to update option');
       }
     },
   });
@@ -267,7 +239,7 @@ export function CustomOptionFormDialog({
             {/* Label */}
             <FormField
               control={form.control}
-              name="label"
+              name="option_label"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Label</FormLabel>
@@ -277,25 +249,6 @@ export function CustomOptionFormDialog({
                   <FormDescription>
                     The question or prompt shown to purchasers
                   </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Description */}
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Additional context or instructions"
-                      {...field}
-                      rows={3}
-                    />
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

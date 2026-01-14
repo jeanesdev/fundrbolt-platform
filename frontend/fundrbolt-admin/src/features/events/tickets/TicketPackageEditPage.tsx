@@ -21,6 +21,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import apiClient from '@/lib/axios';
+import { getErrorMessage } from '@/lib/error-utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
@@ -38,8 +39,12 @@ const packageSchema = z.object({
   price: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid price format').optional(),
   seats_per_package: z.coerce.number().min(1).max(100).optional(),
   quantity_limit: z.preprocess(
-    (val) => (val === '' || val === null || val === undefined ? null : val),
-    z.coerce.number().min(1).nullable().optional()
+    (val) => {
+      // Handle empty string, null, undefined as null (unlimited)
+      if (val === '' || val === null || val === undefined || val === 0) return null;
+      return val;
+    },
+    z.union([z.number().min(1, 'Quantity must be at least 1'), z.null()]).optional()
   ),
   is_enabled: z.boolean().optional(),
   is_sponsorship: z.boolean().optional(),
@@ -104,13 +109,23 @@ export function TicketPackageEditPage() {
 
   const form = useForm<PackageFormData>({
     resolver: zodResolver(packageSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      price: 0,
+      seats_per_package: 1,
+      quantity_limit: 0,
+      is_enabled: true,
+      is_sponsorship: false,
+      version: 0,
+    },
     values: pkg
       ? {
-        name: pkg.name,
-        description: pkg.description,
+        name: pkg.name || '',
+        description: pkg.description || '',
         price: pkg.price,
         seats_per_package: pkg.seats_per_package,
-        quantity_limit: pkg.quantity_limit,
+        quantity_limit: pkg.quantity_limit || 0,
         is_enabled: pkg.is_enabled,
         is_sponsorship: pkg.is_sponsorship,
         version: pkg.version,
@@ -138,17 +153,17 @@ export function TicketPackageEditPage() {
         params: { eventId },
       });
     },
-    onError: (error: Error & { response?: { status?: number; data?: { detail?: string } } }) => {
-      const status = error.response?.status;
-      const detail = error.response?.data?.detail;
+    onError: (error) => {
+      const status = (error as any).response?.status;
+      const detail = (error as any).response?.data?.detail;
 
       // Handle 409 Conflict - concurrent edit
-      if (status === 409 || detail?.includes('Version mismatch')) {
+      if (status === 409 || (typeof detail === 'string' && detail.includes('Version mismatch'))) {
         setShowConflictDialog(true);
       } else {
         toast({
           title: 'Update failed',
-          description: detail || 'Failed to update package',
+          description: getErrorMessage(error, 'Failed to update package'),
           variant: 'destructive',
         });
       }
@@ -180,11 +195,11 @@ export function TicketPackageEditPage() {
         description: 'Package image has been uploaded successfully.',
       });
     },
-    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
+    onError: (error) => {
       setUploadStatus('error');
       toast({
         title: 'Image upload failed',
-        description: error.response?.data?.detail || 'Failed to upload image',
+        description: getErrorMessage(error, 'Failed to upload image'),
         variant: 'destructive',
       });
     },
@@ -206,10 +221,10 @@ export function TicketPackageEditPage() {
         description: 'Package image has been removed.',
       });
     },
-    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
+    onError: (error) => {
       toast({
         title: 'Delete failed',
-        description: error.response?.data?.detail || 'Failed to delete image',
+        description: getErrorMessage(error, 'Failed to delete image'),
         variant: 'destructive',
       });
     },
@@ -337,7 +352,7 @@ export function TicketPackageEditPage() {
                     <FormItem>
                       <FormLabel>Price (USD)</FormLabel>
                       <FormControl>
-                        <Input type="text" {...field} />
+                        <Input type="number" min="0" step="0.01" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -368,14 +383,14 @@ export function TicketPackageEditPage() {
                     <FormControl>
                       <Input
                         type="number"
-                        min={pkg.sold_count}
-                        placeholder="Unlimited"
+                        min="0"
+                        placeholder="Leave blank for unlimited"
                         {...field}
                         value={field.value || ''}
                       />
                     </FormControl>
                     <FormDescription>
-                      Cannot reduce below sold count ({pkg.sold_count})
+                      Leave blank for unlimited. Cannot reduce below sold count ({pkg.sold_count})
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -421,7 +436,7 @@ export function TicketPackageEditPage() {
                 )}
               />
 
-              <div className="space-y-3 rounded-lg border p-4 bg-blue-50">
+              <div className="space-y-3 rounded-lg border p-4 bg-muted/30">
                 <div>
                   <FormLabel className="text-base">Package Image</FormLabel>
                   <FormDescription className="mt-1">
@@ -447,7 +462,12 @@ export function TicketPackageEditPage() {
                 )}
               </div>
 
-              <div className="flex justify-end gap-2">
+              {/* Custom Options Section */}
+              <div className="mt-6 pt-6 border-t">
+                <CustomOptionsManager packageId={packageId} eventId={eventId} />
+              </div>
+
+              <div className="flex justify-end gap-2 mt-6">
                 <Button
                   type="button"
                   variant="outline"
@@ -468,11 +488,6 @@ export function TicketPackageEditPage() {
           </Form>
         </CardContent>
       </Card>
-
-      {/* Custom Options Section */}
-      <div className="mt-6">
-        <CustomOptionsManager packageId={packageId} eventId={eventId} />
-      </div>
 
       {/* Conflict Dialog for concurrent edits */}
       <ConflictDialog

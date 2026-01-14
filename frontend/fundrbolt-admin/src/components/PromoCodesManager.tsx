@@ -20,7 +20,7 @@ export function PromoCodesManager({ eventId }: PromoCodesManagerProps) {
     queryKey: ["promoCodes", eventId, showInactive],
     queryFn: async () => {
       const response = await apiClient.get<PromoCodeRead[]>(
-        `/api/v1/admin/events/${eventId}/promo-codes`,
+        `/admin/events/${eventId}/promo-codes`,
         { params: { include_inactive: showInactive } }
       );
       return response.data;
@@ -31,7 +31,7 @@ export function PromoCodesManager({ eventId }: PromoCodesManagerProps) {
   const deleteMutation = useMutation({
     mutationFn: async (codeId: string) => {
       await apiClient.delete(
-        `/api/v1/admin/events/${eventId}/promo-codes/${codeId}`
+        `/admin/events/${eventId}/promo-codes/${codeId}`
       );
     },
     onSuccess: () => {
@@ -72,10 +72,8 @@ export function PromoCodesManager({ eventId }: PromoCodesManagerProps) {
   };
 
   const formatDiscount = (code: PromoCodeRead) => {
-    if (code.discount_type === DiscountType.PERCENTAGE) {
-      return `${code.discount_value}%`;
-    }
-    return `$${code.discount_value}`;
+    // Format just the number, icon is shown separately
+    return code.discount_value.toString();
   };
 
   const getUsageStatus = (code: PromoCodeRead) => {

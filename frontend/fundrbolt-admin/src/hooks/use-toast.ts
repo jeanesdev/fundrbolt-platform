@@ -41,8 +41,7 @@ export function useToast() {
     const { title, description, duration, variant, action } = options;
 
     if (variant === 'destructive') {
-      sonnerToast.error(title || 'Error', {
-        description,
+      sonnerToast.error(description || title || 'Error', {
         duration,
         action: action ? {
           label: action.label,
@@ -50,8 +49,7 @@ export function useToast() {
         } : undefined,
       });
     } else {
-      sonnerToast.success(title || 'Success', {
-        description,
+      sonnerToast.success(description || title || 'Success', {
         duration,
         action: action ? {
           label: action.label,

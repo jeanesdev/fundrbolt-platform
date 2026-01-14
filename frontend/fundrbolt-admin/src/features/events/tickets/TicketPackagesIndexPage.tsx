@@ -16,6 +16,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import apiClient from '@/lib/axios';
+import { getErrorMessage } from '@/lib/error-utils';
 import {
   DndContext,
   type DragEndEvent,
@@ -121,10 +122,10 @@ export function TicketPackagesIndexPage({ eventId: propEventId }: TicketPackages
         description: 'Ticket package has been deleted successfully.',
       });
     },
-    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
+    onError: (error) => {
       toast({
         title: 'Delete failed',
-        description: error.response?.data?.detail || 'Failed to delete package',
+        description: getErrorMessage(error, 'Failed to delete package'),
         variant: 'destructive',
       });
     },
@@ -146,12 +147,12 @@ export function TicketPackagesIndexPage({ eventId: propEventId }: TicketPackages
         description: 'Package order has been updated successfully.',
       });
     },
-    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
+    onError: (error) => {
       // Revert optimistic update
       queryClient.invalidateQueries({ queryKey: ['ticket-packages', eventId] });
       toast({
         title: 'Reorder failed',
-        description: error.response?.data?.detail || 'Failed to reorder packages',
+        description: getErrorMessage(error, 'Failed to reorder packages'),
         variant: 'destructive',
       });
     },
@@ -383,7 +384,7 @@ function SortablePackageCard({
           <div className="flex-1">
             <div className="flex justify-between items-start">
               <CardTitle className="text-lg">{pkg.name}</CardTitle>
-              <div className="flex gap-1">
+              <div className="hidden sm:flex gap-1">
                 {pkg.is_sponsorship && (
                   <Badge variant="secondary">Sponsorship</Badge>
                 )}
