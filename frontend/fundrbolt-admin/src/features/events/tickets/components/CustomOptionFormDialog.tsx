@@ -80,7 +80,7 @@ export function CustomOptionFormDialog({
   const [newChoice, setNewChoice] = useState('');
 
   const form = useForm<OptionFormData>({
-    resolver: zodResolver(optionSchema),
+    resolver: zodResolver(optionSchema) as any,
     defaultValues: {
       option_type: option?.option_type || 'boolean',
       option_label: option?.option_label || '',

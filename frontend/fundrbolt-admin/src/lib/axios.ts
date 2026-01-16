@@ -62,7 +62,7 @@ apiClient.interceptors.response.use(
     // Don't retry if already retried
     if (originalRequest._retryCount) {
       // Already retried via retryWithBackoff, process error normally
-    } else if (!isAuthEndpoint && isRetryableError(error, { maxRetries: 3, retryableStatusCodes: [408, 429, 500, 502, 503, 504] })) {
+    } else if (!isAuthEndpoint && isRetryableError(error, { maxRetries: 3, initialDelayMs: 1000, maxDelayMs: 10000, backoffMultiplier: 2, retryableStatusCodes: [408, 429, 500, 502, 503, 504] })) {
       // Mark that we're attempting retry
       originalRequest._retryCount = 0
 

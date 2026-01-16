@@ -108,7 +108,7 @@ export function TicketPackageEditPage() {
   handleSetInitialImage();
 
   const form = useForm<PackageFormData>({
-    resolver: zodResolver(packageSchema),
+    resolver: zodResolver(packageSchema) as any,
     defaultValues: {
       name: '',
       description: '',

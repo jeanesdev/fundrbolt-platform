@@ -132,7 +132,7 @@ export function PromoCodeFormDialog({
         max_uses: data.max_uses || null,
         valid_from: data.valid_from || null,
         valid_until: data.valid_until || null,
-        is_active: data.is_active,
+        is_active: data.is_active ?? true,
       };
 
       // Remove code and discount fields if promo has been used
@@ -151,7 +151,7 @@ export function PromoCodeFormDialog({
         max_uses: data.max_uses || null,
         valid_from: data.valid_from || null,
         valid_until: data.valid_until || null,
-        is_active: data.is_active,
+        is_active: data.is_active ?? true,
       };
 
       await createMutation.mutateAsync(createPayload);
@@ -160,7 +160,7 @@ export function PromoCodeFormDialog({
 
   if (!open) return null;
 
-  const hasBeenUsed = editingCode && editingCode.used_count > 0;
+  const hasBeenUsed = !!(editingCode && editingCode.used_count > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">

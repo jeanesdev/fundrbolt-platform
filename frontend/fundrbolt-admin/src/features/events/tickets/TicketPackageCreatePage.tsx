@@ -3,7 +3,6 @@
  * Form for creating new ticket packages
  */
 
-import { packageImagesApi } from '@/api/packageImages';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -61,10 +60,9 @@ export function TicketPackageCreatePage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [createdPackageId, setCreatedPackageId] = useState<string | null>(null);
 
   const form = useForm<PackageFormData>({
-    resolver: zodResolver(packageSchema),
+    resolver: zodResolver(packageSchema) as any,
     mode: 'onBlur',
     reValidateMode: 'onChange',
     defaultValues: {
@@ -88,7 +86,6 @@ export function TicketPackageCreatePage() {
     },
     onSuccess: (pkg) => {
       queryClient.invalidateQueries({ queryKey: ['ticket-packages', eventId] });
-      setCreatedPackageId(pkg.id);
 
       // If file selected, upload image before navigating
       if (selectedFile) {
@@ -117,43 +114,6 @@ export function TicketPackageCreatePage() {
   const onSubmit = (data: PackageFormData) => {
     createMutation.mutate(data);
   };
-
-  // Upload image after package creation
-  const _imageUploadMutation = useMutation({
-    mutationFn: async () => {
-      if (!createdPackageId || !selectedFile) return;
-
-      const response = await packageImagesApi.uploadImage(
-        eventId,
-        createdPackageId,
-        selectedFile,
-        (progress) => setUploadProgress(progress)
-      );
-      return response;
-    },
-    onSuccess: () => {
-      setUploadStatus('success');
-      setUploadProgress(100);
-      toast({
-        title: 'Image uploaded',
-        description: 'You can now add custom options and finalize your package.',
-      });
-      setTimeout(() => {
-        navigate({
-          to: '/events/$eventId/tickets/$packageId/edit',
-          params: { eventId, packageId: createdPackageId },
-        });
-      }, 1500);
-    },
-    onError: (error) => {
-      setUploadStatus('error');
-      toast({
-        title: 'Image upload failed',
-        description: getErrorMessage(error, 'Failed to upload image'),
-        variant: 'destructive',
-      });
-    },
-  });
 
   // Trigger image upload after package creation
   const handleImageFile = (file: File) => {
