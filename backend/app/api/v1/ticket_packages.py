@@ -63,7 +63,7 @@ async def create_ticket_package(
     )
     max_order = max_order_result.scalar_one_or_none()
     next_display_order = (max_order + 1) if max_order is not None else 0
-    
+
     logger.info(f"Creating package: max_order={max_order}, next_display_order={next_display_order}")
 
     # Create package
@@ -398,7 +398,7 @@ async def reorder_packages(
     - Logs audit trail for reorder operation
     """
     logger.info(f"🔄 REORDER ENDPOINT HIT - Event: {event_id}, Package IDs: {reorder_data.package_ids}")
-    
+
     # Verify event access
     result = await db.execute(
         select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
@@ -424,32 +424,32 @@ async def reorder_packages(
 
     # Store original orders before modifying
     original_orders = {pid: all_packages[pid].display_order for pid in reorder_data.package_ids}
-    
+
     # Update display_order using raw SQL to avoid unique constraint violations
     # Set all to negative temp values first, then to final values
     from sqlalchemy import text
-    
+
     # Phase 1: Set all to negative temporary values
     for index, package_id in enumerate(reorder_data.package_ids):
         await db.execute(
             text("UPDATE ticket_packages SET display_order = :temp_order WHERE id = :pkg_id"),
             {"temp_order": -(index + 1), "pkg_id": package_id}
         )
-    
+
     # Phase 2: Set to final positive values
     for index, package_id in enumerate(reorder_data.package_ids):
         await db.execute(
             text("UPDATE ticket_packages SET display_order = :final_order, updated_at = now() WHERE id = :pkg_id"),
             {"final_order": index, "pkg_id": package_id}
         )
-        
+
         # Log if order changed
         old_order = original_orders[package_id]
         if old_order != index:
             logger.info(
                 f"Package {package_id} reordered: {old_order} -> {index} (event {event_id})"
             )
-    
+
     # Refresh all package objects from the database to sync with raw SQL changes
     for package_id in reorder_data.package_ids:
         await db.refresh(all_packages[package_id])
