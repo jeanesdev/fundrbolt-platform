@@ -85,7 +85,7 @@ export function CustomOptionFormDialog({
       option_type: option?.option_type || 'boolean',
       option_label: option?.option_label || '',
       choices: option?.choices || [],
-      is_required: option?.is_required || false,
+      is_required: option?.is_required ?? false,
       display_order: option?.display_order,
     },
   });

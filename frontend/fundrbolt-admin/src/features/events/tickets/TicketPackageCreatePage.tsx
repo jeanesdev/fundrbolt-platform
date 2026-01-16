@@ -38,13 +38,12 @@ const packageSchema = z.object({
     .min(1, 'Price is required')
     .regex(/^\d+(\.\d{1,2})?$/, 'Price must be a valid number (e.g., 50.00)'),
   seats_per_package: z.coerce.number({
-    required_error: 'Seats per package is required',
-    invalid_type_error: 'Seats must be a number',
+    message: 'Seats per package is required and must be a number',
   }).min(1, 'Must have at least 1 seat').max(100, 'Maximum 100 seats per package'),
   quantity_limit: z.preprocess(
     (val) => (val === '' || val === null || val === undefined ? null : val),
     z.coerce.number({
-      invalid_type_error: 'Quantity must be a number',
+      message: 'Quantity must be a number',
     }).min(1, 'Quantity must be at least 1').nullable().optional()
   ),
   is_enabled: z.boolean().default(true),
@@ -120,7 +119,7 @@ export function TicketPackageCreatePage() {
   };
 
   // Upload image after package creation
-  const _imageUploadMutation = useMutation({
+  const imageUploadMutation = useMutation({
     mutationFn: async () => {
       if (!createdPackageId || !selectedFile) return;
 
@@ -162,7 +161,7 @@ export function TicketPackageCreatePage() {
     // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
-      setImagePreview(reader.result as string);
+      setImagePreview((reader.result as string | null) ?? '');
     };
     reader.readAsDataURL(file);
   };
@@ -324,7 +323,7 @@ export function TicketPackageCreatePage() {
                     </div>
                     <FormControl>
                       <Switch
-                        checked={field.value}
+                        checked={field.value ?? false}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
@@ -344,7 +343,7 @@ export function TicketPackageCreatePage() {
                       </FormDescription>
                     </div>
                     <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
                     </FormControl>
                   </FormItem>
                 )}

@@ -117,25 +117,14 @@ export function CustomOptionsManager({ packageId }: CustomOptionsManagerProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custom-options', packageId] });
-      toast({
-        title: 'Option deleted',
-        description: 'Custom option has been deleted successfully.',
-      });
+      toast.success('Custom option has been deleted successfully.');
     },
     onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       const detail = error.response?.data?.detail;
       if (detail?.includes('responses')) {
-        toast({
-          title: 'Cannot delete',
-          description: 'This option has responses and cannot be deleted.',
-          variant: 'destructive',
-        });
+        toast.error('This option has responses and cannot be deleted.');
       } else {
-        toast({
-          title: 'Delete failed',
-          description: detail || 'Failed to delete option',
-          variant: 'destructive',
-        });
+        toast.error(detail || 'Failed to delete option');
       }
     },
   });

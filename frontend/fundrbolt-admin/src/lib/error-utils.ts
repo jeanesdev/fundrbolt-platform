@@ -120,6 +120,8 @@ export function isConsentError(error: unknown): boolean {
     isErrorStatus(error, 409) &&
     typeof data?.detail === 'object' &&
     data.detail !== null &&
+    !Array.isArray(data.detail) &&
+    'code' in data.detail &&
     (data.detail.code === 'CONSENT_REQUIRED' || data.detail.code === 'CONSENT_OUTDATED')
   )
 }

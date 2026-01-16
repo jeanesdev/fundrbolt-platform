@@ -112,7 +112,7 @@ export function TicketPackageEditPage() {
     defaultValues: {
       name: '',
       description: '',
-      price: 0,
+      price: '0',
       seats_per_package: 1,
       quantity_limit: 0,
       is_enabled: true,
@@ -411,7 +411,7 @@ export function TicketPackageEditPage() {
                     </div>
                     <FormControl>
                       <Switch
-                        checked={field.value}
+                        checked={field.value ?? false}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
@@ -431,7 +431,7 @@ export function TicketPackageEditPage() {
                       </FormDescription>
                     </div>
                     <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
                     </FormControl>
                   </FormItem>
                 )}

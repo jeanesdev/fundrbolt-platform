@@ -125,7 +125,7 @@ export function PromoCodeFormDialog({
 
   const onSubmit = async (data: FormData) => {
     if (isEditing) {
-      // Build update payload with version for optimistic locking
+      // Build update payload
       const updatePayload: PromoCodeUpdate = {
         discount_type: data.discount_type,
         discount_value: data.discount_value,
@@ -133,7 +133,6 @@ export function PromoCodeFormDialog({
         valid_from: data.valid_from || null,
         valid_until: data.valid_until || null,
         is_active: data.is_active,
-        version: editingCode.version,
       };
 
       // Remove code and discount fields if promo has been used
