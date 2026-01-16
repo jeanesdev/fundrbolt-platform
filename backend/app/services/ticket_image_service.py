@@ -50,7 +50,9 @@ class ImageService:
             self.blob_service_client = BlobServiceClient.from_connection_string(
                 settings.azure_storage_connection_string
             )
-        self._conn_settings = self._parse_connection_string(settings.azure_storage_connection_string)
+        self._conn_settings = self._parse_connection_string(
+            settings.azure_storage_connection_string
+        )
 
     async def upload_image(
         self,

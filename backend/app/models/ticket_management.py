@@ -177,7 +177,12 @@ class CustomTicketOption(Base, UUIDMixin):
     # Option Details
     option_label: Mapped[str] = mapped_column(String(200), nullable=False)
     option_type: Mapped[OptionType] = mapped_column(
-        SQLEnum(OptionType, name="option_type_enum", native_enum=False, values_callable=lambda obj: [e.value for e in obj]),
+        SQLEnum(
+            OptionType,
+            name="option_type_enum",
+            native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=False,
     )
     choices: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)

@@ -397,7 +397,9 @@ async def reorder_packages(
     - Validates all IDs belong to the event
     - Logs audit trail for reorder operation
     """
-    logger.info(f"🔄 REORDER ENDPOINT HIT - Event: {event_id}, Package IDs: {reorder_data.package_ids}")
+    logger.info(
+        f"🔄 REORDER ENDPOINT HIT - Event: {event_id}, Package IDs: {reorder_data.package_ids}"
+    )
 
     # Verify event access
     result = await db.execute(
@@ -433,14 +435,16 @@ async def reorder_packages(
     for index, package_id in enumerate(reorder_data.package_ids):
         await db.execute(
             text("UPDATE ticket_packages SET display_order = :temp_order WHERE id = :pkg_id"),
-            {"temp_order": -(index + 1), "pkg_id": package_id}
+            {"temp_order": -(index + 1), "pkg_id": package_id},
         )
 
     # Phase 2: Set to final positive values
     for index, package_id in enumerate(reorder_data.package_ids):
         await db.execute(
-            text("UPDATE ticket_packages SET display_order = :final_order, updated_at = now() WHERE id = :pkg_id"),
-            {"final_order": index, "pkg_id": package_id}
+            text(
+                "UPDATE ticket_packages SET display_order = :final_order, updated_at = now() WHERE id = :pkg_id"
+            ),
+            {"final_order": index, "pkg_id": package_id},
         )
 
         # Log if order changed
