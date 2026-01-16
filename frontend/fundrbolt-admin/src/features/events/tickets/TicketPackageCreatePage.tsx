@@ -119,7 +119,7 @@ export function TicketPackageCreatePage() {
   };
 
   // Upload image after package creation
-  const imageUploadMutation = useMutation({
+  const _imageUploadMutation = useMutation({
     mutationFn: async () => {
       if (!createdPackageId || !selectedFile) return;
 
