@@ -47,12 +47,15 @@ class ImageService:
         if blob_service_client:
             self.blob_service_client = blob_service_client
         else:
-            self.blob_service_client = BlobServiceClient.from_connection_string(
-                settings.azure_storage_connection_string
-            )
-        self._conn_settings = self._parse_connection_string(
-            settings.azure_storage_connection_string
-        )
+            conn_str = settings.azure_storage_connection_string
+            if not conn_str:
+                raise ValueError("AZURE_STORAGE_CONNECTION_STRING is required")
+            self.blob_service_client = BlobServiceClient.from_connection_string(conn_str)
+        
+        conn_str = settings.azure_storage_connection_string
+        if not conn_str:
+            raise ValueError("AZURE_STORAGE_CONNECTION_STRING is required")
+        self._conn_settings = self._parse_connection_string(conn_str)
 
     async def upload_image(
         self,
@@ -122,7 +125,9 @@ class ImageService:
             except ResourceExistsError:
                 # Ensure public blob access for existing container so thumbnails load
                 try:
-                    container_client.set_container_access_policy(public_access="blob")
+                    container_client.set_container_access_policy(
+                        signed_identifiers={}, public_access="blob"
+                    )
                 except Exception:
                     # Non-fatal; continue with existing policy
                     pass
