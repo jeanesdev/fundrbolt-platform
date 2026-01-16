@@ -58,7 +58,7 @@ export function getErrorMessage(error: unknown, defaultMessage = 'An error occur
     const messages = data.detail
       .map((err: any) => err.msg || err.message)
       .filter((msg: any): msg is string => typeof msg === 'string');
-    
+
     if (messages.length > 0) {
       return messages.join(', ');
     }

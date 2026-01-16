@@ -4,7 +4,6 @@
  */
 
 import { packageImagesApi } from '@/api/packageImages';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -209,8 +208,8 @@ export function TicketPackageCreatePage() {
                   <FormItem>
                     <FormLabel>Package Name *</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="e.g., VIP Table, General Admission" 
+                      <Input
+                        placeholder="e.g., VIP Table, General Admission"
                         {...field}
                         className={fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''}
                       />
@@ -253,9 +252,9 @@ export function TicketPackageCreatePage() {
                     <FormItem>
                       <FormLabel>Price (USD) *</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="text" 
-                          placeholder="0.00" 
+                        <Input
+                          type="text"
+                          placeholder="0.00"
                           {...field}
                           className={fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''}
                         />
@@ -273,10 +272,10 @@ export function TicketPackageCreatePage() {
                     <FormItem>
                       <FormLabel>Seats per Package *</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          min="1" 
-                          max="100" 
+                        <Input
+                          type="number"
+                          min="1"
+                          max="100"
                           {...field}
                           className={fieldState.error ? 'border-red-500 focus-visible:ring-red-500' : ''}
                         />

@@ -7,19 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import apiClient from '@/lib/axios';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import { CustomOptionFormDialog } from './CustomOptionFormDialog';
 import {
-  DndContext,
   closestCenter,
+  DndContext,
+  DragEndEvent,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -29,6 +24,11 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { CustomOptionFormDialog } from './CustomOptionFormDialog';
 
 interface CustomOption {
   id: string;
@@ -53,13 +53,15 @@ export function CustomOptionsManager({ packageId }: CustomOptionsManagerProps) {
   const [localOptions, setLocalOptions] = useState<CustomOption[]>([]);
 
   // Fetch options
-  const { data: options = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['custom-options', packageId],
     queryFn: async () => {
       const response = await apiClient.get(`/admin/packages/${packageId}/options`);
       return response.data as CustomOption[];
     },
   });
+
+  const options = data ?? [];
 
   // Update local options when data changes
   useEffect(() => {

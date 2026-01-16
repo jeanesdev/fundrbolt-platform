@@ -71,6 +71,12 @@ export function ImageUploadZone({
     }
   };
 
+  const handleClick = () => {
+    if (!disabled) {
+      fileInputRef.current?.click();
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.currentTarget.files;
     if (files && files.length > 0) {
@@ -120,9 +126,10 @@ export function ImageUploadZone({
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
+        onClick={handleClick}
         className={`relative rounded-lg border-2 border-dashed transition-colors ${isDragActive
-            ? 'border-blue-400 bg-blue-50'
-            : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
+          ? 'border-blue-400 bg-blue-50'
+          : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
           } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <div className="flex flex-col items-center justify-center py-8 px-4">

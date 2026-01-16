@@ -6,7 +6,14 @@ import uuid
 from io import BytesIO
 from typing import BinaryIO
 
-from azure.storage.blob import BlobServiceClient
+from datetime import datetime, timedelta
+from azure.core.exceptions import ResourceExistsError
+from azure.storage.blob import (
+    BlobSasPermissions,
+    BlobServiceClient,
+    ContentSettings,
+    generate_blob_sas,
+)
 from PIL import Image
 
 from app.core.config import get_settings
@@ -27,7 +34,10 @@ class ImageService:
     - Generate unique blob names to avoid collisions
     """
 
-    CONTAINER_NAME = "ticket-package-images"
+    # Container comes from environment (e.g., npo-assets); fallback to npo-assets for safety
+    CONTAINER_NAME = settings.azure_storage_container_name or "npo-assets"
+    # Store images under this virtual folder inside the container
+    FOLDER_PREFIX = "ticket-package-images"
     MAX_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
     ALLOWED_FORMATS = {"jpg", "jpeg", "png", "webp"}
     ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
@@ -40,6 +50,7 @@ class ImageService:
             self.blob_service_client = BlobServiceClient.from_connection_string(
                 settings.azure_storage_connection_string
             )
+        self._conn_settings = self._parse_connection_string(settings.azure_storage_connection_string)
 
     async def upload_image(
         self,
@@ -102,6 +113,18 @@ class ImageService:
 
         # Upload to Azure Blob Storage
         try:
+            # Ensure container exists (Azurite/local dev may start empty)
+            container_client = self.blob_service_client.get_container_client(self.CONTAINER_NAME)
+            try:
+                container_client.create_container(public_access="blob")
+            except ResourceExistsError:
+                # Ensure public blob access for existing container so thumbnails load
+                try:
+                    container_client.set_container_access_policy(public_access="blob")
+                except Exception:
+                    # Non-fatal; continue with existing policy
+                    pass
+
             blob_client = self.blob_service_client.get_blob_client(
                 container=self.CONTAINER_NAME,
                 blob=blob_name,
@@ -116,15 +139,27 @@ class ImageService:
                     "package_id": str(package_id) if package_id else "new",
                     "original_filename": filename,
                 },
-                content_settings={
-                    "content_type": mime_type,
-                    "cache_control": "public, max-age=31536000",  # 1 year
-                },
+                content_settings=ContentSettings(
+                    content_type=mime_type,
+                    cache_control="public, max-age=31536000",  # 1 year
+                ),
             )
 
             blob_url: str = str(blob_client.url)
-            logger.info(f"Uploaded image to Azure Blob Storage: {blob_url}")
-            return blob_url
+
+            # Generate a read SAS so thumbnails work even when the account blocks public access
+            sas_token = generate_blob_sas(
+                account_name=self._conn_settings["AccountName"],
+                container_name=self.CONTAINER_NAME,
+                blob_name=blob_name,
+                account_key=self._conn_settings.get("AccountKey"),
+                permission=BlobSasPermissions(read=True),
+                expiry=datetime.utcnow() + timedelta(days=30),
+            )
+
+            signed_url = f"{blob_url}?{sas_token}" if sas_token else blob_url
+            logger.info(f"Uploaded image to Azure Blob Storage: {signed_url}")
+            return signed_url
 
         except Exception as e:
             logger.error(f"Failed to upload image to Azure Blob Storage: {e}")
@@ -176,9 +211,11 @@ class ImageService:
         file_hash = hashlib.sha256(file_content).hexdigest()[:16]
 
         if package_id:
-            return f"event_{event_id}/package_{package_id}_{file_hash}.{file_ext}"
+            blob_name = f"event_{event_id}/package_{package_id}_{file_hash}.{file_ext}"
         else:
-            return f"event_{event_id}/new_{file_hash}.{file_ext}"
+            blob_name = f"event_{event_id}/new_{file_hash}.{file_ext}"
+
+        return f"{ImageService.FOLDER_PREFIX}/{blob_name}"
 
     @staticmethod
     def _extract_blob_name_from_url(url: str) -> str:
@@ -193,3 +230,14 @@ class ImageService:
             raise ValueError("Invalid Azure Blob Storage URL")
         blob_name: str = parts[1]
         return blob_name
+
+    @staticmethod
+    def _parse_connection_string(conn_str: str) -> dict[str, str]:
+        """Parse Azure storage connection string into a dict."""
+        parts: dict[str, str] = {}
+        for segment in conn_str.split(";"):
+            if not segment or "=" not in segment:
+                continue
+            k, v = segment.split("=", 1)
+            parts[k] = v
+        return parts
