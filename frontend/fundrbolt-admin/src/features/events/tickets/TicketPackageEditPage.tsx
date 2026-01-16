@@ -154,8 +154,9 @@ export function TicketPackageEditPage() {
       });
     },
     onError: (error) => {
-      const status = (error as any).response?.status;
-      const detail = (error as any).response?.data?.detail;
+      const errorResponse = error as { response?: { status?: number; data?: { detail?: string } } };
+      const status = errorResponse.response?.status;
+      const detail = errorResponse.response?.data?.detail;
 
       // Handle 409 Conflict - concurrent edit
       if (status === 409 || (typeof detail === 'string' && detail.includes('Version mismatch'))) {

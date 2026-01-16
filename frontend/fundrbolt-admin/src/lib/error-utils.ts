@@ -56,8 +56,8 @@ export function getErrorMessage(error: unknown, defaultMessage = 'An error occur
   // Handle Pydantic validation errors (array format)
   if (Array.isArray(data.detail) && data.detail.length > 0) {
     const messages = data.detail
-      .map((err: any) => err.msg || err.message)
-      .filter((msg: any): msg is string => typeof msg === 'string');
+      .map((err: { msg?: string; message?: string }) => err.msg || err.message)
+      .filter((msg: unknown): msg is string => typeof msg === 'string');
 
     if (messages.length > 0) {
       return messages.join(', ');

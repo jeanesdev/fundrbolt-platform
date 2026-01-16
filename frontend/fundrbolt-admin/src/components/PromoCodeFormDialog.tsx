@@ -97,8 +97,8 @@ export function PromoCodeFormDialog({
       toast.success("Promo code created successfully");
       onClose();
     },
-    onError: (error: any) => {
-      const detail = error.response?.data?.detail;
+    onError: (error: unknown) => {
+      const detail = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail;
       toast.error(detail || "Failed to create promo code");
     },
   });
@@ -117,8 +117,8 @@ export function PromoCodeFormDialog({
       toast.success("Promo code updated successfully");
       onClose();
     },
-    onError: (error: any) => {
-      const detail = error.response?.data?.detail;
+    onError: (error: unknown) => {
+      const detail = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail;
       toast.error(detail || "Failed to update promo code");
     },
   });
