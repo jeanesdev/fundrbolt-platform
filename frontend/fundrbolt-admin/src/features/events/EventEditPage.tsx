@@ -28,6 +28,7 @@ import { EventLinkForm } from './components/EventLinkForm'
 import { FoodOptionSelector } from './components/FoodOptionSelector'
 import { MediaUploader } from './components/MediaUploader'
 import { SponsorsTab } from './components/SponsorsTab'
+import { TicketPackagesIndexPage } from './tickets/TicketPackagesIndexPage'
 
 export function EventEditPage() {
   const navigate = useNavigate()
@@ -234,7 +235,7 @@ export function EventEditPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={(value) => navigate({ to: '/events/$eventId', params: { eventId }, search: (prev) => ({ ...prev, tab: value }) })} className="space-y-4 md:space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8 h-auto">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-9 h-auto">
           <TabsTrigger value="details" className="text-xs sm:text-sm">
             <span className="hidden sm:inline">Event </span>Details
           </TabsTrigger>
@@ -252,6 +253,9 @@ export function EventEditPage() {
           </TabsTrigger>
           <TabsTrigger value="seating" className="text-xs sm:text-sm">
             Seating
+          </TabsTrigger>
+          <TabsTrigger value="tickets" className="text-xs sm:text-sm">
+            Tickets
           </TabsTrigger>
           <TabsTrigger value="sponsors" className="text-xs sm:text-sm">
             Sponsors<span className="hidden sm:inline"> ({sponsors.length})</span>
@@ -446,6 +450,11 @@ export function EventEditPage() {
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Tickets Tab */}
+        <TabsContent value="tickets">
+          <TicketPackagesIndexPage eventId={eventId} />
         </TabsContent>
 
         {/* Sponsors Tab */}

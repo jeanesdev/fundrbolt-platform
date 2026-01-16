@@ -7,7 +7,7 @@ interface ApiErrorResponse {
   response?: {
     status?: number
     data?: {
-      detail?: string | { code?: string; message?: string }
+      detail?: string | { code?: string; message?: string } | Array<{ loc: string[]; msg: string; type: string }>
       message?: string
       error?: {
         message?: string
@@ -53,8 +53,19 @@ export function getErrorMessage(error: unknown, defaultMessage = 'An error occur
     return apiError.message || defaultMessage
   }
 
+  // Handle Pydantic validation errors (array format)
+  if (Array.isArray(data.detail) && data.detail.length > 0) {
+    const messages = data.detail
+      .map((err: { msg?: string; message?: string }) => err.msg || err.message)
+      .filter((msg: unknown): msg is string => typeof msg === 'string');
+
+    if (messages.length > 0) {
+      return messages.join(', ');
+    }
+  }
+
   // Handle structured error with code/message (e.g., consent errors, validation errors)
-  if (typeof data.detail === 'object' && data.detail !== null) {
+  if (typeof data.detail === 'object' && data.detail !== null && !Array.isArray(data.detail)) {
     return data.detail.message || data.detail.code || defaultMessage
   }
 
@@ -109,6 +120,8 @@ export function isConsentError(error: unknown): boolean {
     isErrorStatus(error, 409) &&
     typeof data?.detail === 'object' &&
     data.detail !== null &&
+    !Array.isArray(data.detail) &&
+    'code' in data.detail &&
     (data.detail.code === 'CONSENT_REQUIRED' || data.detail.code === 'CONSENT_OUTDATED')
   )
 }

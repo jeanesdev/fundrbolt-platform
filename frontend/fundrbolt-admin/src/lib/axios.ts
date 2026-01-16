@@ -1,3 +1,4 @@
+import { isRetryableError, retryWithBackoff } from '@/lib/retry'
 import { useAuthStore } from '@/stores/auth-store'
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
@@ -6,7 +7,7 @@ let consentModalShown = false
 
 // Create axios instance with default config
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -52,6 +53,35 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean
+      _retryCount?: number
+    }
+
+    // Skip retry for auth endpoints to avoid infinite loops
+    const isAuthEndpoint = originalRequest.url?.includes('/auth/')
+
+    // Don't retry if already retried
+    if (originalRequest._retryCount) {
+      // Already retried via retryWithBackoff, process error normally
+    } else if (!isAuthEndpoint && isRetryableError(error, { maxRetries: 3, initialDelayMs: 1000, maxDelayMs: 10000, backoffMultiplier: 2, retryableStatusCodes: [408, 429, 500, 502, 503, 504] })) {
+      // Mark that we're attempting retry
+      originalRequest._retryCount = 0
+
+      try {
+        // Retry the request with exponential backoff
+        return await retryWithBackoff(
+          () => apiClient(originalRequest),
+          {
+            maxRetries: 3,
+            initialDelayMs: 1000,
+            maxDelayMs: 10000,
+            backoffMultiplier: 2,
+            retryableStatusCodes: [408, 429, 500, 502, 503, 504],
+          }
+        )
+      } catch (retryError) {
+        // Retry exhausted, process error below
+        return Promise.reject(retryError)
+      }
     }
 
     // Handle 401 Unauthorized - token expired or invalid
