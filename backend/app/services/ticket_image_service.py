@@ -51,7 +51,7 @@ class ImageService:
             if not conn_str:
                 raise ValueError("AZURE_STORAGE_CONNECTION_STRING is required")
             self.blob_service_client = BlobServiceClient.from_connection_string(conn_str)
-        
+
         conn_str = settings.azure_storage_connection_string
         if not conn_str:
             raise ValueError("AZURE_STORAGE_CONNECTION_STRING is required")
