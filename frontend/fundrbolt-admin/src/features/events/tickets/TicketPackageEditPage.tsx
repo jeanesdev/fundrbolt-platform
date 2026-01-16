@@ -108,7 +108,8 @@ export function TicketPackageEditPage() {
   handleSetInitialImage();
 
   const form = useForm<PackageFormData>({
-    resolver: zodResolver(packageSchema) as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(packageSchema) as any, // TS can't infer complex Zod schema with preprocess/nullable
     defaultValues: {
       name: '',
       description: '',

@@ -80,7 +80,8 @@ export function CustomOptionFormDialog({
   const [newChoice, setNewChoice] = useState('');
 
   const form = useForm<OptionFormData>({
-    resolver: zodResolver(optionSchema) as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(optionSchema) as any, // TS can't infer complex Zod schema with optional fields
     defaultValues: {
       option_type: option?.option_type || 'boolean',
       option_label: option?.option_label || '',
