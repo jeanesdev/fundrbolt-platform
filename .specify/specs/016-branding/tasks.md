@@ -8,6 +8,12 @@
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
+## 📊 Overall Progress: 41/79 tasks (52%)
+- ✅ **MVP Complete**: 32/32 tasks (100%) - US1 & US2 fully functional
+- 🚧 **US3 Email Logos**: 9/11 tasks (82%) - 1 manual test remaining
+- ⏳ **US4 Favicons**: 0/9 tasks
+- ⏳ **US5-US6**: Not started
+
 ## Format: `[ID] [P?] [Story] Description`
 - **[P]**: Can run in parallel (different files, no dependencies)
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
