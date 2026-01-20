@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "I have several logo files that I want to upload and use throughout all my frontend apps. I also want to set up my theme colors and make sure they are used throughout the front end apps. The primary colors for fundrbolt are Navey (#1124C) and Gold (#ffc20e) and secondary are white(#ffffff) and gray (#58595b). I want all my apps to have a navy background. My emails should include the logo. Once you've created the folder for where I should upload the images and tell me what format you want them I'll give you a rendering that has Navy and Gold Text (for white backgrounds), one that has White and Gold text (for when it's on a Navy background). Right now I have JPEG, PNG, SVG, and AI. If you need something else I can get it. I want to update my Favicon also. I want to set fonts and any other theme/branding details for all the front end stuff, and make it easy to update and ensure all elements use theme standards."
 
+## Clarifications
+
+### Session 2026-01-19
+
+- Q: Which fonts should be used for typography standards (custom web fonts, system fonts, or defer to teams)? → A: Use system font stack with common web-safe fallbacks (Arial, Helvetica, etc.)
+- Q: Where should logos be hosted for email templates (Azure Blob CDN, app servers, or embedded base64)? → A: Host logos on Azure Blob Storage CDN (separate from app servers)
+- Q: What enforcement level for linting hardcoded colors (errors, warnings with pre-commit, or warnings only)? → A: ESLint rule with warnings, block on pre-commit hook (educate during dev, enforce at commit)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Centralized Logo Asset Management (Priority: P1)
@@ -120,15 +128,15 @@ As a brand manager, I want to update theme values in a single location and see c
 - **FR-001**: System MUST provide a centralized directory structure for storing all logo variants (navy/gold text for white backgrounds, white/gold text for navy backgrounds) in multiple formats (SVG, PNG, JPEG)
 - **FR-002**: System MUST define brand color variables accessible to all frontend applications: Primary colors (Navy #11294c, Gold #ffc20e) and Secondary colors (White #ffffff, Gray #58595b)
 - **FR-003**: System MUST apply navy background (#11294c) as the default background across all frontend applications (admin PWA, donor PWA, landing site)
-- **FR-004**: System MUST provide logo export functionality for email templates with proper hosting or embedding support
+- **FR-004**: System MUST host logo files on Azure Blob Storage CDN with public access for email template references
 - **FR-005**: System MUST generate and configure favicon files in multiple formats and sizes: ICO format (32x32 with embedded 16x16), PNG format (16x16, 32x32, 180x180, 192x192, 512x512), and SVG format (scalable) for browser tabs, bookmarks, and mobile home screen icons
-- **FR-006**: System MUST define typography standards including font families and a typographic scale (headings, body text, captions, etc.)
-- **FR-007**: System MUST prevent hardcoded color values in UI components by enforcing theme variable usage through linting or build-time validation
+- **FR-006**: System MUST define typography standards using a system font stack with web-safe fallbacks (e.g., -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif) including a typographic scale (headings, body text, captions, etc.)
+- **FR-007**: System MUST prevent hardcoded color values in UI components by enforcing theme variable usage through ESLint rules (configured as warnings) with pre-commit hook validation that blocks commits containing hardcoded color violations
 - **FR-008**: System MUST provide clear documentation for accessing logo assets including path conventions, naming patterns, and usage guidelines
 - **FR-009**: System MUST support logo format selection based on use case: SVG for scalable web graphics, PNG for email and raster needs, and optimized favicon formats
 - **FR-010**: System MUST organize assets in a shared package structure that can be imported by all frontend applications without duplication
 - **FR-011**: System MUST provide theme configuration that can be updated in a single location and propagate changes to all applications through package updates
-- **FR-012**: Email templates MUST reference logo assets with absolute URLs or proper embedding to ensure visibility across email clients
+- **FR-012**: Email templates MUST reference logo assets using absolute Azure Blob Storage CDN URLs to ensure visibility across email clients
 
 ### Key Entities
 
@@ -140,7 +148,7 @@ As a brand manager, I want to update theme values in a single location and see c
 - **Theme Configuration**: Represents centralized color, typography, and spacing standards
   - Primary Colors: Navy (#11294c), Gold (#ffc20e)
   - Secondary Colors: White (#ffffff), Gray (#58595b)
-  - Typography: Font families, font sizes, line heights, font weights
+  - Typography: System font stack (-apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif), font sizes, line heights, font weights
   - Spacing: Margin and padding scales for consistent layout
   
 - **Favicon Set**: Represents browser icon files in multiple sizes
@@ -150,7 +158,7 @@ As a brand manager, I want to update theme values in a single location and see c
   - Design consideration: Favicon should be simplified version of logo for visibility at small sizes (16x16)
   
 - **Email Template**: Represents email communications that include branding
-  - Logo reference: Path or embedded data URI
+  - Logo reference: Absolute Azure Blob Storage CDN URL
   - Color scheme: Appropriate for email client rendering
   - Fallback handling: Alt text for blocked images
 
@@ -173,17 +181,17 @@ As a brand manager, I want to update theme values in a single location and see c
 
 - Logo files will be provided in high-quality formats with transparent backgrounds where appropriate
 - SVG format is preferred for web use due to scalability and performance
-- Email hosting infrastructure supports serving static assets or email clients support embedded images
+- Azure Blob Storage CDN URLs will have public read access for email client compatibility
 - All frontend applications are built with modern frameworks that support CSS variables or theme configuration (React, Vue, etc.)
-- Typography choices will follow web-safe fonts or include font file hosting for custom fonts
+- Typography uses system fonts with no external font hosting or licensing requirements
 - Theme system will be implemented in the existing `frontend/shared/` package structure
-- Developers have build-time linting configured to enforce theme usage
+- ESLint and pre-commit hooks are configured in all frontend applications to enforce theme usage at commit time
 
 ## Dependencies
 
 - Existing `frontend/shared/` package structure must support asset imports
 - Build tooling (Vite, Webpack, etc.) must support static asset bundling
-- Email service must support image hosting or embedded data URIs
+- Azure Blob Storage must be configured with public CDN access for email logo hosting
 - Frontend applications must be configured to consume the shared package
 - Design team must provide final logo files in agreed-upon formats and variants
 
