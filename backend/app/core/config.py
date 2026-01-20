@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     azure_storage_account_name: str | None = None
 
     # Azure CDN (for branding assets in emails)
-    azure_cdn_logo_base_url: str = "https://fundrbolt-branding.azureedge.net/branding/logos"
+    azure_cdn_logo_base_url: str = "https://fundrboltdevstor.blob.core.windows.net/branding/logos"
 
     # Frontend URLs (for email links)
     frontend_admin_url: str = "http://localhost:5173"

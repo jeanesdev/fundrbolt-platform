@@ -106,9 +106,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T033 [US3] Upload fundrbolt-logo-navy-gold.png to Azure Blob Storage container 'branding/logos/' via Azure Portal or CLI
-- [ ] T034 [US3] Upload fundrbolt-logo-white-gold.png to Azure Blob Storage container 'branding/logos/' via Azure Portal or CLI
-- [ ] T035 [US3] Verify public blob access by testing CDN URLs in browser (https://fundrbolt-branding.azureedge.net/logos/fundrbolt-logo-white-gold.png)
+- [X] T033 [US3] Upload fundrbolt-logo-navy-gold.png to Azure Blob Storage container 'branding/logos/' via Azure Portal or CLI
+- [X] T034 [US3] Upload fundrbolt-logo-white-gold.png to Azure Blob Storage container 'branding/logos/' via Azure Portal or CLI
+- [X] T035 [US3] Verify public blob access by testing CDN URLs in browser (https://fundrboltdevstor.blob.core.windows.net/branding/logos/fundrbolt-logo-white-gold.png)
 - [X] T036 [US3] Add AZURE_CDN_LOGO_BASE_URL to backend/app/core/config.py Settings class with default value
 - [X] T037 [US3] Create _get_logo_url() method in backend/app/services/email_service.py that returns CDN URL based on background parameter
 - [X] T038 [US3] Update _render_email_template() method in backend/app/services/email_service.py to inject logo_url and logo_alt into context
