@@ -1,0 +1,22 @@
+{
+  "name": "fundrbolt-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fundrbolt monorepo workspace",
+  "scripts": {
+    "prepare": "husky install",
+    "lint": "pnpm -r run lint",
+    "type-check": "pnpm -r run type-check",
+    "test": "pnpm -r run test"
+  },
+  "devDependencies": {
+    "husky": "^8.0.3",
+    "lint-staged": "^15.5.2"
+  },
+  "lint-staged": {
+    "frontend/fundrbolt-admin/**/*.{ts,tsx}": "cd frontend/fundrbolt-admin && eslint --max-warnings 0",
+    "frontend/donor-pwa/**/*.{ts,tsx}": "cd frontend/donor-pwa && eslint --max-warnings 0",
+    "frontend/landing-site/**/*.{ts,tsx}": "cd frontend/landing-site && eslint --max-warnings 0",
+    "frontend/shared/**/*.{ts,tsx}": "cd frontend/shared && pnpm type-check"
+  }
+}

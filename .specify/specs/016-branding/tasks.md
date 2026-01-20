@@ -24,11 +24,11 @@
 
 **Note**: Most asset setup was completed during specification phase. This phase focuses on validation and tool configuration.
 
-- [ ] T001 Verify frontend/shared/src/assets/ directory structure exists with logos/, favicons/, themes/ subdirectories
-- [ ] T002 Verify all logo files are present in frontend/shared/src/assets/logos/ (4 files: navy-gold and white-gold in SVG and PNG)
-- [ ] T003 Verify themes/colors.ts exists with all brand colors defined (Navy #11294c, Gold #ffc20e, White #ffffff, Gray #58595b)
-- [ ] T004 [P] Install husky and lint-staged in root package.json for pre-commit hooks
-- [ ] T005 [P] Verify vite-env.d.ts exists in frontend/shared/src/assets/ with type declarations for SVG/PNG imports
+- [X] T001 Verify frontend/shared/src/assets/ directory structure exists with logos/, favicons/, themes/ subdirectories
+- [X] T002 Verify all logo files are present in frontend/shared/src/assets/logos/ (4 files: navy-gold and white-gold in SVG and PNG)
+- [X] T003 Verify themes/colors.ts exists with all brand colors defined (Navy #11294c, Gold #ffc20e, White #ffffff, Gray #58595b)
+- [X] T004 [P] Install husky and lint-staged in root package.json for pre-commit hooks
+- [X] T005 [P] Verify vite-env.d.ts exists in frontend/shared/src/assets/ with type declarations for SVG/PNG imports
 
 ---
 
@@ -38,10 +38,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T006 Configure ESLint rule for hardcoded color detection in .eslintrc.js (warn on hex/rgb/hsl literals)
-- [ ] T007 Add ESLint exemption for frontend/shared/src/assets/themes/colors.ts file
-- [ ] T008 Configure lint-staged in root package.json to run ESLint with --max-warnings 0 on TypeScript files
-- [ ] T009 Create .husky/pre-commit hook that runs lint-staged
+- [X] T006 Configure ESLint rule for hardcoded color detection in .eslintrc.js (warn on hex/rgb/hsl literals)
+- [X] T007 Add ESLint exemption for frontend/shared/src/assets/themes/colors.ts file
+- [X] T008 Configure lint-staged in root package.json to run ESLint with --max-warnings 0 on TypeScript files
+- [X] T009 Create .husky/pre-commit hook that runs lint-staged
 - [ ] T010 [P] Create Azure Bicep module for Blob Storage container 'branding' with public blob access in infrastructure/bicep/modules/storage.bicep
 - [ ] T011 [P] Create Azure Bicep module for CDN profile and endpoint 'fundrbolt-branding' in infrastructure/bicep/modules/cdn.bicep
 - [ ] T012 Test pre-commit hook by attempting commit with hardcoded color (should fail)
@@ -58,11 +58,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T013 [P] [US1] Create TypeScript interface LogoAsset in frontend/shared/src/assets/types.ts with name, background, svgPath, pngPath, altText fields
-- [ ] T014 [P] [US1] Export logo constants (LogoNavyGold, LogoWhiteGold) from frontend/shared/src/assets/index.ts using existing imports
-- [ ] T015 [P] [US1] Create getLogo() helper function in frontend/shared/src/assets/index.ts that returns logo based on background type ('light' | 'dark')
-- [ ] T016 [US1] Update frontend/shared/package.json to ensure "./assets" export is configured
-- [ ] T017 [US1] Create comprehensive README.md in frontend/shared/src/assets/logos/ with usage examples and variant selection guide
+- [X] T013 [P] [US1] Create TypeScript interface LogoAsset in frontend/shared/src/assets/types.ts with name, background, svgPath, pngPath, altText fields
+- [X] T014 [P] [US1] Export logo constants (LogoNavyGold, LogoWhiteGold) from frontend/shared/src/assets/index.ts using existing imports
+- [X] T015 [P] [US1] Create getLogo() helper function in frontend/shared/src/assets/index.ts that returns logo based on background type ('light' | 'dark')
+- [X] T016 [US1] Update frontend/shared/package.json to ensure "./assets" export is configured
+- [X] T017 [US1] Create comprehensive README.md in frontend/shared/src/assets/logos/ with usage examples and variant selection guide
 - [ ] T018 [US1] Test logo imports in frontend/fundrbolt-admin by creating test component that renders both logo variants
 - [ ] T019 [US1] Test logo imports in frontend/donor-pwa by creating test component that renders logo based on theme
 - [ ] T020 [US1] Test logo imports in frontend/landing-site by adding logo to header component
@@ -79,11 +79,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T021 [P] [US2] Export colors object from frontend/shared/src/assets/index.ts (already defined in themes/colors.ts)
-- [ ] T022 [P] [US2] Export BrandColors TypeScript type from frontend/shared/src/assets/index.ts for type safety
-- [ ] T023 [P] [US2] Create Tailwind CSS config extension in frontend/fundrbolt-admin/tailwind.config.js with brand color utilities (brand-navy, brand-gold, brand-gray)
-- [ ] T024 [P] [US2] Create Tailwind CSS config extension in frontend/donor-pwa/tailwind.config.js with brand color utilities
-- [ ] T025 [P] [US2] Create Tailwind CSS config extension in frontend/landing-site/tailwind.config.js with brand color utilities
+- [X] T021 [P] [US2] Export colors object from frontend/shared/src/assets/index.ts (already defined in themes/colors.ts)
+- [X] T022 [P] [US2] Export BrandColors TypeScript type from frontend/shared/src/assets/index.ts for type safety
+- [X] T023 [P] [US2] Create Tailwind CSS config extension in frontend/fundrbolt-admin/tailwind.config.js with brand color utilities (brand-navy, brand-gold, brand-gray)
+- [X] T024 [P] [US2] Create Tailwind CSS config extension in frontend/donor-pwa/tailwind.config.js with brand color utilities
+- [X] T025 [P] [US2] Create Tailwind CSS config extension in frontend/landing-site/tailwind.config.js with brand color utilities
 - [ ] T026 [US2] Update root layout in frontend/fundrbolt-admin/src/routes/__root.tsx to apply Navy background globally
 - [ ] T027 [US2] Update root layout in frontend/donor-pwa/src/routes/__root.tsx to apply Navy background globally
 - [ ] T028 [US2] Update root layout in frontend/landing-site/src/routes/__root.tsx to apply Navy background globally

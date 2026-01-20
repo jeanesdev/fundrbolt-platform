@@ -23,9 +23,14 @@
 export { colors, cssVariables } from './themes/colors';
 export type { BrandColors } from './themes/colors';
 
+// Export types
+export type { LogoAsset, FaviconSet, TypographyScale } from './types';
+
 // Logo exports - SVG files (TEMPORARY PLACEHOLDERS - Replace with actual logos)
-export { default as LogoNavyGold } from './logos/fundrbolt-logo-navy-gold.svg?url';
-export { default as LogoWhiteGold } from './logos/fundrbolt-logo-white-gold.svg?url';
+import LogoNavyGoldSvg from './logos/fundrbolt-logo-navy-gold.svg?url';
+import LogoWhiteGoldSvg from './logos/fundrbolt-logo-white-gold.svg?url';
+
+export { LogoNavyGoldSvg as LogoNavyGold, LogoWhiteGoldSvg as LogoWhiteGold };
 
 // Logo exports - PNG files for email (TEMPORARY PLACEHOLDERS - Replace with actual logos)
 export { default as LogoNavyGoldPng } from './logos/fundrbolt-logo-navy-gold.png';
@@ -54,5 +59,5 @@ export const faviconPaths = {
  * @returns Path to appropriate logo variant
  */
 export const getLogo = (backgroundType: 'light' | 'dark' = 'dark') => {
-  return backgroundType === 'dark' ? LogoWhiteGold : LogoNavyGold;
+  return backgroundType === 'dark' ? LogoWhiteGoldSvg : LogoNavyGoldSvg;
 };
