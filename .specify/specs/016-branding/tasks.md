@@ -109,14 +109,14 @@
 - [ ] T033 [US3] Upload fundrbolt-logo-navy-gold.png to Azure Blob Storage container 'branding/logos/' via Azure Portal or CLI
 - [ ] T034 [US3] Upload fundrbolt-logo-white-gold.png to Azure Blob Storage container 'branding/logos/' via Azure Portal or CLI
 - [ ] T035 [US3] Verify public blob access by testing CDN URLs in browser (https://fundrbolt-branding.azureedge.net/logos/fundrbolt-logo-white-gold.png)
-- [ ] T036 [US3] Add AZURE_CDN_LOGO_BASE_URL to backend/app/core/config.py Settings class with default value
-- [ ] T037 [US3] Create _get_logo_url() method in backend/app/services/email_service.py that returns CDN URL based on background parameter
-- [ ] T038 [US3] Update _render_email_template() method in backend/app/services/email_service.py to inject logo_url and logo_alt into context
-- [ ] T039 [US3] Update email base template in backend/app/templates/emails/base.html to use {{ logo_url }} with Navy background header
-- [ ] T040 [US3] Update verification email template to reference base.html logo
-- [ ] T041 [US3] Update password reset email template to reference base.html logo
+- [X] T036 [US3] Add AZURE_CDN_LOGO_BASE_URL to backend/app/core/config.py Settings class with default value
+- [X] T037 [US3] Create _get_logo_url() method in backend/app/services/email_service.py that returns CDN URL based on background parameter
+- [X] T038 [US3] Update _render_email_template() method in backend/app/services/email_service.py to inject logo_url and logo_alt into context
+- [X] T039 [US3] Update email base template in backend/app/templates/emails/base.html to use {{ logo_url }} with Navy background header
+- [X] T040 [US3] Update verification email template to reference base.html logo
+- [X] T041 [US3] Update password reset email template to reference base.html logo
 - [ ] T042 [US3] Send test verification email and verify logo displays in Gmail, Outlook, Apple Mail
-- [ ] T043 [US3] Add AZURE_CDN_LOGO_BASE_URL to .env.example with documentation
+- [X] T043 [US3] Add AZURE_CDN_LOGO_BASE_URL to .env.example with documentation
 
 **Checkpoint**: At this point, User Stories 1, 2, AND 3 should all work - emails now include branded logo from CDN
 
