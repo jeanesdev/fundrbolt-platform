@@ -14,8 +14,6 @@
     "lint-staged": "^15.5.2"
   },
   "lint-staged": {
-    "frontend/fundrbolt-admin/**/*.{ts,tsx}": "cd frontend/fundrbolt-admin && eslint --max-warnings 0",
-    "frontend/donor-pwa/**/*.{ts,tsx}": "cd frontend/donor-pwa && eslint --max-warnings 0",
-    "frontend/landing-site/**/*.{ts,tsx}": "cd frontend/landing-site && eslint --max-warnings 0"
+    "frontend/**/*.{ts,tsx}": "pnpm lint"
   }
 }

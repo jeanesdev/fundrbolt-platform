@@ -81,7 +81,7 @@ body {
     font-size: var(--font-size-base);
     line-height: 1.6;
     color: var(--color-text);
-    background-color: var(--color-bg);
+    background-color: var(--color-brand-navy);
     min-height: 100vh;
 }
 

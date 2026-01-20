@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Navigation.css';
+import { LogoNavyGold } from '@fundrbolt/shared/assets';
 
 export const Navigation = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -19,7 +20,12 @@ export const Navigation = () => {
         <div className="nav-wrapper">
           {/* Logo */}
           <Link to="/" className="nav-logo" aria-label="Fundrbolt Home">
-            <span className="logo-text">Fundrbolt</span>
+            <img
+              src={LogoNavyGold}
+              alt="Fundrbolt"
+              className="logo-image"
+              style={{ height: '32px', width: 'auto' }}
+            />
           </Link>
 
           {/* Mobile menu button */}

@@ -63,9 +63,9 @@
 - [X] T015 [P] [US1] Create getLogo() helper function in frontend/shared/src/assets/index.ts that returns logo based on background type ('light' | 'dark')
 - [X] T016 [US1] Update frontend/shared/package.json to ensure "./assets" export is configured
 - [X] T017 [US1] Create comprehensive README.md in frontend/shared/src/assets/logos/ with usage examples and variant selection guide
-- [ ] T018 [US1] Test logo imports in frontend/fundrbolt-admin by creating test component that renders both logo variants
-- [ ] T019 [US1] Test logo imports in frontend/donor-pwa by creating test component that renders logo based on theme
-- [ ] T020 [US1] Test logo imports in frontend/landing-site by adding logo to header component
+- [X] T018 [US1] Test logo imports in frontend/fundrbolt-admin by creating test component that renders both logo variants
+- [X] T019 [US1] Test logo imports in frontend/donor-pwa by creating test component that renders logo based on theme
+- [X] T020 [US1] Test logo imports in frontend/landing-site by adding logo to header component
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - logos importable and rendering in all 3 apps
 
@@ -84,9 +84,9 @@
 - [X] T023 [P] [US2] Create Tailwind CSS config extension in frontend/fundrbolt-admin/tailwind.config.js with brand color utilities (brand-navy, brand-gold, brand-gray)
 - [X] T024 [P] [US2] Create Tailwind CSS config extension in frontend/donor-pwa/tailwind.config.js with brand color utilities
 - [X] T025 [P] [US2] Create Tailwind CSS config extension in frontend/landing-site/tailwind.config.js with brand color utilities
-- [ ] T026 [US2] Update root layout in frontend/fundrbolt-admin/src/routes/__root.tsx to apply Navy background globally
-- [ ] T027 [US2] Update root layout in frontend/donor-pwa/src/routes/__root.tsx to apply Navy background globally
-- [ ] T028 [US2] Update root layout in frontend/landing-site/src/routes/__root.tsx to apply Navy background globally
+- [X] T026 [US2] Update root layout in frontend/fundrbolt-admin/src/routes/__root.tsx to apply Navy background globally
+- [X] T027 [US2] Update root layout in frontend/donor-pwa/src/routes/__root.tsx to apply Navy background globally
+- [X] T028 [US2] Update root layout in frontend/landing-site/src/routes/__root.tsx to apply Navy background globally
 - [ ] T029 [P] [US2] Audit frontend/fundrbolt-admin for hardcoded color values and replace with theme imports (automated with grep or ESLint fix)
 - [ ] T030 [P] [US2] Audit frontend/donor-pwa for hardcoded color values and replace with theme imports
 - [ ] T031 [P] [US2] Audit frontend/landing-site for hardcoded color values and replace with theme imports

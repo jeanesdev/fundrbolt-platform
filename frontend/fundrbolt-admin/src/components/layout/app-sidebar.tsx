@@ -13,6 +13,7 @@ import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
 import { NpoSelector } from './NpoSelector'
 import type { NavGroup as NavGroupType } from './types'
+import { LogoNavyGold } from '@fundrbolt/shared/assets'
 
 // Map icon string names to lucide-react icon components
 const iconMap = {
@@ -43,6 +44,15 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>
+        {/* Fundrbolt Logo */}
+        <div className='flex items-center justify-center px-4 py-2'>
+          <img
+            src={LogoNavyGold}
+            alt='Fundrbolt'
+            className='h-8 w-auto'
+          />
+        </div>
+
         <NpoSelector />
 
         {/* NpoSelector replaces TeamSwitcher for NPO context selection */}
