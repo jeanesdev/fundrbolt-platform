@@ -87,9 +87,9 @@
 - [X] T026 [US2] Update root layout in frontend/fundrbolt-admin/src/routes/__root.tsx to apply Navy background globally
 - [X] T027 [US2] Update root layout in frontend/donor-pwa/src/routes/__root.tsx to apply Navy background globally
 - [X] T028 [US2] Update root layout in frontend/landing-site/src/routes/__root.tsx to apply Navy background globally
-- [ ] T029 [P] [US2] Audit frontend/fundrbolt-admin for hardcoded color values and replace with theme imports (automated with grep or ESLint fix)
-- [ ] T030 [P] [US2] Audit frontend/donor-pwa for hardcoded color values and replace with theme imports
-- [ ] T031 [P] [US2] Audit frontend/landing-site for hardcoded color values and replace with theme imports
+- [X] T029 [P] [US2] Audit frontend/fundrbolt-admin for hardcoded color values and replace with theme imports (automated with grep or ESLint fix)
+- [X] T030 [P] [US2] Audit frontend/donor-pwa for hardcoded color values and replace with theme imports
+- [X] T031 [P] [US2] Audit frontend/landing-site for hardcoded color values and replace with theme imports
 - [X] T032 [US2] Create theme usage examples in frontend/shared/src/assets/INTEGRATION_GUIDE.md showing inline styles, Tailwind utilities, and TypeScript usage
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - logos importable and all apps using theme colors consistently
