@@ -90,7 +90,7 @@
 - [ ] T029 [P] [US2] Audit frontend/fundrbolt-admin for hardcoded color values and replace with theme imports (automated with grep or ESLint fix)
 - [ ] T030 [P] [US2] Audit frontend/donor-pwa for hardcoded color values and replace with theme imports
 - [ ] T031 [P] [US2] Audit frontend/landing-site for hardcoded color values and replace with theme imports
-- [ ] T032 [US2] Create theme usage examples in frontend/shared/src/assets/INTEGRATION_GUIDE.md showing inline styles, Tailwind utilities, and TypeScript usage
+- [X] T032 [US2] Create theme usage examples in frontend/shared/src/assets/INTEGRATION_GUIDE.md showing inline styles, Tailwind utilities, and TypeScript usage
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - logos importable and all apps using theme colors consistently
 

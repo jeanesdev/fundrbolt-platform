@@ -122,7 +122,208 @@ Most modern frameworks auto-detect favicons in the `public/` directory. Verify b
 
 ---
 
-## 4. Enforcing Navy Background
+## 4. Theme Usage Patterns
+
+### Pattern 1: Inline Styles (Direct JavaScript)
+```typescript
+import { colors } from '@fundrbolt/shared/assets';
+
+// Component with inline styles
+function PrimaryButton({ children }: { children: React.ReactNode }) {
+  return (
+    <button
+      style={{
+        backgroundColor: colors.primary.navy,
+        color: colors.text.primary,
+        border: `2px solid ${colors.primary.gold}`,
+        padding: '12px 24px',
+        borderRadius: '8px',
+        fontWeight: 600,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// Dynamic theming
+function EventHeader({ isPrimaryEvent }: { isPrimaryEvent: boolean }) {
+  const bgColor = isPrimaryEvent ? colors.primary.navy : colors.secondary.gray;
+  const textColor = isPrimaryEvent ? colors.text.primary : colors.text.secondary;
+  
+  return (
+    <div style={{ backgroundColor: bgColor, color: textColor, padding: '20px' }}>
+      <h1>Event Details</h1>
+    </div>
+  );
+}
+```
+
+### Pattern 2: Tailwind CSS Utilities
+```typescript
+// 1. First, add to your tailwind.config.js:
+// tailwind.config.js (Tailwind v4 - @theme inline syntax)
+// In your theme.css file:
+@theme inline {
+  --color-brand-navy: #11294c;
+  --color-brand-gold: #ffc20e;
+  --color-brand-gray: #58595b;
+  --color-brand-white: #ffffff;
+}
+
+// 2. Then use in your components:
+function DonateSection() {
+  return (
+    <div className="bg-brand-navy text-brand-white p-8 rounded-lg">
+      <h2 className="text-2xl font-bold mb-4">Support Our Cause</h2>
+      <button className="bg-brand-gold text-brand-navy px-6 py-3 rounded-md hover:opacity-90">
+        Donate Now
+      </button>
+    </div>
+  );
+}
+
+// 3. Responsive layouts with brand colors:
+function EventCard() {
+  return (
+    <div className="bg-white border-brand-gold border-2 rounded-lg overflow-hidden">
+      <div className="bg-brand-navy text-brand-white p-4">
+        <h3 className="text-xl font-semibold">Annual Gala 2025</h3>
+      </div>
+      <div className="p-4 space-y-2">
+        <p className="text-brand-gray">Join us for an evening of fundraising</p>
+        <button className="w-full bg-brand-gold text-brand-navy py-2 rounded hover:brightness-110">
+          Register
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+### Pattern 3: TypeScript with Type Safety
+```typescript
+import { colors, type BrandColors } from '@fundrbolt/shared/assets';
+
+// Type-safe color utility
+function getStatusColor(status: 'active' | 'pending' | 'closed'): string {
+  const statusColors = {
+    active: colors.primary.gold,
+    pending: colors.secondary.gray,
+    closed: colors.primary.navy,
+  } as const;
+  
+  return statusColors[status];
+}
+
+// Type-safe theme hook
+function useThemeColors(): BrandColors {
+  return colors;
+}
+
+// Component with full type safety
+interface ThemedComponentProps {
+  variant: 'primary' | 'secondary';
+  children: React.ReactNode;
+}
+
+function ThemedComponent({ variant, children }: ThemedComponentProps) {
+  const themeColors = useThemeColors();
+  
+  const bgColor = variant === 'primary' 
+    ? themeColors.primary.navy 
+    : themeColors.secondary.white;
+    
+  const textColor = variant === 'primary'
+    ? themeColors.text.primary
+    : themeColors.text.secondary;
+  
+  return (
+    <div style={{ backgroundColor: bgColor, color: textColor }}>
+      {children}
+    </div>
+  );
+}
+
+// Extract specific color palette
+type PrimaryColors = BrandColors['primary'];
+function getPrimaryPalette(): PrimaryColors {
+  return {
+    navy: colors.primary.navy,
+    gold: colors.primary.gold,
+  };
+}
+```
+
+### Pattern 4: CSS Variables (For Global Theming)
+```typescript
+// In your root App component or layout:
+import { colors } from '@fundrbolt/shared/assets';
+
+function App() {
+  useEffect(() => {
+    // Set CSS custom properties
+    document.documentElement.style.setProperty('--color-primary', colors.primary.navy);
+    document.documentElement.style.setProperty('--color-accent', colors.primary.gold);
+    document.documentElement.style.setProperty('--color-text', colors.text.primary);
+    document.documentElement.style.setProperty('--color-bg', colors.background.default);
+  }, []);
+
+  return <YourApp />;
+}
+
+// Then use in any CSS file:
+/* styles.css */
+.hero-section {
+  background-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.cta-button {
+  background-color: var(--color-accent);
+  border: 2px solid var(--color-primary);
+}
+```
+
+### Pattern 5: Styled Components / CSS-in-JS
+```typescript
+import styled from 'styled-components'; // or @emotion/styled
+import { colors } from '@fundrbolt/shared/assets';
+
+const PrimaryButton = styled.button`
+  background-color: ${colors.primary.navy};
+  color: ${colors.text.primary};
+  border: 2px solid ${colors.primary.gold};
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  
+  &:hover {
+    background-color: ${colors.primary.gold};
+    color: ${colors.primary.navy};
+  }
+`;
+
+const EventCard = styled.div`
+  background-color: ${colors.secondary.white};
+  border: 1px solid ${colors.secondary.gray};
+  
+  .card-header {
+    background-color: ${colors.primary.navy};
+    color: ${colors.text.primary};
+    padding: 16px;
+  }
+  
+  .card-body {
+    padding: 16px;
+    color: ${colors.text.secondary};
+  }
+`;
+```
+
+---
+
+## 5. Enforcing Navy Background
 
 ### Global CSS (Recommended)
 ```css
