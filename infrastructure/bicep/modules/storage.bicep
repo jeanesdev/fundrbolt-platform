@@ -80,6 +80,15 @@ resource logsContainer 'Microsoft.Storage/storageAccounts/blobServices/container
   }
 }
 
+// Create blob container for branding assets (public access for logos in emails)
+resource brandingContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
+  parent: blobServices
+  name: 'branding'
+  properties: {
+    publicAccess: 'Blob' // Allow anonymous read access to individual blobs (for email logos)
+  }
+}
+
 // Lifecycle management policy (archive old backups)
 resource lifecyclePolicy 'Microsoft.Storage/storageAccounts/managementPolicies@2023-01-01' = {
   parent: storageAccount
@@ -144,3 +153,4 @@ output storageAccountName string = storageAccount.name
 output storageAccountPrimaryEndpoints object = storageAccount.properties.primaryEndpoints
 output backupsContainerName string = 'backups'
 output logsContainerName string = 'logs'
+output brandingContainerName string = 'branding'

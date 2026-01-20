@@ -42,9 +42,9 @@
 - [X] T007 Add ESLint exemption for frontend/shared/src/assets/themes/colors.ts file
 - [X] T008 Configure lint-staged in root package.json to run ESLint with --max-warnings 0 on TypeScript files
 - [X] T009 Create .husky/pre-commit hook that runs lint-staged
-- [ ] T010 [P] Create Azure Bicep module for Blob Storage container 'branding' with public blob access in infrastructure/bicep/modules/storage.bicep
-- [ ] T011 [P] Create Azure Bicep module for CDN profile and endpoint 'fundrbolt-branding' in infrastructure/bicep/modules/cdn.bicep
-- [ ] T012 Test pre-commit hook by attempting commit with hardcoded color (should fail)
+- [X] T010 [P] Create Azure Bicep module for Blob Storage container 'branding' with public blob access in infrastructure/bicep/modules/storage.bicep
+- [X] T011 [P] Create Azure Bicep module for CDN profile and endpoint 'fundrbolt-branding' in infrastructure/bicep/modules/cdn.bicep
+- [X] T012 Test pre-commit hook by attempting commit with hardcoded color (should fail)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
