@@ -121,7 +121,7 @@
 - [X] T039 [US3] Update email base template in backend/app/templates/emails/base.html to use {{ logo_url }} with Navy background header
 - [X] T040 [US3] Update verification email template to reference base.html logo
 - [X] T041 [US3] Update password reset email template to reference base.html logo
-- [ ] T042 [US3] Send test verification email and verify logo displays in Gmail, Outlook, Apple Mail
+- [X] T042 [US3] Send test verification email and verify logo displays in Gmail, Outlook, Apple Mail
 - [X] T043 [US3] Add AZURE_CDN_LOGO_BASE_URL to .env.example with documentation
 
 **Checkpoint**: At this point, User Stories 1, 2, AND 3 should all work - emails now include branded logo from CDN
