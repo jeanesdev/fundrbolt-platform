@@ -28,7 +28,7 @@ export { fontFamily, typography, typographyCssVariables } from './themes/typogra
 export type { FontFamily } from './themes/typography';
 
 // Export types
-export type { LogoAsset, FaviconSet, TypographyScale } from './types';
+export type { FaviconSet, LogoAsset, TypographyScale } from './types';
 
 // Logo exports - SVG files (TEMPORARY PLACEHOLDERS - Replace with actual logos)
 import LogoNavyGoldSvg from './logos/fundrbolt-logo-navy-gold.svg?url';

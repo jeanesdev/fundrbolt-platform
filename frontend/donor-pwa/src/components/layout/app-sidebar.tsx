@@ -6,13 +6,13 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import { useLayout } from '@/context/layout-provider'
+import { LogoNavyGold } from '@fundrbolt/shared/assets'
 import { Settings, User } from 'lucide-react'
 import { sidebarData } from './data/sidebar-data'
 import { EventSelector } from './EventSelector'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
 import type { NavGroup as NavGroupType } from './types'
-import { LogoNavyGold } from '@fundrbolt/shared/assets'
 
 /**
  * Donor PWA Sidebar

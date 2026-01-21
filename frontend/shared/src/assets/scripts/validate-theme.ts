@@ -17,7 +17,7 @@
 declare const process: { exit: (code: number) => never };
 
 import { colors } from '../themes/colors';
-import { typography, fontFamily } from '../themes/typography';
+import { fontFamily, typography } from '../themes/typography';
 
 // ANSI color codes for terminal output
 const COLORS = {
@@ -183,7 +183,7 @@ function validateFontFamilies() {
       error(`Font family ${fontType} must be a non-empty array`);
     } else {
       success(`fontFamily.${fontType}: ${fontArray.length} fonts in stack`);
-      
+
       // Check for common system fonts in fallback
       const fontString = fontArray.join(', ').toLowerCase();
       if (!fontString.includes('sans-serif') && !fontString.includes('monospace')) {

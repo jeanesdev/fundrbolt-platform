@@ -6,14 +6,14 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import { useLayout } from '@/context/layout-provider'
-import { Building2, Calendar, LayoutDashboard, Users } from 'lucide-react'
 import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
+import { LogoNavyGold } from '@fundrbolt/shared/assets'
+import { Building2, Calendar, LayoutDashboard, Users } from 'lucide-react'
 import { sidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
 import { NpoSelector } from './NpoSelector'
 import type { NavGroup as NavGroupType } from './types'
-import { LogoNavyGold } from '@fundrbolt/shared/assets'
 
 // Map icon string names to lucide-react icon components
 const iconMap = {

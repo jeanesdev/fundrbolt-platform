@@ -2,10 +2,10 @@
  * Navigation component with mobile-first responsive design.
  */
 
+import { LogoNavyGold } from '@fundrbolt/shared/assets';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Navigation.css';
-import { LogoNavyGold } from '@fundrbolt/shared/assets';
 
 export const Navigation = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
