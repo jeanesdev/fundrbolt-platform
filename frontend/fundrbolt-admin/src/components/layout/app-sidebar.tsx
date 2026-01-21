@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/sidebar'
 import { useLayout } from '@/context/layout-provider'
 import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
-import { LogoNavyGold } from '@fundrbolt/shared/assets'
+import { LogoWhiteGold } from '@fundrbolt/shared/assets'
 import { Building2, Calendar, LayoutDashboard, Users } from 'lucide-react'
 import { sidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
@@ -47,7 +47,7 @@ export function AppSidebar() {
         {/* Fundrbolt Logo */}
         <div className='flex items-center justify-center px-4 py-2'>
           <img
-            src={LogoNavyGold}
+            src={LogoWhiteGold}
             alt='Fundrbolt'
             className='h-8 w-auto'
           />
