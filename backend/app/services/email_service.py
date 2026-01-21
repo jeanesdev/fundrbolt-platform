@@ -106,10 +106,10 @@ def _create_email_html_template(
                               border-top-left-radius: 8px;
                               border-top-right-radius: 8px;">
                     {
-                        f'<img src="{logo_url}" alt="Fundrbolt" style="height: 60px; width: auto; display: inline-block;" />'
-                        if logo_url
-                        else '<h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">Fundrbolt</h1>'
-                    }
+        f'<img src="{logo_url}" alt="Fundrbolt" style="height: 60px; width: auto; display: inline-block;" />'
+        if logo_url
+        else '<h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">Fundrbolt</h1>'
+    }
                   </div>
                 </td>
               </tr>
@@ -249,7 +249,9 @@ The Fundrbolt Platform Team
         )
 
         # Send with retry logic
-        return await self._send_email_with_retry(to_email, subject, body, "password_reset", html_body)
+        return await self._send_email_with_retry(
+            to_email, subject, body, "password_reset", html_body
+        )
 
     async def send_verification_email(
         self, to_email: str, verification_token: str, user_name: str | None = None

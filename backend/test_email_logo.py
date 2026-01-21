@@ -2,9 +2,11 @@
 """
 Test script for T042: Send verification email to test logo display
 """
+
 import requests
 
 API_BASE = "http://localhost:8000/api/v1"
+
 
 def test_password_reset_email():
     """Send a password reset email to test logo display"""
@@ -22,10 +24,7 @@ def test_password_reset_email():
     print(f"\n📧 Sending password reset email to: {test_email}")
 
     # Send password reset request
-    response = requests.post(
-        f"{API_BASE}/auth/password/reset/request",
-        json={"email": test_email}
-    )
+    response = requests.post(f"{API_BASE}/auth/password/reset/request", json={"email": test_email})
 
     print(f"\n📊 Response Status: {response.status_code}")
 
@@ -55,6 +54,7 @@ def test_password_reset_email():
     else:
         print("❌ Failed to send email")
         print(f"Response: {response.text}")
+
 
 if __name__ == "__main__":
     test_password_reset_email()
