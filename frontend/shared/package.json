@@ -14,7 +14,8 @@
     "./assets": "./src/assets/index.ts"
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "validate:theme": "tsx src/assets/scripts/validate-theme.ts"
   },
   "peerDependencies": {
     "react": "^19.0.0",

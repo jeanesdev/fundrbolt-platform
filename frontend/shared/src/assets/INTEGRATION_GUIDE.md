@@ -587,7 +587,178 @@ When you receive actual logo files from the designer:
 
 ---
 
-## 8. Best Practices
+## 7.5. Theme Update Workflow
+
+### Updating Brand Colors
+
+When brand colors need to change (rebranding, shade adjustments):
+
+**Step 1**: Update colors in the central source file:
+
+```typescript
+// frontend/shared/src/assets/themes/colors.ts
+
+export const colors = {
+  primary: {
+    navy: '#11294c',  // Update this value
+    gold: '#ffc20e',  // Or this value
+  },
+  // ... rest of color definitions
+} as const;
+```
+
+**Step 2**: Validate your changes:
+
+```bash
+cd frontend/shared
+pnpm validate:theme
+```
+
+This runs validation checks to ensure:
+- All color values are valid hex codes
+- Required color fields are present
+- TypeScript types are correct
+
+**Step 3**: Rebuild all applications:
+
+```bash
+# From repository root
+cd frontend/fundrbolt-admin && pnpm build
+cd frontend/donor-pwa && pnpm build
+cd frontend/landing-site && pnpm build
+```
+
+Or use the Makefile shortcuts:
+```bash
+make build-frontend
+```
+
+**Step 4**: Verify changes:
+- Check all apps render correctly
+- Verify no hardcoded colors remain
+- Test in different browsers
+- Check accessibility (contrast ratios)
+
+**Step 5**: Document the change:
+
+```markdown
+// frontend/shared/src/assets/themes/CHANGELOG.md
+
+## [1.1.0] - 2025-01-15
+### Changed
+- Updated Navy color from #11294c to #0f2341 for better contrast
+- Updated Gold color from #ffc20e to #ffd32a for WCAG AAA compliance
+```
+
+### Updating Typography
+
+To change font families or typographic scale:
+
+**Step 1**: Update typography source:
+
+```typescript
+// frontend/shared/src/assets/themes/typography.ts
+
+export const fontFamily = {
+  sans: ['Inter', /* fallbacks */],  // Change primary font here
+  heading: ['Manrope', /* fallbacks */],
+  // ...
+};
+
+export const typography: TypographyScale = {
+  h1: {
+    fontSize: '3.052rem',  // Adjust sizes here
+    lineHeight: '1.2',
+    fontWeight: 700,
+  },
+  // ...
+};
+```
+
+**Step 2**: Update @theme configurations:
+
+```css
+/* frontend/fundrbolt-admin/src/styles/theme.css */
+/* frontend/donor-pwa/src/styles/theme.css */
+
+@theme inline {
+  --font-sans: 'Inter', ...;  /* Update to match typography.ts */
+  --font-heading: 'Manrope', ...;
+}
+```
+
+**Step 3**: Rebuild and test all applications.
+
+### Testing Theme Changes
+
+Before committing theme changes, test the workflow:
+
+```bash
+# Temporarily change a color value
+# frontend/shared/src/assets/themes/colors.ts
+# gold: '#ffc30f' (was #ffc20e)
+
+# Rebuild all apps
+cd frontend/fundrbolt-admin && pnpm build
+cd frontend/donor-pwa && pnpm build  
+cd frontend/landing-site && pnpm build
+
+# Verify changes appear everywhere
+# Check components that use colors.primary.gold
+# Check email templates (if applicable)
+
+# Revert test change
+git checkout frontend/shared/src/assets/themes/colors.ts
+```
+
+### Validation Script
+
+Run theme validation before committing changes:
+
+```bash
+cd frontend/shared
+pnpm validate:theme
+```
+
+The validation script checks:
+- ✅ All color values are valid 6-digit hex codes
+- ✅ Required color fields exist (primary.navy, primary.gold, etc.)
+- ✅ Typography scale has all required levels (h1-h6, body, small, caption)
+- ✅ Font weights are valid numbers (100-900)
+- ✅ Font sizes use rem or px units
+- ❌ No hardcoded color values in components (use ESLint for this)
+
+### Change Log Requirements
+
+All theme changes must be documented in `CHANGELOG.md`:
+
+```markdown
+## [Major.Minor.Patch] - YYYY-MM-DD
+### Added
+- New color: `colors.status.info` for informational messages
+
+### Changed
+- Updated Navy from #11294c to #0f2341 for better dark mode contrast
+- Increased h1 font size from 3.052rem to 3.5rem
+
+### Deprecated
+- `colors.legacy.blue` - Use `colors.primary.navy` instead
+
+### Removed
+- Old hover states (replaced with gold accent)
+
+### Fixed
+- Typography line heights now consistent across all heading levels
+```
+
+Follow [Semantic Versioning](https://semver.org/) for theme versions:
+- **Major** (1.0.0 → 2.0.0): Breaking changes (rename color keys, remove colors)
+- **Minor** (1.0.0 → 1.1.0): New features (add new colors, new typography levels)
+- **Patch** (1.0.0 → 1.0.1): Bug fixes (adjust hex values, fix typos)
+
+---
+
+## 9. Best Practices
 
 ### ✅ DO
 - Always import colors from `@fundrbolt/shared/assets`
@@ -604,7 +775,7 @@ When you receive actual logo files from the designer:
 
 ---
 
-## 9. Linting & Validation
+## 10. Linting & Validation
 
 ### Prevent Hardcoded Colors (Recommended)
 Add to your ESLint config:
@@ -626,7 +797,7 @@ module.exports = {
 
 ---
 
-## 10. Testing Your Integration
+## 11. Testing Your Integration
 
 ### Visual Checklist
 - [ ] Navy background (#11294c) applied globally
