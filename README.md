@@ -85,6 +85,14 @@ fundrbolt-platform/
 │   │
 │   └── donor-pwa/          # Progressive web app (planned)
 │
+├── frontend/shared/         # Shared frontend assets and utilities
+│   └── src/
+│       └── assets/         # Centralized branding system
+│           ├── logos/      # Brand logos (SVG, PNG)
+│           ├── themes/     # Colors, typography, theme system
+│           ├── favicons/   # Favicon assets
+│           └── INTEGRATION_GUIDE.md  # Usage documentation
+│
 ├── infrastructure/          # Azure infrastructure as code
 │   ├── bicep/
 │   │   ├── modules/        # Reusable Bicep modules (11 Azure resources)
@@ -113,9 +121,10 @@ fundrbolt-platform/
 - **Framework**: React 18 with TypeScript
 - **State Management**: Zustand
 - **Build Tool**: Vite
-- **UI Library**: shadcn/ui (Tailwind CSS)
-- **Routing**: React Router
+- **UI Library**: shadcn/ui (Tailwind CSS 4)
+- **Routing**: React Router (TanStack Router for donor-pwa)
 - **HTTP Client**: Axios
+- **Branding**: Centralized theme system (colors, typography, logos)
 - **Hosting**: Azure Static Web Apps
 
 ### Backend
