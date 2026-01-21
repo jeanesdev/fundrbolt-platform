@@ -13,6 +13,9 @@
  * Usage: pnpm validate:theme
  */
 
+// Node.js process type
+declare const process: { exit: (code: number) => never };
+
 import { colors } from '../themes/colors';
 import { typography, fontFamily } from '../themes/typography';
 
@@ -175,13 +178,14 @@ function validateFontFamilies() {
     }
 
     const fonts = fontFamily[fontType as keyof typeof fontFamily];
-    if (!Array.isArray(fonts) || fonts.length === 0) {
+    const fontArray = fonts ? [...fonts] : [];
+    if (!fonts || fontArray.length === 0) {
       error(`Font family ${fontType} must be a non-empty array`);
     } else {
-      success(`fontFamily.${fontType}: ${fonts.length} fonts in stack`);
+      success(`fontFamily.${fontType}: ${fontArray.length} fonts in stack`);
       
       // Check for common system fonts in fallback
-      const fontString = fonts.join(', ').toLowerCase();
+      const fontString = fontArray.join(', ').toLowerCase();
       if (!fontString.includes('sans-serif') && !fontString.includes('monospace')) {
         warning(`fontFamily.${fontType} should include a generic font family (sans-serif, serif, monospace)`);
       }
