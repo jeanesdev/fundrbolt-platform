@@ -363,7 +363,7 @@ The Fundrbolt Platform Team
         html_body = _create_email_html_template(
             heading=f"You're Invited to Join {npo_name}!",
             body_paragraphs=[
-                f"{inviter_name} from {npo_name} has invited you to join their organization on Fundrbolt Platform as a <strong>{role_display}</strong>.",
+                f"{inviter} {npo_name} has invited you to join their organization on Fundrbolt Platform as a <strong>{role_display}</strong>.",
                 "Click the button below to accept your invitation and get started.",
             ],
             cta_text="Accept Invitation",
