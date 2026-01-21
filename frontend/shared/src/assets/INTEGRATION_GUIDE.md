@@ -122,7 +122,199 @@ Most modern frameworks auto-detect favicons in the `public/` directory. Verify b
 
 ---
 
-## 4. Theme Usage Patterns
+## 4. Typography System
+
+Fundrbolt uses a centralized typography system with standardized font families and typographic scales.
+
+### Font Families
+
+```typescript
+import { fontFamily } from '@fundrbolt/shared/assets';
+
+// System font stack for body text
+fontFamily.sans
+// ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', ...]
+
+// Geometric sans-serif for headings
+fontFamily.heading
+// ['Manrope', 'Inter', '-apple-system', 'BlinkMacSystemFont', ...]
+
+// Monospace for code
+fontFamily.mono
+// ['Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace']
+```
+
+### Typography Scale
+
+Use predefined styles for consistent text hierarchy:
+
+```typescript
+import { typography } from '@fundrbolt/shared/assets';
+
+// Heading styles (h1 - h6)
+typography.h1  // { fontSize: '3.052rem', lineHeight: '1.2', fontWeight: 700 }
+typography.h2  // { fontSize: '2.441rem', lineHeight: '1.2', fontWeight: 700 }
+typography.h3  // { fontSize: '1.953rem', lineHeight: '1.25', fontWeight: 600 }
+typography.h4  // { fontSize: '1.563rem', lineHeight: '1.3', fontWeight: 600 }
+typography.h5  // { fontSize: '1.25rem', lineHeight: '1.3', fontWeight: 600 }
+typography.h6  // { fontSize: '1rem', lineHeight: '1.4', fontWeight: 600 }
+
+// Body text styles
+typography.body     // { fontSize: '1rem', lineHeight: '1.5', fontWeight: 400 }
+typography.small    // { fontSize: '0.875rem', lineHeight: '1.4', fontWeight: 400 }
+typography.caption  // { fontSize: '0.75rem', lineHeight: '1.4', fontWeight: 500 }
+```
+
+### React Component Examples
+
+#### h1 - Page Title
+```tsx
+<h1 style={typography.h1}>
+  Welcome to Fundrbolt
+</h1>
+```
+
+#### h2 - Section Heading
+```tsx
+<h2 style={typography.h2}>
+  Upcoming Events
+</h2>
+```
+
+#### h3 - Subsection Heading
+```tsx
+<h3 style={typography.h3}>
+  Featured Auctions
+</h3>
+```
+
+#### h4 - Card Heading
+```tsx
+<h4 style={typography.h4}>
+  Event Details
+</h4>
+```
+
+#### h5 - Small Heading
+```tsx
+<h5 style={typography.h5}>
+  Sponsor Tier
+</h5>
+```
+
+#### h6 - Metadata Heading
+```tsx
+<h6 style={typography.h6}>
+  Date & Time
+</h6>
+```
+
+#### Body Text
+```tsx
+<p style={typography.body}>
+  Join us for an evening of giving and community impact.
+</p>
+```
+
+#### Small Text (UI Elements)
+```tsx
+<span style={typography.small}>
+  Posted 2 hours ago
+</span>
+```
+
+#### Caption (Footnotes, Labels)
+```tsx
+<caption style={typography.caption}>
+  Table 1: Event Attendance by Year
+</caption>
+```
+
+### Tailwind CSS Integration
+
+All font families are available as CSS variables in `@theme` blocks:
+
+```css
+@theme inline {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, ...;
+  --font-heading: 'Manrope', 'Inter', -apple-system, ...;
+  --font-mono: 'Monaco', 'Consolas', ...;
+}
+```
+
+Use in components:
+```tsx
+// Body text (automatic via global styles)
+<body className="font-sans">
+
+// Headings
+<h1 className="font-heading font-bold text-5xl">
+  Large Title
+</h1>
+
+// Code blocks
+<code className="font-mono text-sm">
+  const example = true;
+</code>
+```
+
+### CSS Custom Properties
+
+Apply typography via CSS variables:
+
+```css
+:root {
+  /* Font Families */
+  --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, ...;
+  --font-family-heading: 'Manrope', 'Inter', -apple-system, ...;
+  --font-family-mono: 'Monaco', 'Consolas', ...;
+  
+  /* Heading Styles */
+  --font-h1-size: 3.052rem;
+  --font-h1-line-height: 1.2;
+  --font-h1-weight: 700;
+  
+  /* Body Styles */
+  --font-body-size: 1rem;
+  --font-body-line-height: 1.5;
+  --font-body-weight: 400;
+}
+
+/* Apply to elements */
+body {
+  font-family: var(--font-family-sans);
+  font-size: var(--font-body-size);
+  line-height: var(--font-body-line-height);
+}
+
+h1 {
+  font-family: var(--font-family-heading);
+  font-size: var(--font-h1-size);
+  line-height: var(--font-h1-line-height);
+  font-weight: var(--font-h1-weight);
+}
+```
+
+### Design Guidelines
+
+**Font Size Scale**: 1.250 (Major Third)
+- Provides clear visual hierarchy
+- Base size: 16px (1rem)
+- Each level multiplies by 1.25
+
+**Line Height**:
+- **Headings**: 1.2-1.3 (tight for impact)
+- **Body**: 1.5 (comfortable reading)
+- **Small/Caption**: 1.4 (slightly tighter for UI)
+
+**Font Weight**:
+- **Headings**: 600-700 (semibold to bold)
+- **Body**: 400 (regular for readability)
+- **Caption**: 500 (medium for small text clarity)
+
+---
+
+## 5. Theme Usage Patterns
 
 ### Pattern 1: Inline Styles (Direct JavaScript)
 ```typescript
@@ -323,7 +515,7 @@ const EventCard = styled.div`
 
 ---
 
-## 5. Enforcing Navy Background
+## 6. Enforcing Navy Background
 
 ### Global CSS (Recommended)
 ```css
@@ -368,7 +560,7 @@ function App() {
 
 ---
 
-## 5. Replacing Placeholders with Real Assets
+## 7. Replacing Placeholders with Real Assets
 
 When you receive actual logo files from the designer:
 
@@ -395,7 +587,7 @@ When you receive actual logo files from the designer:
 
 ---
 
-## 6. Best Practices
+## 8. Best Practices
 
 ### ✅ DO
 - Always import colors from `@fundrbolt/shared/assets`
@@ -412,7 +604,7 @@ When you receive actual logo files from the designer:
 
 ---
 
-## 7. Linting & Validation
+## 9. Linting & Validation
 
 ### Prevent Hardcoded Colors (Recommended)
 Add to your ESLint config:
@@ -434,7 +626,7 @@ module.exports = {
 
 ---
 
-## 8. Testing Your Integration
+## 10. Testing Your Integration
 
 ### Visual Checklist
 - [ ] Navy background (#11294c) applied globally

@@ -160,16 +160,16 @@
 
 ### Implementation for User Story 5
 
-- [ ] T053 [P] [US5] Export fontFamily constant from frontend/shared/src/assets/index.ts (already defined in themes/colors.ts)
-- [ ] T054 [P] [US5] Create typography scale object in frontend/shared/src/assets/themes/typography.ts with font sizes, line heights, font weights for h1-h6, body, small, caption
-- [ ] T055 [P] [US5] Export typography scale from frontend/shared/src/assets/index.ts
-- [ ] T056 [P] [US5] Update Tailwind config in frontend/fundrbolt-admin/tailwind.config.js to extend fontFamily with system font stack
-- [ ] T057 [P] [US5] Update Tailwind config in frontend/donor-pwa/tailwind.config.js to extend fontFamily with system font stack
-- [ ] T058 [P] [US5] Update Tailwind config in frontend/landing-site/tailwind.config.js to extend fontFamily with system font stack
-- [ ] T059 [P] [US5] Apply fontFamily to body element in frontend/fundrbolt-admin/src/routes/__root.tsx global styles
-- [ ] T060 [P] [US5] Apply fontFamily to body element in frontend/donor-pwa/src/routes/__root.tsx global styles
-- [ ] T061 [P] [US5] Apply fontFamily to body element in frontend/landing-site/src/routes/__root.tsx global styles
-- [ ] T062 [US5] Create typography examples in frontend/shared/src/assets/INTEGRATION_GUIDE.md showing h1-h6, body text, and caption styles
+- [x] T053 [P] [US5] Export fontFamily constant from frontend/shared/src/assets/index.ts (already defined in themes/colors.ts)
+- [x] T054 [P] [US5] Create typography scale object in frontend/shared/src/assets/themes/typography.ts with font sizes, line heights, font weights for h1-h6, body, small, caption
+- [x] T055 [P] [US5] Export typography scale from frontend/shared/src/assets/index.ts
+- [x] T056 [P] [US5] Update Tailwind config in frontend/fundrbolt-admin/tailwind.config.js to extend fontFamily with system font stack
+- [x] T057 [P] [US5] Update Tailwind config in frontend/donor-pwa/tailwind.config.js to extend fontFamily with system font stack
+- [x] T058 [P] [US5] Update Tailwind config in frontend/landing-site/tailwind.config.js to extend fontFamily with system font stack
+- [x] T059 [P] [US5] Apply fontFamily to body element in frontend/fundrbolt-admin/src/routes/__root.tsx global styles
+- [x] T060 [P] [US5] Apply fontFamily to body element in frontend/donor-pwa/src/routes/__root.tsx global styles
+- [x] T061 [P] [US5] Apply fontFamily to body element in frontend/landing-site/src/routes/__root.tsx global styles
+- [x] T062 [US5] Create typography examples in frontend/shared/src/assets/INTEGRATION_GUIDE.md showing h1-h6, body text, and caption styles
 
 **Checkpoint**: System fonts now load consistently across all apps with proper fallback chain
 

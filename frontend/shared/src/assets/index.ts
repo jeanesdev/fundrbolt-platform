@@ -23,6 +23,10 @@
 export { colors, cssVariables } from './themes/colors';
 export type { BrandColors } from './themes/colors';
 
+// Export typography system
+export { fontFamily, typography, typographyCssVariables } from './themes/typography';
+export type { FontFamily } from './themes/typography';
+
 // Export types
 export type { LogoAsset, FaviconSet, TypographyScale } from './types';
 
