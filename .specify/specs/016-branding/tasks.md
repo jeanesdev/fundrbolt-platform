@@ -138,15 +138,15 @@
 
 ### Implementation for User Story 4
 
-- [ ] T044 [P] [US4] Update frontend/fundrbolt-admin/index.html <head> to include all 7 favicon link tags (ICO, SVG, 16/32/180/192/512 PNGs)
-- [ ] T045 [P] [US4] Update frontend/donor-pwa/index.html <head> to include all 7 favicon link tags
-- [ ] T046 [P] [US4] Update frontend/landing-site/index.html <head> to include all 7 favicon link tags
+- [x] T044 [P] [US4] Update frontend/fundrbolt-admin/index.html <head> to include all 7 favicon link tags (ICO, SVG, 16/32/180/192/512 PNGs)
+- [x] T045 [P] [US4] Update frontend/donor-pwa/index.html <head> to include all 7 favicon link tags
+- [x] T046 [P] [US4] Update frontend/landing-site/index.html <head> to include all 7 favicon link tags
 - [ ] T047 [P] [US4] Test favicon display in Chrome on desktop (check browser tab icon)
 - [ ] T048 [P] [US4] Test favicon display in Firefox on desktop (check browser tab icon)
 - [ ] T049 [P] [US4] Test favicon display in Safari on macOS (check browser tab icon)
 - [ ] T050 [P] [US4] Test Apple Touch Icon on iOS by adding landing-site to home screen
 - [ ] T051 [P] [US4] Test Android home screen icon by adding donor-pwa to home screen
-- [ ] T052 [US4] Document favicon regeneration process in frontend/shared/src/assets/favicons/README.md
+- [x] T052 [US4] Document favicon regeneration process in frontend/shared/src/assets/favicons/README.md
 
 **Checkpoint**: All browsers and mobile devices now display fundrbolt favicon correctly
 
