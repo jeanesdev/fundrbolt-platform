@@ -13,6 +13,7 @@ import { sidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
 import { NpoSelector } from './NpoSelector'
+import { EventSelector } from './EventSelector'
 import type { NavGroup as NavGroupType } from './types'
 
 // Map icon string names to lucide-react icon components
@@ -54,8 +55,7 @@ export function AppSidebar() {
         </div>
 
         <NpoSelector />
-
-        {/* NpoSelector replaces TeamSwitcher for NPO context selection */}
+        <EventSelector />
       </SidebarHeader>
       <SidebarContent>
         {filteredNavGroups.map((props) => (
