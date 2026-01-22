@@ -6,8 +6,9 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import { useLayout } from '@/context/layout-provider'
-import { Building2, Calendar, LayoutDashboard, Users } from 'lucide-react'
 import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
+import { LogoWhiteGold } from '@fundrbolt/shared/assets'
+import { Building2, Calendar, LayoutDashboard, Users } from 'lucide-react'
 import { sidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
@@ -43,6 +44,15 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>
+        {/* Fundrbolt Logo */}
+        <div className='flex items-center justify-center px-4 py-2'>
+          <img
+            src={LogoWhiteGold}
+            alt='Fundrbolt'
+            className='h-8 w-auto'
+          />
+        </div>
+
         <NpoSelector />
 
         {/* NpoSelector replaces TeamSwitcher for NPO context selection */}

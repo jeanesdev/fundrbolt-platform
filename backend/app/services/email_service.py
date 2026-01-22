@@ -20,6 +20,7 @@ def _create_email_html_template(
     cta_text: str | None = None,
     cta_url: str | None = None,
     footer_text: str | None = None,
+    logo_url: str | None = None,
 ) -> str:
     """
     Create a professional HTML email template.
@@ -30,6 +31,7 @@ def _create_email_html_template(
         cta_text: Optional call-to-action button text
         cta_url: Optional call-to-action button URL
         footer_text: Optional footer text
+        logo_url: Optional CDN URL for Fundrbolt logo
 
     Returns:
         HTML email template string
@@ -96,17 +98,23 @@ def _create_email_html_template(
                           border-radius: 8px;
                           box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);">
               <tr>
-                <td style="padding: 40px;">
-                  <!-- Header -->
-                  <div style="text-align: center; margin-bottom: 32px;">
-                    <h1 style="margin: 0;
-                               color: #1f2937;
-                               font-size: 24px;
-                               font-weight: 700;">
-                      Fundrbolt Platform
-                    </h1>
+                <td style="padding: 0;">
+                  <!-- Header with Navy Background and Logo -->
+                  <div style="background-color: #11294c;
+                              padding: 32px;
+                              text-align: center;
+                              border-top-left-radius: 8px;
+                              border-top-right-radius: 8px;">
+                    {
+        f'<img src="{logo_url}" alt="Fundrbolt" style="height: 60px; width: auto; display: inline-block;" />'
+        if logo_url
+        else '<h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">Fundrbolt</h1>'
+    }
                   </div>
-
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 40px;">
                   <!-- Main Content -->
                   <h2 style="margin: 0 0 24px 0;
                              color: #111827;
@@ -167,6 +175,27 @@ class EmailService:
                 "Set AZURE_COMMUNICATION_CONNECTION_STRING to enable real email sending."
             )
 
+    def _get_logo_url(self, background: str = "dark") -> str:
+        """
+        Get CDN URL for Fundrbolt logo based on background color.
+
+        Args:
+            background: Background color context ('light' or 'dark')
+
+        Returns:
+            CDN URL for the appropriate logo variant
+
+        Note:
+            - Use 'light' (navy/gold logo) for white/light backgrounds
+            - Use 'dark' (white/gold logo) for navy/dark backgrounds (default for emails)
+        """
+        logo_filename = (
+            "fundrbolt-logo-navy-gold.png"
+            if background == "light"
+            else "fundrbolt-logo-white-gold.png"
+        )
+        return f"{settings.azure_cdn_logo_base_url}/{logo_filename}"
+
     async def send_password_reset_email(
         self, to_email: str, reset_token: str, user_name: str | None = None
     ) -> bool:
@@ -206,8 +235,23 @@ Best regards,
 The Fundrbolt Platform Team
         """.strip()
 
+        # HTML version with logo
+        html_body = _create_email_html_template(
+            heading="Reset Your Password",
+            body_paragraphs=[
+                "You requested to reset your password for your Fundrbolt Platform account.",
+                "Click the button below to reset your password. This link will expire in 1 hour.",
+            ],
+            cta_text="Reset Password",
+            cta_url=reset_url,
+            footer_text="If you didn't request this password reset, please ignore this email and your password will remain unchanged.",
+            logo_url=self._get_logo_url("dark"),  # White/gold logo on navy background
+        )
+
         # Send with retry logic
-        return await self._send_email_with_retry(to_email, subject, body, "password_reset")
+        return await self._send_email_with_retry(
+            to_email, subject, body, "password_reset", html_body
+        )
 
     async def send_verification_email(
         self, to_email: str, verification_token: str, user_name: str | None = None
@@ -250,7 +294,7 @@ Best regards,
 The Fundrbolt Platform Team
         """.strip()
 
-        # HTML version
+        # HTML version with logo
         html_body = _create_email_html_template(
             heading="Welcome to Fundrbolt Platform!",
             body_paragraphs=[
@@ -260,6 +304,7 @@ The Fundrbolt Platform Team
             cta_text="Verify Email Address",
             cta_url=verification_url,
             footer_text="This verification link will expire in 24 hours. If you didn't create an account, please ignore this email.",
+            logo_url=self._get_logo_url("dark"),  # White/gold logo on navy background
         )
 
         # Send with retry logic
@@ -316,7 +361,7 @@ Best regards,
 The Fundrbolt Platform Team
         """.strip()
 
-        # HTML version
+        # HTML version with logo
         html_body = _create_email_html_template(
             heading=f"You're Invited to Join {npo_name}!",
             body_paragraphs=[
@@ -329,6 +374,7 @@ The Fundrbolt Platform Team
                 "This invitation will expire in 7 days. "
                 "If you don't have a Fundrbolt Platform account yet, you'll be able to create one when you accept the invitation."
             ),
+            logo_url=self._get_logo_url("dark"),  # White/gold logo on navy background
         )
 
         return await self._send_email_with_retry(

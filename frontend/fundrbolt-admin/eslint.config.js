@@ -54,6 +54,29 @@ export default defineConfig(
       ],
       // Prevent duplicate imports from the same module
       'no-duplicate-imports': 'error',
+      // Enforce brand color usage (warn during dev, block on commit)
+      'no-restricted-syntax': [
+        'warn',
+        {
+          selector: 'Literal[value=/#[0-9a-f]{3,8}/i]',
+          message: 'Do not hardcode hex colors. Import from @fundrbolt/shared/assets instead.',
+        },
+        {
+          selector: 'Literal[value=/rgb\\(/i]',
+          message: 'Do not hardcode RGB colors. Import from @fundrbolt/shared/assets instead.',
+        },
+        {
+          selector: 'Literal[value=/hsl\\(/i]',
+          message: 'Do not hardcode HSL colors. Import from @fundrbolt/shared/assets instead.',
+        },
+      ],
+    },
+  },
+  // Exemption for colors.ts - allow hardcoded colors in theme definition
+  {
+    files: ['**/themes/colors.ts'],
+    rules: {
+      'no-restricted-syntax': 'off',
     },
   }
 )
