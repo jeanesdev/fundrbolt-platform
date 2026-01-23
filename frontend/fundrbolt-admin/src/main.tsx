@@ -18,6 +18,9 @@ import { routeTree } from './routeTree.gen'
 // Styles
 import './styles/index.css'
 
+// Force cache bust - routes should load section components, not stubs
+console.log('[ROUTE DEBUG] routeTree loaded at:', new Date().toISOString())
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

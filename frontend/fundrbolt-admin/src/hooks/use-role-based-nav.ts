@@ -13,6 +13,7 @@
 
 import { useAuth } from './use-auth'
 import { useNpoContext } from './use-npo-context'
+import { useEventContext } from './use-event-context'
 
 export interface NavItem {
   title: string
@@ -24,8 +25,17 @@ export interface NavItem {
   description?: string
 }
 
+export interface EventNavItem {
+  title: string
+  href: string
+  icon: string
+  badge?: string | number
+}
+
 export interface UseRoleBasedNavReturn {
   navItems: NavItem[]
+  eventNavItems: EventNavItem[]
+  eventNavTitle: string | null
   canAccessNpos: boolean
   canAccessEvents: boolean
   canAccessUsers: boolean
@@ -37,6 +47,7 @@ export interface UseRoleBasedNavReturn {
 export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const { role, isSuperAdmin, isNpoAdmin, isEventCoordinator, isStaff } = useAuth()
   const { selectedNpoId } = useNpoContext()
+  const { selectedEventId, selectedEventName, selectedEventSlug } = useEventContext()
 
   // Determine NPO link based on selected NPO
   const npoHref = selectedNpoId ? `/npos/${selectedNpoId}` : '/npos'
@@ -170,8 +181,21 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const canModifyEvents = isSuperAdmin || isNpoAdmin || isEventCoordinator
   const canModifyUsers = isSuperAdmin || isNpoAdmin
 
+  const eventNavItems: EventNavItem[] = selectedEventId
+    ? EVENT_SECTION_CONFIG.map((section) => ({
+        title: section.title,
+        href: `/events/${selectedEventSlug || selectedEventId}/${section.path}`,
+        icon: section.icon,
+        badge: section.badge,
+      }))
+    : []
+
+  const eventNavTitle = selectedEventId ? 'Event' : null
+
   return {
     navItems,
+    eventNavItems,
+    eventNavTitle,
     canAccessNpos,
     canAccessEvents,
     canAccessUsers,
@@ -180,3 +204,20 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     canModifyUsers,
   }
 }
+
+const EVENT_SECTION_CONFIG: Array<{
+  title: string
+  path: string
+  icon: EventNavItem['icon']
+  badge?: string
+}> = [
+  { title: 'Details', path: 'details', icon: 'FileText', badge: '--' },
+  { title: 'Media', path: 'media', icon: 'Image', badge: '--' },
+  { title: 'Links', path: 'links', icon: 'Link2', badge: '--' },
+  { title: 'Food Options', path: 'food', icon: 'Utensils', badge: '--' },
+  { title: 'Registrations', path: 'registrations', icon: 'Users', badge: '--' },
+  { title: 'Seating', path: 'seating', icon: 'LayoutGrid', badge: '--' },
+  { title: 'Tickets', path: 'tickets', icon: 'Ticket', badge: '--' },
+  { title: 'Sponsors', path: 'sponsors', icon: 'Award', badge: '--' },
+  { title: 'Auction Items', path: 'auction-items', icon: 'Gavel', badge: '--' },
+]

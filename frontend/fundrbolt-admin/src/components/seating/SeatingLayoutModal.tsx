@@ -15,16 +15,25 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { mediaApi } from '@/services/event-service'
-import { Loader2, Maximize2, Upload, X } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { Loader2, Maximize2, Upload, X, ImageIcon } from 'lucide-react'
+import { useRef, useState, useEffect } from 'react'
 import { toast } from 'sonner'
+import type { EventMedia } from '@/types/event'
+import { useEventStore } from '@/stores/event-store'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 interface SeatingLayoutModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   eventId: string
   currentImageUrl?: string | null
-  onImageUploaded: (url: string) => void
+  onImageUploaded: (url: string) => void | Promise<void>
 }
 
 export function SeatingLayoutModal({
@@ -34,12 +43,50 @@ export function SeatingLayoutModal({
   currentImageUrl,
   onImageUploaded,
 }: SeatingLayoutModalProps) {
+  console.log('🔴 SeatingLayoutModal RENDERED - open:', open, 'currentImageUrl:', currentImageUrl)
+  
   const [uploading, setUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     currentImageUrl || null
   )
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [showMediaGallery, setShowMediaGallery] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { currentEvent } = useEventStore()
+  const eventMedia = currentEvent?.media || []
+
+  useEffect(() => {
+    console.log('[SeatingLayoutModal] currentImageUrl prop changed to:', currentImageUrl)
+    setPreviewUrl(currentImageUrl || null)
+  }, [currentImageUrl])
+
+  useEffect(() => {
+    if (open) {
+      console.log('[SeatingLayoutModal] Modal opened with currentImageUrl:', currentImageUrl)
+      console.log('[SeatingLayoutModal] previewUrl state:', previewUrl)
+    }
+  }, [open, currentImageUrl, previewUrl])
+
+  const handleSelectFromGallery = async (mediaUrl: string) => {
+    console.log('🔥🔥🔥 GALLERY IMAGE CLICKED - URL:', mediaUrl)
+    console.log('🔥🔥🔥 About to set uploading to true')
+    setPreviewUrl(mediaUrl)
+    setUploading(true)
+    try {
+      console.log('Calling onImageUploaded with URL:', mediaUrl)
+      await onImageUploaded(mediaUrl)
+      console.log('onImageUploaded completed successfully')
+      toast.success('Layout image selected from gallery')
+      onOpenChange(false) // Close modal to show fresh state on reopen
+    } catch (error) {
+      console.error('Failed to set layout image:', error)
+      toast.error('Failed to set layout image')
+      setPreviewUrl(null) // Reset preview on error
+    } finally {
+      setUploading(false)
+      setShowMediaGallery(false)
+    }
+  }
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -113,35 +160,72 @@ export function SeatingLayoutModal({
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Upload Section */}
-            <div className="space-y-2">
-              <Label htmlFor="layout-image">Layout Image</Label>
-              <div className="flex items-center gap-2">
+            {/* Upload or Select from Gallery */}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={showMediaGallery ? 'outline' : 'default'}
+                size="sm"
+                onClick={() => setShowMediaGallery(false)}
+                className="flex-1"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload New
+              </Button>
+              <Button
+                type="button"
+                variant={showMediaGallery ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setShowMediaGallery(true)}
+                disabled={eventMedia.length === 0}
+                className="flex-1"
+              >
+                <ImageIcon className="h-4 w-4 mr-2" />
+                Select from Gallery {eventMedia.length > 0 && `(${eventMedia.length})`}
+              </Button>
+            </div>
+
+            {showMediaGallery ? (
+              /* Gallery Selection */
+              <div className="space-y-2">
+                <Label>Select from Event Media</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-96 overflow-y-auto border rounded-lg p-3">
+                  {eventMedia.map((media) => (
+                    <button
+                      key={media.id}
+                      type="button"
+                      onClick={() => handleSelectFromGallery(media.file_url)}
+                      className="relative group border-2 rounded-lg overflow-hidden hover:border-primary transition-colors aspect-square"
+                    >
+                      <img
+                        src={media.file_url}
+                        alt={media.file_name}
+                        className="w-full h-full object-cover"
+                      />
+                      {previewUrl === media.file_url && (
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                          <div className="bg-primary text-primary-foreground rounded-full p-2">
+                            ✓
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              /* Upload Section - Hidden file input */
+              <div className="space-y-2">
                 <Input
-                  id="layout-image"
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleFileSelect}
                   disabled={uploading}
-                  className="flex-1"
+                  className="hidden"
                 />
-                {previewUrl && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleRemove}
-                    disabled={uploading}
-                    title="Remove layout image"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
               </div>
-              <p className="text-sm text-muted-foreground">
-                Accepted formats: JPG, PNG, GIF. Max size: 10MB
-              </p>
-            </div>
+            )}
 
             {/* Upload Progress */}
             {uploading && (
@@ -154,7 +238,19 @@ export function SeatingLayoutModal({
             {/* Preview Section */}
             {previewUrl ? (
               <div className="space-y-2">
-                <Label>Preview</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Preview</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRemove}
+                    disabled={uploading}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Remove Image
+                  </Button>
+                </div>
                 <div className="border rounded-lg overflow-hidden bg-muted/50 relative group">
                   <img
                     src={previewUrl}
@@ -178,8 +274,19 @@ export function SeatingLayoutModal({
             ) : (
               <div className="border-2 border-dashed rounded-lg p-12 text-center text-muted-foreground">
                 <Upload className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No layout image uploaded</p>
-                <p className="text-sm mt-2">
+                <p className="mb-4">No layout image uploaded</p>
+                {!showMediaGallery && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Choose File
+                  </Button>
+                )}
+                <p className="text-sm mt-4">
                   Upload a floor plan to help with seating assignments
                 </p>
               </div>

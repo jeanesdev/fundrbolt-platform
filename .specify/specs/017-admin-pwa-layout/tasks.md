@@ -13,7 +13,7 @@ Tasks are organized by user story priority. Each user story represents an indepe
 - **P1**: Critical path (MVP functionality - US1, US2, US3)
 - **P2**: High value (Enhanced UX - US4, US5, US6)
 - **P3**: Polish (Nice-to-have - US7)
-
+hpi
 **Parallel Opportunity**: Tasks marked with `[P]` can be executed in parallel with other `[P]` tasks in the same phase.
 
 **Story Dependencies**:
@@ -88,8 +88,8 @@ Tasks are organized by user story priority. Each user story represents an indepe
 - [X] [T025] [P1] [US2] Add EventSelector to AppSidebar below NpoSelector in `frontend/fundrbolt-admin/src/components/layout/app-sidebar.tsx`
 - [X] [T026] [P] [US2] Write unit tests for WCAG contrast utilities in `frontend/fundrbolt-admin/src/lib/__tests__/colors.test.ts`
 - [X] [T027] [P] [US2] Write unit tests for useInitialAvatar hook in `frontend/fundrbolt-admin/src/hooks/__tests__/use-initial-avatar.test.ts`
-- [ ] [T028] [P] [US2] Write component tests for InitialAvatar in `frontend/fundrbolt-admin/src/components/ui/__tests__/initial-avatar.test.tsx`
-- [ ] [T029] [P] [US2] Write component tests for EventSelector in `frontend/fundrbolt-admin/src/components/layout/__tests__/EventSelector.test.tsx`
+- [X] [T028] [P] [US2] Write component tests for InitialAvatar in `frontend/fundrbolt-admin/src/components/ui/__tests__/initial-avatar.test.tsx`
+- [X] [T029] [P] [US2] Write component tests for EventSelector in `frontend/fundrbolt-admin/src/components/layout/__tests__/EventSelector.test.tsx`
 
 **Verification Checklist**:
 - [ ] EventSelector dropdown appears below NpoSelector in sidebar
@@ -112,30 +112,52 @@ Tasks are organized by user story priority. Each user story represents an indepe
 
 ### Implementation Tasks
 
-- [ ] [T030] [P1] [US3] Update `use-role-based-nav.ts` to add dynamic "Event: [Name]" navigation group in `frontend/fundrbolt-admin/src/hooks/use-role-based-nav.ts`
-- [ ] [T031] [P1] [US3] Add conditional logic to show event group only when event is selected
-- [ ] [T032] [P1] [US3] Define event navigation items: Details, Media, Links, Food Options, Registrations, Seating, Tickets, Sponsors, Auction Items
-- [ ] [T033] [P1] [US3] Add icons for each event section (FileText, Image, Link2, Utensils, Users, LayoutGrid, Ticket, Award, Gavel)
-- [ ] [T034] [P1] [US3] Add placeholder badge counts (will be replaced with real API data in Phase 5)
-- [ ] [T035] [P1] [US3] Update NavGroup component to support collapsibility with localStorage persistence in `frontend/fundrbolt-admin/src/components/layout/nav-group.tsx`
-- [ ] [T036] [P1] [US3] Add localStorage keys for each group: `fundrbolt-nav-group-{groupName}-collapsed`
-- [ ] [T037] [P1] [US3] Default all groups to expanded state (collapsed = false)
-- [ ] [T038] [P1] [US3] Remove horizontal tabs from event detail pages in `frontend/fundrbolt-admin/src/features/events/EventEditPage.tsx`
-- [ ] [T039] [P1] [US3] Update event section routing to support sidebar navigation (nested routes)
-- [ ] [T040] [P] [US3] Write unit tests for use-role-based-nav in `frontend/fundrbolt-admin/src/hooks/__tests__/use-role-based-nav.test.ts`
-- [ ] [T041] [P] [US3] Write component tests for NavGroup collapsibility in `frontend/fundrbolt-admin/src/components/layout/__tests__/nav-group.test.tsx`
+- [X] [T030] [P1] [US3] Update `use-role-based-nav.ts` to add dynamic "Event" navigation group in `frontend/fundrbolt-admin/src/hooks/use-role-based-nav.ts`
+- [X] [T031] [P1] [US3] Add conditional logic to show event group only when event is selected
+- [X] [T032] [P1] [US3] Define event navigation items: Details, Media, Links, Food Options, Registrations, Seating, Tickets, Sponsors, Auction Items
+- [X] [T033] [P1] [US3] Add icons for each event section (FileText, Image, Link2, Utensils, Users, LayoutGrid, Ticket, Award, Gavel)
+- [X] [T034] [P1] [US3] Add placeholder badge counts (will be replaced with real API data in Phase 5)
+- [X] [T035] [P1] [US3] Update NavGroup component to support collapsibility with localStorage persistence in `frontend/fundrbolt-admin/src/components/layout/nav-group.tsx`
+- [X] [T036] [P1] [US3] Add localStorage keys for each group: `fundrbolt-nav-group-{groupName}-collapsed`
+- [X] [T037] [P1] [US3] Default all groups to expanded state (collapsed = false)
+- [X] [T038] [P1] [US3] Remove horizontal tabs from event detail pages in `frontend/fundrbolt-admin/src/features/events/EventEditPage.tsx`
+- [X] [T039] [P1] [US3] Update event section routing to support sidebar navigation (nested routes)
+- [X] [T040] [P] [US3] Write unit tests for use-role-based-nav in `frontend/fundrbolt-admin/src/hooks/__tests__/use-role-based-nav.test.ts`
+- [X] [T041] [P] [US3] Write component tests for NavGroup collapsibility in `frontend/fundrbolt-admin/src/components/layout/__tests__/nav-group.test.tsx`
+
+### Additional Fixes & Enhancements
+
+- [X] [T042-A] [US3] Fixed EventEditPage to extract eventId from URL pathname as fallback when params.eventId is undefined
+- [X] [T042-B] [US3] Added loading state guard in EventEditPage to prevent rendering before currentEvent is loaded
+- [X] [T042-C] [US3] Fixed EventSeatingSection to check for currentEvent existence before rendering
+- [X] [T042-D] [US3] Removed NavUser component from sidebar footer (user profile at bottom of sidebar)
+- [X] [T042-E] [US3] Removed unused SidebarFooter import from app-sidebar.tsx
+- [X] [T042-F] [US3] Fixed seating layout modal - added media gallery selector to choose from existing event media
+- [X] [T042-G] [US3] Added type="button" to all Button components in SeatingLayoutModal to prevent form submission/page reload
+- [X] [T042-H] [US3] Uncommented seating_layout_image_url field in Event model (backend/app/models/event.py)
+- [X] [T042-I] [US3] Fixed async handling in SeatingLayoutModal - waits for API update before closing modal
+- [X] [T042-J] [US3] Added console logging for debugging layout image upload/selection
+- [X] [T042-K] [US3] Hide native file input in SeatingLayoutModal when no image selected, show custom "Choose File" button in empty state
+- [X] [T042-L] [US3] Added "Remove Image" button next to preview in SeatingLayoutModal
+- [X] [T042-M] [US3] Event group title changed from "Event: {name}" to just "Event" for cleaner UI
 
 **Verification Checklist**:
-- [ ] "Event: [Name]" group appears in sidebar when event selected
-- [ ] Event group label updates when different event selected
-- [ ] Event group disappears when no event selected
-- [ ] All 9 event sections appear in navigation group
-- [ ] Each section has appropriate icon
-- [ ] Placeholder badge counts display correctly
-- [ ] Clicking event section navigates to correct route
-- [ ] Horizontal tabs removed from event pages
-- [ ] Navigation groups persist collapsed/expanded state
-- [ ] All groups default to expanded on first visit
+- [X] "Event" group appears in sidebar when event selected
+- [X] Event group label shows "Event" without event name
+- [X] Event group disappears when no event selected
+- [X] All 9 event sections appear in navigation group
+- [X] Each section has appropriate icon
+- [X] Placeholder badge counts display correctly ("--")
+- [X] Clicking event section navigates to correct route
+- [X] Horizontal tabs removed from event pages
+- [X] Navigation groups persist collapsed/expanded state
+- [X] All groups default to expanded on first visit
+- [X] Seating page loads properly on first click (no infinite spinner)
+- [X] EventEditPage shows "Loading event..." while event data is being fetched
+- [X] Seating layout modal allows selecting image from existing media gallery
+- [X] Selected layout image persists after page reload
+- [X] User profile component removed from sidebar footer
+- [X] All modal buttons prevent form submission
 
 ---
 

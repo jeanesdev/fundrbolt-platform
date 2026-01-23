@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 import {
@@ -33,29 +33,73 @@ import {
   type NavGroup as NavGroupProps,
 } from './types'
 
-export function NavGroup({ title, items }: NavGroupProps) {
+export function NavGroup({ title, items, defaultCollapsed }: NavGroupProps) {
   const { state, isMobile } = useSidebar()
   const href = useLocation({ select: (location) => location.href })
-  return (
-    <SidebarGroup>
-      <SidebarGroupLabel>{title}</SidebarGroupLabel>
-      <SidebarMenu>
-        {items.map((item) => {
-          const key = `${item.title}-${item.url}`
-
-          if (!item.items)
-            return <SidebarMenuLink key={key} item={item} href={href} />
-
-          if (state === 'collapsed' && !isMobile)
-            return (
-              <SidebarMenuCollapsedDropdown key={key} item={item} href={href} />
-            )
-
-          return <SidebarMenuCollapsible key={key} item={item} href={href} />
-        })}
-      </SidebarMenu>
-    </SidebarGroup>
+  const storageKey = useMemo(
+    () => `fundrbolt-nav-group-${slugify(title)}-collapsed`,
+    [title]
   )
+
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return Boolean(defaultCollapsed)
+    const stored = window.localStorage.getItem(storageKey)
+    if (stored === null) return Boolean(defaultCollapsed)
+    return stored === 'true'
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(storageKey, isCollapsed ? 'true' : 'false')
+  }, [isCollapsed, storageKey])
+
+  const handleToggle = useCallback(() => {
+    setIsCollapsed((prev) => !prev)
+  }, [])
+
+  return (
+    <Collapsible open={!isCollapsed} onOpenChange={(open) => setIsCollapsed(!open)}>
+      <SidebarGroup>
+        <div className='flex items-center justify-between px-2 py-1.5'>
+          <SidebarGroupLabel>{title}</SidebarGroupLabel>
+          <button
+            type='button'
+            onClick={handleToggle}
+            className='text-muted-foreground hover:text-foreground rounded-md p-1 transition-colors'
+            aria-label={isCollapsed ? `Expand ${title}` : `Collapse ${title}`}
+          >
+            <ChevronRight
+              className={`size-4 transition-transform ${!isCollapsed ? 'rotate-90' : ''}`}
+            />
+          </button>
+        </div>
+        <CollapsibleContent>
+          <SidebarMenu>
+            {items.map((item) => {
+              const key = `${item.title}-${item.url}`
+
+              if (!item.items)
+                return <SidebarMenuLink key={key} item={item} href={href} />
+
+              if (state === 'collapsed' && !isMobile)
+                return (
+                  <SidebarMenuCollapsedDropdown key={key} item={item} href={href} />
+                )
+
+              return <SidebarMenuCollapsible key={key} item={item} href={href} />
+            })}
+          </SidebarMenu>
+        </CollapsibleContent>
+      </SidebarGroup>
+    </Collapsible>
+  )
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
 }
 
 function NavBadge({ children }: { children: ReactNode }) {

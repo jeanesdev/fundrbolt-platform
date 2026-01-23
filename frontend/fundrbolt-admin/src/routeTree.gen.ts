@@ -31,11 +31,11 @@ import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-p
 import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_authenticated/route'
 import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
+import { Route as AuthenticatedEventsRouteRouteImport } from './routes/_authenticated/events/route'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedNposIndexRouteImport } from './routes/_authenticated/npos/index'
 import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events/index'
-import { Route as EventsEventIdSeatingRouteImport } from './routes/events/$eventId/seating'
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
@@ -45,11 +45,21 @@ import { Route as AuthenticatedNposCreateRouteImport } from './routes/_authentic
 import { Route as AuthenticatedEventsCreateRouteImport } from './routes/_authenticated/events/create'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedAdminNpoApplicationsRouteImport } from './routes/_authenticated/admin/npo-applications'
+import { Route as AuthenticatedEventsEventIdRouteRouteImport } from './routes/_authenticated/events/$eventId/route'
 import { Route as AuthenticatedUsersUserIdIndexRouteImport } from './routes/_authenticated/users/$userId/index'
 import { Route as AuthenticatedNposNpoIdIndexRouteImport } from './routes/_authenticated/npos/$npoId.index'
 import { Route as AuthenticatedEventsEventIdIndexRouteImport } from './routes/_authenticated/events/$eventId/index'
 import { Route as AuthenticatedNposNpoIdEditRouteImport } from './routes/_authenticated/npos/$npoId/edit'
+import { Route as AuthenticatedEventsEventIdTicketsRouteImport } from './routes/_authenticated/events/$eventId/tickets'
+import { Route as AuthenticatedEventsEventIdSponsorsRouteImport } from './routes/_authenticated/events/$eventId/sponsors'
+import { Route as AuthenticatedEventsEventIdSeatingRouteImport } from './routes/_authenticated/events/$eventId/seating'
+import { Route as AuthenticatedEventsEventIdRegistrationsRouteImport } from './routes/_authenticated/events/$eventId/registrations'
+import { Route as AuthenticatedEventsEventIdMediaRouteImport } from './routes/_authenticated/events/$eventId/media'
+import { Route as AuthenticatedEventsEventIdLinksRouteImport } from './routes/_authenticated/events/$eventId/links'
+import { Route as AuthenticatedEventsEventIdFoodRouteImport } from './routes/_authenticated/events/$eventId/food'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events/$eventId/edit'
+import { Route as AuthenticatedEventsEventIdDetailsRouteImport } from './routes/_authenticated/events/$eventId/details'
+import { Route as AuthenticatedEventsEventIdAuctionItemsRouteImport } from './routes/_authenticated/events/$eventId/auction-items'
 import { Route as AuthenticatedEventsEventIdTicketsIndexRouteImport } from './routes/_authenticated/events/$eventId/tickets/index'
 import { Route as AuthenticatedEventsEventIdAuctionItemsIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-items/index'
 import { Route as AuthenticatedEventsEventIdTicketsCreateRouteImport } from './routes/_authenticated/events/$eventId/tickets/create'
@@ -167,6 +177,12 @@ const AuthenticatedSettingsRouteRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEventsRouteRoute =
+  AuthenticatedEventsRouteRouteImport.update({
+    id: '/events',
+    path: '/events',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
   id: '/users/',
   path: '/users/',
@@ -185,15 +201,10 @@ const AuthenticatedNposIndexRoute = AuthenticatedNposIndexRouteImport.update({
 } as any)
 const AuthenticatedEventsIndexRoute =
   AuthenticatedEventsIndexRouteImport.update({
-    id: '/events/',
-    path: '/events/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedEventsRouteRoute,
   } as any)
-const EventsEventIdSeatingRoute = EventsEventIdSeatingRouteImport.update({
-  id: '/events/$eventId/seating',
-  path: '/events/$eventId/seating',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ClerkAuthenticatedUserManagementRoute =
   ClerkAuthenticatedUserManagementRouteImport.update({
     id: '/user-management',
@@ -229,9 +240,9 @@ const AuthenticatedNposCreateRoute = AuthenticatedNposCreateRouteImport.update({
 } as any)
 const AuthenticatedEventsCreateRoute =
   AuthenticatedEventsCreateRouteImport.update({
-    id: '/events/create',
-    path: '/events/create',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/create',
+    path: '/create',
+    getParentRoute: () => AuthenticatedEventsRouteRoute,
   } as any)
 const AuthenticatedErrorsErrorRoute =
   AuthenticatedErrorsErrorRouteImport.update({
@@ -244,6 +255,12 @@ const AuthenticatedAdminNpoApplicationsRoute =
     id: '/admin/npo-applications',
     path: '/admin/npo-applications',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEventsEventIdRouteRoute =
+  AuthenticatedEventsEventIdRouteRouteImport.update({
+    id: '/$eventId',
+    path: '/$eventId',
+    getParentRoute: () => AuthenticatedEventsRouteRoute,
   } as any)
 const AuthenticatedUsersUserIdIndexRoute =
   AuthenticatedUsersUserIdIndexRouteImport.update({
@@ -259,9 +276,9 @@ const AuthenticatedNposNpoIdIndexRoute =
   } as any)
 const AuthenticatedEventsEventIdIndexRoute =
   AuthenticatedEventsEventIdIndexRouteImport.update({
-    id: '/events/$eventId/',
-    path: '/events/$eventId/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
 const AuthenticatedNposNpoIdEditRoute =
   AuthenticatedNposNpoIdEditRouteImport.update({
@@ -269,58 +286,113 @@ const AuthenticatedNposNpoIdEditRoute =
     path: '/npos/$npoId/edit',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEventsEventIdTicketsRoute =
+  AuthenticatedEventsEventIdTicketsRouteImport.update({
+    id: '/tickets',
+    path: '/tickets',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
+const AuthenticatedEventsEventIdSponsorsRoute =
+  AuthenticatedEventsEventIdSponsorsRouteImport.update({
+    id: '/sponsors',
+    path: '/sponsors',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
+const AuthenticatedEventsEventIdSeatingRoute =
+  AuthenticatedEventsEventIdSeatingRouteImport.update({
+    id: '/seating',
+    path: '/seating',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
+const AuthenticatedEventsEventIdRegistrationsRoute =
+  AuthenticatedEventsEventIdRegistrationsRouteImport.update({
+    id: '/registrations',
+    path: '/registrations',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
+const AuthenticatedEventsEventIdMediaRoute =
+  AuthenticatedEventsEventIdMediaRouteImport.update({
+    id: '/media',
+    path: '/media',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
+const AuthenticatedEventsEventIdLinksRoute =
+  AuthenticatedEventsEventIdLinksRouteImport.update({
+    id: '/links',
+    path: '/links',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
+const AuthenticatedEventsEventIdFoodRoute =
+  AuthenticatedEventsEventIdFoodRouteImport.update({
+    id: '/food',
+    path: '/food',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdEditRoute =
   AuthenticatedEventsEventIdEditRouteImport.update({
-    id: '/events/$eventId/edit',
-    path: '/events/$eventId/edit',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
+const AuthenticatedEventsEventIdDetailsRoute =
+  AuthenticatedEventsEventIdDetailsRouteImport.update({
+    id: '/details',
+    path: '/details',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
+const AuthenticatedEventsEventIdAuctionItemsRoute =
+  AuthenticatedEventsEventIdAuctionItemsRouteImport.update({
+    id: '/auction-items',
+    path: '/auction-items',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
 const AuthenticatedEventsEventIdTicketsIndexRoute =
   AuthenticatedEventsEventIdTicketsIndexRouteImport.update({
-    id: '/events/$eventId/tickets/',
-    path: '/events/$eventId/tickets/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedEventsEventIdTicketsRoute,
   } as any)
 const AuthenticatedEventsEventIdAuctionItemsIndexRoute =
   AuthenticatedEventsEventIdAuctionItemsIndexRouteImport.update({
-    id: '/events/$eventId/auction-items/',
-    path: '/events/$eventId/auction-items/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedEventsEventIdAuctionItemsRoute,
   } as any)
 const AuthenticatedEventsEventIdTicketsCreateRoute =
   AuthenticatedEventsEventIdTicketsCreateRouteImport.update({
-    id: '/events/$eventId/tickets/create',
-    path: '/events/$eventId/tickets/create',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/create',
+    path: '/create',
+    getParentRoute: () => AuthenticatedEventsEventIdTicketsRoute,
   } as any)
 const AuthenticatedEventsEventIdAuctionItemsCreateRoute =
   AuthenticatedEventsEventIdAuctionItemsCreateRouteImport.update({
-    id: '/events/$eventId/auction-items/create',
-    path: '/events/$eventId/auction-items/create',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/create',
+    path: '/create',
+    getParentRoute: () => AuthenticatedEventsEventIdAuctionItemsRoute,
   } as any)
 const AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute =
   AuthenticatedEventsEventIdAuctionItemsItemIdIndexRouteImport.update({
-    id: '/events/$eventId/auction-items/$itemId/',
-    path: '/events/$eventId/auction-items/$itemId/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/$itemId/',
+    path: '/$itemId/',
+    getParentRoute: () => AuthenticatedEventsEventIdAuctionItemsRoute,
   } as any)
 const AuthenticatedEventsEventIdTicketsPackageIdEditRoute =
   AuthenticatedEventsEventIdTicketsPackageIdEditRouteImport.update({
-    id: '/events/$eventId/tickets/$packageId/edit',
-    path: '/events/$eventId/tickets/$packageId/edit',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/$packageId/edit',
+    path: '/$packageId/edit',
+    getParentRoute: () => AuthenticatedEventsEventIdTicketsRoute,
   } as any)
 const AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute =
   AuthenticatedEventsEventIdAuctionItemsItemIdEditRouteImport.update({
-    id: '/events/$eventId/auction-items/$itemId/edit',
-    path: '/events/$eventId/auction-items/$itemId/edit',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/$itemId/edit',
+    path: '/$itemId/edit',
+    getParentRoute: () => AuthenticatedEventsEventIdAuctionItemsRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/events': typeof AuthenticatedEventsRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -338,6 +410,7 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/invitations/accept': typeof InvitationsAcceptRoute
+  '/events/$eventId': typeof AuthenticatedEventsEventIdRouteRouteWithChildren
   '/admin/npo-applications': typeof AuthenticatedAdminNpoApplicationsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/events/create': typeof AuthenticatedEventsCreateRoute
@@ -347,12 +420,20 @@ export interface FileRoutesByFullPath {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
-  '/events/$eventId/seating': typeof EventsEventIdSeatingRoute
   '/events/': typeof AuthenticatedEventsIndexRoute
   '/npos/': typeof AuthenticatedNposIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsRouteWithChildren
+  '/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
+  '/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
+  '/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
+  '/events/$eventId/media': typeof AuthenticatedEventsEventIdMediaRoute
+  '/events/$eventId/registrations': typeof AuthenticatedEventsEventIdRegistrationsRoute
+  '/events/$eventId/seating': typeof AuthenticatedEventsEventIdSeatingRoute
+  '/events/$eventId/sponsors': typeof AuthenticatedEventsEventIdSponsorsRoute
+  '/events/$eventId/tickets': typeof AuthenticatedEventsEventIdTicketsRouteWithChildren
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
   '/events/$eventId/': typeof AuthenticatedEventsEventIdIndexRoute
   '/npos/$npoId/': typeof AuthenticatedNposNpoIdIndexRoute
@@ -393,12 +474,18 @@ export interface FileRoutesByTo {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
-  '/events/$eventId/seating': typeof EventsEventIdSeatingRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/npos': typeof AuthenticatedNposIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
+  '/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
+  '/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
+  '/events/$eventId/media': typeof AuthenticatedEventsEventIdMediaRoute
+  '/events/$eventId/registrations': typeof AuthenticatedEventsEventIdRegistrationsRoute
+  '/events/$eventId/seating': typeof AuthenticatedEventsEventIdSeatingRoute
+  '/events/$eventId/sponsors': typeof AuthenticatedEventsEventIdSponsorsRoute
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
   '/events/$eventId': typeof AuthenticatedEventsEventIdIndexRoute
   '/npos/$npoId': typeof AuthenticatedNposNpoIdIndexRoute
@@ -415,6 +502,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/clerk': typeof ClerkRouteRouteWithChildren
+  '/_authenticated/events': typeof AuthenticatedEventsRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/clerk/(auth)': typeof ClerkauthRouteRouteWithChildren
   '/clerk/_authenticated': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -435,6 +523,7 @@ export interface FileRoutesById {
   '/(errors)/503': typeof errors503Route
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/events/$eventId': typeof AuthenticatedEventsEventIdRouteRouteWithChildren
   '/_authenticated/admin/npo-applications': typeof AuthenticatedAdminNpoApplicationsRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/events/create': typeof AuthenticatedEventsCreateRoute
@@ -444,12 +533,20 @@ export interface FileRoutesById {
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
-  '/events/$eventId/seating': typeof EventsEventIdSeatingRoute
   '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
   '/_authenticated/npos/': typeof AuthenticatedNposIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsRouteWithChildren
+  '/_authenticated/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
+  '/_authenticated/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
+  '/_authenticated/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
+  '/_authenticated/events/$eventId/media': typeof AuthenticatedEventsEventIdMediaRoute
+  '/_authenticated/events/$eventId/registrations': typeof AuthenticatedEventsEventIdRegistrationsRoute
+  '/_authenticated/events/$eventId/seating': typeof AuthenticatedEventsEventIdSeatingRoute
+  '/_authenticated/events/$eventId/sponsors': typeof AuthenticatedEventsEventIdSponsorsRoute
+  '/_authenticated/events/$eventId/tickets': typeof AuthenticatedEventsEventIdTicketsRouteWithChildren
   '/_authenticated/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
   '/_authenticated/events/$eventId/': typeof AuthenticatedEventsEventIdIndexRoute
   '/_authenticated/npos/$npoId/': typeof AuthenticatedNposNpoIdIndexRoute
@@ -467,6 +564,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/clerk'
+    | '/events'
     | '/settings'
     | '/forgot-password'
     | '/otp'
@@ -484,6 +582,7 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/invitations/accept'
+    | '/events/$eventId'
     | '/admin/npo-applications'
     | '/errors/$error'
     | '/events/create'
@@ -493,12 +592,20 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
-    | '/events/$eventId/seating'
     | '/events/'
     | '/npos/'
     | '/settings/'
     | '/users/'
+    | '/events/$eventId/auction-items'
+    | '/events/$eventId/details'
     | '/events/$eventId/edit'
+    | '/events/$eventId/food'
+    | '/events/$eventId/links'
+    | '/events/$eventId/media'
+    | '/events/$eventId/registrations'
+    | '/events/$eventId/seating'
+    | '/events/$eventId/sponsors'
+    | '/events/$eventId/tickets'
     | '/npos/$npoId/edit'
     | '/events/$eventId/'
     | '/npos/$npoId/'
@@ -539,12 +646,18 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
-    | '/events/$eventId/seating'
     | '/events'
     | '/npos'
     | '/settings'
     | '/users'
+    | '/events/$eventId/details'
     | '/events/$eventId/edit'
+    | '/events/$eventId/food'
+    | '/events/$eventId/links'
+    | '/events/$eventId/media'
+    | '/events/$eventId/registrations'
+    | '/events/$eventId/seating'
+    | '/events/$eventId/sponsors'
     | '/npos/$npoId/edit'
     | '/events/$eventId'
     | '/npos/$npoId'
@@ -560,6 +673,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/clerk'
+    | '/_authenticated/events'
     | '/_authenticated/settings'
     | '/clerk/(auth)'
     | '/clerk/_authenticated'
@@ -580,6 +694,7 @@ export interface FileRouteTypes {
     | '/(errors)/503'
     | '/invitations/accept'
     | '/_authenticated/'
+    | '/_authenticated/events/$eventId'
     | '/_authenticated/admin/npo-applications'
     | '/_authenticated/errors/$error'
     | '/_authenticated/events/create'
@@ -589,12 +704,20 @@ export interface FileRouteTypes {
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
     | '/clerk/_authenticated/user-management'
-    | '/events/$eventId/seating'
     | '/_authenticated/events/'
     | '/_authenticated/npos/'
     | '/_authenticated/settings/'
     | '/_authenticated/users/'
+    | '/_authenticated/events/$eventId/auction-items'
+    | '/_authenticated/events/$eventId/details'
     | '/_authenticated/events/$eventId/edit'
+    | '/_authenticated/events/$eventId/food'
+    | '/_authenticated/events/$eventId/links'
+    | '/_authenticated/events/$eventId/media'
+    | '/_authenticated/events/$eventId/registrations'
+    | '/_authenticated/events/$eventId/seating'
+    | '/_authenticated/events/$eventId/sponsors'
+    | '/_authenticated/events/$eventId/tickets'
     | '/_authenticated/npos/$npoId/edit'
     | '/_authenticated/events/$eventId/'
     | '/_authenticated/npos/$npoId/'
@@ -627,7 +750,6 @@ export interface RootRouteChildren {
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
   InvitationsAcceptRoute: typeof InvitationsAcceptRoute
-  EventsEventIdSeatingRoute: typeof EventsEventIdSeatingRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -786,6 +908,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/events': {
+      id: '/_authenticated/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof AuthenticatedEventsRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/users/': {
       id: '/_authenticated/users/'
       path: '/users'
@@ -809,17 +938,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/events/': {
       id: '/_authenticated/events/'
-      path: '/events'
+      path: '/'
       fullPath: '/events/'
       preLoaderRoute: typeof AuthenticatedEventsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/events/$eventId/seating': {
-      id: '/events/$eventId/seating'
-      path: '/events/$eventId/seating'
-      fullPath: '/events/$eventId/seating'
-      preLoaderRoute: typeof EventsEventIdSeatingRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedEventsRouteRoute
     }
     '/clerk/_authenticated/user-management': {
       id: '/clerk/_authenticated/user-management'
@@ -865,10 +987,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/events/create': {
       id: '/_authenticated/events/create'
-      path: '/events/create'
+      path: '/create'
       fullPath: '/events/create'
       preLoaderRoute: typeof AuthenticatedEventsCreateRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedEventsRouteRoute
     }
     '/_authenticated/errors/$error': {
       id: '/_authenticated/errors/$error'
@@ -883,6 +1005,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/npo-applications'
       preLoaderRoute: typeof AuthenticatedAdminNpoApplicationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/events/$eventId': {
+      id: '/_authenticated/events/$eventId'
+      path: '/$eventId'
+      fullPath: '/events/$eventId'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdRouteRouteImport
+      parentRoute: typeof AuthenticatedEventsRouteRoute
     }
     '/_authenticated/users/$userId/': {
       id: '/_authenticated/users/$userId/'
@@ -900,10 +1029,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/events/$eventId/': {
       id: '/_authenticated/events/$eventId/'
-      path: '/events/$eventId'
+      path: '/'
       fullPath: '/events/$eventId/'
       preLoaderRoute: typeof AuthenticatedEventsEventIdIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
     '/_authenticated/npos/$npoId/edit': {
       id: '/_authenticated/npos/$npoId/edit'
@@ -912,64 +1041,231 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNposNpoIdEditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/events/$eventId/tickets': {
+      id: '/_authenticated/events/$eventId/tickets'
+      path: '/tickets'
+      fullPath: '/events/$eventId/tickets'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdTicketsRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
+    '/_authenticated/events/$eventId/sponsors': {
+      id: '/_authenticated/events/$eventId/sponsors'
+      path: '/sponsors'
+      fullPath: '/events/$eventId/sponsors'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdSponsorsRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
+    '/_authenticated/events/$eventId/seating': {
+      id: '/_authenticated/events/$eventId/seating'
+      path: '/seating'
+      fullPath: '/events/$eventId/seating'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdSeatingRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
+    '/_authenticated/events/$eventId/registrations': {
+      id: '/_authenticated/events/$eventId/registrations'
+      path: '/registrations'
+      fullPath: '/events/$eventId/registrations'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdRegistrationsRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
+    '/_authenticated/events/$eventId/media': {
+      id: '/_authenticated/events/$eventId/media'
+      path: '/media'
+      fullPath: '/events/$eventId/media'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdMediaRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
+    '/_authenticated/events/$eventId/links': {
+      id: '/_authenticated/events/$eventId/links'
+      path: '/links'
+      fullPath: '/events/$eventId/links'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdLinksRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
+    '/_authenticated/events/$eventId/food': {
+      id: '/_authenticated/events/$eventId/food'
+      path: '/food'
+      fullPath: '/events/$eventId/food'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdFoodRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
     '/_authenticated/events/$eventId/edit': {
       id: '/_authenticated/events/$eventId/edit'
-      path: '/events/$eventId/edit'
+      path: '/edit'
       fullPath: '/events/$eventId/edit'
       preLoaderRoute: typeof AuthenticatedEventsEventIdEditRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
+    '/_authenticated/events/$eventId/details': {
+      id: '/_authenticated/events/$eventId/details'
+      path: '/details'
+      fullPath: '/events/$eventId/details'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdDetailsRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
+    '/_authenticated/events/$eventId/auction-items': {
+      id: '/_authenticated/events/$eventId/auction-items'
+      path: '/auction-items'
+      fullPath: '/events/$eventId/auction-items'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdAuctionItemsRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
     '/_authenticated/events/$eventId/tickets/': {
       id: '/_authenticated/events/$eventId/tickets/'
-      path: '/events/$eventId/tickets'
+      path: '/'
       fullPath: '/events/$eventId/tickets/'
       preLoaderRoute: typeof AuthenticatedEventsEventIdTicketsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedEventsEventIdTicketsRoute
     }
     '/_authenticated/events/$eventId/auction-items/': {
       id: '/_authenticated/events/$eventId/auction-items/'
-      path: '/events/$eventId/auction-items'
+      path: '/'
       fullPath: '/events/$eventId/auction-items/'
       preLoaderRoute: typeof AuthenticatedEventsEventIdAuctionItemsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedEventsEventIdAuctionItemsRoute
     }
     '/_authenticated/events/$eventId/tickets/create': {
       id: '/_authenticated/events/$eventId/tickets/create'
-      path: '/events/$eventId/tickets/create'
+      path: '/create'
       fullPath: '/events/$eventId/tickets/create'
       preLoaderRoute: typeof AuthenticatedEventsEventIdTicketsCreateRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedEventsEventIdTicketsRoute
     }
     '/_authenticated/events/$eventId/auction-items/create': {
       id: '/_authenticated/events/$eventId/auction-items/create'
-      path: '/events/$eventId/auction-items/create'
+      path: '/create'
       fullPath: '/events/$eventId/auction-items/create'
       preLoaderRoute: typeof AuthenticatedEventsEventIdAuctionItemsCreateRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedEventsEventIdAuctionItemsRoute
     }
     '/_authenticated/events/$eventId/auction-items/$itemId/': {
       id: '/_authenticated/events/$eventId/auction-items/$itemId/'
-      path: '/events/$eventId/auction-items/$itemId'
+      path: '/$itemId'
       fullPath: '/events/$eventId/auction-items/$itemId/'
       preLoaderRoute: typeof AuthenticatedEventsEventIdAuctionItemsItemIdIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedEventsEventIdAuctionItemsRoute
     }
     '/_authenticated/events/$eventId/tickets/$packageId/edit': {
       id: '/_authenticated/events/$eventId/tickets/$packageId/edit'
-      path: '/events/$eventId/tickets/$packageId/edit'
+      path: '/$packageId/edit'
       fullPath: '/events/$eventId/tickets/$packageId/edit'
       preLoaderRoute: typeof AuthenticatedEventsEventIdTicketsPackageIdEditRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedEventsEventIdTicketsRoute
     }
     '/_authenticated/events/$eventId/auction-items/$itemId/edit': {
       id: '/_authenticated/events/$eventId/auction-items/$itemId/edit'
-      path: '/events/$eventId/auction-items/$itemId/edit'
+      path: '/$itemId/edit'
       fullPath: '/events/$eventId/auction-items/$itemId/edit'
       preLoaderRoute: typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedEventsEventIdAuctionItemsRoute
     }
   }
 }
+
+interface AuthenticatedEventsEventIdAuctionItemsRouteChildren {
+  AuthenticatedEventsEventIdAuctionItemsCreateRoute: typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
+  AuthenticatedEventsEventIdAuctionItemsIndexRoute: typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
+  AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute: typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
+  AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute: typeof AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute
+}
+
+const AuthenticatedEventsEventIdAuctionItemsRouteChildren: AuthenticatedEventsEventIdAuctionItemsRouteChildren =
+  {
+    AuthenticatedEventsEventIdAuctionItemsCreateRoute:
+      AuthenticatedEventsEventIdAuctionItemsCreateRoute,
+    AuthenticatedEventsEventIdAuctionItemsIndexRoute:
+      AuthenticatedEventsEventIdAuctionItemsIndexRoute,
+    AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute:
+      AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute,
+    AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute:
+      AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute,
+  }
+
+const AuthenticatedEventsEventIdAuctionItemsRouteWithChildren =
+  AuthenticatedEventsEventIdAuctionItemsRoute._addFileChildren(
+    AuthenticatedEventsEventIdAuctionItemsRouteChildren,
+  )
+
+interface AuthenticatedEventsEventIdTicketsRouteChildren {
+  AuthenticatedEventsEventIdTicketsCreateRoute: typeof AuthenticatedEventsEventIdTicketsCreateRoute
+  AuthenticatedEventsEventIdTicketsIndexRoute: typeof AuthenticatedEventsEventIdTicketsIndexRoute
+  AuthenticatedEventsEventIdTicketsPackageIdEditRoute: typeof AuthenticatedEventsEventIdTicketsPackageIdEditRoute
+}
+
+const AuthenticatedEventsEventIdTicketsRouteChildren: AuthenticatedEventsEventIdTicketsRouteChildren =
+  {
+    AuthenticatedEventsEventIdTicketsCreateRoute:
+      AuthenticatedEventsEventIdTicketsCreateRoute,
+    AuthenticatedEventsEventIdTicketsIndexRoute:
+      AuthenticatedEventsEventIdTicketsIndexRoute,
+    AuthenticatedEventsEventIdTicketsPackageIdEditRoute:
+      AuthenticatedEventsEventIdTicketsPackageIdEditRoute,
+  }
+
+const AuthenticatedEventsEventIdTicketsRouteWithChildren =
+  AuthenticatedEventsEventIdTicketsRoute._addFileChildren(
+    AuthenticatedEventsEventIdTicketsRouteChildren,
+  )
+
+interface AuthenticatedEventsEventIdRouteRouteChildren {
+  AuthenticatedEventsEventIdAuctionItemsRoute: typeof AuthenticatedEventsEventIdAuctionItemsRouteWithChildren
+  AuthenticatedEventsEventIdDetailsRoute: typeof AuthenticatedEventsEventIdDetailsRoute
+  AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
+  AuthenticatedEventsEventIdFoodRoute: typeof AuthenticatedEventsEventIdFoodRoute
+  AuthenticatedEventsEventIdLinksRoute: typeof AuthenticatedEventsEventIdLinksRoute
+  AuthenticatedEventsEventIdMediaRoute: typeof AuthenticatedEventsEventIdMediaRoute
+  AuthenticatedEventsEventIdRegistrationsRoute: typeof AuthenticatedEventsEventIdRegistrationsRoute
+  AuthenticatedEventsEventIdSeatingRoute: typeof AuthenticatedEventsEventIdSeatingRoute
+  AuthenticatedEventsEventIdSponsorsRoute: typeof AuthenticatedEventsEventIdSponsorsRoute
+  AuthenticatedEventsEventIdTicketsRoute: typeof AuthenticatedEventsEventIdTicketsRouteWithChildren
+  AuthenticatedEventsEventIdIndexRoute: typeof AuthenticatedEventsEventIdIndexRoute
+}
+
+const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRouteRouteChildren =
+  {
+    AuthenticatedEventsEventIdAuctionItemsRoute:
+      AuthenticatedEventsEventIdAuctionItemsRouteWithChildren,
+    AuthenticatedEventsEventIdDetailsRoute:
+      AuthenticatedEventsEventIdDetailsRoute,
+    AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
+    AuthenticatedEventsEventIdFoodRoute: AuthenticatedEventsEventIdFoodRoute,
+    AuthenticatedEventsEventIdLinksRoute: AuthenticatedEventsEventIdLinksRoute,
+    AuthenticatedEventsEventIdMediaRoute: AuthenticatedEventsEventIdMediaRoute,
+    AuthenticatedEventsEventIdRegistrationsRoute:
+      AuthenticatedEventsEventIdRegistrationsRoute,
+    AuthenticatedEventsEventIdSeatingRoute:
+      AuthenticatedEventsEventIdSeatingRoute,
+    AuthenticatedEventsEventIdSponsorsRoute:
+      AuthenticatedEventsEventIdSponsorsRoute,
+    AuthenticatedEventsEventIdTicketsRoute:
+      AuthenticatedEventsEventIdTicketsRouteWithChildren,
+    AuthenticatedEventsEventIdIndexRoute: AuthenticatedEventsEventIdIndexRoute,
+  }
+
+const AuthenticatedEventsEventIdRouteRouteWithChildren =
+  AuthenticatedEventsEventIdRouteRoute._addFileChildren(
+    AuthenticatedEventsEventIdRouteRouteChildren,
+  )
+
+interface AuthenticatedEventsRouteRouteChildren {
+  AuthenticatedEventsEventIdRouteRoute: typeof AuthenticatedEventsEventIdRouteRouteWithChildren
+  AuthenticatedEventsCreateRoute: typeof AuthenticatedEventsCreateRoute
+  AuthenticatedEventsIndexRoute: typeof AuthenticatedEventsIndexRoute
+}
+
+const AuthenticatedEventsRouteRouteChildren: AuthenticatedEventsRouteRouteChildren =
+  {
+    AuthenticatedEventsEventIdRouteRoute:
+      AuthenticatedEventsEventIdRouteRouteWithChildren,
+    AuthenticatedEventsCreateRoute: AuthenticatedEventsCreateRoute,
+    AuthenticatedEventsIndexRoute: AuthenticatedEventsIndexRoute,
+  }
+
+const AuthenticatedEventsRouteRouteWithChildren =
+  AuthenticatedEventsRouteRoute._addFileChildren(
+    AuthenticatedEventsRouteRouteChildren,
+  )
 
 interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsConsentRoute: typeof AuthenticatedSettingsConsentRoute
@@ -990,59 +1286,32 @@ const AuthenticatedSettingsRouteRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedEventsRouteRoute: typeof AuthenticatedEventsRouteRouteWithChildren
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminNpoApplicationsRoute: typeof AuthenticatedAdminNpoApplicationsRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
-  AuthenticatedEventsCreateRoute: typeof AuthenticatedEventsCreateRoute
   AuthenticatedNposCreateRoute: typeof AuthenticatedNposCreateRoute
-  AuthenticatedEventsIndexRoute: typeof AuthenticatedEventsIndexRoute
   AuthenticatedNposIndexRoute: typeof AuthenticatedNposIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
-  AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
   AuthenticatedNposNpoIdEditRoute: typeof AuthenticatedNposNpoIdEditRoute
-  AuthenticatedEventsEventIdIndexRoute: typeof AuthenticatedEventsEventIdIndexRoute
   AuthenticatedNposNpoIdIndexRoute: typeof AuthenticatedNposNpoIdIndexRoute
   AuthenticatedUsersUserIdIndexRoute: typeof AuthenticatedUsersUserIdIndexRoute
-  AuthenticatedEventsEventIdAuctionItemsCreateRoute: typeof AuthenticatedEventsEventIdAuctionItemsCreateRoute
-  AuthenticatedEventsEventIdTicketsCreateRoute: typeof AuthenticatedEventsEventIdTicketsCreateRoute
-  AuthenticatedEventsEventIdAuctionItemsIndexRoute: typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
-  AuthenticatedEventsEventIdTicketsIndexRoute: typeof AuthenticatedEventsEventIdTicketsIndexRoute
-  AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute: typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
-  AuthenticatedEventsEventIdTicketsPackageIdEditRoute: typeof AuthenticatedEventsEventIdTicketsPackageIdEditRoute
-  AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute: typeof AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedEventsRouteRoute: AuthenticatedEventsRouteRouteWithChildren,
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminNpoApplicationsRoute:
     AuthenticatedAdminNpoApplicationsRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
-  AuthenticatedEventsCreateRoute: AuthenticatedEventsCreateRoute,
   AuthenticatedNposCreateRoute: AuthenticatedNposCreateRoute,
-  AuthenticatedEventsIndexRoute: AuthenticatedEventsIndexRoute,
   AuthenticatedNposIndexRoute: AuthenticatedNposIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
-  AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
   AuthenticatedNposNpoIdEditRoute: AuthenticatedNposNpoIdEditRoute,
-  AuthenticatedEventsEventIdIndexRoute: AuthenticatedEventsEventIdIndexRoute,
   AuthenticatedNposNpoIdIndexRoute: AuthenticatedNposNpoIdIndexRoute,
   AuthenticatedUsersUserIdIndexRoute: AuthenticatedUsersUserIdIndexRoute,
-  AuthenticatedEventsEventIdAuctionItemsCreateRoute:
-    AuthenticatedEventsEventIdAuctionItemsCreateRoute,
-  AuthenticatedEventsEventIdTicketsCreateRoute:
-    AuthenticatedEventsEventIdTicketsCreateRoute,
-  AuthenticatedEventsEventIdAuctionItemsIndexRoute:
-    AuthenticatedEventsEventIdAuctionItemsIndexRoute,
-  AuthenticatedEventsEventIdTicketsIndexRoute:
-    AuthenticatedEventsEventIdTicketsIndexRoute,
-  AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute:
-    AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute,
-  AuthenticatedEventsEventIdTicketsPackageIdEditRoute:
-    AuthenticatedEventsEventIdTicketsPackageIdEditRoute,
-  AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute:
-    AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -1110,7 +1379,6 @@ const rootRouteChildren: RootRouteChildren = {
   errors500Route: errors500Route,
   errors503Route: errors503Route,
   InvitationsAcceptRoute: InvitationsAcceptRoute,
-  EventsEventIdSeatingRoute: EventsEventIdSeatingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

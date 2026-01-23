@@ -341,9 +341,9 @@ export function SeatingTabContent({
         onOpenChange={setLayoutModalOpen}
         eventId={eventId}
         currentImageUrl={layoutImageUrl}
-        onImageUploaded={(url) => {
+        onImageUploaded={async (url) => {
           if (onLayoutImageUpdate) {
-            onLayoutImageUpdate(url)
+            await onLayoutImageUpdate(url)
           }
         }}
       />
