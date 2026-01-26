@@ -1,5 +1,10 @@
-import { createContext, useContext } from 'react'
-import type { EventDetail, EventLinkCreateRequest, EventUpdateRequest, FoodOptionCreateRequest } from '@/types/event'
+import { createContext } from 'react'
+import type {
+  EventDetail,
+  EventLinkCreateRequest,
+  EventUpdateRequest,
+  FoodOptionCreateRequest,
+} from '@/types/event'
 import type { NPOBranding } from '@/services/event-service'
 import type { AuctionItem } from '@/types/auction-item'
 
@@ -26,22 +31,4 @@ export interface EventWorkspaceContextValue {
   fetchAuctionItems: (eventId: string) => Promise<void>
 }
 
-const EventWorkspaceContext = createContext<EventWorkspaceContextValue | null>(null)
-
-export function EventWorkspaceProvider({
-  value,
-  children,
-}: {
-  value: EventWorkspaceContextValue
-  children: React.ReactNode
-}) {
-  return <EventWorkspaceContext.Provider value={value}>{children}</EventWorkspaceContext.Provider>
-}
-
-export function useEventWorkspace() {
-  const context = useContext(EventWorkspaceContext)
-  if (!context) {
-    throw new Error('useEventWorkspace must be used within an EventWorkspaceProvider')
-  }
-  return context
-}
+export const EventWorkspaceContext = createContext<EventWorkspaceContextValue | null>(null)

@@ -5,6 +5,7 @@
  * Validates luminance calculation, contrast ratios, and text color selection.
  */
 
+import { colors as brandColors } from '@fundrbolt/shared/assets'
 import { describe, expect, it } from 'vitest'
 import {
   calculateLuminance,
@@ -14,28 +15,69 @@ import {
   meetsWCAGAA,
 } from '../colors'
 
+const WHITE = brandColors.secondary.white
+const BLACK = brandColors.background.dark
+const NAVY = brandColors.palette.ink
+const PRIMARY_NAVY = brandColors.primary.navy
+const MAGENTA = brandColors.accent.magenta
+const AQUA = brandColors.accent.aqua
+const SUNSET = brandColors.palette.sunset
+const COBALT = brandColors.palette.cobalt
+const SILVER = brandColors.palette.silver
+const CLOUD = brandColors.palette.cloud
+const FOG = brandColors.palette.fog
+const GOLD = brandColors.primary.gold
+const MIDNIGHT = brandColors.palette.midnightSlate
+const OBSIDIAN = brandColors.palette.obsidian
+
+const WHITE_RGB = { r: 255, g: 255, b: 255 } as const
+const BLACK_RGB = { r: 0, g: 0, b: 0 } as const
+const MAGENTA_RGB = { r: 243, g: 90, b: 255 } as const
+const AQUA_RGB = { r: 23, g: 204, b: 252 } as const
+const SUNSET_RGB = { r: 255, g: 85, b: 51 } as const
+const PRIMARY_NAVY_RGB = { r: 17, g: 41, b: 76 } as const
+
+const stripHash = (hex: string) => hex.replace('#', '').toUpperCase()
+const ensureShortHex = (hex: string) => {
+  if (hex.length !== 6 || hex[0] !== hex[1] || hex[2] !== hex[3] || hex[4] !== hex[5]) {
+    throw new Error('Color cannot be represented as 3-digit hex')
+  }
+  return `${hex[0]}${hex[2]}${hex[4]}`
+}
+
+const WHITE_SHORT = ensureShortHex(stripHash(WHITE))
+const BLACK_SHORT = ensureShortHex(stripHash(BLACK))
+const SUNSET_SHORT = ensureShortHex(stripHash(SUNSET))
+
+const WHITE_NO_PREFIX = stripHash(WHITE)
+const NAVY_NO_PREFIX = stripHash(PRIMARY_NAVY)
+const MAGENTA_NO_PREFIX = stripHash(MAGENTA)
+
 describe('Color Utilities', () => {
   describe('hexToRgb', () => {
     it('should parse 6-digit hex with # prefix', () => {
-      expect(hexToRgb('#FFFFFF')).toEqual({ r: 255, g: 255, b: 255 })
-      expect(hexToRgb('#000000')).toEqual({ r: 0, g: 0, b: 0 })
-      expect(hexToRgb('#FF5733')).toEqual({ r: 255, g: 87, b: 51 })
+      expect(hexToRgb(WHITE)).toEqual(WHITE_RGB)
+      expect(hexToRgb(BLACK)).toEqual(BLACK_RGB)
+      expect(hexToRgb(MAGENTA)).toEqual(MAGENTA_RGB)
+      expect(hexToRgb(AQUA)).toEqual(AQUA_RGB)
     })
 
     it('should parse 6-digit hex without # prefix', () => {
-      expect(hexToRgb('FFFFFF')).toEqual({ r: 255, g: 255, b: 255 })
-      expect(hexToRgb('000000')).toEqual({ r: 0, g: 0, b: 0 })
+      expect(hexToRgb(WHITE_NO_PREFIX)).toEqual(WHITE_RGB)
+      expect(hexToRgb(NAVY_NO_PREFIX)).toEqual(PRIMARY_NAVY_RGB)
+      expect(hexToRgb(MAGENTA_NO_PREFIX)).toEqual(MAGENTA_RGB)
     })
 
     it('should parse 3-digit hex with # prefix', () => {
-      expect(hexToRgb('#FFF')).toEqual({ r: 255, g: 255, b: 255 })
-      expect(hexToRgb('#000')).toEqual({ r: 0, g: 0, b: 0 })
-      expect(hexToRgb('#F53')).toEqual({ r: 255, g: 85, b: 51 })
+      expect(hexToRgb(`#${WHITE_SHORT}`)).toEqual(WHITE_RGB)
+      expect(hexToRgb(`#${BLACK_SHORT}`)).toEqual(BLACK_RGB)
+      expect(hexToRgb(`#${SUNSET_SHORT}`)).toEqual(SUNSET_RGB)
     })
 
     it('should parse 3-digit hex without # prefix', () => {
-      expect(hexToRgb('FFF')).toEqual({ r: 255, g: 255, b: 255 })
-      expect(hexToRgb('000')).toEqual({ r: 0, g: 0, b: 0 })
+      expect(hexToRgb(WHITE_SHORT)).toEqual(WHITE_RGB)
+      expect(hexToRgb(BLACK_SHORT)).toEqual(BLACK_RGB)
+      expect(hexToRgb(SUNSET_SHORT)).toEqual(SUNSET_RGB)
     })
 
     it('should return null for invalid hex', () => {
@@ -98,80 +140,72 @@ describe('Color Utilities', () => {
 
   describe('getContrastingTextColor', () => {
     it('should return white for dark backgrounds', () => {
-      expect(getContrastingTextColor('#000000')).toBe('#FFFFFF') // Black
-      expect(getContrastingTextColor('#1E293B')).toBe('#FFFFFF') // Navy
-      expect(getContrastingTextColor('#333333')).toBe('#FFFFFF') // Dark gray
+      expect(getContrastingTextColor(BLACK)).toBe(WHITE) // Black
+      expect(getContrastingTextColor(NAVY)).toBe(WHITE) // Navy
+      expect(getContrastingTextColor(OBSIDIAN)).toBe(WHITE) // Dark gray equivalent
+      expect(getContrastingTextColor(MIDNIGHT)).toBe(WHITE)
     })
 
     it('should return navy for light backgrounds', () => {
-      expect(getContrastingTextColor('#FFFFFF')).toBe('#1E293B') // White
-      expect(getContrastingTextColor('#F0F0F0')).toBe('#1E293B') // Light gray
-      expect(getContrastingTextColor('#FFFF00')).toBe('#1E293B') // Yellow
+      expect(getContrastingTextColor(WHITE)).toBe(NAVY) // White
+      expect(getContrastingTextColor(CLOUD)).toBe(NAVY) // Light gray
+      expect(getContrastingTextColor(GOLD)).toBe(NAVY) // Gold highlight
     })
 
     it('should return white for mid-tone backgrounds', () => {
-      // Most mid-tone colors work better with white text
-      expect(getContrastingTextColor('#808080')).toBe('#FFFFFF') // Gray
+      expect(getContrastingTextColor(COBALT)).toBe(WHITE)
     })
 
     it('should fallback to white for invalid hex', () => {
-      expect(getContrastingTextColor('invalid')).toBe('#FFFFFF')
+      expect(getContrastingTextColor('invalid')).toBe(WHITE)
     })
   })
 
   describe('meetsWCAGAA', () => {
     it('should pass for white text on black background', () => {
-      expect(meetsWCAGAA('#FFFFFF', '#000000')).toBe(true)
+      expect(meetsWCAGAA(WHITE, BLACK)).toBe(true)
     })
 
     it('should pass for black text on white background', () => {
-      expect(meetsWCAGAA('#000000', '#FFFFFF')).toBe(true)
+      expect(meetsWCAGAA(BLACK, WHITE)).toBe(true)
     })
 
     it('should pass for navy text on white background', () => {
-      expect(meetsWCAGAA('#1E293B', '#FFFFFF')).toBe(true)
+      expect(meetsWCAGAA(NAVY, WHITE)).toBe(true)
     })
 
     it('should pass for white text on navy background', () => {
-      expect(meetsWCAGAA('#FFFFFF', '#1E293B')).toBe(true)
+      expect(meetsWCAGAA(WHITE, NAVY)).toBe(true)
     })
 
     it('should fail for similar colors', () => {
-      expect(meetsWCAGAA('#CCCCCC', '#DDDDDD')).toBe(false)
-      expect(meetsWCAGAA('#333333', '#444444')).toBe(false)
+      expect(meetsWCAGAA(SILVER, CLOUD)).toBe(false)
+      expect(meetsWCAGAA(FOG, SILVER)).toBe(false)
     })
 
     it('should fail for light gray on white', () => {
-      expect(meetsWCAGAA('#EEEEEE', '#FFFFFF')).toBe(false)
+      expect(meetsWCAGAA(CLOUD, WHITE)).toBe(false)
     })
 
     it('should return false for invalid hex colors', () => {
-      expect(meetsWCAGAA('invalid', '#FFFFFF')).toBe(false)
-      expect(meetsWCAGAA('#FFFFFF', 'invalid')).toBe(false)
+      expect(meetsWCAGAA('invalid', WHITE)).toBe(false)
+      expect(meetsWCAGAA(WHITE, 'invalid')).toBe(false)
     })
   })
 
-  describe('Real-world branding colors', () => {
-    it('should provide accessible text color for common branding colors', () => {
-      // Corporate blue
-      const blue = '#0066CC'
-      const blueText = getContrastingTextColor(blue)
-      expect(meetsWCAGAA(blueText, blue)).toBe(true)
+  describe('Brand accent colors', () => {
+    it('should provide accessible text color for accent palette', () => {
+      const accentSet = [
+        brandColors.accent.plum,
+        brandColors.accent.aqua,
+        brandColors.accent.violet,
+        brandColors.accent.magenta,
+      ]
 
-      // Corporate red
-      const red = '#CC0000'
-      const redText = getContrastingTextColor(red)
-      expect(meetsWCAGAA(redText, red)).toBe(true)
-
-      // Corporate green
-      const green = '#00AA00'
-      const greenText = getContrastingTextColor(green)
-      expect(meetsWCAGAA(greenText, green)).toBe(true)
-
-      // Corporate purple
-      const purple = '#663399'
-      const purpleText = getContrastingTextColor(purple)
-      expect(meetsWCAGAA(purpleText, purple)).toBe(true)
+      accentSet.forEach(color => {
+        const textColor = getContrastingTextColor(color)
+        expect(meetsWCAGAA(textColor, color)).toBe(true)
+      })
     })
   })
 })

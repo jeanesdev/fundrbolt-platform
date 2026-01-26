@@ -3,7 +3,7 @@ import { DiscountType, type PromoCodeCreate, type PromoCodeRead, type PromoCodeU
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 interface PromoCodeFormDialogProps {
@@ -36,7 +36,7 @@ export function PromoCodeFormDialog({
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
@@ -50,7 +50,8 @@ export function PromoCodeFormDialog({
     },
   });
 
-  const discountType = watch("discount_type");
+  const discountType =
+    useWatch({ control, name: "discount_type" }) ?? DiscountType.PERCENTAGE;
 
   // Reset form when dialog opens/closes or editing code changes
   useEffect(() => {

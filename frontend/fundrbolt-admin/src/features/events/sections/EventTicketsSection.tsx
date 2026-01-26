@@ -1,5 +1,5 @@
 import { TicketPackagesIndexPage } from '../tickets/TicketPackagesIndexPage'
-import { useEventWorkspace } from '../EventWorkspaceContext'
+import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventTicketsSection() {
   const { currentEvent } = useEventWorkspace()

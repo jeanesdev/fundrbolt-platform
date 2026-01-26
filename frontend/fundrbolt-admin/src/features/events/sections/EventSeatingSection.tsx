@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useEventWorkspace } from '../EventWorkspaceContext'
+import { useEventWorkspace } from '../useEventWorkspace'
 import { SeatingTabContent } from '@/components/seating/SeatingTabContent'
 import { toast } from 'sonner'
 
@@ -39,19 +39,15 @@ export function EventSeatingSection() {
           maxGuestsPerTable={currentEvent?.max_guests_per_table ?? undefined}
           layoutImageUrl={currentEvent?.seating_layout_image_url ?? null}
           onLayoutImageUpdate={async (url) => {
-            console.log('[EventSeatingSection] Updating seating_layout_image_url to:', url)
             try {
-              const updatedEvent = await updateEvent(currentEvent.id, {
+              await updateEvent(currentEvent.id, {
                 seating_layout_image_url: url,
               })
-              console.log('[EventSeatingSection] Update response:', updatedEvent)
-              console.log('[EventSeatingSection] Updated seating_layout_image_url:', updatedEvent?.seating_layout_image_url)
               
               // Reload to ensure we have latest data
               await loadEventById(currentEvent.id)
               // Note: loadEventById returns void, check currentEvent after store updates
             } catch (error) {
-              console.error('[EventSeatingSection] Failed to update layout image:', error)
               toast.error('Failed to update layout image')
               throw error // Re-throw so modal knows it failed
             }

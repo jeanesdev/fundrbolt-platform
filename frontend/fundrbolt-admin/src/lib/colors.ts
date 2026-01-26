@@ -1,3 +1,5 @@
+import { colors as brandColors } from '@fundrbolt/shared/assets'
+
 /**
  * Color Utilities
  * WCAG AA Compliant Contrast Calculation
@@ -89,21 +91,23 @@ export function getContrastingTextColor(bgHex: string): string {
   const rgb = hexToRgb(bgHex)
   if (!rgb) {
     // Fallback to white if hex parsing fails
-    return '#FFFFFF'
+    return brandColors.secondary.white
   }
 
   const bgLuminance = calculateLuminance(rgb.r, rgb.g, rgb.b)
 
-  // White text (#FFFFFF, luminance ~1.0)
-  const whiteContrast = getContrastRatio(bgLuminance, 1.0)
+  const whiteRgb = hexToRgb(brandColors.secondary.white)!
+  const whiteLuminance = calculateLuminance(whiteRgb.r, whiteRgb.g, whiteRgb.b)
+  const whiteContrast = getContrastRatio(bgLuminance, whiteLuminance)
 
-  // Navy text (#1E293B, luminance ~0.013)
-  const navyRgb = hexToRgb('#1E293B')!
+  const navyRgb = hexToRgb(brandColors.palette.ink)!
   const navyLuminance = calculateLuminance(navyRgb.r, navyRgb.g, navyRgb.b)
   const navyContrast = getContrastRatio(bgLuminance, navyLuminance)
 
   // Return color with better contrast (prefer white for better readability)
-  return whiteContrast >= navyContrast ? '#FFFFFF' : '#1E293B'
+  return whiteContrast >= navyContrast
+    ? brandColors.secondary.white
+    : brandColors.palette.ink
 }
 
 /**

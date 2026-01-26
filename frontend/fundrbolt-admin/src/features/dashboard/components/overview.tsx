@@ -1,3 +1,4 @@
+import { colors as brandColors } from '@fundrbolt/shared/assets'
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts'
 
 const data = [
@@ -57,13 +58,13 @@ export function Overview() {
       <BarChart data={data}>
         <XAxis
           dataKey='name'
-          stroke='#888888'
+          stroke={brandColors.text.muted}
           fontSize={12}
           tickLine={false}
           axisLine={false}
         />
         <YAxis
-          stroke='#888888'
+          stroke={brandColors.text.muted}
           fontSize={12}
           tickLine={false}
           axisLine={false}

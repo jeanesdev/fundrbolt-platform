@@ -21,9 +21,7 @@ import {
   Users,
   Utensils,
 } from 'lucide-react'
-import { sidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
-import { NavUser } from './nav-user'
 import { NpoSelector } from './NpoSelector'
 import { EventSelector } from './EventSelector'
 import type { NavGroup as NavGroupType } from './types'

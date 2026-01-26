@@ -3,6 +3,7 @@
  * Comprehensive branding configuration with colors, logo, and social media links
  */
 
+import { colors as brandColors } from '@fundrbolt/shared/assets'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,6 +23,12 @@ import { HexColorPicker } from 'react-colorful'
 import { useDropzone } from 'react-dropzone'
 import Cropper, { type Area } from 'react-easy-crop'
 import { toast } from 'sonner'
+
+const DEFAULT_PRIMARY = brandColors.primary.navy
+const DEFAULT_SECONDARY = brandColors.accent.violet
+const DEFAULT_BACKGROUND = brandColors.secondary.white
+const DEFAULT_ACCENT = brandColors.primary.gold
+const WHITE_LOWER = brandColors.secondary.white.toLowerCase()
 
 // Helper to get full logo URL
 function getLogoUrl(logoPath: string | null): string | null {
@@ -178,10 +185,10 @@ export default function NpoBrandingPage() {
   const [saving, setSaving] = useState(false)
 
   // Form state
-  const [primaryColor, setPrimaryColor] = useState('#3B82F6')
-  const [secondaryColor, setSecondaryColor] = useState('#8B5CF6')
-  const [backgroundColor, setBackgroundColor] = useState('#FFFFFF')
-  const [accentColor, setAccentColor] = useState('#F59E0B')
+  const [primaryColor, setPrimaryColor] = useState(DEFAULT_PRIMARY)
+  const [secondaryColor, setSecondaryColor] = useState(DEFAULT_SECONDARY)
+  const [backgroundColor, setBackgroundColor] = useState(DEFAULT_BACKGROUND)
+  const [accentColor, setAccentColor] = useState(DEFAULT_ACCENT)
   const [logoUrl, setLogoUrl] = useState<string | null | undefined>(null)
   const [socialLinks, setSocialLinks] = useState({
     facebook: '',
@@ -384,6 +391,8 @@ export default function NpoBrandingPage() {
   // Calculate contrast ratio
   const contrastRatio = getContrastRatio(primaryColor, secondaryColor)
   const contrastMeetsWCAG = contrastRatio >= 4.5
+  const isDefaultBackground = backgroundColor.toLowerCase() === WHITE_LOWER
+  const cardBodyColor = isDefaultBackground ? brandColors.text.muted : brandColors.palette.midnightSlate
 
   if (loading) {
     return (
@@ -439,7 +448,7 @@ export default function NpoBrandingPage() {
                     <Input
                       value={primaryColor}
                       onChange={(e) => setPrimaryColor(e.target.value)}
-                      placeholder="#3B82F6"
+                      placeholder={DEFAULT_PRIMARY.toUpperCase()}
                       pattern="^#[0-9A-Fa-f]{6}$"
                     />
                     <div
@@ -463,7 +472,7 @@ export default function NpoBrandingPage() {
                     <Input
                       value={secondaryColor}
                       onChange={(e) => setSecondaryColor(e.target.value)}
-                      placeholder="#8B5CF6"
+                      placeholder={DEFAULT_SECONDARY.toUpperCase()}
                       pattern="^#[0-9A-Fa-f]{6}$"
                     />
                     <div
@@ -487,7 +496,7 @@ export default function NpoBrandingPage() {
                     <Input
                       value={backgroundColor}
                       onChange={(e) => setBackgroundColor(e.target.value)}
-                      placeholder="#FFFFFF"
+                      placeholder={DEFAULT_BACKGROUND.toUpperCase()}
                       pattern="^#[0-9A-Fa-f]{6}$"
                     />
                     <div
@@ -511,7 +520,7 @@ export default function NpoBrandingPage() {
                     <Input
                       value={accentColor}
                       onChange={(e) => setAccentColor(e.target.value)}
-                      placeholder="#F59E0B"
+                      placeholder={DEFAULT_ACCENT.toUpperCase()}
                       pattern="^#[0-9A-Fa-f]{6}$"
                     />
                     <div
@@ -711,7 +720,7 @@ export default function NpoBrandingPage() {
                 className="rounded-lg p-4 sm:p-6"
                 style={{
                   backgroundColor: primaryColor,
-                  color: '#ffffff',
+                  color: brandColors.secondary.white,
                 }}
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
@@ -768,15 +777,15 @@ export default function NpoBrandingPage() {
                 <h4 className="font-semibold" style={{ color: primaryColor }}>
                   Sample Card
                 </h4>
-                <p className="mt-2 text-sm" style={{ color: backgroundColor === '#FFFFFF' ? '#6b7280' : '#374151' }}>
+                <p className="mt-2 text-sm" style={{ color: cardBodyColor }}>
                   This is how content will look with your brand colors.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Badge style={{ backgroundColor: primaryColor, color: '#ffffff' }}>Primary</Badge>
-                  <Badge style={{ backgroundColor: secondaryColor, color: '#ffffff' }}>
+                  <Badge style={{ backgroundColor: primaryColor, color: brandColors.secondary.white }}>Primary</Badge>
+                  <Badge style={{ backgroundColor: secondaryColor, color: brandColors.secondary.white }}>
                     Secondary
                   </Badge>
-                  <Badge style={{ backgroundColor: accentColor, color: '#ffffff' }}>
+                  <Badge style={{ backgroundColor: accentColor, color: brandColors.secondary.white }}>
                     Accent
                   </Badge>
                 </div>
@@ -796,7 +805,7 @@ export default function NpoBrandingPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="rounded-full p-2 transition-colors hover:opacity-80"
-                          style={{ backgroundColor: primaryColor, color: '#ffffff' }}
+                          style={{ backgroundColor: primaryColor, color: brandColors.secondary.white }}
                         >
                           <Facebook className="h-4 w-4" />
                         </a>
@@ -807,7 +816,7 @@ export default function NpoBrandingPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="rounded-full p-2 transition-colors hover:opacity-80"
-                          style={{ backgroundColor: primaryColor, color: '#ffffff' }}
+                          style={{ backgroundColor: primaryColor, color: brandColors.secondary.white }}
                         >
                           <Twitter className="h-4 w-4" />
                         </a>
@@ -818,7 +827,7 @@ export default function NpoBrandingPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="rounded-full p-2 transition-colors hover:opacity-80"
-                          style={{ backgroundColor: primaryColor, color: '#ffffff' }}
+                          style={{ backgroundColor: primaryColor, color: brandColors.secondary.white }}
                         >
                           <Instagram className="h-4 w-4" />
                         </a>
@@ -829,7 +838,7 @@ export default function NpoBrandingPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="rounded-full p-2 transition-colors hover:opacity-80"
-                          style={{ backgroundColor: primaryColor, color: '#ffffff' }}
+                          style={{ backgroundColor: primaryColor, color: brandColors.secondary.white }}
                         >
                           <Linkedin className="h-4 w-4" />
                         </a>

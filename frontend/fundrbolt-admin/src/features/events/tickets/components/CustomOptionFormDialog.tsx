@@ -35,7 +35,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -90,9 +90,9 @@ export function CustomOptionFormDialog({
       display_order: option?.display_order,
     },
   });
-
-  const optionType = form.watch('option_type');
-  const choices = form.watch('choices') || [];
+  const optionType =
+    useWatch({ control: form.control, name: 'option_type' }) ?? 'boolean';
+  const choices = useWatch({ control: form.control, name: 'choices' }) || [];
 
   // Reset form when dialog opens/closes or option changes
   useEffect(() => {

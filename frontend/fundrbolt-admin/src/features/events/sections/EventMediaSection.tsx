@@ -1,9 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { MediaUploader } from '../components/MediaUploader'
-import { useEventWorkspace } from '../EventWorkspaceContext'
+import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventMediaSection() {
-  console.log('[EventMediaSection] REAL COMPONENT LOADED - NOT A STUB!')
   const {
     currentEvent,
     handleMediaUpload,

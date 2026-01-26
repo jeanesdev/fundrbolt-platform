@@ -3,7 +3,7 @@ import { InviteGuestDialog } from '@/components/admin/InviteGuestDialog'
 import { MealSummaryCard } from '@/components/admin/MealSummaryCard'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useEventWorkspace } from '../EventWorkspaceContext'
+import { useEventWorkspace } from '../useEventWorkspace'
 import { toast } from 'sonner'
 
 export function EventRegistrationsSection() {

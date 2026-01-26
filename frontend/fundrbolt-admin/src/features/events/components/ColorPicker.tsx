@@ -3,6 +3,7 @@
  * Simple color picker with hex input and visual preview
  */
 
+import { colors as brandColors } from '@fundrbolt/shared/assets'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useState } from 'react'
@@ -41,7 +42,7 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
         <input
           id={`color-${label}`}
           type="color"
-          value={hexInput || '#000000'}
+          value={hexInput || brandColors.background.dark}
           onChange={(e) => handleColorChange(e.target.value)}
           className="h-10 w-10 rounded border border-input cursor-pointer"
           title={`Pick ${label} Color`}
@@ -51,7 +52,7 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
       {/* Hex code input */}
       <Input
         type="text"
-        placeholder="#000000"
+        placeholder={brandColors.background.dark.toUpperCase()}
         value={hexInput}
         onChange={(e) => handleHexChange(e.target.value)}
         className="flex-1 font-mono"

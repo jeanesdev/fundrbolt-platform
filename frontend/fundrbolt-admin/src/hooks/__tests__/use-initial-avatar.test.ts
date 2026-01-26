@@ -4,6 +4,7 @@
  * Tests for initial generation and WCAG compliance.
  */
 
+import { colors as brandColors } from '@fundrbolt/shared/assets'
 import { renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { useInitialAvatar } from '../use-initial-avatar'
@@ -54,10 +55,10 @@ describe('useInitialAvatar', () => {
   describe('Branding Colors', () => {
     it('should use branding primary color as background', () => {
       const { result } = renderHook(() =>
-        useInitialAvatar({ name: 'Test', brandingPrimaryColor: '#0066CC' })
+        useInitialAvatar({ name: 'Test', brandingPrimaryColor: brandColors.palette.cobalt })
       )
 
-      expect(result.current.bgColor).toBe('#0066CC')
+      expect(result.current.bgColor).toBe(brandColors.palette.cobalt)
     })
 
     it('should fallback to navy when no branding color', () => {
@@ -65,7 +66,7 @@ describe('useInitialAvatar', () => {
         useInitialAvatar({ name: 'Test' })
       )
 
-      expect(result.current.bgColor).toBe('#1E293B')
+      expect(result.current.bgColor).toBe(brandColors.palette.ink)
     })
 
     it('should fallback to navy for invalid branding color', () => {
@@ -73,32 +74,32 @@ describe('useInitialAvatar', () => {
         useInitialAvatar({ name: 'Test', brandingPrimaryColor: 'invalid' })
       )
 
-      expect(result.current.bgColor).toBe('#1E293B')
+      expect(result.current.bgColor).toBe(brandColors.palette.ink)
     })
   })
 
   describe('Text Color Contrast', () => {
     it('should use white text for dark backgrounds', () => {
       const { result } = renderHook(() =>
-        useInitialAvatar({ name: 'Test', brandingPrimaryColor: '#000000' })
+        useInitialAvatar({ name: 'Test', brandingPrimaryColor: brandColors.background.dark })
       )
 
-      expect(result.current.textColor).toBe('#FFFFFF')
+      expect(result.current.textColor).toBe(brandColors.secondary.white)
     })
 
     it('should use navy text for light backgrounds', () => {
       const { result } = renderHook(() =>
-        useInitialAvatar({ name: 'Test', brandingPrimaryColor: '#FFFFFF' })
+        useInitialAvatar({ name: 'Test', brandingPrimaryColor: brandColors.secondary.white })
       )
 
-      expect(result.current.textColor).toBe('#1E293B')
+      expect(result.current.textColor).toBe(brandColors.palette.ink)
     })
   })
 
   describe('Border', () => {
     it('should have border for navy background with white text', () => {
       const { result } = renderHook(() =>
-        useInitialAvatar({ name: 'Test', brandingPrimaryColor: '#1E293B' })
+        useInitialAvatar({ name: 'Test', brandingPrimaryColor: brandColors.palette.ink })
       )
 
       expect(result.current.hasBorder).toBe(true)

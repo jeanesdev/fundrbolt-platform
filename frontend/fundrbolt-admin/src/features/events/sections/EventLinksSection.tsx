@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { EventLinkForm } from '../components/EventLinkForm'
-import { useEventWorkspace } from '../EventWorkspaceContext'
+import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventLinksSection() {
   const { currentEvent, handleLinkCreate, handleLinkDelete } = useEventWorkspace()

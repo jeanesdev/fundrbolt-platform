@@ -1,4 +1,5 @@
 import { type SVGProps } from 'react'
+import { colors } from '@fundrbolt/shared/assets'
 
 export function IconLayoutCompact(props: SVGProps<SVGSVGElement>) {
   return (
@@ -18,7 +19,7 @@ export function IconLayoutCompact(props: SVGProps<SVGSVGElement>) {
         strokeLinecap='round'
         strokeMiterlimit={10}
       />
-      <g stroke='#fff' strokeLinecap='round' strokeMiterlimit={10}>
+      <g stroke={colors.secondary.white} strokeLinecap='round' strokeMiterlimit={10}>
         <path
           fill='none'
           opacity={0.66}
@@ -37,7 +38,13 @@ export function IconLayoutCompact(props: SVGProps<SVGSVGElement>) {
           strokeWidth='2px'
           d='M7.26 17.39L8.37 17.39'
         />
-        <circle cx={7.81} cy={7.25} r={1.16} fill='#fff' opacity={0.8} />
+        <circle
+          cx={7.81}
+          cy={7.25}
+          r={1.16}
+          fill={colors.secondary.white}
+          opacity={0.8}
+        />
       </g>
       <path
         fill='none'

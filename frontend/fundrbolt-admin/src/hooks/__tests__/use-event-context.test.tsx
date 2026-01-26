@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useEventContext } from '../use-event-context'
 import { eventApi } from '@/services/event-service'
 import * as useNpoContextModule from '../use-npo-context'
+import type { Event } from '@/types/event'
 import type { ReactNode } from 'react'
 
 // Mock dependencies
@@ -19,6 +20,8 @@ vi.mock('@/services/event-service')
 
 describe('useEventContext', () => {
   let queryClient: QueryClient
+
+  const toEventList = (items: Array<Partial<Event>>) => items as Event[]
 
   const createWrapper = () => {
     const wrapper = ({ children }: { children: ReactNode }) => (
@@ -58,7 +61,7 @@ describe('useEventContext', () => {
 
     // Mock eventApi.listEvents to return empty list by default
     vi.mocked(eventApi.listEvents).mockResolvedValue({
-      items: [],
+      items: toEventList([]),
       total: 0,
       page: 1,
       per_page: 1000,
@@ -139,7 +142,7 @@ describe('useEventContext', () => {
       ]
 
       vi.mocked(eventApi.listEvents).mockResolvedValue({
-        items: mockEvents as any,
+        items: toEventList(mockEvents),
         total: 2,
         page: 1,
         per_page: 1000,
@@ -170,7 +173,7 @@ describe('useEventContext', () => {
       ]
 
       vi.mocked(eventApi.listEvents).mockResolvedValue({
-        items: mockEvents as any,
+        items: toEventList(mockEvents),
         total: 1,
         page: 1,
         per_page: 1000,
@@ -203,7 +206,7 @@ describe('useEventContext', () => {
       ]
 
       vi.mocked(eventApi.listEvents).mockResolvedValue({
-        items: mockEvents as any,
+        items: toEventList(mockEvents),
         total: 1,
         page: 1,
         per_page: 1000,
@@ -240,7 +243,7 @@ describe('useEventContext', () => {
       ]
 
       vi.mocked(eventApi.listEvents).mockResolvedValue({
-        items: mockEvents as any,
+        items: toEventList(mockEvents),
         total: 2,
         page: 1,
         per_page: 1000,
@@ -267,7 +270,7 @@ describe('useEventContext', () => {
       }))
 
       vi.mocked(eventApi.listEvents).mockResolvedValue({
-        items: mockEvents as any,
+        items: toEventList(mockEvents),
         total: 15,
         page: 1,
         per_page: 1000,
@@ -294,7 +297,7 @@ describe('useEventContext', () => {
       }))
 
       vi.mocked(eventApi.listEvents).mockResolvedValue({
-        items: mockEvents as any,
+        items: toEventList(mockEvents),
         total: 5,
         page: 1,
         per_page: 1000,

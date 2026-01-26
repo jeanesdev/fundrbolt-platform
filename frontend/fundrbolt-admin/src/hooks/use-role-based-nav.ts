@@ -49,7 +49,7 @@ export interface UseRoleBasedNavReturn {
 export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const { role, isSuperAdmin, isNpoAdmin, isEventCoordinator, isStaff } = useAuth()
   const { selectedNpoId } = useNpoContext()
-  const { selectedEventId, selectedEventName, selectedEventSlug } = useEventContext()
+  const { selectedEventId, selectedEventSlug } = useEventContext()
   const { data: eventStats } = useEventStats(selectedEventId)
 
   // Determine NPO link based on selected NPO

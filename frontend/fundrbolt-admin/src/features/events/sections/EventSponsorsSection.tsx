@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SponsorsTab } from '../components/SponsorsTab'
-import { useEventWorkspace } from '../EventWorkspaceContext'
+import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventSponsorsSection() {
   const { currentEvent } = useEventWorkspace()

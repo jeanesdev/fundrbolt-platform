@@ -13,6 +13,7 @@
  * - Adds border for navy-on-white theme when contrast insufficient
  */
 
+import { colors as brandColors } from '@fundrbolt/shared/assets'
 import { getContrastingTextColor, meetsWCAGAA } from '@/lib/colors'
 import { useMemo } from 'react'
 
@@ -77,14 +78,14 @@ export function useInitialAvatar({
       bgColor = brandingPrimaryColor
     } else {
       // Fallback to navy
-      bgColor = '#1E293B'
+      bgColor = brandColors.palette.ink
     }
 
     // Auto-calculate contrasting text color
     const textColor = getContrastingTextColor(bgColor)
 
     // Check if we need a border (navy background on white text needs border)
-    const needsBorder = bgColor === '#1E293B' && textColor === '#FFFFFF'
+    const needsBorder = bgColor === brandColors.palette.ink && textColor === brandColors.secondary.white
     // Alternative: Check WCAG compliance and add border if barely passing
     const wcagCompliant = meetsWCAGAA(textColor, bgColor)
     const hasBorder = needsBorder || !wcagCompliant

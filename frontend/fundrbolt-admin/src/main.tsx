@@ -1,15 +1,15 @@
-import { StrictMode } from 'react'
-import ReactDOM from 'react-dom/client'
-import { AxiosError } from 'axios'
+import { handleServerError } from '@/lib/handle-server-error'
+import { useAuthStore } from '@/stores/auth-store'
 import {
   QueryCache,
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { AxiosError } from 'axios'
+import { StrictMode } from 'react'
+import ReactDOM from 'react-dom/client'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { handleServerError } from '@/lib/handle-server-error'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
@@ -17,9 +17,6 @@ import { ThemeProvider } from './context/theme-provider'
 import { routeTree } from './routeTree.gen'
 // Styles
 import './styles/index.css'
-
-// Force cache bust - routes should load section components, not stubs
-console.log('[ROUTE DEBUG] routeTree loaded at:', new Date().toISOString())
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -3,12 +3,7 @@
  * Page for editing an existing event with media, links, and food options
  */
 
-import { AttendeeListTable } from '@/components/admin/AttendeeListTable'
-import { InviteGuestDialog } from '@/components/admin/InviteGuestDialog'
-import { MealSummaryCard } from '@/components/admin/MealSummaryCard'
-import { SeatingTabContent } from '@/components/seating/SeatingTabContent'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuctionItemStore } from '@/stores/auctionItemStore'
 import { useEventStore } from '@/stores/event-store'
 import { useSponsorStore } from '@/stores/sponsorStore'
@@ -18,32 +13,19 @@ import type {
   FoodOptionCreateRequest,
 } from '@/types/event'
 import { Outlet, useNavigate, useParams, useLocation } from '@tanstack/react-router'
-import { ArrowLeft, Clock } from 'lucide-react'
+import { Clock } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { AuctionItemList } from './components/AuctionItemList'
-import { EventForm } from './components/EventForm'
-import { EventLinkForm } from './components/EventLinkForm'
-import { FoodOptionSelector } from './components/FoodOptionSelector'
-import { MediaUploader } from './components/MediaUploader'
-import { SponsorsTab } from './components/SponsorsTab'
-import { TicketPackagesIndexPage } from './tickets/TicketPackagesIndexPage'
-import { EventWorkspaceProvider } from './EventWorkspaceContext'
+import { EventWorkspaceProvider } from './EventWorkspaceProvider'
 
 export function EventEditPage() {
-  console.log('[EventEditPage] Rendering - this should wrap child routes')
   const navigate = useNavigate()
   const location = useLocation()
   const params = useParams({ strict: false })
   
   // Extract eventId from URL path manually as fallback
-  const pathMatch = location.pathname.match(/\/events\/([^\/]+)/)
+  const pathMatch = location.pathname.match(/\/events\/([^/]+)/)
   const eventId = (params.eventId || pathMatch?.[1]) as string
-  
-  console.log('[EventEditPage] location.pathname:', location.pathname)
-  console.log('[EventEditPage] eventId from params:', params.eventId)
-  console.log('[EventEditPage] eventId from path:', pathMatch?.[1])
-  console.log('[EventEditPage] final eventId:', eventId)
   
   const {
     currentEvent,

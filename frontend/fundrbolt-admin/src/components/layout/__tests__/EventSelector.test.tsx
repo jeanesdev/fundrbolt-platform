@@ -3,19 +3,20 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { EventSelector } from '../EventSelector'
 import { useEventContext, type UseEventContextReturn } from '@/hooks/use-event-context'
+import type { ComponentProps, ReactNode } from 'react'
 
 vi.mock('@/hooks/use-event-context')
 
 vi.mock('@/components/ui/sidebar', async () => {
   const React = await import('react')
   return {
-    SidebarMenu: ({ children }: { children: React.ReactNode }) => (
+    SidebarMenu: ({ children }: { children: ReactNode }) => (
       <ul data-testid='sidebar-menu'>{children}</ul>
     ),
-    SidebarMenuItem: ({ children }: { children: React.ReactNode }) => (
+    SidebarMenuItem: ({ children }: { children: ReactNode }) => (
       <li>{children}</li>
     ),
-    SidebarMenuButton: React.forwardRef<HTMLButtonElement, React.ComponentProps<'button'>>(
+    SidebarMenuButton: React.forwardRef<HTMLButtonElement, ComponentProps<'button'>>(
       ({ children, ...props }, ref) => (
         <button type='button' ref={ref} {...props}>
           {children}
@@ -26,34 +27,50 @@ vi.mock('@/components/ui/sidebar', async () => {
   }
 })
 
+type DropdownMenuItemProps = {
+  children: ReactNode
+  onClick?: () => void
+}
+
+type CommandInputProps = {
+  placeholder?: string
+  value?: string
+  onValueChange?: (value: string) => void
+}
+
+type CommandItemProps = {
+  children: ReactNode
+  onSelect?: () => void
+}
+
 vi.mock('@/components/ui/dropdown-menu', () => {
   return {
-    DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    DropdownMenuItem: ({ children, onClick }: any) => (
+    DropdownMenu: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    DropdownMenuTrigger: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    DropdownMenuContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    DropdownMenuItem: ({ children, onClick }: DropdownMenuItemProps) => (
       <button type='button' onClick={onClick}>
         {children}
       </button>
     ),
-    DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    DropdownMenuLabel: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   }
 })
 
 vi.mock('@/components/ui/command', () => {
   return {
-    Command: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    CommandInput: ({ placeholder, value, onValueChange }: any) => (
+    Command: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    CommandInput: ({ placeholder, value, onValueChange }: CommandInputProps) => (
       <input
         placeholder={placeholder}
         value={value}
         onChange={(event) => onValueChange?.(event.target.value)}
       />
     ),
-    CommandList: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    CommandEmpty: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    CommandGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    CommandItem: ({ children, onSelect }: any) => (
+    CommandList: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    CommandEmpty: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    CommandGroup: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    CommandItem: ({ children, onSelect }: CommandItemProps) => (
       <button type='button' onClick={() => onSelect?.()}>
         {children}
       </button>

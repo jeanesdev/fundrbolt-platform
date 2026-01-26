@@ -18,15 +18,7 @@ import { mediaApi } from '@/services/event-service'
 import { Loader2, Maximize2, Upload, X, ImageIcon } from 'lucide-react'
 import { useRef, useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import type { EventMedia } from '@/types/event'
 import { useEventStore } from '@/stores/event-store'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 
 interface SeatingLayoutModalProps {
   open: boolean
@@ -43,7 +35,6 @@ export function SeatingLayoutModal({
   currentImageUrl,
   onImageUploaded,
 }: SeatingLayoutModalProps) {
-  console.log('🔴 SeatingLayoutModal RENDERED - open:', open, 'currentImageUrl:', currentImageUrl)
   
   const [uploading, setUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(
@@ -56,30 +47,17 @@ export function SeatingLayoutModal({
   const eventMedia = currentEvent?.media || []
 
   useEffect(() => {
-    console.log('[SeatingLayoutModal] currentImageUrl prop changed to:', currentImageUrl)
     setPreviewUrl(currentImageUrl || null)
   }, [currentImageUrl])
 
-  useEffect(() => {
-    if (open) {
-      console.log('[SeatingLayoutModal] Modal opened with currentImageUrl:', currentImageUrl)
-      console.log('[SeatingLayoutModal] previewUrl state:', previewUrl)
-    }
-  }, [open, currentImageUrl, previewUrl])
-
   const handleSelectFromGallery = async (mediaUrl: string) => {
-    console.log('🔥🔥🔥 GALLERY IMAGE CLICKED - URL:', mediaUrl)
-    console.log('🔥🔥🔥 About to set uploading to true')
     setPreviewUrl(mediaUrl)
     setUploading(true)
     try {
-      console.log('Calling onImageUploaded with URL:', mediaUrl)
       await onImageUploaded(mediaUrl)
-      console.log('onImageUploaded completed successfully')
       toast.success('Layout image selected from gallery')
       onOpenChange(false) // Close modal to show fresh state on reopen
-    } catch (error) {
-      console.error('Failed to set layout image:', error)
+    } catch (_error) {
       toast.error('Failed to set layout image')
       setPreviewUrl(null) // Reset preview on error
     } finally {

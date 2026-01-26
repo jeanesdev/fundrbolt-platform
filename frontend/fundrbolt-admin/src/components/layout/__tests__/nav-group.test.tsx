@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NavGroup } from '../nav-group'
@@ -12,7 +12,6 @@ vi.mock('@tanstack/react-router', () => ({
 }))
 
 vi.mock('@/components/ui/sidebar', () => {
-  const React = require('react')
   const setOpenMobile = vi.fn()
   const SidebarContext = {
     state: 'expanded',
@@ -47,7 +46,6 @@ vi.mock('@/components/ui/sidebar', () => {
 })
 
 vi.mock('@/components/ui/collapsible', () => {
-  const React = require('react')
   const CollapsibleContext = React.createContext(true)
 
   const Collapsible = ({ open = true, children }: { open?: boolean; children: React.ReactNode }) => (

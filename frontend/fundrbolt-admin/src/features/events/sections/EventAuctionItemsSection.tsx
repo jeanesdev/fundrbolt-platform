@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AuctionItemList } from '../components/AuctionItemList'
-import { useEventWorkspace } from '../EventWorkspaceContext'
+import { useEventWorkspace } from '../useEventWorkspace'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { useAuctionItemStore } from '@/stores/auctionItemStore'

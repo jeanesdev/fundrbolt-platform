@@ -62,7 +62,7 @@ export const usersColumns: ColumnDef<User>[] = [
     },
     meta: {
       className: cn(
-        'drop-shadow-[0_1px_2px_rgb(0_0_0_/_0.1)] dark:drop-shadow-[0_1px_2px_rgb(255_255_255_/_0.1)]',
+        'drop-shadow-sm dark:drop-shadow',
         'ps-0.5 max-md:sticky start-6 @4xl/content:table-cell @4xl/content:drop-shadow-none',
         'w-36'
       ),

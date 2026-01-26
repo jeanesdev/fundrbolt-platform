@@ -1,9 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { EventForm } from '../components/EventForm'
-import { useEventWorkspace } from '../EventWorkspaceContext'
+import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventDetailsSection() {
-  console.log('[EventDetailsSection] Component loaded - NOT a stub!')
   const { currentEvent, npoBranding, handleSubmit, handleCancel, isSubmitting } = useEventWorkspace()
 
   return (
