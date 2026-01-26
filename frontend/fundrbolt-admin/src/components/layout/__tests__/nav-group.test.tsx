@@ -19,7 +19,7 @@ vi.mock('@/components/ui/sidebar', () => {
     setOpenMobile,
   }
 
-  const passthrough = (Tag: keyof JSX.IntrinsicElements) =>
+  const passthrough = (Tag: React.ElementType) =>
     ({ children, ...props }: { children?: React.ReactNode }) => (
       <Tag {...props}>{children}</Tag>
     )

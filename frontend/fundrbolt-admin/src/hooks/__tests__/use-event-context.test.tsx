@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useEventContext } from '../use-event-context'
 import { eventApi } from '@/services/event-service'
 import * as useNpoContextModule from '../use-npo-context'
-import type { Event } from '@/types/event'
+import type { Event, EventStatus } from '@/types/event'
 import type { ReactNode } from 'react'
 
 // Mock dependencies
@@ -64,8 +64,8 @@ describe('useEventContext', () => {
       items: toEventList([]),
       total: 0,
       page: 1,
-      per_page: 1000,
-      pages: 1,
+      page_size: 1000,
+      total_pages: 1,
     })
   })
 
@@ -127,7 +127,7 @@ describe('useEventContext', () => {
           id: 'event-1',
           name: 'Test Event 1',
           slug: 'test-event-1',
-          status: 'active',
+          status: 'active' as EventStatus,
           event_datetime: '2026-02-01T18:00:00Z',
           logo_url: null,
         },
@@ -135,7 +135,7 @@ describe('useEventContext', () => {
           id: 'event-2',
           name: 'Test Event 2',
           slug: 'test-event-2',
-          status: 'draft',
+          status: 'draft' as EventStatus,
           event_datetime: '2026-03-01T18:00:00Z',
           logo_url: 'https://example.com/logo.png',
         },
@@ -145,8 +145,8 @@ describe('useEventContext', () => {
         items: toEventList(mockEvents),
         total: 2,
         page: 1,
-        per_page: 1000,
-        pages: 1,
+        page_size: 1000,
+        total_pages: 1,
       })
 
       const { result } = renderHook(() => useEventContext(), {
@@ -166,7 +166,7 @@ describe('useEventContext', () => {
           id: 'event-1',
           name: 'Active Event',
           slug: 'active-event',
-          status: 'active',
+          status: 'active' as EventStatus,
           event_datetime: '2026-02-01T18:00:00Z',
           logo_url: null,
         },
@@ -176,8 +176,8 @@ describe('useEventContext', () => {
         items: toEventList(mockEvents),
         total: 1,
         page: 1,
-        per_page: 1000,
-        pages: 1,
+        page_size: 1000,
+        total_pages: 1,
       })
 
       const { result } = renderHook(() => useEventContext(), {
@@ -199,7 +199,7 @@ describe('useEventContext', () => {
           id: 'event-1',
           name: 'Test Event',
           slug: 'test-event',
-          status: 'active',
+          status: 'active' as EventStatus,
           event_datetime: '2026-02-01T18:00:00Z',
           logo_url: null,
         },
@@ -209,8 +209,8 @@ describe('useEventContext', () => {
         items: toEventList(mockEvents),
         total: 1,
         page: 1,
-        per_page: 1000,
-        pages: 1,
+        page_size: 1000,
+        total_pages: 1,
       })
 
       const { result } = renderHook(() => useEventContext(), {
@@ -228,7 +228,7 @@ describe('useEventContext', () => {
           id: 'event-1',
           name: 'Event 1',
           slug: 'event-1',
-          status: 'active',
+          status: 'active' as EventStatus,
           event_datetime: '2026-02-01T18:00:00Z',
           logo_url: null,
         },
@@ -236,7 +236,7 @@ describe('useEventContext', () => {
           id: 'event-2',
           name: 'Event 2',
           slug: 'event-2',
-          status: 'draft',
+          status: 'draft' as EventStatus,
           event_datetime: '2026-03-01T18:00:00Z',
           logo_url: null,
         },
@@ -246,8 +246,8 @@ describe('useEventContext', () => {
         items: toEventList(mockEvents),
         total: 2,
         page: 1,
-        per_page: 1000,
-        pages: 1,
+        page_size: 1000,
+        total_pages: 1,
       })
 
       const { result } = renderHook(() => useEventContext(), {
@@ -264,7 +264,7 @@ describe('useEventContext', () => {
         id: `event-${i + 1}`,
         name: `Event ${i + 1}`,
         slug: `event-${i + 1}`,
-        status: 'active',
+        status: 'active' as EventStatus,
         event_datetime: '2026-02-01T18:00:00Z',
         logo_url: null,
       }))
@@ -273,8 +273,8 @@ describe('useEventContext', () => {
         items: toEventList(mockEvents),
         total: 15,
         page: 1,
-        per_page: 1000,
-        pages: 1,
+        page_size: 1000,
+        total_pages: 1,
       })
 
       const { result } = renderHook(() => useEventContext(), {
@@ -291,7 +291,7 @@ describe('useEventContext', () => {
         id: `event-${i + 1}`,
         name: `Event ${i + 1}`,
         slug: `event-${i + 1}`,
-        status: 'active',
+        status: 'active' as EventStatus,
         event_datetime: '2026-02-01T18:00:00Z',
         logo_url: null,
       }))
@@ -300,8 +300,8 @@ describe('useEventContext', () => {
         items: toEventList(mockEvents),
         total: 5,
         page: 1,
-        per_page: 1000,
-        pages: 1,
+        page_size: 1000,
+        total_pages: 1,
       })
 
       const { result } = renderHook(() => useEventContext(), {

@@ -31,6 +31,8 @@ import {
   Trash2,
   Users,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 // Helper to get full logo URL
 function getLogoUrl(logoPath: string | null): string | null {
   if (!logoPath) return null

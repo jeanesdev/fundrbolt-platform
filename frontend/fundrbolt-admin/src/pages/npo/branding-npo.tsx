@@ -185,10 +185,10 @@ export default function NpoBrandingPage() {
   const [saving, setSaving] = useState(false)
 
   // Form state
-  const [primaryColor, setPrimaryColor] = useState(DEFAULT_PRIMARY)
-  const [secondaryColor, setSecondaryColor] = useState(DEFAULT_SECONDARY)
-  const [backgroundColor, setBackgroundColor] = useState(DEFAULT_BACKGROUND)
-  const [accentColor, setAccentColor] = useState(DEFAULT_ACCENT)
+  const [primaryColor, setPrimaryColor] = useState<string>(DEFAULT_PRIMARY)
+  const [secondaryColor, setSecondaryColor] = useState<string>(DEFAULT_SECONDARY)
+  const [backgroundColor, setBackgroundColor] = useState<string>(DEFAULT_BACKGROUND)
+  const [accentColor, setAccentColor] = useState<string>(DEFAULT_ACCENT)
   const [logoUrl, setLogoUrl] = useState<string | null | undefined>(null)
   const [socialLinks, setSocialLinks] = useState({
     facebook: '',
