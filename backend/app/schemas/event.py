@@ -372,6 +372,19 @@ class EventDetailResponse(BaseModel):
         from_attributes = True
 
 
+class EventStatsResponse(BaseModel):
+    """Summary counts for event-specific navigation badges."""
+
+    event_id: uuid.UUID
+    media_count: int
+    links_count: int
+    food_options_count: int
+    sponsors_count: int
+    auction_items_count: int
+    registrations_count: int
+    guest_count: int
+
+
 class EventPublicResponse(BaseModel):
     """Public event response (no internal fields)."""
 

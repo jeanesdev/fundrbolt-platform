@@ -13,7 +13,6 @@ Tasks are organized by user story priority. Each user story represents an indepe
 - **P1**: Critical path (MVP functionality - US1, US2, US3)
 - **P2**: High value (Enhanced UX - US4, US5, US6)
 - **P3**: Polish (Nice-to-have - US7)
-hpi
 **Parallel Opportunity**: Tasks marked with `[P]` can be executed in parallel with other `[P]` tasks in the same phase.
 
 **Story Dependencies**:

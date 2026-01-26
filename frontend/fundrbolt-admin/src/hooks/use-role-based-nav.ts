@@ -14,6 +14,8 @@
 import { useAuth } from './use-auth'
 import { useNpoContext } from './use-npo-context'
 import { useEventContext } from './use-event-context'
+import { useEventStats } from './use-event-stats'
+import type { EventStats } from '@/types/event'
 
 export interface NavItem {
   title: string
@@ -48,6 +50,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const { role, isSuperAdmin, isNpoAdmin, isEventCoordinator, isStaff } = useAuth()
   const { selectedNpoId } = useNpoContext()
   const { selectedEventId, selectedEventName, selectedEventSlug } = useEventContext()
+  const { data: eventStats } = useEventStats(selectedEventId)
 
   // Determine NPO link based on selected NPO
   const npoHref = selectedNpoId ? `/npos/${selectedNpoId}` : '/npos'
@@ -182,12 +185,21 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const canModifyUsers = isSuperAdmin || isNpoAdmin
 
   const eventNavItems: EventNavItem[] = selectedEventId
-    ? EVENT_SECTION_CONFIG.map((section) => ({
-        title: section.title,
-        href: `/events/${selectedEventSlug || selectedEventId}/${section.path}`,
-        icon: section.icon,
-        badge: section.badge,
-      }))
+    ? EVENT_SECTION_CONFIG.map((section) => {
+        const badgeValue = (() => {
+          if (!eventStats) return undefined
+          if (section.getBadgeValue) return section.getBadgeValue(eventStats)
+          if (section.statKey) return eventStats[section.statKey]
+          return undefined
+        })()
+
+        return {
+          title: section.title,
+          href: `/events/${selectedEventSlug || selectedEventId}/${section.path}`,
+          icon: section.icon,
+          badge: typeof badgeValue === 'number' ? badgeValue : undefined,
+        }
+      })
     : []
 
   const eventNavTitle = selectedEventId ? 'Event' : null
@@ -205,19 +217,27 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   }
 }
 
+type EventStatKey = Exclude<keyof EventStats, 'event_id'>
+
 const EVENT_SECTION_CONFIG: Array<{
   title: string
   path: string
   icon: EventNavItem['icon']
-  badge?: string
+  statKey?: EventStatKey
+  getBadgeValue?: (stats: EventStats) => number
 }> = [
-  { title: 'Details', path: 'details', icon: 'FileText', badge: '--' },
-  { title: 'Media', path: 'media', icon: 'Image', badge: '--' },
-  { title: 'Links', path: 'links', icon: 'Link2', badge: '--' },
-  { title: 'Food Options', path: 'food', icon: 'Utensils', badge: '--' },
-  { title: 'Registrations', path: 'registrations', icon: 'Users', badge: '--' },
-  { title: 'Seating', path: 'seating', icon: 'LayoutGrid', badge: '--' },
-  { title: 'Tickets', path: 'tickets', icon: 'Ticket', badge: '--' },
-  { title: 'Sponsors', path: 'sponsors', icon: 'Award', badge: '--' },
-  { title: 'Auction Items', path: 'auction-items', icon: 'Gavel', badge: '--' },
+  { title: 'Details', path: 'details', icon: 'FileText' },
+  { title: 'Media', path: 'media', icon: 'Image', statKey: 'media_count' },
+  { title: 'Links', path: 'links', icon: 'Link2', statKey: 'links_count' },
+  { title: 'Food Options', path: 'food', icon: 'Utensils', statKey: 'food_options_count' },
+  {
+    title: 'Registrations',
+    path: 'registrations',
+    icon: 'Users',
+    getBadgeValue: (stats) => stats.registrations_count + stats.guest_count,
+  },
+  { title: 'Seating', path: 'seating', icon: 'LayoutGrid' },
+  { title: 'Tickets', path: 'tickets', icon: 'Ticket' },
+  { title: 'Sponsors', path: 'sponsors', icon: 'Award', statKey: 'sponsors_count' },
+  { title: 'Auction Items', path: 'auction-items', icon: 'Gavel', statKey: 'auction_items_count' },
 ]

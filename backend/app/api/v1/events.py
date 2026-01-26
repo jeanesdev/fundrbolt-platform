@@ -14,6 +14,7 @@ from app.schemas.event import (
     EventCreateRequest,
     EventDetailResponse,
     EventListResponse,
+    EventStatsResponse,
     EventSummaryResponse,
     EventUpdateRequest,
 )
@@ -192,6 +193,7 @@ async def list_events(
     status_param: Annotated[str | None, Query(alias="status")] = None,
     page: Annotated[int, Query(ge=1)] = 1,
     per_page: Annotated[int, Query(ge=1, le=100)] = 20,
+    search: Annotated[str | None, Query(max_length=255)] = None,
 ) -> EventListResponse:
     """
     List events with filtering and pagination.
@@ -206,6 +208,7 @@ async def list_events(
     Filters:
     - npo_id: Show events for specific NPO (SuperAdmin only)
     - status: draft, active, or closed
+    - search: case-insensitive match on event name or slug
     """
     from app.models.event import EventStatus
     from app.services.permission_service import PermissionService
@@ -224,12 +227,15 @@ async def list_events(
     permission_service = PermissionService()
     filtered_npo_id = permission_service.get_npo_filter_for_user(current_user, npo_id)
 
+    search_query = search.strip() if search and search.strip() else None
+
     events, total = await EventService.list_events(
         db,
         npo_id=filtered_npo_id,
         status_filter=status_filter,
         page=page,
         per_page=per_page,
+        search_query=search_query,
     )
 
     # Manually construct response items to include NPO name
@@ -263,6 +269,35 @@ async def list_events(
         per_page=per_page,
         total_pages=(total + per_page - 1) // per_page,
     )
+
+
+@router.get("/{event_id}/stats", response_model=EventStatsResponse)
+async def get_event_stats(
+    event_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
+) -> EventStatsResponse:
+    """Return aggregate badge counts for an event."""
+
+    stats = await EventService.get_event_stats(db, event_id)
+    if not stats:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with ID {event_id} not found",
+        )
+
+    from app.services.permission_service import PermissionService
+
+    permission_service = PermissionService()
+    can_view = await permission_service.can_view_event(current_user, stats["npo_id"])
+    if not can_view:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to view this event",
+        )
+
+    stats.pop("npo_id", None)
+    return EventStatsResponse(**stats)
 
 
 @router.get("/public/{slug}", response_model=EventDetailResponse)
