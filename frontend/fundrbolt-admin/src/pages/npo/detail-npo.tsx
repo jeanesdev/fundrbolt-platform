@@ -3,6 +3,7 @@
  * Displays detailed information about a specific NPO with edit and delete actions
  */
 
+import { colors as brandColors } from '@fundrbolt/shared/assets'
 import { ApplicationReviewDialog } from '@/components/admin/application-review-dialog'
 import { ApplicationStatusBadge } from '@/components/npo/application-status-badge'
 import { Badge } from '@/components/ui/badge'
@@ -32,7 +33,6 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-
 // Helper to get full logo URL
 function getLogoUrl(logoPath: string | null): string | null {
   if (!logoPath) return null
@@ -359,7 +359,7 @@ export default function NpoDetailPage() {
                     src={getLogoUrl(npo.branding.logo_url) || undefined}
                     alt={`${npo.name} logo`}
                     className="h-24 w-24 rounded-lg border object-contain p-2"
-                    style={{ backgroundColor: npo.branding.background_color || '#FFFFFF' }}
+                    style={{ backgroundColor: npo.branding.background_color || brandColors.secondary.white }}
                   />
                 </div>
               </div>

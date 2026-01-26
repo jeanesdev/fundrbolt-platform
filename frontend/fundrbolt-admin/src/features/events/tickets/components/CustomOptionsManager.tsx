@@ -65,8 +65,8 @@ export function CustomOptionsManager({ packageId }: CustomOptionsManagerProps) {
 
   // Update local options when data changes
   useEffect(() => {
-    setLocalOptions(options);
-  }, [options]);
+    setLocalOptions(data ?? []);
+  }, [data]);
 
   // Reorder mutation
   const reorderMutation = useMutation({

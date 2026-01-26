@@ -246,3 +246,68 @@ class TestEventListing:
         assert data["total"] >= 7
         # With 3 per page, should be at least 3 pages
         assert data["total_pages"] >= 3
+
+    async def test_list_events_search_by_name(
+        self,
+        npo_admin_client: AsyncClient,
+        db_session: AsyncSession,
+        test_approved_npo: Any,
+        test_npo_admin_user: Any,
+    ) -> None:
+        """Test case-insensitive search by event name."""
+        from app.models.event import Event, EventStatus
+
+        target_event = Event(
+            npo_id=test_approved_npo.id,
+            name="Aurora Benefit Night",
+            slug="aurora-benefit-2026",
+            status=EventStatus.DRAFT,
+            event_datetime=datetime.now(UTC) + timedelta(days=10),
+            timezone="America/Chicago",
+            venue_name="Aurora Hall",
+            version=1,
+            created_by=test_npo_admin_user.id,
+            updated_by=test_npo_admin_user.id,
+        )
+        db_session.add(target_event)
+        await db_session.commit()
+
+        response = await npo_admin_client.get("/api/v1/events?search=AURORA")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert any(item["slug"] == "aurora-benefit-2026" for item in data["items"])
+        for item in data["items"]:
+            assert "aurora" in item["name"].lower() or "aurora" in item["slug"].lower()
+
+    async def test_list_events_search_by_slug(
+        self,
+        npo_admin_client: AsyncClient,
+        db_session: AsyncSession,
+        test_approved_npo: Any,
+        test_npo_admin_user: Any,
+    ) -> None:
+        """Test search filters by slug substring."""
+        from app.models.event import Event, EventStatus
+
+        event = Event(
+            npo_id=test_approved_npo.id,
+            name="Midnight Gala",
+            slug="midnight-gala-2026",
+            status=EventStatus.DRAFT,
+            event_datetime=datetime.now(UTC) + timedelta(days=40),
+            timezone="America/New_York",
+            venue_name="City Plaza",
+            version=1,
+            created_by=test_npo_admin_user.id,
+            updated_by=test_npo_admin_user.id,
+        )
+        db_session.add(event)
+        await db_session.commit()
+
+        response = await npo_admin_client.get("/api/v1/events?search=midnight-gala")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["items"], "Expected at least one event in search results"
+        assert all("midnight-gala" in item["slug"] for item in data["items"])

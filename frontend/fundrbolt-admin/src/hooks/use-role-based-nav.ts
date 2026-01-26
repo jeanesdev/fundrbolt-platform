@@ -13,6 +13,9 @@
 
 import { useAuth } from './use-auth'
 import { useNpoContext } from './use-npo-context'
+import { useEventContext } from './use-event-context'
+import { useEventStats } from './use-event-stats'
+import type { EventStats } from '@/types/event'
 
 export interface NavItem {
   title: string
@@ -24,8 +27,17 @@ export interface NavItem {
   description?: string
 }
 
+export interface EventNavItem {
+  title: string
+  href: string
+  icon: string
+  badge?: string | number
+}
+
 export interface UseRoleBasedNavReturn {
   navItems: NavItem[]
+  eventNavItems: EventNavItem[]
+  eventNavTitle: string | null
   canAccessNpos: boolean
   canAccessEvents: boolean
   canAccessUsers: boolean
@@ -37,6 +49,8 @@ export interface UseRoleBasedNavReturn {
 export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const { role, isSuperAdmin, isNpoAdmin, isEventCoordinator, isStaff } = useAuth()
   const { selectedNpoId } = useNpoContext()
+  const { selectedEventId, selectedEventSlug } = useEventContext()
+  const { data: eventStats } = useEventStats(selectedEventId)
 
   // Determine NPO link based on selected NPO
   const npoHref = selectedNpoId ? `/npos/${selectedNpoId}` : '/npos'
@@ -170,8 +184,30 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const canModifyEvents = isSuperAdmin || isNpoAdmin || isEventCoordinator
   const canModifyUsers = isSuperAdmin || isNpoAdmin
 
+  const eventNavItems: EventNavItem[] = selectedEventId
+    ? EVENT_SECTION_CONFIG.map((section) => {
+        const badgeValue = (() => {
+          if (!eventStats) return undefined
+          if (section.getBadgeValue) return section.getBadgeValue(eventStats)
+          if (section.statKey) return eventStats[section.statKey]
+          return undefined
+        })()
+
+        return {
+          title: section.title,
+          href: `/events/${selectedEventSlug || selectedEventId}/${section.path}`,
+          icon: section.icon,
+          badge: typeof badgeValue === 'number' ? badgeValue : undefined,
+        }
+      })
+    : []
+
+  const eventNavTitle = selectedEventId ? 'Event' : null
+
   return {
     navItems,
+    eventNavItems,
+    eventNavTitle,
     canAccessNpos,
     canAccessEvents,
     canAccessUsers,
@@ -180,3 +216,28 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     canModifyUsers,
   }
 }
+
+type EventStatKey = Exclude<keyof EventStats, 'event_id'>
+
+const EVENT_SECTION_CONFIG: Array<{
+  title: string
+  path: string
+  icon: EventNavItem['icon']
+  statKey?: EventStatKey
+  getBadgeValue?: (stats: EventStats) => number
+}> = [
+  { title: 'Details', path: 'details', icon: 'FileText' },
+  { title: 'Media', path: 'media', icon: 'Image', statKey: 'media_count' },
+  { title: 'Links', path: 'links', icon: 'Link2', statKey: 'links_count' },
+  { title: 'Food Options', path: 'food', icon: 'Utensils', statKey: 'food_options_count' },
+  {
+    title: 'Registrations',
+    path: 'registrations',
+    icon: 'Users',
+    getBadgeValue: (stats) => stats.registrations_count + stats.guest_count,
+  },
+  { title: 'Seating', path: 'seating', icon: 'LayoutGrid' },
+  { title: 'Tickets', path: 'tickets', icon: 'Ticket' },
+  { title: 'Sponsors', path: 'sponsors', icon: 'Award', statKey: 'sponsors_count' },
+  { title: 'Auction Items', path: 'auction-items', icon: 'Gavel', statKey: 'auction_items_count' },
+]

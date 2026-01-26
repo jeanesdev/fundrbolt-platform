@@ -129,6 +129,17 @@ export interface EventListResponse {
   total_pages: number
 }
 
+export interface EventStats {
+  event_id: string
+  media_count: number
+  links_count: number
+  food_options_count: number
+  sponsors_count: number
+  auction_items_count: number
+  registrations_count: number
+  guest_count: number
+}
+
 // ============================================
 // Event Media Types
 // ============================================

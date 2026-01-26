@@ -32,6 +32,28 @@ export const colors = {
     muted: '#58595b',      // Gray text for secondary content
   },
 
+  accent: {
+    plum: '#1f0256',
+    aqua: '#17ccfc',
+    violet: '#5d31ff',
+    magenta: '#f35aff',
+  },
+
+  // Extended palette for UI illustrations and neutral surfaces
+  palette: {
+    midnightSlate: '#1d2b3f',
+    obsidian: '#0d1628',
+    steelBlue: '#426187',
+    cobalt: '#2a62bc',
+    indigo: '#2f5491',
+    deepNavy: '#17273f',
+    silver: '#d9d9d9',
+    cloud: '#ecedef',
+    fog: '#c0c4c4',
+    ink: '#1e293b',
+    sunset: '#ff5533',
+  },
+
   // Status Colors (to be defined as needed)
   status: {
     success: '#10b981',
@@ -53,6 +75,21 @@ export const cssVariables = {
   '--color-background-default': colors.background.default,
   '--color-text-primary': colors.text.primary,
   '--color-text-secondary': colors.text.secondary,
+  '--color-accent-plum': colors.accent.plum,
+  '--color-accent-aqua': colors.accent.aqua,
+  '--color-accent-violet': colors.accent.violet,
+  '--color-accent-magenta': colors.accent.magenta,
+  '--color-palette-midnight-slate': colors.palette.midnightSlate,
+  '--color-palette-obsidian': colors.palette.obsidian,
+  '--color-palette-steel-blue': colors.palette.steelBlue,
+  '--color-palette-cobalt': colors.palette.cobalt,
+  '--color-palette-indigo': colors.palette.indigo,
+  '--color-palette-deep-navy': colors.palette.deepNavy,
+  '--color-palette-silver': colors.palette.silver,
+  '--color-palette-cloud': colors.palette.cloud,
+  '--color-palette-fog': colors.palette.fog,
+  '--color-palette-ink': colors.palette.ink,
+  '--color-palette-sunset': colors.palette.sunset,
 } as const;
 
 export default colors;

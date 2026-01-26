@@ -14,6 +14,7 @@ import type {
   EventListParams,
   EventListResponse,
   EventMedia,
+  EventStats,
   EventUpdateRequest,
   FoodOption,
   FoodOptionCreateRequest,
@@ -41,6 +42,14 @@ export const eventApi = {
    */
   async getEvent(eventId: string): Promise<EventDetail> {
     const response = await apiClient.get<EventDetail>(`/events/${eventId}`)
+    return response.data
+  },
+
+  /**
+   * Fetch aggregate stats used for event navigation badges
+   */
+  async getEventStats(eventId: string): Promise<EventStats> {
+    const response = await apiClient.get<EventStats>(`/events/${eventId}/stats`)
     return response.data
   },
 
