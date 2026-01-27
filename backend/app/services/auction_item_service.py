@@ -1,10 +1,10 @@
 """Service for auction item operations."""
 
 import logging
+import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
-import uuid
 from uuid import UUID
 
 from sqlalchemy import func, select, text

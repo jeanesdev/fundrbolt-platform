@@ -11,7 +11,6 @@ from pathlib import Path
 from openpyxl import Workbook
 from PIL import Image, ImageDraw, ImageFont
 
-
 CATEGORIES = [
     "Experiences",
     "Dining",

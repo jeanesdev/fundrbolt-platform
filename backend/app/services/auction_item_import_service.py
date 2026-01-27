@@ -18,7 +18,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auction_item_import import ALLOWED_CATEGORIES, MAX_IMPORT_ROWS
 from app.core.config import Settings, get_settings
-from app.models.auction_item import AuctionItem, AuctionItemMedia, AuctionType, ItemStatus, MediaType
+from app.models.auction_item import (
+    AuctionItem,
+    AuctionItemMedia,
+    AuctionType,
+    ItemStatus,
+    MediaType,
+)
 from app.schemas.auction_item_import import (
     AuctionItemImportRow,
     ImportImageStatus,

@@ -13,9 +13,9 @@ from app.middleware.auth import get_current_user
 from app.models.event import Event
 from app.models.user import User
 from app.schemas.auction_item_import import ImportReport
-from app.services.audit_service import AuditService
 from app.services.auction_item_import_service import AuctionItemImportService
 from app.services.auction_item_import_zip import ImportZipValidationError
+from app.services.audit_service import AuditService
 
 router = APIRouter(prefix="/admin/events", tags=["admin-auction-items-import"])
 
