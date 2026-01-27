@@ -118,6 +118,7 @@ class AuctionItemImportService:
             "external_id",
             "title",
             "description",
+            "auction_type",
             "fair_market_value",
             "starting_bid",
             "category",
@@ -268,7 +269,7 @@ class AuctionItemImportService:
             bid_number=bid_number,
             title=row_data.title,
             description=row_data.description,
-            auction_type=AuctionType.SILENT,
+            auction_type=AuctionType(row_data.auction_type),
             category=row_data.category,
             starting_bid=row_data.starting_bid,
             bid_increment=bid_increment,
@@ -290,6 +291,7 @@ class AuctionItemImportService:
     def _apply_row_to_item(self, item: AuctionItem, row: AuctionItemImportRow) -> None:
         item.title = row.title
         item.description = row.description
+        item.auction_type = AuctionType(row.auction_type)
         item.category = row.category
         item.starting_bid = row.starting_bid
         item.donor_value = row.fair_market_value
@@ -383,6 +385,7 @@ class AuctionItemImportService:
             "external_id": _to_str(data.get("external_id")),
             "title": _to_str(data.get("title")),
             "description": _to_str(data.get("description")),
+            "auction_type": _to_str(data.get("auction_type")),
             "category": _to_str(data.get("category")),
             "starting_bid": _to_decimal(data.get("starting_bid")),
             "fair_market_value": _to_decimal(data.get("fair_market_value")),

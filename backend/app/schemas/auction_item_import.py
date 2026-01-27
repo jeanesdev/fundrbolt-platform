@@ -33,6 +33,7 @@ class AuctionItemImportRow(BaseModel):
     external_id: str = Field(..., min_length=1, max_length=200)
     title: str = Field(..., min_length=1, max_length=200)
     description: str = Field(..., min_length=1, max_length=10000)
+    auction_type: Literal["live", "silent"]
     category: str = Field(..., min_length=1, max_length=100)
     starting_bid: Decimal = Field(..., ge=0, decimal_places=2)
     fair_market_value: Decimal = Field(..., ge=0, decimal_places=2)
