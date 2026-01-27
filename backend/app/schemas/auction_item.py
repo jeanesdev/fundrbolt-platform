@@ -39,7 +39,7 @@ class AuctionItemBase(BaseModel):
 class AuctionItemCreate(AuctionItemBase):
     """Schema for creating auction items."""
 
-    pass
+    external_id: str | None = Field(None, min_length=1, max_length=200)
 
 
 class AuctionItemUpdate(BaseModel):
@@ -66,6 +66,8 @@ class AuctionItemResponse(AuctionItemBase):
 
     id: UUID
     event_id: UUID
+    external_id: str
+    category: str | None = None
     bid_number: int = Field(..., ge=100, le=999)
     status: ItemStatus
     created_by: UUID

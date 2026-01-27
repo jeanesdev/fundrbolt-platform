@@ -20,9 +20,9 @@ description: "Task list for Bulk Import Auction Items via Workbook + Images"
 
 **Purpose**: Establish shared types and documentation scaffolding
 
-- [ ] T001 Create import schema models in backend/app/schemas/auction_item_import.py
-- [ ] T002 [P] Add frontend import types in frontend/fundrbolt-admin/src/types/auctionItemImport.ts
-- [ ] T003 Update import contract fields in .specify/specs/018-auction-item-bulk/contracts/auction-item-import.yaml (add error report field if needed)
+- [x] T001 Create import schema models in backend/app/schemas/auction_item_import.py
+- [x] T002 [P] Add frontend import types in frontend/fundrbolt-admin/src/types/auctionItemImport.ts
+- [x] T003 Update import contract fields in .specify/specs/018-auction-item-bulk/contracts/auction-item-import.yaml (add error report field if needed)
 
 ---
 
@@ -30,13 +30,13 @@ description: "Task list for Bulk Import Auction Items via Workbook + Images"
 
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
-- [ ] T004 Add external identifier field to backend/app/models/auction_item.py
-- [ ] T005 Create Alembic migration for auction_items external_id and unique constraint in backend/alembic/versions/*_auction_item_external_id.py
-- [ ] T006 Add import constants (row cap, category list, allowed image types) in backend/app/core/auction_item_import.py
-- [ ] T007 Implement ZIP safety utilities in backend/app/services/auction_item_import_zip.py
-- [ ] T008 [P] Add ZIP size/entry limits enforcement in backend/app/services/auction_item_import_zip.py
-- [ ] T009 [P] Add file signature validation for .xlsx and image types in backend/app/services/auction_item_import_zip.py
-- [ ] T010 Implement shared import service skeleton in backend/app/services/auction_item_import_service.py
+- [x] T004 Add external identifier field to backend/app/models/auction_item.py
+- [x] T005 Create Alembic migration for auction_items external_id and unique constraint in backend/alembic/versions/*_auction_item_external_id.py
+- [x] T006 Add import constants (row cap, category list, allowed image types) in backend/app/core/auction_item_import.py
+- [x] T007 Implement ZIP safety utilities in backend/app/services/auction_item_import_zip.py
+- [x] T008 [P] Add ZIP size/entry limits enforcement in backend/app/services/auction_item_import_zip.py
+- [x] T009 [P] Add file signature validation for .xlsx and image types in backend/app/services/auction_item_import_zip.py
+- [x] T010 Implement shared import service skeleton in backend/app/services/auction_item_import_service.py
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -50,14 +50,14 @@ description: "Task list for Bulk Import Auction Items via Workbook + Images"
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Implement workbook parsing + row validation in backend/app/services/auction_item_import_service.py
-- [ ] T012 [US1] Implement error report export (CSV/JSON) in backend/app/services/auction_item_import_service.py and expose in backend/app/api/v1/admin_auction_item_import.py
-- [ ] T013 [US1] Add preflight API route in backend/app/api/v1/admin_auction_item_import.py
-- [ ] T014 [US1] Enforce environment-based import availability in backend/app/api/v1/admin_auction_item_import.py
-- [ ] T015 [US1] Register the import router in backend/app/api/v1/__init__.py
-- [ ] T016 [US1] Add preflight client method in frontend/fundrbolt-admin/src/services/auctionItemService.ts
-- [ ] T017 [US1] Build import modal + upload flow in frontend/fundrbolt-admin/src/features/events/sections/EventAuctionItemsSection.tsx
-- [ ] T018 [US1] Create report UI component in frontend/fundrbolt-admin/src/components/auction-items/AuctionItemImportReport.tsx
+- [x] T011 [US1] Implement workbook parsing + row validation in backend/app/services/auction_item_import_service.py
+- [x] T012 [US1] Implement error report export (CSV/JSON) in backend/app/services/auction_item_import_service.py and expose in backend/app/api/v1/admin_auction_item_import.py
+- [x] T013 [US1] Add preflight API route in backend/app/api/v1/admin_auction_item_import.py
+- [x] T014 [US1] Enforce environment-based import availability in backend/app/api/v1/admin_auction_item_import.py
+- [x] T015 [US1] Register the import router in backend/app/api/v1/__init__.py
+- [x] T016 [US1] Add preflight client method in frontend/fundrbolt-admin/src/services/auctionItemService.ts
+- [x] T017 [US1] Build import modal + upload flow in frontend/fundrbolt-admin/src/features/events/sections/EventAuctionItemsSection.tsx
+- [x] T018 [US1] Create report UI component in frontend/fundrbolt-admin/src/components/auction-items/AuctionItemImportReport.tsx
 
 **Checkpoint**: Preflight validation works end-to-end and returns row-level errors without DB writes
 
@@ -71,11 +71,11 @@ description: "Task list for Bulk Import Auction Items via Workbook + Images"
 
 ### Implementation for User Story 2
 
-- [ ] T019 [US2] Implement commit logic with upsert + image upload in backend/app/services/auction_item_import_service.py
-- [ ] T020 [US2] Add commit API route in backend/app/api/v1/admin_auction_item_import.py
-- [ ] T021 [US2] Add commit client method in frontend/fundrbolt-admin/src/services/auctionItemService.ts
-- [ ] T022 [US2] Wire commit action + refresh list in frontend/fundrbolt-admin/src/features/events/sections/EventAuctionItemsSection.tsx
-- [ ] T023 [US2] Add audit logging for import attempts in backend/app/services/audit_service.py
+- [x] T019 [US2] Implement commit logic with upsert + image upload in backend/app/services/auction_item_import_service.py
+- [x] T020 [US2] Add commit API route in backend/app/api/v1/admin_auction_item_import.py
+- [x] T021 [US2] Add commit client method in frontend/fundrbolt-admin/src/services/auctionItemService.ts
+- [x] T022 [US2] Wire commit action + refresh list in frontend/fundrbolt-admin/src/features/events/sections/EventAuctionItemsSection.tsx
+- [x] T023 [US2] Add audit logging for import attempts in backend/app/services/audit_service.py
 
 **Checkpoint**: Commit creates/updates items, uploads images, and returns a final report
 
@@ -89,9 +89,9 @@ description: "Task list for Bulk Import Auction Items via Workbook + Images"
 
 ### Implementation for User Story 3
 
-- [ ] T024 [US3] Add duplicate external_id detection per workbook in backend/app/services/auction_item_import_service.py
-- [ ] T025 [US3] Ensure import report differentiates created vs updated in backend/app/schemas/auction_item_import.py
-- [ ] T026 [US3] Render created vs updated statuses in frontend/fundrbolt-admin/src/components/auction-items/AuctionItemImportReport.tsx
+- [x] T024 [US3] Add duplicate external_id detection per workbook in backend/app/services/auction_item_import_service.py
+- [x] T025 [US3] Ensure import report differentiates created vs updated in backend/app/schemas/auction_item_import.py
+- [x] T026 [US3] Render created vs updated statuses in frontend/fundrbolt-admin/src/components/auction-items/AuctionItemImportReport.tsx
 
 **Checkpoint**: Re-imports update items in place with no duplication
 
@@ -101,9 +101,9 @@ description: "Task list for Bulk Import Auction Items via Workbook + Images"
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T027 [P] Add internal demo package generator in backend/scripts/generate_auction_item_import_pack.py
-- [ ] T028 [P] Add import helper text in frontend/fundrbolt-admin/src/features/events/sections/EventAuctionItemsSection.tsx
-- [ ] T029 [P] Update quickstart guidance in .specify/specs/018-auction-item-bulk/quickstart.md
+- [x] T027 [P] Add internal demo package generator in backend/scripts/generate_auction_item_import_pack.py
+- [x] T028 [P] Add import helper text in frontend/fundrbolt-admin/src/features/events/sections/EventAuctionItemsSection.tsx
+- [x] T029 [P] Update quickstart guidance in .specify/specs/018-auction-item-bulk/quickstart.md
 
 ---
 

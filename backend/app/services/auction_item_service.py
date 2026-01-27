@@ -4,6 +4,7 @@ import logging
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
+import uuid
 from uuid import UUID
 
 from sqlalchemy import func, select, text
@@ -184,6 +185,7 @@ class AuctionItemService:
         # Create auction item
         auction_item = AuctionItem(
             event_id=event_id,
+            external_id=item_data.external_id or str(uuid.uuid4()),
             bid_number=bid_number,
             title=item_data.title,
             description=item_data.description,
