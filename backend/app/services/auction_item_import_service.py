@@ -54,7 +54,9 @@ class AuctionItemImportService:
         parsed_rows = self._parse_workbook(contents.workbook_bytes)
 
         external_ids = [
-            row.data.get("external_id") for row in parsed_rows if row.data.get("external_id")
+            str(value).strip()
+            for row in parsed_rows
+            if (value := row.data.get("external_id")) not in (None, "")
         ]
         existing_ids = await self._fetch_existing_external_ids(event_id, external_ids)
 
@@ -67,7 +69,9 @@ class AuctionItemImportService:
         row_lookup = {row.row_number: row for row in parsed_rows}
 
         external_ids = [
-            row.data.get("external_id") for row in parsed_rows if row.data.get("external_id")
+            str(value).strip()
+            for row in parsed_rows
+            if (value := row.data.get("external_id")) not in (None, "")
         ]
         existing_ids = await self._fetch_existing_external_ids(event_id, external_ids)
 

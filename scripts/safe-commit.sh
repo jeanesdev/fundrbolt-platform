@@ -14,6 +14,22 @@ while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
 
     # Run pre-commit hooks (allow it to fail, we'll check status)
     if pre-commit run --all-files; then
+        echo ""
+        echo "🧪 Running backend mypy (strict)..."
+        if ! (cd backend && poetry run mypy app --strict --ignore-missing-imports --exclude 'app/tests'); then
+            echo ""
+            echo "❌ mypy failed. Fix type errors before committing."
+            exit 1
+        fi
+
+        echo ""
+        echo "🧹 Running ruff format check..."
+        if ! (cd backend && poetry run ruff format --check .); then
+            echo ""
+            echo "❌ Ruff format check failed. Run: poetry run ruff format ."
+            exit 1
+        fi
+
         # All hooks passed!
         echo ""
         echo "✅ All pre-commit checks passed!"
