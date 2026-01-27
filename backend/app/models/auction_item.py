@@ -6,7 +6,16 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -66,10 +75,17 @@ class AuctionItem(Base, UUIDMixin, TimestampMixin):
     )
 
     # Core fields
+    external_id: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False,
+        index=True,
+        default=lambda: str(uuid.uuid4()),
+    )
     bid_number: Mapped[int] = mapped_column(Integer, nullable=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     auction_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    category: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Pricing
     starting_bid: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
@@ -125,6 +141,7 @@ class AuctionItem(Base, UUIDMixin, TimestampMixin):
 
     # Constraints (documented in migration)
     __table_args__ = (
+        UniqueConstraint("event_id", "external_id", name="uq_auction_items_event_external_id"),
         CheckConstraint("auction_type IN ('live', 'silent')", name="ck_auction_items_auction_type"),
         CheckConstraint(
             "status IN ('draft', 'published', 'sold', 'withdrawn')",

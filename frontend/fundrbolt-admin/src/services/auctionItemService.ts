@@ -8,6 +8,7 @@ import type {
   AuctionType,
   ItemStatus,
 } from '@/types/auction-item';
+import type { ImportReport } from '@/types/auctionItemImport';
 
 /**
  * Auction Item Service
@@ -83,6 +84,44 @@ class AuctionItemService {
    */
   async deleteAuctionItem(eventId: string, itemId: string): Promise<void> {
     await apiClient.delete(`/events/${eventId}/auction-items/${itemId}`);
+  }
+
+  /**
+   * Preflight a bulk import ZIP package for auction items
+   */
+  async preflightImport(
+    eventId: string,
+    zipFile: File
+  ): Promise<ImportReport> {
+    const formData = new FormData();
+    formData.append('zip_file', zipFile);
+    const response = await apiClient.post<ImportReport>(
+      `/admin/events/${eventId}/auction-items/import/preflight`,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }
+    );
+    return response.data;
+  }
+
+  /**
+   * Commit a bulk import ZIP package for auction items
+   */
+  async commitImport(
+    eventId: string,
+    zipFile: File
+  ): Promise<ImportReport> {
+    const formData = new FormData();
+    formData.append('zip_file', zipFile);
+    const response = await apiClient.post<ImportReport>(
+      `/admin/events/${eventId}/auction-items/import/commit`,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }
+    );
+    return response.data;
   }
 }
 

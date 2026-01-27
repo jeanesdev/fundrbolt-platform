@@ -34,6 +34,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Azure Blob Storage (logo assets for emails), File system (frontend shared package) (016-branding)
 - TypeScript 5.x (Frontend), Python 3.11+ (Backend - minimal changes for event list API optimization if needed) + React 18, Vite, TanStack Router, Zustand (state), Radix UI (sidebar/dropdown components), Tailwind CSS 4 (017-admin-pwa-layout)
 - N/A (UI-only changes; uses existing NPO/event APIs) (017-admin-pwa-layout)
+- Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router, Zustand, Radix UI (018-auction-item-bulk)
+- PostgreSQL (auction items), Azure Blob Storage (images) (018-auction-item-bulk)
 
 ## Project Structure
 ```
@@ -118,9 +120,9 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 018-auction-item-bulk: Added Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router, Zustand, Radix UI
 - 017-admin-pwa-layout: Added TypeScript 5.x (Frontend), Python 3.11+ (Backend - minimal changes for event list API optimization if needed) + React 18, Vite, TanStack Router, Zustand (state), Radix UI (sidebar/dropdown components), Tailwind CSS 4
 - 016-branding: Added TypeScript 5.x (Frontend), Python 3.11+ (Backend for email templates) + React 18, Vite (build tool), ESLint (linting), Azure Blob Storage SDK (logo hosting)
-- 015-ticket-management-admin: Added Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (backend); React 18+, Vite, TanStack Router, Zustand, Radix UI (frontend)
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields
   - ✅ Updated registration_guests with is_table_captain boolean field
   - ✅ US1 - Customize Table Capacity: Event coordinators can set custom capacity per table (1-20), system enforces limits
