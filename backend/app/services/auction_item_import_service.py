@@ -53,7 +53,9 @@ class AuctionItemImportService:
         contents = validate_zip_bytes(zip_bytes)
         parsed_rows = self._parse_workbook(contents.workbook_bytes)
 
-        external_ids = [row.data.get("external_id") for row in parsed_rows if row.data.get("external_id")]
+        external_ids = [
+            row.data.get("external_id") for row in parsed_rows if row.data.get("external_id")
+        ]
         existing_ids = await self._fetch_existing_external_ids(event_id, external_ids)
 
         results = self._validate_rows(parsed_rows, contents.image_files, existing_ids)
@@ -64,7 +66,9 @@ class AuctionItemImportService:
         parsed_rows = self._parse_workbook(contents.workbook_bytes)
         row_lookup = {row.row_number: row for row in parsed_rows}
 
-        external_ids = [row.data.get("external_id") for row in parsed_rows if row.data.get("external_id")]
+        external_ids = [
+            row.data.get("external_id") for row in parsed_rows if row.data.get("external_id")
+        ]
         existing_ids = await self._fetch_existing_external_ids(event_id, external_ids)
 
         results = []
@@ -126,7 +130,9 @@ class AuctionItemImportService:
             if len(parsed_rows) >= MAX_IMPORT_ROWS:
                 raise ImportZipValidationError("Workbook exceeds maximum row limit")
 
-            row_data = {headers[i]: values[i] if i < len(values) else None for i in range(len(headers))}
+            row_data = {
+                headers[i]: values[i] if i < len(values) else None for i in range(len(headers))
+            }
             parsed_rows.append(ParsedRow(row_number=index, data=row_data))
 
         if not parsed_rows:
@@ -193,7 +199,11 @@ class AuctionItemImportService:
                 )
                 continue
 
-            status = ImportRowStatus.UPDATED if row.external_id in existing_ids else ImportRowStatus.CREATED
+            status = (
+                ImportRowStatus.UPDATED
+                if row.external_id in existing_ids
+                else ImportRowStatus.CREATED
+            )
             results.append(
                 ImportRowResult(
                     row_number=row_number,
@@ -206,7 +216,9 @@ class AuctionItemImportService:
 
         return results
 
-    async def _fetch_existing_external_ids(self, event_id: UUID, external_ids: list[str]) -> set[str]:
+    async def _fetch_existing_external_ids(
+        self, event_id: UUID, external_ids: list[str]
+    ) -> set[str]:
         if not external_ids:
             return set()
 
@@ -309,7 +321,10 @@ class AuctionItemImportService:
         await self.db.commit()
 
     def _store_image(self, item_id: UUID, filename: str, content: bytes, mime_type: str) -> str:
-        if self.settings.azure_storage_connection_string and self.settings.azure_storage_account_name:
+        if (
+            self.settings.azure_storage_connection_string
+            and self.settings.azure_storage_account_name
+        ):
             from azure.storage.blob import BlobServiceClient, ContentSettings
 
             blob_service = BlobServiceClient.from_connection_string(
@@ -405,13 +420,15 @@ class AuctionItemImportService:
         writer = csv.writer(output)
         writer.writerow(["row_number", "external_id", "status", "message", "image_status"])
         for row in error_rows:
-            writer.writerow([
-                row.row_number,
-                row.external_id or "",
-                row.status.value,
-                row.message,
-                row.image_status.value if row.image_status else "",
-            ])
+            writer.writerow(
+                [
+                    row.row_number,
+                    row.external_id or "",
+                    row.status.value,
+                    row.message,
+                    row.image_status.value if row.image_status else "",
+                ]
+            )
 
         csv_data = output.getvalue().encode("utf-8")
         encoded = base64.b64encode(csv_data).decode("utf-8")

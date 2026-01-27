@@ -93,7 +93,7 @@ def _validate_workbook_signature(entry_bytes: bytes) -> None:
 
 
 def _validate_image_signature(filename: str, entry_bytes: bytes) -> None:
-    if entry_bytes.startswith(b"\xFF\xD8\xFF"):
+    if entry_bytes.startswith(b"\xff\xd8\xff"):
         return
     if entry_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
         return

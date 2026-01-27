@@ -60,7 +60,11 @@ def build_workbook(rows: list[dict[str, object]]) -> bytes:
 
 
 def generate_image(text: str, size: tuple[int, int] = (800, 600)) -> bytes:
-    image = Image.new("RGB", size, color=(random.randint(50, 200), random.randint(50, 200), random.randint(50, 200)))
+    image = Image.new(
+        "RGB",
+        size,
+        color=(random.randint(50, 200), random.randint(50, 200), random.randint(50, 200)),
+    )
     draw = ImageDraw.Draw(image)
     try:
         font = ImageFont.load_default()

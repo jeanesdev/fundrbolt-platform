@@ -75,7 +75,12 @@ class AuctionItem(Base, UUIDMixin, TimestampMixin):
     )
 
     # Core fields
-    external_id: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
+    external_id: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False,
+        index=True,
+        default=lambda: str(uuid.uuid4()),
+    )
     bid_number: Mapped[int] = mapped_column(Integer, nullable=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
