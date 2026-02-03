@@ -41,6 +41,7 @@ You are generating bulk import data for a nonprofit gala fundraiser auction. The
 - `buy_it_now` should be about 120–150% of fair_market_value or null for ~25% of items.
 - Include **10–15 live auction items** (`auction_type = "live"`) that are premium, high-value, and rarer.
 - Live auction items must have **starting_bid between $5,000 and $20,000**.
+- Live auction items must have `buy_it_now` set to **null**.
 - The remaining items should be **silent auction items** with lower, more accessible starting bids.
 - For **6 items**, generate **2–3 images** each. Use `image_filenames` and `image_prompts` for these items and omit `image_filename`/`image_prompt` for those rows. The filenames must share the same base name and add `_1`, `_2`, `_3` before the file extension (e.g., `demo-010_1.png`, `demo-010_2.png`).
 - For all other items, provide a single `image_filename` and `image_prompt`.
