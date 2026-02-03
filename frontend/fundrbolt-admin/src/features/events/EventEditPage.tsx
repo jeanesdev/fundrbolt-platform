@@ -22,11 +22,11 @@ export function EventEditPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const params = useParams({ strict: false })
-  
+
   // Extract eventId from URL path manually as fallback
   const pathMatch = location.pathname.match(/\/events\/([^/]+)/)
   const eventId = (params.eventId || pathMatch?.[1]) as string
-  
+
   const {
     currentEvent,
     eventsLoading,

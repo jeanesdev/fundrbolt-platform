@@ -26,17 +26,17 @@ interface EventContextState {
   selectedEventName: string | null
   selectedEventSlug: string | null
   isManualSelection: boolean // User manually picked vs auto-selected
-  
+
   // Available events for current NPO
   availableEvents: Event[]
   eventsLoading: boolean
   eventsError: string | null
-  
+
   // Actions
   selectEvent: (eventId: string, eventName: string, eventSlug: string, isManual: boolean) => void
   clearEvent: () => void
   loadEventsForNpo: (npoId: string | null) => Promise<void>
-  
+
   // Smart default logic
   applySmartDefault: () => void
 }
@@ -56,7 +56,7 @@ interface EventContextState {
 4. Page navigation → state persists (no change)
 ```
 
-**Persistence**: 
+**Persistence**:
 - Store in localStorage: `fundrbolt-selected-event` → `{eventId, eventName, eventSlug, npoId}`
 - Clear on NPO change or logout
 
@@ -133,10 +133,10 @@ function calculateContrast(color1: string, color2: string): number {
 function selectTextColor(bgColor: string): { textColor: string, hasBorder: boolean } {
   const whiteContrast = calculateContrast(bgColor, '#FFFFFF')
   const navyContrast = calculateContrast(bgColor, '#1e3a8a')
-  
+
   if (whiteContrast >= 4.5) return { textColor: '#FFFFFF', hasBorder: false }
   if (navyContrast >= 4.5) return { textColor: '#1e3a8a', hasBorder: false }
-  
+
   // Fallback: use border + reduced opacity
   return { textColor: '#FFFFFF', hasBorder: true }
 }
@@ -187,7 +187,7 @@ interface EventStats {
 ```python
 class Event(Base):
     __tablename__ = "events"
-    
+
     id: UUID
     npo_id: UUID  # Filter events by NPO
     name: str     # Display in selector
@@ -216,7 +216,7 @@ class Event(Base):
 ```python
 class NPO(Base):
     __tablename__ = "npos"
-    
+
     id: UUID
     name: str  # For initial generation
     logo_url: str | None  # Display in selector, fallback to initials if None
@@ -272,7 +272,7 @@ async def get_event_stats(
     event = await db.get(Event, event_id)
     if not event or not has_access_to_npo(current_user, event.npo_id):
         raise HTTPException(403, "Access denied")
-    
+
     # Efficient subqueries
     media_count = await db.scalar(
         select(func.count()).select_from(EventMedia).where(EventMedia.event_id == event_id)
@@ -281,7 +281,7 @@ async def get_event_stats(
         select(func.count()).select_from(EventLink).where(EventLink.event_id == event_id)
     )
     # ... repeat for other counts
-    
+
     return EventStatsResponse(
         eventId=event_id,
         mediaCount=media_count,

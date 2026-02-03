@@ -19,17 +19,17 @@ Redesign the admin PWA navigation architecture to consolidate all navigation int
 **Testing**: Vitest (unit), Testing Library (component), Playwright (E2E for navigation flows)
 **Target Platform**: Web browsers (Chrome, Firefox, Safari, Edge); responsive design for desktop/tablet/mobile
 **Project Type**: Web application (frontend component of monorepo)
-**Performance Goals**: 
+**Performance Goals**:
 - Sidebar render <50ms
 - Event selector dropdown open <100ms
 - Badge count updates on navigation <200ms
 - Initial avatar generation <10ms
-**Constraints**: 
+**Constraints**:
 - Must maintain existing NPO context functionality
 - Must preserve role-based access control for navigation items
 - Must support collapsible sidebar (existing feature)
 - Must work with existing event/NPO data structures
-**Scale/Scope**: 
+**Scale/Scope**:
 - ~15 new/modified components (EventSelector, AppSidebar updates, navigation groups)
 - ~5 navigation routes affected (settings pages cleanup)
 - ~3 custom hooks (useEventContext, useInitialAvatar)

@@ -20,8 +20,8 @@ description: "Task list for Auction Bid Backend"
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Confirm backend module locations for new bid features under backend/app/models, backend/app/schemas, backend/app/services, backend/app/api/v1
-- [ ] T002 [P] Create placeholder module files for auction bid feature (backend/app/models/auction_bid.py, backend/app/schemas/auction_bid.py, backend/app/services/auction_bid_service.py, backend/app/api/v1/auction_bids.py)
+- [X] T001 Confirm backend module locations for new bid features under backend/app/models, backend/app/schemas, backend/app/services, backend/app/api/v1
+- [X] T002 [P] Create placeholder module files for auction bid feature (backend/app/models/auction_bid.py, backend/app/schemas/auction_bid.py, backend/app/services/auction_bid_service.py, backend/app/api/v1/auction_bids.py)
 
 ---
 
@@ -29,11 +29,11 @@ description: "Task list for Auction Bid Backend"
 
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
-- [ ] T003 Define shared enums/constants for bid types and statuses in backend/app/models/auction_bid.py
-- [ ] T004 Add base audit logging helper for bid actions in backend/app/services/auction_bid_service.py
-- [ ] T005 Create Alembic migration for new tables and indexes in backend/alembic/versions/<new_migration>.py
-- [ ] T006 Register new API router in backend/app/api/v1/__init__.py
-- [ ] T007 Add real-time bid update publishing hook in backend/app/services/auction_bid_service.py
+- [X] T003 Define shared enums/constants for bid types and statuses in backend/app/models/auction_bid.py
+- [X] T004 Add base audit logging helper for bid actions in backend/app/services/auction_bid_service.py
+- [X] T005 Create Alembic migration for new tables and indexes in backend/alembic/versions/<new_migration>.py
+- [X] T006 Register new API router in backend/app/api/v1/__init__.py
+- [X] T007 Add real-time bid update publishing hook in backend/app/services/auction_bid_service.py
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -47,13 +47,13 @@ description: "Task list for Auction Bid Backend"
 
 ### Implementation for User Story 1
 
-- [ ] T008 [P] [US1] Implement AuctionBid model in backend/app/models/auction_bid.py
-- [ ] T009 [P] [US1] Add bid schemas (create/request/response/history) in backend/app/schemas/auction_bid.py
-- [ ] T010 [US1] Implement bid placement and proxy auto-bid logic in backend/app/services/auction_bid_service.py
-- [ ] T011 [US1] Implement bid placement and history endpoints in backend/app/api/v1/auction_bids.py
-- [ ] T012 [US1] Wire router into FastAPI app in backend/app/main.py
-- [ ] T013 [US1] Add bid validation rules and error handling in backend/app/services/auction_bid_service.py
-- [ ] T014 [US1] Validate bidder_number mapping and enforcement in backend/app/services/auction_bid_service.py
+- [X] T008 [P] [US1] Implement AuctionBid model in backend/app/models/auction_bid.py
+- [X] T009 [P] [US1] Add bid schemas (create/request/response/history) in backend/app/schemas/auction_bid.py
+- [X] T010 [US1] Implement bid placement and proxy auto-bid logic in backend/app/services/auction_bid_service.py
+- [X] T011 [US1] Implement bid placement and history endpoints in backend/app/api/v1/auction_bids.py
+- [X] T012 [US1] Wire router into FastAPI app in backend/app/main.py
+- [X] T013 [US1] Add bid validation rules and error handling in backend/app/services/auction_bid_service.py
+- [X] T014 [US1] Validate bidder_number mapping and enforcement in backend/app/services/auction_bid_service.py
 
 **Checkpoint**: User Story 1 should be fully functional and testable independently
 
@@ -67,11 +67,11 @@ description: "Task list for Auction Bid Backend"
 
 ### Implementation for User Story 2
 
-- [ ] T015 [P] [US2] Implement BidActionAudit model in backend/app/models/auction_bid.py
-- [ ] T016 [P] [US2] Add admin action schemas in backend/app/schemas/auction_bid.py
-- [ ] T017 [US2] Implement adjudication logic (mark-winning, adjust, cancel, override) in backend/app/services/auction_bid_service.py
-- [ ] T018 [US2] Implement admin endpoints in backend/app/api/v1/auction_bids.py
-- [ ] T019 [US2] Enforce RBAC for adjudication endpoints in backend/app/api/v1/auction_bids.py
+- [X] T015 [P] [US2] Implement BidActionAudit model in backend/app/models/auction_bid.py
+- [X] T016 [P] [US2] Add admin action schemas in backend/app/schemas/auction_bid.py
+- [X] T017 [US2] Implement adjudication logic (mark-winning, adjust, cancel, override) in backend/app/services/auction_bid_service.py
+- [X] T018 [US2] Implement admin endpoints in backend/app/api/v1/auction_bids.py
+- [X] T019 [US2] Enforce RBAC for adjudication endpoints in backend/app/api/v1/auction_bids.py
 
 **Checkpoint**: User Stories 1 and 2 should both be functional and independently testable
 
@@ -85,11 +85,11 @@ description: "Task list for Auction Bid Backend"
 
 ### Implementation for User Story 3
 
-- [ ] T020 [P] [US3] Implement PaddleRaiseContribution model in backend/app/models/auction_bid.py
-- [ ] T021 [P] [US3] Add paddle raise and report schemas in backend/app/schemas/auction_bid.py
-- [ ] T022 [US3] Implement reporting queries and analytics aggregation in backend/app/services/auction_bid_service.py
-- [ ] T023 [US3] Implement paddle raise and reporting endpoints in backend/app/api/v1/auction_bids.py
-- [ ] T024 [US3] Add high-value donor report logic in backend/app/services/auction_bid_service.py
+- [X] T020 [P] [US3] Implement PaddleRaiseContribution model in backend/app/models/auction_bid.py
+- [X] T021 [P] [US3] Add paddle raise and report schemas in backend/app/schemas/auction_bid.py
+- [X] T022 [US3] Implement reporting queries and analytics aggregation in backend/app/services/auction_bid_service.py
+- [X] T023 [US3] Implement paddle raise and reporting endpoints in backend/app/api/v1/auction_bids.py
+- [X] T024 [US3] Add high-value donor report logic in backend/app/services/auction_bid_service.py
 
 **Checkpoint**: All user stories should now be independently functional
 

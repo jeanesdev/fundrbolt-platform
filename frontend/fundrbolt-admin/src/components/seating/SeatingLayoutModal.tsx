@@ -35,7 +35,7 @@ export function SeatingLayoutModal({
   currentImageUrl,
   onImageUploaded,
 }: SeatingLayoutModalProps) {
-  
+
   const [uploading, setUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     currentImageUrl || null

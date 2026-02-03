@@ -39,9 +39,9 @@ import { LogoNavyGold, LogoWhiteGold } from '@fundrbolt/shared/assets';
 function Header({ isDarkBackground }: { isDarkBackground: boolean }) {
   return (
     <header className={isDarkBackground ? 'bg-brand-navy' : 'bg-white'}>
-      <img 
-        src={isDarkBackground ? LogoWhiteGold : LogoNavyGold} 
-        alt="Fundrbolt" 
+      <img
+        src={isDarkBackground ? LogoWhiteGold : LogoNavyGold}
+        alt="Fundrbolt"
         className="h-16 w-auto"
       />
     </header>
@@ -53,13 +53,13 @@ function Header({ isDarkBackground }: { isDarkBackground: boolean }) {
 Use **PNG format** with transparent background:
 ```html
 <!-- For dark header (navy background) -->
-<img src="https://fundrbolt-branding.azureedge.net/logos/fundrbolt-logo-white-gold.png" 
-     alt="Fundrbolt" 
+<img src="https://fundrbolt-branding.azureedge.net/logos/fundrbolt-logo-white-gold.png"
+     alt="Fundrbolt"
      style="height: 60px; display: block;" />
 
 <!-- For light header (white background) -->
-<img src="https://fundrbolt-branding.azureedge.net/logos/fundrbolt-logo-navy-gold.png" 
-     alt="Fundrbolt" 
+<img src="https://fundrbolt-branding.azureedge.net/logos/fundrbolt-logo-navy-gold.png"
+     alt="Fundrbolt"
      style="height: 60px; display: block;" />
 ```
 
@@ -126,7 +126,7 @@ If the designer provides new logo files:
    ```bash
    # Optimize SVG (remove metadata, compress)
    svgo fundrbolt-logo-navy-gold.svg
-   
+
    # Optimize PNG (lossless compression)
    pngquant --quality=80-100 fundrbolt-logo-navy-gold.png
    ```

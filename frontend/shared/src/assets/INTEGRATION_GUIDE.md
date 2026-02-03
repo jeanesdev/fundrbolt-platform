@@ -268,12 +268,12 @@ Apply typography via CSS variables:
   --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, ...;
   --font-family-heading: 'Manrope', 'Inter', -apple-system, ...;
   --font-family-mono: 'Monaco', 'Consolas', ...;
-  
+
   /* Heading Styles */
   --font-h1-size: 3.052rem;
   --font-h1-line-height: 1.2;
   --font-h1-weight: 700;
-  
+
   /* Body Styles */
   --font-body-size: 1rem;
   --font-body-line-height: 1.5;
@@ -342,7 +342,7 @@ function PrimaryButton({ children }: { children: React.ReactNode }) {
 function EventHeader({ isPrimaryEvent }: { isPrimaryEvent: boolean }) {
   const bgColor = isPrimaryEvent ? colors.primary.navy : colors.secondary.gray;
   const textColor = isPrimaryEvent ? colors.text.primary : colors.text.secondary;
-  
+
   return (
     <div style={{ backgroundColor: bgColor, color: textColor, padding: '20px' }}>
       <h1>Event Details</h1>
@@ -404,7 +404,7 @@ function getStatusColor(status: 'active' | 'pending' | 'closed'): string {
     pending: colors.secondary.gray,
     closed: colors.primary.navy,
   } as const;
-  
+
   return statusColors[status];
 }
 
@@ -421,15 +421,15 @@ interface ThemedComponentProps {
 
 function ThemedComponent({ variant, children }: ThemedComponentProps) {
   const themeColors = useThemeColors();
-  
-  const bgColor = variant === 'primary' 
-    ? themeColors.primary.navy 
+
+  const bgColor = variant === 'primary'
+    ? themeColors.primary.navy
     : themeColors.secondary.white;
-    
+
   const textColor = variant === 'primary'
     ? themeColors.text.primary
     : themeColors.text.secondary;
-  
+
   return (
     <div style={{ backgroundColor: bgColor, color: textColor }}>
       {children}
@@ -489,7 +489,7 @@ const PrimaryButton = styled.button`
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
-  
+
   &:hover {
     background-color: ${colors.primary.gold};
     color: ${colors.primary.navy};
@@ -499,13 +499,13 @@ const PrimaryButton = styled.button`
 const EventCard = styled.div`
   background-color: ${colors.secondary.white};
   border: 1px solid ${colors.secondary.gray};
-  
+
   .card-header {
     background-color: ${colors.primary.navy};
     color: ${colors.text.primary};
     padding: 16px;
   }
-  
+
   .card-body {
     padding: 16px;
     color: ${colors.text.secondary};
@@ -700,7 +700,7 @@ Before committing theme changes, test the workflow:
 
 # Rebuild all apps
 cd frontend/fundrbolt-admin && pnpm build
-cd frontend/donor-pwa && pnpm build  
+cd frontend/donor-pwa && pnpm build
 cd frontend/landing-site && pnpm build
 
 # Verify changes appear everywhere
@@ -812,7 +812,7 @@ module.exports = {
 # Check for hardcoded navy color
 grep -r "#11294c" frontend/*/src/ --exclude-dir=node_modules
 
-# Check for hardcoded gold color  
+# Check for hardcoded gold color
 grep -r "#ffc20e" frontend/*/src/ --exclude-dir=node_modules
 
 # Should only find imports, not direct usage
@@ -829,5 +829,5 @@ grep -r "#ffc20e" frontend/*/src/ --exclude-dir=node_modules
 
 ---
 
-**Last Updated**: 2026-01-19  
+**Last Updated**: 2026-01-19
 **Status**: Temporary placeholders in place, ready for designer assets

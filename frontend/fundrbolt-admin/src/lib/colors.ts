@@ -3,10 +3,10 @@ import { colors as brandColors } from '@fundrbolt/shared/assets'
 /**
  * Color Utilities
  * WCAG AA Compliant Contrast Calculation
- * 
+ *
  * Implements WCAG 2.1 Level AA contrast ratio requirements (4.5:1 for normal text).
  * Used for generating accessible initial avatars with automatic text color adjustment.
- * 
+ *
  * References:
  * - WCAG 2.1: https://www.w3.org/TR/WCAG21/#contrast-minimum
  * - Relative Luminance: https://www.w3.org/TR/WCAG21/#dfn-relative-luminance
@@ -15,7 +15,7 @@ import { colors as brandColors } from '@fundrbolt/shared/assets'
 /**
  * Calculate relative luminance of an RGB color
  * Formula from WCAG 2.1 spec
- * 
+ *
  * @param r - Red channel (0-255)
  * @param g - Green channel (0-255)
  * @param b - Blue channel (0-255)
@@ -40,7 +40,7 @@ export function calculateLuminance(r: number, g: number, b: number): number {
  * Calculate contrast ratio between two colors
  * Formula from WCAG 2.1 spec: (L1 + 0.05) / (L2 + 0.05)
  * where L1 is the lighter color and L2 is the darker color
- * 
+ *
  * @param luminance1 - Relative luminance of first color (0-1)
  * @param luminance2 - Relative luminance of second color (0-1)
  * @returns Contrast ratio (1-21)
@@ -55,7 +55,7 @@ export function getContrastRatio(luminance1: number, luminance2: number): number
 /**
  * Parse hex color to RGB components
  * Supports both 3-digit and 6-digit hex formats with optional # prefix
- * 
+ *
  * @param hex - Hex color string (e.g., "#FFF", "#FFFFFF", "FFF", "FFFFFF")
  * @returns RGB object with r, g, b properties (0-255) or null if invalid
  */
@@ -83,7 +83,7 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } | nul
 /**
  * Determine best text color (white or navy) for a given background color
  * Ensures WCAG AA compliance (4.5:1 minimum contrast ratio)
- * 
+ *
  * @param bgHex - Background color in hex format
  * @returns "white" (#FFFFFF) or "navy" (#1E293B) for optimal contrast
  */
@@ -112,7 +112,7 @@ export function getContrastingTextColor(bgHex: string): string {
 
 /**
  * Check if color combination meets WCAG AA standard (4.5:1 for normal text)
- * 
+ *
  * @param foregroundHex - Foreground/text color in hex format
  * @param backgroundHex - Background color in hex format
  * @returns true if contrast ratio >= 4.5:1

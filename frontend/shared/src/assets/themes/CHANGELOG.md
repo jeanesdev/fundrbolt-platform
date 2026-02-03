@@ -114,6 +114,6 @@ Not applicable - 1.0.0 is the initial release of the centralized theme system.
 
 ---
 
-**Last Updated**: January 2025  
-**Maintained By**: Fundrbolt Engineering Team  
+**Last Updated**: January 2025
+**Maintained By**: Fundrbolt Engineering Team
 **Questions**: Contact engineering@fundrbolt.com

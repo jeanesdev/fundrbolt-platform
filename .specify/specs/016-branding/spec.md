@@ -144,19 +144,19 @@ As a brand manager, I want to update theme values in a single location and see c
   - Variants: Navy/Gold text (for white backgrounds), White/Gold text (for navy backgrounds)
   - Formats: SVG (vector, preferred for web), PNG (raster, various sizes), JPEG (legacy), AI (source file)
   - Naming convention should clearly indicate variant and format
-  
+
 - **Theme Configuration**: Represents centralized color, typography, and spacing standards
   - Primary Colors: Navy (#11294c), Gold (#ffc20e)
   - Secondary Colors: White (#ffffff), Gray (#58595b)
   - Typography: System font stack (-apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif), font sizes, line heights, font weights
   - Spacing: Margin and padding scales for consistent layout
-  
+
 - **Favicon Set**: Represents browser icon files in multiple sizes
   - ICO: favicon.ico (32x32 with 16x16 embedded) for legacy browser support
   - PNG: 16x16 (browser tabs), 32x32 (taskbar/bookmarks), 180x180 (Apple Touch Icon), 192x192 (Android home screen), 512x512 (Android high-res/PWA)
   - SVG: favicon.svg (scalable vector, preferred for modern browsers)
   - Design consideration: Favicon should be simplified version of logo for visibility at small sizes (16x16)
-  
+
 - **Email Template**: Represents email communications that include branding
   - Logo reference: Absolute Azure Blob Storage CDN URL
   - Color scheme: Appropriate for email client rendering
