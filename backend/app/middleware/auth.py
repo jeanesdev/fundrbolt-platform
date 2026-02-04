@@ -7,6 +7,7 @@ import uuid
 from collections.abc import Callable
 from functools import wraps
 from typing import Annotated, Any
+from uuid import UUID
 
 import jwt
 from fastapi import Depends, HTTPException, Request, status
@@ -17,6 +18,8 @@ from app.core.database import get_db
 from app.core.security import decode_token
 from app.models.user import User
 from app.services.redis_service import RedisService
+
+_FORWARD_REF_UUID = UUID
 
 
 class HTTPBearerAuth(HTTPBearer):
