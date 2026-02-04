@@ -353,7 +353,14 @@ def require_role(*allowed_roles: str) -> Callable[..., Any]:
 
             return await func(*args, **kwargs)
 
-        wrapper.__signature__ = inspect.signature(func)  # type: ignore[attr-defined]
+        try:
+            wrapper.__signature__ = inspect.signature(  # type: ignore[attr-defined]
+                func,
+                eval_str=True,
+                globals=func.__globals__,
+            )
+        except TypeError:
+            wrapper.__signature__ = inspect.signature(func)  # type: ignore[attr-defined]
         return wrapper
 
     return decorator

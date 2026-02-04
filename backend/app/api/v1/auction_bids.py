@@ -126,9 +126,9 @@ async def get_bidder_bid_history(
 @require_role("super_admin", "npo_admin", "event_coordinator")
 async def mark_winning_bid(
     bid_id: UUID,
-    payload: Annotated[MarkWinningRequest, Body(...)],
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    payload: MarkWinningRequest = Body(...),
 ) -> BidResponse:
     try:
         service = AuctionBidService(db)
