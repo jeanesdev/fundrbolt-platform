@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -126,7 +126,7 @@ async def get_bidder_bid_history(
 @require_role("super_admin", "npo_admin", "event_coordinator")
 async def mark_winning_bid(
     bid_id: UUID,
-    payload: MarkWinningRequest,
+    payload: Annotated[MarkWinningRequest, Body(...)],
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> BidResponse:
