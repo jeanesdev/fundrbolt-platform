@@ -4,6 +4,7 @@ Provides dependency injection for protected endpoints that require authenticatio
 """
 
 import uuid
+from uuid import UUID
 from collections.abc import Callable
 from functools import wraps
 from typing import Annotated, Any
