@@ -3,6 +3,7 @@
 Provides dependency injection for protected endpoints that require authentication.
 """
 
+import inspect
 import uuid
 from collections.abc import Callable
 from functools import wraps
@@ -352,6 +353,7 @@ def require_role(*allowed_roles: str) -> Callable[..., Any]:
 
             return await func(*args, **kwargs)
 
+        wrapper.__signature__ = inspect.signature(func)  # type: ignore[attr-defined]
         return wrapper
 
     return decorator
