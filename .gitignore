@@ -54,3 +54,6 @@ htmlcov/
 coverage.xml
 *.cover
 node_modules/
+
+# Ignore Directory for Uploaded Files
+ignore/

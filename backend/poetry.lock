@@ -2248,6 +2248,21 @@ files = [
 ]
 
 [[package]]
+name = "types-bleach"
+version = "6.3.0.20251115"
+description = "Typing stubs for bleach"
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "types_bleach-6.3.0.20251115-py3-none-any.whl", hash = "sha256:f81e7cf4ebac3f3d60b66b3fd5236c324e65037d1b28d22c94d5b457f0b98f42"},
+    {file = "types_bleach-6.3.0.20251115.tar.gz", hash = "sha256:96911b20f169a18524d03b61fa7e98a08c411292f7cdb5dc191057f55dad9ae3"},
+]
+
+[package.dependencies]
+types-html5lib = "*"
+
+[[package]]
 name = "types-cffi"
 version = "1.17.0.20250915"
 description = "Typing stubs for cffi"
@@ -2261,6 +2276,21 @@ files = [
 
 [package.dependencies]
 types-setuptools = "*"
+
+[[package]]
+name = "types-html5lib"
+version = "1.1.11.20251117"
+description = "Typing stubs for html5lib"
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "types_html5lib-1.1.11.20251117-py3-none-any.whl", hash = "sha256:2a3fc935de788a4d2659f4535002a421e05bea5e172b649d33232e99d4272d08"},
+    {file = "types_html5lib-1.1.11.20251117.tar.gz", hash = "sha256:1a6a3ac5394aa12bf547fae5d5eff91dceec46b6d07c4367d9b39a37f42f201a"},
+]
+
+[package.dependencies]
+types-webencodings = "*"
 
 [[package]]
 name = "types-pyopenssl"
@@ -2316,6 +2346,18 @@ groups = ["dev"]
 files = [
     {file = "types_setuptools-80.9.0.20250822-py3-none-any.whl", hash = "sha256:53bf881cb9d7e46ed12c76ef76c0aaf28cfe6211d3fab12e0b83620b1a8642c3"},
     {file = "types_setuptools-80.9.0.20250822.tar.gz", hash = "sha256:070ea7716968ec67a84c7f7768d9952ff24d28b65b6594797a464f1b3066f965"},
+]
+
+[[package]]
+name = "types-webencodings"
+version = "0.5.0.20251108"
+description = "Typing stubs for webencodings"
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "types_webencodings-0.5.0.20251108-py3-none-any.whl", hash = "sha256:e21f81ff750795faffddaffd70a3d8bfff77d006f22c27e393eb7812586249d8"},
+    {file = "types_webencodings-0.5.0.20251108.tar.gz", hash = "sha256:2378e2ceccced3d41bb5e21387586e7b5305e11519fc6b0659c629f23b2e5de4"},
 ]
 
 [[package]]
@@ -2691,4 +2733,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "b241a502a7f06bd01be77c7f9dd9da93f0b4a39ec3fe51bdd031fef877a1edf0"
+content-hash = "d7ad55600fd81ff3e1d0925fd48e866d10deae775d84c9915b6e5c9330da1dcc"
