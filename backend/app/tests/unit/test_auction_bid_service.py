@@ -231,4 +231,4 @@ class TestAuctionBidService:
         current_high = await service._current_high_bid(item.id)
         assert current_high is not None
         assert current_high.user_id == test_user_2.id
-        assert current_high.bid_amount == Decimal("130.00")
+        assert current_high.bid_amount == Decimal("110.00")

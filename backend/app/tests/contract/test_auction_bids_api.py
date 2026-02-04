@@ -32,6 +32,7 @@ async def _create_auction_item(
     npo_admin_client: AsyncClient,
     event_id,
     *,
+    headers: dict[str, str] | None = None,
     auction_type: str = "silent",
     starting_bid: float = 100.0,
     bid_increment: float = 10.0,
@@ -53,6 +54,7 @@ async def _create_auction_item(
     response = await npo_admin_client.post(
         f"/api/v1/events/{event_id}/auction-items",
         json=payload,
+        headers=headers,
     )
     assert response.status_code == 201, response.json()
     return response.json()
@@ -64,14 +66,27 @@ class TestAuctionBidPlacement:
 
     async def test_place_bid_success(
         self,
-        donor_client: AsyncClient,
-        npo_admin_client: AsyncClient,
+        async_client: AsyncClient,
+        test_donor_token: str,
+        test_npo_admin_token: str,
         test_event: Any,
         test_registration: Any,
         test_donor_user: Any,
         db_session: AsyncSession,
     ) -> None:
-        item = await _create_auction_item(npo_admin_client, test_event.id)
+        admin_headers = {"Authorization": f"Bearer {test_npo_admin_token}"}
+        donor_headers = {"Authorization": f"Bearer {test_donor_token}"}
+
+        item = await _create_auction_item(
+            async_client,
+            test_event.id,
+            headers=admin_headers,
+            auction_type="silent",
+            starting_bid=100.0,
+            bid_increment=10.0,
+            buy_now_enabled=False,
+            buy_now_price=None,
+        )
         await _assign_bidder_number(
             db_session,
             registration_id=test_registration.id,
@@ -86,7 +101,9 @@ class TestAuctionBidPlacement:
             "bid_type": "regular",
         }
 
-        response = await donor_client.post("/api/v1/auction/bids", json=payload)
+        response = await async_client.post(
+            "/api/v1/auction/bids", json=payload, headers=donor_headers
+        )
 
         assert response.status_code == 201
         data = response.json()
@@ -97,14 +114,27 @@ class TestAuctionBidPlacement:
 
     async def test_item_bid_history_returns_results(
         self,
-        donor_client: AsyncClient,
-        npo_admin_client: AsyncClient,
+        async_client: AsyncClient,
+        test_donor_token: str,
+        test_npo_admin_token: str,
         test_event: Any,
         test_registration: Any,
         test_donor_user: Any,
         db_session: AsyncSession,
     ) -> None:
-        item = await _create_auction_item(npo_admin_client, test_event.id)
+        admin_headers = {"Authorization": f"Bearer {test_npo_admin_token}"}
+        donor_headers = {"Authorization": f"Bearer {test_donor_token}"}
+
+        item = await _create_auction_item(
+            async_client,
+            test_event.id,
+            headers=admin_headers,
+            auction_type="silent",
+            starting_bid=100.0,
+            bid_increment=10.0,
+            buy_now_enabled=False,
+            buy_now_price=None,
+        )
         await _assign_bidder_number(
             db_session,
             registration_id=test_registration.id,
@@ -118,10 +148,14 @@ class TestAuctionBidPlacement:
             "bid_amount": 100.0,
             "bid_type": "regular",
         }
-        place_response = await donor_client.post("/api/v1/auction/bids", json=bid_payload)
+        place_response = await async_client.post(
+            "/api/v1/auction/bids", json=bid_payload, headers=donor_headers
+        )
         assert place_response.status_code == 201
 
-        response = await donor_client.get(f"/api/v1/auction/items/{item['id']}/bids")
+        response = await async_client.get(
+            f"/api/v1/auction/items/{item['id']}/bids", headers=donor_headers
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -131,16 +165,24 @@ class TestAuctionBidPlacement:
 
     async def test_mark_winning_bid(
         self,
-        donor_client: AsyncClient,
-        npo_admin_client: AsyncClient,
+        async_client: AsyncClient,
+        test_donor_token: str,
+        test_npo_admin_token: str,
         test_event: Any,
         test_registration: Any,
         test_donor_user: Any,
         db_session: AsyncSession,
     ) -> None:
+        admin_headers = {"Authorization": f"Bearer {test_npo_admin_token}"}
+        donor_headers = {"Authorization": f"Bearer {test_donor_token}"}
+
         item = await _create_auction_item(
-            npo_admin_client,
+            async_client,
             test_event.id,
+            headers=admin_headers,
+            auction_type="silent",
+            starting_bid=100.0,
+            bid_increment=10.0,
             buy_now_enabled=True,
             buy_now_price=200.0,
         )
@@ -157,13 +199,16 @@ class TestAuctionBidPlacement:
             "bid_amount": 200.0,
             "bid_type": "buy_now",
         }
-        bid_response = await donor_client.post("/api/v1/auction/bids", json=bid_payload)
+        bid_response = await async_client.post(
+            "/api/v1/auction/bids", json=bid_payload, headers=donor_headers
+        )
         assert bid_response.status_code == 201
         bid = bid_response.json()
 
-        response = await npo_admin_client.post(
+        response = await async_client.post(
             f"/api/v1/auction/bids/{bid['id']}/mark-winning",
             json={"reason": "Confirmed winner"},
+            headers=admin_headers,
         )
 
         assert response.status_code == 200
