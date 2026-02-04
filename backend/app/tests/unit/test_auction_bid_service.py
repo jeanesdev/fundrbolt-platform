@@ -173,7 +173,9 @@ class TestAuctionBidService:
         assert bid.bid_status == BidStatus.WINNING.value
         assert bid.bid_type == BidType.BUY_NOW.value
 
-    async def test_proxy_auto_bidding_outbids_previous(self, db_session: AsyncSession, test_event, test_donor_user, test_user_2) -> None:
+    async def test_proxy_auto_bidding_outbids_previous(
+        self, db_session: AsyncSession, test_event, test_donor_user, test_user_2
+    ) -> None:
         service = AuctionBidService(db_session)
         item = await _create_auction_item(
             db_session,
