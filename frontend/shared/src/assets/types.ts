@@ -1,12 +1,12 @@
 /**
  * Brand Asset Types
- * 
+ *
  * TypeScript interfaces for all brand assets including logos, colors, and themes.
  */
 
 /**
  * Logo Asset Interface
- * 
+ *
  * Represents a logo variant with all necessary metadata
  */
 export interface LogoAsset {
@@ -28,7 +28,7 @@ export interface LogoAsset {
 
 /**
  * Favicon Set Interface
- * 
+ *
  * Represents all favicon files for browser/mobile display
  */
 export interface FaviconSet {
@@ -50,7 +50,7 @@ export interface FaviconSet {
 
 /**
  * Typography Scale Interface
- * 
+ *
  * Defines font sizes, line heights, and font weights for consistent typography
  */
 export interface TypographyScale {

@@ -1,19 +1,19 @@
 /**
  * Fundrbolt Shared Assets
- * 
+ *
  * Centralized exports for all brand assets including logos, colors, and themes.
  * Import from this file to ensure consistency across all applications.
- * 
+ *
  * ⚠️ TEMPORARY PLACEHOLDERS: Logo files are currently simple placeholders.
  * Replace with actual logo files from designer when available.
- * 
+ *
  * @example
  * ```typescript
  * import { colors, LogoNavyGold, getLogo } from '@fundrbolt/shared/assets';
- * 
+ *
  * // Use in React component
  * <img src={LogoNavyGold} alt="Fundrbolt" />
- * 
+ *
  * // Or use helper to select based on background
  * <img src={getLogo('dark')} alt="Fundrbolt" />
  * ```
@@ -56,9 +56,9 @@ export const faviconPaths = {
 
 /**
  * Logo Component Props Helper
- * 
+ *
  * Use this to select the correct logo based on background color
- * 
+ *
  * @param backgroundType - 'light' for white/light backgrounds, 'dark' for navy/dark backgrounds
  * @returns Path to appropriate logo variant
  */

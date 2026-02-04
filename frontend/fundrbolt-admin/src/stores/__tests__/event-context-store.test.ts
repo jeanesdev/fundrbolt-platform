@@ -13,7 +13,7 @@ describe('useEventContextStore', () => {
   beforeEach(() => {
     // Clear persisted state before each test
     localStorage.clear()
-    
+
     // Reset store to initial state
     act(() => {
       useEventContextStore.getState().reset()
@@ -23,7 +23,7 @@ describe('useEventContextStore', () => {
   describe('Initial State', () => {
     it('should initialize with null selected event', () => {
       const { result } = renderHook(() => useEventContextStore())
-      
+
       expect(result.current.selectedEventId).toBeNull()
       expect(result.current.selectedEventName).toBeNull()
       expect(result.current.selectedEventSlug).toBeNull()
@@ -32,7 +32,7 @@ describe('useEventContextStore', () => {
 
     it('should initialize with empty available events', () => {
       const { result } = renderHook(() => useEventContextStore())
-      
+
       expect(result.current.availableEvents).toEqual([])
       expect(result.current.eventsLoading).toBe(false)
       expect(result.current.eventsError).toBeNull()
@@ -42,7 +42,7 @@ describe('useEventContextStore', () => {
   describe('Smart Default Logic - Active Events', () => {
     it('should select next active event when available', () => {
       const { result } = renderHook(() => useEventContextStore())
-      
+
       const events: EventContextOption[] = [
         {
           id: 'event-1',
@@ -82,10 +82,10 @@ describe('useEventContextStore', () => {
   describe('Smart Default Logic - Upcoming Events', () => {
     it('should select next upcoming event when no active events', () => {
       const { result } = renderHook(() => useEventContextStore())
-      
+
       const futureDate1 = new Date()
       futureDate1.setDate(futureDate1.getDate() + 30)
-      
+
       const futureDate2 = new Date()
       futureDate2.setDate(futureDate2.getDate() + 15)
 
@@ -120,7 +120,7 @@ describe('useEventContextStore', () => {
   describe('Smart Default Logic - Past Events', () => {
     it('should select most recent past event when no active/upcoming events', () => {
       const { result } = renderHook(() => useEventContextStore())
-      
+
       const events: EventContextOption[] = [
         {
           id: 'event-1',
@@ -157,7 +157,7 @@ describe('useEventContextStore', () => {
 
     it('should clear selection when no events available', () => {
       const { result } = renderHook(() => useEventContextStore())
-      
+
       act(() => {
         result.current.setAvailableEvents([])
         result.current.applySmartDefault()
@@ -171,7 +171,7 @@ describe('useEventContextStore', () => {
   describe('Manual Selection', () => {
     it('should allow manual event selection', () => {
       const { result } = renderHook(() => useEventContextStore())
-      
+
       act(() => {
         result.current.selectEvent('event-123', 'My Event', 'my-event', true)
       })
@@ -184,7 +184,7 @@ describe('useEventContextStore', () => {
 
     it('should not override manual selection with smart default', () => {
       const { result } = renderHook(() => useEventContextStore())
-      
+
       // Manual selection first
       act(() => {
         result.current.selectEvent('event-manual', 'Manual Event', 'manual-event', true)
@@ -215,7 +215,7 @@ describe('useEventContextStore', () => {
   describe('Clear Event', () => {
     it('should clear event selection', () => {
       const { result } = renderHook(() => useEventContextStore())
-      
+
       act(() => {
         result.current.selectEvent('event-123', 'My Event', 'my-event', true)
         result.current.clearEvent()
@@ -231,7 +231,7 @@ describe('useEventContextStore', () => {
   describe('Loading and Error States', () => {
     it('should set loading state', () => {
       const { result } = renderHook(() => useEventContextStore())
-      
+
       act(() => {
         result.current.setLoading(true)
       })
@@ -247,7 +247,7 @@ describe('useEventContextStore', () => {
 
     it('should set error state', () => {
       const { result } = renderHook(() => useEventContextStore())
-      
+
       act(() => {
         result.current.setError('Failed to load events')
       })
@@ -265,7 +265,7 @@ describe('useEventContextStore', () => {
   describe('LocalStorage Persistence', () => {
     it('should persist selected event to localStorage', () => {
       const { result } = renderHook(() => useEventContextStore())
-      
+
       act(() => {
         result.current.selectEvent('event-persist', 'Persist Event', 'persist-event', true)
       })
@@ -273,7 +273,7 @@ describe('useEventContextStore', () => {
       // Check localStorage
       const stored = localStorage.getItem('fundrbolt-event-context-storage')
       expect(stored).toBeTruthy()
-      
+
       const parsed = JSON.parse(stored!)
       expect(parsed.state.selectedEventId).toBe('event-persist')
       expect(parsed.state.selectedEventName).toBe('Persist Event')
@@ -298,7 +298,7 @@ describe('useEventContextStore', () => {
       // Note: In real usage, this happens automatically on page load
       // For testing, we need to manually trigger rehydration
       const store = useEventContextStore.getState()
-      
+
       // Verify the store reads from localStorage on initialization
       // Since we cleared and reset in beforeEach, we need to set it again for this test
       act(() => {
@@ -316,7 +316,7 @@ describe('useEventContextStore', () => {
   describe('Reset', () => {
     it('should reset store to initial state', () => {
       const { result } = renderHook(() => useEventContextStore())
-      
+
       // Set some state
       act(() => {
         result.current.selectEvent('event-123', 'My Event', 'my-event', true)
@@ -345,7 +345,7 @@ describe('useEventContextStore', () => {
   describe('Helper Methods', () => {
     it('should return selected event ID', () => {
       const { result } = renderHook(() => useEventContextStore())
-      
+
       act(() => {
         result.current.selectEvent('event-123', 'My Event', 'my-event', false)
       })
@@ -355,7 +355,7 @@ describe('useEventContextStore', () => {
 
     it('should check if event is selected', () => {
       const { result } = renderHook(() => useEventContextStore())
-      
+
       expect(result.current.isEventSelected()).toBe(false)
 
       act(() => {

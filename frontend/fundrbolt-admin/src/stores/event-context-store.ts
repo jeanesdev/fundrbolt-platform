@@ -69,7 +69,7 @@ function selectSmartDefault(events: EventContextOption[]): EventContextOption | 
   const activeEvents = events.filter((e) => e.status === 'active')
   if (activeEvents.length > 0) {
     // Return the next chronologically active event
-    return activeEvents.sort((a, b) => 
+    return activeEvents.sort((a, b) =>
       new Date(a.event_datetime).getTime() - new Date(b.event_datetime).getTime()
     )[0]
   }
@@ -78,7 +78,7 @@ function selectSmartDefault(events: EventContextOption[]): EventContextOption | 
   const upcomingEvents = events.filter((e) => new Date(e.event_datetime) > now)
   if (upcomingEvents.length > 0) {
     // Return the next chronologically upcoming event
-    return upcomingEvents.sort((a, b) => 
+    return upcomingEvents.sort((a, b) =>
       new Date(a.event_datetime).getTime() - new Date(b.event_datetime).getTime()
     )[0]
   }
@@ -86,7 +86,7 @@ function selectSmartDefault(events: EventContextOption[]): EventContextOption | 
   // Priority 3: Past events (most recent first)
   const pastEvents = events.filter((e) => new Date(e.event_datetime) <= now)
   if (pastEvents.length > 0) {
-    return pastEvents.sort((a, b) => 
+    return pastEvents.sort((a, b) =>
       new Date(b.event_datetime).getTime() - new Date(a.event_datetime).getTime()
     )[0]
   }

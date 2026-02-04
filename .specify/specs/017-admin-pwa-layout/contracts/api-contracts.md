@@ -208,10 +208,10 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 SELECT * FROM events WHERE npo_id = $1 ORDER BY start_date DESC LIMIT $2 OFFSET $3;
 
 -- Modified query (with search)
-SELECT * FROM events 
-WHERE npo_id = $1 
+SELECT * FROM events
+WHERE npo_id = $1
   AND ($2 IS NULL OR name ILIKE '%' || $2 || '%')
-ORDER BY start_date DESC 
+ORDER BY start_date DESC
 LIMIT $3 OFFSET $4;
 ```
 
@@ -272,7 +272,7 @@ export function useEventStats(eventId: string | null) {
 ```typescript
 function EventNavGroup({ eventId }: { eventId: string }) {
   const { data: stats, isLoading } = useEventStats(eventId)
-  
+
   return (
     <NavGroup title={`Event: ${eventName}`}>
       <NavItem href={`/events/${eventId}/media`} badge={stats?.mediaCount} />
@@ -520,11 +520,11 @@ describe('EventStatsService', () => {
       mediaCount: 5,
       sponsorsCount: 12,
     }
-    
+
     mockApiClient.get.mockResolvedValue({ data: mockStats })
-    
+
     const result = await EventStatsService.getEventStats(mockStats.eventId)
-    
+
     expect(result).toEqual(mockStats)
     expect(mockApiClient.get).toHaveBeenCalledWith(
       `/api/v1/events/${mockStats.eventId}/stats`

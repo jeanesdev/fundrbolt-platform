@@ -62,7 +62,7 @@ export function useEventContext(): UseEventContextReturn {
   const { data, isLoading: queryLoading, error: queryError } = useQuery({
     queryKey: ['events', 'list', { npoId: selectedNpoId }],
     queryFn: async () => {
-      const response = await eventApi.listEvents({ 
+      const response = await eventApi.listEvents({
         npo_id: selectedNpoId || undefined,
         page: 1,
         page_size: 1000, // Fetch all events for selector
@@ -85,7 +85,7 @@ export function useEventContext(): UseEventContextReturn {
       }))
 
       setAvailableEvents(eventOptions)
-      
+
       // Apply smart default only if no manual selection exists
       if (!isManualSelection) {
         applySmartDefault()

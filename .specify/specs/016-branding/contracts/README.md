@@ -162,22 +162,22 @@ class EmailService:
     def _get_logo_url(self, background: str = "dark") -> str:
         """
         Get Azure CDN logo URL for email templates.
-        
+
         Args:
             background: "light" or "dark" - determines which logo variant to use
-            
+
         Returns:
             Full HTTPS URL to logo PNG on Azure CDN
-            
+
         Examples:
             >>> email_service._get_logo_url("dark")
             'https://fundrbolt-branding.azureedge.net/logos/fundrbolt-logo-white-gold.png'
-            
+
             >>> email_service._get_logo_url("light")
             'https://fundrbolt-branding.azureedge.net/logos/fundrbolt-logo-navy-gold.png'
         """
         base_url = settings.AZURE_CDN_LOGO_BASE_URL
-        
+
         if background == "dark":
             return f"{base_url}/fundrbolt-logo-white-gold.png"
         else:
@@ -191,9 +191,9 @@ class EmailService:
 
 class Settings(BaseSettings):
     # ... existing settings ...
-    
+
     AZURE_CDN_LOGO_BASE_URL: str = "https://fundrbolt-branding.azureedge.net/logos"
-    
+
     class Config:
         env_file = ".env"
 ```
@@ -212,15 +212,15 @@ class Settings(BaseSettings):
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #11294c;">
         <tr>
             <td align="center" style="padding: 20px 0;">
-                <img src="{{ logo_url }}" 
-                     alt="Fundrbolt" 
+                <img src="{{ logo_url }}"
+                     alt="Fundrbolt"
                      style="height: 60px; display: block;" />
             </td>
         </tr>
     </table>
-    
+
     <!-- Email content goes here -->
-    
+
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #58595b; margin-top: 40px;">
         <tr>
             <td align="center" style="padding: 20px; color: #ffffff; font-size: 12px;">
@@ -240,15 +240,15 @@ class Settings(BaseSettings):
 async def send_verification_email(self, email: str, token: str) -> None:
     """Send email verification with branded logo"""
     logo_url = self._get_logo_url(background="dark")  # Dark header background
-    
+
     template_context = {
         "logo_url": logo_url,
         "logo_alt": "Fundrbolt",
         "verification_link": f"{settings.FRONTEND_URL}/verify-email?token={token}",
     }
-    
+
     html_content = self._render_template("emails/verify_email.html", template_context)
-    
+
     await self._send_email(
         to=email,
         subject="Verify your Fundrbolt account",

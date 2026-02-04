@@ -358,7 +358,7 @@ This guide walks through implementing the admin PWA layout redesign from scratch
 
 1. **Remove Duplicate Header** (15 min)
    ```tsx
-   // BEFORE: 
+   // BEFORE:
    <Header><Search /></Header>
    // AFTER: Remove this (main layout already has header)
    ```
