@@ -5,8 +5,10 @@ from typing import Any
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.auction_bid import AuctionBid
 from app.models.registration_guest import RegistrationGuest
 
 
@@ -204,9 +206,14 @@ class TestAuctionBidPlacement:
         )
         assert bid_response.status_code == 201
         bid = bid_response.json()
+        stmt = select(AuctionBid).where(
+            AuctionBid.auction_item_id == item["id"],
+            AuctionBid.user_id == test_donor_user.id,
+        )
+        bid_record = (await db_session.execute(stmt)).scalar_one()
 
         response = await async_client.post(
-            f"/api/v1/auction/bids/{bid['id']}/mark-winning",
+            f"/api/v1/auction/bids/{bid_record.id}/mark-winning",
             json={"reason": "Confirmed winner"},
             headers=admin_headers,
         )
