@@ -20,9 +20,9 @@ description: "Task list for Image Generator Utility (Dev CLI)"
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Ensure CLI script location exists at backend/scripts/image_generator_cli.py
-- [ ] T002 Add OpenAI Python SDK dependency in backend/pyproject.toml (poetry add openai)
-- [ ] T003 [P] Add environment variable documentation in backend/README.md for Azure OpenAI settings
+- [x] T001 Ensure CLI script location exists at backend/scripts/image_generator_cli.py
+- [x] T002 Add OpenAI Python SDK dependency in backend/pyproject.toml (poetry add openai)
+- [x] T003 [P] Add environment variable documentation in backend/README.md for Azure OpenAI settings
 
 ---
 
@@ -30,9 +30,9 @@ description: "Task list for Image Generator Utility (Dev CLI)"
 
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
-- [ ] T004 Implement config loading and validation for required env vars in backend/scripts/image_generator_cli.py
-- [ ] T005 Implement JSON loading and schema validation (single vs list fields) in backend/scripts/image_generator_cli.py
-- [ ] T006 Implement filename sanitization helper and uniqueness handling in backend/scripts/image_generator_cli.py
+- [x] T004 Implement config loading and validation for required env vars in backend/scripts/image_generator_cli.py
+- [x] T005 Implement JSON loading and schema validation (single vs list fields) in backend/scripts/image_generator_cli.py
+- [x] T006 Implement filename sanitization helper and uniqueness handling in backend/scripts/image_generator_cli.py
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -46,10 +46,10 @@ description: "Task list for Image Generator Utility (Dev CLI)"
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Implement CLI argument parsing for input/output/prompt prefix/suffix in backend/scripts/image_generator_cli.py
-- [ ] T008 [US1] Implement prompt preparation and iteration over items/prompts in backend/scripts/image_generator_cli.py
-- [ ] T009 [US1] Implement Azure OpenAI image generation call and base64 decoding in backend/scripts/image_generator_cli.py
-- [ ] T010 [US1] Implement file write flow to output folder in backend/scripts/image_generator_cli.py
+- [x] T007 [US1] Implement CLI argument parsing for input/output/prompt prefix/suffix in backend/scripts/image_generator_cli.py
+- [x] T008 [US1] Implement prompt preparation and iteration over items/prompts in backend/scripts/image_generator_cli.py
+- [x] T009 [US1] Implement Azure OpenAI image generation call and base64 decoding in backend/scripts/image_generator_cli.py
+- [x] T010 [US1] Implement file write flow to output folder in backend/scripts/image_generator_cli.py
 
 **Checkpoint**: User Story 1 functional and testable independently
 
@@ -63,8 +63,8 @@ description: "Task list for Image Generator Utility (Dev CLI)"
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Apply sanitized naming rules and collision resolution to output filenames in backend/scripts/image_generator_cli.py
-- [ ] T012 [US2] Implement skip-existing behavior with logged status in backend/scripts/image_generator_cli.py
+- [x] T011 [US2] Apply sanitized naming rules and collision resolution to output filenames in backend/scripts/image_generator_cli.py
+- [x] T012 [US2] Implement skip-existing behavior with logged status in backend/scripts/image_generator_cli.py
 
 **Checkpoint**: User Story 2 functional and testable independently
 
@@ -78,9 +78,9 @@ description: "Task list for Image Generator Utility (Dev CLI)"
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Implement structured logging for per-item/prompt progress in backend/scripts/image_generator_cli.py
-- [ ] T014 [US3] Implement run summary output (saved/skipped/failed counts) in backend/scripts/image_generator_cli.py
-- [ ] T015 [US3] Enforce stop-on-first-generation-failure behavior in backend/scripts/image_generator_cli.py
+- [x] T013 [US3] Implement structured logging for per-item/prompt progress in backend/scripts/image_generator_cli.py
+- [x] T014 [US3] Implement run summary output (saved/skipped/failed counts) in backend/scripts/image_generator_cli.py
+- [x] T015 [US3] Enforce stop-on-first-generation-failure behavior in backend/scripts/image_generator_cli.py
 
 **Checkpoint**: User Story 3 functional and testable independently
 
@@ -90,8 +90,8 @@ description: "Task list for Image Generator Utility (Dev CLI)"
 
 **Purpose**: Final documentation and usability checks
 
-- [ ] T016 [P] Update backend/README.md with CLI usage example and flags
-- [ ] T017 [P] Validate quickstart example against current CLI flags in specs/020-image-generator-util/quickstart.md
+- [x] T016 [P] Update backend/README.md with CLI usage example and flags
+- [x] T017 [P] Validate quickstart example against current CLI flags in specs/020-image-generator-util/quickstart.md
 
 ---
 

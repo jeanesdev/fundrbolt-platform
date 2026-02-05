@@ -14,7 +14,7 @@ Run from repo root:
 - Optional prompt prefix/suffix supported
 
 Example usage:
-- `poetry run python backend/scripts/image_generator_cli.py --input ignore/example_auction_items.json --output ./generated-images --prompt-prefix "Studio photo of" --prompt-suffix "high detail"`
+- `poetry run python backend/scripts/image_generator_cli.py --input ignore/example_auction_items.json --output ./generated-images --max-images 3 --prompt-prefix "Studio photo of" --prompt-suffix "high detail"`
 
 ## Required Environment Variables
 
@@ -28,3 +28,5 @@ Example usage:
 - Existing files are skipped and logged as skipped.
 - The run stops on the first generation failure.
 - Filenames are sanitized and made unique when needed.
+- Output folder must exist before running the CLI.
+- Use `--dry-run` to validate inputs without generating images.

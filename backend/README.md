@@ -105,6 +105,34 @@ mypy app --strict --ignore-missing-imports
 pre-commit run --all-files
 ```
 
+## 🧰 Dev Utilities
+
+### Azure OpenAI Image Generator (CLI)
+
+Generate demo images for auction items from a JSON file (dev-only utility).
+
+**Required environment variables**:
+- `AZURE_OPENAI_ENDPOINT`
+- `AZURE_OPENAI_API_KEY`
+- `AZURE_OPENAI_DEPLOYMENT`
+- `AZURE_OPENAI_API_VERSION`
+
+**Example usage**:
+```bash
+poetry run python backend/scripts/image_generator_cli.py \
+   --input ignore/example_auction_items.json \
+   --output ignore/generated-images \
+   --max-images 3 \
+   --prompt-prefix "Realistic Professional Marketing Studio simple elegant photo of" \
+   --prompt-suffix "high detail"
+```
+
+**Notes**:
+- Output folder must exist.
+- Existing files are skipped and logged as skipped.
+- The run stops on the first generation failure.
+- Use `--dry-run` to validate inputs without generating images.
+
 ### Database Migrations
 
 ```bash
