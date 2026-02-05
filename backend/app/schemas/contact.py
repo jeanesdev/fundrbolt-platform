@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-import bleach  # type: ignore[import-untyped]
+import bleach
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.models.contact_submission import SubmissionStatus
@@ -39,7 +39,7 @@ class ContactSubmissionCreate(BaseModel):
     @classmethod
     def sanitize_html(cls, value: str) -> str:
         """Sanitize HTML to prevent XSS attacks"""
-        return bleach.clean(value, tags=[], strip=True)  # type: ignore[no-any-return]
+        return bleach.clean(value, tags=[], strip=True)
 
 
 class ContactSubmissionResponse(BaseModel):

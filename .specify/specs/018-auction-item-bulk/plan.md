@@ -80,5 +80,3 @@ frontend/
 ```
 
 **Structure Decision**: Web application structure using existing `backend/app` and `frontend/fundrbolt-admin/src` directories.
-
- 

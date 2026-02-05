@@ -1,5 +1,6 @@
 """Database models package."""
 
+from app.models.auction_bid import AuctionBid, BidActionAudit, PaddleRaiseContribution
 from app.models.auction_item import AuctionItem
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin, UUIDMixin
@@ -35,8 +36,10 @@ from app.models.user import User
 
 __all__ = [
     "AssignedTicket",
+    "AuctionBid",
     "AuctionItem",
     "AuditLog",
+    "BidActionAudit",
     "Base",
     "TimestampMixin",
     "UUIDMixin",
@@ -62,6 +65,7 @@ __all__ = [
     "PaymentStatus",
     "PromoCode",
     "PromoCodeApplication",
+    "PaddleRaiseContribution",
     "RegistrationGuest",
     "RegistrationStatus",
     "Role",

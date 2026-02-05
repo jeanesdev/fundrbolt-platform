@@ -1,6 +1,6 @@
 # Phase 0: Research - Centralized Brand Assets and Theme System
 
-**Date**: 2026-01-19  
+**Date**: 2026-01-19
 **Feature**: 016-branding
 
 ## Research Overview
@@ -66,8 +66,8 @@ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica N
 
 **Email Template Usage**:
 ```html
-<img src="https://fundrbolt-branding.azureedge.net/logos/fundrbolt-logo-white-gold.png" 
-     alt="Fundrbolt" 
+<img src="https://fundrbolt-branding.azureedge.net/logos/fundrbolt-logo-white-gold.png"
+     alt="Fundrbolt"
      style="height: 60px;" />
 ```
 

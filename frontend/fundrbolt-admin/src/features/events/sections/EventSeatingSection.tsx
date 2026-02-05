@@ -43,7 +43,7 @@ export function EventSeatingSection() {
               await updateEvent(currentEvent.id, {
                 seating_layout_image_url: url,
               })
-              
+
               // Reload to ensure we have latest data
               await loadEventById(currentEvent.id)
               // Note: loadEventById returns void, check currentEvent after store updates

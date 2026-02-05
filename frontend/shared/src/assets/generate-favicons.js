@@ -3,9 +3,9 @@
 /**
  * Simple Favicon Generator
  * Generates PNG favicons in multiple sizes from SVG
- * 
+ *
  * This is a temporary solution until actual favicons are provided by designer.
- * 
+ *
  * Usage: node generate-favicons.js
  */
 

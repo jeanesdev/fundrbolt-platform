@@ -1,7 +1,7 @@
 /**
  * InitialAvatar Component
  * Displays a circular avatar with initials and branding colors
- * 
+ *
  * Used as fallback when NPO/Event logos are not uploaded.
  * Ensures WCAG AA compliance with auto-contrasting text colors.
  */

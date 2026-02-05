@@ -1,6 +1,6 @@
 # Phase 1: Data Model - Centralized Brand Assets and Theme System
 
-**Date**: 2026-01-19  
+**Date**: 2026-01-19
 **Feature**: 016-branding
 
 ## Data Model Overview
@@ -13,7 +13,7 @@ This document defines the data structures for brand asset management. Note: This
 
 **Description**: Logo file variants for different background contexts
 
-**Storage Location**: 
+**Storage Location**:
 - Frontend: `frontend/shared/src/assets/logos/`
 - Email: Azure Blob Storage (`branding` container)
 
@@ -220,12 +220,12 @@ class EmailService:
     def _get_logo_url(self, background: str = "dark") -> str:
         """Get Azure CDN logo URL for email templates"""
         base_url = "https://fundrbolt-branding.azureedge.net/logos"
-        
+
         if background == "dark":
             return f"{base_url}/fundrbolt-logo-white-gold.png"
         else:
             return f"{base_url}/fundrbolt-logo-navy-gold.png"
-    
+
     def _render_email_template(self, template_name: str, context: dict) -> str:
         """Render email template with logo URL"""
         context["logo_url"] = self._get_logo_url()
@@ -239,8 +239,8 @@ class EmailService:
 <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #11294c;">
   <tr>
     <td align="center" style="padding: 20px 0;">
-      <img src="{{ logo_url }}" 
-           alt="{{ logo_alt }}" 
+      <img src="{{ logo_url }}"
+           alt="{{ logo_alt }}"
            style="height: 60px; display: block;" />
     </td>
   </tr>

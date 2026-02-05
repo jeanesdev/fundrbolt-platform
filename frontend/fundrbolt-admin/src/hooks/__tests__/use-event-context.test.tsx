@@ -33,7 +33,7 @@ describe('useEventContext', () => {
   beforeEach(() => {
     // Clear all mocks
     vi.clearAllMocks()
-    
+
     // Clear localStorage
     localStorage.clear()
 

@@ -35,6 +35,8 @@ wheels/
 venv/
 ENV/
 env/
+.venv/
+.env*
 
 # IDEs
 .vscode/
@@ -54,3 +56,6 @@ htmlcov/
 coverage.xml
 *.cover
 node_modules/
+
+# Ignore Directory for Uploaded Files
+ignore/

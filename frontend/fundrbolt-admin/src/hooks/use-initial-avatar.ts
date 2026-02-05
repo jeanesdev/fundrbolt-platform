@@ -1,10 +1,10 @@
 /**
  * useInitialAvatar Hook
  * Generates initial-based avatar configuration with WCAG AA compliant colors
- * 
+ *
  * Used for NPOs and Events without uploaded logos/images.
  * Auto-calculates contrasting text color and applies border when needed.
- * 
+ *
  * Business Rules:
  * - Extracts first letter of first two words (max 2 characters)
  * - Uses branding primary color as background if available
@@ -32,7 +32,7 @@ export interface UseInitialAvatarProps {
 /**
  * Extract initials from a name
  * Takes first letter of first two words
- * 
+ *
  * Examples:
  * - "Fundrbolt Platform" -> "FP"
  * - "St. Mary's Church" -> "SM"

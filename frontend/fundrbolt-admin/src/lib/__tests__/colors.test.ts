@@ -116,24 +116,24 @@ describe('Color Utilities', () => {
       const whiteLuminance = calculateLuminance(255, 255, 255)
       const blackLuminance = calculateLuminance(0, 0, 0)
       const ratio = getContrastRatio(whiteLuminance, blackLuminance)
-      
+
       expect(ratio).toBeCloseTo(21, 0) // Maximum contrast ratio is 21:1
     })
 
     it('should calculate contrast between same colors (minimum)', () => {
       const luminance = calculateLuminance(128, 128, 128)
       const ratio = getContrastRatio(luminance, luminance)
-      
+
       expect(ratio).toBe(1) // Same color has 1:1 ratio
     })
 
     it('should handle luminance values in any order', () => {
       const whiteLuminance = calculateLuminance(255, 255, 255)
       const blackLuminance = calculateLuminance(0, 0, 0)
-      
+
       const ratio1 = getContrastRatio(whiteLuminance, blackLuminance)
       const ratio2 = getContrastRatio(blackLuminance, whiteLuminance)
-      
+
       expect(ratio1).toEqual(ratio2)
     })
   })

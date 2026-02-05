@@ -143,12 +143,12 @@ frontend/
       icon-192x192.png
       icon-512x512.png
       apple-touch-icon.png
-      
+
   donor-pwa/public/
     favicon.ico
     images/
       [same files as admin]
-      
+
   landing-site/public/
     favicon.ico
     icon.svg              # Note: different naming
