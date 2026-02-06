@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import json
 import random
 import zipfile
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 from openpyxl import Workbook
 from PIL import Image, ImageDraw, ImageFont
@@ -24,6 +26,25 @@ CATEGORIES = [
     "Other",
 ]
 
+HEADERS = [
+    "external_id",
+    "title",
+    "description",
+    "auction_type",
+    "fair_market_value",
+    "starting_bid",
+    "category",
+    "image_filename",
+    "buy_it_now",
+    "quantity",
+    "donor_name",
+    "tags",
+    "restrictions",
+    "fulfillment_notes",
+    "is_featured",
+    "sort_order",
+]
+
 
 def build_workbook(rows: list[dict[str, object]]) -> bytes:
     workbook = Workbook()
@@ -32,28 +53,10 @@ def build_workbook(rows: list[dict[str, object]]) -> bytes:
         raise RuntimeError("Failed to initialize workbook sheet")
     sheet.title = "Auction Items"
 
-    headers = [
-        "external_id",
-        "title",
-        "description",
-        "auction_type",
-        "fair_market_value",
-        "starting_bid",
-        "category",
-        "image_filename",
-        "buy_it_now",
-        "quantity",
-        "donor_name",
-        "tags",
-        "restrictions",
-        "fulfillment_notes",
-        "is_featured",
-        "sort_order",
-    ]
-    sheet.append(headers)
+    sheet.append(HEADERS)
 
     for row in rows:
-        sheet.append([row.get(header) for header in headers])
+        sheet.append([row.get(header) for header in HEADERS])
 
     buffer = BytesIO()
     workbook.save(buffer)
@@ -106,6 +109,37 @@ def build_rows(count: int) -> list[dict[str, object]]:
     return rows
 
 
+def load_rows_from_json(path: Path) -> list[dict[str, object]]:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, list):
+        raise ValueError("Expected JSON array of auction items")
+
+    rows: list[dict[str, object]] = []
+    for index, item in enumerate(data, start=1):
+        if not isinstance(item, dict):
+            raise ValueError("Each JSON item must be an object")
+
+        image_filename = item.get("image_filename")
+        if not image_filename:
+            image_filenames = item.get("image_filenames")
+            if isinstance(image_filenames, list) and image_filenames:
+                image_filename = image_filenames[0]
+
+        normalized: dict[str, object] = {
+            header: item.get(header) for header in HEADERS
+        }
+        normalized["image_filename"] = image_filename
+
+        if normalized.get("quantity") in (None, ""):
+            normalized["quantity"] = 1
+        if normalized.get("sort_order") in (None, ""):
+            normalized["sort_order"] = index
+
+        rows.append(normalized)
+
+    return rows
+
+
 def create_zip(output_path: Path, rows: list[dict[str, object]]) -> None:
     workbook_bytes = build_workbook(rows)
 
@@ -117,16 +151,83 @@ def create_zip(output_path: Path, rows: list[dict[str, object]]) -> None:
             zip_file.writestr(f"images/{image_name}", image_bytes)
 
 
+def _find_image_candidate(images_dir: Path, image_name: str) -> Path | None:
+    if not images_dir.exists():
+        return None
+
+    target_name = image_name.lower()
+    exact_path = images_dir / image_name
+    if exact_path.exists():
+        return exact_path
+
+    stem = Path(image_name).stem.lower()
+    candidates = [
+        path
+        for path in images_dir.iterdir()
+        if path.is_file()
+        and path.suffix.lower() in {".png", ".jpg", ".jpeg"}
+        and stem in path.name.lower()
+    ]
+    if not candidates:
+        return None
+
+    return sorted(candidates, key=lambda path: len(path.name))[0]
+
+
+def create_zip_from_json(
+    output_path: Path, rows: list[dict[str, object]], images_dir: Path | None
+) -> None:
+    workbook_bytes = build_workbook(rows)
+    images_root = images_dir or Path.cwd()
+
+    with zipfile.ZipFile(output_path, mode="w", compression=zipfile.ZIP_DEFLATED) as zip_file:
+        zip_file.writestr("auction_items.xlsx", workbook_bytes)
+        for row in rows:
+            image_name = row.get("image_filename")
+            if not image_name:
+                continue
+            image_name = str(image_name)
+            image_path = _find_image_candidate(images_root, image_name)
+            if image_path and image_path.exists():
+                zip_file.write(image_path, arcname=f"images/{image_name}")
+            else:
+                image_bytes = generate_image(str(row.get("title", image_name)))
+                zip_file.writestr(f"images/{image_name}", image_bytes)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate demo auction item import package")
     parser.add_argument("--count", type=int, default=20, help="Number of items to generate")
+    parser.add_argument("--json", type=Path, help="Path to JSON file of auction items")
+    parser.add_argument(
+        "--xlsx",
+        type=Path,
+        default=Path("./auction_items.xlsx"),
+        help="Output workbook path when using --json",
+    )
     parser.add_argument(
         "--output",
         type=Path,
         default=Path("./auction-item-import-demo.zip"),
         help="Output ZIP path",
     )
+    parser.add_argument(
+        "--images-dir",
+        type=Path,
+        help="Directory containing item images when using --json",
+    )
     args = parser.parse_args()
+
+    if args.json:
+        rows = load_rows_from_json(args.json)
+        if args.output:
+            create_zip_from_json(args.output, rows, args.images_dir)
+            print(f"Created {args.output} with {len(rows)} items")
+            return
+        workbook_bytes = build_workbook(rows)
+        args.xlsx.write_bytes(workbook_bytes)
+        print(f"Created {args.xlsx} with {len(rows)} items")
+        return
 
     rows = build_rows(args.count)
     create_zip(args.output, rows)

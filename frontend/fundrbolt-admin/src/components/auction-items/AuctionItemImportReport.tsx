@@ -27,7 +27,11 @@ function ReportRow({ row }: { row: ImportRowResult }) {
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-muted-foreground">Row {row.row_number}</span>
         {row.external_id && <span className="font-medium">{row.external_id}</span>}
+        {row.title && <span className="text-muted-foreground">{row.title}</span>}
         <Badge variant={statusVariant(row.status)}>{row.status}</Badge>
+        <span className="text-xs text-muted-foreground">
+          Images: {row.image_count ?? 0}
+        </span>
         {row.image_status && (
           <span className="text-xs text-muted-foreground">Image: {row.image_status}</span>
         )}

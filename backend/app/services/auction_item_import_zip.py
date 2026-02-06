@@ -20,6 +20,7 @@ from app.core.auction_item_import import (
 @dataclass
 class ImportZipContents:
     workbook_bytes: bytes
+    workbook_filename: str
     image_files: dict[str, bytes]
 
 
@@ -41,7 +42,7 @@ def validate_zip_bytes(zip_bytes: bytes) -> ImportZipContents:
         raise ImportZipValidationError("ZIP file contains too many entries")
 
     total_uncompressed = 0
-    workbook_bytes: bytes | None = None
+    workbook_entries: list[tuple[PurePosixPath, bytes]] = []
     image_files: dict[str, bytes] = {}
 
     for entry in entries:
@@ -60,25 +61,44 @@ def validate_zip_bytes(zip_bytes: bytes) -> ImportZipContents:
         with zip_file.open(entry) as entry_stream:
             entry_bytes = entry_stream.read()
 
-        if entry_path.name == WORKBOOK_FILENAME and entry_path.parent == PurePosixPath("."):
-            _validate_workbook_signature(entry_bytes)
-            workbook_bytes = entry_bytes
+        if entry_path.suffix.lower() in {".xlsx", ".csv"}:
+            workbook_entries.append((entry_path, entry_bytes))
             continue
 
-        if entry_path.parts and entry_path.parts[0] == "images":
-            if entry_path.suffix.lower() not in ALLOWED_IMAGE_EXTENSIONS:
-                raise ImportZipValidationError("Unsupported image file type")
+        if entry_path.suffix.lower() in ALLOWED_IMAGE_EXTENSIONS:
             _validate_image_signature(entry_path.name, entry_bytes)
+            if entry_path.name in image_files:
+                raise ImportZipValidationError(f"Duplicate image filename found: {entry_path.name}")
             image_files[entry_path.name] = entry_bytes
             continue
 
-    if workbook_bytes is None:
-        raise ImportZipValidationError("Missing auction_items.xlsx in ZIP root")
+        raise ImportZipValidationError(
+            f"Unsupported file type in ZIP: {entry_path.name}. Only .xlsx, .csv, .jpg, .jpeg, .png are allowed."
+        )
+
+    if not workbook_entries:
+        raise ImportZipValidationError("Missing workbook (.xlsx or .csv) in ZIP")
+
+    if len(workbook_entries) > 1:
+        workbook_names = ", ".join(path.name for path, _ in workbook_entries)
+        raise ImportZipValidationError(
+            f"ZIP must contain exactly one workbook (.xlsx or .csv). Found: {workbook_names}"
+        )
+
+    workbook_path, workbook_bytes = workbook_entries[0]
+    if workbook_path.suffix.lower() == ".xlsx":
+        _validate_workbook_signature(workbook_bytes)
+    elif not workbook_bytes:
+        raise ImportZipValidationError("Workbook file is empty")
 
     if not image_files:
-        raise ImportZipValidationError("ZIP file contains no images in images/ folder")
+        raise ImportZipValidationError("ZIP file contains no image files")
 
-    return ImportZipContents(workbook_bytes=workbook_bytes, image_files=image_files)
+    return ImportZipContents(
+        workbook_bytes=workbook_bytes,
+        workbook_filename=workbook_path.name,
+        image_files=image_files,
+    )
 
 
 def _validate_zip_entry(entry: zipfile.ZipInfo) -> None:
