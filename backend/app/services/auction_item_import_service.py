@@ -234,7 +234,11 @@ class AuctionItemImportService:
 
             image_filenames = self._get_image_filenames(row)
             image_count = len([name for name in image_filenames if name in image_files])
-            image_status = ImportImageStatus.OK if image_count == len(image_filenames) else ImportImageStatus.MISSING
+            image_status = (
+                ImportImageStatus.OK
+                if image_count == len(image_filenames)
+                else ImportImageStatus.MISSING
+            )
             if not image_filenames:
                 image_status = ImportImageStatus.MISSING
                 errors.append("No image filenames provided")

@@ -124,9 +124,7 @@ def load_rows_from_json(path: Path) -> list[dict[str, object]]:
             if isinstance(image_filenames, list) and image_filenames:
                 image_filename = image_filenames[0]
 
-        normalized: dict[str, object] = {
-            header: item.get(header) for header in HEADERS
-        }
+        normalized: dict[str, object] = {header: item.get(header) for header in HEADERS}
         normalized["image_filename"] = image_filename
 
         if normalized.get("quantity") in (None, ""):
