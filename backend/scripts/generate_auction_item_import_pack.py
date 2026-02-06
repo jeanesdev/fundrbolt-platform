@@ -8,7 +8,6 @@ import random
 import zipfile
 from io import BytesIO
 from pathlib import Path
-from typing import Any
 
 from openpyxl import Workbook
 from PIL import Image, ImageDraw, ImageFont
@@ -155,7 +154,6 @@ def _find_image_candidate(images_dir: Path, image_name: str) -> Path | None:
     if not images_dir.exists():
         return None
 
-    target_name = image_name.lower()
     exact_path = images_dir / image_name
     if exact_path.exists():
         return exact_path

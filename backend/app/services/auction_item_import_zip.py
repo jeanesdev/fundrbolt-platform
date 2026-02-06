@@ -9,7 +9,6 @@ from pathlib import PurePosixPath
 
 from app.core.auction_item_import import (
     ALLOWED_IMAGE_EXTENSIONS,
-    WORKBOOK_FILENAME,
     ZIP_MAX_COMPRESSED_BYTES,
     ZIP_MAX_ENTRIES,
     ZIP_MAX_ENTRY_BYTES,
