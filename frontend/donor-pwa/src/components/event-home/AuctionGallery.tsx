@@ -362,7 +362,7 @@ export function AuctionGallery({
       {/* Items grid */}
       {items.length > 0 && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {items.map((item) => (
+          {(watchedItems.length > 0 ? unwatchedItems : items).map((item) => (
             <AuctionItemCard
               key={item.id}
               item={item}
