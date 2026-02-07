@@ -535,5 +535,5 @@ class AuctionItemImportService:
         return str(value).strip().lower().replace(" ", "_")
 
     @staticmethod
-    def _is_empty_row(values: tuple[Any, ...]) -> bool:
+    def _is_empty_row(values: list[Any] | tuple[Any, ...]) -> bool:
         return all(value is None or str(value).strip() == "" for value in values)
