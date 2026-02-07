@@ -50,6 +50,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - PostgreSQL (auction items, bids, watch list, item views, promotions), Redis (sessions/cache) (024-donor-bidding-ui)
 - Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 18, Vite, TanStack Router, Zustand, Radix UI (025-event-checkin-page)
 - PostgreSQL (registrations, check-ins, audit logs), Redis (sessions) (025-event-checkin-page)
+- Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 19, Vite 7, TanStack Router, Zustand, React Query, Radix UI, Recharts (026-event-dashboard-for)
+- PostgreSQL 15 (event data), Redis 7 (sessions) (026-event-dashboard-for)
 
 ## Project Structure
 ```
@@ -134,9 +136,9 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 026-event-dashboard-for: Added Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 19, Vite 7, TanStack Router, Zustand, React Query, Radix UI, Recharts
 - 025-event-checkin-page: Added Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 18, Vite, TanStack Router, Zustand, Radix UI
 - 024-donor-bidding-ui: Added Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0; React 18, Vite, Zustand, TanStack Router, Radix UI, Tailwind
-- 023-import-auction-bids: Added Python 3.11+, TypeScript 5.x + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 18, Vite, TanStack Router, Zustand, Radix UI
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields
   - ✅ Updated registration_guests with is_table_captain boolean field
   - ✅ US1 - Customize Table Capacity: Event coordinators can set custom capacity per table (1-20), system enforces limits
