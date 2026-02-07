@@ -54,4 +54,44 @@ echo "👀 Watching CI checks for PR #$PR_NUMBER..."
 gh pr checks "$PR_NUMBER" --watch
 
 echo ""
-echo "✅ CI checks finished. See status above."
+echo "🔄 Entering extended wait loop until no checks are pending..."
+
+POLL_INTERVAL=20  # seconds
+
+while true; do
+  # Get raw checks JSON
+  CHECKS_JSON="$(gh pr checks "$PR_NUMBER" --json status,state,name 2>/dev/null || echo "")"
+
+  # If command failed or no checks yet, just sleep and retry
+  if [[ -z "$CHECKS_JSON" ]]; then
+    echo "ℹ️ No checks information yet. Waiting..."
+    sleep "$POLL_INTERVAL"
+    continue
+  fi
+
+  # Count pending checks
+  PENDING_COUNT="$(echo "$CHECKS_JSON" | jq '[.[] | select(.status == "PENDING" or .status == "IN_PROGRESS")] | length')"
+
+  # Optional: count failing checks
+  FAILING_COUNT="$(echo "$CHECKS_JSON" | jq '[.[] | select(.state == "FAILURE" or .state == "ERROR")] | length')"
+
+  echo "📊 Current CI summary for PR #$PR_NUMBER: $PENDING_COUNT pending, $FAILING_COUNT failing."
+
+  if [[ "$PENDING_COUNT" -eq 0 ]]; then
+    echo "✅ No pending checks remaining."
+
+    if [[ "$FAILING_COUNT" -gt 0 ]]; then
+      echo "❌ Some checks failed. See detailed output above or in the PR UI."
+      exit 1
+    else
+      echo "🎉 All checks completed and passing."
+      break
+    fi
+  fi
+
+  echo "⏳ Still waiting on pending checks. Sleeping for $POLL_INTERVAL seconds..."
+  sleep "$POLL_INTERVAL"
+done
+
+echo ""
+echo "✅ Publish flow fully complete; CI is done for PR #$PR_NUMBER."
