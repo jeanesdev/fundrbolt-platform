@@ -121,7 +121,8 @@ async def preflight_import(
 )
 async def commit_import(
     event_id: UUID,
-    request: ImportConfirmRequest,
+    preflight_id: str,
+    confirm: bool,
     file: Annotated[UploadFile, File(...)],
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -140,7 +141,7 @@ async def commit_import(
     _require_event_admin(current_user, event)
 
     # Validate confirmation
-    if not request.confirm:
+    if not confirm:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Import must be confirmed with confirm=true",
@@ -154,7 +155,7 @@ async def commit_import(
         service = TicketSalesImportService(db)
         result = await service.commit_import(
             event_id=event_id,
-            preflight_id=UUID(request.preflight_id),
+            preflight_id=UUID(preflight_id),
             file_bytes=file_bytes,
             user_id=current_user.id,
         )

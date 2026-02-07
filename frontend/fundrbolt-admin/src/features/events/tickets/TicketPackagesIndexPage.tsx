@@ -35,11 +35,12 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { Eye, EyeOff, GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, GripVertical, Pencil, Plus, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { PurchasersList } from './components/PurchasersList';
 import { SalesExportButton } from './components/SalesExportButton';
 import { SalesSummaryCard } from './components/SalesSummaryCard';
+import { TicketSalesImportDialog } from './components/TicketSalesImportDialog';
 
 interface TicketPackage {
   id: string;
@@ -76,6 +77,7 @@ export function TicketPackagesIndexPage({ eventId: propEventId }: TicketPackages
   const queryClient = useQueryClient();
   const [showDisabled, setShowDisabled] = useState(false);
   const [expandedPackages, setExpandedPackages] = useState<Set<string>>(new Set());
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -248,6 +250,13 @@ export function TicketPackagesIndexPage({ eventId: propEventId }: TicketPackages
             <div className="flex gap-2">
               <SalesExportButton eventId={eventId} eventName="Event" />
               <Button
+                variant="outline"
+                onClick={() => setImportDialogOpen(true)}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Import Sales
+              </Button>
+              <Button
                 onClick={() =>
                   navigate({
                     to: '/events/$eventId/tickets/create',
@@ -321,6 +330,17 @@ export function TicketPackagesIndexPage({ eventId: propEventId }: TicketPackages
           <PromoCodesManager eventId={eventId} />
         </TabsContent>
       </Tabs>
+
+      {/* Import Dialog */}
+      <TicketSalesImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        eventId={eventId}
+        onImportComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ['ticket-packages', eventId] })
+          queryClient.invalidateQueries({ queryKey: ['sales-summary', eventId] })
+        }}
+      />
     </div>
   );
 }
