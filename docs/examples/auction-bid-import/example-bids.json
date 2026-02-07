@@ -1,0 +1,20 @@
+[
+  {
+    "donor_email": "donor1001@example.org",
+    "auction_item_code": "ITEM-500",
+    "bid_amount": 150.00,
+    "bid_time": "2026-02-01T19:45:00-06:00"
+  },
+  {
+    "donor_email": "donor1002@example.org",
+    "auction_item_code": "ITEM-501",
+    "bid_amount": 200.00,
+    "bid_time": "2026-02-01T19:47:30-06:00"
+  },
+  {
+    "donor_email": "donor1003@example.org",
+    "auction_item_code": "ITEM-500",
+    "bid_amount": 160.00,
+    "bid_time": "2026-02-01T19:50:15-06:00"
+  }
+]

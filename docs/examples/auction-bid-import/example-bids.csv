@@ -1,0 +1,4 @@
+donor_email,auction_item_code,bid_amount,bid_time
+donor1001@example.org,ITEM-500,150.00,2026-02-01T19:45:00-06:00
+donor1002@example.org,ITEM-501,200.00,2026-02-01T19:47:30-06:00
+donor1003@example.org,ITEM-500,160.00,2026-02-01T19:50:15-06:00
