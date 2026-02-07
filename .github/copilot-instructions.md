@@ -40,6 +40,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - PostgreSQL (Azure Database for PostgreSQL) (019-auction-bid-backend)
 - Python 3.11+ + OpenAI Python SDK (Azure OpenAI), standard library (argparse, json, pathlib, logging) (020-image-generator-util)
 - Local filesystem (image output folder) (020-image-generator-util)
+- Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, Zustand, Radix UI (021-ticket-sales-import)
+- PostgreSQL (ticket sales, import batches, audit), Azure Blob Storage (optional staging for uploads) (021-ticket-sales-import)
 
 ## Project Structure
 ```
@@ -124,9 +126,9 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 021-ticket-sales-import: Added Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, Zustand, Radix UI
 - 020-image-generator-util: Added Python 3.11+ + OpenAI Python SDK (Azure OpenAI), standard library (argparse, json, pathlib, logging)
 - 019-auction-bid-backend: Added Python 3.11+ + FastAPI, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic
-- 018-auction-item-bulk: Added Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router, Zustand, Radix UI
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields
   - ✅ Updated registration_guests with is_table_captain boolean field
   - ✅ US1 - Customize Table Capacity: Event coordinators can set custom capacity per table (1-20), system enforces limits

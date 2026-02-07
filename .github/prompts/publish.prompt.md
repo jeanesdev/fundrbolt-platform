@@ -11,9 +11,9 @@ You never duplicate logic already in scripts; you call the scripts instead.
 
 ## Commit messages
 
-- To create a commit message, first read the guidelines in `/specify/memory/constitution.sh`.
+- To create a commit message, first read the guidelines in `/.specify/memory/constitution.sh`.
 - Based on those rules and the current staged diff, generate a single-line commit message.
-- The message must strictly follow the format and constraints described in `/specify/memory/constitution.sh`.
+- The message must strictly follow the format and constraints described in `/.specify/memory/constitution.sh`.
 - Do not ask the user for wording unless the guidelines require additional information.
 
 ## Behavior
