@@ -1,0 +1,128 @@
+openapi: 3.1.0
+info:
+  title: Ticket Sales Import
+  version: 1.0.0
+paths:
+  /api/v1/admin/events/{event_id}/ticket-sales/import/preflight:
+    post:
+      summary: Preflight ticket sales import
+      description: Validate an uploaded ticket sales file and return row-level issues.
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+                - file
+      responses:
+        "200":
+          description: Preflight results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreflightResult"
+        "400":
+          description: Invalid file or unsupported format
+        "403":
+          description: Not authorized
+  /api/v1/admin/events/{event_id}/ticket-sales/import:
+    post:
+      summary: Import ticket sales from a preflighted file
+      description: Executes the import using a preflight identifier.
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                preflight_id:
+                  type: string
+                confirm:
+                  type: boolean
+              required:
+                - preflight_id
+                - confirm
+      responses:
+        "200":
+          description: Import summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+        "400":
+          description: Preflight required or invalid
+        "403":
+          description: Not authorized
+components:
+  schemas:
+    PreflightIssue:
+      type: object
+      properties:
+        row_number:
+          type: integer
+        field_name:
+          type: string
+        severity:
+          type: string
+          enum: [error, warning]
+        message:
+          type: string
+        raw_value:
+          type: string
+    PreflightResult:
+      type: object
+      properties:
+        preflight_id:
+          type: string
+        detected_format:
+          type: string
+          enum: [json, csv, xlsx]
+        total_rows:
+          type: integer
+        valid_rows:
+          type: integer
+        error_rows:
+          type: integer
+        warning_rows:
+          type: integer
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreflightIssue"
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreflightIssue"
+    ImportResult:
+      type: object
+      properties:
+        batch_id:
+          type: string
+        created_rows:
+          type: integer
+        skipped_rows:
+          type: integer
+        failed_rows:
+          type: integer
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreflightIssue"
