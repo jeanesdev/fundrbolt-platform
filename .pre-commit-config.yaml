@@ -57,6 +57,6 @@ repos:
 
       - id: ci-mirror
         name: CI mirror (lint, format, build)
-        entry: bash -c 'cd frontend/fundrbolt-admin && pnpm lint && pnpm format:check && pnpm build'
+        entry: bash -c 'cd frontend/fundrbolt-admin && pnpm lint && pnpm type-check && pnpm build'
         language: system
         pass_filenames: false
