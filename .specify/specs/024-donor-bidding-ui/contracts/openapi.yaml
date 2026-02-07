@@ -1,0 +1,335 @@
+openapi: 3.0.3
+info:
+  title: Donor Bidding UI API
+  version: 1.0.0
+servers:
+  - url: /api/v1
+paths:
+  /events/{event_id}/auction/items:
+    get:
+      summary: List auction items for donor gallery
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Gallery items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuctionItemGalleryResponse"
+  /auction/items/{item_id}:
+    get:
+      summary: Get auction item details
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Item details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuctionItemDetail"
+  /auction/items/{item_id}/bids:
+    post:
+      summary: Place a bid
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BidRequest"
+      responses:
+        "201":
+          description: Bid accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BidResponse"
+        "409":
+          description: Bid rejected (min bid, closed, or stale)
+  /auction/items/{item_id}/max-bid:
+    post:
+      summary: Set max bid
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaxBidRequest"
+      responses:
+        "201":
+          description: Max bid accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BidResponse"
+        "409":
+          description: Max bid rejected (not allowed, closed, or stale)
+  /auction/items/{item_id}/buy-now:
+    post:
+      summary: Buy now for an item
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity:
+                  type: integer
+                  minimum: 1
+      responses:
+        "201":
+          description: Buy now accepted
+        "409":
+          description: Buy now unavailable or sold out
+  /watchlist:
+    get:
+      summary: Get donor watch list
+      responses:
+        "200":
+          description: Watch list items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchListResponse"
+    post:
+      summary: Add item to watch list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WatchListRequest"
+      responses:
+        "201":
+          description: Watch list entry created
+  /watchlist/{item_id}:
+    delete:
+      summary: Remove item from watch list
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Watch list entry removed
+  /admin/auction/items/{item_id}/engagement:
+    get:
+      summary: Get item engagement and bid history (admin)
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Engagement summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminEngagementResponse"
+  /admin/auction/items/{item_id}/promotion:
+    patch:
+      summary: Update item promotion badge/notice (admin)
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromotionRequest"
+      responses:
+        "200":
+          description: Promotion updated
+  /admin/auction/items/{item_id}/buy-now:
+    patch:
+      summary: Update buy-now availability (admin)
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BuyNowAdminRequest"
+      responses:
+        "200":
+          description: Buy-now settings updated
+components:
+  schemas:
+    AuctionItemGalleryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuctionItemSummary"
+    AuctionItemSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        current_bid_amount:
+          type: number
+        min_next_bid_amount:
+          type: number
+        bid_count:
+          type: integer
+        bidding_open:
+          type: boolean
+        watcher_count:
+          type: integer
+        buy_now_enabled:
+          type: boolean
+        buy_now_remaining_quantity:
+          type: integer
+        promotion_badge:
+          type: string
+        promotion_notice:
+          type: string
+    AuctionItemDetail:
+      allOf:
+        - $ref: "#/components/schemas/AuctionItemSummary"
+        - type: object
+          properties:
+            description:
+              type: string
+            images:
+              type: array
+              items:
+                type: string
+    BidRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+    MaxBidRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+    BidResponse:
+      type: object
+      properties:
+        bid_id:
+          type: string
+        item_id:
+          type: string
+        amount:
+          type: number
+        current_bid_amount:
+          type: number
+    WatchListRequest:
+      type: object
+      required: [item_id]
+      properties:
+        item_id:
+          type: string
+    WatchListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuctionItemSummary"
+    AdminEngagementResponse:
+      type: object
+      properties:
+        watchers:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserSummary"
+        views:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemViewSummary"
+        bids:
+          type: array
+          items:
+            $ref: "#/components/schemas/BidSummary"
+    UserSummary:
+      type: object
+      properties:
+        user_id:
+          type: string
+        display_name:
+          type: string
+    ItemViewSummary:
+      type: object
+      properties:
+        user_id:
+          type: string
+        view_duration_seconds:
+          type: integer
+    BidSummary:
+      type: object
+      properties:
+        bid_id:
+          type: string
+        user_id:
+          type: string
+        amount:
+          type: number
+        is_max_bid:
+          type: boolean
+        created_at:
+          type: string
+    PromotionRequest:
+      type: object
+      properties:
+        badge_label:
+          type: string
+        notice_message:
+          type: string
+    BuyNowAdminRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        remaining_quantity:
+          type: integer
+        override_reason:
+          type: string
