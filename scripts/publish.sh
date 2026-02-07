@@ -52,13 +52,6 @@ fi
 
 echo ""
 echo "👀 Watching CI checks for PR #$PR_NUMBER..."
-gh pr checks "$PR_NUMBER" --watch
-
-echo ""
-echo "🔄 Entering extended wait loop until no checks are pending..."
-
-POLL_INTERVAL=20  # seconds
-
-while true; do
-echo "✅ CI checks finished. See status above."
-  CHECKS_JSON="$(gh pr checks "$PR_NUMBER" --json status,state,name 2>/dev/null || echo "")"
+if ! gh pr checks "$PR_NUMBER" --watch; then
+  echo "ℹ️ No checks reported; skipping watch."
+fi
