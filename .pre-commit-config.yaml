@@ -19,24 +19,14 @@ repos:
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.18.2
+  - repo: local
     hooks:
-      - id: mypy
-        additional_dependencies:
-          - pydantic==2.12.3
-          - pydantic-settings==2.11.0
-          - sqlalchemy==2.0.44
-          - fastapi==0.120.0
-          - starlette==0.48.0
-          - bcrypt==5.0.0
-          - types-bleach==6.3.0.20251115
-          - types-redis==4.6.0.20241004
-          - types-pytz==2025.2.0.20251108
-          - types-pillow==10.2.0.20240822
-        args: [--strict, --ignore-missing-imports]
-        files: ^backend/app/
-        exclude: ^backend/(alembic/|app/tests/)
+      - id: mypy-ci
+        name: Mypy (CI parity)
+        entry: bash -c 'cd backend && poetry run mypy app --strict --ignore-missing-imports --exclude "app/tests"'
+        language: system
+        files: ^backend/app/.*\.py$
+        pass_filenames: false
 
   # Frontend and Bicep validation (local hooks)
   - repo: local
@@ -64,3 +54,9 @@ repos:
         language: system
         files: ^infrastructure/bicep/.*\.bicep$
         pass_filenames: true
+
+      - id: ci-mirror
+        name: CI mirror (lint, format, build)
+        entry: bash -c 'cd frontend/fundrbolt-admin && pnpm lint && pnpm format:check && pnpm build'
+        language: system
+        pass_filenames: false

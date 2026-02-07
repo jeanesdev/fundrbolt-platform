@@ -51,7 +51,7 @@ class AuctionItemImportService:
 
     async def preflight(self, event_id: UUID, zip_bytes: bytes) -> ImportReport:
         contents = validate_zip_bytes(zip_bytes)
-        parsed_rows = self._parse_workbook(contents.workbook_bytes)
+        parsed_rows = self._parse_workbook(contents.workbook_bytes, contents.workbook_filename)
 
         external_ids = [
             str(value).strip()
@@ -65,7 +65,7 @@ class AuctionItemImportService:
 
     async def commit(self, event_id: UUID, zip_bytes: bytes, user_id: UUID) -> ImportReport:
         contents = validate_zip_bytes(zip_bytes)
-        parsed_rows = self._parse_workbook(contents.workbook_bytes)
+        parsed_rows = self._parse_workbook(contents.workbook_bytes, contents.workbook_filename)
         row_lookup = {row.row_number: row for row in parsed_rows}
 
         external_ids = [
@@ -97,15 +97,20 @@ class AuctionItemImportService:
                     ImportRowResult(
                         row_number=result.row_number,
                         external_id=result.external_id,
+                        title=result.title,
                         status=ImportRowStatus.ERROR,
                         message=str(exc),
                         image_status=result.image_status,
+                        image_count=result.image_count,
                     )
                 )
 
         return self._build_report(results)
 
-    def _parse_workbook(self, workbook_bytes: bytes) -> list[ParsedRow]:
+    def _parse_workbook(self, workbook_bytes: bytes, workbook_filename: str) -> list[ParsedRow]:
+        if workbook_filename.lower().endswith(".csv"):
+            return self._parse_csv(workbook_bytes)
+
         workbook = load_workbook(io.BytesIO(workbook_bytes), read_only=True, data_only=True)
         sheet = workbook.active
         row_iter = sheet.iter_rows(values_only=True)
@@ -114,19 +119,7 @@ class AuctionItemImportService:
             raise ImportZipValidationError("Workbook is empty")
 
         headers = [self._normalize_header(value) for value in header_row]
-        required_columns = {
-            "external_id",
-            "title",
-            "description",
-            "auction_type",
-            "fair_market_value",
-            "starting_bid",
-            "category",
-            "image_filename",
-        }
-        missing = sorted(required_columns - set(headers))
-        if missing:
-            raise ImportZipValidationError(f"Missing required columns: {', '.join(missing)}")
+        self._validate_required_headers(headers)
 
         parsed_rows: list[ParsedRow] = []
         for index, values in enumerate(row_iter, start=2):
@@ -144,6 +137,56 @@ class AuctionItemImportService:
             raise ImportZipValidationError("Workbook contains no data rows")
 
         return parsed_rows
+
+    def _parse_csv(self, workbook_bytes: bytes) -> list[ParsedRow]:
+        try:
+            content = workbook_bytes.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise ImportZipValidationError("CSV must be UTF-8 encoded") from exc
+
+        reader = csv.reader(io.StringIO(content))
+        header_row = next(reader, None)
+        if not header_row:
+            raise ImportZipValidationError("CSV is empty")
+
+        headers = [self._normalize_header(value) for value in header_row]
+        self._validate_required_headers(headers)
+
+        parsed_rows: list[ParsedRow] = []
+        for index, values in enumerate(reader, start=2):
+            if self._is_empty_row(values):
+                continue
+            if len(parsed_rows) >= MAX_IMPORT_ROWS:
+                raise ImportZipValidationError("Workbook exceeds maximum row limit")
+
+            row_data = {
+                headers[i]: values[i] if i < len(values) else None for i in range(len(headers))
+            }
+            parsed_rows.append(ParsedRow(row_number=index, data=row_data))
+
+        if not parsed_rows:
+            raise ImportZipValidationError("Workbook contains no data rows")
+
+        return parsed_rows
+
+    def _validate_required_headers(self, headers: list[str]) -> None:
+        required_columns = {
+            "external_id",
+            "title",
+            "description",
+            "auction_type",
+            "fair_market_value",
+            "starting_bid",
+            "category",
+        }
+        missing = sorted(required_columns - set(headers))
+        if missing:
+            raise ImportZipValidationError(f"Missing required columns: {', '.join(missing)}")
+
+        if "image_filename" not in headers and "image_filenames" not in headers:
+            raise ImportZipValidationError(
+                "Missing required image column: image_filename or image_filenames"
+            )
 
     def _validate_rows(
         self,
@@ -171,8 +214,10 @@ class AuctionItemImportService:
                     ImportRowResult(
                         row_number=row_number,
                         external_id=external_id,
+                        title=data.get("title"),
                         status=ImportRowStatus.ERROR,
                         message=str(exc),
+                        image_count=0,
                     )
                 )
                 continue
@@ -187,19 +232,29 @@ class AuctionItemImportService:
             if row.starting_bid > row.fair_market_value:
                 errors.append("Starting bid exceeds fair market value")
 
-            image_status = ImportImageStatus.OK
-            if row.image_filename not in image_files:
+            image_filenames = self._get_image_filenames(row)
+            image_count = len([name for name in image_filenames if name in image_files])
+            image_status = (
+                ImportImageStatus.OK
+                if image_count == len(image_filenames)
+                else ImportImageStatus.MISSING
+            )
+            if not image_filenames:
                 image_status = ImportImageStatus.MISSING
-                errors.append("Image file not found in images/ folder")
+                errors.append("No image filenames provided")
+            elif image_count < len(image_filenames):
+                errors.append("One or more image files not found in ZIP")
 
             if errors:
                 results.append(
                     ImportRowResult(
                         row_number=row_number,
                         external_id=row.external_id,
+                        title=row.title,
                         status=ImportRowStatus.ERROR,
                         message="; ".join(errors),
                         image_status=image_status,
+                        image_count=image_count,
                     )
                 )
                 continue
@@ -213,9 +268,11 @@ class AuctionItemImportService:
                 ImportRowResult(
                     row_number=row_number,
                     external_id=row.external_id,
+                    title=row.title,
                     status=status,
                     message="Ready",
                     image_status=image_status,
+                    image_count=image_count,
                 )
             )
 
@@ -244,6 +301,7 @@ class AuctionItemImportService:
         user_id: UUID,
     ) -> None:
         row_data = AuctionItemImportRow(**self._coerce_row(row))
+        image_filenames = self._get_image_filenames(row_data)
 
         existing_query = select(AuctionItem).where(
             AuctionItem.event_id == event_id,
@@ -256,7 +314,7 @@ class AuctionItemImportService:
             self._apply_row_to_item(existing_item, row_data)
             await self.db.commit()
             await self.db.refresh(existing_item)
-            await self._attach_image(existing_item, row_data.image_filename, image_files)
+            await self._attach_images(existing_item, image_filenames, image_files)
             return
 
         service = AuctionItemService(self.db)
@@ -286,7 +344,7 @@ class AuctionItemImportService:
         self.db.add(new_item)
         await self.db.commit()
         await self.db.refresh(new_item)
-        await self._attach_image(new_item, row_data.image_filename, image_files)
+        await self._attach_images(new_item, image_filenames, image_files)
 
     def _apply_row_to_item(self, item: AuctionItem, row: AuctionItemImportRow) -> None:
         item.title = row.title
@@ -301,29 +359,32 @@ class AuctionItemImportService:
         item.donated_by = row.donor_name
         item.display_priority = row.sort_order
 
-    async def _attach_image(
+    async def _attach_images(
         self,
         item: AuctionItem,
-        image_filename: str,
+        image_filenames: list[str],
         image_files: dict[str, bytes],
     ) -> None:
-        if image_filename not in image_files:
-            return
+        display_order = 0
+        for image_filename in image_filenames:
+            if image_filename not in image_files:
+                continue
 
-        image_bytes = image_files[image_filename]
-        mime_type = magic.from_buffer(image_bytes, mime=True)
-        file_path = self._store_image(item.id, image_filename, image_bytes, mime_type)
+            image_bytes = image_files[image_filename]
+            mime_type = magic.from_buffer(image_bytes, mime=True)
+            file_path = self._store_image(item.id, image_filename, image_bytes, mime_type)
 
-        media = AuctionItemMedia(
-            auction_item_id=item.id,
-            media_type=MediaType.IMAGE.value,
-            file_path=file_path,
-            file_name=image_filename,
-            file_size=len(image_bytes),
-            mime_type=mime_type,
-            display_order=0,
-        )
-        self.db.add(media)
+            media = AuctionItemMedia(
+                auction_item_id=item.id,
+                media_type=MediaType.IMAGE.value,
+                file_path=file_path,
+                file_name=image_filename,
+                file_size=len(image_bytes),
+                mime_type=mime_type,
+                display_order=display_order,
+            )
+            self.db.add(media)
+            display_order += 1
         await self.db.commit()
 
     def _store_image(self, item_id: UUID, filename: str, content: bytes, mime_type: str) -> str:
@@ -398,7 +459,21 @@ class AuctionItemImportService:
             "is_featured": _to_bool(data.get("is_featured")),
             "sort_order": _to_int(data.get("sort_order")),
             "image_filename": _to_str(data.get("image_filename")),
+            "image_filenames": _to_str(data.get("image_filenames")),
         }
+
+    @staticmethod
+    def _get_image_filenames(row: AuctionItemImportRow) -> list[str]:
+        if row.image_filenames:
+            raw = row.image_filenames
+        else:
+            raw = row.image_filename or ""
+
+        if not raw:
+            return []
+
+        parts = [part.strip() for part in raw.replace(";", ",").replace("\n", ",").split(",")]
+        return [part for part in parts if part]
 
     def _build_report(self, rows: list[ImportRowResult]) -> ImportReport:
         created_count = sum(1 for row in rows if row.status == ImportRowStatus.CREATED)
@@ -425,15 +500,27 @@ class AuctionItemImportService:
 
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["row_number", "external_id", "status", "message", "image_status"])
+        writer.writerow(
+            [
+                "row_number",
+                "external_id",
+                "title",
+                "status",
+                "message",
+                "image_status",
+                "image_count",
+            ]
+        )
         for row in error_rows:
             writer.writerow(
                 [
                     row.row_number,
                     row.external_id or "",
+                    row.title or "",
                     row.status.value,
                     row.message,
                     row.image_status.value if row.image_status else "",
+                    row.image_count,
                 ]
             )
 
@@ -448,5 +535,5 @@ class AuctionItemImportService:
         return str(value).strip().lower().replace(" ", "_")
 
     @staticmethod
-    def _is_empty_row(values: tuple[Any, ...]) -> bool:
+    def _is_empty_row(values: list[Any] | tuple[Any, ...]) -> bool:
         return all(value is None or str(value).strip() == "" for value in values)

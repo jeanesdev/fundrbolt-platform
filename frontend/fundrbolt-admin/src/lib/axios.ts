@@ -5,9 +5,18 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 // Global flag to track if consent modal is already shown
 let consentModalShown = false
 
+// Normalize API base URL to include /api/v1
+const rawBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const normalizedBaseUrl = rawBaseUrl.replace(/\/+$/, '')
+const apiBaseUrl = normalizedBaseUrl.endsWith('/api/v1')
+  ? normalizedBaseUrl
+  : normalizedBaseUrl.endsWith('/api')
+    ? `${normalizedBaseUrl}/v1`
+    : `${normalizedBaseUrl}/api/v1`
+
 // Create axios instance with default config
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  baseURL: apiBaseUrl,
   headers: {
     'Content-Type': 'application/json',
   },

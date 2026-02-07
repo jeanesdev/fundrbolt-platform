@@ -45,7 +45,8 @@ class AuctionItemImportRow(BaseModel):
     fulfillment_notes: str | None = Field(None, max_length=1000)
     is_featured: bool | None = False
     sort_order: int | None = None
-    image_filename: str = Field(..., min_length=1, max_length=255)
+    image_filename: str | None = Field(None, min_length=1, max_length=255)
+    image_filenames: str | None = Field(None, max_length=2000)
 
 
 class ImportRowResult(BaseModel):
@@ -53,9 +54,11 @@ class ImportRowResult(BaseModel):
 
     row_number: int = Field(..., ge=1)
     external_id: str | None = None
+    title: str | None = None
     status: ImportRowStatus
     message: str
     image_status: ImportImageStatus | None = None
+    image_count: int = Field(default=0, ge=0)
 
 
 class ImportReport(BaseModel):

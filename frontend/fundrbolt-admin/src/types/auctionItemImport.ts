@@ -18,9 +18,11 @@ export enum ImportImageStatus {
 export interface ImportRowResult {
   row_number: number;
   external_id?: string | null;
+  title?: string | null;
   status: ImportRowStatus;
   message: string;
   image_status?: ImportImageStatus | null;
+  image_count?: number | null;
 }
 
 export interface ImportReport {
