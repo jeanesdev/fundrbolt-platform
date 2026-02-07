@@ -16,6 +16,12 @@ from app.models.npo_application import NPOApplication
 from app.models.npo_branding import NPOBranding
 from app.models.npo_member import NPOMember
 from app.models.registration_guest import RegistrationGuest
+from app.models.registration_import import (
+    ImportBatchStatus,
+    RegistrationImportBatch,
+    RegistrationValidationIssue,
+    ValidationSeverity,
+)
 from app.models.role import Role
 from app.models.session import Session
 from app.models.sponsor import Sponsor
@@ -67,7 +73,11 @@ __all__ = [
     "PromoCodeApplication",
     "PaddleRaiseContribution",
     "RegistrationGuest",
+    "RegistrationImportBatch",
     "RegistrationStatus",
+    "RegistrationValidationIssue",
+    "ImportBatchStatus",
+    "ValidationSeverity",
     "Role",
     "Session",
     "Sponsor",
