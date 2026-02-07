@@ -7,7 +7,8 @@
     "prepare": "husky install",
     "lint": "pnpm -r run lint",
     "type-check": "pnpm -r run type-check",
-    "test": "pnpm -r run test"
+    "test": "pnpm -r run test",
+    "prepublish:ci": "cd backend && poetry run ruff check . && poetry run ruff format --check . && poetry run mypy app --strict --ignore-missing-imports --exclude 'app/tests' && poetry run pytest --cov=app --cov-report=xml --cov-report=term && cd ../frontend/fundrbolt-admin && pnpm lint && pnpm type-check && pnpm build"
   },
   "devDependencies": {
     "husky": "^8.0.3",
