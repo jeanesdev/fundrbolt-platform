@@ -5,15 +5,17 @@
  * - CSS Grid layout (responsive: 2 cols mobile, 3 cols tablet, 4 cols desktop)
  * - Auction type filter (All/Silent/Live) using button group
  * - Infinite scroll pagination using react-query useInfiniteQuery
+ * - Watched items section at top
  * - Empty state with Gavel icon
  * - Loading spinner for scroll trigger
  */
 
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { Gavel, Loader2 } from 'lucide-react';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { Eye, Gavel, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { cn } from '@/lib/utils';
+import watchListService from '@/services/watchlistService';
 import type {
   AuctionFilterType,
   AuctionItemGalleryItem,
@@ -143,6 +145,18 @@ export function AuctionGallery({
   // Ref for infinite scroll trigger
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
+  // Fetch watch list
+  const { data: watchListData } = useQuery({
+    queryKey: ['watchlist', eventId],
+    queryFn: () => watchListService.getWatchList(eventId),
+    enabled: !!eventId,
+    staleTime: 30000, // 30 seconds
+  });
+
+  const watchedItemIds = new Set(
+    watchListData?.watch_list?.map((entry) => entry.auction_item_id) || []
+  );
+
   // Infinite query for auction items
   const {
     data,
@@ -197,6 +211,10 @@ export function AuctionGallery({
   // Flatten items from all pages
   const items = data?.pages.flatMap((page) => page.items) ?? [];
   const totalCount = data?.pages[0]?.pagination.total ?? 0;
+
+  // Separate watched and unwatched items
+  const watchedItems = items.filter((item) => watchedItemIds.has(item.id));
+  const unwatchedItems = items.filter((item) => !watchedItemIds.has(item.id));
 
   // Handle bid click
   const handleBidClick = useCallback(
@@ -293,6 +311,52 @@ export function AuctionGallery({
             Check back soon for exciting items to bid on!
           </p>
         </div>
+      )}
+
+      {/* Watched Items Section */}
+      {watchedItems.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Eye
+              className="h-5 w-5"
+              style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+            />
+            <h3
+              className="text-lg font-semibold"
+              style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+            >
+              Watched Items
+            </h3>
+            <span
+              className="text-sm"
+              style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+            >
+              ({watchedItems.length})
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {watchedItems.map((item) => (
+              <AuctionItemCard
+                key={item.id}
+                item={item}
+                onClick={handleBidClick}
+                onBidClick={handleBidClick}
+                eventStatus={eventStatus}
+                eventDateTime={eventDateTime}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* All Items Section */}
+      {items.length > 0 && watchedItems.length > 0 && (
+        <h3
+          className="text-lg font-semibold mt-8"
+          style={{ color: 'var(--event-text-on-background, #000000)' }}
+        >
+          All Items
+        </h3>
       )}
 
       {/* Items grid */}
