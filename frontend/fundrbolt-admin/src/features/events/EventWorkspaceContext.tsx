@@ -1,13 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext } from 'react'
+import type { NPOBranding } from '../../services/event-service'
+import type { AuctionItem } from '../../types/auction-item'
 import type {
   EventDetail,
   EventLinkCreateRequest,
   EventUpdateRequest,
   FoodOptionCreateRequest,
 } from '../../types/event'
-import type { NPOBranding } from '../../services/event-service'
-import type { AuctionItem } from '../../types/auction-item'
 
 export interface EventWorkspaceContextValue {
   eventId: string
