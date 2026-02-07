@@ -4,11 +4,14 @@ from app.models.auction_bid import AuctionBid, BidActionAudit, PaddleRaiseContri
 from app.models.auction_item import AuctionItem
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin, UUIDMixin
+from app.models.buy_now_availability import BuyNowAvailability
 from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
 from app.models.event import Event, EventLink, EventMedia, FoodOption
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.event_table import EventTable
 from app.models.invitation import Invitation
+from app.models.item_promotion import ItemPromotion
+from app.models.item_view import ItemView
 from app.models.legal_document import LegalDocument
 from app.models.meal_selection import MealSelection
 from app.models.npo import NPO
@@ -33,16 +36,16 @@ from app.models.ticket_management import (
     TicketPurchase,
 )
 from app.models.user import User
+from app.models.watch_list_entry import WatchListEntry
 
 __all__ = [
     "AssignedTicket",
     "AuctionBid",
     "AuctionItem",
     "AuditLog",
-    "BidActionAudit",
     "Base",
-    "TimestampMixin",
-    "UUIDMixin",
+    "BidActionAudit",
+    "BuyNowAvailability",
     "ConsentAuditLog",
     "CookieConsent",
     "CustomTicketOption",
@@ -54,6 +57,8 @@ __all__ = [
     "EventTable",
     "FoodOption",
     "Invitation",
+    "ItemPromotion",
+    "ItemView",
     "LegalDocument",
     "MealSelection",
     "NPO",
@@ -62,10 +67,10 @@ __all__ = [
     "NPOMember",
     "OptionResponse",
     "OptionType",
+    "PaddleRaiseContribution",
     "PaymentStatus",
     "PromoCode",
     "PromoCodeApplication",
-    "PaddleRaiseContribution",
     "RegistrationGuest",
     "RegistrationStatus",
     "Role",
@@ -74,6 +79,9 @@ __all__ = [
     "TicketAuditLog",
     "TicketPackage",
     "TicketPurchase",
+    "TimestampMixin",
     "User",
     "UserConsent",
+    "UUIDMixin",
+    "WatchListEntry",
 ]

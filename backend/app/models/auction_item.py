@@ -121,6 +121,33 @@ class AuctionItem(Base, UUIDMixin, TimestampMixin):
     )
     display_priority: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+    # Bidding state (for donor UI)
+    current_bid_amount: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    min_next_bid_amount: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    bid_count: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        server_default="0",
+        nullable=False,
+    )
+    bidding_open: Mapped[bool] = mapped_column(
+        default=False,
+        server_default="false",
+        nullable=False,
+    )
+
+    # Engagement metrics
+    watcher_count: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        server_default="0",
+        nullable=False,
+    )
+
+    # Promotion fields
+    promotion_badge: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    promotion_notice: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # Soft delete
     deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
