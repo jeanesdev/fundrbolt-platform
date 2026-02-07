@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     admin,
     admin_auction_item_import,
+    admin_dashboard,
     admin_seating,
     admin_testimonials,
     auction_bids,
@@ -73,5 +74,6 @@ api_router.include_router(ticket_options.router, tags=["admin-tickets"])
 api_router.include_router(promo_codes.router, tags=["admin-tickets"])
 api_router.include_router(sales_tracking.router, prefix="/admin", tags=["admin-tickets"])
 api_router.include_router(admin.router, tags=["admin"])
+api_router.include_router(admin_dashboard.router, prefix="/admin", tags=["admin-dashboard"])
 
 __all__ = ["api_router"]
