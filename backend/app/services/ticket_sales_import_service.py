@@ -211,20 +211,118 @@ class TicketSalesImportService:
                 "File has changed since preflight. Please re-run preflight."
             )
 
+        # Check for errors
+        if batch.error_count > 0:
+            raise TicketSalesImportError(
+                "Cannot import file with errors. Please fix errors and re-run preflight."
+            )
+
+        # Parse file
+        parsed_rows = self._parse_file(file_bytes, batch.source_format)
+
+        # Fetch existing external_sale_ids
+        external_ids = [
+            str(row.data.get("external_sale_id", "")).strip()
+            for row in parsed_rows
+            if row.data.get("external_sale_id")
+        ]
+        existing_ids = await self._fetch_existing_external_ids(event_id, external_ids)
+
+        # Fetch ticket packages
+        ticket_packages = await self._fetch_ticket_packages(event_id)
+        package_map = {pkg.name.lower(): pkg for pkg in ticket_packages}
+
+        # Create ticket purchases
+        created_count = 0
+        skipped_count = 0
+        failed_count = 0
+        warnings: list[PreflightIssue] = []
+
+        for parsed_row in parsed_rows:
+            try:
+                external_id = str(parsed_row.data.get("external_sale_id", "")).strip()
+
+                # Skip if external_sale_id already exists
+                if external_id and external_id in existing_ids:
+                    skipped_count += 1
+                    warnings.append(
+                        PreflightIssue(
+                            row_number=parsed_row.row_number,
+                            field_name="external_sale_id",
+                            severity=IssueSeverity.WARNING,
+                            message=f"Skipped: External sale ID '{external_id}' already exists",
+                            raw_value=external_id,
+                        )
+                    )
+                    continue
+
+                # Get ticket package
+                ticket_type = str(parsed_row.data.get("ticket_type", "")).strip()
+                package = package_map.get(ticket_type.lower())
+                if not package:
+                    failed_count += 1
+                    continue
+
+                # Parse values
+                quantity = int(parsed_row.data.get("quantity", 1))
+                total_amount = Decimal(str(parsed_row.data.get("total_amount", 0)))
+                purchase_date_str = str(parsed_row.data.get("purchase_date", ""))
+                
+                # Parse purchase date
+                try:
+                    purchase_date = datetime.fromisoformat(purchase_date_str)
+                except ValueError:
+                    # Try common date formats
+                    from dateutil import parser as date_parser
+                    purchase_date = date_parser.parse(purchase_date_str)
+
+                # Create ticket purchase
+                purchase = TicketPurchase(
+                    event_id=event_id,
+                    ticket_package_id=package.id,
+                    user_id=user_id,
+                    quantity=quantity,
+                    total_price=total_amount,
+                    payment_status="completed",  # Default to completed for imports
+                    external_sale_id=external_id if external_id else None,
+                    purchaser_name=str(parsed_row.data.get("purchaser_name", "")).strip()
+                    or None,
+                    purchaser_email=str(parsed_row.data.get("purchaser_email", "")).strip()
+                    or None,
+                    purchaser_phone=str(parsed_row.data.get("purchaser_phone", "")).strip()
+                    or None,
+                    notes=str(parsed_row.data.get("notes", "")).strip() or None,
+                    purchased_at=purchase_date,
+                )
+                self.db.add(purchase)
+                created_count += 1
+
+                # Update sold_count on package
+                package.sold_count += quantity
+
+            except Exception as e:
+                failed_count += 1
+                warnings.append(
+                    PreflightIssue(
+                        row_number=parsed_row.row_number,
+                        field_name=None,
+                        severity=IssueSeverity.WARNING,
+                        message=f"Failed to import: {str(e)}",
+                    )
+                )
+
         # Update batch status
         batch.status = ImportStatus.IMPORTED
         batch.created_by = user_id
-
-        # TODO: Parse file and create ticket purchases
-        # This will be implemented in the next phase
 
         await self.db.flush()
 
         return ImportResult(
             batch_id=str(batch.id),
-            created_rows=0,
-            skipped_rows=0,
-            failed_rows=0,
+            created_rows=created_count,
+            skipped_rows=skipped_count,
+            failed_rows=failed_count,
+            warnings=warnings,
         )
 
     def _detect_format(self, file_bytes: bytes, filename: str) -> ImportFormat:

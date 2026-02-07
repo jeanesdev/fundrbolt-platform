@@ -2,7 +2,7 @@
 
 **Feature Branch**: `021-ticket-sales-import`
 **Created**: 2026-02-07
-**Status**: Draft
+**Status**: Implemented
 **Input**: User description: "ticket-sales-import I need to be able to import ticet sales information in bulk from a json file, an excel workbook, or a csv. Please include an example format for the json and csv. Add a button on the tickets page of the admin PWA for importing, first with a preflight to verify everything works without error, and then once that passes to actually import the data. Look at the bulk import on the auction items page for an example."
 
 ## Clarifications
