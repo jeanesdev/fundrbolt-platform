@@ -45,19 +45,13 @@ if [[ -n "$PR_NUMBER" ]]; then
   echo "✅ PR already exists for branch '$BRANCH' (#$PR_NUMBER). Reusing it."
 else
   echo "📝 No PR found. Creating a new one..."
-  PR_NUMBER="$(gh pr create --fill --head "$BRANCH" --json number --jq '.number')"
+  gh pr create --fill --head "$BRANCH"
+  PR_NUMBER="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')"
   echo "✅ PR created (#$PR_NUMBER)."
 fi
 
 echo ""
 echo "👀 Watching CI checks for PR #$PR_NUMBER..."
-gh pr checks "$PR_NUMBER" --watch
-
-echo ""
-echo "🔄 Entering extended wait loop until no checks are pending..."
-
-POLL_INTERVAL=20  # seconds
-
-while true; do
-echo "✅ CI checks finished. See status above."
-  CHECKS_JSON="$(gh pr checks "$PR_NUMBER" --json status,state,name 2>/dev/null || echo "")"
+if ! gh pr checks "$PR_NUMBER" --watch; then
+  echo "ℹ️ No checks reported; skipping watch."
+fi
