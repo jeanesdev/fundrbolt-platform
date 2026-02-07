@@ -45,7 +45,8 @@ if [[ -n "$PR_NUMBER" ]]; then
   echo "✅ PR already exists for branch '$BRANCH' (#$PR_NUMBER). Reusing it."
 else
   echo "📝 No PR found. Creating a new one..."
-  PR_NUMBER="$(gh pr create --fill --head "$BRANCH" --json number --jq '.number')"
+  gh pr create --fill --head "$BRANCH"
+  PR_NUMBER="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')"
   echo "✅ PR created (#$PR_NUMBER)."
 fi
 
