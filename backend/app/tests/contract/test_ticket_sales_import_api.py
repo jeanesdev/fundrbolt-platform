@@ -147,7 +147,7 @@ NonExistentType,John Doe,john@example.com,1,100.00,2026-02-01,EXT-001"""
         )
 
         assert response.status_code == 400
-        assert "5000" in response.json()["detail"]
+        assert "5000" in response.json()["message"]
 
     async def test_preflight_duplicate_in_file(
         self,
@@ -309,7 +309,7 @@ class TestTicketSalesImportCommit:
         )
 
         assert response.status_code == 400
-        assert "not found" in response.json()["detail"]
+        assert "not found" in response.json()["message"]
 
     async def test_commit_requires_confirmation(
         self,
@@ -333,7 +333,7 @@ class TestTicketSalesImportCommit:
         )
 
         assert response.status_code == 400
-        assert "confirmed" in response.json()["detail"]
+        assert "confirmed" in response.json()["message"]
 
     async def test_commit_checksum_validation(
         self,
@@ -361,7 +361,7 @@ class TestTicketSalesImportCommit:
         )
 
         assert response.status_code == 400
-        assert "changed" in response.json()["detail"]
+        assert "changed" in response.json()["message"]
 
     async def test_commit_unauthorized(
         self,

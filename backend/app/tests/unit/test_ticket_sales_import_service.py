@@ -106,7 +106,7 @@ General,Jane Smith,jane@example.com,1,50.00,2026-02-02,EXT-002"""
             },
         )
 
-        issues = service._validate_row(row, {"vip"}, set(), [])
+        issues = service._validate_row(row, {"vip"}, set(), [], {})
 
         assert len(issues) == 1
         assert issues[0].severity == IssueSeverity.ERROR
@@ -131,7 +131,7 @@ General,Jane Smith,jane@example.com,1,50.00,2026-02-02,EXT-002"""
             },
         )
 
-        issues = service._validate_row(row, {"vip"}, set(), [])
+        issues = service._validate_row(row, {"vip"}, set(), [], {})
 
         quantity_issues = [i for i in issues if i.field_name == "quantity"]
         assert len(quantity_issues) == 1
@@ -155,7 +155,7 @@ General,Jane Smith,jane@example.com,1,50.00,2026-02-02,EXT-002"""
             },
         )
 
-        issues = service._validate_row(row, {"vip", "general"}, set(), [])
+        issues = service._validate_row(row, {"vip", "general"}, set(), [], {})
 
         ticket_issues = [i for i in issues if i.field_name == "ticket_type"]
         assert len(ticket_issues) == 1
@@ -180,7 +180,7 @@ General,Jane Smith,jane@example.com,1,50.00,2026-02-02,EXT-002"""
         )
 
         # Simulate duplicate by passing same ID twice in list
-        issues = service._validate_row(row, {"vip"}, set(), ["EXT-DUP", "EXT-DUP"])
+        issues = service._validate_row(row, {"vip"}, set(), ["EXT-DUP", "EXT-DUP"], {})
 
         dup_issues = [i for i in issues if "Duplicate" in i.message]
         assert len(dup_issues) == 1
@@ -205,7 +205,7 @@ General,Jane Smith,jane@example.com,1,50.00,2026-02-02,EXT-002"""
         )
 
         # Pass existing ID in existing_ids set
-        issues = service._validate_row(row, {"vip"}, {"EXT-EXISTS"}, ["EXT-EXISTS"])
+        issues = service._validate_row(row, {"vip"}, {"EXT-EXISTS"}, ["EXT-EXISTS"], {})
 
         warning_issues = [i for i in issues if i.severity == IssueSeverity.WARNING]
         assert len(warning_issues) == 1
@@ -229,7 +229,7 @@ General,Jane Smith,jane@example.com,1,50.00,2026-02-02,EXT-002"""
             },
         )
 
-        issues = service._validate_row(row, {"vip"}, set(), [])
+        issues = service._validate_row(row, {"vip"}, set(), [], {})
 
         amount_issues = [i for i in issues if i.field_name == "total_amount"]
         assert len(amount_issues) == 1
