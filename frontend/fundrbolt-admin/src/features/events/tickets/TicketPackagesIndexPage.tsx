@@ -41,6 +41,7 @@ import { PurchasersList } from './components/PurchasersList';
 import { SalesExportButton } from './components/SalesExportButton';
 import { SalesSummaryCard } from './components/SalesSummaryCard';
 import { TicketSalesImportDialog } from './components/TicketSalesImportDialog';
+import { TicketSalesTable } from './components/TicketSalesTable';
 
 interface TicketPackage {
   id: string;
@@ -232,6 +233,7 @@ export function TicketPackagesIndexPage({ eventId: propEventId }: TicketPackages
       <Tabs defaultValue="packages" className="space-y-6">
         <TabsList>
           <TabsTrigger value="packages">Ticket Packages</TabsTrigger>
+          <TabsTrigger value="sales">Sales</TabsTrigger>
           <TabsTrigger value="promos">Promo Codes</TabsTrigger>
         </TabsList>
 
@@ -323,6 +325,11 @@ export function TicketPackagesIndexPage({ eventId: propEventId }: TicketPackages
               </SortableContext>
             </DndContext>
           )}
+        </TabsContent>
+
+        {/* Sales Tab */}
+        <TabsContent value="sales">
+          <TicketSalesTable eventId={eventId} />
         </TabsContent>
 
         {/* Promo Codes Tab */}
