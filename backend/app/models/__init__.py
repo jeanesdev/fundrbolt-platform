@@ -38,6 +38,13 @@ from app.models.ticket_management import (
     TicketPackage,
     TicketPurchase,
 )
+from app.models.ticket_sales_import import (
+    ImportFormat,
+    ImportStatus,
+    IssueSeverity,
+    TicketSalesImportBatch,
+    TicketSalesImportIssue,
+)
 from app.models.user import User
 
 __all__ = [
@@ -59,7 +66,10 @@ __all__ = [
     "EventRegistration",
     "EventTable",
     "FoodOption",
+    "ImportFormat",
+    "ImportStatus",
     "Invitation",
+    "IssueSeverity",
     "LegalDocument",
     "MealSelection",
     "NPO",
@@ -84,6 +94,8 @@ __all__ = [
     "TicketAuditLog",
     "TicketPackage",
     "TicketPurchase",
+    "TicketSalesImportBatch",
+    "TicketSalesImportIssue",
     "User",
     "UserConsent",
 ]

@@ -1,0 +1,329 @@
+openapi: 3.1.0
+info:
+  title: Event Dashboard
+  version: 1.0.0
+paths:
+  /api/v1/admin/events/{event_id}/dashboard:
+    get:
+      summary: Get event dashboard data
+      description: Returns aggregated fundraising data for the admin event dashboard.
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: sources
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: scenario
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [base, optimistic, conservative]
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+        "403":
+          description: Not authorized
+  /api/v1/admin/events/{event_id}/dashboard/segments:
+    get:
+      summary: Get dashboard segment breakdowns
+      description: Returns segment breakdowns by table, guest, registrant, or company.
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: segment_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [table, guest, registrant, company]
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [total_amount, contribution_share]
+      responses:
+        "200":
+          description: Segment breakdown response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SegmentBreakdownResponse"
+        "403":
+          description: Not authorized
+  /api/v1/admin/events/{event_id}/dashboard/projections:
+    get:
+      summary: Get projection adjustments
+      description: Returns current projection adjustments for the event and scenario.
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: scenario
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [base, optimistic, conservative]
+      responses:
+        "200":
+          description: Projection adjustments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectionAdjustmentSet"
+        "403":
+          description: Not authorized
+    post:
+      summary: Update projection adjustments
+      description: Updates event-wide projection adjustments for a scenario.
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectionAdjustmentUpdate"
+      responses:
+        "200":
+          description: Updated projection adjustments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectionAdjustmentSet"
+        "400":
+          description: Invalid input
+        "403":
+          description: Not authorized
+components:
+  schemas:
+    MoneyValue:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: float
+        currency:
+          type: string
+          example: USD
+    RevenueSourceSummary:
+      type: object
+      properties:
+        source:
+          type: string
+        actual:
+          $ref: "#/components/schemas/MoneyValue"
+        projected:
+          $ref: "#/components/schemas/MoneyValue"
+        target:
+          $ref: "#/components/schemas/MoneyValue"
+        variance_amount:
+          $ref: "#/components/schemas/MoneyValue"
+        variance_percent:
+          type: number
+        pacing_percent:
+          type: number
+    PacingStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [on_track, off_track]
+        pacing_percent:
+          type: number
+        trajectory:
+          type: string
+          enum: [linear]
+    CashflowPoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        actual:
+          $ref: "#/components/schemas/MoneyValue"
+        projected:
+          $ref: "#/components/schemas/MoneyValue"
+    WaterfallStep:
+      type: object
+      properties:
+        label:
+          type: string
+        amount:
+          $ref: "#/components/schemas/MoneyValue"
+    FunnelStage:
+      type: object
+      properties:
+        stage:
+          type: string
+          enum: [invited, registered, checked_in, donated_bid]
+        count:
+          type: integer
+    AlertCard:
+      type: object
+      properties:
+        source:
+          type: string
+        status:
+          type: string
+          enum: [active, resolved]
+        threshold_percent:
+          type: number
+        consecutive_refreshes:
+          type: integer
+        triggered_at:
+          type: string
+          format: date-time
+    DashboardSummary:
+      type: object
+      properties:
+        event_id:
+          type: string
+        goal:
+          $ref: "#/components/schemas/MoneyValue"
+        total_actual:
+          $ref: "#/components/schemas/MoneyValue"
+        total_projected:
+          $ref: "#/components/schemas/MoneyValue"
+        variance_amount:
+          $ref: "#/components/schemas/MoneyValue"
+        variance_percent:
+          type: number
+        pacing:
+          $ref: "#/components/schemas/PacingStatus"
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/RevenueSourceSummary"
+        waterfall:
+          type: array
+          items:
+            $ref: "#/components/schemas/WaterfallStep"
+        cashflow:
+          type: array
+          items:
+            $ref: "#/components/schemas/CashflowPoint"
+        funnel:
+          type: array
+          items:
+            $ref: "#/components/schemas/FunnelStage"
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlertCard"
+        last_refreshed_at:
+          type: string
+          format: date-time
+    SegmentBreakdownItem:
+      type: object
+      properties:
+        segment_id:
+          type: string
+        segment_label:
+          type: string
+        total_amount:
+          $ref: "#/components/schemas/MoneyValue"
+        contribution_share:
+          type: number
+        guest_count:
+          type: integer
+    SegmentBreakdownResponse:
+      type: object
+      properties:
+        segment_type:
+          type: string
+          enum: [table, guest, registrant, company]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SegmentBreakdownItem"
+    ProjectionAdjustment:
+      type: object
+      properties:
+        source:
+          type: string
+        projected:
+          $ref: "#/components/schemas/MoneyValue"
+    ProjectionAdjustmentSet:
+      type: object
+      properties:
+        event_id:
+          type: string
+        scenario:
+          type: string
+          enum: [base, optimistic, conservative]
+        adjustments:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectionAdjustment"
+        updated_at:
+          type: string
+          format: date-time
+        updated_by:
+          type: string
+    ProjectionAdjustmentUpdate:
+      type: object
+      properties:
+        scenario:
+          type: string
+          enum: [base, optimistic, conservative]
+        adjustments:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectionAdjustment"
+      required:
+        - scenario
+        - adjustments
