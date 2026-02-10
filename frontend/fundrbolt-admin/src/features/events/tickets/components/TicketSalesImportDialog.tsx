@@ -54,8 +54,14 @@ function IssueRow({ issue }: { issue: PreflightIssue }) {
     <div className="flex flex-col gap-1 border-b border-border pb-3">
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-muted-foreground">Row {issue.row_number}</span>
-        {issue.field_name && <span className="font-medium">{issue.field_name}</span>}
-        <Badge variant={statusVariant(issue.severity)}>{issue.severity}</Badge>
+        {issue.field_name && (
+          <Badge variant="outline" className="text-xs">
+            {issue.field_name}
+          </Badge>
+        )}
+        <Badge variant={statusVariant(issue.severity)} className="text-xs capitalize">
+          {issue.severity}
+        </Badge>
       </div>
       <p className="text-sm">{issue.message}</p>
       {issue.raw_value && (
@@ -78,23 +84,6 @@ export function TicketSalesImportDialog({
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const activeRequest = useRef<AbortController | null>(null)
-
-  const logApiError = (error: unknown, context: string) => {
-    if (axios.isAxiosError(error)) {
-      const status = error.response?.status
-      const statusText = error.response?.statusText
-      const url = error.config?.url
-      console.error(`[TicketSalesImport] ${context} failed`, {
-        status,
-        statusText,
-        url,
-        data: error.response?.data,
-      })
-      return
-    }
-
-    console.error(`[TicketSalesImport] ${context} failed`, error)
-  }
 
   const buildErrorDescription = (error: unknown, fallback: string) => {
     const message = getErrorMessage(error, fallback)
@@ -164,7 +153,6 @@ export function TicketSalesImportDialog({
         setStage('select')
         return
       }
-      logApiError(error, 'Preflight')
       toast({
         title: 'Preflight Failed',
         description: buildErrorDescription(error, 'Preflight failed'),
@@ -212,7 +200,6 @@ export function TicketSalesImportDialog({
         setStage('results')
         return
       }
-      logApiError(error, 'Import')
       toast({
         title: 'Import Failed',
         description: buildErrorDescription(error, 'Import failed'),

@@ -85,10 +85,6 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
     return () => clearTimeout(timeout);
   }, [query]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedQuery, perPage, sortBy, sortDir]);
-
   const { data, isLoading, error } = useQuery<EventSalesList>({
     queryKey: ['sales-list', eventId, debouncedQuery, sortBy, sortDir, page, perPage],
     queryFn: () =>
@@ -104,19 +100,16 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
 
   const totalCount = data?.total_count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / perPage));
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
+  const currentPage = Math.min(page, totalPages);
 
   const toggleSort = (column: SortableColumn) => {
     if (sortBy === column) {
       setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+      setPage(1);
     } else {
       setSortBy(column);
       setSortDir('desc');
+      setPage(1);
     }
   };
 
@@ -135,10 +128,10 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
 
   const paginationText = useMemo(() => {
     if (!totalCount) return 'No sales yet';
-    const start = (page - 1) * perPage + 1;
-    const end = Math.min(page * perPage, totalCount);
+    const start = (currentPage - 1) * perPage + 1;
+    const end = Math.min(currentPage * perPage, totalCount);
     return `Showing ${start}-${end} of ${totalCount} sales`;
-  }, [page, perPage, totalCount]);
+  }, [currentPage, perPage, totalCount]);
 
   return (
     <Card>
@@ -153,13 +146,19 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
             <Input
               placeholder="Search sales"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setPage(1);
+              }}
               className="pl-8"
             />
           </div>
           <Select
             value={String(perPage)}
-            onValueChange={(value) => setPerPage(Number(value))}
+            onValueChange={(value) => {
+              setPerPage(Number(value));
+              setPage(1);
+            }}
           >
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Rows" />
@@ -331,18 +330,18 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                   variant="outline"
                   size="sm"
                   onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                  disabled={page <= 1}
+                  disabled={currentPage <= 1}
                 >
                   Previous
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  Page {page} of {totalPages}
+                  Page {currentPage} of {totalPages}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                  disabled={page >= totalPages}
+                  disabled={currentPage >= totalPages}
                 >
                   Next
                 </Button>
