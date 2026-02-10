@@ -33,7 +33,6 @@ from app.models.ticket_sales_import import (
 )
 from app.schemas.ticket_sales_import import (
     ImportResult,
-    ImportRowStatus,
     PreflightIssue,
     PreflightResult,
 )
@@ -287,7 +286,7 @@ class TicketSalesImportService:
                 purchase_date_str = str(parsed_row.data.get("purchase_date", ""))
                 promo_code_raw = str(parsed_row.data.get("promo_code", "")).strip()
                 discount_amount_raw = parsed_row.data.get("discount_amount")
-                
+
                 # Parse purchase date
                 try:
                     purchase_date = datetime.fromisoformat(purchase_date_str)
