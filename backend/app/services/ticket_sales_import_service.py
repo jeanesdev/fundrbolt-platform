@@ -27,12 +27,13 @@ from app.models.ticket_management import (
 from app.models.ticket_sales_import import (
     ImportFormat,
     ImportStatus,
-    IssueSeverity,
+    IssueSeverity as ModelIssueSeverity,
     TicketSalesImportBatch,
     TicketSalesImportIssue,
 )
 from app.schemas.ticket_sales_import import (
     ImportResult,
+    IssueSeverity,
     PreflightIssue,
     PreflightResult,
 )
@@ -173,7 +174,7 @@ class TicketSalesImportService:
                 batch_id=batch.id,
                 row_number=issue.row_number,
                 field_name=issue.field_name,
-                severity=IssueSeverity(issue.severity.value),
+                severity=ModelIssueSeverity(issue.severity.value),
                 message=issue.message,
                 raw_value=issue.raw_value,
             )
@@ -188,6 +189,7 @@ class TicketSalesImportService:
             warning_rows=warning_count,
             issues=issues,
             warnings=warnings,
+            error_report_url=None,
         )
 
     async def commit_import(
@@ -292,7 +294,7 @@ class TicketSalesImportService:
                     purchase_date = datetime.fromisoformat(purchase_date_str)
                 except ValueError:
                     # Try common date formats
-                    from dateutil import parser as date_parser
+                    from dateutil import parser as date_parser  # type: ignore[import-untyped]
 
                     purchase_date = date_parser.parse(purchase_date_str)
 
@@ -316,7 +318,7 @@ class TicketSalesImportService:
 
                 if promo_code_raw:
                     promo = promo_code_map.get(promo_code_raw.lower())
-                    if not self._is_promo_code_valid(promo):
+                    if not promo or not self._is_promo_code_valid(promo):
                         warnings.append(
                             PreflightIssue(
                                 row_number=parsed_row.row_number,
@@ -559,7 +561,7 @@ class TicketSalesImportService:
         promo_code_raw = str(data.get("promo_code", "")).strip()
         if promo_code_raw:
             promo = promo_code_map.get(promo_code_raw.lower())
-            if not self._is_promo_code_valid(promo):
+            if not promo or not self._is_promo_code_valid(promo):
                 issues.append(
                     PreflightIssue(
                         row_number=row_num,
