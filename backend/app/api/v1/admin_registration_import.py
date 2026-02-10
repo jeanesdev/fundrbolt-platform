@@ -11,7 +11,11 @@ from app.core.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.event import Event
 from app.models.user import User
-from app.schemas.registration_import import ImportReport
+from app.schemas.registration_import import (
+    ImportErrorReportRequest,
+    ImportErrorReportResponse,
+    ImportReport,
+)
 from app.services.audit_service import AuditService
 from app.services.registration_import_service import (
     RegistrationImportError,
@@ -143,3 +147,26 @@ async def commit_import(
         return report
     except RegistrationImportError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.post(
+    "/{event_id}/registrations/import/error-report",
+    response_model=ImportErrorReportResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def build_error_report(
+    event_id: UUID,
+    request: ImportErrorReportRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ImportErrorReportResponse:
+    """Generate downloadable error report for registration import results."""
+    event_result = await db.execute(select(Event).where(Event.id == event_id))
+    event = event_result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    _require_event_admin(current_user, event)
+
+    service = RegistrationImportService(db)
+    return service.build_error_report(request)

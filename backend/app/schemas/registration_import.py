@@ -45,6 +45,20 @@ class RegistrationImportRow(BaseModel):
     bidder_number: int | None = Field(None, ge=100, le=999)
     table_number: int | None = Field(None, ge=1)
     guest_count: int | None = Field(None, ge=1)
+    ticket_purchase_id: str | None = Field(
+        None,
+        description="Optional ticket purchase ID to link registration",
+        max_length=200,
+    )
+    ticket_purchaser_email: str | None = Field(
+        None,
+        description="Alternative purchaser email for ticket purchase lookup",
+        max_length=255,
+    )
+    ticket_purchase_date: date | None = Field(
+        None,
+        description="Alternative purchase date (YYYY-MM-DD) for ticket purchase lookup",
+    )
 
 
 class ValidationIssue(BaseModel):

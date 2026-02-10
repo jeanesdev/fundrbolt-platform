@@ -84,7 +84,7 @@ As an admin, I want clear error feedback from preflight so I can correct my file
 - **FR-004**: System MUST block import when preflight detects errors and must not create any registrations in that case.
 - **FR-005**: System MUST allow import only after a successful preflight for the same uploaded file.
 - **FR-006**: System MUST validate required fields: event identifier, registrant full name, registrant email, registration date, ticket package, quantity, total amount, payment status, and external registration identifier; any missing or invalid required fields MUST cause preflight to fail.
-- **FR-007**: System MUST allow optional fields: registrant phone, notes, bidder number, table number, and guest count.
+- **FR-007**: System MUST allow optional fields: registrant phone, notes, bidder number, table number, guest count, ticket_purchase_id, ticket_purchaser_email, and ticket_purchase_date.
 - **FR-008**: System MUST detect duplicate external registration identifiers within the uploaded file and flag them as errors during preflight.
 - **FR-009**: System MUST report validation results with counts of total rows, valid rows, error rows, and warning rows.
 - **FR-010**: System MUST provide a downloadable error report when preflight finds errors.
@@ -98,6 +98,8 @@ As an admin, I want clear error feedback from preflight so I can correct my file
 - **FR-018**: System MUST enforce a maximum of 5,000 rows per import file.
 - **FR-020**: System MUST enforce `external_registration_id` uniqueness within the selected event.
 - **FR-019**: System MUST allow preflight to succeed when existing `external_registration_id` duplicates are found, while warning that those rows will be skipped during import.
+- **FR-021**: System MUST accept `ticket_purchase_id` to link a registration to a ticket sale when provided.
+- **FR-022**: System MUST allow `ticket_purchaser_email` + `ticket_purchase_date` as an alternative lookup for the ticket purchase; missing or ambiguous matches MUST fail preflight.
 
 #### Example File Formats
 
@@ -119,14 +121,17 @@ Each object represents one registration record:
 - table_number: 8
 - guest_count: 2
 - notes: Sponsor package
+- ticket_purchase_id: 1b2c3d4e-0000-1111-2222-333344445555
+- ticket_purchaser_email: jordan.lee@example.org
+- ticket_purchase_date: 2026-01-20
 
 **CSV example (header and one row)**
 
 Header:
-event_id,registrant_name,registrant_email,registration_date,ticket_package,quantity,total_amount,payment_status,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,notes
+event_id,registrant_name,registrant_email,registration_date,ticket_package,quantity,total_amount,payment_status,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,notes,ticket_purchase_id,ticket_purchaser_email,ticket_purchase_date
 
 Row:
-EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,VIP Table,2,500.00,Paid,REG-100045,555-123-4567,42,8,2,Sponsor package
+EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,VIP Table,2,500.00,Paid,REG-100045,555-123-4567,42,8,2,Sponsor package,1b2c3d4e-0000-1111-2222-333344445555,jordan.lee@example.org,2026-01-20
 
 ### Key Entities *(include if feature involves data)*
 

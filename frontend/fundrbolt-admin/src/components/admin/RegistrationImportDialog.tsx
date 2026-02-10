@@ -99,10 +99,13 @@ function ExampleFormats() {
     table_number: 8,
     guest_count: 2,
     notes: 'Sponsor package',
+    ticket_purchase_id: '1b2c3d4e-0000-1111-2222-333344445555',
+    ticket_purchaser_email: 'jordan.lee@example.org',
+    ticket_purchase_date: '2026-01-20',
   }
 
-  const csvExample = `event_id,registrant_name,registrant_email,registration_date,ticket_package,quantity,total_amount,payment_status,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,notes
-EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,VIP Table,2,500.00,Paid,REG-100045,555-123-4567,42,8,2,Sponsor package`
+  const csvExample = `event_id,registrant_name,registrant_email,registration_date,ticket_package,quantity,total_amount,payment_status,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,notes,ticket_purchase_id,ticket_purchaser_email,ticket_purchase_date
+EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,VIP Table,2,500.00,Paid,REG-100045,555-123-4567,42,8,2,Sponsor package,1b2c3d4e-0000-1111-2222-333344445555,jordan.lee@example.org,2026-01-20`
 
   return (
     <div className="space-y-4">
@@ -125,7 +128,8 @@ EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,VIP Table,2,500.00,Pai
         </p>
         <p>
           <strong>Optional fields:</strong> event_id (ignored), registrant_phone, notes,
-          bidder_number, table_number, guest_count
+          bidder_number, table_number, guest_count, ticket_purchase_id, ticket_purchaser_email,
+          ticket_purchase_date
         </p>
         <p>
           <strong>Max rows:</strong> 5,000 per file
@@ -289,6 +293,18 @@ export function RegistrationImportDialog({
                           <div>{report.failed_count} failed</div>
                         </div>
                       </div>
+                      {report.error_report_url && (
+                        <div className="rounded-md border border-border p-3">
+                          <p className="text-sm text-muted-foreground">Error report</p>
+                          <a
+                            className="text-sm font-medium text-primary underline"
+                            href={report.error_report_url}
+                            download="registration-import-errors.csv"
+                          >
+                            Download error report
+                          </a>
+                        </div>
+                      )}
                     </div>
 
                     <ScrollArea className="h-64 rounded-md border border-border p-3">

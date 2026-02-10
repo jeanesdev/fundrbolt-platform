@@ -5,7 +5,7 @@
 ### Registration Record
 - **Represents**: A single event registration created from an import row.
 - **Key fields**: event_id, registrant_name, registrant_email, registration_date, ticket_package, quantity, total_amount, payment_status, external_registration_id
-- **Optional fields**: registrant_phone, bidder_number, table_number, guest_count, notes
+- **Optional fields**: registrant_phone, bidder_number, table_number, guest_count, notes, ticket_purchase_id, ticket_purchaser_email, ticket_purchase_date
 - **Constraints**:
   - `external_registration_id` must be unique within the selected event
   - Required fields must be present and valid
