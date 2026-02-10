@@ -89,7 +89,7 @@ async def _create_registration(
     from app.models.ticket_management import TicketPackage
     from app.models.user import User
     from sqlalchemy import select
-    
+
     # Extract and parse data
     registrant_email = str(row["registrant_email"]).strip().lower()
     registrant_name = str(row["registrant_name"]).strip()
@@ -97,13 +97,13 @@ async def _create_registration(
     ticket_package_name = str(row["ticket_package"]).strip()
     quantity = int(row["quantity"])
     guest_count = int(row.get("guest_count", quantity))
-    
+
     # 1. Find or create user for registrant
     user_result = await self.db.execute(
         select(User).where(User.email == registrant_email)
     )
     registrant_user = user_result.scalar_one_or_none()
-    
+
     if not registrant_user:
         # Create new user for registrant
         registrant_user = User(
@@ -115,7 +115,7 @@ async def _create_registration(
         )
         self.db.add(registrant_user)
         await self.db.flush()  # Get the user ID
-    
+
     # 2. Find ticket package
     ticket_pkg_result = await self.db.execute(
         select(TicketPackage).where(
@@ -126,7 +126,7 @@ async def _create_registration(
     ticket_package = ticket_pkg_result.scalar_one_or_none()
     if not ticket_package:
         raise ValueError(f"Ticket package '{ticket_package_name}' not found")
-    
+
     # 3. Create EventRegistration
     registration = EventRegistration(
         user_id=registrant_user.id,
@@ -138,7 +138,7 @@ async def _create_registration(
     )
     self.db.add(registration)
     await self.db.flush()  # Get the registration ID
-    
+
     # 4. Create RegistrationGuest records
     # First guest is the primary registrant
     primary_guest = RegistrationGuest(
@@ -151,7 +151,7 @@ async def _create_registration(
         table_number=row.get("table_number"),
     )
     self.db.add(primary_guest)
-    
+
     # Create additional guest placeholders if guest_count > 1
     for i in range(2, guest_count + 1):
         guest = RegistrationGuest(
@@ -176,9 +176,9 @@ async def _fetch_existing_external_ids(
     """Fetch existing external registration IDs for the event."""
     if not external_ids:
         return set()
-    
+
     from app.models.event_registration import EventRegistration
-    
+
     result = await self.db.execute(
         select(EventRegistration.external_registration_id)
         .where(
@@ -228,7 +228,7 @@ pnpm dev
 After implementation:
 
 - [ ] Valid JSON file creates registrations
-- [ ] Valid CSV file creates registrations  
+- [ ] Valid CSV file creates registrations
 - [ ] Valid Excel file creates registrations
 - [ ] Missing required field fails preflight
 - [ ] Duplicate external_id in file fails preflight

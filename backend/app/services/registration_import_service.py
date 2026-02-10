@@ -16,16 +16,7 @@ from openpyxl import load_workbook
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.event_registration import EventRegistration
-from app.models.registration_guest import RegistrationGuest
-from app.models.registration_import import (
-    ImportBatchStatus,
-    RegistrationImportBatch,
-    RegistrationValidationIssue,
-    ValidationSeverity,
-)
 from app.models.ticket_management import TicketPackage
-from app.models.user import User
 from app.schemas.registration_import import (
     ImportReport,
     ImportRowResult,
@@ -73,9 +64,7 @@ class RegistrationImportService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def preflight(
-        self, event_id: UUID, file_bytes: bytes, filename: str
-    ) -> ImportReport:
+    async def preflight(self, event_id: UUID, file_bytes: bytes, filename: str) -> ImportReport:
         """Run preflight validation without creating records."""
         file_type = self._detect_file_type(filename)
         parsed_rows = self._parse_file(file_bytes, file_type)
@@ -221,9 +210,7 @@ class RegistrationImportService:
             if self._is_empty_row(values):
                 continue
             if len(parsed_rows) >= MAX_IMPORT_ROWS:
-                raise RegistrationImportError(
-                    f"CSV exceeds maximum of {MAX_IMPORT_ROWS} rows"
-                )
+                raise RegistrationImportError(f"CSV exceeds maximum of {MAX_IMPORT_ROWS} rows")
 
             row_data = {
                 headers[i]: values[i] if i < len(values) else None for i in range(len(headers))
@@ -256,9 +243,7 @@ class RegistrationImportService:
             if self._is_empty_row(values):
                 continue
             if len(parsed_rows) >= MAX_IMPORT_ROWS:
-                raise RegistrationImportError(
-                    f"Excel exceeds maximum of {MAX_IMPORT_ROWS} rows"
-                )
+                raise RegistrationImportError(f"Excel exceeds maximum of {MAX_IMPORT_ROWS} rows")
 
             row_data = {
                 headers[i]: values[i] if i < len(values) else None for i in range(len(headers))
@@ -280,11 +265,9 @@ class RegistrationImportService:
         """Validate that all required headers are present."""
         missing = [h for h in REQUIRED_HEADERS if h not in headers]
         if missing:
-            raise RegistrationImportError(
-                f"Missing required columns: {', '.join(missing)}"
-            )
+            raise RegistrationImportError(f"Missing required columns: {', '.join(missing)}")
 
-    def _is_empty_row(self, values: tuple | list) -> bool:
+    def _is_empty_row(self, values: tuple[Any, ...] | list[Any]) -> bool:
         """Check if a row is empty."""
         return all(v is None or str(v).strip() == "" for v in values)
 
@@ -444,7 +427,6 @@ class RegistrationImportService:
 
             # Determine status
             has_errors = any(i.severity == ValidationIssueSeverity.ERROR for i in issues)
-            has_warnings = any(i.severity == ValidationIssueSeverity.WARNING for i in issues)
 
             if has_errors:
                 status = ImportRowStatus.ERROR
@@ -490,33 +472,23 @@ class RegistrationImportService:
         # 5. Store external_registration_id (needs model update)
         pass
 
-    def _build_report(
-        self, results: list[ImportRowResult], file_type: str
-    ) -> ImportReport:
+    def _build_report(self, results: list[ImportRowResult], file_type: str) -> ImportReport:
         """Build import report from results."""
         counter = Counter(result.status for result in results)
-
-        error_count = sum(
-            1
-            for result in results
-            for issue in result.issues
-            if issue.severity == ValidationIssueSeverity.ERROR
-        )
-        warning_count = sum(
-            1
-            for result in results
-            for issue in result.issues
-            if issue.severity == ValidationIssueSeverity.WARNING
-        )
 
         return ImportReport(
             total_rows=len(results),
             valid_rows=counter[ImportRowStatus.CREATED],
             error_rows=sum(1 for r in results if r.status == ImportRowStatus.ERROR),
-            warning_rows=sum(1 for r in results if any(i.severity == ValidationIssueSeverity.WARNING for i in r.issues)),
+            warning_rows=sum(
+                1
+                for r in results
+                if any(i.severity == ValidationIssueSeverity.WARNING for i in r.issues)
+            ),
             created_count=counter[ImportRowStatus.CREATED],
             skipped_count=counter[ImportRowStatus.SKIPPED],
             failed_count=counter[ImportRowStatus.ERROR],
             rows=results,
+            error_report_url=None,
             file_type=file_type,
         )

@@ -127,17 +127,30 @@ Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
         """Test preflight with valid Excel file."""
         wb = Workbook()
         ws = wb.active
-        ws.append([
-            "registrant_name",
-            "registrant_email",
-            "registration_date",
-            "ticket_package",
-            "quantity",
-            "total_amount",
-            "payment_status",
-            "external_registration_id",
-        ])
-        ws.append(["John Doe", "john@example.com", "2026-02-01", "VIP Table", 2, 500.00, "Paid", "REG-001"])
+        ws.append(
+            [
+                "registrant_name",
+                "registrant_email",
+                "registration_date",
+                "ticket_package",
+                "quantity",
+                "total_amount",
+                "payment_status",
+                "external_registration_id",
+            ]
+        )
+        ws.append(
+            [
+                "John Doe",
+                "john@example.com",
+                "2026-02-01",
+                "VIP Table",
+                2,
+                500.00,
+                "Paid",
+                "REG-001",
+            ]
+        )
 
         excel_buffer = io.BytesIO()
         wb.save(excel_buffer)
@@ -145,7 +158,13 @@ Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
 
         response = await npo_admin_client.post(
             f"/api/v1/admin/events/{test_event.id}/registrations/import/preflight",
-            files={"file": ("registrations.xlsx", excel_bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+            files={
+                "file": (
+                    "registrations.xlsx",
+                    excel_bytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
+            },
         )
 
         assert response.status_code == 200

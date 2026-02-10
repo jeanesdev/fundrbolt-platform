@@ -16,6 +16,10 @@ class EventRegistrationCreateRequest(BaseModel):
     """Request schema for creating a new event registration."""
 
     event_id: uuid.UUID = Field(..., description="ID of the event to register for")
+    ticket_purchase_id: uuid.UUID | None = Field(
+        default=None,
+        description="Linked ticket purchase ID (optional)",
+    )
     number_of_guests: int = Field(
         default=1,
         ge=1,
@@ -31,6 +35,10 @@ class EventRegistrationCreateRequest(BaseModel):
 class EventRegistrationUpdateRequest(BaseModel):
     """Request schema for updating an event registration."""
 
+    ticket_purchase_id: uuid.UUID | None = Field(
+        default=None,
+        description="Linked ticket purchase ID (optional)",
+    )
     number_of_guests: int | None = Field(
         default=None,
         ge=1,
@@ -58,6 +66,7 @@ class EventRegistrationResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     event_id: uuid.UUID
+    ticket_purchase_id: uuid.UUID | None
     status: RegistrationStatus
     ticket_type: str | None
     number_of_guests: int

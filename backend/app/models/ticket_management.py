@@ -28,6 +28,7 @@ from app.models.base import Base, UUIDMixin
 
 if TYPE_CHECKING:
     from app.models.event import Event
+    from app.models.event_registration import EventRegistration
     from app.models.user import User
 
 
@@ -482,6 +483,10 @@ class TicketPurchase(Base, UUIDMixin):
         "PromoCodeApplication",
         back_populates="ticket_purchase",
         uselist=False,
+    )
+    registrations: Mapped[list["EventRegistration"]] = relationship(
+        "EventRegistration",
+        back_populates="ticket_purchase",
     )
     assigned_tickets: Mapped[list["AssignedTicket"]] = relationship(
         "AssignedTicket",

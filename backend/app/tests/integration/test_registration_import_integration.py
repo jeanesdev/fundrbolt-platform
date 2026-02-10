@@ -31,7 +31,7 @@ async def test_ticket_package(db_session: AsyncSession, test_event: Event, test_
         sold_count=0,
     )
     db_session.add(package)
-    
+
     # Also create a General Admission package
     general = TicketPackage(
         event_id=test_event.id,
@@ -44,7 +44,7 @@ async def test_ticket_package(db_session: AsyncSession, test_event: Event, test_
         sold_count=0,
     )
     db_session.add(general)
-    
+
     await db_session.commit()
     await db_session.refresh(package)
     return package
@@ -90,9 +90,7 @@ class TestRegistrationImportEndToEnd:
         filename = "registrations.json"
 
         # Step 2: Run preflight
-        preflight_report = await import_service.preflight(
-            test_event.id, json_bytes, filename
-        )
+        preflight_report = await import_service.preflight(test_event.id, json_bytes, filename)
 
         # Verify preflight results
         assert preflight_report.total_rows == 2
@@ -127,9 +125,7 @@ Jane Smith,jane@example.com,2026-02-02,General Admission,1,150.00,Paid,REG-002""
         filename = "registrations.csv"
 
         # Run preflight
-        preflight_report = await import_service.preflight(
-            test_event.id, csv_bytes, filename
-        )
+        preflight_report = await import_service.preflight(test_event.id, csv_bytes, filename)
 
         assert preflight_report.total_rows == 2
         assert preflight_report.valid_rows == 2
@@ -166,9 +162,7 @@ Jane Smith,jane@example.com,2026-02-02,General Admission,1,150.00,Paid,REG-002""
         ]
         json_bytes = json.dumps(registrations).encode("utf-8")
 
-        report = await import_service.preflight(
-            test_event.id, json_bytes, "registrations.json"
-        )
+        report = await import_service.preflight(test_event.id, json_bytes, "registrations.json")
 
         assert report.error_rows == 2
         assert report.valid_rows == 0
@@ -205,15 +199,11 @@ Jane Smith,jane@example.com,2026-02-02,General Admission,1,150.00,Paid,REG-002""
         ]
         json_bytes = json.dumps(registrations).encode("utf-8")
 
-        report = await import_service.preflight(
-            test_event.id, json_bytes, "registrations.json"
-        )
+        report = await import_service.preflight(test_event.id, json_bytes, "registrations.json")
 
         # Second row should have error
         assert report.error_rows >= 1
-        duplicate_row = next(
-            (r for r in report.rows if r.row_number == 2), None
-        )
+        duplicate_row = next((r for r in report.rows if r.row_number == 2), None)
         assert duplicate_row is not None
         assert duplicate_row.status.value == "error"
 
@@ -239,9 +229,7 @@ Jane Smith,jane@example.com,2026-02-02,General Admission,1,150.00,Paid,REG-002""
         ]
         json_bytes = json.dumps(registrations).encode("utf-8")
 
-        report = await import_service.preflight(
-            test_event.id, json_bytes, "registrations.json"
-        )
+        report = await import_service.preflight(test_event.id, json_bytes, "registrations.json")
 
         # Should have warnings but no errors
         assert report.error_rows == 0
@@ -271,9 +259,7 @@ Jane Smith,jane@example.com,2026-02-02,General Admission,1,150.00,Paid,REG-002""
         ]
         json_bytes = json.dumps(registrations).encode("utf-8")
 
-        report = await import_service.preflight(
-            test_event.id, json_bytes, "registrations.json"
-        )
+        report = await import_service.preflight(test_event.id, json_bytes, "registrations.json")
 
         assert report.total_rows == 100
         assert report.valid_rows == 100
@@ -316,9 +302,7 @@ class TestRegistrationImportWithMultiplePackages:
         ]
         json_bytes = json.dumps(registrations).encode("utf-8")
 
-        report = await import_service.preflight(
-            test_event.id, json_bytes, "registrations.json"
-        )
+        report = await import_service.preflight(test_event.id, json_bytes, "registrations.json")
 
         assert report.valid_rows == 2
         assert report.error_rows == 0
@@ -350,16 +334,10 @@ class TestRegistrationImportValidation:
         ]
         json_bytes = json.dumps(registrations).encode("utf-8")
 
-        report = await import_service.preflight(
-            test_event.id, json_bytes, "registrations.json"
-        )
+        report = await import_service.preflight(test_event.id, json_bytes, "registrations.json")
 
         assert report.error_rows == 1
-        assert any(
-            "date" in issue.message.lower()
-            for row in report.rows
-            for issue in row.issues
-        )
+        assert any("date" in issue.message.lower() for row in report.rows for issue in row.issues)
 
     async def test_invalid_numeric_values(
         self,
@@ -382,9 +360,7 @@ class TestRegistrationImportValidation:
         ]
         json_bytes = json.dumps(registrations).encode("utf-8")
 
-        report = await import_service.preflight(
-            test_event.id, json_bytes, "registrations.json"
-        )
+        report = await import_service.preflight(test_event.id, json_bytes, "registrations.json")
 
         assert report.error_rows == 1
 
@@ -409,13 +385,7 @@ class TestRegistrationImportValidation:
         ]
         json_bytes = json.dumps(registrations).encode("utf-8")
 
-        report = await import_service.preflight(
-            test_event.id, json_bytes, "registrations.json"
-        )
+        report = await import_service.preflight(test_event.id, json_bytes, "registrations.json")
 
         assert report.error_rows == 1
-        assert any(
-            "amount" in issue.message.lower()
-            for row in report.rows
-            for issue in row.issues
-        )
+        assert any("amount" in issue.message.lower() for row in report.rows for issue in row.issues)

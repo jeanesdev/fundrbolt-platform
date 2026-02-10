@@ -28,6 +28,7 @@ export interface EventRegistration {
   id: string
   user_id: string
   event_id: string
+  ticket_purchase_id: string | null
   status: string
   ticket_type: string | null
   number_of_guests: number

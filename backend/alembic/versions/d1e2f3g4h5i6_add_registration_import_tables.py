@@ -117,9 +117,7 @@ def upgrade() -> None:
             nullable=True,
             comment="Field that caused the issue (if applicable)",
         ),
-        sa.Column(
-            "message", sa.Text(), nullable=False, comment="Human-readable error message"
-        ),
+        sa.Column("message", sa.Text(), nullable=False, comment="Human-readable error message"),
     )
 
     # Create indexes
@@ -137,7 +135,9 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     # Drop indexes
-    op.drop_index("idx_validation_issues_batch_severity", table_name="registration_validation_issues")
+    op.drop_index(
+        "idx_validation_issues_batch_severity", table_name="registration_validation_issues"
+    )
     op.drop_index("idx_import_batches_event_created", table_name="registration_import_batches")
 
     # Drop tables

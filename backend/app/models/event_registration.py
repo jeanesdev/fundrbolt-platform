@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from app.models.event import Event
     from app.models.meal_selection import MealSelection
     from app.models.registration_guest import RegistrationGuest
+    from app.models.ticket_management import TicketPurchase
     from app.models.user import User
 
 
@@ -67,6 +68,13 @@ class EventRegistration(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         index=True,
     )
+    ticket_purchase_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ticket_purchases.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        comment="Linked ticket purchase (if registration created from a sale)",
+    )
 
     # Registration Details
     status: Mapped[RegistrationStatus] = mapped_column(
@@ -95,6 +103,10 @@ class EventRegistration(Base, UUIDMixin, TimestampMixin):
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="event_registrations")
     event: Mapped["Event"] = relationship("Event", back_populates="registrations")
+    ticket_purchase: Mapped["TicketPurchase | None"] = relationship(
+        "TicketPurchase",
+        back_populates="registrations",
+    )
     guests: Mapped[list["RegistrationGuest"]] = relationship(
         "RegistrationGuest",
         back_populates="registration",

@@ -14,11 +14,13 @@ import type { AxiosResponse } from 'axios'
 
 export interface EventRegistrationCreateRequest {
   event_id: string
+  ticket_purchase_id?: string | null
   number_of_guests: number
   ticket_type?: string | null
 }
 
 export interface EventRegistrationUpdateRequest {
+  ticket_purchase_id?: string | null
   number_of_guests?: number
   ticket_type?: string | null
   status?: 'pending' | 'confirmed' | 'cancelled' | 'waitlisted'
@@ -28,6 +30,7 @@ export interface EventRegistrationResponse {
   id: string
   user_id: string
   event_id: string
+  ticket_purchase_id: string | null
   status: 'pending' | 'confirmed' | 'cancelled' | 'waitlisted'
   ticket_type: string | null
   number_of_guests: number

@@ -3,7 +3,7 @@
 import enum
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy import Enum as SQLEnum
@@ -84,7 +84,8 @@ class RegistrationImportBatch(Base, UUIDMixin):
     failed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     # Metadata
-    metadata: Mapped[dict | None] = mapped_column(
+    metadata_: Mapped[dict[str, Any] | None] = mapped_column(
+        "metadata",
         JSONB,
         nullable=True,
         comment="Additional metadata (e.g., processing time)",

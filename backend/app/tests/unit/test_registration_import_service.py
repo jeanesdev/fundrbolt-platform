@@ -2,9 +2,7 @@
 
 import io
 import json
-from datetime import date
 from decimal import Decimal
-from uuid import UUID, uuid4
 
 import pytest
 from openpyxl import Workbook
@@ -251,26 +249,30 @@ class TestExcelParsing:
         """Test parsing valid Excel file."""
         wb = Workbook()
         ws = wb.active
-        ws.append([
-            "registrant_name",
-            "registrant_email",
-            "registration_date",
-            "ticket_package",
-            "quantity",
-            "total_amount",
-            "payment_status",
-            "external_registration_id",
-        ])
-        ws.append([
-            "John Doe",
-            "john@example.com",
-            "2026-02-01",
-            "VIP Table",
-            2,
-            500.00,
-            "Paid",
-            "REG-001",
-        ])
+        ws.append(
+            [
+                "registrant_name",
+                "registrant_email",
+                "registration_date",
+                "ticket_package",
+                "quantity",
+                "total_amount",
+                "payment_status",
+                "external_registration_id",
+            ]
+        )
+        ws.append(
+            [
+                "John Doe",
+                "john@example.com",
+                "2026-02-01",
+                "VIP Table",
+                2,
+                500.00,
+                "Paid",
+                "REG-001",
+            ]
+        )
 
         excel_buffer = io.BytesIO()
         wb.save(excel_buffer)
@@ -333,7 +335,9 @@ class TestValidation:
 
         assert len(results) == 1
         assert results[0].status == ImportRowStatus.CREATED
-        assert len([i for i in results[0].issues if i.severity == ValidationIssueSeverity.ERROR]) == 0
+        assert (
+            len([i for i in results[0].issues if i.severity == ValidationIssueSeverity.ERROR]) == 0
+        )
 
     async def test_validate_missing_required_field(
         self,

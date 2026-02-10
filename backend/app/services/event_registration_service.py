@@ -13,6 +13,7 @@ from app.models.event import Event, EventStatus
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.npo import NPO
 from app.models.registration_guest import RegistrationGuest
+from app.models.ticket_management import TicketPurchase
 from app.models.user import User
 from app.schemas.event_registration import (
     EventRegistrationCreateRequest,
@@ -73,10 +74,36 @@ class EventRegistrationService:
                 detail="You are already registered for this event",
             )
 
+        ticket_purchase_id: uuid.UUID | None = None
+        if registration_data.ticket_purchase_id:
+            purchase_result = await db.execute(
+                select(TicketPurchase).where(
+                    TicketPurchase.id == registration_data.ticket_purchase_id
+                )
+            )
+            purchase = purchase_result.scalar_one_or_none()
+            if not purchase:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Ticket purchase not found",
+                )
+            if purchase.event_id != registration_data.event_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Ticket purchase does not match event",
+                )
+            if purchase.user_id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Ticket purchase does not belong to current user",
+                )
+            ticket_purchase_id = purchase.id
+
         # Create registration
         registration = EventRegistration(
             user_id=current_user.id,
             event_id=registration_data.event_id,
+            ticket_purchase_id=ticket_purchase_id,
             number_of_guests=registration_data.number_of_guests,
             ticket_type=registration_data.ticket_type,
             status=RegistrationStatus.CONFIRMED,
@@ -392,6 +419,33 @@ class EventRegistrationService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You can only update your own registrations",
             )
+
+        if registration_data.ticket_purchase_id is not None:
+            if registration_data.ticket_purchase_id:
+                purchase_result = await db.execute(
+                    select(TicketPurchase).where(
+                        TicketPurchase.id == registration_data.ticket_purchase_id
+                    )
+                )
+                purchase = purchase_result.scalar_one_or_none()
+                if not purchase:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Ticket purchase not found",
+                    )
+                if purchase.event_id != registration.event_id:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Ticket purchase does not match event",
+                    )
+                if purchase.user_id != registration.user_id:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Ticket purchase does not belong to current user",
+                    )
+                registration.ticket_purchase_id = purchase.id
+            else:
+                registration.ticket_purchase_id = None
 
         # Update fields
         if registration_data.number_of_guests is not None:

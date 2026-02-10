@@ -69,9 +69,7 @@ async def preflight_import(
     _require_event_admin(current_user, event)
 
     if not file.filename:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Filename is required"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Filename is required")
 
     try:
         file_bytes = await file.read()
@@ -125,9 +123,7 @@ async def commit_import(
     _require_event_admin(current_user, event)
 
     if not file.filename:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Filename is required"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Filename is required")
 
     try:
         file_bytes = await file.read()
