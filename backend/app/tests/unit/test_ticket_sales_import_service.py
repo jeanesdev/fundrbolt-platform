@@ -254,7 +254,7 @@ General,Jane Smith,jane@example.com,1,50.00,2026-02-02,EXT-002"""
         assert "non-negative" in amount_issues[0].message
 
     async def test_row_limit_enforcement(
-        self, db_session: AsyncSession, test_event: any
+        self, db_session: AsyncSession, test_event: any, test_user: any
     ) -> None:
         """Test that files over MAX_IMPORT_ROWS are rejected."""
         service = TicketSalesImportService(db_session)
@@ -268,7 +268,9 @@ General,Jane Smith,jane@example.com,1,50.00,2026-02-02,EXT-002"""
         csv_content = (header + rows).encode()
         
         with pytest.raises(TicketSalesImportError) as exc_info:
-            await service.preflight(test_event.id, csv_content, "large.csv")
+            await service.preflight(
+                test_event.id, csv_content, "large.csv", created_by=test_user.id
+            )
         
         assert "Maximum allowed is 5000" in str(exc_info.value)
 
@@ -282,6 +284,7 @@ class TestTicketSalesImportPreflight:
         db_session: AsyncSession,
         test_event: any,
         test_ticket_package: any,
+        test_user: any,
     ) -> None:
         """Test successful preflight with valid data."""
         service = TicketSalesImportService(db_session)
@@ -290,7 +293,9 @@ class TestTicketSalesImportPreflight:
 {test_ticket_package.name},John Doe,john@example.com,1,100.00,2026-02-01,EXT-001
 {test_ticket_package.name},Jane Smith,jane@example.com,2,200.00,2026-02-02,EXT-002""".encode()
         
-        result = await service.preflight(test_event.id, csv_content, "sales.csv")
+        result = await service.preflight(
+            test_event.id, csv_content, "sales.csv", created_by=test_user.id
+        )
         
         assert result.total_rows == 2
         assert result.valid_rows == 2
@@ -304,6 +309,7 @@ class TestTicketSalesImportPreflight:
         db_session: AsyncSession,
         test_event: any,
         test_ticket_package: any,
+        test_user: any,
     ) -> None:
         """Test that preflight creates import batch record."""
         service = TicketSalesImportService(db_session)
@@ -311,7 +317,9 @@ class TestTicketSalesImportPreflight:
         csv_content = f"""ticket_type,purchaser_name,purchaser_email,quantity,total_amount,purchase_date,external_sale_id
 {test_ticket_package.name},John Doe,john@example.com,1,100.00,2026-02-01,EXT-001""".encode()
         
-        result = await service.preflight(test_event.id, csv_content, "sales.csv")
+        result = await service.preflight(
+            test_event.id, csv_content, "sales.csv", created_by=test_user.id
+        )
         
         # Verify batch record was created
         stmt = select(TicketSalesImportBatch).where(
@@ -346,7 +354,7 @@ class TestTicketSalesImportCommit:
         
         # Run preflight first
         preflight_result = await service.preflight(
-            test_event.id, csv_content, "sales.csv"
+            test_event.id, csv_content, "sales.csv", created_by=test_user.id
         )
         await db_session.commit()
         
@@ -392,7 +400,7 @@ class TestTicketSalesImportCommit:
         
         # Run preflight and commit
         preflight_result = await service.preflight(
-            test_event.id, csv_content, "sales.csv"
+            test_event.id, csv_content, "sales.csv", created_by=test_user.id
         )
         await db_session.commit()
         
@@ -423,7 +431,9 @@ class TestTicketSalesImportCommit:
         csv_content1 = f"""ticket_type,purchaser_name,purchaser_email,quantity,total_amount,purchase_date,external_sale_id
 {test_ticket_package.name},John Doe,john@example.com,1,100.00,2026-02-01,EXT-001""".encode()
         
-        preflight1 = await service.preflight(test_event.id, csv_content1, "sales1.csv")
+        preflight1 = await service.preflight(
+            test_event.id, csv_content1, "sales1.csv", created_by=test_user.id
+        )
         await db_session.commit()
         await service.commit_import(
             test_event.id, UUID(preflight1.preflight_id), csv_content1, test_user.id
@@ -434,7 +444,9 @@ class TestTicketSalesImportCommit:
         csv_content2 = f"""ticket_type,purchaser_name,purchaser_email,quantity,total_amount,purchase_date,external_sale_id
 {test_ticket_package.name},Jane Smith,jane@example.com,1,100.00,2026-02-02,EXT-001""".encode()
         
-        preflight2 = await service.preflight(test_event.id, csv_content2, "sales2.csv")
+        preflight2 = await service.preflight(
+            test_event.id, csv_content2, "sales2.csv", created_by=test_user.id
+        )
         await db_session.commit()
         
         import_result = await service.commit_import(
@@ -460,7 +472,7 @@ class TestTicketSalesImportCommit:
         
         # Run preflight
         preflight_result = await service.preflight(
-            test_event.id, csv_content1, "sales.csv"
+            test_event.id, csv_content1, "sales.csv", created_by=test_user.id
         )
         await db_session.commit()
         
@@ -494,7 +506,7 @@ class TestTicketSalesImportCommit:
         
         # Run preflight (should have errors)
         preflight_result = await service.preflight(
-            test_event.id, csv_content, "sales.csv"
+            test_event.id, csv_content, "sales.csv", created_by=test_user.id
         )
         await db_session.commit()
         

@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.logging import get_logger
 from app.middleware.auth import get_current_user
 from app.models.event import Event
 from app.models.user import User
@@ -20,6 +21,14 @@ from app.services.ticket_sales_import_service import (
 )
 
 router = APIRouter(prefix="/admin/events", tags=["admin-ticket-sales-import"])
+logger = get_logger(__name__)
+
+
+def _safe_user_id(user: User) -> str | None:
+    user_dict = getattr(user, "__dict__", {})
+    if isinstance(user_dict, dict) and user_dict.get("id"):
+        return str(user_dict["id"])
+    return None
 
 
 class ImportConfirmRequest(BaseModel):
@@ -76,19 +85,9 @@ async def preflight_import(
 
         # Run preflight
         service = TicketSalesImportService(db)
-        result = await service.preflight(event_id, file_bytes, filename)
-
-        # Update created_by for the batch
-        from app.models.ticket_sales_import import TicketSalesImportBatch
-
-        batch_result = await db.execute(
-            select(TicketSalesImportBatch).where(
-                TicketSalesImportBatch.id == UUID(result.preflight_id)
-            )
+        result = await service.preflight(
+            event_id, file_bytes, filename, created_by=current_user.id
         )
-        batch = batch_result.scalar_one_or_none()
-        if batch:
-            batch.created_by = current_user.id
 
         await db.commit()
 
@@ -108,6 +107,14 @@ async def preflight_import(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except Exception as exc:
         await db.rollback()
+        logger.exception(
+            "Ticket sales import preflight failed",
+            extra={
+                "event_id": str(event_id),
+                "user_id": _safe_user_id(current_user),
+                "upload_filename": file.filename if file else None,
+            },
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Unexpected error during preflight: {str(exc)}",

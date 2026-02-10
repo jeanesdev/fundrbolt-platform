@@ -136,6 +136,8 @@ Each object represents one ticket sale record:
 - total_amount: 500.00
 - purchase_date: 2026-02-01
 - external_sale_id: EXT-100045
+- promo_code: VIP20
+- discount_amount: 100.00
 - fee_amount: 15.00
 - payment_status: Paid
 - notes: Sponsor package
@@ -143,10 +145,10 @@ Each object represents one ticket sale record:
 **CSV example (header and one row)**
 
 Header:
-event_id,ticket_type,purchaser_name,purchaser_email,quantity,total_amount,purchase_date,external_sale_id,fee_amount,payment_status,notes
+event_id,ticket_type,purchaser_name,purchaser_email,quantity,total_amount,purchase_date,external_sale_id,promo_code,discount_amount,fee_amount,payment_status,notes
 
 Row:
-EVT-2026-001,VIP Table,Jordan Lee,jordan.lee@example.org,2,500.00,2026-02-01,EXT-100045,15.00,Paid,Sponsor package
+EVT-2026-001,VIP Table,Jordan Lee,jordan.lee@example.org,2,500.00,2026-02-01,EXT-100045,VIP20,100.00,15.00,Paid,Sponsor package
 
 ### Key Entities *(include if feature involves data)*
 

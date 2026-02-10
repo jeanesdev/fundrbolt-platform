@@ -1,8 +1,8 @@
 """Create ticket sales import tables
 
 Revision ID: f1a2b3c4d5e6
-Revises: sponsorship_001_add_is_sponsorship
-Create Date: 2026-02-07 16:45:00.000000
+Revises: sponsorship_001
+Create Date: 2026-01-27 20:15:00.000000
 
 """
 
@@ -13,7 +13,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "f1a2b3c4d5e6"
-down_revision = "sponsorship_001_add_is_sponsorship"
+down_revision = "sponsorship_001"
 branch_labels = None
 depends_on = None
 

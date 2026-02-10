@@ -17,7 +17,13 @@ from openpyxl import load_workbook
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.ticket_management import TicketPackage, TicketPurchase
+from app.models.ticket_management import (
+    DiscountType,
+    PromoCode,
+    PromoCodeApplication,
+    TicketPackage,
+    TicketPurchase,
+)
 from app.models.ticket_sales_import import (
     ImportFormat,
     ImportStatus,
@@ -45,6 +51,8 @@ REQUIRED_CSV_HEADERS = [
 ]
 OPTIONAL_CSV_HEADERS = [
     "purchaser_phone",
+    "promo_code",
+    "discount_amount",
     "fee_amount",
     "payment_status",
     "notes",
@@ -72,7 +80,11 @@ class TicketSalesImportService:
         self.db = db
 
     async def preflight(
-        self, event_id: UUID, file_bytes: bytes, filename: str
+        self,
+        event_id: UUID,
+        file_bytes: bytes,
+        filename: str,
+        created_by: UUID,
     ) -> PreflightResult:
         """Validate uploaded file and return preflight results.
 
@@ -80,6 +92,7 @@ class TicketSalesImportService:
             event_id: UUID of the event
             file_bytes: Raw bytes of the uploaded file
             filename: Original filename
+            created_by: UUID of the user initiating the preflight
 
         Returns:
             PreflightResult with validation summary and issues
@@ -111,6 +124,9 @@ class TicketSalesImportService:
         ticket_packages = await self._fetch_ticket_packages(event_id)
         package_names = {pkg.name.lower() for pkg in ticket_packages}
 
+        promo_codes = await self._fetch_promo_codes(event_id)
+        promo_code_map = {promo.code.lower(): promo for promo in promo_codes}
+
         # Validate rows
         issues: list[PreflightIssue] = []
         warnings: list[PreflightIssue] = []
@@ -120,7 +136,7 @@ class TicketSalesImportService:
 
         for parsed_row in parsed_rows:
             row_issues = self._validate_row(
-                parsed_row, package_names, existing_ids, external_ids
+                parsed_row, package_names, existing_ids, external_ids, promo_code_map
             )
             if row_issues:
                 for issue in row_issues:
@@ -139,7 +155,7 @@ class TicketSalesImportService:
         # Create import batch record
         batch = TicketSalesImportBatch(
             event_id=event_id,
-            created_by=UUID("00000000-0000-0000-0000-000000000000"),  # Will be set by endpoint
+            created_by=created_by,
             status=ImportStatus.PREFLIGHTED,
             source_filename=filename,
             source_format=detected_format,
@@ -150,6 +166,7 @@ class TicketSalesImportService:
             preflight_checksum=checksum,
         )
         self.db.add(batch)
+        await self.db.flush()
 
         # Create issue records
         for issue in issues + warnings:
@@ -162,8 +179,6 @@ class TicketSalesImportService:
                 raw_value=issue.raw_value,
             )
             self.db.add(issue_record)
-
-        await self.db.flush()
 
         return PreflightResult(
             preflight_id=str(batch.id),
@@ -232,6 +247,9 @@ class TicketSalesImportService:
         ticket_packages = await self._fetch_ticket_packages(event_id)
         package_map = {pkg.name.lower(): pkg for pkg in ticket_packages}
 
+        promo_codes = await self._fetch_promo_codes(event_id)
+        promo_code_map = {promo.code.lower(): promo for promo in promo_codes}
+
         # Create ticket purchases
         created_count = 0
         skipped_count = 0
@@ -267,6 +285,8 @@ class TicketSalesImportService:
                 quantity = int(parsed_row.data.get("quantity", 1))
                 total_amount = Decimal(str(parsed_row.data.get("total_amount", 0)))
                 purchase_date_str = str(parsed_row.data.get("purchase_date", ""))
+                promo_code_raw = str(parsed_row.data.get("promo_code", "")).strip()
+                discount_amount_raw = parsed_row.data.get("discount_amount")
                 
                 # Parse purchase date
                 try:
@@ -296,6 +316,30 @@ class TicketSalesImportService:
                 )
                 self.db.add(purchase)
                 created_count += 1
+
+                if promo_code_raw:
+                    promo = promo_code_map.get(promo_code_raw.lower())
+                    if not self._is_promo_code_valid(promo):
+                        warnings.append(
+                            PreflightIssue(
+                                row_number=parsed_row.row_number,
+                                field_name="promo_code",
+                                severity=IssueSeverity.WARNING,
+                                message=f"Promo code '{promo_code_raw}' is not valid",
+                                raw_value=promo_code_raw,
+                            )
+                        )
+                    else:
+                        discount_amount = self._resolve_discount_amount(
+                            total_amount, promo, discount_amount_raw
+                        )
+                        promo_application = PromoCodeApplication(
+                            promo_code_id=promo.id,
+                            ticket_purchase_id=purchase.id,
+                            discount_amount=discount_amount,
+                        )
+                        self.db.add(promo_application)
+                        promo.used_count += 1
 
                 # Update sold_count on package
                 package.sold_count += quantity
@@ -407,6 +451,7 @@ class TicketSalesImportService:
         package_names: set[str],
         existing_ids: set[str],
         all_ids_in_file: list[str],
+        promo_code_map: dict[str, PromoCode],
     ) -> list[PreflightIssue]:
         """Validate a single row and return issues."""
         issues: list[PreflightIssue] = []
@@ -514,6 +559,51 @@ class TicketSalesImportService:
                     )
                 )
 
+        promo_code_raw = str(data.get("promo_code", "")).strip()
+        if promo_code_raw:
+            promo = promo_code_map.get(promo_code_raw.lower())
+            if not self._is_promo_code_valid(promo):
+                issues.append(
+                    PreflightIssue(
+                        row_number=row_num,
+                        field_name="promo_code",
+                        severity=IssueSeverity.ERROR,
+                        message=f"Promo code '{promo_code_raw}' is not valid for this event",
+                        raw_value=promo_code_raw,
+                    )
+                )
+
+        discount_raw = data.get("discount_amount")
+        if discount_raw not in (None, ""):
+            try:
+                discount_value = Decimal(str(discount_raw))
+                if discount_value < 0:
+                    raise InvalidOperation
+                try:
+                    total_amount = Decimal(str(data.get("total_amount", 0)))
+                    if discount_value > total_amount:
+                        issues.append(
+                            PreflightIssue(
+                                row_number=row_num,
+                                field_name="discount_amount",
+                                severity=IssueSeverity.ERROR,
+                                message="Discount amount cannot exceed total amount",
+                                raw_value=str(discount_raw),
+                            )
+                        )
+                except (InvalidOperation, ValueError, TypeError):
+                    pass
+            except (InvalidOperation, ValueError, TypeError):
+                issues.append(
+                    PreflightIssue(
+                        row_number=row_num,
+                        field_name="discount_amount",
+                        severity=IssueSeverity.ERROR,
+                        message="Discount amount must be a valid non-negative number",
+                        raw_value=str(discount_raw),
+                    )
+                )
+
         return issues
 
     async def _fetch_existing_external_ids(
@@ -538,3 +628,40 @@ class TicketSalesImportService:
             select(TicketPackage).where(TicketPackage.event_id == event_id)
         )
         return list(result.scalars().all())
+
+    async def _fetch_promo_codes(self, event_id: UUID) -> list[PromoCode]:
+        """Fetch all promo codes for the event."""
+        result = await self.db.execute(
+            select(PromoCode).where(PromoCode.event_id == event_id)
+        )
+        return list(result.scalars().all())
+
+    @staticmethod
+    def _is_promo_code_valid(promo: PromoCode | None) -> bool:
+        """Validate promo code status and date range."""
+        if not promo:
+            return False
+        if not promo.is_active:
+            return False
+        now = datetime.utcnow()
+        if promo.valid_from and now < promo.valid_from:
+            return False
+        if promo.valid_until and now > promo.valid_until:
+            return False
+        if promo.max_uses and promo.used_count >= promo.max_uses:
+            return False
+        return True
+
+    @staticmethod
+    def _resolve_discount_amount(
+        total_amount: Decimal, promo: PromoCode, discount_raw: Any
+    ) -> Decimal:
+        """Resolve discount amount from explicit value or promo configuration."""
+        if discount_raw not in (None, ""):
+            try:
+                return Decimal(str(discount_raw))
+            except (InvalidOperation, ValueError, TypeError):
+                return Decimal("0")
+        if promo.discount_type == DiscountType.PERCENTAGE:
+            return (total_amount * promo.discount_value) / Decimal("100")
+        return min(total_amount, promo.discount_value)
