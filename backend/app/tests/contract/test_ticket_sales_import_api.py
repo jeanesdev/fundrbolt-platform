@@ -12,6 +12,15 @@ from app.models.ticket_management import TicketPurchase
 from app.models.ticket_sales_import import TicketSalesImportBatch
 
 
+def _extract_error_message(payload: dict[str, Any]) -> str:
+    detail = payload.get("detail")
+    if isinstance(detail, dict):
+        return str(detail.get("message", ""))
+    if isinstance(detail, str):
+        return detail
+    return str(payload.get("message", ""))
+
+
 @pytest.mark.asyncio
 class TestTicketSalesImportPreflight:
     """Test POST /api/v1/admin/events/{event_id}/ticket-sales/import/preflight."""
@@ -147,8 +156,7 @@ NonExistentType,John Doe,john@example.com,1,100.00,2026-02-01,EXT-001"""
         )
 
         assert response.status_code == 400
-        error_payload = response.json()
-        error_message = error_payload.get("detail") or error_payload.get("message", "")
+        error_message = _extract_error_message(response.json())
         assert "5000" in error_message
 
     async def test_preflight_duplicate_in_file(
@@ -311,8 +319,7 @@ class TestTicketSalesImportCommit:
         )
 
         assert response.status_code == 400
-        error_payload = response.json()
-        error_message = error_payload.get("detail") or error_payload.get("message", "")
+        error_message = _extract_error_message(response.json())
         assert "not found" in error_message
 
     async def test_commit_requires_confirmation(
@@ -337,8 +344,7 @@ class TestTicketSalesImportCommit:
         )
 
         assert response.status_code == 400
-        error_payload = response.json()
-        error_message = error_payload.get("detail") or error_payload.get("message", "")
+        error_message = _extract_error_message(response.json())
         assert "confirmed" in error_message
 
     async def test_commit_checksum_validation(
@@ -367,8 +373,7 @@ class TestTicketSalesImportCommit:
         )
 
         assert response.status_code == 400
-        error_payload = response.json()
-        error_message = error_payload.get("detail") or error_payload.get("message", "")
+        error_message = _extract_error_message(response.json())
         assert "changed" in error_message
 
     async def test_commit_unauthorized(
