@@ -1754,3 +1754,41 @@ def mock_azure_storage(monkeypatch):
     )
 
     return mock_blob_service
+
+
+# ================================
+# Ticket Management Fixtures
+# ================================
+
+
+@pytest_asyncio.fixture
+async def test_ticket_package(
+    db_session: AsyncSession, test_event: Any, test_npo_admin_user: Any
+) -> Any:
+    """
+    Create a test ticket package for the test event.
+
+    Returns a TicketPackage instance with sample data.
+    """
+    from decimal import Decimal
+
+    from app.models.ticket_management import TicketPackage
+
+    package = TicketPackage(
+        event_id=test_event.id,
+        created_by=test_npo_admin_user.id,
+        name="General Admission",
+        description="Standard admission ticket",
+        price=Decimal("100.00"),
+        seats_per_package=1,
+        quantity_limit=100,
+        sold_count=0,
+        display_order=1,
+        is_enabled=True,
+        is_sponsorship=False,
+    )
+    db_session.add(package)
+    await db_session.commit()
+    await db_session.refresh(package)
+
+    return package
