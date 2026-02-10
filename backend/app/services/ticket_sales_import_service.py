@@ -27,9 +27,11 @@ from app.models.ticket_management import (
 from app.models.ticket_sales_import import (
     ImportFormat,
     ImportStatus,
-    IssueSeverity as ModelIssueSeverity,
     TicketSalesImportBatch,
     TicketSalesImportIssue,
+)
+from app.models.ticket_sales_import import (
+    IssueSeverity as ModelIssueSeverity,
 )
 from app.schemas.ticket_sales_import import (
     ImportResult,
