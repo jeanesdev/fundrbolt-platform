@@ -120,9 +120,7 @@ NonExistentType,John Doe,john@example.com,1,100.00,2026-02-01,EXT-001"""
         data = response.json()
 
         assert data["error_rows"] > 0
-        ticket_type_errors = [
-            i for i in data["issues"] if i.get("field_name") == "ticket_type"
-        ]
+        ticket_type_errors = [i for i in data["issues"] if i.get("field_name") == "ticket_type"]
         assert len(ticket_type_errors) > 0
         assert "not found" in ticket_type_errors[0]["message"]
 
@@ -247,9 +245,7 @@ class TestTicketSalesImportCommit:
         assert isinstance(data["warnings"], list)
 
         # Verify ticket purchase was created
-        stmt = select(TicketPurchase).where(
-            TicketPurchase.external_sale_id == "EXT-001"
-        )
+        stmt = select(TicketPurchase).where(TicketPurchase.external_sale_id == "EXT-001")
         result = await db_session.execute(stmt)
         purchase = result.scalar_one()
 
@@ -409,9 +405,7 @@ class TestTicketSalesImportCommit:
         )
 
         # Verify batch status
-        stmt = select(TicketSalesImportBatch).where(
-            TicketSalesImportBatch.id == UUID(preflight_id)
-        )
+        stmt = select(TicketSalesImportBatch).where(TicketSalesImportBatch.id == UUID(preflight_id))
         result = await db_session.execute(stmt)
         batch = result.scalar_one()
 

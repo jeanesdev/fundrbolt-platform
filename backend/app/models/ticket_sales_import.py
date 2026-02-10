@@ -124,7 +124,9 @@ class TicketSalesImportBatch(Base, UUIDMixin):
     )
 
     def __repr__(self) -> str:
-        return f"<TicketSalesImportBatch(id={self.id}, status={self.status}, rows={self.row_count})>"
+        return (
+            f"<TicketSalesImportBatch(id={self.id}, status={self.status}, rows={self.row_count})>"
+        )
 
 
 class TicketSalesImportIssue(Base, UUIDMixin):

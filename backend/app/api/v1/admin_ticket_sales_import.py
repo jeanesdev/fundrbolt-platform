@@ -85,9 +85,7 @@ async def preflight_import(
 
         # Run preflight
         service = TicketSalesImportService(db)
-        result = await service.preflight(
-            event_id, file_bytes, filename, created_by=current_user.id
-        )
+        result = await service.preflight(event_id, file_bytes, filename, created_by=current_user.id)
 
         await db.commit()
 

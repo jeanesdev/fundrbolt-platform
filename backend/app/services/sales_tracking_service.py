@@ -320,9 +320,7 @@ class SalesTrackingService:
         total_count = count_result.scalar_one()
 
         result = await self.db.execute(
-            base_query.order_by(sort_direction(sort_expression))
-            .limit(per_page)
-            .offset(offset)
+            base_query.order_by(sort_direction(sort_expression)).limit(per_page).offset(offset)
         )
         purchases = result.unique().scalars().all()
 

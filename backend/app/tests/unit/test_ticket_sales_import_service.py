@@ -88,9 +88,7 @@ General,Jane Smith,jane@example.com,1,50.00,2026-02-02,EXT-002"""
 
         assert "Invalid JSON" in str(exc_info.value)
 
-    async def test_validate_row_missing_required_field(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_validate_row_missing_required_field(self, db_session: AsyncSession) -> None:
         """Test validation catches missing required fields."""
         service = TicketSalesImportService(db_session)
         from app.services.ticket_sales_import_service import ParsedRow
@@ -115,9 +113,7 @@ General,Jane Smith,jane@example.com,1,50.00,2026-02-02,EXT-002"""
         assert issues[0].field_name == "purchaser_name"
         assert "Missing required field" in issues[0].message
 
-    async def test_validate_row_invalid_quantity(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_validate_row_invalid_quantity(self, db_session: AsyncSession) -> None:
         """Test validation catches invalid quantity."""
         service = TicketSalesImportService(db_session)
         from app.services.ticket_sales_import_service import ParsedRow
@@ -141,9 +137,7 @@ General,Jane Smith,jane@example.com,1,50.00,2026-02-02,EXT-002"""
         assert len(quantity_issues) == 1
         assert "valid integer" in quantity_issues[0].message
 
-    async def test_validate_row_ticket_type_not_found(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_validate_row_ticket_type_not_found(self, db_session: AsyncSession) -> None:
         """Test validation catches non-existent ticket type."""
         service = TicketSalesImportService(db_session)
         from app.services.ticket_sales_import_service import ParsedRow
@@ -167,9 +161,7 @@ General,Jane Smith,jane@example.com,1,50.00,2026-02-02,EXT-002"""
         assert len(ticket_issues) == 1
         assert "not found" in ticket_issues[0].message
 
-    async def test_validate_row_duplicate_in_file(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_validate_row_duplicate_in_file(self, db_session: AsyncSession) -> None:
         """Test validation catches duplicate external_sale_id in file."""
         service = TicketSalesImportService(db_session)
         from app.services.ticket_sales_import_service import ParsedRow
@@ -188,17 +180,13 @@ General,Jane Smith,jane@example.com,1,50.00,2026-02-02,EXT-002"""
         )
 
         # Simulate duplicate by passing same ID twice in list
-        issues = service._validate_row(
-            row, {"vip"}, set(), ["EXT-DUP", "EXT-DUP"]
-        )
+        issues = service._validate_row(row, {"vip"}, set(), ["EXT-DUP", "EXT-DUP"])
 
         dup_issues = [i for i in issues if "Duplicate" in i.message]
         assert len(dup_issues) == 1
         assert dup_issues[0].severity == IssueSeverity.ERROR
 
-    async def test_validate_row_existing_external_id(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_validate_row_existing_external_id(self, db_session: AsyncSession) -> None:
         """Test validation warns about existing external_sale_id."""
         service = TicketSalesImportService(db_session)
         from app.services.ticket_sales_import_service import ParsedRow
@@ -217,17 +205,13 @@ General,Jane Smith,jane@example.com,1,50.00,2026-02-02,EXT-002"""
         )
 
         # Pass existing ID in existing_ids set
-        issues = service._validate_row(
-            row, {"vip"}, {"EXT-EXISTS"}, ["EXT-EXISTS"]
-        )
+        issues = service._validate_row(row, {"vip"}, {"EXT-EXISTS"}, ["EXT-EXISTS"])
 
         warning_issues = [i for i in issues if i.severity == IssueSeverity.WARNING]
         assert len(warning_issues) == 1
         assert "already exists" in warning_issues[0].message
 
-    async def test_validate_row_negative_amount(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_validate_row_negative_amount(self, db_session: AsyncSession) -> None:
         """Test validation catches negative total_amount."""
         service = TicketSalesImportService(db_session)
         from app.services.ticket_sales_import_service import ParsedRow
@@ -372,9 +356,7 @@ class TestTicketSalesImportCommit:
         assert import_result.failed_rows == 0
 
         # Verify purchase was created
-        stmt = select(TicketPurchase).where(
-            TicketPurchase.external_sale_id == "EXT-001"
-        )
+        stmt = select(TicketPurchase).where(TicketPurchase.external_sale_id == "EXT-001")
         result = await db_session.execute(stmt)
         purchase = result.scalar_one()
 

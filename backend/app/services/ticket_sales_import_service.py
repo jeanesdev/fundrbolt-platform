@@ -293,6 +293,7 @@ class TicketSalesImportService:
                 except ValueError:
                     # Try common date formats
                     from dateutil import parser as date_parser
+
                     purchase_date = date_parser.parse(purchase_date_str)
 
                 # Create ticket purchase
@@ -304,12 +305,9 @@ class TicketSalesImportService:
                     total_price=total_amount,
                     payment_status="completed",  # Default to completed for imports
                     external_sale_id=external_id if external_id else None,
-                    purchaser_name=str(parsed_row.data.get("purchaser_name", "")).strip()
-                    or None,
-                    purchaser_email=str(parsed_row.data.get("purchaser_email", "")).strip()
-                    or None,
-                    purchaser_phone=str(parsed_row.data.get("purchaser_phone", "")).strip()
-                    or None,
+                    purchaser_name=str(parsed_row.data.get("purchaser_name", "")).strip() or None,
+                    purchaser_email=str(parsed_row.data.get("purchaser_email", "")).strip() or None,
+                    purchaser_phone=str(parsed_row.data.get("purchaser_phone", "")).strip() or None,
                     notes=str(parsed_row.data.get("notes", "")).strip() or None,
                     purchased_at=purchase_date,
                 )
@@ -630,9 +628,7 @@ class TicketSalesImportService:
 
     async def _fetch_promo_codes(self, event_id: UUID) -> list[PromoCode]:
         """Fetch all promo codes for the event."""
-        result = await self.db.execute(
-            select(PromoCode).where(PromoCode.event_id == event_id)
-        )
+        result = await self.db.execute(select(PromoCode).where(PromoCode.event_id == event_id))
         return list(result.scalars().all())
 
     @staticmethod
