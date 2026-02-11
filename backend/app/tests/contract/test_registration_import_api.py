@@ -2,34 +2,12 @@
 
 import io
 import json
-from decimal import Decimal
 
 import pytest
 from httpx import AsyncClient
 from openpyxl import Workbook
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.event import Event
-from app.models.ticket_management import TicketPackage
-
-
-@pytest.fixture
-async def test_ticket_package(db_session: AsyncSession, test_event: Event, test_user):
-    """Create a test ticket package for imports."""
-    package = TicketPackage(
-        event_id=test_event.id,
-        created_by=test_user.id,
-        name="VIP Table",
-        description="VIP table package",
-        price=Decimal("500.00"),
-        seats_per_package=8,
-        quantity_limit=10,
-        sold_count=0,
-    )
-    db_session.add(package)
-    await db_session.commit()
-    await db_session.refresh(package)
-    return package
 
 
 @pytest.mark.asyncio
@@ -40,7 +18,6 @@ class TestRegistrationImportPreflight:
         self,
         npo_admin_client: AsyncClient,
         test_event: Event,
-        test_ticket_package: TicketPackage,
     ):
         """Test preflight with valid JSON file."""
         registrations = [
@@ -48,20 +25,14 @@ class TestRegistrationImportPreflight:
                 "registrant_name": "John Doe",
                 "registrant_email": "john@example.com",
                 "registration_date": "2026-02-01",
-                "ticket_package": "VIP Table",
                 "quantity": 2,
-                "total_amount": 500.00,
-                "payment_status": "Paid",
                 "external_registration_id": "REG-001",
             },
             {
                 "registrant_name": "Jane Smith",
                 "registrant_email": "jane@example.com",
                 "registration_date": "2026-02-02",
-                "ticket_package": "VIP Table",
                 "quantity": 1,
-                "total_amount": 250.00,
-                "payment_status": "Paid",
                 "external_registration_id": "REG-002",
             },
         ]
@@ -96,12 +67,11 @@ class TestRegistrationImportPreflight:
         self,
         npo_admin_client: AsyncClient,
         test_event: Event,
-        test_ticket_package: TicketPackage,
     ):
         """Test preflight with valid CSV file."""
-        csv_content = """registrant_name,registrant_email,registration_date,ticket_package,quantity,total_amount,payment_status,external_registration_id
-John Doe,john@example.com,2026-02-01,VIP Table,2,500.00,Paid,REG-001
-Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
+        csv_content = """registrant_name,registrant_email,registration_date,quantity,external_registration_id
+John Doe,john@example.com,2026-02-01,2,REG-001
+Jane Smith,jane@example.com,2026-02-02,1,REG-002"""
 
         csv_bytes = csv_content.encode("utf-8")
 
@@ -122,7 +92,6 @@ Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
         self,
         npo_admin_client: AsyncClient,
         test_event: Event,
-        test_ticket_package: TicketPackage,
     ):
         """Test preflight with valid Excel file."""
         wb = Workbook()
@@ -132,10 +101,7 @@ Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
                 "registrant_name",
                 "registrant_email",
                 "registration_date",
-                "ticket_package",
                 "quantity",
-                "total_amount",
-                "payment_status",
                 "external_registration_id",
             ]
         )
@@ -144,10 +110,7 @@ Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
                 "John Doe",
                 "john@example.com",
                 "2026-02-01",
-                "VIP Table",
                 2,
-                500.00,
-                "Paid",
                 "REG-001",
             ]
         )
@@ -178,7 +141,6 @@ Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
         self,
         npo_admin_client: AsyncClient,
         test_event: Event,
-        test_ticket_package: TicketPackage,
     ):
         """Test preflight fails with missing required fields."""
         registrations = [
@@ -186,10 +148,7 @@ Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
                 "registrant_name": "",  # Missing
                 "registrant_email": "john@example.com",
                 "registration_date": "2026-02-01",
-                "ticket_package": "VIP Table",
                 "quantity": 2,
-                "total_amount": 500.00,
-                "payment_status": "Paid",
                 "external_registration_id": "REG-001",
             }
         ]
@@ -212,7 +171,6 @@ Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
         self,
         npo_admin_client: AsyncClient,
         test_event: Event,
-        test_ticket_package: TicketPackage,
     ):
         """Test preflight detects duplicate external IDs in file."""
         registrations = [
@@ -220,20 +178,14 @@ Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
                 "registrant_name": "John Doe",
                 "registrant_email": "john@example.com",
                 "registration_date": "2026-02-01",
-                "ticket_package": "VIP Table",
                 "quantity": 1,
-                "total_amount": 250.00,
-                "payment_status": "Paid",
                 "external_registration_id": "REG-DUP",
             },
             {
                 "registrant_name": "Jane Smith",
                 "registrant_email": "jane@example.com",
                 "registration_date": "2026-02-02",
-                "ticket_package": "VIP Table",
                 "quantity": 1,
-                "total_amount": 250.00,
-                "payment_status": "Paid",
                 "external_registration_id": "REG-DUP",  # Duplicate
             },
         ]
@@ -254,22 +206,22 @@ Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
         assert second_row["status"] == "error"
         assert any("Duplicate" in issue["message"] for issue in second_row["issues"])
 
-    async def test_preflight_nonexistent_ticket_package(
+    async def test_preflight_nonexistent_ticket_purchase(
         self,
         npo_admin_client: AsyncClient,
         test_event: Event,
     ):
-        """Test preflight fails with non-existent ticket package."""
+        """Test preflight fails with non-existent ticket purchase."""
+        from uuid import uuid4
+
         registrations = [
             {
                 "registrant_name": "John Doe",
                 "registrant_email": "john@example.com",
                 "registration_date": "2026-02-01",
-                "ticket_package": "NonExistent Package",
                 "quantity": 1,
-                "total_amount": 250.00,
-                "payment_status": "Paid",
                 "external_registration_id": "REG-001",
+                "ticket_purchase_id": str(uuid4()),
             }
         ]
         json_content = json.dumps(registrations).encode("utf-8")
@@ -284,7 +236,10 @@ Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
 
         assert data["error_rows"] > 0
         assert data["rows"][0]["status"] == "error"
-        assert any("does not exist" in issue["message"] for issue in data["rows"][0]["issues"])
+        assert any(
+            "Ticket purchase not found" in issue["message"]
+            for issue in data["rows"][0]["issues"]
+        )
 
     async def test_preflight_invalid_file_type(
         self,
@@ -330,10 +285,7 @@ Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
                 "registrant_name": "John Doe",
                 "registrant_email": "john@example.com",
                 "registration_date": "2026-02-01",
-                "ticket_package": "VIP Table",
                 "quantity": 1,
-                "total_amount": 250.00,
-                "payment_status": "Paid",
                 "external_registration_id": "REG-001",
             }
         ]
@@ -359,10 +311,7 @@ Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
                 "registrant_name": "John Doe",
                 "registrant_email": "john@example.com",
                 "registration_date": "2026-02-01",
-                "ticket_package": "VIP Table",
                 "quantity": 1,
-                "total_amount": 250.00,
-                "payment_status": "Paid",
                 "external_registration_id": "REG-001",
             }
         ]
@@ -379,7 +328,6 @@ Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
         self,
         npo_admin_client: AsyncClient,
         test_event: Event,
-        test_ticket_package: TicketPackage,
     ):
         """Test preflight with optional fields included."""
         registrations = [
@@ -387,10 +335,7 @@ Jane Smith,jane@example.com,2026-02-02,VIP Table,1,250.00,Paid,REG-002"""
                 "registrant_name": "John Doe",
                 "registrant_email": "john@example.com",
                 "registration_date": "2026-02-01",
-                "ticket_package": "VIP Table",
                 "quantity": 2,
-                "total_amount": 500.00,
-                "payment_status": "Paid",
                 "external_registration_id": "REG-001",
                 "registrant_phone": "555-1234",
                 "bidder_number": 100,
@@ -428,10 +373,7 @@ class TestRegistrationImportCommit:
                 "registrant_name": "John Doe",
                 "registrant_email": "john@example.com",
                 "registration_date": "2026-02-01",
-                "ticket_package": "VIP Table",
                 "quantity": 1,
-                "total_amount": 250.00,
-                "payment_status": "Paid",
                 "external_registration_id": "REG-001",
             }
         ]
@@ -456,10 +398,7 @@ class TestRegistrationImportCommit:
                 "registrant_name": "John Doe",
                 "registrant_email": "john@example.com",
                 "registration_date": "2026-02-01",
-                "ticket_package": "VIP Table",
                 "quantity": 1,
-                "total_amount": 250.00,
-                "payment_status": "Paid",
                 "external_registration_id": "REG-001",
             }
         ]
@@ -494,7 +433,6 @@ class TestRegistrationImportCommit:
         self,
         npo_admin_client: AsyncClient,
         test_event: Event,
-        test_ticket_package: TicketPackage,
     ):
         """Test commit validates data before attempting creation."""
         registrations = [
@@ -502,10 +440,7 @@ class TestRegistrationImportCommit:
                 "registrant_name": "",  # Missing required field
                 "registrant_email": "john@example.com",
                 "registration_date": "2026-02-01",
-                "ticket_package": "VIP Table",
                 "quantity": 1,
-                "total_amount": 250.00,
-                "payment_status": "Paid",
                 "external_registration_id": "REG-001",
             }
         ]

@@ -2,14 +2,12 @@
 
 import io
 import json
-from decimal import Decimal
 
 import pytest
 from openpyxl import Workbook
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.event import Event
-from app.models.ticket_management import TicketPackage
 from app.schemas.registration_import import (
     ImportRowStatus,
     ValidationIssueSeverity,
@@ -25,25 +23,6 @@ from app.services.registration_import_service import (
 async def import_service(db_session: AsyncSession):
     """Create a RegistrationImportService instance."""
     return RegistrationImportService(db_session)
-
-
-@pytest.fixture
-async def test_ticket_package(db_session: AsyncSession, test_event: Event, test_user):
-    """Create a test ticket package."""
-    package = TicketPackage(
-        event_id=test_event.id,
-        created_by=test_user.id,
-        name="VIP Table",
-        description="VIP table with premium seating",
-        price=Decimal("500.00"),
-        seats_per_package=8,
-        quantity_limit=10,
-        sold_count=0,
-    )
-    db_session.add(package)
-    await db_session.commit()
-    await db_session.refresh(package)
-    return package
 
 
 @pytest.mark.asyncio
@@ -87,10 +66,7 @@ class TestJSONParsing:
                 "registrant_name": "John Doe",
                 "registrant_email": "john@example.com",
                 "registration_date": "2026-02-01",
-                "ticket_package": "VIP Table",
                 "quantity": 2,
-                "total_amount": 500.00,
-                "payment_status": "Paid",
                 "external_registration_id": "REG-001",
             }
         ]
@@ -110,10 +86,7 @@ class TestJSONParsing:
                 "registrant_name": "Jane Smith",
                 "registrant_email": "jane@example.com",
                 "registration_date": "2026-02-02",
-                "ticket_package": "General Admission",
                 "quantity": 1,
-                "total_amount": 150.00,
-                "payment_status": "Paid",
                 "external_registration_id": "REG-002",
                 "registrant_phone": "555-1234",
                 "bidder_number": 100,
@@ -159,10 +132,7 @@ class TestJSONParsing:
                 "registrant_name": f"Person {i}",
                 "registrant_email": f"person{i}@example.com",
                 "registration_date": "2026-02-01",
-                "ticket_package": "VIP Table",
                 "quantity": 1,
-                "total_amount": 100.00,
-                "payment_status": "Paid",
                 "external_registration_id": f"REG-{i:05d}",
             }
             for i in range(MAX_IMPORT_ROWS + 1)
@@ -179,9 +149,9 @@ class TestCSVParsing:
 
     async def test_parse_valid_csv(self, import_service: RegistrationImportService):
         """Test parsing valid CSV file."""
-        csv_content = """registrant_name,registrant_email,registration_date,ticket_package,quantity,total_amount,payment_status,external_registration_id
-John Doe,john@example.com,2026-02-01,VIP Table,2,500.00,Paid,REG-001
-Jane Smith,jane@example.com,2026-02-02,General Admission,1,150.00,Paid,REG-002"""
+        csv_content = """registrant_name,registrant_email,registration_date,quantity,external_registration_id
+    John Doe,john@example.com,2026-02-01,2,REG-001
+    Jane Smith,jane@example.com,2026-02-02,1,REG-002"""
 
         csv_bytes = csv_content.encode("utf-8")
         rows = import_service._parse_csv(csv_bytes)
@@ -193,8 +163,8 @@ Jane Smith,jane@example.com,2026-02-02,General Admission,1,150.00,Paid,REG-002""
 
     async def test_parse_csv_with_optional_fields(self, import_service: RegistrationImportService):
         """Test parsing CSV with optional fields."""
-        csv_content = """registrant_name,registrant_email,registration_date,ticket_package,quantity,total_amount,payment_status,external_registration_id,registrant_phone,bidder_number
-John Doe,john@example.com,2026-02-01,VIP Table,2,500.00,Paid,REG-001,555-1234,100"""
+        csv_content = """registrant_name,registrant_email,registration_date,quantity,external_registration_id,registrant_phone,bidder_number
+    John Doe,john@example.com,2026-02-01,2,REG-001,555-1234,100"""
 
         csv_bytes = csv_content.encode("utf-8")
         rows = import_service._parse_csv(csv_bytes)
@@ -204,10 +174,10 @@ John Doe,john@example.com,2026-02-01,VIP Table,2,500.00,Paid,REG-001,555-1234,10
 
     async def test_skip_empty_csv_rows(self, import_service: RegistrationImportService):
         """Test skipping empty rows in CSV."""
-        csv_content = """registrant_name,registrant_email,registration_date,ticket_package,quantity,total_amount,payment_status,external_registration_id
-John Doe,john@example.com,2026-02-01,VIP Table,2,500.00,Paid,REG-001
+        csv_content = """registrant_name,registrant_email,registration_date,quantity,external_registration_id
+    John Doe,john@example.com,2026-02-01,2,REG-001
 
-Jane Smith,jane@example.com,2026-02-02,General,1,150.00,Paid,REG-002"""
+    Jane Smith,jane@example.com,2026-02-02,1,REG-002"""
 
         csv_bytes = csv_content.encode("utf-8")
         rows = import_service._parse_csv(csv_bytes)
@@ -254,10 +224,7 @@ class TestExcelParsing:
                 "registrant_name",
                 "registrant_email",
                 "registration_date",
-                "ticket_package",
                 "quantity",
-                "total_amount",
-                "payment_status",
                 "external_registration_id",
             ]
         )
@@ -266,10 +233,7 @@ class TestExcelParsing:
                 "John Doe",
                 "john@example.com",
                 "2026-02-01",
-                "VIP Table",
                 2,
-                500.00,
-                "Paid",
                 "REG-001",
             ]
         )
@@ -310,7 +274,6 @@ class TestValidation:
         self,
         import_service: RegistrationImportService,
         test_event: Event,
-        test_ticket_package: TicketPackage,
     ):
         """Test validation passes with all required fields."""
         from app.services.registration_import_service import ParsedRow
@@ -322,10 +285,7 @@ class TestValidation:
                     "registrant_name": "John Doe",
                     "registrant_email": "john@example.com",
                     "registration_date": "2026-02-01",
-                    "ticket_package": "VIP Table",
                     "quantity": 2,
-                    "total_amount": 500.00,
-                    "payment_status": "Paid",
                     "external_registration_id": "REG-001",
                 },
             )
@@ -354,10 +314,7 @@ class TestValidation:
                     "registrant_name": "",  # Empty required field
                     "registrant_email": "john@example.com",
                     "registration_date": "2026-02-01",
-                    "ticket_package": "VIP Table",
                     "quantity": 2,
-                    "total_amount": 500.00,
-                    "payment_status": "Paid",
                     "external_registration_id": "REG-001",
                 },
             )
@@ -374,7 +331,6 @@ class TestValidation:
         self,
         import_service: RegistrationImportService,
         test_event: Event,
-        test_ticket_package: TicketPackage,
     ):
         """Test validation detects duplicate external IDs in file."""
         from app.services.registration_import_service import ParsedRow
@@ -386,10 +342,7 @@ class TestValidation:
                     "registrant_name": "John Doe",
                     "registrant_email": "john@example.com",
                     "registration_date": "2026-02-01",
-                    "ticket_package": "VIP Table",
                     "quantity": 1,
-                    "total_amount": 250.00,
-                    "payment_status": "Paid",
                     "external_registration_id": "REG-DUP",
                 },
             ),
@@ -399,10 +352,7 @@ class TestValidation:
                     "registrant_name": "Jane Smith",
                     "registrant_email": "jane@example.com",
                     "registration_date": "2026-02-01",
-                    "ticket_package": "VIP Table",
                     "quantity": 1,
-                    "total_amount": 250.00,
-                    "payment_status": "Paid",
                     "external_registration_id": "REG-DUP",  # Duplicate
                 },
             ),
@@ -419,7 +369,6 @@ class TestValidation:
         self,
         import_service: RegistrationImportService,
         test_event: Event,
-        test_ticket_package: TicketPackage,
     ):
         """Test validation warns about existing external IDs."""
         from app.services.registration_import_service import ParsedRow
@@ -432,10 +381,7 @@ class TestValidation:
                     "registrant_name": "John Doe",
                     "registrant_email": "john@example.com",
                     "registration_date": "2026-02-01",
-                    "ticket_package": "VIP Table",
                     "quantity": 1,
-                    "total_amount": 250.00,
-                    "payment_status": "Paid",
                     "external_registration_id": "REG-EXISTS",
                 },
             )
@@ -448,12 +394,13 @@ class TestValidation:
         assert len(warnings) > 0
         assert any("already exists" in w.message for w in warnings)
 
-    async def test_validate_nonexistent_ticket_package(
+    async def test_validate_nonexistent_ticket_purchase(
         self,
         import_service: RegistrationImportService,
         test_event: Event,
     ):
-        """Test validation fails with non-existent ticket package."""
+        """Test validation fails with non-existent ticket purchase."""
+        from uuid import uuid4
         from app.services.registration_import_service import ParsedRow
 
         rows = [
@@ -463,11 +410,9 @@ class TestValidation:
                     "registrant_name": "John Doe",
                     "registrant_email": "john@example.com",
                     "registration_date": "2026-02-01",
-                    "ticket_package": "NonExistent Package",
                     "quantity": 1,
-                    "total_amount": 250.00,
-                    "payment_status": "Paid",
                     "external_registration_id": "REG-001",
+                    "ticket_purchase_id": str(uuid4()),
                 },
             )
         ]
@@ -476,13 +421,12 @@ class TestValidation:
 
         assert results[0].status == ImportRowStatus.ERROR
         errors = [i for i in results[0].issues if i.severity == ValidationIssueSeverity.ERROR]
-        assert any("does not exist" in e.message for e in errors)
+        assert any("Ticket purchase not found" in e.message for e in errors)
 
     async def test_validate_invalid_quantity(
         self,
         import_service: RegistrationImportService,
         test_event: Event,
-        test_ticket_package: TicketPackage,
     ):
         """Test validation fails with invalid quantity."""
         from app.services.registration_import_service import ParsedRow
@@ -494,10 +438,7 @@ class TestValidation:
                     "registrant_name": "John Doe",
                     "registrant_email": "john@example.com",
                     "registration_date": "2026-02-01",
-                    "ticket_package": "VIP Table",
                     "quantity": 0,  # Invalid: must be >= 1
-                    "total_amount": 500.00,
-                    "payment_status": "Paid",
                     "external_registration_id": "REG-001",
                 },
             )
@@ -509,42 +450,10 @@ class TestValidation:
         errors = [i for i in results[0].issues if i.severity == ValidationIssueSeverity.ERROR]
         assert any("quantity" in e.message.lower() for e in errors)
 
-    async def test_validate_negative_amount(
-        self,
-        import_service: RegistrationImportService,
-        test_event: Event,
-        test_ticket_package: TicketPackage,
-    ):
-        """Test validation fails with negative amount."""
-        from app.services.registration_import_service import ParsedRow
-
-        rows = [
-            ParsedRow(
-                row_number=1,
-                data={
-                    "registrant_name": "John Doe",
-                    "registrant_email": "john@example.com",
-                    "registration_date": "2026-02-01",
-                    "ticket_package": "VIP Table",
-                    "quantity": 1,
-                    "total_amount": -100.00,  # Negative amount
-                    "payment_status": "Paid",
-                    "external_registration_id": "REG-001",
-                },
-            )
-        ]
-
-        results = await import_service._validate_rows(test_event.id, rows, set())
-
-        assert results[0].status == ImportRowStatus.ERROR
-        errors = [i for i in results[0].issues if i.severity == ValidationIssueSeverity.ERROR]
-        assert any("amount" in e.message.lower() for e in errors)
-
     async def test_validate_invalid_date_format(
         self,
         import_service: RegistrationImportService,
         test_event: Event,
-        test_ticket_package: TicketPackage,
     ):
         """Test validation fails with invalid date format."""
         from app.services.registration_import_service import ParsedRow
@@ -556,10 +465,7 @@ class TestValidation:
                     "registrant_name": "John Doe",
                     "registrant_email": "john@example.com",
                     "registration_date": "02/01/2026",  # Invalid format
-                    "ticket_package": "VIP Table",
                     "quantity": 1,
-                    "total_amount": 250.00,
-                    "payment_status": "Paid",
                     "external_registration_id": "REG-001",
                 },
             )
@@ -575,7 +481,6 @@ class TestValidation:
         self,
         import_service: RegistrationImportService,
         test_event: Event,
-        test_ticket_package: TicketPackage,
     ):
         """Test validation warns about event_id mismatch."""
         from app.services.registration_import_service import ParsedRow
@@ -588,10 +493,7 @@ class TestValidation:
                     "registrant_name": "John Doe",
                     "registrant_email": "john@example.com",
                     "registration_date": "2026-02-01",
-                    "ticket_package": "VIP Table",
                     "quantity": 1,
-                    "total_amount": 250.00,
-                    "payment_status": "Paid",
                     "external_registration_id": "REG-001",
                 },
             )

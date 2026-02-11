@@ -49,14 +49,14 @@ export interface RegistrationImportRowExample {
   registrant_name: string
   registrant_email: string
   registration_date: string  // YYYY-MM-DD
-  ticket_package: string
   quantity: number
-  total_amount: number
-  payment_status: string
   external_registration_id: string
   registrant_phone?: string
   notes?: string
   bidder_number?: number
   table_number?: number
   guest_count?: number
+  ticket_purchase_id?: string
+  ticket_purchaser_email?: string
+  ticket_purchase_date?: string
 }

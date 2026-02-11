@@ -4,10 +4,10 @@ import { MealSummaryCard } from '@/components/admin/MealSummaryCard'
 import { RegistrationImportDialog } from '@/components/admin/RegistrationImportDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useEventWorkspace } from '../useEventWorkspace'
-import { toast } from 'sonner'
 import { Upload } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
+import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventRegistrationsSection() {
   const { currentEvent, eventId } = useEventWorkspace()

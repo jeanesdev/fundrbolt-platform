@@ -6,7 +6,6 @@ Verify the admin registration import flow (preflight + confirm) for JSON, CSV, a
 ## Preconditions
 - Admin user with registration management permissions
 - Target event selected in the admin PWA
-- Ticket packages/registration options exist for the event
 
 ## Files
 - Prepare a JSON, CSV, and Excel file that match the example schema in the spec

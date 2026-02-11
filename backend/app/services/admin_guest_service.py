@@ -74,12 +74,21 @@ class AdminGuestService:
 
         # Process each registration
         for registration in registrations:
+            if registration.user is None:
+                logger.warning(
+                    "Skipping registration without user",
+                    extra={"registration_id": str(registration.id)},
+                )
+                continue
+
             # Add registrant as first attendee
             registrant_meal = None
             if include_meal_selections:
                 # Find registrant's meal (guest_id is NULL)
                 for meal in registration.meal_selections:
                     if meal.guest_id is None:
+                        if meal.food_option is None:
+                            continue
                         registrant_meal = {
                             "food_option_name": meal.food_option.name,
                             "food_option_description": meal.food_option.description,
@@ -118,6 +127,8 @@ class AdminGuestService:
                     # Find guest's meal
                     for meal in registration.meal_selections:
                         if meal.guest_id == guest.id:
+                            if meal.food_option is None:
+                                continue
                             guest_meal = {
                                 "food_option_name": meal.food_option.name,
                                 "food_option_description": meal.food_option.description,

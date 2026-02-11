@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import { InitialAvatar } from '../initial-avatar'
 import { useInitialAvatar } from '@/hooks/use-initial-avatar'
+import { render, screen } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { InitialAvatar } from '../initial-avatar'
 
 vi.mock('@/hooks/use-initial-avatar')
 

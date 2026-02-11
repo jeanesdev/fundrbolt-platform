@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import date
-from decimal import Decimal
 from enum import Enum
 from uuid import UUID
 
@@ -33,10 +32,7 @@ class RegistrationImportRow(BaseModel):
     registrant_name: str = Field(..., min_length=1, max_length=255)
     registrant_email: str = Field(..., min_length=1, max_length=255)
     registration_date: date
-    ticket_package: str = Field(..., min_length=1, max_length=100)
     quantity: int = Field(..., ge=1)
-    total_amount: Decimal = Field(..., ge=0, decimal_places=2)
-    payment_status: str = Field(..., min_length=1, max_length=50)
     external_registration_id: str = Field(..., min_length=1, max_length=200)
 
     # Optional fields

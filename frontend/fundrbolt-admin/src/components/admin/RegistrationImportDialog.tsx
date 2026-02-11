@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -9,13 +10,12 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { getErrorMessage } from '@/lib/error-utils'
 import { registrationImportService } from '@/services/registration-import-service'
 import type {
-  RegistrationImportReport,
   ImportRowResult,
+  RegistrationImportReport,
   ValidationIssueSeverity,
 } from '@/types/registrationImport'
 import { AlertCircle, CheckCircle2, FileText, Loader2, Upload, XCircle } from 'lucide-react'
@@ -89,10 +89,7 @@ function ExampleFormats() {
     registrant_name: 'Jordan Lee',
     registrant_email: 'jordan.lee@example.org',
     registration_date: '2026-02-01',
-    ticket_package: 'VIP Table',
     quantity: 2,
-    total_amount: 500.0,
-    payment_status: 'Paid',
     external_registration_id: 'REG-100045',
     registrant_phone: '555-123-4567',
     bidder_number: 42,
@@ -104,8 +101,8 @@ function ExampleFormats() {
     ticket_purchase_date: '2026-01-20',
   }
 
-  const csvExample = `event_id,registrant_name,registrant_email,registration_date,ticket_package,quantity,total_amount,payment_status,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,notes,ticket_purchase_id,ticket_purchaser_email,ticket_purchase_date
-EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,VIP Table,2,500.00,Paid,REG-100045,555-123-4567,42,8,2,Sponsor package,1b2c3d4e-0000-1111-2222-333344445555,jordan.lee@example.org,2026-01-20`
+  const csvExample = `event_id,registrant_name,registrant_email,registration_date,quantity,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,notes,ticket_purchase_id,ticket_purchaser_email,ticket_purchase_date
+EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,2,REG-100045,555-123-4567,42,8,2,Sponsor package,1b2c3d4e-0000-1111-2222-333344445555,jordan.lee@example.org,2026-01-20`
 
   return (
     <div className="space-y-4">
@@ -124,7 +121,7 @@ EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,VIP Table,2,500.00,Pai
       <div className="text-xs text-muted-foreground space-y-1">
         <p>
           <strong>Required fields:</strong> registrant_name, registrant_email, registration_date,
-          ticket_package, quantity, total_amount, payment_status, external_registration_id
+          quantity, external_registration_id
         </p>
         <p>
           <strong>Optional fields:</strong> event_id (ignored), registrant_phone, notes,

@@ -10,19 +10,19 @@ import uuid
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime
-from decimal import Decimal, InvalidOperation
 from typing import Any
 from uuid import UUID
 
 from openpyxl import load_workbook
 from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
 from app.models.base import Base
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.registration_guest import RegistrationGuest
-from app.models.ticket_management import TicketPackage, TicketPurchase
+from app.models.ticket_management import TicketPurchase
 from app.models.user import User
 from app.schemas.registration_import import (
     ImportErrorReportFormat,
@@ -41,10 +41,7 @@ REQUIRED_HEADERS = [
     "registrant_name",
     "registrant_email",
     "registration_date",
-    "ticket_package",
     "quantity",
-    "total_amount",
-    "payment_status",
     "external_registration_id",
 ]
 
@@ -315,10 +312,6 @@ class RegistrationImportService:
         results = []
         seen_ids: set[str] = set()
 
-        # Fetch ticket packages for validation
-        ticket_packages = await self._fetch_ticket_packages(event_id)
-        package_names = {pkg.name.lower() for pkg in ticket_packages}
-
         for row in parsed_rows:
             issues: list[ValidationIssue] = []
             data = row.data
@@ -362,18 +355,6 @@ class RegistrationImportService:
                         )
                     )
 
-            # Validate ticket package exists
-            ticket_package = str(data.get("ticket_package", "")).strip()
-            if ticket_package and ticket_package.lower() not in package_names:
-                issues.append(
-                    ValidationIssue(
-                        row_number=row.row_number,
-                        severity=ValidationIssueSeverity.ERROR,
-                        field_name="ticket_package",
-                        message=f"Ticket package '{ticket_package}' does not exist for this event",
-                    )
-                )
-
             # Validate numeric fields
             quantity = data.get("quantity")
             if quantity is not None:
@@ -395,29 +376,6 @@ class RegistrationImportService:
                             severity=ValidationIssueSeverity.ERROR,
                             field_name="quantity",
                             message=f"Invalid quantity value: {quantity}",
-                        )
-                    )
-
-            total_amount = data.get("total_amount")
-            if total_amount is not None:
-                try:
-                    amount_decimal = Decimal(str(total_amount))
-                    if amount_decimal < 0:
-                        issues.append(
-                            ValidationIssue(
-                                row_number=row.row_number,
-                                severity=ValidationIssueSeverity.ERROR,
-                                field_name="total_amount",
-                                message="Total amount must be non-negative",
-                            )
-                        )
-                except (InvalidOperation, ValueError, TypeError):
-                    issues.append(
-                        ValidationIssue(
-                            row_number=row.row_number,
-                            severity=ValidationIssueSeverity.ERROR,
-                            field_name="total_amount",
-                            message=f"Invalid total_amount value: {total_amount}",
                         )
                     )
 
@@ -485,13 +443,6 @@ class RegistrationImportService:
 
         return results
 
-    async def _fetch_ticket_packages(self, event_id: UUID) -> list[TicketPackage]:
-        """Fetch ticket packages for the event."""
-        result = await self.db.execute(
-            select(TicketPackage).where(TicketPackage.event_id == event_id)
-        )
-        return list(result.scalars().all())
-
     async def _create_registration(
         self, event_id: UUID, row: dict[str, Any], user_id: UUID
     ) -> bool:
@@ -522,30 +473,24 @@ class RegistrationImportService:
         if existing_registration:
             return False
 
-        ticket_package_name = str(row.get("ticket_package", "")).strip()
-        if not ticket_package_name:
-            raise RegistrationImportError("Ticket package is required")
-
-        package_result = await self.db.execute(
-            select(TicketPackage).where(
-                TicketPackage.event_id == event_id,
-                func.lower(TicketPackage.name) == ticket_package_name.lower(),
-            )
-        )
-        ticket_package = package_result.scalar_one_or_none()
-        if not ticket_package:
-            raise RegistrationImportError(
-                f"Ticket package '{ticket_package_name}' not found for event"
-            )
-
         number_of_guests = self._resolve_guest_count(row)
         ticket_purchase_id = await self._resolve_ticket_purchase_id(event_id, row)
+        ticket_type: str | None = None
+        if ticket_purchase_id:
+            purchase_result = await self.db.execute(
+                select(TicketPurchase)
+                .options(selectinload(TicketPurchase.ticket_package))
+                .where(TicketPurchase.id == ticket_purchase_id)
+            )
+            purchase = purchase_result.scalar_one_or_none()
+            if purchase and purchase.ticket_package:
+                ticket_type = purchase.ticket_package.name
 
         registration = EventRegistration(
             user_id=user.id,
             event_id=event_id,
             status=RegistrationStatus.CONFIRMED,
-            ticket_type=ticket_package.name,
+            ticket_type=ticket_type,
             number_of_guests=number_of_guests,
             ticket_purchase_id=ticket_purchase_id,
         )
