@@ -504,6 +504,134 @@ class TestValidation:
         warnings = [i for i in results[0].issues if i.severity == ValidationIssueSeverity.WARNING]
         assert any("event_id" in w.message for w in warnings)
 
+    async def test_validate_guest_requires_parent(
+        self,
+        import_service: RegistrationImportService,
+        test_event: Event,
+    ):
+        """Test guest row fails when parent registration is missing."""
+        from app.services.registration_import_service import ParsedRow
+
+        rows = [
+            ParsedRow(
+                row_number=1,
+                data={
+                    "guest_of_email": "parent@example.com",
+                    "registrant_name": "Guest User",
+                    "registrant_email": "guest@example.com",
+                    "registration_date": "2026-02-01",
+                    "quantity": 1,
+                    "external_registration_id": "",
+                },
+            )
+        ]
+
+        results = await import_service._validate_rows(test_event.id, rows, set())
+
+        assert results[0].status == ImportRowStatus.ERROR
+        errors = [i for i in results[0].issues if i.severity == ValidationIssueSeverity.ERROR]
+        assert any("parent registration" in e.message.lower() for e in errors)
+
+    async def test_validate_guest_duplicate_email_per_parent(
+        self,
+        import_service: RegistrationImportService,
+        test_event: Event,
+    ):
+        """Test duplicate guest email per parent fails preflight."""
+        from app.services.registration_import_service import ParsedRow
+
+        rows = [
+            ParsedRow(
+                row_number=1,
+                data={
+                    "registrant_name": "Parent User",
+                    "registrant_email": "parent@example.com",
+                    "registration_date": "2026-02-01",
+                    "quantity": 2,
+                    "guest_count": 2,
+                    "external_registration_id": "REG-001",
+                },
+            ),
+            ParsedRow(
+                row_number=2,
+                data={
+                    "guest_of_email": "parent@example.com",
+                    "registrant_name": "Guest One",
+                    "registrant_email": "guest@example.com",
+                    "registration_date": "2026-02-01",
+                    "quantity": 1,
+                    "external_registration_id": "",
+                },
+            ),
+            ParsedRow(
+                row_number=3,
+                data={
+                    "guest_of_email": "parent@example.com",
+                    "registrant_name": "Guest Two",
+                    "registrant_email": "guest@example.com",
+                    "registration_date": "2026-02-01",
+                    "quantity": 1,
+                    "external_registration_id": "",
+                },
+            ),
+        ]
+
+        results = await import_service._validate_rows(test_event.id, rows, set())
+
+        assert results[2].status == ImportRowStatus.ERROR
+        errors = [i for i in results[2].issues if i.severity == ValidationIssueSeverity.ERROR]
+        assert any("duplicate guest email" in e.message.lower() for e in errors)
+
+    async def test_validate_guest_rows_exceed_guest_count(
+        self,
+        import_service: RegistrationImportService,
+        test_event: Event,
+    ):
+        """Test guest rows exceeding guest_count fail preflight."""
+        from app.services.registration_import_service import ParsedRow
+
+        rows = [
+            ParsedRow(
+                row_number=1,
+                data={
+                    "registrant_name": "Parent User",
+                    "registrant_email": "parent@example.com",
+                    "registration_date": "2026-02-01",
+                    "quantity": 2,
+                    "guest_count": 2,
+                    "external_registration_id": "REG-001",
+                },
+            ),
+            ParsedRow(
+                row_number=2,
+                data={
+                    "guest_of_email": "parent@example.com",
+                    "registrant_name": "Guest One",
+                    "registrant_email": "guest1@example.com",
+                    "registration_date": "2026-02-01",
+                    "quantity": 1,
+                    "external_registration_id": "",
+                },
+            ),
+            ParsedRow(
+                row_number=3,
+                data={
+                    "guest_of_email": "parent@example.com",
+                    "registrant_name": "Guest Two",
+                    "registrant_email": "guest2@example.com",
+                    "registration_date": "2026-02-01",
+                    "quantity": 1,
+                    "external_registration_id": "",
+                },
+            ),
+        ]
+
+        results = await import_service._validate_rows(test_event.id, rows, set())
+
+        assert results[2].status == ImportRowStatus.ERROR
+        errors = [i for i in results[2].issues if i.severity == ValidationIssueSeverity.ERROR]
+        assert any("guest rows exceed" in e.message.lower() for e in errors)
+
 
 @pytest.mark.asyncio
 class TestReportBuilding:

@@ -101,15 +101,31 @@ function ExampleFormats() {
     ticket_purchase_date: '2026-01-20',
   }
 
-  const csvExample = `event_id,registrant_name,registrant_email,registration_date,quantity,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,notes,ticket_purchase_id,ticket_purchaser_email,ticket_purchase_date
-EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,2,REG-100045,555-123-4567,42,8,2,Sponsor package,1b2c3d4e-0000-1111-2222-333344445555,jordan.lee@example.org,2026-01-20`
+  const jsonGuestExample = {
+    guest_of_email: 'jordan.lee@example.org',
+    registrant_name: 'Casey Guest',
+    registrant_email: 'casey.guest@example.org',
+    registration_date: '2026-02-01',
+    quantity: 1,
+    external_registration_id: '',
+    registrant_phone: '555-222-7890',
+    bidder_number: 84,
+    table_number: 8,
+    guest_count: 1,
+    notes: 'Dietary: vegetarian',
+  }
+
+  const csvExample = `event_id,registrant_name,registrant_email,registration_date,quantity,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,guest_of_email,notes,ticket_purchase_id,ticket_purchaser_email,ticket_purchase_date
+EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,2,REG-100045,555-123-4567,42,8,2,,Sponsor package,1b2c3d4e-0000-1111-2222-333344445555,jordan.lee@example.org,2026-01-20
+EVT-2026-001,Casey Guest,casey.guest@example.org,2026-02-01,1,,555-222-7890,84,8,1,jordan.lee@example.org,Dietary: vegetarian,,,
+`
 
   return (
     <div className="space-y-4">
       <div>
         <h4 className="mb-2 text-sm font-semibold">JSON Format (Array of Objects)</h4>
         <pre className="rounded-md bg-muted p-3 text-xs overflow-x-auto">
-          {JSON.stringify([jsonExample], null, 2)}
+          {JSON.stringify([jsonExample, jsonGuestExample], null, 2)}
         </pre>
       </div>
       <div>
@@ -125,11 +141,14 @@ EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,2,REG-100045,555-123-4
         </p>
         <p>
           <strong>Optional fields:</strong> event_id (ignored), registrant_phone, notes,
-          bidder_number, table_number, guest_count, ticket_purchase_id, ticket_purchaser_email,
-          ticket_purchase_date
+          bidder_number, table_number, guest_count, guest_of_email, ticket_purchase_id,
+          ticket_purchaser_email, ticket_purchase_date
         </p>
         <p>
           <strong>Max rows:</strong> 5,000 per file
+        </p>
+        <p>
+          <strong>Guest rows:</strong> set guest_of_email to the parent registrant email; external_registration_id may be blank
         </p>
       </div>
     </div>

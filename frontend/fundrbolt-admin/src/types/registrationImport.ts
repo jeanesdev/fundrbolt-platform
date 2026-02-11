@@ -56,6 +56,7 @@ export interface RegistrationImportRowExample {
   bidder_number?: number
   table_number?: number
   guest_count?: number
+  guest_of_email?: string
   ticket_purchase_id?: string
   ticket_purchaser_email?: string
   ticket_purchase_date?: string

@@ -41,6 +41,11 @@ class RegistrationImportRow(BaseModel):
     bidder_number: int | None = Field(None, ge=100, le=999)
     table_number: int | None = Field(None, ge=1)
     guest_count: int | None = Field(None, ge=1)
+    guest_of_email: str | None = Field(
+        None,
+        description="Parent registrant email for guest rows",
+        max_length=255,
+    )
     ticket_purchase_id: str | None = Field(
         None,
         description="Optional ticket purchase ID to link registration",

@@ -14,6 +14,7 @@
 - Q: What is the uniqueness scope for `external_registration_id`? → A: Unique within the selected event.
 - Q: What is the maximum number of rows allowed per import? → A: 5,000 rows.
 - Q: Should preflight fail on any missing/invalid required fields? → A: Yes, any required-field errors cause preflight to fail.
+- Q: Should guest registrations be included in the same file? → A: Yes; rows with `guest_of_email` are treated as guests linked to the parent registrant.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -73,6 +74,7 @@ As an admin, I want clear error feedback from preflight so I can correct my file
 - File uses an unsupported encoding or corrupted Excel workbook.
 - Row count exceeds the maximum allowed for a single import.
 - Preflight passes but the user cancels the import.
+- Guest rows reference missing parents or exceed guest_count.
 
 ## Requirements *(mandatory)*
 
@@ -84,7 +86,7 @@ As an admin, I want clear error feedback from preflight so I can correct my file
 - **FR-004**: System MUST block import when preflight detects errors and must not create any registrations in that case.
 - **FR-005**: System MUST allow import only after a successful preflight for the same uploaded file.
 - **FR-006**: System MUST validate required fields: event identifier, registrant full name, registrant email, registration date, quantity, and external registration identifier; any missing or invalid required fields MUST cause preflight to fail.
-- **FR-007**: System MUST allow optional fields: registrant phone, notes, bidder number, table number, guest count, ticket_purchase_id, ticket_purchaser_email, and ticket_purchase_date.
+- **FR-007**: System MUST allow optional fields: registrant phone, notes, bidder number, table number, guest count, guest_of_email, ticket_purchase_id, ticket_purchaser_email, and ticket_purchase_date.
 - **FR-008**: System MUST detect duplicate external registration identifiers within the uploaded file and flag them as errors during preflight.
 - **FR-009**: System MUST report validation results with counts of total rows, valid rows, error rows, and warning rows.
 - **FR-010**: System MUST provide a downloadable error report when preflight finds errors.
@@ -100,12 +102,17 @@ As an admin, I want clear error feedback from preflight so I can correct my file
 - **FR-020**: System MUST enforce `external_registration_id` uniqueness within the selected event.
 - **FR-021**: System MUST accept `ticket_purchase_id` to link a registration to a ticket sale when provided.
 - **FR-022**: System MUST allow `ticket_purchaser_email` + `ticket_purchase_date` as an alternative lookup for the ticket purchase; missing or ambiguous matches MUST fail preflight.
+- **FR-023**: System MUST treat rows with `guest_of_email` as guest registrations linked to the parent registrant email.
+- **FR-024**: System MUST fail preflight if a guest row references a parent registrant that is not present in the file and does not exist in the system for the selected event.
+- **FR-025**: System MUST fail preflight if the number of guest rows exceeds the parent’s `guest_count` capacity.
+- **FR-026**: System MUST require unique guest email addresses per parent registration and fail preflight on duplicates.
+- **FR-027**: System MUST ignore ticket purchase fields on guest rows.
 
 #### Example File Formats
 
 **JSON example (array of registration objects)**
 
-Each object represents one registration record:
+Each object represents one registration record (or guest row when `guest_of_email` is set):
 
 - event_id: EVT-2026-001
 - registrant_name: Jordan Lee
@@ -121,18 +128,21 @@ Each object represents one registration record:
 - ticket_purchase_id: 1b2c3d4e-0000-1111-2222-333344445555
 - ticket_purchaser_email: jordan.lee@example.org
 - ticket_purchase_date: 2026-01-20
+- guest_of_email: jordan.lee@example.org (guest row only)
 
 **CSV example (header and one row)**
 
 Header:
-event_id,registrant_name,registrant_email,registration_date,quantity,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,notes,ticket_purchase_id,ticket_purchaser_email,ticket_purchase_date
+event_id,registrant_name,registrant_email,registration_date,quantity,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,guest_of_email,notes,ticket_purchase_id,ticket_purchaser_email,ticket_purchase_date
 
-Row:
-EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,2,REG-100045,555-123-4567,42,8,2,Sponsor package,1b2c3d4e-0000-1111-2222-333344445555,jordan.lee@example.org,2026-01-20
+Rows:
+EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,2,REG-100045,555-123-4567,42,8,2,,Sponsor package,1b2c3d4e-0000-1111-2222-333344445555,jordan.lee@example.org,2026-01-20
+EVT-2026-001,Casey Guest,casey.guest@example.org,2026-02-01,1,,555-222-7890,84,8,1,jordan.lee@example.org,Dietary: vegetarian,,,
 
 ### Key Entities *(include if feature involves data)*
 
 - **Registration Record**: Represents a single event registration with registrant details, quantity, and optional ticket purchase linkage.
+- **Guest Registration**: Represents a guest row linked to a parent registrant via `guest_of_email`.
 - **External Registration Identifier**: Unique identifier for a registration within the selected event.
 - **Import Batch**: Represents one upload attempt with its preflight results, status, and initiating admin.
 - **Validation Issue**: Represents a preflight error or warning tied to a specific row and field.

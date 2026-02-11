@@ -52,6 +52,7 @@ OPTIONAL_HEADERS = [
     "bidder_number",
     "table_number",
     "guest_count",
+    "guest_of_email",
     "ticket_purchase_id",
     "ticket_purchaser_email",
     "ticket_purchase_date",
@@ -100,6 +101,14 @@ class RegistrationImportService:
         parsed_rows = self._parse_file(file_bytes, file_type)
         row_lookup = {row.row_number: row for row in parsed_rows}
 
+        guest_rows_by_parent_email: dict[str, list[ParsedRow]] = {}
+        guest_parent_emails: set[str] = set()
+        for row in parsed_rows:
+            guest_of_email = self._normalize_email(row.data.get("guest_of_email"))
+            if guest_of_email:
+                guest_rows_by_parent_email.setdefault(guest_of_email, []).append(row)
+                guest_parent_emails.add(guest_of_email)
+
         # Fetch existing external IDs
         external_ids = [
             str(value).strip()
@@ -108,11 +117,23 @@ class RegistrationImportService:
         ]
         existing_ids = await self._fetch_existing_external_ids(event_id, external_ids)
 
+        existing_parent_by_email = await self._fetch_registrations_by_email(
+            event_id, guest_parent_emails
+        )
+
         # Validate and then create records
         validation_results = await self._validate_rows(event_id, parsed_rows, existing_ids)
 
         results = []
+        created_parent_by_email: dict[str, EventRegistration] = {}
+        guest_rows_created: set[int] = set()
+
         for result in validation_results:
+            row = row_lookup[result.row_number]
+            is_guest_row = bool(self._normalize_email(row.data.get("guest_of_email")))
+            if is_guest_row:
+                continue
+
             if result.status == ImportRowStatus.ERROR:
                 results.append(result)
                 continue
@@ -122,12 +143,18 @@ class RegistrationImportService:
                 continue
 
             try:
-                created = await self._create_registration(
+                parent_email = self._normalize_email(row.data.get("registrant_email"))
+                guest_rows = [g.data for g in guest_rows_by_parent_email.get(parent_email, [])]
+                created_registration = await self._create_registration(
                     event_id=event_id,
-                    row=row_lookup[result.row_number].data,
+                    row=row.data,
                     user_id=user_id,
+                    guest_rows=guest_rows,
                 )
-                if created:
+                if created_registration:
+                    created_parent_by_email[parent_email] = created_registration
+                    for guest_row in guest_rows_by_parent_email.get(parent_email, []):
+                        guest_rows_created.add(guest_row.row_number)
                     results.append(result)
                 else:
                     results.append(
@@ -152,6 +179,53 @@ class RegistrationImportService:
                         registrant_email=result.registrant_email,
                         status=ImportRowStatus.ERROR,
                         message=f"Failed to create registration: {exc}",
+                    )
+                )
+
+        for result in validation_results:
+            row = row_lookup[result.row_number]
+            guest_of_email = self._normalize_email(row.data.get("guest_of_email"))
+            if not guest_of_email:
+                continue
+
+            if result.status == ImportRowStatus.ERROR:
+                results.append(result)
+                continue
+
+            if result.row_number in guest_rows_created:
+                results.append(result)
+                continue
+
+            parent_registration = created_parent_by_email.get(guest_of_email) or existing_parent_by_email.get(
+                guest_of_email
+            )
+            if not parent_registration:
+                results.append(
+                    ImportRowResult(
+                        row_number=result.row_number,
+                        external_id=result.external_id,
+                        registrant_name=result.registrant_name,
+                        registrant_email=result.registrant_email,
+                        status=ImportRowStatus.ERROR,
+                        message="Failed to create guest: parent registration not found",
+                    )
+                )
+                continue
+
+            try:
+                await self._create_guest_registration(parent_registration.id, row.data)
+                await self.db.commit()
+                results.append(result)
+            except Exception as exc:
+                await self.db.rollback()
+                results.append(
+                    ImportRowResult(
+                        row_number=result.row_number,
+                        external_id=result.external_id,
+                        registrant_name=result.registrant_name,
+                        registrant_email=result.registrant_email,
+                        status=ImportRowStatus.ERROR,
+                        message=f"Failed to create guest: {exc}",
                     )
                 )
 
@@ -312,12 +386,49 @@ class RegistrationImportService:
         results = []
         seen_ids: set[str] = set()
 
+        parent_rows_by_email: dict[str, ParsedRow] = {}
+        guest_rows_by_parent_email: dict[str, list[ParsedRow]] = {}
+        guest_parent_emails: set[str] = set()
+        guest_email_counts: dict[str, Counter[str]] = {}
+
+        for row in parsed_rows:
+            guest_of_email = self._normalize_email(row.data.get("guest_of_email"))
+            if guest_of_email:
+                guest_rows_by_parent_email.setdefault(guest_of_email, []).append(row)
+                guest_parent_emails.add(guest_of_email)
+                guest_email = self._normalize_email(row.data.get("registrant_email"))
+                if guest_email:
+                    guest_email_counts.setdefault(guest_of_email, Counter())[guest_email] += 1
+            else:
+                parent_email = self._normalize_email(row.data.get("registrant_email"))
+                if parent_email:
+                    parent_rows_by_email[parent_email] = row
+
+        existing_parent_by_email = await self._fetch_registrations_by_email(
+            event_id, guest_parent_emails
+        )
+        existing_guest_emails_by_registration = await self._fetch_guest_emails_by_registration(
+            [registration.id for registration in existing_parent_by_email.values()]
+        )
+
+        parent_capacity_by_email: dict[str, int] = {}
+        for email, parent_row in parent_rows_by_email.items():
+            parent_capacity_by_email[email] = max(self._resolve_guest_count(parent_row.data) - 1, 0)
+        for email, registration in existing_parent_by_email.items():
+            if email not in parent_capacity_by_email:
+                total_guests = registration.number_of_guests or 1
+                parent_capacity_by_email[email] = max(total_guests - 1, 0)
+
         for row in parsed_rows:
             issues: list[ValidationIssue] = []
             data = row.data
+            guest_of_email = self._normalize_email(data.get("guest_of_email"))
+            is_guest_row = bool(guest_of_email)
 
             # Validate required fields
             for field in REQUIRED_HEADERS:
+                if is_guest_row and field == "external_registration_id":
+                    continue
                 value = data.get(field)
                 if value is None or str(value).strip() == "":
                     issues.append(
@@ -329,9 +440,9 @@ class RegistrationImportService:
                         )
                     )
 
-            # Check for duplicates within file
+            # Check for duplicates within file (non-guest rows only)
             external_id = str(data.get("external_registration_id", "")).strip()
-            if external_id:
+            if external_id and not is_guest_row:
                 if external_id in seen_ids:
                     issues.append(
                         ValidationIssue(
@@ -354,6 +465,56 @@ class RegistrationImportService:
                             message=f"Registration with external_id '{external_id}' already exists and will be skipped",
                         )
                     )
+
+            if is_guest_row:
+                if guest_of_email not in parent_rows_by_email and guest_of_email not in existing_parent_by_email:
+                    issues.append(
+                        ValidationIssue(
+                            row_number=row.row_number,
+                            severity=ValidationIssueSeverity.ERROR,
+                            field_name="guest_of_email",
+                            message=f"No parent registration found for guest_of_email: {guest_of_email}",
+                        )
+                    )
+
+                guest_email = self._normalize_email(data.get("registrant_email"))
+                if guest_email and guest_of_email:
+                    if guest_email_counts.get(guest_of_email, Counter()).get(guest_email, 0) > 1:
+                        issues.append(
+                            ValidationIssue(
+                                row_number=row.row_number,
+                                severity=ValidationIssueSeverity.ERROR,
+                                field_name="registrant_email",
+                                message="Duplicate guest email for the same registration",
+                            )
+                        )
+
+                if guest_of_email in existing_parent_by_email and guest_email:
+                    existing_parent = existing_parent_by_email[guest_of_email]
+                    existing_guest_emails = existing_guest_emails_by_registration.get(
+                        existing_parent.id, set()
+                    )
+                    if guest_email in existing_guest_emails:
+                        issues.append(
+                            ValidationIssue(
+                                row_number=row.row_number,
+                                severity=ValidationIssueSeverity.ERROR,
+                                field_name="registrant_email",
+                                message="Guest email already exists for this registration",
+                            )
+                        )
+
+                if guest_of_email in parent_capacity_by_email:
+                    max_guest_rows = parent_capacity_by_email[guest_of_email]
+                    if len(guest_rows_by_parent_email.get(guest_of_email, [])) > max_guest_rows:
+                        issues.append(
+                            ValidationIssue(
+                                row_number=row.row_number,
+                                severity=ValidationIssueSeverity.ERROR,
+                                field_name="guest_count",
+                                message="Guest rows exceed guest_count for the parent registration",
+                            )
+                        )
 
             # Validate numeric fields
             quantity = data.get("quantity")
@@ -397,12 +558,13 @@ class RegistrationImportService:
                         )
                     )
 
-            await self._validate_ticket_purchase_link(
-                event_id=event_id,
-                row_number=row.row_number,
-                data=data,
-                issues=issues,
-            )
+            if not is_guest_row:
+                await self._validate_ticket_purchase_link(
+                    event_id=event_id,
+                    row_number=row.row_number,
+                    data=data,
+                    issues=issues,
+                )
 
             # Check event_id mismatch (warning only)
             file_event_id = data.get("event_id")
@@ -444,8 +606,12 @@ class RegistrationImportService:
         return results
 
     async def _create_registration(
-        self, event_id: UUID, row: dict[str, Any], user_id: UUID
-    ) -> bool:
+        self,
+        event_id: UUID,
+        row: dict[str, Any],
+        user_id: UUID,
+        guest_rows: list[dict[str, Any]] | None = None,
+    ) -> EventRegistration | None:
         """Create a registration record from validated row data."""
         registrant_name_raw = str(row.get("registrant_name", "")).strip()
         registrant_email_raw = str(row.get("registrant_email", "")).strip().lower()
@@ -471,7 +637,7 @@ class RegistrationImportService:
         )
         existing_registration = existing_result.scalar_one_or_none()
         if existing_registration:
-            return False
+            return None
 
         number_of_guests = self._resolve_guest_count(row)
         ticket_purchase_id = await self._resolve_ticket_purchase_id(event_id, row)
@@ -508,7 +674,23 @@ class RegistrationImportService:
         )
         self.db.add(primary_guest)
 
-        additional_guest_count = max(number_of_guests - 1, 0)
+        explicit_guest_rows = guest_rows or []
+        for guest_row in explicit_guest_rows:
+            guest_name = str(guest_row.get("registrant_name", "")).strip() or None
+            guest_email = str(guest_row.get("registrant_email", "")).strip().lower() or None
+            guest_phone = str(guest_row.get("registrant_phone", "")).strip() or None
+            self.db.add(
+                RegistrationGuest(
+                    registration_id=registration.id,
+                    name=guest_name,
+                    email=guest_email,
+                    phone=guest_phone,
+                    bidder_number=self._parse_optional_int(guest_row.get("bidder_number")),
+                    table_number=self._parse_optional_int(guest_row.get("table_number")),
+                )
+            )
+
+        additional_guest_count = max(number_of_guests - 1 - len(explicit_guest_rows), 0)
         for _ in range(additional_guest_count):
             self.db.add(
                 RegistrationGuest(
@@ -519,7 +701,7 @@ class RegistrationImportService:
                 )
             )
 
-        return True
+        return registration
 
     async def _get_or_create_user(
         self,
@@ -552,6 +734,23 @@ class RegistrationImportService:
         self.db.add(user)
         await self.db.flush()
         return user
+
+    async def _create_guest_registration(
+        self, registration_id: UUID, row: dict[str, Any]
+    ) -> None:
+        guest_name = str(row.get("registrant_name", "")).strip() or None
+        guest_email = str(row.get("registrant_email", "")).strip().lower() or None
+        guest_phone = str(row.get("registrant_phone", "")).strip() or None
+        self.db.add(
+            RegistrationGuest(
+                registration_id=registration_id,
+                name=guest_name,
+                email=guest_email,
+                phone=guest_phone,
+                bidder_number=self._parse_optional_int(row.get("bidder_number")),
+                table_number=self._parse_optional_int(row.get("table_number")),
+            )
+        )
 
     async def _resolve_ticket_purchase_id(self, event_id: UUID, row: dict[str, Any]) -> UUID | None:
         raw_purchase_id = str(row.get("ticket_purchase_id", "")).strip()
@@ -628,6 +827,52 @@ class RegistrationImportService:
             return int(value)
         except (TypeError, ValueError):
             return None
+
+    def _normalize_email(self, value: Any) -> str:
+        return str(value or "").strip().lower()
+
+    async def _fetch_registrations_by_email(
+        self, event_id: UUID, emails: set[str]
+    ) -> dict[str, EventRegistration]:
+        if not emails:
+            return {}
+
+        normalized = {email.strip().lower() for email in emails if email}
+        if not normalized:
+            return {}
+
+        result = await self.db.execute(
+            select(EventRegistration, User.email)
+            .join(User, User.id == EventRegistration.user_id)
+            .where(EventRegistration.event_id == event_id)
+            .where(func.lower(User.email).in_(normalized))
+        )
+
+        return {
+            row[1].lower(): row[0]
+            for row in result.all()
+            if row[1]
+        }
+
+    async def _fetch_guest_emails_by_registration(
+        self, registration_ids: list[UUID]
+    ) -> dict[UUID, set[str]]:
+        if not registration_ids:
+            return {}
+
+        result = await self.db.execute(
+            select(RegistrationGuest.registration_id, RegistrationGuest.email)
+            .where(RegistrationGuest.registration_id.in_(registration_ids))
+            .where(RegistrationGuest.email.isnot(None))
+        )
+
+        emails_by_registration: dict[UUID, set[str]] = {}
+        for registration_id, email in result.all():
+            if not email:
+                continue
+            emails_by_registration.setdefault(registration_id, set()).add(email.lower())
+
+        return emails_by_registration
 
     async def _validate_ticket_purchase_link(
         self,
