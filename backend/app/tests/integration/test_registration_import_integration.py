@@ -29,6 +29,7 @@ async def test_ticket_package(db_session: AsyncSession, test_event: Event, test_
         seats_per_package=8,
         quantity_limit=10,
         sold_count=0,
+        display_order=0,
     )
     db_session.add(package)
 
@@ -42,6 +43,7 @@ async def test_ticket_package(db_session: AsyncSession, test_event: Event, test_
         seats_per_package=1,
         quantity_limit=100,
         sold_count=0,
+        display_order=1,
     )
     db_session.add(general)
 
