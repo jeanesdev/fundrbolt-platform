@@ -332,16 +332,20 @@ class TestSeatingAssignment:
         guest1 = RegistrationGuest(
             id=uuid4(),
             registration_id=registration1.id,
+            user_id=test_donor.id,
             name="Guest 1",
             email="guest1@example.com",
             bidder_number=200,
+            is_primary=True,
         )
         guest2 = RegistrationGuest(
             id=uuid4(),
             registration_id=registration2.id,
+            user_id=user2.id,
             name="Guest 2",
             email="guest2@example.com",
             bidder_number=300,
+            is_primary=True,
         )
         db_session.add_all([guest1, guest2])
         await db_session.commit()

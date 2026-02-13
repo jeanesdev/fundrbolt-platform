@@ -171,10 +171,7 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         await conn.execute(
-            text(
-                "ALTER TABLE event_registrations "
-                "ADD COLUMN IF NOT EXISTS ticket_purchase_id UUID"
-            )
+            text("ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS ticket_purchase_id UUID")
         )
         await conn.execute(
             text(
@@ -216,8 +213,7 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
         )
         await conn.execute(
             text(
-                "ALTER TABLE registration_guests "
-                "ADD COLUMN IF NOT EXISTS check_in_time TIMESTAMPTZ"
+                "ALTER TABLE registration_guests ADD COLUMN IF NOT EXISTS check_in_time TIMESTAMPTZ"
             )
         )
         await conn.execute(
@@ -239,16 +235,10 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
             )
         )
         await conn.execute(
-            text(
-                "ALTER TABLE registration_guests "
-                "ADD COLUMN IF NOT EXISTS bidder_number INTEGER"
-            )
+            text("ALTER TABLE registration_guests ADD COLUMN IF NOT EXISTS bidder_number INTEGER")
         )
         await conn.execute(
-            text(
-                "ALTER TABLE registration_guests "
-                "ADD COLUMN IF NOT EXISTS table_number INTEGER"
-            )
+            text("ALTER TABLE registration_guests ADD COLUMN IF NOT EXISTS table_number INTEGER")
         )
         await conn.execute(
             text(

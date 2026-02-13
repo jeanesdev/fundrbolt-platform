@@ -290,9 +290,7 @@ class RegistrationImportService:
         for index, obj in enumerate(data, start=1):
             if not isinstance(obj, dict):
                 continue
-            row_data = {
-                self._normalize_header(k): self._normalize_cell(v) for k, v in obj.items()
-            }
+            row_data = {self._normalize_header(k): self._normalize_cell(v) for k, v in obj.items()}
             parsed_rows.append(ParsedRow(row_number=index, data=row_data))
 
         if not parsed_rows:

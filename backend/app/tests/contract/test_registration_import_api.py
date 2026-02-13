@@ -10,6 +10,13 @@ from openpyxl import Workbook
 from app.models.event import Event
 
 
+def _get_detail_message(payload: dict) -> str:
+    detail = payload.get("detail", payload)
+    if isinstance(detail, dict):
+        return str(detail.get("message", detail))
+    return str(detail)
+
+
 @pytest.mark.asyncio
 class TestRegistrationImportPreflight:
     """Test POST /api/v1/admin/events/{event_id}/registrations/import/preflight endpoint."""
@@ -254,7 +261,7 @@ Jane Smith,jane@example.com,2026-02-02,1,REG-002"""
         )
 
         assert response.status_code == 400
-        assert "Unsupported file type" in response.json()["detail"]
+        assert "Unsupported file type" in _get_detail_message(response.json())
 
     async def test_preflight_empty_file(
         self,
@@ -270,7 +277,7 @@ Jane Smith,jane@example.com,2026-02-02,1,REG-002"""
         )
 
         assert response.status_code == 400
-        assert "contains no data" in response.json()["detail"]
+        assert "contains no data" in _get_detail_message(response.json())
 
     async def test_preflight_event_not_found(
         self,
@@ -297,7 +304,7 @@ Jane Smith,jane@example.com,2026-02-02,1,REG-002"""
         )
 
         assert response.status_code == 404
-        assert "Event not found" in response.json()["detail"]
+        assert "Event not found" in _get_detail_message(response.json())
 
     async def test_preflight_requires_authentication(
         self,
@@ -410,7 +417,7 @@ class TestRegistrationImportCommit:
         )
 
         assert response.status_code == 404
-        assert "Event not found" in response.json()["detail"]
+        assert "Event not found" in _get_detail_message(response.json())
 
     async def test_commit_invalid_file_type(
         self,
@@ -426,7 +433,7 @@ class TestRegistrationImportCommit:
         )
 
         assert response.status_code == 400
-        assert "Unsupported file type" in response.json()["detail"]
+        assert "Unsupported file type" in _get_detail_message(response.json())
 
     async def test_commit_validates_before_creating(
         self,
