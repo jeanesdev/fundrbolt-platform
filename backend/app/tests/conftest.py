@@ -1663,7 +1663,6 @@ async def test_registration(db_session: AsyncSession, test_event: Any, test_dono
     registration = EventRegistration(
         event_id=test_event.id,
         user_id=test_donor_user.id,
-        status=RegistrationStatus.CONFIRMED,
         number_of_guests=2,
     )
     db_session.add(registration)

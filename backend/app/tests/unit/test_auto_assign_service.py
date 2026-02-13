@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.event import Event
-from app.models.event_registration import EventRegistration, RegistrationStatus
+from app.models.event_registration import EventRegistration
 from app.models.registration_guest import RegistrationGuest
 from app.models.user import User
 from app.services.auto_assign_service import AutoAssignService
@@ -34,7 +34,6 @@ class TestAutoAssignService:
         registration = EventRegistration(
             event_id=test_active_event.id,
             user_id=test_user.id,
-            status=RegistrationStatus.CONFIRMED,
         )
         db_session.add(registration)
         await db_session.flush()
@@ -106,7 +105,6 @@ class TestAutoAssignService:
             registration = EventRegistration(
                 event_id=test_active_event.id,
                 user_id=users[reg_num].id,
-                status=RegistrationStatus.CONFIRMED,
             )
             db_session.add(registration)
             await db_session.flush()
@@ -158,7 +156,6 @@ class TestAutoAssignService:
         registration = EventRegistration(
             event_id=test_active_event.id,
             user_id=test_user.id,
-            status=RegistrationStatus.CONFIRMED,
         )
         db_session.add(registration)
         await db_session.flush()
@@ -195,7 +192,6 @@ class TestAutoAssignService:
         registration = EventRegistration(
             event_id=test_active_event.id,
             user_id=test_user.id,
-            status=RegistrationStatus.CONFIRMED,
         )
         db_session.add(registration)
         await db_session.flush()
@@ -264,7 +260,6 @@ class TestAutoAssignService:
             registration = EventRegistration(
                 event_id=test_active_event.id,
                 user_id=users[idx].id,
-                status=RegistrationStatus.CONFIRMED,
             )
             db_session.add(registration)
             await db_session.flush()
@@ -346,7 +341,6 @@ class TestAutoAssignService:
         registration = EventRegistration(
             event_id=test_active_event.id,
             user_id=test_user.id,
-            status=RegistrationStatus.CONFIRMED,
         )
         db_session.add(registration)
         await db_session.flush()

@@ -10,6 +10,7 @@ import uuid
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime
+from decimal import Decimal, InvalidOperation
 from typing import Any
 from uuid import UUID
 
@@ -23,7 +24,7 @@ from app.models.event import FoodOption
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.meal_selection import MealSelection
 from app.models.registration_guest import RegistrationGuest
-from app.models.ticket_management import TicketPurchase
+from app.models.ticket_management import TicketPackage, TicketPurchase
 from app.models.user import User
 from app.schemas.registration_import import (
     ImportErrorReportFormat,
@@ -289,7 +290,9 @@ class RegistrationImportService:
         for index, obj in enumerate(data, start=1):
             if not isinstance(obj, dict):
                 continue
-            row_data = {self._normalize_header(k): v for k, v in obj.items()}
+            row_data = {
+                self._normalize_header(k): self._normalize_cell(v) for k, v in obj.items()
+            }
             parsed_rows.append(ParsedRow(row_number=index, data=row_data))
 
         if not parsed_rows:
@@ -320,7 +323,8 @@ class RegistrationImportService:
                 raise RegistrationImportError(f"CSV exceeds maximum of {MAX_IMPORT_ROWS} rows")
 
             row_data = {
-                headers[i]: values[i] if i < len(values) else None for i in range(len(headers))
+                headers[i]: self._normalize_cell(values[i]) if i < len(values) else None
+                for i in range(len(headers))
             }
             parsed_rows.append(ParsedRow(row_number=index, data=row_data))
 
@@ -353,7 +357,8 @@ class RegistrationImportService:
                 raise RegistrationImportError(f"Excel exceeds maximum of {MAX_IMPORT_ROWS} rows")
 
             row_data = {
-                headers[i]: values[i] if i < len(values) else None for i in range(len(headers))
+                headers[i]: self._normalize_cell(values[i]) if i < len(values) else None
+                for i in range(len(headers))
             }
             parsed_rows.append(ParsedRow(row_number=index, data=row_data))
 
@@ -367,6 +372,12 @@ class RegistrationImportService:
         if value is None:
             return ""
         return str(value).strip().lower().replace(" ", "_").replace("-", "_")
+
+    def _normalize_cell(self, value: Any) -> Any:
+        """Normalize cell values from parsed files."""
+        if isinstance(value, str):
+            return value.strip()
+        return value
 
     def _validate_required_headers(self, headers: list[str]) -> None:
         """Validate that all required headers are present."""
@@ -421,6 +432,7 @@ class RegistrationImportService:
             [registration.id for registration in existing_parent_by_email.values()]
         )
         food_option_name_index, food_option_id_index = await self._fetch_food_option_index(event_id)
+        ticket_package_index = await self._fetch_ticket_package_index(event_id)
 
         parent_capacity_by_email: dict[str, int] = {}
         for email, parent_row in parent_rows_by_email.items():
@@ -594,6 +606,40 @@ class RegistrationImportService:
                     data=data,
                     issues=issues,
                 )
+
+                ticket_package_raw = str(data.get("ticket_package", "")).strip()
+                if ticket_package_raw and ticket_package_raw.lower() not in ticket_package_index:
+                    issues.append(
+                        ValidationIssue(
+                            row_number=row.row_number,
+                            severity=ValidationIssueSeverity.ERROR,
+                            field_name="ticket_package",
+                            message=f"Ticket package not found: {ticket_package_raw}",
+                        )
+                    )
+
+                total_amount_raw = data.get("total_amount")
+                if total_amount_raw not in (None, ""):
+                    try:
+                        total_amount = Decimal(str(total_amount_raw))
+                        if total_amount < 0:
+                            issues.append(
+                                ValidationIssue(
+                                    row_number=row.row_number,
+                                    severity=ValidationIssueSeverity.ERROR,
+                                    field_name="total_amount",
+                                    message="Total amount must be non-negative",
+                                )
+                            )
+                    except (InvalidOperation, ValueError, TypeError):
+                        issues.append(
+                            ValidationIssue(
+                                row_number=row.row_number,
+                                severity=ValidationIssueSeverity.ERROR,
+                                field_name="total_amount",
+                                message=f"Invalid total_amount value: {total_amount_raw}",
+                            )
+                        )
 
             # Check event_id mismatch (warning only)
             file_event_id = data.get("event_id")
@@ -903,6 +949,13 @@ class RegistrationImportService:
         name_index = {option.name.lower(): option.id for option in options if option.name}
         id_index = {str(option.id): option.id for option in options}
         return name_index, id_index
+
+    async def _fetch_ticket_package_index(self, event_id: UUID) -> dict[str, UUID]:
+        result = await self.db.execute(
+            select(TicketPackage).where(TicketPackage.event_id == event_id)
+        )
+        packages = result.scalars().all()
+        return {package.name.lower(): package.id for package in packages if package.name}
 
     def _resolve_food_option_from_indexes(
         self,
