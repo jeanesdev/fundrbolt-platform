@@ -4,7 +4,7 @@ import logging
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -12,6 +12,7 @@ from app.middleware.auth import get_current_active_user
 from app.models.event_registration import RegistrationStatus
 from app.models.user import User
 from app.schemas.event_registration import (
+    EventRegistrationCancelRequest,
     EventRegistrationCreateRequest,
     EventRegistrationListResponse,
     EventRegistrationResponse,
@@ -155,9 +156,16 @@ async def cancel_registration(
     registration_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],
+    cancel_data: EventRegistrationCancelRequest = Body(...),
 ) -> None:
-    """Cancel a registration (soft delete)."""
-    await EventRegistrationService.cancel_registration(db, registration_id, current_user)
+    """Cancel a registration (soft delete) with reason/note."""
+    await EventRegistrationService.cancel_registration(
+        db,
+        registration_id,
+        current_user,
+        cancellation_reason=cancel_data.cancellation_reason,
+        cancellation_note=cancel_data.cancellation_note,
+    )
 
 
 # ================================

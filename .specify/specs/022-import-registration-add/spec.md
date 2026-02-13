@@ -15,6 +15,7 @@
 - Q: What is the maximum number of rows allowed per import? → A: 5,000 rows.
 - Q: Should preflight fail on any missing/invalid required fields? → A: Yes, any required-field errors cause preflight to fail.
 - Q: Should guest registrations be included in the same file? → A: Yes; rows with `guest_of_email` are treated as guests linked to the parent registrant.
+- Q: Should food options be importable? → A: Yes; `food_option` maps to an event food option and creates a meal selection.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -86,7 +87,7 @@ As an admin, I want clear error feedback from preflight so I can correct my file
 - **FR-004**: System MUST block import when preflight detects errors and must not create any registrations in that case.
 - **FR-005**: System MUST allow import only after a successful preflight for the same uploaded file.
 - **FR-006**: System MUST validate required fields: event identifier, registrant full name, registrant email, registration date, quantity, and external registration identifier; any missing or invalid required fields MUST cause preflight to fail.
-- **FR-007**: System MUST allow optional fields: registrant phone, notes, bidder number, table number, guest count, guest_of_email, ticket_purchase_id, ticket_purchaser_email, and ticket_purchase_date.
+- **FR-007**: System MUST allow optional fields: registrant phone, notes, bidder number, table number, guest count, guest_of_email, food_option, ticket_purchase_id, ticket_purchaser_email, and ticket_purchase_date.
 - **FR-008**: System MUST detect duplicate external registration identifiers within the uploaded file and flag them as errors during preflight.
 - **FR-009**: System MUST report validation results with counts of total rows, valid rows, error rows, and warning rows.
 - **FR-010**: System MUST provide a downloadable error report when preflight finds errors.
@@ -107,6 +108,7 @@ As an admin, I want clear error feedback from preflight so I can correct my file
 - **FR-025**: System MUST fail preflight if the number of guest rows exceeds the parent’s `guest_count` capacity.
 - **FR-026**: System MUST require unique guest email addresses per parent registration and fail preflight on duplicates.
 - **FR-027**: System MUST ignore ticket purchase fields on guest rows.
+- **FR-028**: System MUST accept `food_option` (name or ID) and create a meal selection for the registrant or guest row when provided.
 
 #### Example File Formats
 
@@ -129,15 +131,16 @@ Each object represents one registration record (or guest row when `guest_of_emai
 - ticket_purchaser_email: jordan.lee@example.org
 - ticket_purchase_date: 2026-01-20
 - guest_of_email: jordan.lee@example.org (guest row only)
+- food_option: Vegetarian
 
 **CSV example (header and one row)**
 
 Header:
-event_id,registrant_name,registrant_email,registration_date,quantity,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,guest_of_email,notes,ticket_purchase_id,ticket_purchaser_email,ticket_purchase_date
+event_id,registrant_name,registrant_email,registration_date,quantity,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,guest_of_email,food_option,notes,ticket_purchase_id,ticket_purchaser_email,ticket_purchase_date
 
 Rows:
-EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,2,REG-100045,555-123-4567,42,8,2,,Sponsor package,1b2c3d4e-0000-1111-2222-333344445555,jordan.lee@example.org,2026-01-20
-EVT-2026-001,Casey Guest,casey.guest@example.org,2026-02-01,1,,555-222-7890,84,8,1,jordan.lee@example.org,Dietary: vegetarian,,,
+EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,2,REG-100045,555-123-4567,42,8,2,,Vegetarian,Sponsor package,1b2c3d4e-0000-1111-2222-333344445555,jordan.lee@example.org,2026-01-20
+EVT-2026-001,Casey Guest,casey.guest@example.org,2026-02-01,1,,555-222-7890,84,8,1,jordan.lee@example.org,Vegetarian,Dietary: vegetarian,,,
 
 ### Key Entities *(include if feature involves data)*
 
@@ -168,4 +171,3 @@ EVT-2026-001,Casey Guest,casey.guest@example.org,2026-02-01,1,,555-222-7890,84,8
 - **SC-002**: Preflight completes within 60 seconds for files up to 5,000 rows.
 - **SC-003**: At least 95% of valid rows in a file are imported without manual correction.
 - **SC-004**: Time to add 1,000 registrations is reduced to under 10 minutes including preflight.
-

@@ -401,6 +401,7 @@ class TestValidation:
     ):
         """Test validation fails with non-existent ticket purchase."""
         from uuid import uuid4
+
         from app.services.registration_import_service import ParsedRow
 
         rows = [
@@ -631,6 +632,34 @@ class TestValidation:
         assert results[2].status == ImportRowStatus.ERROR
         errors = [i for i in results[2].issues if i.severity == ValidationIssueSeverity.ERROR]
         assert any("guest rows exceed" in e.message.lower() for e in errors)
+
+    async def test_validate_food_option_not_found(
+        self,
+        import_service: RegistrationImportService,
+        test_event: Event,
+    ):
+        """Test invalid food option fails preflight."""
+        from app.services.registration_import_service import ParsedRow
+
+        rows = [
+            ParsedRow(
+                row_number=1,
+                data={
+                    "registrant_name": "Parent User",
+                    "registrant_email": "parent@example.com",
+                    "registration_date": "2026-02-01",
+                    "quantity": 1,
+                    "external_registration_id": "REG-001",
+                    "food_option": "No Such Option",
+                },
+            )
+        ]
+
+        results = await import_service._validate_rows(test_event.id, rows, set())
+
+        assert results[0].status == ImportRowStatus.ERROR
+        errors = [i for i in results[0].issues if i.severity == ValidationIssueSeverity.ERROR]
+        assert any("food option" in e.message.lower() for e in errors)
 
 
 @pytest.mark.asyncio

@@ -237,8 +237,7 @@ Jane Smith,jane@example.com,2026-02-02,1,REG-002"""
         assert data["error_rows"] > 0
         assert data["rows"][0]["status"] == "error"
         assert any(
-            "Ticket purchase not found" in issue["message"]
-            for issue in data["rows"][0]["issues"]
+            "Ticket purchase not found" in issue["message"] for issue in data["rows"][0]["issues"]
         )
 
     async def test_preflight_invalid_file_type(

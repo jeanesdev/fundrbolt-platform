@@ -46,6 +46,11 @@ class RegistrationImportRow(BaseModel):
         description="Parent registrant email for guest rows",
         max_length=255,
     )
+    food_option: str | None = Field(
+        None,
+        description="Optional food option name or ID for meal selection",
+        max_length=255,
+    )
     ticket_purchase_id: str | None = Field(
         None,
         description="Optional ticket purchase ID to link registration",

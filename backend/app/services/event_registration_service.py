@@ -105,11 +105,22 @@ class EventRegistrationService:
             event_id=registration_data.event_id,
             ticket_purchase_id=ticket_purchase_id,
             number_of_guests=registration_data.number_of_guests,
-            ticket_type=registration_data.ticket_type,
-            status=RegistrationStatus.CONFIRMED,
         )
 
         db.add(registration)
+        await db.flush()
+
+        primary_guest = RegistrationGuest(
+            registration_id=registration.id,
+            user_id=current_user.id,
+            name=f"{current_user.first_name} {current_user.last_name}",
+            email=current_user.email,
+            phone=current_user.phone,
+            status=RegistrationStatus.CONFIRMED.value,
+            is_primary=True,
+        )
+        db.add(primary_guest)
+
         await db.commit()
         await db.refresh(registration, ["user", "event", "guests", "meal_selections"])
 
@@ -137,11 +148,17 @@ class EventRegistrationService:
             Existing EventRegistration or None
         """
         result = await db.execute(
-            select(EventRegistration).where(
+            select(EventRegistration)
+            .join(
+                RegistrationGuest,
+                RegistrationGuest.registration_id == EventRegistration.id,
+            )
+            .where(
                 and_(
                     EventRegistration.user_id == user_id,
                     EventRegistration.event_id == event_id,
-                    EventRegistration.status != RegistrationStatus.CANCELLED,
+                    RegistrationGuest.is_primary.is_(True),
+                    RegistrationGuest.status != RegistrationStatus.CANCELLED.value,
                 )
             )
         )
@@ -170,6 +187,13 @@ class EventRegistrationService:
         """
         query = (
             select(EventRegistration)
+            .join(
+                RegistrationGuest,
+                and_(
+                    RegistrationGuest.registration_id == EventRegistration.id,
+                    RegistrationGuest.is_primary.is_(True),
+                ),
+            )
             .where(EventRegistration.user_id == user_id)
             .options(
                 selectinload(EventRegistration.event),
@@ -179,7 +203,7 @@ class EventRegistrationService:
         )
 
         if status_filter:
-            query = query.where(EventRegistration.status == status_filter)
+            query = query.where(RegistrationGuest.status == status_filter.value)
 
         # Get total count
         count_query = select(func.count()).select_from(query.subquery())
@@ -226,14 +250,21 @@ class EventRegistrationService:
         # Query registrations with event, NPO, and branding data
         query = (
             select(EventRegistration)
+            .join(
+                RegistrationGuest,
+                and_(
+                    RegistrationGuest.registration_id == EventRegistration.id,
+                    RegistrationGuest.is_primary.is_(True),
+                ),
+            )
             .where(
                 and_(
                     EventRegistration.user_id == user_id,
-                    EventRegistration.status.in_(
+                    RegistrationGuest.status.in_(
                         [
-                            RegistrationStatus.PENDING,
-                            RegistrationStatus.CONFIRMED,
-                            RegistrationStatus.WAITLISTED,
+                            RegistrationStatus.PENDING.value,
+                            RegistrationStatus.CONFIRMED.value,
+                            RegistrationStatus.WAITLISTED.value,
                         ]
                     ),
                 )
@@ -352,6 +383,13 @@ class EventRegistrationService:
         """
         query = (
             select(EventRegistration)
+            .join(
+                RegistrationGuest,
+                and_(
+                    RegistrationGuest.registration_id == EventRegistration.id,
+                    RegistrationGuest.is_primary.is_(True),
+                ),
+            )
             .where(EventRegistration.event_id == event_id)
             .options(
                 selectinload(EventRegistration.user),
@@ -361,7 +399,7 @@ class EventRegistrationService:
         )
 
         if status_filter:
-            query = query.where(EventRegistration.status == status_filter)
+            query = query.where(RegistrationGuest.status == status_filter.value)
 
         # Get total count
         count_query = select(func.count()).select_from(query.subquery())
@@ -403,7 +441,10 @@ class EventRegistrationService:
         result = await db.execute(
             select(EventRegistration)
             .where(EventRegistration.id == registration_id)
-            .options(selectinload(EventRegistration.event))
+            .options(
+                selectinload(EventRegistration.event),
+                selectinload(EventRegistration.guests),
+            )
         )
         registration = result.scalar_one_or_none()
 
@@ -451,15 +492,21 @@ class EventRegistrationService:
         if registration_data.number_of_guests is not None:
             registration.number_of_guests = registration_data.number_of_guests
 
-        if registration_data.ticket_type is not None:
-            registration.ticket_type = registration_data.ticket_type
-
         if registration_data.status is not None:
-            # Validate state transition
-            EventRegistrationService._validate_status_transition(
-                registration.status, registration_data.status
+            primary_guest = next(
+                (guest for guest in registration.guests if guest.is_primary),
+                None,
             )
-            registration.status = registration_data.status
+            if not primary_guest:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Primary guest record is missing",
+                )
+            current_status = RegistrationStatus(primary_guest.status)
+            EventRegistrationService._validate_status_transition(
+                current_status, registration_data.status
+            )
+            primary_guest.status = registration_data.status.value
 
         await db.commit()
         await db.refresh(registration, ["user", "event", "guests", "meal_selections"])
@@ -472,26 +519,54 @@ class EventRegistrationService:
         db: AsyncSession,
         registration_id: uuid.UUID,
         current_user: User,
+        cancellation_reason: str | None = None,
+        cancellation_note: str | None = None,
     ) -> EventRegistration:
-        """
-        Cancel an event registration (soft delete).
+        """Cancel an event registration (soft delete), logging reason/note."""
+        return await EventRegistrationService._cancel_registration(
+            db,
+            registration_id,
+            current_user,
+            cancellation_reason=cancellation_reason,
+            cancellation_note=cancellation_note,
+            enforce_owner=True,
+        )
 
-        Args:
-            db: Database session
-            registration_id: Registration ID
-            current_user: User performing the cancellation
+    @staticmethod
+    async def cancel_registration_admin(
+        db: AsyncSession,
+        registration_id: uuid.UUID,
+        current_user: User,
+        cancellation_reason: str | None = None,
+        cancellation_note: str | None = None,
+    ) -> EventRegistration:
+        """Cancel a registration as an admin (no ownership check)."""
+        return await EventRegistrationService._cancel_registration(
+            db,
+            registration_id,
+            current_user,
+            cancellation_reason=cancellation_reason,
+            cancellation_note=cancellation_note,
+            enforce_owner=False,
+        )
 
-        Returns:
-            Cancelled EventRegistration object
-
-        Raises:
-            HTTPException: If registration not found or unauthorized
-        """
-        # Get registration
+    @staticmethod
+    async def _cancel_registration(
+        db: AsyncSession,
+        registration_id: uuid.UUID,
+        current_user: User,
+        cancellation_reason: str | None,
+        cancellation_note: str | None,
+        enforce_owner: bool,
+    ) -> EventRegistration:
+        """Internal cancellation helper with optional ownership enforcement."""
         result = await db.execute(
             select(EventRegistration)
             .where(EventRegistration.id == registration_id)
-            .options(selectinload(EventRegistration.event))
+            .options(
+                selectinload(EventRegistration.event),
+                selectinload(EventRegistration.guests),
+            )
         )
         registration = result.scalar_one_or_none()
 
@@ -501,37 +576,41 @@ class EventRegistrationService:
                 detail=f"Registration with ID {registration_id} not found",
             )
 
-        # Check ownership
-        if registration.user_id != current_user.id:
+        if enforce_owner and registration.user_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You can only cancel your own registrations",
             )
 
-        # Check if already cancelled
-        if registration.status == RegistrationStatus.CANCELLED:
+        primary_guest = next(
+            (guest for guest in registration.guests if guest.is_primary),
+            None,
+        )
+        if not primary_guest:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Primary guest record is missing",
+            )
+
+        if primary_guest.status == RegistrationStatus.CANCELLED.value:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Registration is already cancelled",
             )
 
-        # Validate can cancel (before event starts)
-        if registration.event.event_datetime <= datetime.now():
+        event_dt = registration.event.event_datetime
+        if event_dt.tzinfo is None:
+            event_dt = event_dt.replace(tzinfo=UTC)
+        if event_dt <= datetime.now(UTC):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot cancel registration after event has started",
             )
 
-        # Soft delete by setting status to cancelled
-        registration.status = RegistrationStatus.CANCELLED
-
-        # Release bidder numbers for all guests in this registration
-        guests_result = await db.execute(
-            select(RegistrationGuest).where(RegistrationGuest.registration_id == registration_id)
-        )
-        guests = guests_result.scalars().all()
-
-        for guest in guests:
+        for guest in registration.guests:
+            guest.status = RegistrationStatus.CANCELLED.value
+            guest.cancellation_reason = cancellation_reason
+            guest.cancellation_note = cancellation_note
             if guest.bidder_number is not None:
                 await BidderNumberService.handle_registration_cancellation(db, guest.id)
                 logger.info(
@@ -542,7 +621,10 @@ class EventRegistrationService:
         await db.commit()
         await db.refresh(registration)
 
-        logger.info(f"Event registration cancelled: {registration_id} by user {current_user.id}")
+        logger.info(
+            f"Event registration cancelled: {registration_id} by user {current_user.id} "
+            f"reason={cancellation_reason} note={cancellation_note}"
+        )
         return registration
 
     @staticmethod

@@ -5,8 +5,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime as SADateTime
-from sqlalchemy import ForeignKey, Index, Integer, String, UniqueConstraint
+from sqlalchemy import ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -77,27 +76,11 @@ class EventRegistration(Base, UUIDMixin, TimestampMixin):
     )
 
     # Registration Details
-    status: Mapped[RegistrationStatus] = mapped_column(
-        String(20),
-        nullable=False,
-        default=RegistrationStatus.CONFIRMED,
-        index=True,
-    )
-    ticket_type: Mapped[str | None] = mapped_column(
-        String(100),
-        nullable=True,
-        comment="Type of ticket (future use: VIP, General, etc.)",
-    )
     number_of_guests: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
         default=1,
         comment="Number of guests (including registrant)",
-    )
-    check_in_time: Mapped[datetime | None] = mapped_column(
-        SADateTime(timezone=True),
-        nullable=True,
-        comment="When the primary registrant checked in at the event",
     )
 
     # Relationships
@@ -119,7 +102,97 @@ class EventRegistration(Base, UUIDMixin, TimestampMixin):
     )
 
     # Unique Constraints
-    __table_args__ = (
-        UniqueConstraint("user_id", "event_id", name="uq_user_event_registration"),
-        Index("idx_user_event_status", "user_id", "event_id", "status"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "event_id", name="uq_user_event_registration"),)
+
+    def _primary_guest(self) -> "RegistrationGuest | None":
+        for guest in self.guests:
+            if getattr(guest, "is_primary", False):
+                return guest
+        return None
+
+    def _ensure_primary_guest(self, status_value: str | None = None) -> "RegistrationGuest":
+        primary = self._primary_guest()
+        if primary:
+            if status_value is not None:
+                primary.status = status_value
+            return primary
+
+        from app.models.registration_guest import RegistrationGuest
+
+        primary = RegistrationGuest(
+            user_id=self.user_id,
+            name=None,
+            email=None,
+            phone=None,
+            status=status_value or RegistrationStatus.CONFIRMED.value,
+            is_primary=True,
+        )
+        self.guests.append(primary)
+        return primary
+
+    @property
+    def status(self) -> str:
+        primary = self._primary_guest()
+        if primary and primary.status:
+            override = self.__dict__.pop("_status_override", None)
+            if override is not None:
+                primary.status = override
+            return str(primary.status)
+        override = self.__dict__.get("_status_override")
+        if override is not None:
+            return str(override)
+        return RegistrationStatus.CONFIRMED.value
+
+    @status.setter
+    def status(self, value: RegistrationStatus | str) -> None:
+        status_value = value.value if isinstance(value, RegistrationStatus) else str(value)
+        self._ensure_primary_guest(status_value)
+        self.__dict__["_status_override"] = status_value
+
+    @property
+    def cancellation_reason(self) -> str | None:
+        primary = self._primary_guest()
+        if primary:
+            override = self.__dict__.pop("_cancellation_reason_override", None)
+            if override is not None:
+                primary.cancellation_reason = override
+            return primary.cancellation_reason
+        return self.__dict__.get("_cancellation_reason_override")
+
+    @cancellation_reason.setter
+    def cancellation_reason(self, value: str | None) -> None:
+        primary = self._ensure_primary_guest()
+        primary.cancellation_reason = value
+        self.__dict__["_cancellation_reason_override"] = value
+
+    @property
+    def cancellation_note(self) -> str | None:
+        primary = self._primary_guest()
+        if primary:
+            override = self.__dict__.pop("_cancellation_note_override", None)
+            if override is not None:
+                primary.cancellation_note = override
+            return primary.cancellation_note
+        return self.__dict__.get("_cancellation_note_override")
+
+    @cancellation_note.setter
+    def cancellation_note(self, value: str | None) -> None:
+        primary = self._ensure_primary_guest()
+        primary.cancellation_note = value
+        self.__dict__["_cancellation_note_override"] = value
+
+    @property
+    def check_in_time(self) -> datetime | None:
+        primary = self._primary_guest()
+        if primary:
+            override = self.__dict__.pop("_check_in_time_override", None)
+            if override is not None:
+                primary.check_in_time = override
+            return primary.check_in_time
+        return self.__dict__.get("_check_in_time_override")
+
+    @check_in_time.setter
+    def check_in_time(self, value: datetime | None) -> None:
+        primary = self._ensure_primary_guest()
+        primary.check_in_time = value
+        self.__dict__["_check_in_time_override"] = value

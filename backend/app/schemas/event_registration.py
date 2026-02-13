@@ -2,10 +2,27 @@
 
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
 from app.models.event_registration import RegistrationStatus
+
+# ================================
+# Cancel Request Schema
+# ================================
+
+
+class EventRegistrationCancelRequest(BaseModel):
+    """Request schema for cancelling a registration with reason/note."""
+
+    cancellation_reason: Literal["duplicate", "requested", "payment_issue", "other"] = Field(
+        ..., description="Reason for cancellation"
+    )
+    cancellation_note: str | None = Field(
+        default=None, max_length=255, description="Optional cancellation note"
+    )
+
 
 # ================================
 # Request Schemas
@@ -25,11 +42,6 @@ class EventRegistrationCreateRequest(BaseModel):
         ge=1,
         description="Number of guests (including registrant)",
     )
-    ticket_type: str | None = Field(
-        default=None,
-        max_length=100,
-        description="Type of ticket (future use: VIP, General, etc.)",
-    )
 
 
 class EventRegistrationUpdateRequest(BaseModel):
@@ -43,11 +55,6 @@ class EventRegistrationUpdateRequest(BaseModel):
         default=None,
         ge=1,
         description="Updated number of guests",
-    )
-    ticket_type: str | None = Field(
-        default=None,
-        max_length=100,
-        description="Updated ticket type",
     )
     status: RegistrationStatus | None = Field(
         default=None,
@@ -68,11 +75,13 @@ class EventRegistrationResponse(BaseModel):
     event_id: uuid.UUID
     ticket_purchase_id: uuid.UUID | None
     status: RegistrationStatus
-    ticket_type: str | None
     number_of_guests: int
     check_in_time: datetime | None
     created_at: datetime
     updated_at: datetime
+
+    cancellation_reason: str | None
+    cancellation_note: str | None
 
     class Config:
         from_attributes = True

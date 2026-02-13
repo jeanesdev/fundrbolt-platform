@@ -1658,6 +1658,7 @@ async def test_registration(db_session: AsyncSession, test_event: Any, test_dono
     Returns an EventRegistration instance linking test_donor_user to test_event.
     """
     from app.models.event_registration import EventRegistration, RegistrationStatus
+    from app.models.registration_guest import RegistrationGuest
 
     registration = EventRegistration(
         event_id=test_event.id,
@@ -1666,6 +1667,18 @@ async def test_registration(db_session: AsyncSession, test_event: Any, test_dono
         number_of_guests=2,
     )
     db_session.add(registration)
+    await db_session.flush()
+
+    primary_guest = RegistrationGuest(
+        registration_id=registration.id,
+        user_id=test_donor_user.id,
+        name=f"{test_donor_user.first_name} {test_donor_user.last_name}",
+        email=test_donor_user.email,
+        phone=test_donor_user.phone,
+        status=RegistrationStatus.CONFIRMED.value,
+        is_primary=True,
+    )
+    db_session.add(primary_guest)
     await db_session.commit()
     await db_session.refresh(registration)
 

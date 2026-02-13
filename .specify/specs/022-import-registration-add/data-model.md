@@ -5,7 +5,7 @@
 ### Registration Record
 - **Represents**: A single event registration created from an import row.
 - **Key fields**: event_id, registrant_name, registrant_email, registration_date, quantity, external_registration_id
-- **Optional fields**: registrant_phone, bidder_number, table_number, guest_count, guest_of_email, notes, ticket_purchase_id, ticket_purchaser_email, ticket_purchase_date
+- **Optional fields**: registrant_phone, bidder_number, table_number, guest_count, guest_of_email, food_option, notes, ticket_purchase_id, ticket_purchaser_email, ticket_purchase_date
 - **Constraints**:
   - `external_registration_id` must be unique within the selected event
   - Required fields must be present and valid
@@ -30,6 +30,7 @@
 - Guest rows (with `guest_of_email`) must reference a parent registrant in the file or system.
 - Guest emails must be unique per parent registration.
 - Guest rows must not exceed the parent `guest_count` capacity.
+- `food_option` must match a food option for the event when provided.
 - Maximum 5,000 rows per import.
 
 ## State Transitions

@@ -15,12 +15,13 @@ from uuid import UUID
 
 from openpyxl import load_workbook
 from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
 from app.models.base import Base
+from app.models.event import FoodOption
 from app.models.event_registration import EventRegistration, RegistrationStatus
+from app.models.meal_selection import MealSelection
 from app.models.registration_guest import RegistrationGuest
 from app.models.ticket_management import TicketPurchase
 from app.models.user import User
@@ -53,6 +54,7 @@ OPTIONAL_HEADERS = [
     "table_number",
     "guest_count",
     "guest_of_email",
+    "food_option",
     "ticket_purchase_id",
     "ticket_purchaser_email",
     "ticket_purchase_date",
@@ -120,6 +122,7 @@ class RegistrationImportService:
         existing_parent_by_email = await self._fetch_registrations_by_email(
             event_id, guest_parent_emails
         )
+        food_option_name_index, food_option_id_index = await self._fetch_food_option_index(event_id)
 
         # Validate and then create records
         validation_results = await self._validate_rows(event_id, parsed_rows, existing_ids)
@@ -150,6 +153,8 @@ class RegistrationImportService:
                     row=row.data,
                     user_id=user_id,
                     guest_rows=guest_rows,
+                    food_option_name_index=food_option_name_index,
+                    food_option_id_index=food_option_id_index,
                 )
                 if created_registration:
                     created_parent_by_email[parent_email] = created_registration
@@ -196,9 +201,9 @@ class RegistrationImportService:
                 results.append(result)
                 continue
 
-            parent_registration = created_parent_by_email.get(guest_of_email) or existing_parent_by_email.get(
+            parent_registration = created_parent_by_email.get(
                 guest_of_email
-            )
+            ) or existing_parent_by_email.get(guest_of_email)
             if not parent_registration:
                 results.append(
                     ImportRowResult(
@@ -213,7 +218,12 @@ class RegistrationImportService:
                 continue
 
             try:
-                await self._create_guest_registration(parent_registration.id, row.data)
+                await self._create_guest_registration(
+                    parent_registration.id,
+                    row.data,
+                    food_option_name_index,
+                    food_option_id_index,
+                )
                 await self.db.commit()
                 results.append(result)
             except Exception as exc:
@@ -410,6 +420,7 @@ class RegistrationImportService:
         existing_guest_emails_by_registration = await self._fetch_guest_emails_by_registration(
             [registration.id for registration in existing_parent_by_email.values()]
         )
+        food_option_name_index, food_option_id_index = await self._fetch_food_option_index(event_id)
 
         parent_capacity_by_email: dict[str, int] = {}
         for email, parent_row in parent_rows_by_email.items():
@@ -467,7 +478,10 @@ class RegistrationImportService:
                     )
 
             if is_guest_row:
-                if guest_of_email not in parent_rows_by_email and guest_of_email not in existing_parent_by_email:
+                if (
+                    guest_of_email not in parent_rows_by_email
+                    and guest_of_email not in existing_parent_by_email
+                ):
                     issues.append(
                         ValidationIssue(
                             row_number=row.row_number,
@@ -537,6 +551,21 @@ class RegistrationImportService:
                             severity=ValidationIssueSeverity.ERROR,
                             field_name="quantity",
                             message=f"Invalid quantity value: {quantity}",
+                        )
+                    )
+
+            food_option_raw = str(data.get("food_option", "")).strip()
+            if food_option_raw:
+                food_option_id = self._resolve_food_option_from_indexes(
+                    food_option_raw, food_option_name_index, food_option_id_index
+                )
+                if not food_option_id:
+                    issues.append(
+                        ValidationIssue(
+                            row_number=row.row_number,
+                            severity=ValidationIssueSeverity.ERROR,
+                            field_name="food_option",
+                            message=f"Food option not found for event: {food_option_raw}",
                         )
                     )
 
@@ -611,6 +640,8 @@ class RegistrationImportService:
         row: dict[str, Any],
         user_id: UUID,
         guest_rows: list[dict[str, Any]] | None = None,
+        food_option_name_index: dict[str, UUID] | None = None,
+        food_option_id_index: dict[str, UUID] | None = None,
     ) -> EventRegistration | None:
         """Create a registration record from validated row data."""
         registrant_name_raw = str(row.get("registrant_name", "")).strip()
@@ -641,22 +672,10 @@ class RegistrationImportService:
 
         number_of_guests = self._resolve_guest_count(row)
         ticket_purchase_id = await self._resolve_ticket_purchase_id(event_id, row)
-        ticket_type: str | None = None
-        if ticket_purchase_id:
-            purchase_result = await self.db.execute(
-                select(TicketPurchase)
-                .options(selectinload(TicketPurchase.ticket_package))
-                .where(TicketPurchase.id == ticket_purchase_id)
-            )
-            purchase = purchase_result.scalar_one_or_none()
-            if purchase and purchase.ticket_package:
-                ticket_type = purchase.ticket_package.name
 
         registration = EventRegistration(
             user_id=user.id,
             event_id=event_id,
-            status=RegistrationStatus.CONFIRMED,
-            ticket_type=ticket_type,
             number_of_guests=number_of_guests,
             ticket_purchase_id=ticket_purchase_id,
         )
@@ -671,24 +690,40 @@ class RegistrationImportService:
             phone=registrant_phone,
             bidder_number=self._parse_optional_int(row.get("bidder_number")),
             table_number=self._parse_optional_int(row.get("table_number")),
+            status=RegistrationStatus.CONFIRMED.value,
+            is_primary=True,
         )
         self.db.add(primary_guest)
+        await self.db.flush()
+
+        registrant_food_option_id = self._resolve_food_option_from_indexes(
+            str(row.get("food_option", "")).strip(),
+            food_option_name_index or {},
+            food_option_id_index or {},
+        )
+        self._add_meal_selection(registration.id, primary_guest.id, registrant_food_option_id)
 
         explicit_guest_rows = guest_rows or []
         for guest_row in explicit_guest_rows:
             guest_name = str(guest_row.get("registrant_name", "")).strip() or None
             guest_email = str(guest_row.get("registrant_email", "")).strip().lower() or None
             guest_phone = str(guest_row.get("registrant_phone", "")).strip() or None
-            self.db.add(
-                RegistrationGuest(
-                    registration_id=registration.id,
-                    name=guest_name,
-                    email=guest_email,
-                    phone=guest_phone,
-                    bidder_number=self._parse_optional_int(guest_row.get("bidder_number")),
-                    table_number=self._parse_optional_int(guest_row.get("table_number")),
-                )
+            guest = RegistrationGuest(
+                registration_id=registration.id,
+                name=guest_name,
+                email=guest_email,
+                phone=guest_phone,
+                bidder_number=self._parse_optional_int(guest_row.get("bidder_number")),
+                table_number=self._parse_optional_int(guest_row.get("table_number")),
             )
+            self.db.add(guest)
+            await self.db.flush()
+            guest_food_option_id = self._resolve_food_option_from_indexes(
+                str(guest_row.get("food_option", "")).strip(),
+                food_option_name_index or {},
+                food_option_id_index or {},
+            )
+            self._add_meal_selection(registration.id, guest.id, guest_food_option_id)
 
         additional_guest_count = max(number_of_guests - 1 - len(explicit_guest_rows), 0)
         for _ in range(additional_guest_count):
@@ -736,21 +771,31 @@ class RegistrationImportService:
         return user
 
     async def _create_guest_registration(
-        self, registration_id: UUID, row: dict[str, Any]
+        self,
+        registration_id: UUID,
+        row: dict[str, Any],
+        food_option_name_index: dict[str, UUID],
+        food_option_id_index: dict[str, UUID],
     ) -> None:
         guest_name = str(row.get("registrant_name", "")).strip() or None
         guest_email = str(row.get("registrant_email", "")).strip().lower() or None
         guest_phone = str(row.get("registrant_phone", "")).strip() or None
-        self.db.add(
-            RegistrationGuest(
-                registration_id=registration_id,
-                name=guest_name,
-                email=guest_email,
-                phone=guest_phone,
-                bidder_number=self._parse_optional_int(row.get("bidder_number")),
-                table_number=self._parse_optional_int(row.get("table_number")),
-            )
+        guest = RegistrationGuest(
+            registration_id=registration_id,
+            name=guest_name,
+            email=guest_email,
+            phone=guest_phone,
+            bidder_number=self._parse_optional_int(row.get("bidder_number")),
+            table_number=self._parse_optional_int(row.get("table_number")),
         )
+        self.db.add(guest)
+        await self.db.flush()
+        guest_food_option_id = self._resolve_food_option_from_indexes(
+            str(row.get("food_option", "")).strip(),
+            food_option_name_index,
+            food_option_id_index,
+        )
+        self._add_meal_selection(registration_id, guest.id, guest_food_option_id)
 
     async def _resolve_ticket_purchase_id(self, event_id: UUID, row: dict[str, Any]) -> UUID | None:
         raw_purchase_id = str(row.get("ticket_purchase_id", "")).strip()
@@ -758,22 +803,27 @@ class RegistrationImportService:
         purchase_date_raw = row.get("ticket_purchase_date")
 
         if raw_purchase_id:
+            # Try UUID first
             try:
                 purchase_id = UUID(raw_purchase_id)
-            except (ValueError, TypeError) as exc:
-                raise RegistrationImportError(
-                    f"Invalid ticket_purchase_id: {raw_purchase_id}"
-                ) from exc
-
-            purchase_result = await self.db.execute(
-                select(TicketPurchase).where(TicketPurchase.id == purchase_id)
-            )
-            purchase = purchase_result.scalar_one_or_none()
-            if not purchase:
-                raise RegistrationImportError("Ticket purchase not found")
-            if purchase.event_id != event_id:
-                raise RegistrationImportError("Ticket purchase does not match event")
-            return purchase.id
+                purchase_result = await self.db.execute(
+                    select(TicketPurchase).where(TicketPurchase.id == purchase_id)
+                )
+                purchase = purchase_result.scalar_one_or_none()
+                if purchase and purchase.event_id == event_id:
+                    return purchase.id
+            except (ValueError, TypeError):
+                # Not a UUID, try external_sale_id
+                purchase_result = await self.db.execute(
+                    select(TicketPurchase).where(
+                        TicketPurchase.event_id == event_id,
+                        TicketPurchase.external_sale_id == raw_purchase_id,
+                    )
+                )
+                purchase = purchase_result.scalar_one_or_none()
+                if not purchase:
+                    raise RegistrationImportError("Ticket purchase not found")
+                return purchase.id
 
         if purchaser_email or purchase_date_raw not in (None, ""):
             if not purchaser_email or purchase_date_raw in (None, ""):
@@ -828,6 +878,46 @@ class RegistrationImportService:
         except (TypeError, ValueError):
             return None
 
+    def _add_meal_selection(
+        self,
+        registration_id: UUID,
+        guest_id: UUID | None,
+        food_option_id: UUID | None,
+    ) -> None:
+        if not food_option_id:
+            return
+
+        self.db.add(
+            MealSelection(
+                registration_id=registration_id,
+                guest_id=guest_id,
+                food_option_id=food_option_id,
+            )
+        )
+
+    async def _fetch_food_option_index(
+        self, event_id: UUID
+    ) -> tuple[dict[str, UUID], dict[str, UUID]]:
+        result = await self.db.execute(select(FoodOption).where(FoodOption.event_id == event_id))
+        options = result.scalars().all()
+        name_index = {option.name.lower(): option.id for option in options if option.name}
+        id_index = {str(option.id): option.id for option in options}
+        return name_index, id_index
+
+    def _resolve_food_option_from_indexes(
+        self,
+        raw_value: str,
+        name_index: dict[str, UUID],
+        id_index: dict[str, UUID],
+    ) -> UUID | None:
+        if not raw_value:
+            return None
+
+        if raw_value in id_index:
+            return id_index[raw_value]
+
+        return name_index.get(raw_value.lower())
+
     def _normalize_email(self, value: Any) -> str:
         return str(value or "").strip().lower()
 
@@ -848,11 +938,7 @@ class RegistrationImportService:
             .where(func.lower(User.email).in_(normalized))
         )
 
-        return {
-            row[1].lower(): row[0]
-            for row in result.all()
-            if row[1]
-        }
+        return {row[1].lower(): row[0] for row in result.all() if row[1]}
 
     async def _fetch_guest_emails_by_registration(
         self, registration_ids: list[UUID]
@@ -887,44 +973,54 @@ class RegistrationImportService:
         purchase_date_raw = data.get("ticket_purchase_date")
 
         if raw_purchase_id:
+            # Try UUID first
             try:
                 purchase_id = UUID(raw_purchase_id)
+                purchase_result = await self.db.execute(
+                    select(TicketPurchase).where(TicketPurchase.id == purchase_id)
+                )
+                purchase = purchase_result.scalar_one_or_none()
+                if not purchase:
+                    issues.append(
+                        ValidationIssue(
+                            row_number=row_number,
+                            severity=ValidationIssueSeverity.ERROR,
+                            field_name="ticket_purchase_id",
+                            message="Ticket purchase not found",
+                        )
+                    )
+                    return
+                if purchase.event_id != event_id:
+                    issues.append(
+                        ValidationIssue(
+                            row_number=row_number,
+                            severity=ValidationIssueSeverity.ERROR,
+                            field_name="ticket_purchase_id",
+                            message="Ticket purchase does not match event",
+                        )
+                    )
+                return
             except (ValueError, TypeError):
-                issues.append(
-                    ValidationIssue(
-                        row_number=row_number,
-                        severity=ValidationIssueSeverity.ERROR,
-                        field_name="ticket_purchase_id",
-                        message=f"Invalid ticket_purchase_id: {raw_purchase_id}",
+                # Not a UUID, try external_sale_id
+                purchase_result = await self.db.execute(
+                    select(TicketPurchase).where(
+                        TicketPurchase.event_id == event_id,
+                        TicketPurchase.external_sale_id == raw_purchase_id,
                     )
                 )
+                purchase = purchase_result.scalar_one_or_none()
+                if not purchase:
+                    issues.append(
+                        ValidationIssue(
+                            row_number=row_number,
+                            severity=ValidationIssueSeverity.ERROR,
+                            field_name="ticket_purchase_id",
+                            message=f"Ticket purchase not found for external_sale_id: {raw_purchase_id}",
+                        )
+                    )
+                    return
+                # Success, no error to add
                 return
-
-            purchase_result = await self.db.execute(
-                select(TicketPurchase).where(TicketPurchase.id == purchase_id)
-            )
-            purchase = purchase_result.scalar_one_or_none()
-            if not purchase:
-                issues.append(
-                    ValidationIssue(
-                        row_number=row_number,
-                        severity=ValidationIssueSeverity.ERROR,
-                        field_name="ticket_purchase_id",
-                        message="Ticket purchase not found",
-                    )
-                )
-                return
-
-            if purchase.event_id != event_id:
-                issues.append(
-                    ValidationIssue(
-                        row_number=row_number,
-                        severity=ValidationIssueSeverity.ERROR,
-                        field_name="ticket_purchase_id",
-                        message="Ticket purchase does not match event",
-                    )
-                )
-            return
 
         if purchaser_email or purchase_date_raw is not None:
             if not purchaser_email or purchase_date_raw in (None, ""):

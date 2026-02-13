@@ -5,16 +5,6 @@
  * CSV export, and guest invitation features.
  */
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -32,11 +22,15 @@ import {
   getEventAttendees,
   sendGuestInvitation,
 } from '@/lib/api/admin-attendees'
+import { cancelRegistration } from '@/lib/api/cancel-registration'
+import { getErrorMessage } from '@/lib/error-utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Download, Hash, Loader2, Mail, PenLine, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { AssignBidderNumberDialog } from './AssignBidderNumberDialog'
+import { CancelAttendeesDialog, type CancelAttendeesPayload } from './CancelAttendeesDialog'
+import { CancelRegistrationDialog } from './CancelRegistrationDialog'
 
 interface AttendeeListTableProps {
   eventId: string
@@ -55,12 +49,28 @@ export function AttendeeListTable({
     id: string
     name: string
   } | null>(null)
+  const [bulkCancelDialogOpen, setBulkCancelDialogOpen] = useState(false)
+  const [bulkCancelPending, setBulkCancelPending] = useState(false)
   const [bidderNumberDialogOpen, setBidderNumberDialogOpen] = useState(false)
   const [attendeeForBidderNumber, setAttendeeForBidderNumber] = useState<{
     id: string
     name: string
     bidder_number?: number | null
   } | null>(null)
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [registrantToCancel, setRegistrantToCancel] = useState<{
+    registration_id: string
+    name: string
+  } | null>(null)
+  // Cancel registration handler
+  const handleCancelRegistrationClick = (registrationId: string, registrantName: string) => {
+    setRegistrantToCancel({ registration_id: registrationId, name: registrantName })
+    setCancelDialogOpen(true)
+  }
+  const handleCancelRegistrationComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ['event-attendees', eventId] })
+    setRegistrantToCancel(null)
+  }
   const queryClient = useQueryClient()
 
   // Fetch attendees
@@ -89,7 +99,8 @@ export function AttendeeListTable({
 
   // Delete guest mutation
   const deleteGuestMutation = useMutation({
-    mutationFn: deleteGuest,
+    mutationFn: ({ guestId, payload }: { guestId: string; payload: CancelAttendeesPayload }) =>
+      deleteGuest(guestId, payload),
     onSuccess: () => {
       toast.success('Guest deleted successfully')
       queryClient.invalidateQueries({ queryKey: ['event-attendees', eventId] })
@@ -142,9 +153,57 @@ export function AttendeeListTable({
     setAttendeeForBidderNumber(null)
   }
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = (payload: CancelAttendeesPayload) => {
     if (guestToDelete) {
-      deleteGuestMutation.mutate(guestToDelete.id)
+      deleteGuestMutation.mutate({ guestId: guestToDelete.id, payload })
+    }
+  }
+
+  const handleBulkCancelConfirm = async (payload: CancelAttendeesPayload) => {
+    const selected = attendees.filter((attendee) => selectedAttendees.has(attendee.id))
+    if (selected.length === 0) {
+      toast.error('No attendees selected')
+      return
+    }
+
+    const toastId = toast.loading(`Cancelling ${selected.length} attendee(s)...`)
+    setBulkCancelPending(true)
+    try {
+      const results = await Promise.allSettled(
+        selected.map((attendee) => {
+          const isCancelled =
+            attendee.status === 'cancelled' || attendee.status === 'canceled'
+          if (isCancelled) {
+            return Promise.resolve()
+          }
+          if (attendee.attendee_type === 'registrant') {
+            return cancelRegistration(attendee.registration_id, payload)
+          }
+          return deleteGuest(attendee.id, payload)
+        })
+      )
+
+      const failures = results.filter((r) => r.status === 'rejected')
+      if (failures.length > 0) {
+        const failureMessages = failures
+          .map((failure) =>
+            getErrorMessage((failure as PromiseRejectedResult).reason, 'Cancel failed')
+          )
+          .slice(0, 3)
+        const detail = failureMessages.length > 0 ? `: ${failureMessages.join(' • ')}` : ''
+        toast.error(`Failed to cancel ${failures.length} attendee(s)${detail}`, { id: toastId })
+      } else {
+        toast.success(`Cancelled ${selected.length} attendee(s)`, { id: toastId })
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['event-attendees', eventId] })
+      queryClient.invalidateQueries({ queryKey: ['meal-summary', eventId] })
+      setSelectedAttendees(new Set())
+      setBulkCancelDialogOpen(false)
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to cancel selected attendees'), { id: toastId })
+    } finally {
+      setBulkCancelPending(false)
     }
   }
 
@@ -189,27 +248,41 @@ export function AttendeeListTable({
 
   const attendees = data?.attendees || []
   const totalAttendees = data?.total || 0
+  const activeAttendees = attendees.filter(
+    (attendee) => attendee.status !== 'cancelled' && attendee.status !== 'canceled'
+  ).length
 
   return (
     <div className='space-y-4'>
       {/* Toolbar */}
       <div className='flex items-center justify-between'>
         <div className='text-sm text-muted-foreground'>
-          {totalAttendees} total attendees
+          {totalAttendees} total attendees • {activeAttendees} active
           {selectedAttendees.size > 0 && (
             <span className='ml-2'>
               ({selectedAttendees.size} selected)
             </span>
           )}
         </div>
-        <Button
-          variant='outline'
-          size='sm'
-          onClick={handleExportCSV}
-        >
-          <Download className='mr-2 h-4 w-4' />
-          Export CSV
-        </Button>
+        <div className='flex items-center gap-2'>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => setBulkCancelDialogOpen(true)}
+            disabled={selectedAttendees.size === 0}
+          >
+            <Trash2 className='mr-2 h-4 w-4 text-destructive' />
+            Cancel Selected
+          </Button>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={handleExportCSV}
+          >
+            <Download className='mr-2 h-4 w-4' />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {/* Table */}
@@ -250,151 +323,156 @@ export function AttendeeListTable({
                 </TableCell>
               </TableRow>
             ) : (
-              attendees.map((attendee) => (
-                <TableRow key={attendee.id}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedAttendees.has(attendee.id)}
-                      onCheckedChange={() => toggleSelection(attendee.id)}
-                    />
-                  </TableCell>
-                  <TableCell className='font-medium'>
-                    {attendee.name}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        attendee.attendee_type === 'registrant'
-                          ? 'default'
-                          : 'secondary'
-                      }
-                    >
-                      {attendee.attendee_type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className='flex items-center gap-2'>
-                      {attendee.bidder_number ? (
-                        <Badge
-                          variant='outline'
-                          className='bg-amber-50 text-amber-700 border-amber-200 font-mono font-semibold'
-                        >
-                          <Hash className='mr-1 h-3 w-3' />
-                          {attendee.bidder_number}
-                        </Badge>
-                      ) : (
-                        <span className='text-muted-foreground'>—</span>
-                      )}
-                      <Button
-                        variant='ghost'
-                        size='sm'
-                        className='h-6 w-6 p-0'
-                        onClick={() =>
-                          handleAssignBidderNumber(
-                            attendee.id,
-                            attendee.name,
-                            attendee.bidder_number
-                          )
-                        }
-                        title={
-                          attendee.bidder_number
-                            ? 'Reassign bidder number'
-                            : 'Assign bidder number'
+              attendees.map((attendee) => {
+                const isCancelled =
+                  attendee.status === 'cancelled' || attendee.status === 'canceled'
+                return (
+                  <TableRow key={attendee.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedAttendees.has(attendee.id)}
+                        onCheckedChange={() => toggleSelection(attendee.id)}
+                      />
+                    </TableCell>
+                    <TableCell className='font-medium'>
+                      {attendee.name}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          attendee.attendee_type === 'registrant'
+                            ? 'default'
+                            : 'secondary'
                         }
                       >
-                        <PenLine className='h-3 w-3' />
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell className='max-w-[200px] truncate'>
-                    {attendee.email || '—'}
-                  </TableCell>
-                  <TableCell>{attendee.phone || '—'}</TableCell>
-                  {includeMealSelections && (
-                    <TableCell className='max-w-[150px] truncate'>
-                      {attendee.meal_selection || '—'}
+                        {attendee.attendee_type}
+                      </Badge>
                     </TableCell>
-                  )}
-                  <TableCell>{attendee.guest_of || '—'}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        attendee.status === 'confirmed' ? 'default' : 'outline'
-                      }
-                    >
-                      {attendee.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className='text-right'>
-                    <div className='flex items-center justify-end gap-2'>
-                      {attendee.attendee_type === 'guest' && attendee.email && (
+                    <TableCell>
+                      <div className='flex items-center gap-2'>
+                        {attendee.bidder_number ? (
+                          <Badge
+                            variant='outline'
+                            className='bg-amber-50 text-amber-700 border-amber-200 font-mono font-semibold'
+                          >
+                            <Hash className='mr-1 h-3 w-3' />
+                            {attendee.bidder_number}
+                          </Badge>
+                        ) : (
+                          <span className='text-muted-foreground'>—</span>
+                        )}
                         <Button
                           variant='ghost'
                           size='sm'
-                          onClick={() => handleSendInvitation(attendee.id)}
-                          disabled={sendInvitationMutation.isPending}
+                          className='h-6 w-6 p-0'
+                          onClick={() =>
+                            handleAssignBidderNumber(
+                              attendee.id,
+                              attendee.name,
+                              attendee.bidder_number
+                            )
+                          }
+                          title={
+                            attendee.bidder_number
+                              ? 'Reassign bidder number'
+                              : 'Assign bidder number'
+                          }
                         >
-                          {sendInvitationMutation.isPending &&
-                            sendInvitationMutation.variables === attendee.id ? (
-                            <Loader2 className='h-4 w-4 animate-spin' />
-                          ) : (
-                            <>
-                              <Mail className='mr-2 h-4 w-4' />
-                              Send Invite
-                            </>
-                          )}
+                          <PenLine className='h-3 w-3' />
                         </Button>
-                      )}
-                      {attendee.attendee_type === 'guest' && (
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          onClick={() => handleDeleteClick(attendee.id, attendee.name)}
-                          disabled={deleteGuestMutation.isPending}
-                        >
-                          <Trash2 className='h-4 w-4 text-destructive' />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                      </div>
+                    </TableCell>
+                    <TableCell className='max-w-[200px] truncate'>
+                      {attendee.email || '—'}
+                    </TableCell>
+                    <TableCell>{attendee.phone || '—'}</TableCell>
+                    {includeMealSelections && (
+                      <TableCell className='max-w-[150px] truncate'>
+                        {attendee.meal_selection || '—'}
+                      </TableCell>
+                    )}
+                    <TableCell>{attendee.guest_of || '—'}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          attendee.status === 'confirmed' ? 'default' : 'outline'
+                        }
+                      >
+                        {attendee.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className='text-right'>
+                      <div className='flex items-center justify-end gap-2'>
+                        {attendee.attendee_type === 'guest' && attendee.email && (
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            onClick={() => handleSendInvitation(attendee.id)}
+                            disabled={sendInvitationMutation.isPending}
+                          >
+                            {sendInvitationMutation.isPending &&
+                              sendInvitationMutation.variables === attendee.id ? (
+                              <Loader2 className='h-4 w-4 animate-spin' />
+                            ) : (
+                              <>
+                                <Mail className='mr-2 h-4 w-4' />
+                                Send Invite
+                              </>
+                            )}
+                          </Button>
+                        )}
+                        {attendee.attendee_type === 'guest' && (
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            onClick={() => handleDeleteClick(attendee.id, attendee.name)}
+                            disabled={deleteGuestMutation.isPending || isCancelled}
+                            aria-label={isCancelled ? 'Guest cancelled' : 'Cancel guest'}
+                          >
+                            <Trash2 className='mr-2 h-4 w-4 text-destructive' />
+                            {isCancelled ? 'Cancelled' : 'Cancel'}
+                          </Button>
+                        )}
+                        {attendee.attendee_type === 'registrant' && (
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            onClick={() => handleCancelRegistrationClick(attendee.registration_id, attendee.name)}
+                            disabled={isCancelled}
+                            aria-label={isCancelled ? 'Registration cancelled' : 'Cancel registration'}
+                          >
+                            <Trash2 className='mr-2 h-4 w-4 text-destructive' />
+                            {isCancelled ? 'Cancelled' : 'Cancel'}
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>
       </div>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Guest</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete <strong>{guestToDelete?.name}</strong>?
-              This will also remove their meal selections. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteGuestMutation.isPending}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              disabled={deleteGuestMutation.isPending}
-              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-            >
-              {deleteGuestMutation.isPending ? (
-                <>
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                  Deleting...
-                </>
-              ) : (
-                'Delete Guest'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Cancel Guest Dialog */}
+      {guestToDelete && (
+        <CancelAttendeesDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          title="Cancel Guest"
+          description={
+            <>
+              Are you sure you want to cancel <strong>{guestToDelete.name}</strong>?
+              <br />
+              This will also remove their meal selections.
+            </>
+          }
+          confirmLabel={deleteGuestMutation.isPending ? 'Cancelling...' : 'Cancel Guest'}
+          isPending={deleteGuestMutation.isPending}
+          onConfirm={handleDeleteConfirm}
+        />
+      )}
 
       {/* Bidder Number Assignment Dialog */}
       {attendeeForBidderNumber && (
@@ -408,6 +486,28 @@ export function AttendeeListTable({
           onAssignmentComplete={handleBidderNumberAssignmentComplete}
         />
       )}
+      {/* Cancel Registration Dialog */}
+      {registrantToCancel && (
+        <CancelRegistrationDialog
+          open={cancelDialogOpen}
+          onOpenChange={setCancelDialogOpen}
+          registrationId={registrantToCancel.registration_id}
+          registrantName={registrantToCancel.name}
+          onCancelComplete={handleCancelRegistrationComplete}
+        />
+      )}
+      {/* Bulk Cancel Dialog */}
+      <CancelAttendeesDialog
+        open={bulkCancelDialogOpen}
+        onOpenChange={setBulkCancelDialogOpen}
+        title="Cancel Selected Attendees"
+        description={
+          <>This will cancel {selectedAttendees.size} selected attendees.</>
+        }
+        confirmLabel={bulkCancelPending ? 'Cancelling...' : 'Cancel Selected'}
+        isPending={bulkCancelPending}
+        onConfirm={handleBulkCancelConfirm}
+      />
     </div>
   )
 }

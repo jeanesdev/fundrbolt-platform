@@ -25,6 +25,22 @@ from app.services.registration_import_service import (
 router = APIRouter(prefix="/admin/events", tags=["admin-registrations-import"])
 
 
+def _get_user_id(current_user: User) -> UUID:
+    """Get user id without triggering lazy loads."""
+    user_id = current_user.__dict__.get("id")
+    if isinstance(user_id, UUID):
+        return user_id
+    identity = getattr(current_user, "_sa_instance_state", None)
+    if identity and identity.identity:
+        identity_id = identity.identity[0]
+        if isinstance(identity_id, UUID):
+            return identity_id
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Unable to resolve current user id",
+    )
+
+
 def _require_event_admin(current_user: User, event: Event) -> None:
     """Require event admin permissions."""
     if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:  # type: ignore[attr-defined]
@@ -80,10 +96,11 @@ async def preflight_import(
         service = RegistrationImportService(db)
         report = await service.preflight(event_id, file_bytes, file.filename)
 
+        current_user_id = _get_user_id(current_user)
         await AuditService.log_registration_import(
             db=db,
             event_id=event_id,
-            initiated_by_user_id=current_user.id,
+            initiated_by_user_id=current_user_id,
             stage="preflight",
             total_rows=report.total_rows,
             created_count=0,
@@ -132,12 +149,13 @@ async def commit_import(
     try:
         file_bytes = await file.read()
         service = RegistrationImportService(db)
-        report = await service.commit(event_id, file_bytes, file.filename, current_user.id)
+        current_user_id = _get_user_id(current_user)
+        report = await service.commit(event_id, file_bytes, file.filename, current_user_id)
 
         await AuditService.log_registration_import(
             db=db,
             event_id=event_id,
-            initiated_by_user_id=current_user.id,
+            initiated_by_user_id=current_user_id,
             stage="commit",
             total_rows=report.total_rows,
             created_count=report.created_count,

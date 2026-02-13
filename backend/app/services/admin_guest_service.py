@@ -7,7 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -81,47 +81,85 @@ class AdminGuestService:
                 )
                 continue
 
-            # Add registrant as first attendee
-            registrant_meal = None
-            if include_meal_selections:
-                # Find registrant's meal (guest_id is NULL)
-                for meal in registration.meal_selections:
-                    if meal.guest_id is None:
-                        if meal.food_option is None:
-                            continue
-                        registrant_meal = {
-                            "food_option_name": meal.food_option.name,
-                            "food_option_description": meal.food_option.description,
-                        }
-                        break
+            primary_guest = next(
+                (guest for guest in registration.guests if guest.is_primary),
+                None,
+            )
 
-            attendee = {
-                "id": str(registration.id),
-                "registration_id": str(registration.id),
-                "attendee_type": "registrant",
-                "name": f"{registration.user.first_name} {registration.user.last_name}",
-                "email": registration.user.email,
-                "phone": registration.user.phone or "",
-                "number_of_guests": registration.number_of_guests,
-                "ticket_type": registration.ticket_type or "",
-                "status": registration.status.value
-                if hasattr(registration.status, "value")
-                else str(registration.status),
-                "created_at": registration.created_at.isoformat(),
-            }
+            if primary_guest:
+                registrant_meal = None
+                if include_meal_selections:
+                    for meal in registration.meal_selections:
+                        if meal.guest_id == primary_guest.id or meal.guest_id is None:
+                            if meal.food_option is None:
+                                continue
+                            registrant_meal = {
+                                "food_option_name": meal.food_option.name,
+                                "food_option_description": meal.food_option.description,
+                            }
+                            break
 
-            if include_meal_selections:
-                attendee["meal_selection"] = (
-                    registrant_meal["food_option_name"] if registrant_meal else None
-                )
-                attendee["meal_description"] = (
-                    registrant_meal["food_option_description"] if registrant_meal else None
-                )
+                attendee = {
+                    "id": str(primary_guest.id),
+                    "registration_id": str(registration.id),
+                    "attendee_type": "registrant",
+                    "name": primary_guest.name
+                    or f"{registration.user.first_name} {registration.user.last_name}",
+                    "email": primary_guest.email or registration.user.email,
+                    "phone": primary_guest.phone or (registration.user.phone or ""),
+                    "number_of_guests": registration.number_of_guests,
+                    "status": primary_guest.status,
+                    "created_at": primary_guest.created_at.isoformat(),
+                }
 
-            attendees.append(attendee)
+                if include_meal_selections:
+                    attendee["meal_selection"] = (
+                        registrant_meal["food_option_name"] if registrant_meal else None
+                    )
+                    attendee["meal_description"] = (
+                        registrant_meal["food_option_description"] if registrant_meal else None
+                    )
+
+                attendees.append(attendee)
+            else:
+                registrant_meal = None
+                if include_meal_selections:
+                    for meal in registration.meal_selections:
+                        if meal.guest_id is None:
+                            if meal.food_option is None:
+                                continue
+                            registrant_meal = {
+                                "food_option_name": meal.food_option.name,
+                                "food_option_description": meal.food_option.description,
+                            }
+                            break
+
+                attendee = {
+                    "id": str(registration.id),
+                    "registration_id": str(registration.id),
+                    "attendee_type": "registrant",
+                    "name": f"{registration.user.first_name} {registration.user.last_name}",
+                    "email": registration.user.email,
+                    "phone": registration.user.phone or "",
+                    "number_of_guests": registration.number_of_guests,
+                    "status": registration.status,
+                    "created_at": registration.created_at.isoformat(),
+                }
+
+                if include_meal_selections:
+                    attendee["meal_selection"] = (
+                        registrant_meal["food_option_name"] if registrant_meal else None
+                    )
+                    attendee["meal_description"] = (
+                        registrant_meal["food_option_description"] if registrant_meal else None
+                    )
+
+                attendees.append(attendee)
 
             # Add guests
             for guest in registration.guests:
+                if guest.is_primary:
+                    continue
                 guest_meal = None
                 if include_meal_selections:
                     # Find guest's meal
@@ -143,7 +181,7 @@ class AdminGuestService:
                     "email": guest.email or "",
                     "phone": guest.phone or "",
                     "guest_of": f"{registration.user.first_name} {registration.user.last_name}",
-                    "status": "confirmed",
+                    "status": guest.status or "confirmed",
                 }
 
                 if include_meal_selections:
@@ -191,7 +229,6 @@ class AdminGuestService:
                 "phone",
                 "attendee_type",
                 "guest_of",
-                "ticket_type",
                 "meal_selection",
                 "status",
                 "created_at",
@@ -203,7 +240,6 @@ class AdminGuestService:
                 "phone",
                 "attendee_type",
                 "guest_of",
-                "ticket_type",
                 "status",
                 "created_at",
             ]
@@ -246,28 +282,62 @@ class AdminGuestService:
                 detail=f"Event with ID {event_id} not found",
             )
 
-        # Get all registrations count
-        registrations_result = await db.execute(
-            select(func.count(EventRegistration.id)).where(EventRegistration.event_id == event_id)
-        )
-        total_registrations = registrations_result.scalar() or 0
-
-        # Initialize meal counts with all food options (even if count is 0)
-        meal_counts: dict[str, dict[str, Any]] = {}
-        for food_option in event.food_options:
-            meal_counts[food_option.name] = {
+        meal_counts = {
+            food_option.name: {
                 "food_option_id": str(food_option.id),
                 "name": food_option.name,
                 "description": food_option.description,
                 "count": 0,
             }
+            for food_option in event.food_options
+        }
+
+        # Get total registration count (primary guests)
+        registrations_result = await db.execute(
+            select(func.count(RegistrationGuest.id))
+            .join(EventRegistration)
+            .where(
+                EventRegistration.event_id == event_id,
+                RegistrationGuest.is_primary.is_(True),
+            )
+        )
+        total_registrations: int = int(registrations_result.scalar_one() or 0)
+
+        # Active attendees exclude cancelled guests
+        active_registrations_result = await db.execute(
+            select(func.count(RegistrationGuest.id))
+            .join(EventRegistration)
+            .where(
+                EventRegistration.event_id == event_id,
+                RegistrationGuest.is_primary.is_(True),
+                RegistrationGuest.status != "cancelled",
+            )
+        )
+        active_registrations: int = int(active_registrations_result.scalar_one() or 0)
+
+        active_guests_result = await db.execute(
+            select(func.count(RegistrationGuest.id))
+            .join(EventRegistration)
+            .where(
+                EventRegistration.event_id == event_id,
+                RegistrationGuest.is_primary.is_(False),
+                RegistrationGuest.status != "cancelled",
+            )
+        )
+        active_guests: int = int(active_guests_result.scalar_one() or 0)
+
+        total_active_attendees = active_registrations + active_guests
 
         # Get all meal selections for this event and increment counts
         meal_selections_result = await db.execute(
             select(MealSelection, FoodOption)
             .join(EventRegistration, MealSelection.registration_id == EventRegistration.id)
             .join(FoodOption, MealSelection.food_option_id == FoodOption.id)
-            .where(EventRegistration.event_id == event_id)
+            .join(RegistrationGuest, MealSelection.guest_id == RegistrationGuest.id)
+            .where(
+                EventRegistration.event_id == event_id,
+                RegistrationGuest.status != "cancelled",
+            )
         )
         meal_selections = meal_selections_result.all()
 
@@ -275,25 +345,32 @@ class AdminGuestService:
         for _meal_selection, food_option in meal_selections:
             option_name = food_option.name
             if option_name in meal_counts:
-                meal_counts[option_name]["count"] += 1
+                current_count = int(meal_counts[option_name]["count"] or 0)
+                meal_counts[option_name]["count"] = current_count + 1
 
-        # Calculate total attendees (registrants + guests)
+        # Calculate total attendees (primary + guests)
         guests_result = await db.execute(
             select(func.count(RegistrationGuest.id))
             .join(EventRegistration)
-            .where(EventRegistration.event_id == event_id)
+            .where(
+                EventRegistration.event_id == event_id,
+                RegistrationGuest.is_primary.is_(False),
+            )
         )
-        total_guests = guests_result.scalar() or 0
+        total_guests: int = int(guests_result.scalar_one() or 0)
         total_attendees = total_registrations + total_guests
 
         # Calculate total meal selections
-        total_meal_selections = sum(m["count"] for m in meal_counts.values())
+        total_meal_selections = 0
+        for meal in meal_counts.values():
+            total_meal_selections += int(meal["count"] or 0)
 
         return {
             "event_id": str(event_id),
             "event_name": event.name,
             "total_registrations": total_registrations,
             "total_attendees": total_attendees,
+            "total_active_attendees": total_active_attendees,
             "total_meal_selections": total_meal_selections,
             "meal_counts": list(meal_counts.values()),
         }
@@ -472,13 +549,9 @@ class AdminGuestService:
 
         if not admin_registration:
             # Create a new admin registration
-            from app.models.event_registration import RegistrationStatus
-
             admin_registration = EventRegistration(
                 user_id=invited_by_user.id,
                 event_id=event_id,
-                status=RegistrationStatus.PENDING,  # Pending until guest confirms
-                ticket_type="admin_invite",
                 number_of_guests=1,
             )
             db.add(admin_registration)
@@ -487,6 +560,14 @@ class AdminGuestService:
             # Update guest count
             admin_registration.number_of_guests = (admin_registration.number_of_guests or 0) + 1
 
+        existing_primary_result = await db.execute(
+            select(RegistrationGuest)
+            .where(RegistrationGuest.registration_id == admin_registration.id)
+            .where(RegistrationGuest.is_primary.is_(True))
+            .limit(1)
+        )
+        has_primary = existing_primary_result.scalar_one_or_none() is not None
+
         # Create the guest record
         guest = RegistrationGuest(
             registration_id=admin_registration.id,
@@ -494,6 +575,7 @@ class AdminGuestService:
             email=guest_data.get("email"),
             phone=guest_data.get("phone"),
             invited_by_admin=True,
+            is_primary=not has_primary,
         )
         db.add(guest)
         await db.commit()
@@ -620,13 +702,17 @@ class AdminGuestService:
     async def delete_guest(
         db: AsyncSession,
         guest_id: UUID,
+        cancellation_reason: str | None = None,
+        cancellation_note: str | None = None,
     ) -> None:
         """
-        Delete a guest and their meal selections.
+        Cancel (soft delete) a guest and remove their meal selections.
 
         Args:
             db: Database session
             guest_id: Guest UUID
+            cancellation_reason: Optional cancellation reason
+            cancellation_note: Optional cancellation note
 
         Raises:
             HTTPException: If guest not found
@@ -649,8 +735,17 @@ class AdminGuestService:
             await BidderNumberService.handle_registration_cancellation(db, guest_id)
             logger.info(f"Released bidder number {bidder_number} for deleted guest {guest_id}")
 
-        # Delete guest (meal selections will cascade)
-        await db.delete(guest)
+        # Remove guest meal selections
+        await db.execute(delete(MealSelection).where(MealSelection.guest_id == guest.id))
+
+        # Soft cancel guest
+        guest.status = "cancelled"
+        guest.cancellation_reason = cancellation_reason
+        guest.cancellation_note = cancellation_note
+
         await db.commit()
 
-        logger.info(f"Deleted guest {guest_id} ({guest.name})")
+        logger.info(
+            f"Cancelled guest {guest_id} ({guest.name}) reason={cancellation_reason} "
+            f"note={cancellation_note}"
+        )

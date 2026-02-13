@@ -66,6 +66,11 @@ class RegistrationGuestResponse(BaseModel):
     invited_by_admin: bool
     invitation_sent_at: datetime | None
     checked_in: bool
+    check_in_time: datetime | None
+    status: str
+    cancellation_reason: str | None
+    cancellation_note: str | None
+    is_primary: bool
     created_at: datetime
     updated_at: datetime
 

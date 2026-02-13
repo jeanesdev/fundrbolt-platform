@@ -16,13 +16,11 @@ export interface EventRegistrationCreateRequest {
   event_id: string
   ticket_purchase_id?: string | null
   number_of_guests: number
-  ticket_type?: string | null
 }
 
 export interface EventRegistrationUpdateRequest {
   ticket_purchase_id?: string | null
   number_of_guests?: number
-  ticket_type?: string | null
   status?: 'pending' | 'confirmed' | 'cancelled' | 'waitlisted'
 }
 
@@ -32,7 +30,6 @@ export interface EventRegistrationResponse {
   event_id: string
   ticket_purchase_id: string | null
   status: 'pending' | 'confirmed' | 'cancelled' | 'waitlisted'
-  ticket_type: string | null
   number_of_guests: number
   created_at: string
   updated_at: string

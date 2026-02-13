@@ -8,9 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getErrorMessage } from '@/lib/error-utils'
 import { registrationImportService } from '@/services/registration-import-service'
 import type {
@@ -18,7 +18,7 @@ import type {
   RegistrationImportReport,
   ValidationIssueSeverity,
 } from '@/types/registrationImport'
-import { AlertCircle, CheckCircle2, FileText, Loader2, Upload, XCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Download, FileText, Loader2, Upload, XCircle } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -54,6 +54,14 @@ const severityIcon = (severity: ValidationIssueSeverity) => {
 }
 
 function ReportRow({ row }: { row: ImportRowResult }) {
+  // Suppress warnings for event_id and ticket_purchase_id
+  const filteredIssues = (row.issues || []).filter(
+    (issue) =>
+      !(
+        issue.severity === 'warning' &&
+        (issue.field_name === 'event_id' || issue.field_name === 'ticket_purchase_id')
+      )
+  )
   return (
     <div className="flex flex-col gap-2 border-b border-border pb-3">
       <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -66,9 +74,9 @@ function ReportRow({ row }: { row: ImportRowResult }) {
         <Badge variant={statusVariant(row.status)}>{row.status}</Badge>
       </div>
       <p className="text-sm">{row.message}</p>
-      {row.issues && row.issues.length > 0 && (
+      {filteredIssues.length > 0 && (
         <div className="ml-4 space-y-1">
-          {row.issues.map((issue, idx) => (
+          {filteredIssues.map((issue, idx) => (
             <div key={idx} className="flex items-start gap-2 text-xs">
               {severityIcon(issue.severity)}
               <span className="text-muted-foreground">
@@ -83,77 +91,48 @@ function ReportRow({ row }: { row: ImportRowResult }) {
   )
 }
 
-function ExampleFormats() {
-  const jsonExample = {
-    event_id: 'EVT-2026-001',
-    registrant_name: 'Jordan Lee',
-    registrant_email: 'jordan.lee@example.org',
-    registration_date: '2026-02-01',
-    quantity: 2,
-    external_registration_id: 'REG-100045',
-    registrant_phone: '555-123-4567',
-    bidder_number: 42,
-    table_number: 8,
-    guest_count: 2,
-    notes: 'Sponsor package',
-    ticket_purchase_id: '1b2c3d4e-0000-1111-2222-333344445555',
-    ticket_purchaser_email: 'jordan.lee@example.org',
-    ticket_purchase_date: '2026-01-20',
-  }
+const EXAMPLE_JSON = JSON.stringify(
+  [
+    {
+      event_id: 'EVT-2026-001',
+      registrant_name: 'Jordan Lee',
+      registrant_email: 'jordan.lee@example.org',
+      registration_date: '2026-02-01',
+      quantity: 2,
+      external_registration_id: 'REG-100045',
+      registrant_phone: '555-123-4567',
+      bidder_number: 42,
+      table_number: 8,
+      guest_count: 2,
+      food_option: 'Vegetarian',
+      notes: 'Sponsor package',
+      ticket_purchase_id: '1b2c3d4e-0000-1111-2222-333344445555',
+      ticket_purchaser_email: 'jordan.lee@example.org',
+      ticket_purchase_date: '2026-01-20',
+    },
+    {
+      guest_of_email: 'jordan.lee@example.org',
+      registrant_name: 'Casey Guest',
+      registrant_email: 'casey.guest@example.org',
+      registration_date: '2026-02-01',
+      quantity: 1,
+      external_registration_id: '',
+      registrant_phone: '555-222-7890',
+      bidder_number: 84,
+      table_number: 8,
+      guest_count: 1,
+      food_option: 'Vegetarian',
+      notes: 'Dietary: vegetarian',
+    },
+  ],
+  null,
+  2
+)
 
-  const jsonGuestExample = {
-    guest_of_email: 'jordan.lee@example.org',
-    registrant_name: 'Casey Guest',
-    registrant_email: 'casey.guest@example.org',
-    registration_date: '2026-02-01',
-    quantity: 1,
-    external_registration_id: '',
-    registrant_phone: '555-222-7890',
-    bidder_number: 84,
-    table_number: 8,
-    guest_count: 1,
-    notes: 'Dietary: vegetarian',
-  }
-
-  const csvExample = `event_id,registrant_name,registrant_email,registration_date,quantity,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,guest_of_email,notes,ticket_purchase_id,ticket_purchaser_email,ticket_purchase_date
-EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,2,REG-100045,555-123-4567,42,8,2,,Sponsor package,1b2c3d4e-0000-1111-2222-333344445555,jordan.lee@example.org,2026-01-20
-EVT-2026-001,Casey Guest,casey.guest@example.org,2026-02-01,1,,555-222-7890,84,8,1,jordan.lee@example.org,Dietary: vegetarian,,,
+const EXAMPLE_CSV = `event_id,registrant_name,registrant_email,registration_date,quantity,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,guest_of_email,food_option,notes,ticket_purchase_id,ticket_purchaser_email,ticket_purchase_date
+EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,2,REG-100045,555-123-4567,42,8,2,,Vegetarian,Sponsor package,1b2c3d4e-0000-1111-2222-333344445555,jordan.lee@example.org,2026-01-20
+EVT-2026-001,Casey Guest,casey.guest@example.org,2026-02-01,1,,555-222-7890,84,8,1,jordan.lee@example.org,Vegetarian,Dietary: vegetarian,,,
 `
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <h4 className="mb-2 text-sm font-semibold">JSON Format (Array of Objects)</h4>
-        <pre className="rounded-md bg-muted p-3 text-xs overflow-x-auto">
-          {JSON.stringify([jsonExample, jsonGuestExample], null, 2)}
-        </pre>
-      </div>
-      <div>
-        <h4 className="mb-2 text-sm font-semibold">CSV Format</h4>
-        <pre className="rounded-md bg-muted p-3 text-xs overflow-x-auto whitespace-pre-wrap">
-          {csvExample}
-        </pre>
-      </div>
-      <div className="text-xs text-muted-foreground space-y-1">
-        <p>
-          <strong>Required fields:</strong> registrant_name, registrant_email, registration_date,
-          quantity, external_registration_id
-        </p>
-        <p>
-          <strong>Optional fields:</strong> event_id (ignored), registrant_phone, notes,
-          bidder_number, table_number, guest_count, guest_of_email, ticket_purchase_id,
-          ticket_purchaser_email, ticket_purchase_date
-        </p>
-        <p>
-          <strong>Max rows:</strong> 5,000 per file
-        </p>
-        <p>
-          <strong>Guest rows:</strong> set guest_of_email to the parent registrant email; external_registration_id may be blank
-        </p>
-      </div>
-    </div>
-  )
-}
 
 export function RegistrationImportDialog({
   eventId,
@@ -165,7 +144,6 @@ export function RegistrationImportDialog({
   const [report, setReport] = useState<RegistrationImportReport | null>(null)
   const [isPreflight, setIsPreflight] = useState(false)
   const [isCommitting, setIsCommitting] = useState(false)
-  const [showExamples, setShowExamples] = useState(false)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -214,10 +192,14 @@ export function RegistrationImportDialog({
       setIsCommitting(true)
       const result = await registrationImportService.commitImport(eventId, file)
       setReport(result)
-      toast.success(
-        `Import complete: ${result.created_count} created, ${result.skipped_count} skipped`
-      )
-      onImportComplete?.()
+      if (result.error_rows > 0) {
+        toast.error(`Import completed with ${result.error_rows} error(s)`)
+      } else {
+        toast.success(
+          `Import complete: ${result.created_count} created, ${result.skipped_count} skipped`
+        )
+        onImportComplete?.()
+      }
     } catch (err) {
       toast.error(getErrorMessage(err, 'Import failed'))
     } finally {
@@ -228,15 +210,25 @@ export function RegistrationImportDialog({
   const handleClose = () => {
     setFile(null)
     setReport(null)
-    setShowExamples(false)
     onOpenChange(false)
   }
 
   const canCommit = report && report.error_rows === 0 && report.valid_rows > 0
 
+  // Compute filtered warning count (excluding event_id warnings)
+  const filteredWarningRows =
+    report?.rows.filter(
+      (row) =>
+        (row.issues || []).some(
+          (issue) =>
+            issue.severity === 'warning' &&
+            issue.field_name !== 'event_id'
+        )
+    ).length ?? 0
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+      <DialogContent className="w-[calc(100dvw-2rem)] max-w-[calc(100dvw-2rem)] sm:max-w-3xl max-h-[90vh] flex flex-col overflow-hidden p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Import Registrations</DialogTitle>
           <DialogDescription>
@@ -245,131 +237,183 @@ export function RegistrationImportDialog({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-4">
-          {!showExamples ? (
-            <>
-              <div className="space-y-2">
-                <label htmlFor="file-upload" className="text-sm font-medium">
-                  Select File
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    id="file-upload"
-                    type="file"
-                    accept=".json,.csv,.xlsx,.xls"
-                    onChange={handleFileChange}
-                    disabled={isPreflight || isCommitting}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowExamples(true)}
-                  >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Examples
-                  </Button>
-                </div>
-                {file && (
-                  <p className="text-xs text-muted-foreground">
-                    Selected: {file.name} ({Math.round(file.size / 1024)} KB)
-                  </p>
-                )}
-              </div>
-
-              {report && (
-                <>
-                  <Separator />
-                  <div className="space-y-4">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-md border border-border p-3">
-                        <p className="text-sm text-muted-foreground">Summary</p>
-                        <div className="mt-1 space-y-1 text-sm">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            {report.total_rows} total rows
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            {report.valid_rows} valid
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <XCircle className="h-4 w-4 text-destructive" />
-                            {report.error_rows} errors
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <AlertCircle className="h-4 w-4 text-yellow-600" />
-                            {report.warning_rows} warnings
-                          </div>
-                        </div>
-                      </div>
-                      <div className="rounded-md border border-border p-3">
-                        <p className="text-sm text-muted-foreground">Results</p>
-                        <div className="mt-1 space-y-1 text-sm">
-                          <div>{report.created_count} created</div>
-                          <div>{report.skipped_count} skipped</div>
-                          <div>{report.failed_count} failed</div>
-                        </div>
-                      </div>
-                      {report.error_report_url && (
-                        <div className="rounded-md border border-border p-3">
-                          <p className="text-sm text-muted-foreground">Error report</p>
-                          <a
-                            className="text-sm font-medium text-primary underline"
-                            href={report.error_report_url}
-                            download="registration-import-errors.csv"
-                          >
-                            Download error report
-                          </a>
-                        </div>
-                      )}
-                    </div>
-
-                    <ScrollArea className="h-64 rounded-md border border-border p-3">
-                      <div className="space-y-3">
-                        {report.rows.map((row) => (
-                          <ReportRow
-                            key={`${row.row_number}-${row.external_id ?? 'row'}`}
-                            row={row}
-                          />
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                </>
+          <div className="space-y-2">
+            <label htmlFor="file-upload" className="text-sm font-medium">
+              Select File
+            </label>
+            <div className="flex items-center gap-2 min-w-0">
+              <input
+                id="file-upload"
+                type="file"
+                accept=".json,.csv,.xlsx,.xls"
+                onChange={handleFileChange}
+                disabled={isPreflight || isCommitting}
+                className="flex-1 min-w-0 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90"
+              />
+              {file && (
+                <Badge variant="outline" className="gap-1">
+                  <FileText className="h-3 w-3" />
+                  {file.name}
+                </Badge>
               )}
+            </div>
+          </div>
+
+          <Tabs defaultValue="csv" className="w-full min-w-0">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="csv">CSV Example</TabsTrigger>
+              <TabsTrigger value="json">JSON Example</TabsTrigger>
+            </TabsList>
+            <TabsContent value="csv" className="space-y-2 w-full min-w-0">
+              <p className="text-sm text-muted-foreground">CSV file with header row:</p>
+              <pre className="rounded-md bg-muted p-3 text-[11px] sm:text-xs whitespace-pre-wrap break-words w-full max-w-full">
+                <code className="block whitespace-pre-wrap break-words">{EXAMPLE_CSV}</code>
+              </pre>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full whitespace-normal break-words text-center"
+                onClick={() => {
+                  const blob = new Blob([EXAMPLE_CSV], { type: 'text/csv' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = 'registration-import-example.csv'
+                  a.click()
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download CSV Example
+              </Button>
+            </TabsContent>
+            <TabsContent value="json" className="space-y-2 w-full min-w-0">
+              <p className="text-sm text-muted-foreground">JSON array of registrations:</p>
+              <pre className="rounded-md bg-muted p-3 text-[11px] sm:text-xs whitespace-pre-wrap break-words w-full max-w-full">
+                <code className="block whitespace-pre-wrap break-words">{EXAMPLE_JSON}</code>
+              </pre>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full whitespace-normal break-words text-center"
+                onClick={() => {
+                  const blob = new Blob([EXAMPLE_JSON], { type: 'application/json' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = 'registration-import-example.json'
+                  a.click()
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download JSON Example
+              </Button>
+            </TabsContent>
+          </Tabs>
+
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>
+              <strong>Required fields:</strong> registrant_name, registrant_email,
+              registration_date, quantity, external_registration_id
+            </p>
+            <p>
+              <strong>Optional fields:</strong> event_id (ignored), registrant_phone, notes,
+              bidder_number, table_number, guest_count, guest_of_email, food_option,
+              ticket_purchase_id, ticket_purchaser_email, ticket_purchase_date
+            </p>
+            <p>
+              <strong>Max rows:</strong> 5,000 per file
+            </p>
+            <p>
+              <strong>Guest rows:</strong> set guest_of_email to the parent registrant email;
+              external_registration_id may be blank
+            </p>
+          </div>
+
+          {report && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-md border border-border p-3">
+                    <p className="text-sm text-muted-foreground">Summary</p>
+                    <div className="mt-1 space-y-1 text-sm">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        {report.total_rows} total rows
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        {report.valid_rows} valid
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <XCircle className="h-4 w-4 text-destructive" />
+                        {report.error_rows} errors
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-yellow-600" />
+                        {filteredWarningRows} warnings
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-border p-3">
+                    <p className="text-sm text-muted-foreground">Results</p>
+                    <div className="mt-1 space-y-1 text-sm">
+                      <div>{report.created_count} created</div>
+                      <div>{report.skipped_count} skipped</div>
+                      <div>{report.failed_count} failed</div>
+                    </div>
+                  </div>
+                  {report.error_report_url && (
+                    <div className="rounded-md border border-border p-3">
+                      <p className="text-sm text-muted-foreground">Error report</p>
+                      <a
+                        className="text-sm font-medium text-primary underline"
+                        href={report.error_report_url}
+                        download="registration-import-errors.csv"
+                      >
+                        Download error report
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                <ScrollArea className="h-64 rounded-md border border-border p-3">
+                  <div className="space-y-3">
+                    {report.rows.map((row) => (
+                      <ReportRow
+                        key={`${row.row_number}-${row.external_id ?? 'row'}`}
+                        row={row}
+                      />
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
             </>
-          ) : (
-            <ExampleFormats />
           )}
         </div>
 
         <DialogFooter>
-          {showExamples ? (
-            <Button variant="outline" onClick={() => setShowExamples(false)}>
-              Back
+          <>
+            <Button variant="outline" onClick={handleClose}>
+              Cancel
             </Button>
-          ) : (
-            <>
-              <Button variant="outline" onClick={handleClose}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handlePreflight}
-                disabled={!file || isPreflight || isCommitting}
-                variant="secondary"
-              >
-                {isPreflight && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Run Preflight
-              </Button>
-              <Button
-                onClick={handleCommit}
-                disabled={!canCommit || isCommitting}
-              >
-                {isCommitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                <Upload className="mr-2 h-4 w-4" />
-                Confirm Import
-              </Button>
-            </>
-          )}
+            <Button
+              onClick={handlePreflight}
+              disabled={!file || isPreflight || isCommitting}
+              variant="secondary"
+            >
+              {isPreflight && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Run Preflight
+            </Button>
+            <Button
+              onClick={handleCommit}
+              disabled={!canCommit || isCommitting}
+            >
+              {isCommitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Upload className="mr-2 h-4 w-4" />
+              Confirm Import
+            </Button>
+          </>
         </DialogFooter>
       </DialogContent>
     </Dialog>

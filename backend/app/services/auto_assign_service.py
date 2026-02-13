@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.event import Event
-from app.models.event_registration import EventRegistration, RegistrationStatus
+from app.models.event_registration import EventRegistration
 from app.models.registration_guest import RegistrationGuest
 
 
@@ -64,7 +64,7 @@ class AutoAssignService:
             .join(EventRegistration)
             .where(
                 EventRegistration.event_id == event_id,
-                EventRegistration.status == RegistrationStatus.CONFIRMED,
+                RegistrationGuest.status == "confirmed",
                 RegistrationGuest.table_number.is_(None),
             )
             .options(selectinload(RegistrationGuest.registration))
@@ -211,7 +211,7 @@ class AutoAssignService:
             .join(EventRegistration)
             .where(
                 EventRegistration.event_id == event_id,
-                EventRegistration.status == RegistrationStatus.CONFIRMED,
+                RegistrationGuest.status == "confirmed",
                 RegistrationGuest.table_number.isnot(None),
             )
             .group_by(RegistrationGuest.table_number)
@@ -243,7 +243,7 @@ class AutoAssignService:
             .join(EventRegistration)
             .where(
                 EventRegistration.event_id == event_id,
-                EventRegistration.status == RegistrationStatus.CONFIRMED,
+                RegistrationGuest.status == "confirmed",
                 RegistrationGuest.table_number.is_(None),
             )
         )

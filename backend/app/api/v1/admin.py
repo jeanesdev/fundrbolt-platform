@@ -3,7 +3,7 @@
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,10 +14,12 @@ from app.models.event import Event
 from app.models.event_registration import EventRegistration
 from app.models.registration_guest import RegistrationGuest
 from app.models.user import User
+from app.schemas.event_registration import EventRegistrationCancelRequest
 from app.schemas.npo import NPOResponse
 from app.services.admin_guest_service import AdminGuestService
 from app.services.application_service import ApplicationService
 from app.services.email_service import get_email_service
+from app.services.event_registration_service import EventRegistrationService
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -319,6 +321,36 @@ async def get_event_attendees(
     return {"attendees": result, "total": len(result)}
 
 
+@router.delete(
+    "/registrations/{registration_id}/cancel",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Cancel event registration",
+    description="Cancel a registration with reason/note (event admin)",
+)
+async def cancel_registration_admin(
+    registration_id: UUID,
+    cancel_data: EventRegistrationCancelRequest = Body(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    registration = await EventRegistrationService.get_registration_by_id(db, registration_id)
+    if not registration:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Registration with ID {registration_id} not found",
+        )
+
+    _require_event_admin(current_user, registration.event)
+
+    await EventRegistrationService.cancel_registration_admin(
+        db,
+        registration_id,
+        current_user,
+        cancellation_reason=cancel_data.cancellation_reason,
+        cancellation_note=cancel_data.cancellation_note,
+    )
+
+
 @router.get(
     "/events/{event_id}/meal-summary",
     summary="Get event meal summary",
@@ -417,11 +449,12 @@ async def invite_guest_to_event(
 @router.delete(
     "/guests/{guest_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Delete a guest",
-    description="Delete a guest and their meal selections",
+    summary="Cancel a guest",
+    description="Cancel a guest and remove their meal selections",
 )
 async def delete_guest(
     guest_id: UUID,
+    cancel_data: EventRegistrationCancelRequest | None = Body(default=None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> None:
@@ -452,7 +485,12 @@ async def delete_guest(
 
     _require_event_admin(current_user, event)
 
-    await AdminGuestService.delete_guest(db=db, guest_id=guest_id)
+    await AdminGuestService.delete_guest(
+        db=db,
+        guest_id=guest_id,
+        cancellation_reason=cancel_data.cancellation_reason if cancel_data else None,
+        cancellation_note=cancel_data.cancellation_note if cancel_data else None,
+    )
 
 
 @router.post(
