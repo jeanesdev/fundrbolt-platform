@@ -170,6 +170,104 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
     # Create all other tables in a fresh transaction
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(
+            text(
+                "ALTER TABLE event_registrations "
+                "ADD COLUMN IF NOT EXISTS ticket_purchase_id UUID"
+            )
+        )
+        await conn.execute(
+            text(
+                """
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1
+                        FROM information_schema.columns
+                        WHERE table_name = 'event_registrations'
+                          AND column_name = 'status'
+                    ) THEN
+                        ALTER TABLE event_registrations
+                            ALTER COLUMN status DROP NOT NULL;
+                        ALTER TABLE event_registrations
+                            ALTER COLUMN status SET DEFAULT 'confirmed';
+                    END IF;
+                END $$;
+                """
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS invited_by_admin BOOLEAN DEFAULT FALSE"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS invitation_sent_at TIMESTAMPTZ"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS checked_in BOOLEAN DEFAULT FALSE"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS check_in_time TIMESTAMPTZ"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'confirmed'"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS cancellation_reason VARCHAR(50)"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS cancellation_note VARCHAR(255)"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS bidder_number INTEGER"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS table_number INTEGER"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS bidder_number_assigned_at TIMESTAMPTZ"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS is_table_captain BOOLEAN DEFAULT FALSE"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT FALSE"
+            )
+        )
 
     yield engine
 
