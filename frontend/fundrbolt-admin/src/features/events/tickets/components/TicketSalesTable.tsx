@@ -7,6 +7,16 @@ import { salesTrackingApi, type EventSalesList } from '@/api/salesTracking';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -24,7 +34,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowDown, ArrowUp, ArrowUpDown, Search } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Filter, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 interface TicketSalesTableProps {
@@ -43,6 +53,18 @@ type SortableColumn =
   | 'payment_status'
   | 'promo_code'
   | 'external_sale_id';
+
+type FilterState = {
+  purchaser_name: string;
+  purchaser_email: string;
+  package_name: string;
+  quantity: string;
+  total_price: string;
+  payment_status: string;
+  purchased_at: string;
+  promo_code: string;
+  external_sale_id: string;
+};
 
 const DEFAULT_PER_PAGE = 25;
 
@@ -79,6 +101,17 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
   const [perPage, setPerPage] = useState(DEFAULT_PER_PAGE);
   const [sortBy, setSortBy] = useState<SortableColumn>('purchased_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [filters, setFilters] = useState<FilterState>({
+    purchaser_name: '',
+    purchaser_email: '',
+    package_name: '',
+    quantity: '',
+    total_price: '',
+    payment_status: 'all',
+    purchased_at: '',
+    promo_code: '',
+    external_sale_id: '',
+  });
 
   useEffect(() => {
     const timeout = setTimeout(() => setDebouncedQuery(query.trim()), 300);
@@ -124,7 +157,181 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
     );
   };
 
-  const hasResults = (data?.sales?.length ?? 0) > 0;
+  const updateFilter = (key: keyof FilterState, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      purchaser_name: '',
+      purchaser_email: '',
+      package_name: '',
+      quantity: '',
+      total_price: '',
+      payment_status: 'all',
+      purchased_at: '',
+      promo_code: '',
+      external_sale_id: '',
+    });
+  };
+
+  const sales = useMemo(() => data?.sales ?? [], [data?.sales]);
+  const paymentStatuses = useMemo(
+    () => Array.from(new Set(sales.map((sale) => sale.payment_status))).sort(),
+    [sales]
+  );
+  const matchesText = (value: string | null | undefined, needle: string) =>
+    value?.toLowerCase().includes(needle.toLowerCase()) ?? false;
+
+  const filteredSales = useMemo(() => {
+    if (!sales.length) return [];
+    return sales.filter((sale) => {
+      if (filters.purchaser_name && !matchesText(sale.purchaser_name, filters.purchaser_name)) {
+        return false;
+      }
+      if (filters.purchaser_email && !matchesText(sale.purchaser_email, filters.purchaser_email)) {
+        return false;
+      }
+      if (filters.package_name && !matchesText(sale.package_name, filters.package_name)) {
+        return false;
+      }
+      if (
+        filters.quantity &&
+        !String(sale.quantity ?? '').includes(filters.quantity.trim())
+      ) {
+        return false;
+      }
+      if (
+        filters.total_price &&
+        !String(sale.total_price ?? '').includes(filters.total_price.trim())
+      ) {
+        return false;
+      }
+      if (filters.payment_status !== 'all' && sale.payment_status !== filters.payment_status) {
+        return false;
+      }
+      if (filters.purchased_at) {
+        const formatted = formatDate(sale.purchased_at);
+        if (!matchesText(sale.purchased_at, filters.purchased_at) && !matchesText(formatted, filters.purchased_at)) {
+          return false;
+        }
+      }
+      if (filters.promo_code && !matchesText(sale.promo_code, filters.promo_code)) {
+        return false;
+      }
+      if (filters.external_sale_id && !matchesText(sale.external_sale_id, filters.external_sale_id)) {
+        return false;
+      }
+      return true;
+    });
+  }, [filters, sales]);
+
+  const renderTextHeader = (
+    label: string,
+    column: SortableColumn,
+    filterKey: keyof FilterState,
+    placeholder: string
+  ) => (
+    <TableHead>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2"
+          onClick={() => toggleSort(column)}
+        >
+          {label}
+          {getSortIcon(column)}
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="rounded-sm p-1 text-muted-foreground hover:text-foreground"
+              aria-label={`Filter ${label}`}
+            >
+              <Filter className="h-3 w-3" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuLabel>{label}</DropdownMenuLabel>
+            <DropdownMenuItem onSelect={() => toggleSort(column)}>
+              Toggle sort
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Filter</DropdownMenuLabel>
+            <div className="px-2 py-2" onClick={(event) => event.stopPropagation()}>
+              <Input
+                placeholder={placeholder}
+                value={filters[filterKey]}
+                onChange={(event) => updateFilter(filterKey, event.target.value)}
+                onKeyDown={(event) => event.stopPropagation()}
+              />
+            </div>
+            <DropdownMenuItem
+              disabled={!filters[filterKey]}
+              onSelect={() => updateFilter(filterKey, '')}
+            >
+              Clear filter
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </TableHead>
+  );
+
+  const renderOptionHeader = (
+    label: string,
+    column: SortableColumn,
+    filterKey: keyof FilterState,
+    options: Array<{ value: string; label: string }>
+  ) => (
+    <TableHead>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2"
+          onClick={() => toggleSort(column)}
+        >
+          {label}
+          {getSortIcon(column)}
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="rounded-sm p-1 text-muted-foreground hover:text-foreground"
+              aria-label={`Filter ${label}`}
+            >
+              <Filter className="h-3 w-3" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuLabel>{label}</DropdownMenuLabel>
+            <DropdownMenuItem onSelect={() => toggleSort(column)}>
+              Toggle sort
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Filter</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={filters[filterKey]}
+              onValueChange={(value) => updateFilter(filterKey, value)}
+            >
+              {options.map((option) => (
+                <DropdownMenuRadioItem key={option.value} value={option.value}>
+                  {option.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </TableHead>
+  );
+
+  const hasResults = filteredSales.length > 0;
 
   const paginationText = useMemo(() => {
     if (!totalCount) return 'No sales yet';
@@ -169,6 +376,14 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
               <SelectItem value="100">100 rows</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearFilters}
+            disabled={Object.values(filters).every((value) => value === '' || value === 'all')}
+          >
+            Clear Filters
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -179,117 +394,41 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
           <div className="text-sm text-destructive">Failed to load sales.</div>
         )}
         {!isLoading && !error && !hasResults && (
-          <div className="text-sm text-muted-foreground">No ticket sales found.</div>
+          <div className="text-sm text-muted-foreground">
+            {sales.length === 0
+              ? 'No ticket sales found.'
+              : 'No ticket sales match the current filters.'}
+          </div>
         )}
         {!isLoading && !error && hasResults && (
           <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              Showing {filteredSales.length} of {sales.length} sales on this page
+            </div>
             <div className="w-full overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2"
-                        onClick={() => toggleSort('purchaser_name')}
-                      >
-                        Purchaser
-                        {getSortIcon('purchaser_name')}
-                      </Button>
-                    </TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2"
-                        onClick={() => toggleSort('purchaser_email')}
-                      >
-                        Email
-                        {getSortIcon('purchaser_email')}
-                      </Button>
-                    </TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2"
-                        onClick={() => toggleSort('package_name')}
-                      >
-                        Package
-                        {getSortIcon('package_name')}
-                      </Button>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2"
-                        onClick={() => toggleSort('quantity')}
-                      >
-                        Qty
-                        {getSortIcon('quantity')}
-                      </Button>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2"
-                        onClick={() => toggleSort('total_price')}
-                      >
-                        Total
-                        {getSortIcon('total_price')}
-                      </Button>
-                    </TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2"
-                        onClick={() => toggleSort('payment_status')}
-                      >
-                        Status
-                        {getSortIcon('payment_status')}
-                      </Button>
-                    </TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2"
-                        onClick={() => toggleSort('purchased_at')}
-                      >
-                        Purchased
-                        {getSortIcon('purchased_at')}
-                      </Button>
-                    </TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2"
-                        onClick={() => toggleSort('promo_code')}
-                      >
-                        Promo
-                        {getSortIcon('promo_code')}
-                      </Button>
-                    </TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2"
-                        onClick={() => toggleSort('external_sale_id')}
-                      >
-                        External ID
-                        {getSortIcon('external_sale_id')}
-                      </Button>
-                    </TableHead>
+                    {renderTextHeader('Purchaser', 'purchaser_name', 'purchaser_name', 'Filter purchaser')}
+                    {renderTextHeader('Email', 'purchaser_email', 'purchaser_email', 'Filter email')}
+                    {renderTextHeader('Package', 'package_name', 'package_name', 'Filter package')}
+                    {renderTextHeader('Qty', 'quantity', 'quantity', 'Filter quantity')}
+                    {renderTextHeader('Total', 'total_price', 'total_price', 'Filter total')}
+                    {renderOptionHeader(
+                      'Status',
+                      'payment_status',
+                      'payment_status',
+                      [{ value: 'all', label: 'All statuses' }].concat(
+                        paymentStatuses.map((status) => ({ value: status, label: status }))
+                      )
+                    )}
+                    {renderTextHeader('Purchased', 'purchased_at', 'purchased_at', 'Filter date')}
+                    {renderTextHeader('Promo', 'promo_code', 'promo_code', 'Filter promo')}
+                    {renderTextHeader('External ID', 'external_sale_id', 'external_sale_id', 'Filter external ID')}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data?.sales.map((sale) => (
+                  {filteredSales.map((sale) => (
                     <TableRow key={sale.purchase_id}>
                       <TableCell className="font-medium">{sale.purchaser_name || '—'}</TableCell>
                       <TableCell>{sale.purchaser_email || '—'}</TableCell>

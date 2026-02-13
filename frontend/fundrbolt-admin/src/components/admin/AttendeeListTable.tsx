@@ -9,6 +9,17 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import {
   Table,
   TableBody,
   TableCell,
@@ -17,6 +28,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
+  type Attendee,
   deleteGuest,
   downloadAttendeesCSV,
   getEventAttendees,
@@ -25,7 +37,16 @@ import {
 import { cancelRegistration } from '@/lib/api/cancel-registration'
 import { getErrorMessage } from '@/lib/error-utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Download, Hash, Loader2, Mail, PenLine, Trash2 } from 'lucide-react'
+import {
+  ArrowUpDown,
+  Download,
+  Filter,
+  Hash,
+  Loader2,
+  Mail,
+  PenLine,
+  Trash2,
+} from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { AssignBidderNumberDialog } from './AssignBidderNumberDialog'
@@ -35,6 +56,27 @@ import { CancelRegistrationDialog } from './CancelRegistrationDialog'
 interface AttendeeListTableProps {
   eventId: string
   includeMealSelections?: boolean
+}
+
+type SortKey =
+  | 'name'
+  | 'type'
+  | 'bidder'
+  | 'email'
+  | 'phone'
+  | 'meal'
+  | 'guestOf'
+  | 'status'
+
+type FilterState = {
+  name: string
+  type: string
+  bidder: string
+  email: string
+  phone: string
+  meal: string
+  guestOf: string
+  status: string
 }
 
 export function AttendeeListTable({
@@ -51,6 +93,18 @@ export function AttendeeListTable({
   } | null>(null)
   const [bulkCancelDialogOpen, setBulkCancelDialogOpen] = useState(false)
   const [bulkCancelPending, setBulkCancelPending] = useState(false)
+  const [filters, setFilters] = useState<FilterState>({
+    name: '',
+    type: 'all',
+    bidder: '',
+    email: '',
+    phone: '',
+    meal: '',
+    guestOf: '',
+    status: 'all',
+  })
+  const [sortKey, setSortKey] = useState<SortKey>('name')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [bidderNumberDialogOpen, setBidderNumberDialogOpen] = useState(false)
   const [attendeeForBidderNumber, setAttendeeForBidderNumber] = useState<{
     id: string
@@ -220,11 +274,11 @@ export function AttendeeListTable({
 
   // Toggle all attendees selection
   const toggleAllSelection = () => {
-    if (selectedAttendees.size === data?.attendees.length) {
+    if (selectedAttendees.size === displayedAttendees.length) {
       setSelectedAttendees(new Set())
     } else {
       setSelectedAttendees(
-        new Set(data?.attendees.map((a) => a.id) || [])
+        new Set(displayedAttendees.map((a) => a.id) || [])
       )
     }
   }
@@ -251,13 +305,222 @@ export function AttendeeListTable({
   const activeAttendees = attendees.filter(
     (attendee) => attendee.status !== 'cancelled' && attendee.status !== 'canceled'
   ).length
+  const statusOptions = Array.from(new Set(attendees.map((attendee) => attendee.status))).sort()
+  const matchesText = (value: string | null | undefined, needle: string) =>
+    value?.toLowerCase().includes(needle.toLowerCase()) ?? false
+  const filteredAttendees = attendees.filter((attendee) => {
+    if (filters.name && !matchesText(attendee.name, filters.name)) {
+      return false
+    }
+    if (filters.type !== 'all' && attendee.attendee_type !== filters.type) {
+      return false
+    }
+    if (
+      filters.bidder &&
+      !String(attendee.bidder_number ?? '').includes(filters.bidder.trim())
+    ) {
+      return false
+    }
+    if (filters.email && !matchesText(attendee.email, filters.email)) {
+      return false
+    }
+    if (filters.phone && !matchesText(attendee.phone, filters.phone)) {
+      return false
+    }
+    if (
+      includeMealSelections &&
+      filters.meal &&
+      !matchesText(
+        attendee.meal_selection ?? attendee.meal_description ?? '',
+        filters.meal
+      )
+    ) {
+      return false
+    }
+    if (filters.guestOf && !matchesText(attendee.guest_of, filters.guestOf)) {
+      return false
+    }
+    if (filters.status !== 'all' && attendee.status !== filters.status) {
+      return false
+    }
+    return true
+  })
+  const getSortValue = (attendee: Attendee, key: SortKey) => {
+    switch (key) {
+      case 'name':
+        return attendee.name ?? ''
+      case 'type':
+        return attendee.attendee_type ?? ''
+      case 'bidder':
+        return attendee.bidder_number ?? -1
+      case 'email':
+        return attendee.email ?? ''
+      case 'phone':
+        return attendee.phone ?? ''
+      case 'meal':
+        return attendee.meal_selection ?? attendee.meal_description ?? ''
+      case 'guestOf':
+        return attendee.guest_of ?? ''
+      case 'status':
+        return attendee.status ?? ''
+      default:
+        return ''
+    }
+  }
+  const sortedAttendees = [...filteredAttendees].sort((a, b) => {
+    const aValue = getSortValue(a, sortKey)
+    const bValue = getSortValue(b, sortKey)
+    const compare =
+      typeof aValue === 'number' && typeof bValue === 'number'
+        ? aValue - bValue
+        : String(aValue).localeCompare(String(bValue))
+    return sortDirection === 'asc' ? compare : -compare
+  })
+  const displayedAttendees = sortedAttendees
+  const allVisibleSelected =
+    displayedAttendees.length > 0 &&
+    displayedAttendees.every((attendee) => selectedAttendees.has(attendee.id))
+  const handleSortChange = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+      return
+    }
+    setSortKey(key)
+    setSortDirection('asc')
+  }
+  const sortIndicator = (key: SortKey) => {
+    if (sortKey !== key) {
+      return null
+    }
+    return sortDirection === 'asc' ? '^' : 'v'
+  }
+  const updateFilter = (key: keyof FilterState, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }))
+  }
+  const renderTextHeader = (
+    label: string,
+    key: SortKey,
+    filterKey: keyof FilterState,
+    placeholder: string
+  ) => (
+    <TableHead>
+      <div className='flex items-center gap-2'>
+        <button
+          className='flex items-center gap-2'
+          onClick={() => handleSortChange(key)}
+          type='button'
+        >
+          {label}
+          <ArrowUpDown className='h-3 w-3 text-muted-foreground' />
+          <span className='text-xs text-muted-foreground'>{sortIndicator(key)}</span>
+        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className='rounded-sm p-1 text-muted-foreground hover:text-foreground'
+              type='button'
+              aria-label={`Filter ${label}`}
+            >
+              <Filter className='h-3 w-3' />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='start' className='w-56'>
+            <DropdownMenuLabel>{label}</DropdownMenuLabel>
+            <DropdownMenuItem onSelect={() => handleSortChange(key)}>
+              Toggle sort
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Filter</DropdownMenuLabel>
+            <div
+              className='px-2 py-2'
+              onClick={(event) => event.stopPropagation()}
+            >
+              <Input
+                placeholder={placeholder}
+                value={filters[filterKey]}
+                onChange={(event) => updateFilter(filterKey, event.target.value)}
+                onKeyDown={(event) => event.stopPropagation()}
+              />
+            </div>
+            <DropdownMenuItem
+              disabled={!filters[filterKey]}
+              onSelect={() => updateFilter(filterKey, '')}
+            >
+              Clear filter
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </TableHead>
+  )
+  const renderOptionHeader = (
+    label: string,
+    key: SortKey,
+    filterKey: keyof FilterState,
+    options: Array<{ value: string; label: string }>
+  ) => (
+    <TableHead>
+      <div className='flex items-center gap-2'>
+        <button
+          className='flex items-center gap-2'
+          onClick={() => handleSortChange(key)}
+          type='button'
+        >
+          {label}
+          <ArrowUpDown className='h-3 w-3 text-muted-foreground' />
+          <span className='text-xs text-muted-foreground'>{sortIndicator(key)}</span>
+        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className='rounded-sm p-1 text-muted-foreground hover:text-foreground'
+              type='button'
+              aria-label={`Filter ${label}`}
+            >
+              <Filter className='h-3 w-3' />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='start' className='w-56'>
+            <DropdownMenuLabel>{label}</DropdownMenuLabel>
+            <DropdownMenuItem onSelect={() => handleSortChange(key)}>
+              Toggle sort
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Filter</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={filters[filterKey]}
+              onValueChange={(value) => updateFilter(filterKey, value)}
+            >
+              {options.map((option) => (
+                <DropdownMenuRadioItem key={option.value} value={option.value}>
+                  {option.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </TableHead>
+  )
+  const resetFilters = () => {
+    setFilters({
+      name: '',
+      type: 'all',
+      bidder: '',
+      email: '',
+      phone: '',
+      meal: '',
+      guestOf: '',
+      status: 'all',
+    })
+  }
 
   return (
     <div className='space-y-4'>
       {/* Toolbar */}
       <div className='flex items-center justify-between'>
         <div className='text-sm text-muted-foreground'>
-          {totalAttendees} total attendees • {activeAttendees} active
+          Showing {displayedAttendees.length} of {totalAttendees} attendees • {activeAttendees} active
           {selectedAttendees.size > 0 && (
             <span className='ml-2'>
               ({selectedAttendees.size} selected)
@@ -265,6 +528,16 @@ export function AttendeeListTable({
           )}
         </div>
         <div className='flex items-center gap-2'>
+          <Button
+            variant='ghost'
+            size='sm'
+            onClick={resetFilters}
+            disabled={
+              Object.values(filters).every((value) => value === '' || value === 'all')
+            }
+          >
+            Clear Filters
+          </Button>
           <Button
             variant='outline'
             size='sm'
@@ -292,38 +565,49 @@ export function AttendeeListTable({
             <TableRow>
               <TableHead className='w-12'>
                 <Checkbox
-                  checked={
-                    selectedAttendees.size === attendees.length &&
-                    attendees.length > 0
-                  }
+                  checked={allVisibleSelected}
                   onCheckedChange={toggleAllSelection}
                 />
               </TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Bidder #</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
-              {includeMealSelections && <TableHead>Meal Selection</TableHead>}
-              <TableHead>Guest Of</TableHead>
-              <TableHead>Status</TableHead>
+              {renderTextHeader('Name', 'name', 'name', 'Filter name')}
+              {renderOptionHeader('Type', 'type', 'type', [
+                { value: 'all', label: 'All types' },
+                { value: 'registrant', label: 'Registrant' },
+                { value: 'guest', label: 'Guest' },
+              ])}
+              {renderTextHeader('Bidder #', 'bidder', 'bidder', 'Filter bidder #')}
+              {renderTextHeader('Email', 'email', 'email', 'Filter email')}
+              {renderTextHeader('Phone', 'phone', 'phone', 'Filter phone')}
+              {includeMealSelections &&
+                renderTextHeader('Meal Selection', 'meal', 'meal', 'Filter meal')}
+              {renderTextHeader('Guest Of', 'guestOf', 'guestOf', 'Filter guest of')}
+              {renderOptionHeader(
+                'Status',
+                'status',
+                'status',
+                [{ value: 'all', label: 'All statuses' }].concat(
+                  statusOptions.map((status) => ({ value: status, label: status }))
+                )
+              )}
               <TableHead className='text-right'>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {attendees.length === 0 ? (
+            {displayedAttendees.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={includeMealSelections ? 10 : 9}
                   className='text-center'
                 >
                   <p className='py-8 text-muted-foreground'>
-                    No attendees registered yet
+                    {attendees.length === 0
+                      ? 'No attendees registered yet'
+                      : 'No attendees match the current filters'}
                   </p>
                 </TableCell>
               </TableRow>
             ) : (
-              attendees.map((attendee) => {
+              displayedAttendees.map((attendee) => {
                 const isCancelled =
                   attendee.status === 'cancelled' || attendee.status === 'canceled'
                 return (
