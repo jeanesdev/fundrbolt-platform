@@ -120,7 +120,9 @@ class TestEventStats:
         assert data["sponsors_count"] == 1
         assert data["auction_items_count"] == 1
         assert data["registrations_count"] == 1
+        assert data["active_registrations_count"] == 1
         assert data["guest_count"] == 2
+        assert data["active_guest_count"] == 2
 
     async def test_get_event_stats_forbidden_for_donor(
         self,

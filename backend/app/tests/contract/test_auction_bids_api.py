@@ -18,13 +18,24 @@ async def _assign_bidder_number(
     user_id,
     bidder_number: int,
 ) -> RegistrationGuest:
-    guest = RegistrationGuest(
-        registration_id=registration_id,
-        user_id=user_id,
-        name="Bidder",
-        bidder_number=bidder_number,
+    stmt = select(RegistrationGuest).where(
+        RegistrationGuest.registration_id == registration_id,
+        RegistrationGuest.is_primary.is_(True),
     )
-    db_session.add(guest)
+    guest = (await db_session.execute(stmt)).scalar_one_or_none()
+
+    if not guest:
+        guest = RegistrationGuest(
+            registration_id=registration_id,
+            user_id=user_id,
+            name="Bidder",
+            bidder_number=bidder_number,
+            is_primary=True,
+        )
+        db_session.add(guest)
+    else:
+        guest.bidder_number = bidder_number
+
     await db_session.commit()
     await db_session.refresh(guest)
     return guest

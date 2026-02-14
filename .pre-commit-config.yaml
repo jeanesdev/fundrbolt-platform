@@ -27,6 +27,7 @@ repos:
         language: system
         files: ^backend/app/.*\.py$
         pass_filenames: false
+        always_run: true
 
   # Frontend and Bicep validation (local hooks)
   - repo: local

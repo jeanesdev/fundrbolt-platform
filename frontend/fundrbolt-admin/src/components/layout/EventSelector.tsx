@@ -11,19 +11,6 @@
  */
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from '@/components/ui/sidebar'
-import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -31,8 +18,21 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
-import { useEventContext } from '@/hooks/use-event-context'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { InitialAvatar } from '@/components/ui/initial-avatar'
+import {
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from '@/components/ui/sidebar'
+import { useEventContext } from '@/hooks/use-event-context'
 import { Calendar, ChevronsUpDown } from 'lucide-react'
 import { useState } from 'react'
 
@@ -56,8 +56,8 @@ export function EventSelector() {
   // Filter events by search query (case-insensitive)
   const filteredEvents = shouldShowSearch && searchQuery
     ? availableEvents.filter((event) =>
-        event.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      event.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
     : availableEvents
 
   // If no events available, show empty state

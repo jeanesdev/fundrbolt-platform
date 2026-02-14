@@ -109,9 +109,16 @@ class CheckInService:
         if not registration:
             return None
 
-        # Set check-in time if not already set
-        if not registration.check_in_time:
-            registration.check_in_time = datetime.now(UTC)
+        primary_guest = next(
+            (guest for guest in registration.guests if guest.is_primary),
+            None,
+        )
+        if not primary_guest:
+            return None
+
+        if not primary_guest.check_in_time:
+            primary_guest.check_in_time = datetime.now(UTC)
+            primary_guest.checked_in = True
             await db.commit()
             await db.refresh(registration)
 
@@ -143,8 +150,8 @@ class CheckInService:
         if not guest:
             return None
 
-        # Mark as checked in if not already
-        if not guest.checked_in:
+        if not guest.check_in_time:
+            guest.check_in_time = datetime.now(UTC)
             guest.checked_in = True
             await db.commit()
             await db.refresh(guest)
@@ -180,7 +187,15 @@ class CheckInService:
         if not registration:
             return None
 
-        registration.check_in_time = None
+        primary_guest = next(
+            (guest for guest in registration.guests if guest.is_primary),
+            None,
+        )
+        if not primary_guest:
+            return None
+
+        primary_guest.check_in_time = None
+        primary_guest.checked_in = False
         await db.commit()
         await db.refresh(registration)
 
@@ -211,6 +226,7 @@ class CheckInService:
         if not guest:
             return None
 
+        guest.check_in_time = None
         guest.checked_in = False
         await db.commit()
         await db.refresh(guest)

@@ -12,7 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.event import Event
-from app.models.event_registration import EventRegistration, RegistrationStatus
+from app.models.event_registration import EventRegistration
+from app.models.event_table import EventTable
 from app.models.registration_guest import RegistrationGuest
 
 
@@ -64,7 +65,7 @@ class AutoAssignService:
             .join(EventRegistration)
             .where(
                 EventRegistration.event_id == event_id,
-                EventRegistration.status == RegistrationStatus.CONFIRMED,
+                RegistrationGuest.status == "confirmed",
                 RegistrationGuest.table_number.is_(None),
             )
             .options(selectinload(RegistrationGuest.registration))
@@ -101,6 +102,7 @@ class AutoAssignService:
         assignments = []
         warnings = []
         current_table = 1
+        table_assignments: dict[int, list[RegistrationGuest]] = {}
 
         for party in sorted_parties:
             party_size = len(party)
@@ -114,6 +116,7 @@ class AutoAssignService:
                     # Assign entire party to this table
                     for guest in party:
                         guest.table_number = table_num
+                        table_assignments.setdefault(table_num, []).append(guest)
                         assignments.append(
                             {
                                 "guest_id": guest.id,
@@ -144,6 +147,7 @@ class AutoAssignService:
                         guests_to_assign = remaining_party[:available]
                         for guest in guests_to_assign:
                             guest.table_number = table_num
+                            table_assignments.setdefault(table_num, []).append(guest)
                             assignments.append(
                                 {
                                     "guest_id": guest.id,
@@ -170,6 +174,13 @@ class AutoAssignService:
                         f"Could not assign {len(remaining_party)} guests from party "
                         f"(registration {party[0].registration_id}) - no available capacity"
                     )
+
+        # Default captains for newly filled tables (prefer registrants)
+        await AutoAssignService._assign_default_captains(
+            db,
+            event_id,
+            table_assignments,
+        )
 
         # Commit all assignments
         await db.commit()
@@ -211,7 +222,7 @@ class AutoAssignService:
             .join(EventRegistration)
             .where(
                 EventRegistration.event_id == event_id,
-                EventRegistration.status == RegistrationStatus.CONFIRMED,
+                RegistrationGuest.status == "confirmed",
                 RegistrationGuest.table_number.isnot(None),
             )
             .group_by(RegistrationGuest.table_number)
@@ -243,9 +254,47 @@ class AutoAssignService:
             .join(EventRegistration)
             .where(
                 EventRegistration.event_id == event_id,
-                EventRegistration.status == RegistrationStatus.CONFIRMED,
+                RegistrationGuest.status == "confirmed",
                 RegistrationGuest.table_number.is_(None),
             )
         )
         result = await db.execute(query)
         return result.scalar_one()
+
+    @staticmethod
+    async def _assign_default_captains(
+        db: AsyncSession,
+        event_id: UUID,
+        table_assignments: dict[int, list[RegistrationGuest]],
+    ) -> None:
+        if not table_assignments:
+            return
+
+        table_numbers = list(table_assignments.keys())
+        existing_tables = await db.execute(
+            select(EventTable).where(
+                EventTable.event_id == event_id,
+                EventTable.table_number.in_(table_numbers),
+            )
+        )
+        table_map = {table.table_number: table for table in existing_tables.scalars()}
+
+        for table_number, guests in table_assignments.items():
+            if not guests:
+                continue
+
+            event_table = table_map.get(table_number)
+            if not event_table:
+                event_table = EventTable(event_id=event_id, table_number=table_number)
+                db.add(event_table)
+                table_map[table_number] = event_table
+
+            if event_table.table_captain_id:
+                continue
+
+            captain = next((guest for guest in guests if guest.is_primary), None)
+            if not captain:
+                captain = guests[0]
+
+            captain.is_table_captain = True
+            event_table.table_captain_id = captain.id

@@ -599,7 +599,7 @@ async def get_table_occupancy(
                 bidder_number=g.bidder_number,
                 table_number=g.table_number,
                 registration_id=g.registration_id,
-                checked_in=False,  # TODO: Add check-in status when implemented
+                checked_in=g.checked_in,
                 is_guest_of_primary=is_guest_of_primary,
                 primary_registrant_name=(
                     f"{primary_user.first_name} {primary_user.last_name}"
@@ -685,7 +685,7 @@ async def get_seating_guests(
             )
 
     # Build query
-    from app.models.event_registration import EventRegistration, RegistrationStatus
+    from app.models.event_registration import EventRegistration
 
     base_query = (
         select(RegistrationGuest, EventRegistration, User)
@@ -693,7 +693,7 @@ async def get_seating_guests(
         .join(User, EventRegistration.user_id == User.id)
         .where(
             EventRegistration.event_id == event_id,
-            EventRegistration.status == RegistrationStatus.CONFIRMED,
+            RegistrationGuest.status == "confirmed",
         )
     )
 
@@ -736,7 +736,7 @@ async def get_seating_guests(
                 bidder_number=guest.bidder_number,
                 table_number=guest.table_number,
                 registration_id=guest.registration_id,
-                checked_in=False,  # TODO: Add check-in status when implemented
+                checked_in=guest.checked_in,
                 is_guest_of_primary=is_guest_of_primary,
                 primary_registrant_name=(
                     f"{primary_user.first_name} {primary_user.last_name}"
@@ -917,7 +917,10 @@ async def assign_registration_bidder_number(
 
     reg_query = (
         select(EventRegistration)
-        .options(selectinload(EventRegistration.guests))
+        .options(
+            selectinload(EventRegistration.guests),
+            selectinload(EventRegistration.user),
+        )
         .where(EventRegistration.id == registration_id, EventRegistration.event_id == event_id)
     )
     reg_result = await db.execute(reg_query)
@@ -930,17 +933,22 @@ async def assign_registration_bidder_number(
         )
 
     # Get or create primary guest
-    if not registration.guests:
-        # Create primary guest
+    primary_guest = next(
+        (guest for guest in registration.guests if guest.is_primary),
+        None,
+    )
+    if not primary_guest:
         primary_guest = RegistrationGuest(
             registration_id=registration.id,
             user_id=registration.user_id,
-            checked_in=False,
+            name=f"{registration.user.first_name} {registration.user.last_name}",
+            email=registration.user.email,
+            phone=registration.user.phone,
+            status="confirmed",
+            is_primary=True,
         )
         db.add(primary_guest)
         await db.flush()
-    else:
-        primary_guest = registration.guests[0]
 
     # Assign bidder number
     try:
@@ -1023,7 +1031,10 @@ async def assign_registration_table(
 
     reg_query = (
         select(EventRegistration)
-        .options(selectinload(EventRegistration.guests))
+        .options(
+            selectinload(EventRegistration.guests),
+            selectinload(EventRegistration.user),
+        )
         .where(EventRegistration.id == registration_id, EventRegistration.event_id == event_id)
     )
     reg_result = await db.execute(reg_query)
@@ -1036,17 +1047,22 @@ async def assign_registration_table(
         )
 
     # Get or create primary guest
-    if not registration.guests:
-        # Create primary guest
+    primary_guest = next(
+        (guest for guest in registration.guests if guest.is_primary),
+        None,
+    )
+    if not primary_guest:
         primary_guest = RegistrationGuest(
             registration_id=registration.id,
             user_id=registration.user_id,
-            checked_in=False,
+            name=f"{registration.user.first_name} {registration.user.last_name}",
+            email=registration.user.email,
+            phone=registration.user.phone,
+            status="confirmed",
+            is_primary=True,
         )
         db.add(primary_guest)
         await db.flush()
-    else:
-        primary_guest = registration.guests[0]
 
     # Assign table
     try:

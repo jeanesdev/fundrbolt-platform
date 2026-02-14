@@ -7,13 +7,19 @@ import uuid
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import asc, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.core.logging import get_logger
 from app.core.redis import get_redis
-from app.models.ticket_management import PromoCode, TicketPackage, TicketPurchase
+from app.models.ticket_management import (
+    PromoCode,
+    PromoCodeApplication,
+    TicketPackage,
+    TicketPurchase,
+)
+from app.models.user import User
 
 logger = get_logger(__name__)
 
@@ -221,6 +227,143 @@ class SalesTrackingService:
 
         return {
             "purchasers": purchasers,
+            "total_count": total_count,
+            "page": page,
+            "per_page": per_page,
+        }
+
+    async def get_event_sales_list(
+        self,
+        event_id: uuid.UUID,
+        search: str | None = None,
+        sort_by: str = "purchased_at",
+        sort_dir: str = "desc",
+        page: int = 1,
+        per_page: int = 50,
+    ) -> dict[str, Any]:
+        """Get paginated list of ticket purchases for an event with search and sorting."""
+        offset = (page - 1) * per_page
+
+        purchaser_name_expr = func.coalesce(
+            TicketPurchase.purchaser_name,
+            func.concat(User.first_name, " ", User.last_name),
+        )
+        purchaser_email_expr = func.coalesce(TicketPurchase.purchaser_email, User.email)
+
+        sort_map = {
+            "purchased_at": TicketPurchase.purchased_at,
+            "purchaser_name": purchaser_name_expr,
+            "purchaser_email": purchaser_email_expr,
+            "package_name": TicketPackage.name,
+            "quantity": TicketPurchase.quantity,
+            "total_price": TicketPurchase.total_price,
+            "payment_status": TicketPurchase.payment_status,
+            "promo_code": PromoCode.code,
+            "discount_amount": PromoCodeApplication.discount_amount,
+            "external_sale_id": TicketPurchase.external_sale_id,
+        }
+
+        sort_expression = sort_map.get(sort_by, TicketPurchase.purchased_at)
+        sort_direction = asc if sort_dir.lower() == "asc" else desc
+
+        base_query = (
+            select(TicketPurchase)
+            .join(TicketPurchase.ticket_package)
+            .join(TicketPurchase.user)
+            .outerjoin(TicketPurchase.promo_application)
+            .outerjoin(PromoCodeApplication.promo_code)
+            .where(TicketPurchase.event_id == event_id)
+            .options(
+                joinedload(TicketPurchase.ticket_package),
+                joinedload(TicketPurchase.user),
+                joinedload(TicketPurchase.promo_application).joinedload(
+                    PromoCodeApplication.promo_code
+                ),
+            )
+        )
+
+        filters = []
+        if search:
+            trimmed = search.strip()
+            if trimmed:
+                like = f"%{trimmed}%"
+                filters.append(
+                    or_(
+                        TicketPurchase.purchaser_name.ilike(like),
+                        TicketPurchase.purchaser_email.ilike(like),
+                        TicketPurchase.purchaser_phone.ilike(like),
+                        TicketPurchase.external_sale_id.ilike(like),
+                        TicketPurchase.notes.ilike(like),
+                        TicketPackage.name.ilike(like),
+                        purchaser_name_expr.ilike(like),
+                        purchaser_email_expr.ilike(like),
+                        PromoCode.code.ilike(like),
+                    )
+                )
+
+        if filters:
+            base_query = base_query.where(*filters)
+
+        count_query = (
+            select(func.count(TicketPurchase.id))
+            .select_from(TicketPurchase)
+            .join(TicketPurchase.ticket_package)
+            .join(TicketPurchase.user)
+            .outerjoin(TicketPurchase.promo_application)
+            .outerjoin(PromoCodeApplication.promo_code)
+            .where(TicketPurchase.event_id == event_id)
+        )
+        if filters:
+            count_query = count_query.where(*filters)
+
+        count_result = await self.db.execute(count_query)
+        total_count = count_result.scalar_one()
+
+        result = await self.db.execute(
+            base_query.order_by(sort_direction(sort_expression)).limit(per_page).offset(offset)
+        )
+        purchases = result.unique().scalars().all()
+
+        sales = []
+        for purchase in purchases:
+            promo_code = None
+            discount_amount = None
+            if purchase.promo_application and purchase.promo_application.promo_code:
+                promo_code = purchase.promo_application.promo_code.code
+                discount_amount = purchase.promo_application.discount_amount
+
+            purchaser_name = purchase.purchaser_name
+            purchaser_email = purchase.purchaser_email
+            if not purchaser_name and purchase.user:
+                purchaser_name = f"{purchase.user.first_name} {purchase.user.last_name}".strip()
+            if not purchaser_email and purchase.user:
+                purchaser_email = purchase.user.email
+
+            payment_status = purchase.payment_status
+            payment_status_value = (
+                payment_status.value if hasattr(payment_status, "value") else str(payment_status)
+            )
+
+            sales.append(
+                {
+                    "purchase_id": str(purchase.id),
+                    "package_name": purchase.ticket_package.name,
+                    "purchaser_name": purchaser_name,
+                    "purchaser_email": purchaser_email,
+                    "purchaser_phone": purchase.purchaser_phone,
+                    "quantity": purchase.quantity,
+                    "total_price": purchase.total_price,
+                    "payment_status": payment_status_value,
+                    "purchased_at": purchase.purchased_at.isoformat(),
+                    "promo_code": promo_code,
+                    "discount_amount": discount_amount,
+                    "external_sale_id": purchase.external_sale_id,
+                    "notes": purchase.notes,
+                }
+            )
+
+        return {
+            "sales": sales,
             "total_count": total_count,
             "page": page,
             "per_page": per_page,

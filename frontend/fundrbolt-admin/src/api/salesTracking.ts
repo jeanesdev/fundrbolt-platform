@@ -43,6 +43,37 @@ export interface PackageSalesDetails extends PackageSalesSummary {
   per_page: number;
 }
 
+export interface EventSalesRow {
+  purchase_id: string;
+  package_name: string;
+  purchaser_name: string;
+  purchaser_email: string;
+  purchaser_phone: string | null;
+  quantity: number;
+  total_price: number;
+  payment_status: string;
+  purchased_at: string;
+  promo_code: string | null;
+  discount_amount: number | null;
+  external_sale_id: string | null;
+  notes: string | null;
+}
+
+export interface EventSalesList {
+  sales: EventSalesRow[];
+  total_count: number;
+  page: number;
+  per_page: number;
+}
+
+export interface EventSalesListParams {
+  search?: string;
+  sort_by?: string;
+  sort_dir?: 'asc' | 'desc';
+  page?: number;
+  per_page?: number;
+}
+
 export const salesTrackingApi = {
   /**
    * Get event-wide sales summary
@@ -87,5 +118,19 @@ export const salesTrackingApi = {
     // Create blob URL for download
     const blob = new Blob([response.data], { type: 'text/csv' });
     return URL.createObjectURL(blob);
+  },
+
+  /**
+   * Get event-wide sales list
+   */
+  async getEventSalesList(
+    eventId: string,
+    params: EventSalesListParams = {}
+  ): Promise<EventSalesList> {
+    const response = await apiClient.get<EventSalesList>(
+      `/admin/events/${eventId}/tickets/sales`,
+      { params }
+    );
+    return response.data;
   },
 };

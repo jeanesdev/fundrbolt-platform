@@ -5,14 +5,14 @@
  * Validates NPO change handling, query invalidation, and event loading.
  */
 
-import { renderHook, waitFor } from '@testing-library/react'
+import { eventApi } from '@/services/event-service'
+import type { Event, EventStatus } from '@/types/event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { renderHook, waitFor } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useEventContext } from '../use-event-context'
-import { eventApi } from '@/services/event-service'
 import * as useNpoContextModule from '../use-npo-context'
-import type { Event, EventStatus } from '@/types/event'
-import type { ReactNode } from 'react'
 
 // Mock dependencies
 vi.mock('../use-npo-context')

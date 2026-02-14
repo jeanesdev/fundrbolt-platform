@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.event import Event
-from app.models.event_registration import EventRegistration, RegistrationStatus
+from app.models.event_registration import EventRegistration
 from app.models.registration_guest import RegistrationGuest
 from app.models.user import User
 
@@ -240,7 +240,7 @@ class TestSeatingAssignment:
         """Test manual bidder number assignment to a guest."""
         from uuid import uuid4
 
-        from app.models.event_registration import EventRegistration, RegistrationStatus
+        from app.models.event_registration import EventRegistration
         from app.models.registration_guest import RegistrationGuest
 
         # Step 1: Create a registration and guest
@@ -248,7 +248,6 @@ class TestSeatingAssignment:
             id=uuid4(),
             event_id=test_active_event.id,
             user_id=test_donor.id,
-            status=RegistrationStatus.CONFIRMED,
         )
         db_session.add(registration)
         await db_session.commit()
@@ -294,7 +293,7 @@ class TestSeatingAssignment:
         from sqlalchemy import text
 
         from app.core.security import hash_password
-        from app.models.event_registration import EventRegistration, RegistrationStatus
+        from app.models.event_registration import EventRegistration
         from app.models.registration_guest import RegistrationGuest
         from app.models.user import User
 
@@ -319,7 +318,6 @@ class TestSeatingAssignment:
             id=uuid4(),
             event_id=test_active_event.id,
             user_id=test_donor.id,
-            status=RegistrationStatus.CONFIRMED,
         )
         db_session.add(registration1)
 
@@ -327,7 +325,6 @@ class TestSeatingAssignment:
             id=uuid4(),
             event_id=test_active_event.id,
             user_id=user2.id,
-            status=RegistrationStatus.CONFIRMED,
         )
         db_session.add(registration2)
         await db_session.commit()
@@ -335,16 +332,20 @@ class TestSeatingAssignment:
         guest1 = RegistrationGuest(
             id=uuid4(),
             registration_id=registration1.id,
+            user_id=test_donor.id,
             name="Guest 1",
             email="guest1@example.com",
             bidder_number=200,
+            is_primary=True,
         )
         guest2 = RegistrationGuest(
             id=uuid4(),
             registration_id=registration2.id,
+            user_id=user2.id,
             name="Guest 2",
             email="guest2@example.com",
             bidder_number=300,
+            is_primary=True,
         )
         db_session.add_all([guest1, guest2])
         await db_session.commit()
@@ -378,7 +379,7 @@ class TestSeatingAssignment:
         """Test validation of bidder number range."""
         from uuid import uuid4
 
-        from app.models.event_registration import EventRegistration, RegistrationStatus
+        from app.models.event_registration import EventRegistration
         from app.models.registration_guest import RegistrationGuest
 
         # Step 1: Create a guest
@@ -386,7 +387,6 @@ class TestSeatingAssignment:
             id=uuid4(),
             event_id=test_active_event.id,
             user_id=test_donor.id,
-            status=RegistrationStatus.CONFIRMED,
         )
         db_session.add(registration)
         await db_session.commit()
@@ -451,7 +451,6 @@ class TestSeatingDragDropWorkflow:
             event_id=test_active_event.id,
             user_id=test_user_2.id,
             number_of_guests=1,
-            status="confirmed",
         )
         db_session.add(registration)
         await db_session.commit()
@@ -503,7 +502,6 @@ class TestSeatingDragDropWorkflow:
             event_id=test_active_event.id,
             user_id=test_user_2.id,
             number_of_guests=1,
-            status="confirmed",
         )
         db_session.add(registration)
         await db_session.commit()
@@ -555,7 +553,6 @@ class TestSeatingDragDropWorkflow:
             event_id=test_active_event.id,
             user_id=test_user_2.id,
             number_of_guests=3,
-            status="confirmed",
         )
         db_session.add(registration)
         await db_session.commit()
@@ -620,7 +617,6 @@ class TestSeatingDragDropWorkflow:
             event_id=test_active_event.id,
             user_id=test_user_2.id,
             number_of_guests=3,
-            status="confirmed",
         )
         db_session.add(registration)
         await db_session.commit()
@@ -688,7 +684,6 @@ class TestSeatingDragDropWorkflow:
             event_id=test_active_event.id,
             user_id=test_user_2.id,
             number_of_guests=3,
-            status="confirmed",
         )
         db_session.add(registration)
         await db_session.commit()
@@ -772,7 +767,6 @@ class TestSeatingDragDropWorkflow:
             registration = EventRegistration(
                 event_id=test_active_event.id,
                 user_id=users[idx].id,
-                status=RegistrationStatus.CONFIRMED,
             )
             db_session.add(registration)
             await db_session.flush()
@@ -845,7 +839,6 @@ class TestSeatingDragDropWorkflow:
         registration = EventRegistration(
             event_id=test_active_event.id,
             user_id=test_user_2.id,
-            status=RegistrationStatus.CONFIRMED,
         )
         db_session.add(registration)
         await db_session.flush()
@@ -928,9 +921,7 @@ class TestDonorSeatingView:
         registration = EventRegistration(
             user_id=test_user.id,
             event_id=test_active_event.id,
-            status=RegistrationStatus.CONFIRMED,
             number_of_guests=1,
-            check_in_time=None,  # Not checked in yet
         )
         db_session.add(registration)
         await db_session.flush()
@@ -938,11 +929,13 @@ class TestDonorSeatingView:
         # Create guest with table and bidder number assigned
         guest = RegistrationGuest(
             registration_id=registration.id,
+            user_id=test_user.id,
             name=test_user.full_name,
             email=test_user.email,
             table_number=5,
             bidder_number=123,
             bidder_number_assigned_at=datetime.now(UTC),
+            is_primary=True,
         )
         db_session.add(guest)
         await db_session.commit()
@@ -962,7 +955,7 @@ class TestDonorSeatingView:
         assert "check in" in data["message"].lower()
 
         # Step 3: Simulate check-in
-        registration.check_in_time = datetime.now(UTC)
+        guest.check_in_time = datetime.now(UTC)
         await db_session.commit()
 
         # Step 4: Query seating info AFTER check-in
@@ -1000,9 +993,7 @@ class TestDonorSeatingView:
         registration = EventRegistration(
             user_id=test_user.id,
             event_id=test_active_event.id,
-            status=RegistrationStatus.CONFIRMED,
             number_of_guests=1,
-            check_in_time=None,
         )
         db_session.add(registration)
         await db_session.flush()
@@ -1010,10 +1001,12 @@ class TestDonorSeatingView:
         # Create guest WITHOUT table assignment
         guest = RegistrationGuest(
             registration_id=registration.id,
+            user_id=test_user.id,
             name=test_user.full_name,
             email=test_user.email,
             table_number=None,  # NO TABLE ASSIGNED
             bidder_number=None,
+            is_primary=True,
         )
         db_session.add(guest)
         await db_session.commit()
@@ -1085,20 +1078,21 @@ class TestDonorSeatingView:
         user_registration = EventRegistration(
             user_id=test_user.id,
             event_id=test_active_event.id,
-            status=RegistrationStatus.CONFIRMED,
             number_of_guests=1,
-            check_in_time=datetime.now(UTC),  # CHECKED IN
         )
         db_session.add(user_registration)
         await db_session.flush()
 
         user_guest = RegistrationGuest(
             registration_id=user_registration.id,
+            user_id=test_user.id,
             name=test_user.full_name,
             email=test_user.email,
             table_number=5,
             bidder_number=123,
             bidder_number_assigned_at=datetime.now(UTC),
+            check_in_time=datetime.now(UTC),
+            is_primary=True,
         )
         db_session.add(user_guest)
 
@@ -1106,19 +1100,20 @@ class TestDonorSeatingView:
         tablemate1_registration = EventRegistration(
             user_id=tablemate1.id,
             event_id=test_active_event.id,
-            status=RegistrationStatus.CONFIRMED,
             number_of_guests=1,
-            check_in_time=datetime.now(UTC),  # CHECKED IN
         )
         db_session.add(tablemate1_registration)
         await db_session.flush()
 
         tablemate1_guest = RegistrationGuest(
             registration_id=tablemate1_registration.id,
+            user_id=tablemate1.id,
             name="Alice Johnson",
             email="alice@example.com",
             table_number=5,  # SAME TABLE
             bidder_number=124,
+            check_in_time=datetime.now(UTC),
+            is_primary=True,
         )
         db_session.add(tablemate1_guest)
 
@@ -1126,19 +1121,19 @@ class TestDonorSeatingView:
         tablemate2_registration = EventRegistration(
             user_id=tablemate2.id,
             event_id=test_active_event.id,
-            status=RegistrationStatus.CONFIRMED,
             number_of_guests=1,
-            check_in_time=None,  # NOT CHECKED IN
         )
         db_session.add(tablemate2_registration)
         await db_session.flush()
 
         tablemate2_guest = RegistrationGuest(
             registration_id=tablemate2_registration.id,
+            user_id=tablemate2.id,
             name="Bob Smith",
             email="bob@example.com",
             table_number=5,  # SAME TABLE
             bidder_number=125,
+            is_primary=True,
         )
         db_session.add(tablemate2_guest)
         await db_session.commit()

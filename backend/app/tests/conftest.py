@@ -170,6 +170,94 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
     # Create all other tables in a fresh transaction
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(
+            text("ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS ticket_purchase_id UUID")
+        )
+        await conn.execute(
+            text(
+                """
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1
+                        FROM information_schema.columns
+                        WHERE table_name = 'event_registrations'
+                          AND column_name = 'status'
+                    ) THEN
+                        ALTER TABLE event_registrations
+                            ALTER COLUMN status DROP NOT NULL;
+                        ALTER TABLE event_registrations
+                            ALTER COLUMN status SET DEFAULT 'confirmed';
+                    END IF;
+                END $$;
+                """
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS invited_by_admin BOOLEAN DEFAULT FALSE"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS invitation_sent_at TIMESTAMPTZ"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS checked_in BOOLEAN DEFAULT FALSE"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests ADD COLUMN IF NOT EXISTS check_in_time TIMESTAMPTZ"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'confirmed'"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS cancellation_reason VARCHAR(50)"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS cancellation_note VARCHAR(255)"
+            )
+        )
+        await conn.execute(
+            text("ALTER TABLE registration_guests ADD COLUMN IF NOT EXISTS bidder_number INTEGER")
+        )
+        await conn.execute(
+            text("ALTER TABLE registration_guests ADD COLUMN IF NOT EXISTS table_number INTEGER")
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS bidder_number_assigned_at TIMESTAMPTZ"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS is_table_captain BOOLEAN DEFAULT FALSE"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT FALSE"
+            )
+        )
 
     yield engine
 
@@ -1658,14 +1746,26 @@ async def test_registration(db_session: AsyncSession, test_event: Any, test_dono
     Returns an EventRegistration instance linking test_donor_user to test_event.
     """
     from app.models.event_registration import EventRegistration, RegistrationStatus
+    from app.models.registration_guest import RegistrationGuest
 
     registration = EventRegistration(
         event_id=test_event.id,
         user_id=test_donor_user.id,
-        status=RegistrationStatus.CONFIRMED,
         number_of_guests=2,
     )
     db_session.add(registration)
+    await db_session.flush()
+
+    primary_guest = RegistrationGuest(
+        registration_id=registration.id,
+        user_id=test_donor_user.id,
+        name=f"{test_donor_user.first_name} {test_donor_user.last_name}",
+        email=test_donor_user.email,
+        phone=test_donor_user.phone,
+        status=RegistrationStatus.CONFIRMED.value,
+        is_primary=True,
+    )
+    db_session.add(primary_guest)
     await db_session.commit()
     await db_session.refresh(registration)
 
@@ -1754,3 +1854,41 @@ def mock_azure_storage(monkeypatch):
     )
 
     return mock_blob_service
+
+
+# ================================
+# Ticket Management Fixtures
+# ================================
+
+
+@pytest_asyncio.fixture
+async def test_ticket_package(
+    db_session: AsyncSession, test_event: Any, test_npo_admin_user: Any
+) -> Any:
+    """
+    Create a test ticket package for the test event.
+
+    Returns a TicketPackage instance with sample data.
+    """
+    from decimal import Decimal
+
+    from app.models.ticket_management import TicketPackage
+
+    package = TicketPackage(
+        event_id=test_event.id,
+        created_by=test_npo_admin_user.id,
+        name="General Admission",
+        description="Standard admission ticket",
+        price=Decimal("100.00"),
+        seats_per_package=1,
+        quantity_limit=100,
+        sold_count=0,
+        display_order=1,
+        is_enabled=True,
+        is_sponsorship=False,
+    )
+    db_session.add(package)
+    await db_session.commit()
+    await db_session.refresh(package)
+
+    return package

@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.event import Event
-from app.models.event_registration import EventRegistration, RegistrationStatus
+from app.models.event_registration import EventRegistration
 from app.models.registration_guest import RegistrationGuest
 from app.models.user import User
 from app.services.seating_service import SeatingService
@@ -101,7 +101,6 @@ class TestSeatingService:
         registration = EventRegistration(
             event_id=test_active_event.id,
             user_id=test_user_2.id,
-            status=RegistrationStatus.CONFIRMED,
             number_of_guests=1,
         )
         db_session.add(registration)
@@ -137,7 +136,6 @@ class TestSeatingService:
         registration = EventRegistration(
             event_id=test_active_event.id,
             user_id=test_user_2.id,
-            status=RegistrationStatus.CONFIRMED,
             number_of_guests=3,
         )
         db_session.add(registration)
@@ -186,7 +184,6 @@ class TestSeatingService:
         registration = EventRegistration(
             event_id=test_active_event.id,
             user_id=test_user_2.id,
-            status=RegistrationStatus.CONFIRMED,
             number_of_guests=1,
         )
         db_session.add(registration)
@@ -223,7 +220,6 @@ class TestSeatingService:
         registration = EventRegistration(
             event_id=test_active_event.id,
             user_id=test_user_2.id,
-            status=RegistrationStatus.CONFIRMED,
             number_of_guests=3,
         )
         db_session.add(registration)
@@ -262,7 +258,6 @@ class TestSeatingService:
         registration = EventRegistration(
             event_id=test_active_event.id,
             user_id=test_user_2.id,
-            status=RegistrationStatus.CONFIRMED,
             number_of_guests=3,
         )
         db_session.add(registration)
@@ -309,7 +304,6 @@ class TestSeatingService:
         registration = EventRegistration(
             event_id=test_active_event.id,
             user_id=test_user_2.id,
-            status=RegistrationStatus.CONFIRMED,
             number_of_guests=1,
         )
         db_session.add(registration)

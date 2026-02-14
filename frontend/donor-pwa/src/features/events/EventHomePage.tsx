@@ -17,16 +17,20 @@
 
 import { AuctionGallery, CountdownTimer, EventDetails, EventSwitcher, MySeatingSection } from '@/components/event-home'
 import { AuctionItemDetailModal } from '@/components/event-home/AuctionItemDetailModal'
+import { BidSliderModal } from '@/components/auction/BidSliderModal'
+import { BidConfirmSlide } from '@/components/auction/BidConfirmSlide'
 import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEventBranding } from '@/hooks/use-event-branding'
 import { useEventContext } from '@/hooks/use-event-context'
 import { getMySeatingInfo, type SeatingInfoResponse } from '@/services/seating-service'
+import auctionItemService from '@/services/auctionItemService'
+import watchListService from '@/services/watchlistService'
 import { useEventContextStore } from '@/stores/event-context-store'
 import { useEventStore } from '@/stores/event-store'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { AlertCircle, Calendar, Loader2, MapPin } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -46,6 +50,29 @@ export function EventHomePage() {
   const { setSelectedEvent } = useEventContextStore()
   const { availableEvents } = useEventContext()
   const [selectedAuctionItemId, setSelectedAuctionItemId] = useState<string | null>(null)
+  const [isItemWatching, setIsItemWatching] = useState(false)
+  const [bidModalState, setBidModalState] = useState<{
+    isOpen: boolean
+    item: any | null
+    selectedAmount: number
+    isMaxBid: boolean
+  }>({
+    isOpen: false,
+    item: null,
+    selectedAmount: 0,
+    isMaxBid: false,
+  })
+  const [confirmModalState, setConfirmModalState] = useState<{
+    isOpen: boolean
+    amount: number
+    isMaxBid: boolean
+    itemTitle: string
+  }>({
+    isOpen: false,
+    amount: 0,
+    isMaxBid: false,
+    itemTitle: '',
+  })
 
   // Convert available events from event context to RegisteredEventWithBranding format
   const eventsForSwitcher = useMemo((): RegisteredEventWithBranding[] => {
@@ -230,6 +257,114 @@ export function EventHomePage() {
     document.body.removeChild(link)
     URL.revokeObjectURL(link.href)
   }, [currentEvent])
+
+  // Query client for invalidation
+  const queryClient = useQueryClient()
+
+  // Fetch watch list to determine if selected item is being watched
+  const { data: watchListData } = useQuery({
+    queryKey: ['watchlist', currentEvent?.id],
+    queryFn: () => {
+      if (!currentEvent?.id) return Promise.resolve({ watch_list: [], total: 0 })
+      return watchListService.getWatchList(currentEvent.id)
+    },
+    enabled: !!currentEvent?.id,
+    staleTime: 30000,
+  })
+
+  // Check if selected item is being watched
+  useEffect(() => {
+    if (selectedAuctionItemId && watchListData?.watch_list) {
+      const isWatched = watchListData.watch_list.some(
+        (entry) => entry.auction_item_id === selectedAuctionItemId
+      )
+      setIsItemWatching(isWatched)
+    }
+  }, [selectedAuctionItemId, watchListData])
+
+  // Place bid mutation
+  const placeBidMutation = useMutation({
+    mutationFn: ({ itemId, amount }: { itemId: string; amount: number }) =>
+      auctionItemService.placeBid(currentEvent!.id, itemId, amount),
+    onSuccess: () => {
+      toast.success('Bid placed successfully!')
+      queryClient.invalidateQueries({ queryKey: ['auction-items', currentEvent?.id] })
+      queryClient.invalidateQueries({ queryKey: ['auction-item-detail', currentEvent?.id] })
+      setBidModalState({ isOpen: false, item: null, selectedAmount: 0, isMaxBid: false })
+      setConfirmModalState({ isOpen: false, amount: 0, isMaxBid: false, itemTitle: '' })
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || 'Failed to place bid')
+    },
+  })
+
+  // Place max bid mutation
+  const placeMaxBidMutation = useMutation({
+    mutationFn: ({ itemId, maxAmount }: { itemId: string; maxAmount: number }) =>
+      auctionItemService.placeMaxBid(currentEvent!.id, itemId, maxAmount),
+    onSuccess: () => {
+      toast.success('Max bid set successfully!')
+      queryClient.invalidateQueries({ queryKey: ['auction-items', currentEvent?.id] })
+      queryClient.invalidateQueries({ queryKey: ['auction-item-detail', currentEvent?.id] })
+      setBidModalState({ isOpen: false, item: null, selectedAmount: 0, isMaxBid: false })
+      setConfirmModalState({ isOpen: false, amount: 0, isMaxBid: false, itemTitle: '' })
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || 'Failed to set max bid')
+    },
+  })
+
+  // Handle bid button click from auction item detail
+  const handleBidClick = useCallback((item: any) => {
+    const minNextBid = item.min_next_bid_amount || (item.current_bid_amount || item.starting_bid) + item.bid_increment
+    setBidModalState({
+      isOpen: true,
+      item,
+      selectedAmount: minNextBid,
+      isMaxBid: false,
+    })
+  }, [])
+
+  // Handle place bid from slider
+  const handlePlaceBid = useCallback((amount: number) => {
+    if (!bidModalState.item) return
+    setBidModalState((prev) => ({ ...prev, isOpen: false }))
+    setConfirmModalState({
+      isOpen: true,
+      amount,
+      isMaxBid: false,
+      itemTitle: bidModalState.item.title,
+    })
+  }, [bidModalState.item])
+
+  // Handle set max bid from slider
+  const handleSetMaxBid = useCallback((amount: number) => {
+    if (!bidModalState.item) return
+    setBidModalState((prev) => ({ ...prev, isOpen: false }))
+    setConfirmModalState({
+      isOpen: true,
+      amount,
+      isMaxBid: true,
+      itemTitle: bidModalState.item.title,
+    })
+  }, [bidModalState.item])
+
+  // Handle confirm bid after swipe
+  const handleConfirmBid = useCallback(() => {
+    if (!bidModalState.item) return
+
+    if (confirmModalState.isMaxBid) {
+      placeMaxBidMutation.mutate({
+        itemId: bidModalState.item.id,
+        maxAmount: confirmModalState.amount,
+      })
+    } else {
+      placeBidMutation.mutate({
+        itemId: bidModalState.item.id,
+        amount: confirmModalState.amount,
+      })
+    }
+  }, [bidModalState.item, confirmModalState, placeBidMutation, placeMaxBidMutation])
 
   // Loading state
   if (eventsLoading) {
@@ -560,10 +695,34 @@ export function EventHomePage() {
           eventStatus={currentEvent?.status}
           eventDateTime={currentEvent?.event_datetime}
           onClose={() => setSelectedAuctionItemId(null)}
-          onBid={(item) => {
-            // TODO: Navigate to bid page when bidding is implemented
-            toast.info(`Place bid on "${item.title}"`)
-          }}
+          onBid={handleBidClick}
+          isWatching={isItemWatching}
+          onWatchToggle={(isWatching) => setIsItemWatching(isWatching)}
+        />
+
+        {/* Bid Slider Modal */}
+        {bidModalState.item && (
+          <BidSliderModal
+            isOpen={bidModalState.isOpen}
+            onClose={() => setBidModalState({ isOpen: false, item: null, selectedAmount: 0, isMaxBid: false })}
+            itemTitle={bidModalState.item.title}
+            currentBid={bidModalState.item.current_bid_amount || bidModalState.item.starting_bid}
+            minNextBid={bidModalState.item.min_next_bid_amount || (bidModalState.item.current_bid_amount || bidModalState.item.starting_bid) + bidModalState.item.bid_increment}
+            bidIncrement={bidModalState.item.bid_increment}
+            allowMaxBid={true}
+            onPlaceBid={handlePlaceBid}
+            onSetMaxBid={handleSetMaxBid}
+          />
+        )}
+
+        {/* Bid Confirm Slide */}
+        <BidConfirmSlide
+          isOpen={confirmModalState.isOpen}
+          onClose={() => setConfirmModalState({ isOpen: false, amount: 0, isMaxBid: false, itemTitle: '' })}
+          onConfirm={handleConfirmBid}
+          bidAmount={confirmModalState.amount}
+          isMaxBid={confirmModalState.isMaxBid}
+          itemTitle={confirmModalState.itemTitle}
         />
       </div>
     </div>

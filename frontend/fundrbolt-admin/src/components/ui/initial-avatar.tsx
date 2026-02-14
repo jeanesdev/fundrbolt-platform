@@ -6,8 +6,8 @@
  * Ensures WCAG AA compliance with auto-contrasting text colors.
  */
 
-import { cn } from '@/lib/utils'
 import { useInitialAvatar, type UseInitialAvatarProps } from '@/hooks/use-initial-avatar'
+import { cn } from '@/lib/utils'
 
 export interface InitialAvatarProps extends UseInitialAvatarProps {
   size?: 'sm' | 'md' | 'lg'

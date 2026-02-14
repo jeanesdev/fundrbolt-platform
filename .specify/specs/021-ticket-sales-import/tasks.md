@@ -13,8 +13,8 @@ description: "Task list for ticket sales import implementation"
 
 **Purpose**: Create feature module scaffolding for backend and frontend.
 
-- [ ] T001 Create backend module skeletons in backend/app/api/v1/admin_ticket_sales_import.py, backend/app/services/ticket_sales_import_service.py, backend/app/schemas/ticket_sales_import.py
-- [ ] T002 [P] Create frontend module skeletons in frontend/fundrbolt-admin/src/features/events/tickets/components/TicketSalesImportDialog.tsx and frontend/fundrbolt-admin/src/features/events/tickets/services/ticketSalesImport.ts
+- [x] T001 Create backend module skeletons in backend/app/api/v1/admin_ticket_sales_import.py, backend/app/services/ticket_sales_import_service.py, backend/app/schemas/ticket_sales_import.py
+- [x] T002 [P] Create frontend module skeletons in frontend/fundrbolt-admin/src/features/events/tickets/components/TicketSalesImportDialog.tsx and frontend/fundrbolt-admin/src/features/events/tickets/services/ticketSalesImport.ts
 
 ---
 
@@ -22,11 +22,11 @@ description: "Task list for ticket sales import implementation"
 
 **Purpose**: Data model and routing prerequisites for all stories.
 
-- [ ] T003 Add migration for ticket purchase import fields and import tables in backend/alembic/versions/xxxx_create_ticket_sales_import_tables.py
-- [ ] T004 Update TicketPurchase fields and constraints for import data in backend/app/models/ticket_management.py
-- [ ] T005 [P] Add import batch and issue models in backend/app/models/ticket_sales_import.py and export in backend/app/models/__init__.py
-- [ ] T006 [P] Define preflight/import response schemas in backend/app/schemas/ticket_sales_import.py
-- [ ] T007 Register ticket sales import router in backend/app/api/v1/__init__.py
+- [x] T003 Add migration for ticket purchase import fields and import tables in backend/alembic/versions/xxxx_create_ticket_sales_import_tables.py
+- [x] T004 Update TicketPurchase fields and constraints for import data in backend/app/models/ticket_management.py
+- [x] T005 [P] Add import batch and issue models in backend/app/models/ticket_sales_import.py and export in backend/app/models/__init__.py
+- [x] T006 [P] Define preflight/import response schemas in backend/app/schemas/ticket_sales_import.py
+- [x] T007 Register ticket sales import router in backend/app/api/v1/__init__.py
 
 **Checkpoint**: Foundational data model and routing ready.
 
@@ -40,11 +40,11 @@ description: "Task list for ticket sales import implementation"
 
 ### Implementation
 
-- [ ] T008 [US1] Implement CSV preflight validation (required fields, ticket type exists, row limit) in backend/app/services/ticket_sales_import_service.py
-- [ ] T009 [US1] Implement preflight/import endpoints in backend/app/api/v1/admin_ticket_sales_import.py
-- [ ] T010 [P] [US1] Add API client functions for preflight/import in frontend/fundrbolt-admin/src/features/events/tickets/services/ticketSalesImport.ts
-- [ ] T011 [US1] Add import button and dialog wiring in frontend/fundrbolt-admin/src/features/events/tickets/TicketPackagesIndexPage.tsx and frontend/fundrbolt-admin/src/features/events/tickets/components/TicketSalesImportDialog.tsx
-- [ ] T012 [P] [US1] Add frontend types for preflight/import responses in frontend/fundrbolt-admin/src/types/ticket-management.ts
+- [x] T008 [US1] Implement CSV preflight validation (required fields, ticket type exists, row limit) in backend/app/services/ticket_sales_import_service.py
+- [x] T009 [US1] Implement preflight/import endpoints in backend/app/api/v1/admin_ticket_sales_import.py
+- [x] T010 [P] [US1] Add API client functions for preflight/import in frontend/fundrbolt-admin/src/features/events/tickets/services/ticketSalesImport.ts
+- [x] T011 [US1] Add import button and dialog wiring in frontend/fundrbolt-admin/src/features/events/tickets/TicketPackagesIndexPage.tsx and frontend/fundrbolt-admin/src/features/events/tickets/components/TicketSalesImportDialog.tsx
+- [x] T012 [P] [US1] Add frontend types for preflight/import responses in frontend/fundrbolt-admin/src/types/ticket-management.ts
 
 **Checkpoint**: User Story 1 complete and independently usable for CSV imports.
 
@@ -58,8 +58,8 @@ description: "Task list for ticket sales import implementation"
 
 ### Implementation
 
-- [ ] T013 [US2] Extend parsing to JSON and Excel in backend/app/services/ticket_sales_import_service.py
-- [ ] T014 [US2] Display JSON/CSV examples and accepted formats in frontend/fundrbolt-admin/src/features/events/tickets/components/TicketSalesImportDialog.tsx
+- [x] T013 [US2] Extend parsing to JSON and Excel in backend/app/services/ticket_sales_import_service.py
+- [x] T014 [US2] Display JSON/CSV examples and accepted formats in frontend/fundrbolt-admin/src/features/events/tickets/components/TicketSalesImportDialog.tsx
 
 **Checkpoint**: User Story 2 complete with multi-format support.
 
@@ -73,7 +73,7 @@ description: "Task list for ticket sales import implementation"
 
 ### Implementation
 
-- [ ] T015 [US3] Add existing `external_sale_id` warning/skip logic in backend/app/services/ticket_sales_import_service.py
+- [x] T015 [US3] Add existing `external_sale_id` warning/skip logic in backend/app/services/ticket_sales_import_service.py
 - [ ] T016 [US3] Generate error report output and include `error_report_url` in backend/app/schemas/ticket_sales_import.py
 - [ ] T017 [US3] Update contract to include `error_report_url` in .specify/specs/021-ticket-sales-import/contracts/ticket-sales-import.yaml
 - [ ] T018 [US3] Render row-level issues, warnings, and error report download in frontend/fundrbolt-admin/src/features/events/tickets/components/TicketSalesImportDialog.tsx

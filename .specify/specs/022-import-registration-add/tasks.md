@@ -20,9 +20,9 @@ description: "Task list for Event Registration Import"
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create registration import backend module placeholders in backend/app/api/v1/admin_registration_import.py, backend/app/services/registration_import_service.py, and backend/app/schemas/registration_import.py
-- [ ] T002 [P] Create admin registration import service client stub in frontend/fundrbolt-admin/src/services/registration-import-service.ts
-- [ ] T003 [P] Create registration import dialog component shell in frontend/fundrbolt-admin/src/components/admin/RegistrationImportDialog.tsx
+- [x] T001 Create registration import backend module placeholders in backend/app/api/v1/admin_registration_import.py, backend/app/services/registration_import_service.py, and backend/app/schemas/registration_import.py
+- [x] T002 [P] Create admin registration import service client stub in frontend/fundrbolt-admin/src/services/registration-import-service.ts
+- [x] T003 [P] Create registration import dialog component shell in frontend/fundrbolt-admin/src/components/admin/RegistrationImportDialog.tsx
 
 ---
 
@@ -32,10 +32,10 @@ description: "Task list for Event Registration Import"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Create Import Batch and Validation Issue models in backend/app/models/registration_import.py
-- [ ] T005 [P] Add Alembic migration for import batch and validation issue tables in backend/alembic/versions/<new>_registration_import.py
-- [ ] T006 [P] Define Pydantic schemas for preflight and confirm responses in backend/app/schemas/registration_import.py
-- [ ] T007 Update API router registration to include admin registration import routes in backend/app/api/v1/__init__.py
+- [x] T004 Create Import Batch and Validation Issue models in backend/app/models/registration_import.py
+- [x] T005 [P] Add Alembic migration for import batch and validation issue tables in backend/alembic/versions/<new>_registration_import.py
+- [x] T006 [P] Define Pydantic schemas for preflight and confirm responses in backend/app/schemas/registration_import.py
+- [x] T007 Update API router registration to include admin registration import routes in backend/app/api/v1/__init__.py
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -49,13 +49,13 @@ description: "Task list for Event Registration Import"
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Implement preflight validation (required fields, in-file duplicates, event_id mismatch warnings, row limit) in backend/app/services/registration_import_service.py
-- [ ] T009 [US1] Implement confirm import logic (create records, skip existing duplicates, record batch summary) in backend/app/services/registration_import_service.py
-- [ ] T010 [US1] Implement preflight and confirm endpoints in backend/app/api/v1/admin_registration_import.py
-- [ ] T011 [US1] Add Import button to registrations page in frontend/fundrbolt-admin/src/features/events/sections/EventRegistrationsSection.tsx
-- [ ] T012 [US1] Build preflight + confirm dialog UI in frontend/fundrbolt-admin/src/components/admin/RegistrationImportDialog.tsx
-- [ ] T013 [US1] Wire dialog actions to API client in frontend/fundrbolt-admin/src/services/registration-import-service.ts
-- [ ] T014 [US1] Add JSON/CSV example format display in frontend/fundrbolt-admin/src/components/admin/RegistrationImportDialog.tsx
+- [x] T008 [US1] Implement preflight validation (required fields, in-file duplicates, event_id mismatch warnings, row limit) in backend/app/services/registration_import_service.py
+- [x] T009 [US1] Implement confirm import logic (create records, skip existing duplicates, record batch summary) in backend/app/services/registration_import_service.py
+- [x] T010 [US1] Implement preflight and confirm endpoints in backend/app/api/v1/admin_registration_import.py
+- [x] T011 [US1] Add Import button to registrations page in frontend/fundrbolt-admin/src/features/events/sections/EventRegistrationsSection.tsx
+- [x] T012 [US1] Build preflight + confirm dialog UI in frontend/fundrbolt-admin/src/components/admin/RegistrationImportDialog.tsx
+- [x] T013 [US1] Wire dialog actions to API client in frontend/fundrbolt-admin/src/services/registration-import-service.ts
+- [x] T014 [US1] Add JSON/CSV example format display in frontend/fundrbolt-admin/src/components/admin/RegistrationImportDialog.tsx
 
 **Checkpoint**: User Story 1 is fully functional and testable independently
 
@@ -69,9 +69,9 @@ description: "Task list for Event Registration Import"
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Implement JSON, CSV, and Excel parsing in backend/app/services/registration_import_service.py
-- [ ] T016 [US2] Enforce accepted file types and extensions in frontend/fundrbolt-admin/src/components/admin/RegistrationImportDialog.tsx
-- [ ] T017 [US2] Populate file_type in preflight responses from backend/app/services/registration_import_service.py and schemas in backend/app/schemas/registration_import.py
+- [x] T015 [US2] Implement JSON, CSV, and Excel parsing in backend/app/services/registration_import_service.py
+- [x] T016 [US2] Enforce accepted file types and extensions in frontend/fundrbolt-admin/src/components/admin/RegistrationImportDialog.tsx
+- [x] T017 [US2] Populate file_type in preflight responses from backend/app/services/registration_import_service.py and schemas in backend/app/schemas/registration_import.py
 
 **Checkpoint**: User Stories 1 AND 2 work independently
 
@@ -85,9 +85,9 @@ description: "Task list for Event Registration Import"
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] Add error report generation in backend/app/services/registration_import_service.py
-- [ ] T019 [US3] Add error report download endpoint in backend/app/api/v1/admin_registration_import.py
-- [ ] T020 [US3] Show row-level errors/warnings and download link in frontend/fundrbolt-admin/src/components/admin/RegistrationImportDialog.tsx
+- [x] T018 [US3] Add error report generation in backend/app/services/registration_import_service.py
+- [x] T019 [US3] Add error report download endpoint in backend/app/api/v1/admin_registration_import.py
+- [x] T020 [US3] Show row-level errors/warnings and download link in frontend/fundrbolt-admin/src/components/admin/RegistrationImportDialog.tsx
 
 **Checkpoint**: All user stories independently functional
 
@@ -97,7 +97,7 @@ description: "Task list for Event Registration Import"
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T021 [P] Validate quickstart flow and update steps if needed in .specify/specs/022-import-registration-add/quickstart.md
+- [x] T021 [P] Validate quickstart flow and update steps if needed in .specify/specs/022-import-registration-add/quickstart.md
 
 ---
 

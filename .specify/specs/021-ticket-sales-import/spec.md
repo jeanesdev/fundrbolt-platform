@@ -2,7 +2,7 @@
 
 **Feature Branch**: `021-ticket-sales-import`
 **Created**: 2026-02-07
-**Status**: Draft
+**Status**: Implemented
 **Input**: User description: "ticket-sales-import I need to be able to import ticet sales information in bulk from a json file, an excel workbook, or a csv. Please include an example format for the json and csv. Add a button on the tickets page of the admin PWA for importing, first with a preflight to verify everything works without error, and then once that passes to actually import the data. Look at the bulk import on the auction items page for an example."
 
 ## Clarifications
@@ -77,6 +77,22 @@ As an admin, I want clear error feedback from preflight so I can correct my file
 
 ---
 
+### User Story 4 - View and search ticket sales (Priority: P2)
+
+As an admin, I want a searchable, sortable table of all ticket sales so I can quickly find purchasers and verify sales details.
+
+**Why this priority**: Admins need to audit purchases and resolve questions without exporting CSVs or searching per-package.
+
+**Independent Test**: Can be fully tested by loading the Sales tab, searching by purchaser or package, and sorting by amount or date.
+
+**Acceptance Scenarios**:
+
+1. **Given** ticket sales exist, **When** I open the Sales tab, **Then** I see a paginated table of purchases for the event.
+2. **Given** a search term, **When** I search by purchaser name or package name, **Then** the table filters to matching rows.
+3. **Given** a sortable column, **When** I click the column header, **Then** the table sorts ascending/descending.
+
+---
+
 [Add more user stories as needed, each with an assigned priority]
 
 ### Edge Cases
@@ -121,6 +137,9 @@ As an admin, I want clear error feedback from preflight so I can correct my file
 - **FR-017**: System MUST ignore `event_id` values in the uploaded file and import all rows into the currently selected event.
 - **FR-018**: System MUST skip importing rows whose `external_sale_id` already exists in the system and surface a warning in preflight results.
 - **FR-019**: System MUST enforce a maximum of 5,000 rows per import file.
+- **FR-020**: System MUST provide a Sales tab on the tickets page with a searchable, sortable, paginated table of all ticket purchases for the selected event.
+- **FR-021**: System MUST expose an admin API endpoint to list event ticket sales with search, sorting, and pagination.
+- **FR-022**: System MUST include sales fields in the table: purchaser name/email, package, quantity, total, payment status, purchase date, promo code, discount, and external sale id.
 
 #### Example File Formats
 
@@ -136,6 +155,8 @@ Each object represents one ticket sale record:
 - total_amount: 500.00
 - purchase_date: 2026-02-01
 - external_sale_id: EXT-100045
+- promo_code: VIP20
+- discount_amount: 100.00
 - fee_amount: 15.00
 - payment_status: Paid
 - notes: Sponsor package
@@ -143,10 +164,10 @@ Each object represents one ticket sale record:
 **CSV example (header and one row)**
 
 Header:
-event_id,ticket_type,purchaser_name,purchaser_email,quantity,total_amount,purchase_date,external_sale_id,fee_amount,payment_status,notes
+event_id,ticket_type,purchaser_name,purchaser_email,quantity,total_amount,purchase_date,external_sale_id,promo_code,discount_amount,fee_amount,payment_status,notes
 
 Row:
-EVT-2026-001,VIP Table,Jordan Lee,jordan.lee@example.org,2,500.00,2026-02-01,EXT-100045,15.00,Paid,Sponsor package
+EVT-2026-001,VIP Table,Jordan Lee,jordan.lee@example.org,2,500.00,2026-02-01,EXT-100045,VIP20,100.00,15.00,Paid,Sponsor package
 
 ### Key Entities *(include if feature involves data)*
 
@@ -168,6 +189,7 @@ EVT-2026-001,VIP Table,Jordan Lee,jordan.lee@example.org,2,500.00,2026-02-01,EXT
 
 - Ticket packages/types must already exist for the selected event.
 - Admin users must have access to the tickets page and ticket management permissions.
+- Sales list API endpoint: `GET /api/v1/admin/events/{event_id}/tickets/sales`.
 
 ## Success Criteria *(mandatory)*
 
@@ -182,3 +204,4 @@ EVT-2026-001,VIP Table,Jordan Lee,jordan.lee@example.org,2,500.00,2026-02-01,EXT
 - **SC-002**: Preflight completes within 60 seconds for files up to 5,000 rows.
 - **SC-003**: At least 95% of valid rows in a file are imported without manual correction.
 - **SC-004**: Time to add 1,000 ticket sales is reduced to under 10 minutes including preflight.
+- **SC-005**: Admins can find a specific purchase using search within 30 seconds.

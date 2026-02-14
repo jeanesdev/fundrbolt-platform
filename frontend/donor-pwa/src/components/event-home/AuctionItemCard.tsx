@@ -1,13 +1,14 @@
 /**
  * AuctionItemCard - Card component for displaying auction items in the gallery
  *
- * Displays thumbnail, title, current/starting bid, and bid button.
+ * Displays thumbnail, title, current/starting bid, bid count, and bid button.
  * Uses event branding colors via CSS variables.
+ * Supports promotional badges and watcher count.
  */
 
 import { cn } from '@/lib/utils';
 import type { AuctionItemGalleryItem } from '@/types/auction-gallery';
-import { Gavel, Image as ImageIcon } from 'lucide-react';
+import { Eye, Gavel, Image as ImageIcon } from 'lucide-react';
 
 export interface AuctionItemCardProps {
   item: AuctionItemGalleryItem;
@@ -52,6 +53,7 @@ export function AuctionItemCard({
   const hasCurrentBid = item.current_bid !== null && item.current_bid > 0;
   const bidLabel = hasCurrentBid ? 'Current Bid' : 'Starting Bid';
   const isEventInFuture = eventDateTime ? new Date(eventDateTime) > new Date() : false;
+  const isBiddingOpen = item.bidding_open !== false; // Default to true if not specified
 
   const handleBidClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click when clicking bid button
@@ -91,6 +93,13 @@ export function AuctionItemCard({
           </div>
         )}
 
+        {/* Promotion badge */}
+        {item.promotion_badge && (
+          <div className="absolute left-2 top-2 rounded-full bg-amber-500/90 px-2 py-0.5 text-xs font-bold text-white shadow-md">
+            {item.promotion_badge}
+          </div>
+        )}
+
         {/* Auction type badge */}
         <div
           className={cn(
@@ -102,6 +111,14 @@ export function AuctionItemCard({
         >
           {item.auction_type}
         </div>
+
+        {/* Watcher count badge */}
+        {item.watcher_count !== undefined && item.watcher_count > 0 && (
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-xs font-medium text-white">
+            <Eye className="h-3 w-3" aria-hidden="true" />
+            {item.watcher_count}
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -151,7 +168,7 @@ export function AuctionItemCard({
         {/* Bid button */}
         <button
           onClick={handleBidClick}
-          disabled={eventStatus !== 'active' || isEventInFuture}
+          disabled={eventStatus !== 'active' || isEventInFuture || !isBiddingOpen}
           className={cn(
             'mt-3 flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
@@ -165,9 +182,9 @@ export function AuctionItemCard({
           <Gavel className="h-4 w-4" aria-hidden="true" />
           {isEventInFuture
             ? 'Not Started'
-            : eventStatus === 'active'
+            : eventStatus === 'active' && isBiddingOpen
               ? 'Place Bid'
-              : eventStatus === 'closed'
+              : eventStatus === 'closed' || !isBiddingOpen
                 ? 'Closed'
                 : 'Not Active'}
         </button>

@@ -78,6 +78,48 @@ async def get_package_sales_details(
 
 
 @router.get(
+    "/events/{event_id}/tickets/sales",
+    summary="Get event sales list",
+)
+async def get_event_sales_list(
+    event_id: uuid.UUID,
+    search: str | None = Query(None, description="Search purchasers, packages, and promos"),
+    sort_by: str = Query("purchased_at", description="Sort field"),
+    sort_dir: str = Query("desc", description="Sort direction: asc or desc"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """Get paginated list of ticket purchases for an event."""
+    result = await db.execute(
+        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    service = SalesTrackingService(db)
+    try:
+        sales_data = await service.get_event_sales_list(
+            event_id=event_id,
+            search=search,
+            sort_by=sort_by,
+            sort_dir=sort_dir,
+            page=page,
+            per_page=per_page,
+        )
+    except Exception:
+        logger.exception("Failed to retrieve sales list", extra={"event_id": str(event_id)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to load sales data",
+        )
+
+    logger.info(f"Retrieved sales list for event {event_id}")
+    return sales_data
+
+
+@router.get(
     "/events/{event_id}/tickets/sales/export",
     summary="Export sales data as CSV",
 )

@@ -1,9 +1,9 @@
 import { renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useRoleBasedNav } from '../use-role-based-nav'
 import { useAuth } from '../use-auth'
-import { useNpoContext } from '../use-npo-context'
 import { useEventContext } from '../use-event-context'
+import { useNpoContext } from '../use-npo-context'
+import { useRoleBasedNav } from '../use-role-based-nav'
 
 vi.mock('../use-auth')
 vi.mock('../use-npo-context')

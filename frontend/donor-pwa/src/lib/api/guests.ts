@@ -33,6 +33,12 @@ export interface RegistrationGuestResponse {
   phone: string | null
   invited_by_admin: boolean
   invitation_sent_at: string | null
+  checked_in: boolean
+  check_in_time: string | null
+  status: string
+  cancellation_reason: string | null
+  cancellation_note: string | null
+  is_primary: boolean
   created_at: string
   updated_at: string
 }

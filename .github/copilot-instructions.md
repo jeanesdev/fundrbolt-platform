@@ -48,6 +48,10 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - PostgreSQL (auction bids, import batches), Redis (rate limiting/session) (023-import-auction-bids)
 - Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0; React 18, Vite, Zustand, TanStack Router, Radix UI, Tailwind (024-donor-bidding-ui)
 - PostgreSQL (auction items, bids, watch list, item views, promotions), Redis (sessions/cache) (024-donor-bidding-ui)
+- Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 18, Vite, TanStack Router, Zustand, Radix UI (025-event-checkin-page)
+- PostgreSQL (registrations, check-ins, audit logs), Redis (sessions) (025-event-checkin-page)
+- Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 19, Vite 7, TanStack Router, Zustand, React Query, Radix UI, Recharts (026-event-dashboard-for)
+- PostgreSQL 15 (event data), Redis 7 (sessions) (026-event-dashboard-for)
 
 ## Project Structure
 ```
@@ -132,9 +136,9 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 026-event-dashboard-for: Added Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 19, Vite 7, TanStack Router, Zustand, React Query, Radix UI, Recharts
+- 025-event-checkin-page: Added Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 18, Vite, TanStack Router, Zustand, Radix UI
 - 024-donor-bidding-ui: Added Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0; React 18, Vite, Zustand, TanStack Router, Radix UI, Tailwind
-- 023-import-auction-bids: Added Python 3.11+, TypeScript 5.x + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 18, Vite, TanStack Router, Zustand, Radix UI
-- 022-import-registration-add: Added Python 3.11+, TypeScript 5.x + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router, Zustand
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields
   - ✅ Updated registration_guests with is_table_captain boolean field
   - ✅ US1 - Customize Table Capacity: Event coordinators can set custom capacity per table (1-20), system enforces limits
@@ -323,4 +327,76 @@ git commit -m "message"
 - `DELETE /api/v1/cookies/consent` - Revoke cookie consent (default to reject all)
 
 <!-- MANUAL ADDITIONS START -->
+
+---
+applyTo: "**"
+excludeAgent: "code-review"
+---
+
+# fundrbolt-platform Development Guidelines
+
+> Core agent behavior for CI and quality checks
+
+When you (GitHub Copilot coding agent) work in this repository:
+
+- Always respect the existing Makefile commands and CI workflows.
+- Prefer using `make` targets when available rather than re-inventing commands.
+- Never introduce direct `pip` or ad-hoc virtualenv usage; always use `poetry run` for Python commands.
+
+## Backend CI behavior (Python / FastAPI)
+
+When touching any code under `backend/`:
+
+- Treat the following as the **authoritative backend CI checks**:
+  - Lint: `cd backend && poetry run ruff check .`
+  - Format check: `cd backend && poetry run ruff format --check .`
+  - Type check: `cd backend && poetry run mypy app --strict --ignore-missing-imports --exclude 'app/tests'`
+  - Tests: `cd backend && poetry run pytest -v --tb=short`
+- After making code or test changes, run **all four** commands above.
+- If any of these commands fail:
+  - Read the command output carefully.
+  - Identify the root cause (implementation, tests, typing, or formatting).
+  - Make focused changes to fix the underlying issue.
+  - Run **all four** commands again to ensure nothing else broke.
+- Repeat this fix-and-rerun loop until:
+  - All four commands succeed, or
+  - You have completed **5 full cycles** and still have failures.
+- If you cannot get them fully passing within 5 cycles, stop and:
+  - Summarize which commands are still failing.
+  - List the failing files / tests and the most likely root causes.
+  - Propose a concrete plan for the next human developer.
+
+## Frontend CI behavior (React / pnpm)
+
+When touching any code under `frontend/`:
+
+- Treat the following as the **authoritative frontend CI checks**:
+  - Install deps: `cd frontend/fundrbolt-admin && pnpm install --frozen-lockfile`
+  - Lint: `cd frontend/fundrbolt-admin && pnpm lint`
+  - Prettier check: `cd frontend/fundrbolt-admin && pnpm format:check`
+  - Build: `cd frontend/fundrbolt-admin && pnpm build`
+- After making frontend changes, run:
+  - `pnpm lint`
+  - `pnpm format:check`
+  - `pnpm build`
+  from `frontend/fundrbolt-admin`.
+- If any command fails:
+  - Read the output carefully.
+  - Fix the underlying code, types, or formatting issues.
+  - Re-run **all three** commands (`lint`, `format:check`, `build`) to ensure a clean state.
+- As with backend, stop after **5 full cycles** if you still cannot get all three commands passing, and then:
+  - Summarize remaining failures and suspected causes.
+  - Suggest specific follow-up steps.
+
+## General task behavior
+
+For any task (backend, frontend, or both):
+
+- Prefer using these CI-aligned commands instead of inventing new ones.
+- When asked to “make CI green” or “fix failing checks” on a branch:
+  - Run all relevant backend and/or frontend commands that correspond to the failing GitHub Actions jobs.
+  - Iterate in a loop: change → run commands → inspect failures → fix → re-run, up to 5 full iterations.
+- Do not consider the task complete while any of the above CI commands still fail, unless you have hit the iteration limit and clearly documented what remains.
+
+---
 <!-- MANUAL ADDITIONS END -->

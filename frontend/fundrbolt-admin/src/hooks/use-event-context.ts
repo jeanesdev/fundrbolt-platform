@@ -10,11 +10,11 @@
  * - Loads available events filtered by current NPO
  */
 
+import { eventApi } from '@/services/event-service'
 import { useEventContextStore, type EventContextOption } from '@/stores/event-context-store'
-import { useQueryClient, useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect } from 'react'
 import { useNpoContext } from './use-npo-context'
-import { eventApi } from '@/services/event-service'
 
 export interface UseEventContextReturn {
   selectedEventId: string | null

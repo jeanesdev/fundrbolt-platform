@@ -1,0 +1,365 @@
+openapi: 3.0.3
+info:
+  title: Event Check-in API
+  version: 1.0.0
+paths:
+  /api/v1/admin/events/{event_id}/checkins/search:
+    get:
+      summary: Search registered guests for check-in
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: q
+          required: true
+          schema: { type: string }
+          description: Search term for name, phone, or email
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckinSearchResults"
+
+  /api/v1/admin/events/{event_id}/checkins/{registration_id}/check-in:
+    post:
+      summary: Check in a guest/ticket
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: registration_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Check-in recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckinStatus"
+        "409":
+          description: Already checked in
+
+  /api/v1/admin/events/{event_id}/checkins/{registration_id}/check-out:
+    post:
+      summary: Undo a check-in (check-out)
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: registration_id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckOutRequest"
+      responses:
+        "200":
+          description: Check-out recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckinStatus"
+        "400":
+          description: Missing reason
+
+  /api/v1/admin/events/{event_id}/registrations:
+    post:
+      summary: Register a new donor and create a registration
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrationCreateRequest"
+      responses:
+        "201":
+          description: Registration created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Registration"
+
+  /api/v1/admin/events/{event_id}/registrations/{registration_id}/donor:
+    patch:
+      summary: Update donor contact information
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: registration_id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonorUpdateRequest"
+      responses:
+        "200":
+          description: Donor updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donor"
+
+  /api/v1/admin/events/{event_id}/registrations/{registration_id}/seating:
+    patch:
+      summary: Assign or change bidder and table numbers
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: registration_id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SeatingUpdateRequest"
+      responses:
+        "200":
+          description: Seating assignment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Registration"
+        "409":
+          description: Bidder/table number conflict
+
+  /api/v1/admin/events/{event_id}/registrations/{registration_id}/dinner-selection:
+    patch:
+      summary: Set or change dinner selection
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: registration_id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DinnerSelectionUpdateRequest"
+      responses:
+        "200":
+          description: Dinner selection updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Registration"
+
+  /api/v1/admin/events/{event_id}/registrations/{registration_id}/transfer:
+    post:
+      summary: Transfer a ticket to another donor
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: registration_id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferRequest"
+      responses:
+        "200":
+          description: Ticket transferred
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Registration"
+
+  /api/v1/admin/events/{event_id}/checkins/dashboard:
+    get:
+      summary: Get check-in dashboard totals and checked-in list
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckinDashboard"
+
+components:
+  schemas:
+    CheckinSearchResults:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistrationSummary"
+    CheckinDashboard:
+      type: object
+      properties:
+        total_registered:
+          type: integer
+        total_checked_in:
+          type: integer
+        checked_in:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistrationSummary"
+    CheckinStatus:
+      type: object
+      properties:
+        registration_id:
+          type: string
+        status:
+          type: string
+          enum: [checked_in, not_checked_in]
+        checked_in_at:
+          type: string
+          format: date-time
+        checked_out_at:
+          type: string
+          format: date-time
+    RegistrationSummary:
+      type: object
+      properties:
+        registration_id:
+          type: string
+        donor_name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        bidder_number:
+          type: string
+        table_number:
+          type: string
+        dinner_selection:
+          type: string
+        checkin_status:
+          type: string
+          enum: [checked_in, not_checked_in]
+        checked_in_at:
+          type: string
+          format: date-time
+    Registration:
+      type: object
+      properties:
+        registration_id:
+          type: string
+        event_id:
+          type: string
+        donor_id:
+          type: string
+        bidder_number:
+          type: string
+        table_number:
+          type: string
+        dinner_selection_id:
+          type: string
+        checkin_status:
+          type: string
+          enum: [checked_in, not_checked_in]
+    Donor:
+      type: object
+      properties:
+        donor_id:
+          type: string
+        full_name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+    CheckOutRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+    RegistrationCreateRequest:
+      type: object
+      required: [donor]
+      properties:
+        donor:
+          $ref: "#/components/schemas/DonorCreate"
+        ticket_id:
+          type: string
+        dinner_selection_id:
+          type: string
+    DonorCreate:
+      type: object
+      required: [full_name]
+      properties:
+        full_name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+    DonorUpdateRequest:
+      type: object
+      properties:
+        full_name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+    SeatingUpdateRequest:
+      type: object
+      properties:
+        bidder_number:
+          type: string
+        table_number:
+          type: string
+    DinnerSelectionUpdateRequest:
+      type: object
+      properties:
+        dinner_selection_id:
+          type: string
+    TransferRequest:
+      type: object
+      required: [to_donor_id]
+      properties:
+        to_donor_id:
+          type: string
+        note:
+          type: string

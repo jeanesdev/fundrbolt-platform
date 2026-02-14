@@ -13,8 +13,8 @@
  * - Adds border for navy-on-white theme when contrast insufficient
  */
 
-import { colors as brandColors } from '@fundrbolt/shared/assets'
 import { getContrastingTextColor, meetsWCAGAA } from '@/lib/colors'
+import { colors as brandColors } from '@fundrbolt/shared/assets'
 import { useMemo } from 'react'
 
 export interface InitialAvatarConfig {

@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.event import Event
-from app.models.event_registration import EventRegistration, RegistrationStatus
+from app.models.event_registration import EventRegistration
 from app.models.registration_guest import RegistrationGuest
 
 logger = logging.getLogger(__name__)
@@ -208,7 +208,7 @@ class SeatingService:
             .join(EventRegistration)
             .where(
                 EventRegistration.event_id == event_id,
-                EventRegistration.status == RegistrationStatus.CONFIRMED,
+                RegistrationGuest.status == "confirmed",
                 RegistrationGuest.table_number.is_(None),
             )
             .options(selectinload(RegistrationGuest.registration))
@@ -287,7 +287,7 @@ class SeatingService:
             .join(EventRegistration)
             .where(
                 EventRegistration.event_id == event_id,
-                EventRegistration.status == RegistrationStatus.CONFIRMED,
+                RegistrationGuest.status == "confirmed",
             )
         )
         total_result = await db.execute(total_query)
@@ -298,7 +298,7 @@ class SeatingService:
             .join(EventRegistration)
             .where(
                 EventRegistration.event_id == event_id,
-                EventRegistration.status == RegistrationStatus.CONFIRMED,
+                RegistrationGuest.status == "confirmed",
                 RegistrationGuest.table_number.isnot(None),
             )
         )
@@ -375,7 +375,7 @@ class SeatingService:
                 raise ValueError(f"No guest record found for user {user_id} at event {event_id}")
 
             # Check if user is checked in
-            is_checked_in = registration.check_in_time is not None
+            is_checked_in = my_guest.check_in_time is not None
 
             # Build my_info (hide bidder number if not checked in)
             from app.schemas.seating import MySeatingInfo
@@ -412,14 +412,7 @@ class SeatingService:
                 from app.schemas.seating import TablemateInfo
 
                 for tm_guest in tablemate_guests:
-                    # Get registration to check check-in status
-                    tm_reg_query = select(EventRegistration).where(
-                        EventRegistration.id == tm_guest.registration_id
-                    )
-                    tm_reg_result = await db.execute(tm_reg_query)
-                    tm_registration = tm_reg_result.scalar_one()
-
-                    tm_is_checked_in = tm_registration.check_in_time is not None
+                    tm_is_checked_in = tm_guest.check_in_time is not None
 
                     tablemates.append(
                         TablemateInfo(

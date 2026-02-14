@@ -17,6 +17,11 @@ export interface AuctionItemGalleryItem {
   starting_bid: number;
   current_bid: number | null;
   bid_count: number;
+  bidding_open?: boolean;
+  watcher_count?: number;
+  promotion_badge?: string | null;
+  promotion_notice?: string | null;
+  min_next_bid_amount?: number;
 }
 
 /**

@@ -35,11 +35,13 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { Eye, EyeOff, GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, GripVertical, Pencil, Plus, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { PurchasersList } from './components/PurchasersList';
 import { SalesExportButton } from './components/SalesExportButton';
 import { SalesSummaryCard } from './components/SalesSummaryCard';
+import { TicketSalesImportDialog } from './components/TicketSalesImportDialog';
+import { TicketSalesTable } from './components/TicketSalesTable';
 
 interface TicketPackage {
   id: string;
@@ -76,6 +78,7 @@ export function TicketPackagesIndexPage({ eventId: propEventId }: TicketPackages
   const queryClient = useQueryClient();
   const [showDisabled, setShowDisabled] = useState(false);
   const [expandedPackages, setExpandedPackages] = useState<Set<string>>(new Set());
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -230,6 +233,7 @@ export function TicketPackagesIndexPage({ eventId: propEventId }: TicketPackages
       <Tabs defaultValue="packages" className="space-y-6">
         <TabsList>
           <TabsTrigger value="packages">Ticket Packages</TabsTrigger>
+          <TabsTrigger value="sales">Sales</TabsTrigger>
           <TabsTrigger value="promos">Promo Codes</TabsTrigger>
         </TabsList>
 
@@ -247,6 +251,13 @@ export function TicketPackagesIndexPage({ eventId: propEventId }: TicketPackages
             </div>
             <div className="flex gap-2">
               <SalesExportButton eventId={eventId} eventName="Event" />
+              <Button
+                variant="outline"
+                onClick={() => setImportDialogOpen(true)}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Import Sales
+              </Button>
               <Button
                 onClick={() =>
                   navigate({
@@ -316,11 +327,27 @@ export function TicketPackagesIndexPage({ eventId: propEventId }: TicketPackages
           )}
         </TabsContent>
 
+        {/* Sales Tab */}
+        <TabsContent value="sales">
+          <TicketSalesTable eventId={eventId} />
+        </TabsContent>
+
         {/* Promo Codes Tab */}
         <TabsContent value="promos">
           <PromoCodesManager eventId={eventId} />
         </TabsContent>
       </Tabs>
+
+      {/* Import Dialog */}
+      <TicketSalesImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        eventId={eventId}
+        onImportComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ['ticket-packages', eventId] })
+          queryClient.invalidateQueries({ queryKey: ['sales-summary', eventId] })
+        }}
+      />
     </div>
   );
 }

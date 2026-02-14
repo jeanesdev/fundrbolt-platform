@@ -20,11 +20,14 @@ from app.schemas.auction_item import (
     AuctionItemUpdate,
     PaginationInfo,
 )
+from app.schemas.item_view import ItemViewCreate, ItemViewResponse
 from app.services.auction_item_service import AuctionItemService
+from app.services.item_view_service import ItemViewService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/events/{event_id}/auction-items", tags=["Auction Items"])
+donor_router = APIRouter(prefix="/auction/items", tags=["Auction Items"])
 
 
 @router.post(
@@ -457,6 +460,82 @@ async def delete_auction_item(
     try:
         await service.delete_auction_item(item_id=item_id)
         logger.info(f"User {current_user.id} deleted auction item {item_id}")
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+
+
+# Donor-facing endpoints (no event_id in path)
+@donor_router.post(
+    "/{item_id}/views",
+    response_model=ItemViewResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Record item view",
+    description="Record that a user viewed an auction item with duration tracking.",
+)
+async def record_item_view(
+    item_id: UUID,
+    view_data: ItemViewCreate,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ItemViewResponse:
+    """Record an item view.
+
+    **Permissions**: Authenticated users
+
+    Records that a user viewed an auction item, including when they started
+    viewing and for how long. This data is used for engagement analytics.
+
+    Args:
+        item_id: UUID of auction item
+        view_data: View data (view_started_at, view_duration_seconds)
+        current_user: Authenticated user
+        db: Database session
+
+    Returns:
+        Created item view record
+
+    Raises:
+        HTTPException 401: Not authenticated
+        HTTPException 404: Item not found
+        HTTPException 422: Validation error (negative duration, etc.)
+    """
+    # Verify item exists and get event_id
+    service = AuctionItemService(db)
+    item = await service.get_auction_item_by_id(item_id)
+
+    if not item:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Auction item {item_id} not found",
+        )
+
+    # Validate that item_id in path matches body
+    if view_data.item_id != item_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Item ID in path must match item ID in request body",
+        )
+
+    view_service = ItemViewService(db)
+
+    try:
+        view = await view_service.record_view(
+            item_id=item_id,
+            event_id=item.event_id,
+            user_id=current_user.id,
+            view_started_at=view_data.view_started_at,
+            view_duration_seconds=view_data.view_duration_seconds,
+        )
+
+        logger.info(
+            f"User {current_user.id} viewed item {item_id} for "
+            f"{view_data.view_duration_seconds} seconds"
+        )
+        return ItemViewResponse.model_validate(view)
 
     except ValueError as e:
         raise HTTPException(

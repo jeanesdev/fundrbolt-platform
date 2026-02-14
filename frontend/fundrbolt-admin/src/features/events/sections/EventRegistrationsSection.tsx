@@ -1,13 +1,17 @@
 import { AttendeeListTable } from '@/components/admin/AttendeeListTable'
 import { InviteGuestDialog } from '@/components/admin/InviteGuestDialog'
 import { MealSummaryCard } from '@/components/admin/MealSummaryCard'
+import { RegistrationImportDialog } from '@/components/admin/RegistrationImportDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useEventWorkspace } from '../useEventWorkspace'
+import { Upload } from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
+import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventRegistrationsSection() {
   const { currentEvent, eventId } = useEventWorkspace()
+  const [importOpen, setImportOpen] = useState(false)
 
   const hasFoodOptions = Boolean(currentEvent.food_options?.length)
 
@@ -31,6 +35,15 @@ export function EventRegistrationsSection() {
               </CardDescription>
             </div>
             <div className='flex flex-col sm:flex-row gap-2'>
+              <Button
+                onClick={() => setImportOpen(true)}
+                variant='outline'
+                size='sm'
+                className='shrink-0'
+              >
+                <Upload className='mr-2 h-4 w-4' />
+                Import
+              </Button>
               <InviteGuestDialog
                 eventId={currentEvent.id}
                 onGuestInvited={() => {
@@ -55,6 +68,16 @@ export function EventRegistrationsSection() {
           />
         </CardContent>
       </Card>
+
+      <RegistrationImportDialog
+        eventId={currentEvent.id}
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImportComplete={() => {
+          // Reload the attendee list after successful import
+          window.location.reload()
+        }}
+      />
     </div>
   )
 }

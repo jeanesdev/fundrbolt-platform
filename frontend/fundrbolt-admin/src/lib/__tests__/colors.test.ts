@@ -9,9 +9,9 @@ import { colors as brandColors } from '@fundrbolt/shared/assets'
 import { describe, expect, it } from 'vitest'
 import {
   calculateLuminance,
+  getContrastingTextColor,
   getContrastRatio,
   hexToRgb,
-  getContrastingTextColor,
   meetsWCAGAA,
 } from '../colors'
 
