@@ -139,6 +139,19 @@ class RegistrationGuest(Base, UUIDMixin, TimestampMixin):
         comment="Whether this guest is the primary registrant",
     )
 
+    # Check-in Timestamps (Feature 025)
+    checked_in_at: Mapped[datetime | None] = mapped_column(
+        SADateTime(timezone=True),
+        nullable=True,
+        index=True,
+        comment="Timestamp when guest was checked in",
+    )
+    checked_out_at: Mapped[datetime | None] = mapped_column(
+        SADateTime(timezone=True),
+        nullable=True,
+        comment="Timestamp when guest was checked out",
+    )
+
     # Relationships
     registration: Mapped["EventRegistration"] = relationship(
         "EventRegistration",

@@ -4,6 +4,7 @@ from app.models.auction_bid import AuctionBid, BidActionAudit, PaddleRaiseContri
 from app.models.auction_item import AuctionItem
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin, UUIDMixin
+from app.models.checkin_record import CheckinAction, CheckinRecord
 from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
 from app.models.event import Event, EventLink, EventMedia, FoodOption
 from app.models.event_registration import EventRegistration, RegistrationStatus
@@ -38,6 +39,7 @@ from app.models.ticket_management import (
     TicketPackage,
     TicketPurchase,
 )
+from app.models.ticket_transfer_record import TicketTransferRecord
 from app.models.ticket_sales_import import (
     ImportFormat,
     ImportStatus,
@@ -56,6 +58,8 @@ __all__ = [
     "Base",
     "TimestampMixin",
     "UUIDMixin",
+    "CheckinAction",
+    "CheckinRecord",
     "ConsentAuditLog",
     "CookieConsent",
     "CustomTicketOption",
@@ -94,6 +98,7 @@ __all__ = [
     "TicketAuditLog",
     "TicketPackage",
     "TicketPurchase",
+    "TicketTransferRecord",
     "TicketSalesImportBatch",
     "TicketSalesImportIssue",
     "User",
