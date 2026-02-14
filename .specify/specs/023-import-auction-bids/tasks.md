@@ -20,9 +20,9 @@ description: "Task list for Import Auction Bids"
 
 **Purpose**: Create shared models and schemas used by all stories
 
-- [ ] T001 Create import batch/validation models in backend/app/models/auction_bid_import.py
-- [ ] T002 [P] Create import schemas in backend/app/schemas/auction_bid_import.py
-- [ ] T003 Update exports in backend/app/models/__init__.py and backend/app/schemas/__init__.py
+- [x] T001 Create import batch/validation models in backend/app/models/auction_bid_import.py
+- [x] T002 [P] Create import schemas in backend/app/schemas/auction_bid_import.py
+- [x] T003 Update exports in backend/app/models/__init__.py and backend/app/schemas/__init__.py
 
 ---
 
@@ -30,11 +30,11 @@ description: "Task list for Import Auction Bids"
 
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
-- [ ] T004 Add migration for import batches and validation results in backend/alembic/versions/<timestamp>_add_auction_bid_import_tables.py
-- [ ] T005 Create import service skeleton in backend/app/services/auction_bid_import_service.py
-- [ ] T006 Add import API client in frontend/fundrbolt-admin/src/services/auctionBidService.ts
-- [ ] T007 Add auction bids route shell in frontend/fundrbolt-admin/src/routes/_authenticated/events/$eventId/auction-bids/route.tsx
-- [ ] T008 Add navigation entry for auction bids in frontend/fundrbolt-admin/src/routes/_authenticated/events/$eventId/route.tsx
+- [x] T004 Add migration for import batches and validation results in backend/alembic/versions/<timestamp>_add_auction_bid_import_tables.py
+- [x] T005 Create import service skeleton in backend/app/services/auction_bid_import_service.py
+- [x] T006 Add import API client in frontend/fundrbolt-admin/src/services/auctionBidService.ts
+- [x] T007 Add auction bids route shell in frontend/fundrbolt-admin/src/routes/_authenticated/events/$eventId/auction-bids.tsx
+- [x] T008 Add navigation entry for auction bids in frontend/fundrbolt-admin/src/hooks/use-role-based-nav.ts
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -48,11 +48,11 @@ description: "Task list for Import Auction Bids"
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Implement file parsing for JSON/CSV/XLSX in backend/app/services/auction_bid_import_service.py
-- [ ] T010 [US1] Implement preflight validation rules in backend/app/services/auction_bid_import_service.py
-- [ ] T011 [US1] Add preflight endpoint in backend/app/api/v1/auction_bids.py
-- [ ] T012 [US1] Build import upload + preflight UI in frontend/fundrbolt-admin/src/components/auction-bids/AuctionBidImportForm.tsx
-- [ ] T013 [US1] Wire preflight flow in frontend/fundrbolt-admin/src/routes/_authenticated/events/$eventId/auction-bids/index.tsx
+- [x] T009 [US1] Implement file parsing for JSON/CSV/XLSX in backend/app/services/auction_bid_import_service.py
+- [x] T010 [US1] Implement preflight validation rules in backend/app/services/auction_bid_import_service.py
+- [x] T011 [US1] Add preflight endpoint in backend/app/api/v1/admin_auction_bid_import.py
+- [x] T012 [US1] Build import upload + preflight UI in frontend/fundrbolt-admin/src/features/events/auction-bids/AuctionBidImportDialog.tsx
+- [x] T013 [US1] Wire preflight flow in frontend/fundrbolt-admin/src/features/events/sections/EventAuctionBidsSection.tsx
 
 **Checkpoint**: User Story 1 fully functional and testable independently
 
@@ -66,10 +66,10 @@ description: "Task list for Import Auction Bids"
 
 ### Implementation for User Story 2
 
-- [ ] T014 [US2] Implement confirm import logic in backend/app/services/auction_bid_import_service.py
-- [ ] T015 [US2] Add confirm endpoint in backend/app/api/v1/auction_bids.py
-- [ ] T016 [US2] Build confirm + summary UI in frontend/fundrbolt-admin/src/components/auction-bids/AuctionBidImportConfirm.tsx
-- [ ] T017 [US2] Wire confirm flow in frontend/fundrbolt-admin/src/routes/_authenticated/events/$eventId/auction-bids/index.tsx
+- [x] T014 [US2] Implement confirm import logic in backend/app/services/auction_bid_import_service.py
+- [x] T015 [US2] Add confirm endpoint in backend/app/api/v1/admin_auction_bid_import.py
+- [x] T016 [US2] Build confirm + summary UI in frontend/fundrbolt-admin/src/features/events/auction-bids/AuctionBidImportDialog.tsx
+- [x] T017 [US2] Wire confirm flow in frontend/fundrbolt-admin/src/features/events/sections/EventAuctionBidsSection.tsx
 
 **Checkpoint**: User Stories 1 and 2 both work independently
 
@@ -83,10 +83,10 @@ description: "Task list for Import Auction Bids"
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] Implement dashboard aggregation in backend/app/services/auction_bid_service.py
-- [ ] T019 [US3] Add dashboard endpoint in backend/app/api/v1/auction_bids.py
-- [ ] T020 [US3] Create dashboard page in frontend/fundrbolt-admin/src/routes/_authenticated/events/$eventId/auction-bids/auction-bids.tsx
-- [ ] T021 [US3] Build dashboard UI in frontend/fundrbolt-admin/src/components/auction-bids/AuctionBidsDashboard.tsx
+- [x] T018 [US3] Implement dashboard aggregation in backend/app/services/auction_bid_import_service.py
+- [x] T019 [US3] Add dashboard endpoint in backend/app/api/v1/admin_auction_bid_import.py
+- [x] T020 [US3] Create dashboard page in frontend/fundrbolt-admin/src/routes/_authenticated/events/$eventId/auction-bids.tsx
+- [x] T021 [US3] Build dashboard UI in frontend/fundrbolt-admin/src/features/events/auction-bids/AuctionBidsDashboard.tsx
 
 **Checkpoint**: All user stories independently functional
 
@@ -96,8 +96,8 @@ description: "Task list for Import Auction Bids"
 
 **Purpose**: Final alignment and documentation updates
 
-- [ ] T022 [P] Update quickstart validation notes in .specify/specs/023-import-auction-bids/quickstart.md
-- [ ] T023 [P] Confirm OpenAPI contract alignment in .specify/specs/023-import-auction-bids/contracts/auction-bid-import.openapi.yaml
+- [x] T022 [P] Update quickstart validation notes in .specify/specs/023-import-auction-bids/quickstart.md
+- [x] T023 [P] Confirm OpenAPI contract alignment in .specify/specs/023-import-auction-bids/contracts/auction-bid-import.openapi.yaml
 
 ---
 

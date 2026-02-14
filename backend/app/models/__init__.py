@@ -1,6 +1,13 @@
 """Database models package."""
 
 from app.models.auction_bid import AuctionBid, BidActionAudit, PaddleRaiseContribution
+from app.models.auction_bid_import import (
+    AuctionBidImportBatch,
+    AuctionBidImportFormat,
+    AuctionBidImportIssue,
+    AuctionBidImportIssueSeverity,
+    AuctionBidImportStatus,
+)
 from app.models.auction_item import AuctionItem
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin, UUIDMixin
@@ -83,6 +90,11 @@ __all__ = [
     "PromoCodeApplication",
     "PaddleRaiseContribution",
     "RegistrationGuest",
+    "AuctionBidImportBatch",
+    "AuctionBidImportFormat",
+    "AuctionBidImportIssue",
+    "AuctionBidImportIssueSeverity",
+    "AuctionBidImportStatus",
     "RegistrationImportBatch",
     "RegistrationStatus",
     "RegistrationValidationIssue",

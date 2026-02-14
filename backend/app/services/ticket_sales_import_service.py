@@ -296,7 +296,7 @@ class TicketSalesImportService:
                     purchase_date = datetime.fromisoformat(purchase_date_str)
                 except ValueError:
                     # Try common date formats
-                    from dateutil import parser as date_parser  # type: ignore[import-untyped]
+                    from dateutil import parser as date_parser
 
                     purchase_date = date_parser.parse(purchase_date_str)
 

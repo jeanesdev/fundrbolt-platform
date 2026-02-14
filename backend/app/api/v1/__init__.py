@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     admin,
+    admin_auction_bid_import,
     admin_auction_item_import,
     admin_registration_import,
     admin_seating,
@@ -68,6 +69,7 @@ api_router.include_router(public_events.router, prefix="/public", tags=["public-
 api_router.include_router(public_testimonials.router, tags=["public-testimonials"])
 api_router.include_router(admin_testimonials.router, tags=["admin-testimonials"])
 api_router.include_router(admin_seating.router, tags=["admin-seating"])
+api_router.include_router(admin_auction_bid_import.router)
 api_router.include_router(admin_auction_item_import.router)
 api_router.include_router(admin_registration_import.router)
 api_router.include_router(admin_ticket_sales_import.router)

@@ -60,6 +60,7 @@ import { Route as AuthenticatedEventsEventIdFoodRouteImport } from './routes/_au
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events/$eventId/edit'
 import { Route as AuthenticatedEventsEventIdDetailsRouteImport } from './routes/_authenticated/events/$eventId/details'
 import { Route as AuthenticatedEventsEventIdAuctionItemsRouteImport } from './routes/_authenticated/events/$eventId/auction-items'
+import { Route as AuthenticatedEventsEventIdAuctionBidsRouteImport } from './routes/_authenticated/events/$eventId/auction-bids'
 import { Route as AuthenticatedEventsEventIdTicketsIndexRouteImport } from './routes/_authenticated/events/$eventId/tickets/index'
 import { Route as AuthenticatedEventsEventIdAuctionItemsIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-items/index'
 import { Route as AuthenticatedEventsEventIdTicketsCreateRouteImport } from './routes/_authenticated/events/$eventId/tickets/create'
@@ -346,6 +347,12 @@ const AuthenticatedEventsEventIdAuctionItemsRoute =
     path: '/auction-items',
     getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
+const AuthenticatedEventsEventIdAuctionBidsRoute =
+  AuthenticatedEventsEventIdAuctionBidsRouteImport.update({
+    id: '/auction-bids',
+    path: '/auction-bids',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdTicketsIndexRoute =
   AuthenticatedEventsEventIdTicketsIndexRouteImport.update({
     id: '/',
@@ -424,6 +431,7 @@ export interface FileRoutesByFullPath {
   '/npos/': typeof AuthenticatedNposIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/events/$eventId/auction-bids': typeof AuthenticatedEventsEventIdAuctionBidsRoute
   '/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsRouteWithChildren
   '/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
@@ -478,6 +486,7 @@ export interface FileRoutesByTo {
   '/npos': typeof AuthenticatedNposIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/events/$eventId/auction-bids': typeof AuthenticatedEventsEventIdAuctionBidsRoute
   '/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
@@ -537,6 +546,7 @@ export interface FileRoutesById {
   '/_authenticated/npos/': typeof AuthenticatedNposIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/events/$eventId/auction-bids': typeof AuthenticatedEventsEventIdAuctionBidsRoute
   '/_authenticated/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsRouteWithChildren
   '/_authenticated/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
@@ -596,6 +606,7 @@ export interface FileRouteTypes {
     | '/npos/'
     | '/settings/'
     | '/users/'
+    | '/events/$eventId/auction-bids'
     | '/events/$eventId/auction-items'
     | '/events/$eventId/details'
     | '/events/$eventId/edit'
@@ -650,6 +661,7 @@ export interface FileRouteTypes {
     | '/npos'
     | '/settings'
     | '/users'
+    | '/events/$eventId/auction-bids'
     | '/events/$eventId/details'
     | '/events/$eventId/edit'
     | '/events/$eventId/food'
@@ -708,6 +720,7 @@ export interface FileRouteTypes {
     | '/_authenticated/npos/'
     | '/_authenticated/settings/'
     | '/_authenticated/users/'
+    | '/_authenticated/events/$eventId/auction-bids'
     | '/_authenticated/events/$eventId/auction-items'
     | '/_authenticated/events/$eventId/details'
     | '/_authenticated/events/$eventId/edit'
@@ -1111,6 +1124,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsEventIdAuctionItemsRouteImport
       parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
+    '/_authenticated/events/$eventId/auction-bids': {
+      id: '/_authenticated/events/$eventId/auction-bids'
+      path: '/auction-bids'
+      fullPath: '/events/$eventId/auction-bids'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdAuctionBidsRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
     '/_authenticated/events/$eventId/tickets/': {
       id: '/_authenticated/events/$eventId/tickets/'
       path: '/'
@@ -1209,6 +1229,7 @@ const AuthenticatedEventsEventIdTicketsRouteWithChildren =
   )
 
 interface AuthenticatedEventsEventIdRouteRouteChildren {
+  AuthenticatedEventsEventIdAuctionBidsRoute: typeof AuthenticatedEventsEventIdAuctionBidsRoute
   AuthenticatedEventsEventIdAuctionItemsRoute: typeof AuthenticatedEventsEventIdAuctionItemsRouteWithChildren
   AuthenticatedEventsEventIdDetailsRoute: typeof AuthenticatedEventsEventIdDetailsRoute
   AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
@@ -1224,6 +1245,8 @@ interface AuthenticatedEventsEventIdRouteRouteChildren {
 
 const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRouteRouteChildren =
   {
+    AuthenticatedEventsEventIdAuctionBidsRoute:
+      AuthenticatedEventsEventIdAuctionBidsRoute,
     AuthenticatedEventsEventIdAuctionItemsRoute:
       AuthenticatedEventsEventIdAuctionItemsRouteWithChildren,
     AuthenticatedEventsEventIdDetailsRoute:

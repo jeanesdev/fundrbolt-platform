@@ -11,7 +11,7 @@ Provide a fast way to validate and import auction bids for an event using JSON, 
 1. Open the auction bids dashboard for the event in the admin PWA.
 2. Select Import and upload a JSON, CSV, or Excel file.
 3. Review preflight results and fix any invalid rows.
-4. Confirm the import to create bids atomically.
+4. Confirm the import to create bids atomically (upload the same file to confirm).
 5. Verify totals and recent bids on the dashboard.
 
 ## Sample File Fields
