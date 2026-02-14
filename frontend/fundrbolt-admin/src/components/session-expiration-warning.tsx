@@ -10,42 +10,30 @@ import { Button } from '@/components/ui/button'
 import apiClient from '@/lib/axios'
 import { useAuthStore } from '@/stores/auth-store'
 import { useRouter } from '@tanstack/react-router'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface SessionExpirationWarningProps {
   /**
-   * How many seconds before expiry to show warning
+   * How many seconds before inactivity timeout to show warning
    * Default: 120 (2 minutes)
    */
   warningThresholdSeconds?: number
-  /**
-   * How many seconds before expiry to auto-refresh on navigation
-   * Default: 300 (5 minutes)
-   */
-  autoRefreshThresholdSeconds?: number
 }
 
 export function SessionExpirationWarning({
   warningThresholdSeconds = 120,
-  autoRefreshThresholdSeconds = 300,
 }: SessionExpirationWarningProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [secondsRemaining, setSecondsRemaining] = useState<number | null>(null)
   const [isExtending, setIsExtending] = useState(false)
   const [lastRefreshAttempt, setLastRefreshAttempt] = useState<number>(0)
 
+  const idleTimeoutMs = 15 * 60 * 1000
+  const lastActivityRef = useRef<number>(Date.now())
+  const idleTimeoutRef = useRef<number | null>(null)
+
   const router = useRouter()
   const { accessToken, refreshToken, reset } = useAuthStore()
-
-  // Parse JWT to get expiration time
-  const getTokenExpiry = useCallback((token: string): number | null => {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]))
-      return payload.exp ? payload.exp * 1000 : null // Convert to milliseconds
-    } catch {
-      return null
-    }
-  }, [])
 
   // Extend session by refreshing the access token
   const handleExtendSession = useCallback(async (silent = false) => {
@@ -97,33 +85,76 @@ export function SessionExpirationWarning({
     window.location.href = '/sign-in'
   }, [reset])
 
-  // Auto-refresh token on navigation if it's getting close to expiry
+  const recordActivity = useCallback((shouldRefresh: boolean) => {
+    lastActivityRef.current = Date.now()
+    setIsOpen(false)
+    setSecondsRemaining(null)
+
+    if (idleTimeoutRef.current) {
+      window.clearTimeout(idleTimeoutRef.current)
+    }
+
+    idleTimeoutRef.current = window.setTimeout(() => {
+      handleLogout()
+    }, idleTimeoutMs)
+
+    if (shouldRefresh && accessToken && refreshToken) {
+      handleExtendSession(true)
+    }
+  }, [accessToken, refreshToken, handleExtendSession, handleLogout, idleTimeoutMs])
+
+  // Track activity and refresh on route change or focus/visibility
   useEffect(() => {
-    if (!accessToken || !refreshToken) return
+    if (!accessToken || !refreshToken) {
+      setIsOpen(false)
+      setSecondsRemaining(null)
+      return
+    }
 
-    const expiryTime = getTokenExpiry(accessToken)
-    if (!expiryTime) return
+    recordActivity(false)
 
-    // Listen to router location changes
-    const checkAndRefresh = () => {
-      const now = Date.now()
-      const timeUntilExpiry = expiryTime - now
-      const secondsUntilExpiry = Math.floor(timeUntilExpiry / 1000)
-
-      // If token expires within autoRefreshThreshold, refresh it silently
-      if (secondsUntilExpiry <= autoRefreshThresholdSeconds && secondsUntilExpiry > 0) {
-        // Silent refresh on navigation
-        handleExtendSession(true)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        recordActivity(true)
       }
     }
 
-    // Subscribe to router history changes
-    const unsubscribe = router.history.subscribe(checkAndRefresh)
+    const handleFocus = () => {
+      recordActivity(true)
+    }
 
-    return unsubscribe
-  }, [accessToken, refreshToken, autoRefreshThresholdSeconds, getTokenExpiry, handleExtendSession, router])
+    const handleUserActivity = () => {
+      recordActivity(false)
+    }
 
-  // Monitor token expiration
+    const unsubscribe = router.subscribe(() => {
+      recordActivity(true)
+    })
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleVisibility)
+    window.addEventListener('mousemove', handleUserActivity)
+    window.addEventListener('mousedown', handleUserActivity)
+    window.addEventListener('keydown', handleUserActivity)
+    window.addEventListener('scroll', handleUserActivity)
+    window.addEventListener('touchstart', handleUserActivity)
+
+    return () => {
+      unsubscribe()
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('mousemove', handleUserActivity)
+      window.removeEventListener('mousedown', handleUserActivity)
+      window.removeEventListener('keydown', handleUserActivity)
+      window.removeEventListener('scroll', handleUserActivity)
+      window.removeEventListener('touchstart', handleUserActivity)
+      if (idleTimeoutRef.current) {
+        window.clearTimeout(idleTimeoutRef.current)
+      }
+    }
+  }, [accessToken, refreshToken, recordActivity, router])
+
+  // Monitor inactivity warning countdown
   useEffect(() => {
     if (!accessToken) {
       setIsOpen(false)
@@ -131,34 +162,25 @@ export function SessionExpirationWarning({
       return
     }
 
-    const expiryTime = getTokenExpiry(accessToken)
-    if (!expiryTime) return
-
-    // Check every 5 seconds to avoid rate limits
-    const intervalId = setInterval(() => {
+    const intervalId = window.setInterval(() => {
       const now = Date.now()
-      const timeUntilExpiry = expiryTime - now
-      const secondsUntilExpiry = Math.floor(timeUntilExpiry / 1000)
+      const idleMs = now - lastActivityRef.current
+      const remainingMs = idleTimeoutMs - idleMs
+      const remainingSeconds = Math.floor(remainingMs / 1000)
 
-      // Show warning if within threshold
-      if (
-        secondsUntilExpiry <= warningThresholdSeconds &&
-        secondsUntilExpiry > 0
-      ) {
-        setSecondsRemaining(secondsUntilExpiry)
+      if (remainingSeconds <= warningThresholdSeconds && remainingSeconds > 0) {
+        setSecondsRemaining(remainingSeconds)
         setIsOpen(true)
       }
 
-      // Auto-logout if expired
-      if (secondsUntilExpiry <= 0) {
-        clearInterval(intervalId)
-        reset()
-        window.location.href = '/sign-in'
+      if (remainingSeconds <= 0) {
+        window.clearInterval(intervalId)
+        handleLogout()
       }
-    }, 5000) // Check every 5 seconds instead of 1 second
+    }, 5000)
 
-    return () => clearInterval(intervalId)
-  }, [accessToken, warningThresholdSeconds, getTokenExpiry, reset])
+    return () => window.clearInterval(intervalId)
+  }, [accessToken, handleLogout, idleTimeoutMs, warningThresholdSeconds])
 
   // Format seconds as MM:SS
   const formatTime = (seconds: number): string => {
@@ -174,7 +196,7 @@ export function SessionExpirationWarning({
           <AlertDialogTitle>Session Expiring Soon</AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className='space-y-2'>
-              <p>Your session will expire in:</p>
+              <p>Your session will end due to inactivity in:</p>
               <p className='text-foreground text-2xl font-bold'>
                 {secondsRemaining !== null
                   ? formatTime(secondsRemaining)
