@@ -67,8 +67,8 @@ export function MealSummaryCard({ eventId, className }: MealSummaryCardProps) {
 
   const summary = data!
   const selectionRate =
-    summary.total_attendees > 0
-      ? (summary.total_meal_selections / summary.total_attendees) * 100
+    summary.total_active_attendees > 0
+      ? (summary.total_meal_selections / summary.total_active_attendees) * 100
       : 0
 
   return (
@@ -87,9 +87,9 @@ export function MealSummaryCard({ eventId, className }: MealSummaryCardProps) {
         <div className='grid gap-4 sm:grid-cols-3'>
           <div className='space-y-1'>
             <p className='text-sm font-medium text-muted-foreground'>
-              Total Attendees
+              Total Active Attendees
             </p>
-            <p className='text-2xl font-bold'>{summary.total_attendees}</p>
+            <p className='text-2xl font-bold'>{summary.total_active_attendees}</p>
           </div>
           <div className='space-y-1'>
             <p className='text-sm font-medium text-muted-foreground'>
@@ -110,7 +110,7 @@ export function MealSummaryCard({ eventId, className }: MealSummaryCardProps) {
           <div className='flex items-center justify-between text-sm'>
             <span className='text-muted-foreground'>Overall Progress</span>
             <span className='font-medium'>
-              {summary.total_meal_selections} / {summary.total_attendees}
+              {summary.total_meal_selections} / {summary.total_active_attendees}
             </span>
           </div>
           <Progress value={selectionRate} className='h-2' />
@@ -161,13 +161,13 @@ export function MealSummaryCard({ eventId, className }: MealSummaryCardProps) {
         )}
 
         {/* Pending Selections */}
-        {summary.total_attendees > summary.total_meal_selections && (
+        {summary.total_active_attendees > summary.total_meal_selections && (
           <div className='rounded-md bg-muted/50 p-3'>
             <p className='text-sm text-muted-foreground'>
               <span className='font-medium text-foreground'>
-                {summary.total_attendees - summary.total_meal_selections}
+                {summary.total_active_attendees - summary.total_meal_selections}
               </span>{' '}
-              attendee{summary.total_attendees - summary.total_meal_selections !== 1 ? 's' : ''} haven't
+              attendee{summary.total_active_attendees - summary.total_meal_selections !== 1 ? 's' : ''} haven't
               selected a meal yet
             </p>
           </div>

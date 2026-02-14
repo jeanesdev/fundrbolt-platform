@@ -1,7 +1,7 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useEventWorkspace } from '../useEventWorkspace'
 import { SeatingTabContent } from '@/components/seating/SeatingTabContent'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
+import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventSeatingSection() {
   const { currentEvent, updateEvent, loadEventById } = useEventWorkspace()

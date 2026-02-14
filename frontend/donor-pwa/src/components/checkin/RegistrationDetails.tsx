@@ -49,12 +49,6 @@ export function RegistrationDetails({ registration }: RegistrationDetailsProps) 
             <div className="text-sm font-medium text-muted-foreground">Number of Guests</div>
             <div className="text-base font-semibold">{registration.number_of_guests}</div>
           </div>
-          {registration.ticket_type && (
-            <div>
-              <div className="text-sm font-medium text-muted-foreground">Ticket Type</div>
-              <div className="text-base font-semibold">{registration.ticket_type}</div>
-            </div>
-          )}
           {isCheckedIn && registration.check_in_time && (
             <div>
               <div className="text-sm font-medium text-muted-foreground">Check-In Time</div>

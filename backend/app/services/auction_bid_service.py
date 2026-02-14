@@ -62,12 +62,28 @@ class AuctionBidService:
             .where(
                 EventRegistration.event_id == event_id,
                 RegistrationGuest.user_id == user_id,
+                RegistrationGuest.is_primary.is_(True),
             )
         )
         result = await self.db.execute(stmt)
         bidder_number = result.scalar_one_or_none()
+
+        if bidder_number is None:
+            fallback_stmt = (
+                select(RegistrationGuest.bidder_number)
+                .join(EventRegistration, RegistrationGuest.registration_id == EventRegistration.id)
+                .where(
+                    EventRegistration.event_id == event_id,
+                    RegistrationGuest.user_id == user_id,
+                )
+                .limit(1)
+            )
+            fallback_result = await self.db.execute(fallback_stmt)
+            bidder_number = fallback_result.scalar_one_or_none()
+
         if bidder_number is None:
             raise ValueError("Bidder number not found for user in this event")
+
         return bidder_number
 
     async def _latest_bid_records_for_item(self, item_id: UUID) -> list[AuctionBid]:
