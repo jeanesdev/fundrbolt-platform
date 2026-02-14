@@ -3,13 +3,12 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.middleware.auth import require_role
-from app.models.role import Role
 from app.schemas.registration_guest import RegistrationGuestResponse
 from app.services.checkin_service import CheckInService
 
@@ -112,10 +111,10 @@ class RegistrationCreateRequest(BaseModel):
 
 
 @router.get("/search", response_model=CheckinSearchResponse)
-@require_role([Role.SUPER_ADMIN, Role.NPO_ADMIN, Role.NPO_STAFF])
+@require_role("super_admin", "npo_admin", "staff")
 async def search_guests(
     event_id: uuid.UUID,
-    q: str = Field(..., min_length=1, description="Search query (name, phone, email)"),
+    q: str = Query(..., min_length=1, description="Search query (name, phone, email)"),
     db: Annotated[AsyncSession, Depends(get_db)] = None,
 ) -> CheckinSearchResponse:
     """Search for registered guests for check-in.
@@ -145,11 +144,11 @@ async def search_guests(
 
 
 @router.post("/{registration_id}/check-in", response_model=CheckinStatusResponse)
-@require_role([Role.SUPER_ADMIN, Role.NPO_ADMIN, Role.NPO_STAFF])
+@require_role("super_admin", "npo_admin", "staff")
 async def check_in_guest(
     event_id: uuid.UUID,
     registration_id: uuid.UUID,
-    current_user: Annotated[dict, Depends(require_role([Role.SUPER_ADMIN, Role.NPO_ADMIN, Role.NPO_STAFF]))],
+    current_user: Annotated[dict, Depends(require_role("super_admin", "npo_admin", "staff"))],
     db: Annotated[AsyncSession, Depends(get_db)] = None,
 ) -> CheckinStatusResponse:
     """Check in a guest/ticket.
@@ -176,12 +175,12 @@ async def check_in_guest(
 
 
 @router.post("/{registration_id}/check-out", response_model=CheckinStatusResponse)
-@require_role([Role.SUPER_ADMIN, Role.NPO_ADMIN, Role.NPO_STAFF])
+@require_role("super_admin", "npo_admin", "staff")
 async def check_out_guest(
     event_id: uuid.UUID,
     registration_id: uuid.UUID,
     request: CheckOutRequest,
-    current_user: Annotated[dict, Depends(require_role([Role.SUPER_ADMIN, Role.NPO_ADMIN, Role.NPO_STAFF]))],
+    current_user: Annotated[dict, Depends(require_role("super_admin", "npo_admin", "staff"))],
     db: Annotated[AsyncSession, Depends(get_db)] = None,
 ) -> CheckinStatusResponse:
     """Undo a check-in (check-out).
@@ -208,7 +207,7 @@ async def check_out_guest(
 
 
 @router.get("/dashboard", response_model=CheckinDashboardResponse)
-@require_role([Role.SUPER_ADMIN, Role.NPO_ADMIN, Role.NPO_STAFF])
+@require_role("super_admin", "npo_admin", "staff")
 async def get_checkin_dashboard(
     event_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)] = None,
@@ -245,7 +244,7 @@ async def get_checkin_dashboard(
 
 
 @router.patch("/{registration_id}/donor", response_model=RegistrationGuestResponse)
-@require_role([Role.SUPER_ADMIN, Role.NPO_ADMIN, Role.NPO_STAFF])
+@require_role("super_admin", "npo_admin", "staff")
 async def update_donor_info(
     event_id: uuid.UUID,
     registration_id: uuid.UUID,
@@ -275,7 +274,7 @@ async def update_donor_info(
 
 
 @router.patch("/{registration_id}/seating", response_model=RegistrationGuestResponse)
-@require_role([Role.SUPER_ADMIN, Role.NPO_ADMIN, Role.NPO_STAFF])
+@require_role("super_admin", "npo_admin", "staff")
 async def update_seating(
     event_id: uuid.UUID,
     registration_id: uuid.UUID,
@@ -304,7 +303,7 @@ async def update_seating(
 
 
 @router.patch("/{registration_id}/dinner-selection", response_model=RegistrationGuestResponse)
-@require_role([Role.SUPER_ADMIN, Role.NPO_ADMIN, Role.NPO_STAFF])
+@require_role("super_admin", "npo_admin", "staff")
 async def update_dinner_selection(
     event_id: uuid.UUID,
     registration_id: uuid.UUID,
@@ -332,12 +331,12 @@ async def update_dinner_selection(
 
 
 @router.post("/{registration_id}/transfer", response_model=RegistrationGuestResponse)
-@require_role([Role.SUPER_ADMIN, Role.NPO_ADMIN])
+@require_role("super_admin", "npo_admin")
 async def transfer_ticket(
     event_id: uuid.UUID,
     registration_id: uuid.UUID,
     request: TransferRequest,
-    current_user: Annotated[dict, Depends(require_role([Role.SUPER_ADMIN, Role.NPO_ADMIN]))],
+    current_user: Annotated[dict, Depends(require_role("super_admin", "npo_admin"))],
     db: Annotated[AsyncSession, Depends(get_db)] = None,
 ) -> RegistrationGuestResponse:
     """Transfer a ticket to another donor during check-in.
