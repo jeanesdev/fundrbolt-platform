@@ -30,9 +30,11 @@ async def event(db_session: AsyncSession, test_npo, test_user):
         npo_id=test_npo.id,
         name="Test Event",
         slug="test-event",
-        event_date=datetime.now(UTC),
+        event_datetime=datetime.now(UTC),
+        timezone="America/Chicago",
         description="Test event description",
         created_by=test_user.id,
+        updated_by=test_user.id,
     )
     db_session.add(event)
     await db_session.commit()
