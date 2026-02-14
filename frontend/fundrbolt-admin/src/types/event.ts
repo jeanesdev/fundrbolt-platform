@@ -136,6 +136,7 @@ export interface EventStats {
   food_options_count: number
   sponsors_count: number
   auction_items_count: number
+  auction_bids_count: number
   registrations_count: number
   active_registrations_count: number
   guest_count: number

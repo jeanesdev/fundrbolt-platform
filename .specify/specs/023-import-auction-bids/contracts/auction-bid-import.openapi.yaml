@@ -3,7 +3,7 @@ info:
   title: Auction Bid Import API
   version: 1.0.0
 paths:
-  /api/v1/events/{event_id}/auction/bids/dashboard:
+  /api/v1/admin/events/{event_id}/auction-bids/dashboard:
     get:
       summary: Get auction bids dashboard summary
       parameters:
@@ -19,7 +19,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BidsDashboard"
-  /api/v1/events/{event_id}/auction/bids/import/preflight:
+  /api/v1/admin/events/{event_id}/auction-bids/import/preflight:
     post:
       summary: Preflight an auction bid import file
       parameters:
@@ -34,14 +34,11 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required: [file, file_type]
+              required: [file]
               properties:
                 file:
                   type: string
                   format: binary
-                file_type:
-                  type: string
-                  enum: [json, csv, xlsx]
       responses:
         "200":
           description: Preflight results
@@ -49,7 +46,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PreflightResult"
-  /api/v1/events/{event_id}/auction/bids/import/confirm:
+  /api/v1/admin/events/{event_id}/auction-bids/import/confirm:
     post:
       summary: Confirm a preflighted auction bid import
       parameters:
@@ -61,11 +58,14 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
-              required: [import_batch_id]
+              required: [file, import_batch_id]
               properties:
+                file:
+                  type: string
+                  format: binary
                 import_batch_id:
                   type: string
       responses:
@@ -118,9 +118,12 @@ components:
           format: date-time
     PreflightResult:
       type: object
-      required: [import_batch_id, total_rows, valid_rows, invalid_rows, row_errors]
+      required:
+        [import_batch_id, detected_format, total_rows, valid_rows, invalid_rows, warning_rows, row_errors]
       properties:
         import_batch_id:
+          type: string
+        detected_format:
           type: string
         total_rows:
           type: integer
@@ -128,27 +131,45 @@ components:
           type: integer
         invalid_rows:
           type: integer
+        warning_rows:
+          type: integer
         row_errors:
           type: array
           items:
-            $ref: "#/components/schemas/RowError"
-    RowError:
+            $ref: "#/components/schemas/RowIssue"
+        row_warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/RowIssue"
+        error_report_url:
+          type: string
+          nullable: true
+    RowIssue:
       type: object
-      required: [row_number, error_code, message]
+      required: [row_number, severity, message]
       properties:
         row_number:
           type: integer
-        error_code:
+        severity:
           type: string
+          enum: [error, warning]
+        field_name:
+          type: string
+          nullable: true
         message:
           type: string
+        raw_value:
+          type: string
+          nullable: true
     ImportSummary:
       type: object
-      required: [import_batch_id, created_bids, started_at, completed_at]
+      required: [import_batch_id, created_bids, skipped_bids, started_at, completed_at]
       properties:
         import_batch_id:
           type: string
         created_bids:
+          type: integer
+        skipped_bids:
           type: integer
         started_at:
           type: string
