@@ -22,7 +22,7 @@ Tests for API endpoint contracts:
   - Success with CSV, JSON files
   - Error scenarios (missing fields, invalid ticket type, row limit, duplicates)
   - Authorization checks
-  
+
 - **Import Endpoint** (`POST /api/v1/admin/events/{event_id}/ticket-sales/import`):
   - Successful import with purchase creation
   - Duplicate skipping

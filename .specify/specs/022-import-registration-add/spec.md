@@ -14,6 +14,8 @@
 - Q: What is the uniqueness scope for `external_registration_id`? → A: Unique within the selected event.
 - Q: What is the maximum number of rows allowed per import? → A: 5,000 rows.
 - Q: Should preflight fail on any missing/invalid required fields? → A: Yes, any required-field errors cause preflight to fail.
+- Q: Should guest registrations be included in the same file? → A: Yes; rows with `guest_of_email` are treated as guests linked to the parent registrant.
+- Q: Should food options be importable? → A: Yes; `food_option` maps to an event food option and creates a meal selection.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -66,13 +68,14 @@ As an admin, I want clear error feedback from preflight so I can correct my file
 
 - File is empty or only has headers.
 - File includes rows for a different event than the one currently selected.
-- File references a ticket package or registration option that does not exist for the selected event.
+- File references a ticket purchase that does not exist for the selected event.
 - Duplicate external registration identifiers appear in the same file.
 - External registration identifiers already exist in the system.
 - Required numeric fields contain text or negative values.
 - File uses an unsupported encoding or corrupted Excel workbook.
 - Row count exceeds the maximum allowed for a single import.
 - Preflight passes but the user cancels the import.
+- Guest rows reference missing parents or exceed guest_count.
 
 ## Requirements *(mandatory)*
 
@@ -83,8 +86,8 @@ As an admin, I want clear error feedback from preflight so I can correct my file
 - **FR-003**: System MUST require a preflight validation step before any import is executed.
 - **FR-004**: System MUST block import when preflight detects errors and must not create any registrations in that case.
 - **FR-005**: System MUST allow import only after a successful preflight for the same uploaded file.
-- **FR-006**: System MUST validate required fields: event identifier, registrant full name, registrant email, registration date, ticket package, quantity, total amount, payment status, and external registration identifier; any missing or invalid required fields MUST cause preflight to fail.
-- **FR-007**: System MUST allow optional fields: registrant phone, notes, bidder number, table number, and guest count.
+- **FR-006**: System MUST validate required fields: event identifier, registrant full name, registrant email, registration date, quantity, and external registration identifier; any missing or invalid required fields MUST cause preflight to fail.
+- **FR-007**: System MUST allow optional fields: registrant phone, notes, bidder number, table number, guest count, guest_of_email, food_option, ticket_purchase_id, ticket_purchaser_email, and ticket_purchase_date.
 - **FR-008**: System MUST detect duplicate external registration identifiers within the uploaded file and flag them as errors during preflight.
 - **FR-009**: System MUST report validation results with counts of total rows, valid rows, error rows, and warning rows.
 - **FR-010**: System MUST provide a downloadable error report when preflight finds errors.
@@ -96,41 +99,53 @@ As an admin, I want clear error feedback from preflight so I can correct my file
 - **FR-016**: System MUST ignore `event_id` values in the uploaded file and import all rows into the currently selected event, while warning when a row’s `event_id` differs from the selected event.
 - **FR-017**: System MUST skip importing rows whose `external_registration_id` already exists in the system and surface a warning in preflight results.
 - **FR-018**: System MUST enforce a maximum of 5,000 rows per import file.
-- **FR-020**: System MUST enforce `external_registration_id` uniqueness within the selected event.
 - **FR-019**: System MUST allow preflight to succeed when existing `external_registration_id` duplicates are found, while warning that those rows will be skipped during import.
+- **FR-020**: System MUST enforce `external_registration_id` uniqueness within the selected event.
+- **FR-021**: System MUST accept `ticket_purchase_id` to link a registration to a ticket sale when provided.
+- **FR-022**: System MUST allow `ticket_purchaser_email` + `ticket_purchase_date` as an alternative lookup for the ticket purchase; missing or ambiguous matches MUST fail preflight.
+- **FR-023**: System MUST treat rows with `guest_of_email` as guest registrations linked to the parent registrant email.
+- **FR-024**: System MUST fail preflight if a guest row references a parent registrant that is not present in the file and does not exist in the system for the selected event.
+- **FR-025**: System MUST fail preflight if the number of guest rows exceeds the parent’s `guest_count` capacity.
+- **FR-026**: System MUST require unique guest email addresses per parent registration and fail preflight on duplicates.
+- **FR-027**: System MUST ignore ticket purchase fields on guest rows.
+- **FR-028**: System MUST accept `food_option` (name or ID) and create a meal selection for the registrant or guest row when provided.
 
 #### Example File Formats
 
 **JSON example (array of registration objects)**
 
-Each object represents one registration record:
+Each object represents one registration record (or guest row when `guest_of_email` is set):
 
 - event_id: EVT-2026-001
 - registrant_name: Jordan Lee
 - registrant_email: jordan.lee@example.org
 - registration_date: 2026-02-01
-- ticket_package: VIP Table
 - quantity: 2
-- total_amount: 500.00
-- payment_status: Paid
 - external_registration_id: REG-100045
 - registrant_phone: 555-123-4567
 - bidder_number: 42
 - table_number: 8
 - guest_count: 2
 - notes: Sponsor package
+- ticket_purchase_id: 1b2c3d4e-0000-1111-2222-333344445555
+- ticket_purchaser_email: jordan.lee@example.org
+- ticket_purchase_date: 2026-01-20
+- guest_of_email: jordan.lee@example.org (guest row only)
+- food_option: Vegetarian
 
 **CSV example (header and one row)**
 
 Header:
-event_id,registrant_name,registrant_email,registration_date,ticket_package,quantity,total_amount,payment_status,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,notes
+event_id,registrant_name,registrant_email,registration_date,quantity,external_registration_id,registrant_phone,bidder_number,table_number,guest_count,guest_of_email,food_option,notes,ticket_purchase_id,ticket_purchaser_email,ticket_purchase_date
 
-Row:
-EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,VIP Table,2,500.00,Paid,REG-100045,555-123-4567,42,8,2,Sponsor package
+Rows:
+EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,2,REG-100045,555-123-4567,42,8,2,,Vegetarian,Sponsor package,1b2c3d4e-0000-1111-2222-333344445555,jordan.lee@example.org,2026-01-20
+EVT-2026-001,Casey Guest,casey.guest@example.org,2026-02-01,1,,555-222-7890,84,8,1,jordan.lee@example.org,Vegetarian,Dietary: vegetarian,,,
 
 ### Key Entities *(include if feature involves data)*
 
-- **Registration Record**: Represents a single event registration with registrant details, ticket package, quantity, amounts, and payment status.
+- **Registration Record**: Represents a single event registration with registrant details, quantity, and optional ticket purchase linkage.
+- **Guest Registration**: Represents a guest row linked to a parent registrant via `guest_of_email`.
 - **External Registration Identifier**: Unique identifier for a registration within the selected event.
 - **Import Batch**: Represents one upload attempt with its preflight results, status, and initiating admin.
 - **Validation Issue**: Represents a preflight error or warning tied to a specific row and field.
@@ -141,12 +156,11 @@ EVT-2026-001,Jordan Lee,jordan.lee@example.org,2026-02-01,VIP Table,2,500.00,Pai
 - Excel workbooks provide data in the first worksheet with a single header row.
 - The selected event in the admin interface determines the target event for imported registrations.
 - Any `event_id` provided in the file is informational only and does not affect import routing.
-- Amounts use a single currency per import file.
 - The maximum import size is 5,000 rows.
 
 ### Dependencies
 
-- Ticket packages or registration options must already exist for the selected event.
+- Ticket purchases (optional) must exist to link registrations.
 - Admin users must have access to the registrations page and registration management permissions.
 
 ## Success Criteria *(mandatory)*

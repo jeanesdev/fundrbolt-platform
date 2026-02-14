@@ -382,7 +382,9 @@ class EventStatsResponse(BaseModel):
     sponsors_count: int
     auction_items_count: int
     registrations_count: int
+    active_registrations_count: int
     guest_count: int
+    active_guest_count: int
 
 
 class EventPublicResponse(BaseModel):
