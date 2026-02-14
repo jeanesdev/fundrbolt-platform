@@ -55,11 +55,15 @@ class AuditEventType(str, Enum):
     AUCTION_ITEM_PUBLISHED = "auction_item_published"
     AUCTION_ITEM_WITHDRAWN = "auction_item_withdrawn"
     AUCTION_ITEM_IMPORT = "auction_item_import"
+    # Ticket sales import events
+    TICKET_SALES_IMPORT = "ticket_sales_import"
     # Table customization events (Feature 014)
     TABLE_CAPACITY_CHANGED = "table_capacity_changed"
     TABLE_NAME_CHANGED = "table_name_changed"
     TABLE_CAPTAIN_ASSIGNED = "table_captain_assigned"
     TABLE_CAPTAIN_REMOVED = "table_captain_removed"
+    # Registration import events (Feature 022)
+    REGISTRATION_IMPORT = "registration_import"
 
 
 class AuditService:
@@ -1189,6 +1193,47 @@ class AuditService:
         )
 
     @staticmethod
+    async def log_ticket_sales_import(
+        db: AsyncSession,
+        event_id: uuid.UUID,
+        initiated_by_user_id: uuid.UUID,
+        stage: str,
+        total_rows: int,
+        error_count: int,
+        ip_address: str | None = None,
+    ) -> None:
+        """Log ticket sales import attempts (preflight/commit)."""
+        from app.models.audit_log import AuditLog
+
+        audit_log = AuditLog(
+            user_id=initiated_by_user_id,
+            action="ticket_sales_import",
+            ip_address=ip_address or "unknown",
+            user_agent=None,
+            event_metadata={
+                "event_id": str(event_id),
+                "stage": stage,
+                "total_rows": total_rows,
+                "error_count": error_count,
+            },
+        )
+        db.add(audit_log)
+        await db.commit()
+
+        logger.info(
+            "Ticket sales import",
+            extra={
+                "event_type": AuditEventType.TICKET_SALES_IMPORT.value,
+                "event_id": str(event_id),
+                "stage": stage,
+                "total_rows": total_rows,
+                "error_count": error_count,
+                "initiated_by_user_id": str(initiated_by_user_id),
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+    @staticmethod
     async def log_table_customization_change(
         db: AsyncSession,
         event_id: uuid.UUID,
@@ -1256,6 +1301,50 @@ class AuditService:
                 "change_type": change_type,
                 "old_value": old_value,
                 "new_value": new_value,
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+    @staticmethod
+    async def log_registration_import(
+        db: AsyncSession,
+        event_id: uuid.UUID,
+        initiated_by_user_id: uuid.UUID,
+        stage: str,
+        total_rows: int,
+        created_count: int,
+        error_count: int,
+        ip_address: str | None = None,
+    ) -> None:
+        """Log registration import attempts (preflight/commit) - Feature 022."""
+        from app.models.audit_log import AuditLog
+
+        audit_log = AuditLog(
+            user_id=initiated_by_user_id,
+            action="registration_import",
+            ip_address=ip_address or "unknown",
+            user_agent=None,
+            event_metadata={
+                "event_id": str(event_id),
+                "stage": stage,
+                "total_rows": total_rows,
+                "created_count": created_count,
+                "error_count": error_count,
+            },
+        )
+        db.add(audit_log)
+        await db.commit()
+
+        logger.info(
+            "Registration import",
+            extra={
+                "event_type": AuditEventType.REGISTRATION_IMPORT.value,
+                "event_id": str(event_id),
+                "stage": stage,
+                "total_rows": total_rows,
+                "created_count": created_count,
+                "error_count": error_count,
+                "initiated_by_user_id": str(initiated_by_user_id),
                 "timestamp": datetime.utcnow().isoformat(),
             },
         )

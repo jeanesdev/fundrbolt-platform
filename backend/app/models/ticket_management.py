@@ -28,6 +28,7 @@ from app.models.base import Base, UUIDMixin
 
 if TYPE_CHECKING:
     from app.models.event import Event
+    from app.models.event_registration import EventRegistration
     from app.models.user import User
 
 
@@ -415,6 +416,7 @@ class TicketPurchase(Base, UUIDMixin):
     - quantity > 0
     - total_price >= 0 (after promo code discount)
     - payment_status tracks transaction state
+    - external_sale_id is unique per event (for import tracking)
     """
 
     __tablename__ = "ticket_purchases"
@@ -452,6 +454,13 @@ class TicketPurchase(Base, UUIDMixin):
         nullable=False,
     )
 
+    # Import Fields (Feature 021)
+    external_sale_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    purchaser_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    purchaser_email: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    purchaser_phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # Timestamps
     purchased_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -474,6 +483,10 @@ class TicketPurchase(Base, UUIDMixin):
         "PromoCodeApplication",
         back_populates="ticket_purchase",
         uselist=False,
+    )
+    registrations: Mapped[list["EventRegistration"]] = relationship(
+        "EventRegistration",
+        back_populates="ticket_purchase",
     )
     assigned_tickets: Mapped[list["AssignedTicket"]] = relationship(
         "AssignedTicket",

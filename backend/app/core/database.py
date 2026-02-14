@@ -70,14 +70,14 @@ async def get_db() -> AsyncGenerator[AsyncSession, Any]:
                     await session.commit()
                 except SQLAlchemyError as e:
                     await session.rollback()
-                    logger.error(
+                    logger.exception(
                         "Database error during transaction",
                         extra={"error": str(e), "attempt": attempt + 1},
                     )
                     raise
                 except Exception as e:
                     await session.rollback()
-                    logger.error(
+                    logger.exception(
                         "Unexpected error during transaction",
                         extra={"error": str(e), "attempt": attempt + 1},
                     )

@@ -83,6 +83,30 @@ class RegistrationGuest(Base, UUIDMixin, TimestampMixin):
         default=False,
         comment="Whether the guest has checked in at the event",
     )
+    check_in_time: Mapped[datetime | None] = mapped_column(
+        SADateTime(timezone=True),
+        nullable=True,
+        comment="When the guest checked in at the event",
+    )
+
+    # Cancellation Tracking
+    status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="confirmed",
+        index=True,
+        comment="Guest status (confirmed/cancelled)",
+    )
+    cancellation_reason: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        comment="Reason for cancellation (admin-supplied)",
+    )
+    cancellation_note: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        comment="Optional cancellation note",
+    )
 
     # Seating and Bidder Number Fields (Feature 012)
     bidder_number: Mapped[int | None] = mapped_column(
@@ -107,6 +131,12 @@ class RegistrationGuest(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         default=False,
         comment="Whether this guest is designated as captain of their assigned table",
+    )
+    is_primary: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        comment="Whether this guest is the primary registrant",
     )
 
     # Check-in Timestamps (Feature 025)

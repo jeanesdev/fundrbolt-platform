@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useEventContext, type UseEventContextReturn } from '@/hooks/use-event-context'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { EventSelector } from '../EventSelector'
-import { useEventContext, type UseEventContextReturn } from '@/hooks/use-event-context'
 import type { ComponentProps, ReactNode } from 'react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { EventSelector } from '../EventSelector'
 
 vi.mock('@/hooks/use-event-context')
 
