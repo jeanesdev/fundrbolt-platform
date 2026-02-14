@@ -27,7 +27,6 @@ from app.models import (
     EventTable,
     AuctionItem,
     AuctionBid,
-    TicketSale,
     Sponsor,
     User,
 )

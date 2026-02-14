@@ -15,7 +15,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.deps import get_current_user, get_db
+from app.core.database import get_db
+from app.middleware.auth import get_current_user
 from app.models import User
 from app.schemas.event_dashboard import (
     DashboardSummary,
