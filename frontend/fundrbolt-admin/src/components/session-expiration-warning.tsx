@@ -32,7 +32,7 @@ export function SessionExpirationWarning({
   const lastActivityRef = useRef<number>(Date.now())
   const idleTimeoutRef = useRef<number | null>(null)
 
-  const locationKey = useRouterState({ select: (state) => state.location.key })
+  const locationHref = useRouterState({ select: (state) => state.location.href })
   const { accessToken, refreshToken, reset } = useAuthStore()
 
   // Extend session by refreshing the access token
@@ -156,7 +156,7 @@ export function SessionExpirationWarning({
     }
 
     recordActivity(true)
-  }, [accessToken, refreshToken, locationKey, recordActivity])
+  }, [accessToken, refreshToken, locationHref, recordActivity])
 
   // Monitor inactivity warning countdown
   useEffect(() => {
