@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.event import Event
-from app.models.event_registration import EventRegistration, RegistrationStatus
+from app.models.event_registration import EventRegistration
 from app.models.registration_guest import RegistrationGuest
 from app.models.user import User
 from app.services.auto_assign_service import AutoAssignService
@@ -34,7 +34,6 @@ class TestAutoAssignService:
         registration = EventRegistration(
             event_id=test_active_event.id,
             user_id=test_user.id,
-            status=RegistrationStatus.CONFIRMED,
         )
         db_session.add(registration)
         await db_session.flush()
@@ -106,7 +105,6 @@ class TestAutoAssignService:
             registration = EventRegistration(
                 event_id=test_active_event.id,
                 user_id=users[reg_num].id,
-                status=RegistrationStatus.CONFIRMED,
             )
             db_session.add(registration)
             await db_session.flush()
@@ -158,7 +156,6 @@ class TestAutoAssignService:
         registration = EventRegistration(
             event_id=test_active_event.id,
             user_id=test_user.id,
-            status=RegistrationStatus.CONFIRMED,
         )
         db_session.add(registration)
         await db_session.flush()
@@ -182,6 +179,45 @@ class TestAutoAssignService:
         # Verify warning about party split
         assert len(result["warnings"]) == 1
         assert "split" in result["warnings"][0].lower()
+
+    @pytest.mark.asyncio
+    async def test_auto_assign_prefers_primary_as_captain(
+        self, db_session: AsyncSession, test_active_event: Event, test_user: Any
+    ) -> None:
+        """Auto-assign should set primary registrant as table captain when available."""
+        test_active_event.table_count = 2
+        test_active_event.max_guests_per_table = 4
+        await db_session.commit()
+
+        registration = EventRegistration(
+            event_id=test_active_event.id,
+            user_id=test_user.id,
+        )
+        db_session.add(registration)
+        await db_session.flush()
+
+        primary_guest = RegistrationGuest(
+            registration_id=registration.id,
+            name="Primary Guest",
+            email="primary@test.com",
+            is_primary=True,
+        )
+        guest = RegistrationGuest(
+            registration_id=registration.id,
+            name="Guest Two",
+            email="guest2@test.com",
+        )
+        db_session.add_all([primary_guest, guest])
+        await db_session.commit()
+
+        await AutoAssignService.auto_assign_guests(db_session, test_active_event.id)
+
+        await db_session.refresh(primary_guest)
+        await db_session.refresh(guest)
+
+        assert primary_guest.table_number is not None
+        assert primary_guest.table_number == guest.table_number
+        assert primary_guest.is_table_captain is True
 
     @pytest.mark.asyncio
     async def test_largest_parties_assigned_first(
@@ -224,7 +260,6 @@ class TestAutoAssignService:
             registration = EventRegistration(
                 event_id=test_active_event.id,
                 user_id=users[idx].id,
-                status=RegistrationStatus.CONFIRMED,
             )
             db_session.add(registration)
             await db_session.flush()
@@ -306,7 +341,6 @@ class TestAutoAssignService:
         registration = EventRegistration(
             event_id=test_active_event.id,
             user_id=test_user.id,
-            status=RegistrationStatus.CONFIRMED,
         )
         db_session.add(registration)
         await db_session.flush()

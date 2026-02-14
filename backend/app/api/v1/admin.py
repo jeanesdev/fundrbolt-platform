@@ -3,17 +3,23 @@
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.middleware.auth import get_current_user
+from app.models.event import Event
+from app.models.event_registration import EventRegistration
+from app.models.registration_guest import RegistrationGuest
 from app.models.user import User
+from app.schemas.event_registration import EventRegistrationCancelRequest
 from app.schemas.npo import NPOResponse
 from app.services.admin_guest_service import AdminGuestService
 from app.services.application_service import ApplicationService
 from app.services.email_service import get_email_service
+from app.services.event_registration_service import EventRegistrationService
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -46,6 +52,29 @@ def require_superadmin(current_user: Annotated[User, Depends(get_current_user)])
             detail="SuperAdmin privileges required for this operation",
         )
     return current_user
+
+
+def _require_event_admin(current_user: User, event: Event) -> None:
+    allowed_roles = {
+        "super_admin",
+        "npo_admin",
+        "npo_staff",
+        "event_coordinator",
+        "staff",
+    }
+    user_role = getattr(current_user, "role_name", None)
+    if user_role not in allowed_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to manage this event.",
+        )
+
+    if user_role != "super_admin":
+        if getattr(current_user, "npo_id", None) != event.npo_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to manage this event.",
+            )
 
 
 @router.get(
@@ -245,7 +274,7 @@ async def get_event_attendees(
     include_meal_selections: bool = False,
     format: str = "json",
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_superadmin),
+    current_user: User = Depends(get_current_user),
 ) -> Any:
     """
     Get all attendees for an event.
@@ -267,6 +296,13 @@ async def get_event_attendees(
     """
     from fastapi.responses import Response
 
+    event_result = await db.execute(select(Event).where(Event.id == event_id))
+    event = event_result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    _require_event_admin(current_user, event)
+
     result = await AdminGuestService.get_event_attendees(
         db=db,
         event_id=event_id,
@@ -285,6 +321,36 @@ async def get_event_attendees(
     return {"attendees": result, "total": len(result)}
 
 
+@router.delete(
+    "/registrations/{registration_id}/cancel",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Cancel event registration",
+    description="Cancel a registration with reason/note (event admin)",
+)
+async def cancel_registration_admin(
+    registration_id: UUID,
+    cancel_data: EventRegistrationCancelRequest = Body(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    registration = await EventRegistrationService.get_registration_by_id(db, registration_id)
+    if not registration:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Registration with ID {registration_id} not found",
+        )
+
+    _require_event_admin(current_user, registration.event)
+
+    await EventRegistrationService.cancel_registration_admin(
+        db,
+        registration_id,
+        current_user,
+        cancellation_reason=cancel_data.cancellation_reason,
+        cancellation_note=cancel_data.cancellation_note,
+    )
+
+
 @router.get(
     "/events/{event_id}/meal-summary",
     summary="Get event meal summary",
@@ -293,7 +359,7 @@ async def get_event_attendees(
 async def get_meal_summary(
     event_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_superadmin),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """
     Get meal selection summary for an event.
@@ -310,6 +376,13 @@ async def get_meal_summary(
     Returns:
         Meal summary with counts per option
     """
+    event_result = await db.execute(select(Event).where(Event.id == event_id))
+    event = event_result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    _require_event_admin(current_user, event)
+
     return await AdminGuestService.get_meal_summary(db=db, event_id=event_id)
 
 
@@ -323,7 +396,7 @@ async def invite_guest_to_event(
     event_id: UUID,
     guest_data: dict[str, Any],
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_superadmin),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """
     Invite a new guest to an event by creating a registration and sending invitation.
@@ -344,6 +417,13 @@ async def invite_guest_to_event(
     Raises:
         HTTPException: If event not found or email fails
     """
+    event_result = await db.execute(select(Event).where(Event.id == event_id))
+    event = event_result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    _require_event_admin(current_user, event)
+
     email_service = get_email_service()
     guest, email_sent = await AdminGuestService.invite_guest_to_event(
         db=db,
@@ -369,13 +449,14 @@ async def invite_guest_to_event(
 @router.delete(
     "/guests/{guest_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Delete a guest",
-    description="Delete a guest and their meal selections",
+    summary="Cancel a guest",
+    description="Cancel a guest and remove their meal selections",
 )
 async def delete_guest(
     guest_id: UUID,
+    cancel_data: EventRegistrationCancelRequest | None = Body(default=None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_superadmin),
+    current_user: User = Depends(get_current_user),
 ) -> None:
     """
     Delete a guest from an event.
@@ -392,7 +473,24 @@ async def delete_guest(
     Raises:
         HTTPException: If guest not found
     """
-    await AdminGuestService.delete_guest(db=db, guest_id=guest_id)
+    event_result = await db.execute(
+        select(Event)
+        .join(EventRegistration, EventRegistration.event_id == Event.id)
+        .join(RegistrationGuest, RegistrationGuest.registration_id == EventRegistration.id)
+        .where(RegistrationGuest.id == guest_id)
+    )
+    event = event_result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Guest not found")
+
+    _require_event_admin(current_user, event)
+
+    await AdminGuestService.delete_guest(
+        db=db,
+        guest_id=guest_id,
+        cancellation_reason=cancel_data.cancellation_reason if cancel_data else None,
+        cancellation_note=cancel_data.cancellation_note if cancel_data else None,
+    )
 
 
 @router.post(
@@ -404,7 +502,7 @@ async def delete_guest(
 async def send_guest_invitation(
     guest_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_superadmin),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, str]:
     """
     Send invitation email to a guest.
@@ -424,6 +522,18 @@ async def send_guest_invitation(
     Raises:
         HTTPException: If guest not found or email fails
     """
+    event_result = await db.execute(
+        select(Event)
+        .join(EventRegistration, EventRegistration.event_id == Event.id)
+        .join(RegistrationGuest, RegistrationGuest.registration_id == EventRegistration.id)
+        .where(RegistrationGuest.id == guest_id)
+    )
+    event = event_result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Guest not found")
+
+    _require_event_admin(current_user, event)
+
     email_service = get_email_service()
     success = await AdminGuestService.send_guest_invitation(
         db=db, guest_id=guest_id, email_service=email_service

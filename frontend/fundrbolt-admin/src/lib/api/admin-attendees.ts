@@ -14,7 +14,6 @@ export interface Attendee {
   email: string
   phone: string
   number_of_guests?: number
-  ticket_type?: string
   guest_of?: string
   meal_selection?: string | null
   meal_description?: string | null
@@ -40,6 +39,7 @@ export interface MealSummaryResponse {
   event_name: string
   total_registrations: number
   total_attendees: number
+  total_active_attendees: number
   total_meal_selections: number
   meal_counts: MealCount[]
 }
@@ -174,6 +174,14 @@ export const inviteGuestToEvent = async (
  * @param guestId - Guest UUID
  * @returns void
  */
-export const deleteGuest = async (guestId: string): Promise<void> => {
-  await apiClient.delete(`/admin/guests/${guestId}`)
+export const deleteGuest = async (
+  guestId: string,
+  payload?: {
+    cancellation_reason?: 'duplicate' | 'requested' | 'payment_issue' | 'other'
+    cancellation_note?: string
+  }
+): Promise<void> => {
+  await apiClient.delete(`/admin/guests/${guestId}`, {
+    data: payload,
+  })
 }

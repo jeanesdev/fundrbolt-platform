@@ -19,6 +19,12 @@ from app.models.npo_application import NPOApplication
 from app.models.npo_branding import NPOBranding
 from app.models.npo_member import NPOMember
 from app.models.registration_guest import RegistrationGuest
+from app.models.registration_import import (
+    ImportBatchStatus,
+    RegistrationImportBatch,
+    RegistrationValidationIssue,
+    ValidationSeverity,
+)
 from app.models.role import Role
 from app.models.session import Session
 from app.models.sponsor import Sponsor
@@ -34,6 +40,13 @@ from app.models.ticket_management import (
     TicketAuditLog,
     TicketPackage,
     TicketPurchase,
+)
+from app.models.ticket_sales_import import (
+    ImportFormat,
+    ImportStatus,
+    IssueSeverity,
+    TicketSalesImportBatch,
+    TicketSalesImportIssue,
 )
 from app.models.user import User
 from app.models.watch_list_entry import WatchListEntry
@@ -56,9 +69,12 @@ __all__ = [
     "EventRegistration",
     "EventTable",
     "FoodOption",
+    "ImportFormat",
+    "ImportStatus",
     "Invitation",
     "ItemPromotion",
     "ItemView",
+    "IssueSeverity",
     "LegalDocument",
     "MealSelection",
     "NPO",
@@ -72,7 +88,11 @@ __all__ = [
     "PromoCode",
     "PromoCodeApplication",
     "RegistrationGuest",
+    "RegistrationImportBatch",
     "RegistrationStatus",
+    "RegistrationValidationIssue",
+    "ImportBatchStatus",
+    "ValidationSeverity",
     "Role",
     "Session",
     "Sponsor",
@@ -80,6 +100,8 @@ __all__ = [
     "TicketPackage",
     "TicketPurchase",
     "TimestampMixin",
+    "TicketSalesImportBatch",
+    "TicketSalesImportIssue",
     "User",
     "UserConsent",
     "UUIDMixin",

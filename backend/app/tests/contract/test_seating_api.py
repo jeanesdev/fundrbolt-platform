@@ -124,7 +124,8 @@ class TestSeatingEndpoints:
         from app.models.registration_guest import RegistrationGuest
 
         guest_query = select(RegistrationGuest).where(
-            RegistrationGuest.registration_id == test_registration.id
+            RegistrationGuest.registration_id == test_registration.id,
+            RegistrationGuest.is_primary.is_(True),
         )
         guest_result = await db_session.execute(guest_query)
         primary_guest = guest_result.scalar_one()
@@ -140,14 +141,14 @@ class TestSeatingEndpoints:
     ) -> None:
         """Test bidder number assignment rejects duplicate numbers."""
         # Create guest with bidder number for first registration
-        first_guest = RegistrationGuest(
-            registration_id=test_registration.id,
-            user_id=test_registration.user_id,
-            bidder_number=200,
-            bidder_number_assigned_at=datetime.now(UTC),
-            checked_in=False,
+        first_guest_query = select(RegistrationGuest).where(
+            RegistrationGuest.registration_id == test_registration.id,
+            RegistrationGuest.is_primary.is_(True),
         )
-        db_session.add(first_guest)
+        first_guest = (await db_session.execute(first_guest_query)).scalar_one()
+        first_guest.bidder_number = 200
+        first_guest.bidder_number_assigned_at = datetime.now(UTC)
+        first_guest.checked_in = False
         await db_session.commit()
 
         # Create second registration
@@ -155,8 +156,6 @@ class TestSeatingEndpoints:
         second_registration = EventRegistration(
             event_id=test_event.id,
             user_id=second_user.id,
-            status="confirmed",
-            ticket_type="general_admission",
             number_of_guests=1,
         )
         db_session.add(second_registration)
@@ -216,7 +215,8 @@ class TestSeatingEndpoints:
         from app.models.registration_guest import RegistrationGuest
 
         guest_query = select(RegistrationGuest).where(
-            RegistrationGuest.registration_id == test_registration.id
+            RegistrationGuest.registration_id == test_registration.id,
+            RegistrationGuest.is_primary.is_(True),
         )
         guest_result = await db_session.execute(guest_query)
         primary_guest = guest_result.scalar_one()
@@ -231,13 +231,13 @@ class TestSeatingEndpoints:
     ) -> None:
         """Test DELETE /admin/events/{event_id}/registrations/{registration_id}/table returns 200."""
         # Create guest with table assignment
-        primary_guest = RegistrationGuest(
-            registration_id=test_registration.id,
-            user_id=test_registration.user_id,
-            table_number=5,
-            checked_in=False,
+        primary_guest_query = select(RegistrationGuest).where(
+            RegistrationGuest.registration_id == test_registration.id,
+            RegistrationGuest.is_primary.is_(True),
         )
-        db_session.add(primary_guest)
+        primary_guest = (await db_session.execute(primary_guest_query)).scalar_one()
+        primary_guest.table_number = 5
+        primary_guest.checked_in = False
         await db_session.commit()
 
         response = await npo_admin_client.delete(
@@ -252,7 +252,8 @@ class TestSeatingEndpoints:
         # Verify database persistence - check primary guest
         await db_session.refresh(test_registration)
         guest_query = select(RegistrationGuest).where(
-            RegistrationGuest.registration_id == test_registration.id
+            RegistrationGuest.registration_id == test_registration.id,
+            RegistrationGuest.is_primary.is_(True),
         )
         guest_result = await db_session.execute(guest_query)
         updated_guest = guest_result.scalar_one()
@@ -316,13 +317,13 @@ class TestSeatingEndpoints:
         test_event.max_guests_per_table = 8
 
         # Create guest with table assignment
-        primary_guest = RegistrationGuest(
-            registration_id=test_registration.id,
-            user_id=test_registration.user_id,
-            table_number=3,
-            checked_in=False,
+        primary_guest_query = select(RegistrationGuest).where(
+            RegistrationGuest.registration_id == test_registration.id,
+            RegistrationGuest.is_primary.is_(True),
         )
-        db_session.add(primary_guest)
+        primary_guest = (await db_session.execute(primary_guest_query)).scalar_one()
+        primary_guest.table_number = 3
+        primary_guest.checked_in = False
         await db_session.commit()
 
         response = await npo_admin_client.get(
@@ -423,16 +424,16 @@ class TestDonorSeatingEndpoint:
         # Create primary guest for registration
         from app.models.registration_guest import RegistrationGuest
 
-        primary_guest = RegistrationGuest(
-            registration_id=test_registration.id,
-            user_id=test_donor.id,
-            table_number=5,
-            bidder_number=150,
-            bidder_number_assigned_at=datetime.now(UTC),
-            checked_in=False,
+        primary_guest_query = select(RegistrationGuest).where(
+            RegistrationGuest.registration_id == test_registration.id,
+            RegistrationGuest.is_primary.is_(True),
         )
-        db_session.add(primary_guest)
-        test_registration.check_in_time = datetime.now(UTC)
+        primary_guest = (await db_session.execute(primary_guest_query)).scalar_one()
+        primary_guest.table_number = 5
+        primary_guest.bidder_number = 150
+        primary_guest.bidder_number_assigned_at = datetime.now(UTC)
+        primary_guest.checked_in = False
+        primary_guest.check_in_time = datetime.now(UTC)
         await db_session.commit()
 
         response = await donor_client.get(f"/api/v1/donor/events/{test_event.id}/my-seating")
@@ -469,16 +470,16 @@ class TestDonorSeatingEndpoint:
         # Create primary guest for registration
         from app.models.registration_guest import RegistrationGuest
 
-        primary_guest = RegistrationGuest(
-            registration_id=test_registration.id,
-            user_id=test_donor.id,
-            table_number=5,
-            bidder_number=150,
-            bidder_number_assigned_at=datetime.now(UTC),
-            checked_in=False,
+        primary_guest_query = select(RegistrationGuest).where(
+            RegistrationGuest.registration_id == test_registration.id,
+            RegistrationGuest.is_primary.is_(True),
         )
-        db_session.add(primary_guest)
-        test_registration.check_in_time = None  # Not checked in
+        primary_guest = (await db_session.execute(primary_guest_query)).scalar_one()
+        primary_guest.table_number = 5
+        primary_guest.bidder_number = 150
+        primary_guest.bidder_number_assigned_at = datetime.now(UTC)
+        primary_guest.checked_in = False
+        primary_guest.check_in_time = None
         await db_session.commit()
 
         response = await donor_client.get(f"/api/v1/donor/events/{test_event.id}/my-seating")
@@ -504,14 +505,14 @@ class TestDonorSeatingEndpoint:
         # Create primary guest for registration with no table
         from app.models.registration_guest import RegistrationGuest
 
-        primary_guest = RegistrationGuest(
-            registration_id=test_registration.id,
-            user_id=test_donor.id,
-            table_number=None,
-            bidder_number=None,
-            checked_in=False,
+        primary_guest_query = select(RegistrationGuest).where(
+            RegistrationGuest.registration_id == test_registration.id,
+            RegistrationGuest.is_primary.is_(True),
         )
-        db_session.add(primary_guest)
+        primary_guest = (await db_session.execute(primary_guest_query)).scalar_one()
+        primary_guest.table_number = None
+        primary_guest.bidder_number = None
+        primary_guest.checked_in = False
         await db_session.commit()
 
         response = await donor_client.get(f"/api/v1/donor/events/{test_event.id}/my-seating")
