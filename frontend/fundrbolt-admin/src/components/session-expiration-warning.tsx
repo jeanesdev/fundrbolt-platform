@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button'
 import apiClient from '@/lib/axios'
 import { useAuthStore } from '@/stores/auth-store'
-import { useRouter } from '@tanstack/react-router'
+import { useRouterState } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface SessionExpirationWarningProps {
@@ -32,7 +32,7 @@ export function SessionExpirationWarning({
   const lastActivityRef = useRef<number>(Date.now())
   const idleTimeoutRef = useRef<number | null>(null)
 
-  const router = useRouter()
+  const locationKey = useRouterState({ select: (state) => state.location.key })
   const { accessToken, refreshToken, reset } = useAuthStore()
 
   // Extend session by refreshing the access token
@@ -103,7 +103,7 @@ export function SessionExpirationWarning({
     }
   }, [accessToken, refreshToken, handleExtendSession, handleLogout, idleTimeoutMs])
 
-  // Track activity and refresh on route change or focus/visibility
+  // Track activity and refresh on focus/visibility
   useEffect(() => {
     if (!accessToken || !refreshToken) {
       setIsOpen(false)
@@ -127,10 +127,6 @@ export function SessionExpirationWarning({
       recordActivity(false)
     }
 
-    const unsubscribe = router.subscribe(() => {
-      recordActivity(true)
-    })
-
     window.addEventListener('focus', handleFocus)
     document.addEventListener('visibilitychange', handleVisibility)
     window.addEventListener('mousemove', handleUserActivity)
@@ -140,7 +136,6 @@ export function SessionExpirationWarning({
     window.addEventListener('touchstart', handleUserActivity)
 
     return () => {
-      unsubscribe()
       window.removeEventListener('focus', handleFocus)
       document.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('mousemove', handleUserActivity)
@@ -152,7 +147,16 @@ export function SessionExpirationWarning({
         window.clearTimeout(idleTimeoutRef.current)
       }
     }
-  }, [accessToken, refreshToken, recordActivity, router])
+  }, [accessToken, refreshToken, recordActivity])
+
+  // Refresh on route change
+  useEffect(() => {
+    if (!accessToken || !refreshToken) {
+      return
+    }
+
+    recordActivity(true)
+  }, [accessToken, refreshToken, locationKey, recordActivity])
 
   // Monitor inactivity warning countdown
   useEffect(() => {
