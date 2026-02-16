@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getErrorMessage } from '@/lib/error-utils'
 import { auctionItemService } from '@/services/auctionItemService'
 import { useAuctionItemStore } from '@/stores/auctionItemStore'
@@ -13,8 +14,15 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { AuctionItemList } from '../components/AuctionItemList'
 import { useEventWorkspace } from '../useEventWorkspace'
+import { EventAuctionBidsSection } from './EventAuctionBidsSection'
 
-export function EventAuctionItemsSection() {
+type AuctionItemsTab = 'items' | 'bids'
+
+interface EventAuctionItemsSectionProps {
+  initialTab?: AuctionItemsTab
+}
+
+export function EventAuctionItemsSection({ initialTab = 'items' }: EventAuctionItemsSectionProps) {
   const navigate = useNavigate()
   const { currentEvent, auctionItems, fetchAuctionItems } = useEventWorkspace()
   const deleteAuctionItem = useAuctionItemStore((state) => state.deleteAuctionItem)
@@ -99,100 +107,114 @@ export function EventAuctionItemsSection() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <CardTitle>Auction Items</CardTitle>
-            <CardDescription>
-              Manage live and silent auction items for your fundraising event
-            </CardDescription>
-          </div>
-          <Button variant="outline" onClick={() => setImportOpen(true)}>
-            <Upload className="mr-2 h-4 w-4" />
-            Import Items
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <AuctionItemList
-          items={auctionItems}
-          isLoading={isLoading}
-          error={error}
-          onAdd={() => navigate({ to: '/events/$eventId/auction-items/create', params: { eventId } })}
-          onEdit={(item) =>
-            navigate({
-              to: '/events/$eventId/auction-items/$itemId/edit',
-              params: { eventId, itemId: item.id },
-            })
-          }
-          onView={(item) =>
-            navigate({
-              to: '/events/$eventId/auction-items/$itemId',
-              params: { eventId, itemId: item.id },
-            })
-          }
-          onDelete={async (item) => {
-            if (!confirm(`Are you sure you want to delete "${item.title}"?`)) return
-            try {
-              await deleteAuctionItem(currentEvent.id, item.id)
-              toast.success('Auction item deleted successfully')
-              await fetchAuctionItems(currentEvent.id)
-            } catch (err) {
-              const message = err instanceof Error ? err.message : 'Failed to delete auction item'
-              toast.error(message)
-            }
-          }}
-        />
-      </CardContent>
-      <Dialog open={importOpen} onOpenChange={(open) => (open ? setImportOpen(true) : closeImport())}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Import Auction Items</DialogTitle>
-            <DialogDescription>
-              Upload a ZIP containing a single .xlsx or .csv workbook and any .jpg/.png images anywhere in the ZIP.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <Input
-              type="file"
-              accept=".zip"
-              onChange={(event) => setImportFile(event.target.files?.[0] ?? null)}
-            />
-            <p className="text-xs text-muted-foreground">
-              The workbook must include required columns and image filenames must match the image file names.
-            </p>
-
-            {importReport && <AuctionItemImportReport report={importReport} />}
-          </div>
-
-          <DialogFooter className="gap-2">
-            {(isPreflighting || isCommitting) && (
-              <div className="mr-auto flex items-center gap-2 text-xs text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                {isPreflighting
-                  ? 'Running preflight…'
-                  : commitProgress
-                    ? `Importing items… ${commitProgress.current}/${commitProgress.total} (estimated)`
-                    : 'Importing items…'}
+    <Tabs defaultValue={initialTab} className="space-y-6">
+      <TabsList>
+        <TabsTrigger value="items">Auction Items</TabsTrigger>
+        <TabsTrigger value="bids">Auction Bids</TabsTrigger>
+      </TabsList>
+      <TabsContent value="items">
+        <Card>
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <CardTitle>Auction Items</CardTitle>
+                <CardDescription>
+                  Manage live and silent auction items for your fundraising event
+                </CardDescription>
               </div>
-            )}
-            <Button variant="outline" onClick={closeImport}>
-              Cancel
-            </Button>
-            <Button onClick={handlePreflight} disabled={isPreflighting}>
-              {isPreflighting ? 'Running preflight...' : 'Run Preflight'}
-            </Button>
-            <Button
-              onClick={handleCommit}
-              disabled={isCommitting || !importReport || importReport.error_count > 0}
-            >
-              {isCommitting ? 'Importing...' : 'Commit Import'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
+              <Button variant="outline" onClick={() => setImportOpen(true)}>
+                <Upload className="mr-2 h-4 w-4" />
+                Import Items
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <AuctionItemList
+              items={auctionItems}
+              isLoading={isLoading}
+              error={error}
+              onAdd={() => navigate({ to: '/events/$eventId/auction-items/create', params: { eventId } })}
+              onEdit={(item) =>
+                navigate({
+                  to: '/events/$eventId/auction-items/$itemId/edit',
+                  params: { eventId, itemId: item.id },
+                })
+              }
+              onView={(item) =>
+                navigate({
+                  to: '/events/$eventId/auction-items/$itemId',
+                  params: { eventId, itemId: item.id },
+                })
+              }
+              onDelete={async (item) => {
+                if (!confirm(`Are you sure you want to delete "${item.title}"?`)) return
+                try {
+                  await deleteAuctionItem(currentEvent.id, item.id)
+                  toast.success('Auction item deleted successfully')
+                  await fetchAuctionItems(currentEvent.id)
+                } catch (err) {
+                  const message = err instanceof Error ? err.message : 'Failed to delete auction item'
+                  toast.error(message)
+                }
+              }}
+            />
+          </CardContent>
+          <Dialog
+            open={importOpen}
+            onOpenChange={(open) => (open ? setImportOpen(true) : closeImport())}
+          >
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>Import Auction Items</DialogTitle>
+                <DialogDescription>
+                  Upload a ZIP containing a single .xlsx or .csv workbook and any .jpg/.png images anywhere in the ZIP.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <Input
+                  type="file"
+                  accept=".zip"
+                  onChange={(event) => setImportFile(event.target.files?.[0] ?? null)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  The workbook must include required columns and image filenames must match the image file names.
+                </p>
+
+                {importReport && <AuctionItemImportReport report={importReport} />}
+              </div>
+
+              <DialogFooter className="gap-2">
+                {(isPreflighting || isCommitting) && (
+                  <div className="mr-auto flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    {isPreflighting
+                      ? 'Running preflight…'
+                      : commitProgress
+                        ? `Importing items… ${commitProgress.current}/${commitProgress.total} (estimated)`
+                        : 'Importing items…'}
+                  </div>
+                )}
+                <Button variant="outline" onClick={closeImport}>
+                  Cancel
+                </Button>
+                <Button onClick={handlePreflight} disabled={isPreflighting}>
+                  {isPreflighting ? 'Running preflight...' : 'Run Preflight'}
+                </Button>
+                <Button
+                  onClick={handleCommit}
+                  disabled={isCommitting || !importReport || importReport.error_count > 0}
+                >
+                  {isCommitting ? 'Importing...' : 'Commit Import'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </Card>
+      </TabsContent>
+      <TabsContent value="bids">
+        <EventAuctionBidsSection />
+      </TabsContent>
+    </Tabs>
   )
 }

@@ -14,6 +14,90 @@ class BidderNumberService:
     """Service for managing bidder number assignments."""
 
     @staticmethod
+    async def _get_used_bidder_numbers(
+        db: AsyncSession,
+        event_id: UUID,
+        exclude_guest_ids: set[UUID] | None = None,
+    ) -> set[int]:
+        exclude_guest_ids = exclude_guest_ids or set()
+        query = (
+            select(RegistrationGuest.id, RegistrationGuest.bidder_number)
+            .join(EventRegistration)
+            .where(
+                EventRegistration.event_id == event_id,
+                RegistrationGuest.bidder_number.isnot(None),
+            )
+        )
+        if exclude_guest_ids:
+            query = query.where(RegistrationGuest.id.notin_(exclude_guest_ids))
+
+        result = await db.execute(query)
+        return {
+            bidder_number for _, bidder_number in result.fetchall() if bidder_number is not None
+        }
+
+    @staticmethod
+    def _find_next_available_number(
+        used_numbers: set[int],
+        reserved_numbers: set[int] | None = None,
+    ) -> int:
+        reserved_numbers = reserved_numbers or set()
+        for num in range(100, 1000):
+            if num in reserved_numbers:
+                continue
+            if num not in used_numbers:
+                return num
+        raise ValueError("All 900 bidder numbers are in use for this event.")
+
+    @staticmethod
+    def _find_next_available_number_from(
+        used_numbers: set[int],
+        start_at: int,
+        reserved_numbers: set[int] | None = None,
+    ) -> int:
+        if not (100 <= start_at <= 999):
+            raise ValueError(f"Bidder number must be between 100 and 999, got {start_at}")
+        reserved_numbers = reserved_numbers or set()
+        for num in range(start_at, 1000):
+            if num in reserved_numbers:
+                continue
+            if num not in used_numbers:
+                return num
+        raise ValueError(f"No available bidder numbers at or above {start_at}.")
+
+    @staticmethod
+    def _find_highest_available_number(
+        used_numbers: set[int],
+        reserved_numbers: set[int] | None = None,
+    ) -> int:
+        reserved_numbers = reserved_numbers or set()
+        for num in range(999, 99, -1):
+            if num in reserved_numbers:
+                continue
+            if num not in used_numbers:
+                return num
+        raise ValueError("All 900 bidder numbers are in use for this event.")
+
+    @staticmethod
+    def _find_replacement_number(
+        used_numbers: set[int],
+        reserved_numbers: set[int] | None = None,
+    ) -> int:
+        reserved_numbers = reserved_numbers or set()
+        max_used = max(used_numbers, default=99)
+        candidate = max_used + 1
+        if (
+            100 <= candidate <= 999
+            and candidate not in used_numbers
+            and candidate not in reserved_numbers
+        ):
+            return candidate
+        return BidderNumberService._find_highest_available_number(
+            used_numbers,
+            reserved_numbers,
+        )
+
+    @staticmethod
     async def assign_bidder_number(
         db: AsyncSession,
         event_id: UUID,
@@ -47,32 +131,41 @@ class BidderNumberService:
             raise ValueError(f"Guest {guest_id} already has bidder number {guest.bidder_number}")
 
         # Get all used bidder numbers for this event
-        used_numbers_query = (
-            select(RegistrationGuest.bidder_number)
-            .join(EventRegistration)
-            .where(
-                EventRegistration.event_id == event_id,
-                RegistrationGuest.bidder_number.isnot(None),
-            )
-        )
-        result = await db.execute(used_numbers_query)
-        used_numbers = {row[0] for row in result.fetchall()}
+        used_numbers = await BidderNumberService._get_used_bidder_numbers(db, event_id)
 
         # Find first available number (100-999)
-        for num in range(100, 1000):
-            if num not in used_numbers:
-                # Assign bidder number
-                guest.bidder_number = num
-                guest.bidder_number_assigned_at = datetime.now(UTC)
-                await db.commit()
-                await db.refresh(guest)
-                return num
+        num = BidderNumberService._find_next_available_number(used_numbers)
 
-        # No available numbers
-        raise ValueError(
-            f"All 900 bidder numbers are in use for event {event_id}. "
-            "Cannot assign new bidder number."
-        )
+        # Assign bidder number
+        guest.bidder_number = num
+        guest.bidder_number_assigned_at = datetime.now(UTC)
+        await db.commit()
+        await db.refresh(guest)
+        return num
+
+    @staticmethod
+    async def assign_bidder_number_from_start(
+        db: AsyncSession,
+        event_id: UUID,
+        guest_id: UUID,
+        start_at: int,
+    ) -> int:
+        """Assign next available bidder number at or above a starting value."""
+        guest_query = select(RegistrationGuest).where(RegistrationGuest.id == guest_id)
+        result = await db.execute(guest_query)
+        guest = result.scalar_one()
+
+        if guest.bidder_number is not None:
+            raise ValueError(f"Guest {guest_id} already has bidder number {guest.bidder_number}")
+
+        used_numbers = await BidderNumberService._get_used_bidder_numbers(db, event_id)
+        num = BidderNumberService._find_next_available_number_from(used_numbers, start_at)
+
+        guest.bidder_number = num
+        guest.bidder_number_assigned_at = datetime.now(UTC)
+        await db.commit()
+        await db.refresh(guest)
+        return num
 
     @staticmethod
     async def validate_bidder_number_uniqueness(
@@ -153,6 +246,15 @@ class BidderNumberService:
         return available
 
     @staticmethod
+    async def get_next_available_bidder_number(
+        db: AsyncSession,
+        event_id: UUID,
+    ) -> int:
+        """Get the next available bidder number using the reassignment rule."""
+        used_numbers = await BidderNumberService._get_used_bidder_numbers(db, event_id)
+        return BidderNumberService._find_replacement_number(used_numbers)
+
+    @staticmethod
     async def reassign_bidder_number(
         db: AsyncSession,
         event_id: UUID,
@@ -210,19 +312,23 @@ class BidderNumberService:
             "previous_holder_new_number": None,
         }
 
-        # If conflict exists, reassign previous holder to new number
+        # If conflict exists, reassign previous holder to next available number
         if conflicting_guest:
             response["previous_holder_id"] = conflicting_guest.id
 
-            # Clear the conflicting guest's number first
-            conflicting_guest.bidder_number = None
-            conflicting_guest.bidder_number_assigned_at = None
-            await db.flush()
-
-            # Find next available number for previous holder
-            new_number_for_previous = await BidderNumberService.assign_bidder_number(
-                db, event_id, conflicting_guest.id
+            used_numbers = await BidderNumberService._get_used_bidder_numbers(
+                db,
+                event_id,
+                exclude_guest_ids={guest_id, conflicting_guest.id},
             )
+            new_number_for_previous = BidderNumberService._find_replacement_number(
+                used_numbers,
+                reserved_numbers={new_bidder_number},
+            )
+            conflicting_guest.bidder_number = new_number_for_previous
+            if conflicting_guest.bidder_number_assigned_at is None:
+                conflicting_guest.bidder_number_assigned_at = datetime.now(UTC)
+            await db.flush()
             response["previous_holder_new_number"] = new_number_for_previous
 
         # Assign new number to target guest

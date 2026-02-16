@@ -6,6 +6,7 @@ import csv
 import hashlib
 import io
 import json
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -19,6 +20,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.selectable import Subquery
 
+from app.core.logging import get_logger
 from app.models.auction_bid import AuctionBid, BidStatus, BidType, TransactionStatus
 from app.models.auction_bid_import import (
     AuctionBidImportBatch,
@@ -47,12 +49,19 @@ from app.schemas.auction_bid_import import (
 
 MAX_IMPORT_ROWS = 10000
 REQUIRED_HEADERS = ["donor_email", "auction_item_code", "bid_amount", "bid_time"]
+logger = get_logger(__name__)
 
 
 @dataclass
 class ParsedRow:
     row_number: int
     data: dict[str, Any]
+
+
+@dataclass
+class DonorLookup:
+    users_by_email: dict[str, User]
+    guest_emails_without_user: set[str]
 
 
 class AuctionBidImportError(Exception):
@@ -72,8 +81,28 @@ class AuctionBidImportService:
         filename: str,
         created_by: UUID,
     ) -> AuctionBidPreflightResult:
+        start_time = time.monotonic()
+        logger.info(
+            "Auction bid preflight started",
+            extra={
+                "event_id": str(event_id),
+                "file_name": filename,
+                "file_size_bytes": len(file_bytes),
+            },
+        )
+
+        detect_start = time.monotonic()
         detected_format = self._detect_format(file_bytes, filename)
         parsed_rows = self._parse_file(file_bytes, detected_format)
+        logger.info(
+            "Auction bid preflight parsed",
+            extra={
+                "event_id": str(event_id),
+                "format": detected_format.value,
+                "row_count": len(parsed_rows),
+                "elapsed_ms": int((time.monotonic() - detect_start) * 1000),
+            },
+        )
 
         if len(parsed_rows) > MAX_IMPORT_ROWS:
             raise AuctionBidImportError(
@@ -94,14 +123,26 @@ class AuctionBidImportService:
             if (code := self._normalize_item_code(row.data.get("auction_item_code")))
         }
 
-        donor_lookup = await self._fetch_donors_by_email(donor_emails)
+        lookup_start = time.monotonic()
+        donor_lookup = await self._fetch_donors_by_email(event_id, donor_emails)
         item_lookup = await self._fetch_items_by_code(event_id, item_codes)
-        bidder_lookup = await self._fetch_bidder_numbers(event_id, donor_lookup)
+        bidder_lookup = await self._fetch_bidder_numbers(event_id, donor_lookup.users_by_email)
         current_high_bids = await self._fetch_current_high_bids(item_lookup)
+        logger.info(
+            "Auction bid preflight lookups",
+            extra={
+                "event_id": str(event_id),
+                "donor_count": len(donor_lookup.users_by_email),
+                "guest_missing_user_count": len(donor_lookup.guest_emails_without_user),
+                "item_count": len(item_lookup),
+                "bidder_count": len(bidder_lookup),
+                "elapsed_ms": int((time.monotonic() - lookup_start) * 1000),
+            },
+        )
 
         duplicate_counts = self._build_duplicate_counts(parsed_rows)
         existing_fingerprints = await self._fetch_existing_bid_fingerprints(
-            event_id, donor_lookup, item_lookup
+            event_id, donor_lookup.users_by_email, item_lookup
         )
 
         issues: list[SchemaIssue] = []
@@ -114,7 +155,8 @@ class AuctionBidImportService:
         for parsed_row in parsed_rows:
             row_issues = self._validate_row(
                 parsed_row,
-                donor_lookup,
+                donor_lookup.users_by_email,
+                donor_lookup.guest_emails_without_user,
                 item_lookup,
                 bidder_lookup,
                 updated_high_bids,
@@ -141,7 +183,7 @@ class AuctionBidImportService:
                 bid_amount = self._parse_decimal(parsed_row.data.get("bid_amount"))
                 bid_time = self._parse_bid_time(parsed_row.data.get("bid_time"))
                 item = item_lookup.get(item_code or "")
-                donor = donor_lookup.get(donor_email or "")
+                donor = donor_lookup.users_by_email.get(donor_email or "")
                 if item and donor:
                     updated_high_bids[item.id] = AuctionBid(
                         event_id=item.event_id,
@@ -186,7 +228,7 @@ class AuctionBidImportService:
             )
             self.db.add(issue_record)
 
-        return AuctionBidPreflightResult(
+        result = AuctionBidPreflightResult(
             import_batch_id=str(batch.id),
             detected_format=detected_format.value,
             total_rows=len(parsed_rows),
@@ -197,6 +239,17 @@ class AuctionBidImportService:
             row_warnings=warnings,
             error_report_url=None,
         )
+        logger.info(
+            "Auction bid preflight completed",
+            extra={
+                "event_id": str(event_id),
+                "total_rows": result.total_rows,
+                "invalid_rows": result.invalid_rows,
+                "warning_rows": result.warning_rows,
+                "elapsed_ms": int((time.monotonic() - start_time) * 1000),
+            },
+        )
+        return result
 
     async def confirm_import(
         self,
@@ -239,13 +292,13 @@ class AuctionBidImportService:
             if (code := self._normalize_item_code(row.data.get("auction_item_code")))
         }
 
-        donor_lookup = await self._fetch_donors_by_email(donor_emails)
+        donor_lookup = await self._fetch_donors_by_email(event_id, donor_emails)
         item_lookup = await self._fetch_items_by_code(event_id, item_codes)
-        bidder_lookup = await self._fetch_bidder_numbers(event_id, donor_lookup)
+        bidder_lookup = await self._fetch_bidder_numbers(event_id, donor_lookup.users_by_email)
         current_high_bids = await self._fetch_current_high_bids(item_lookup)
         duplicate_counts = self._build_duplicate_counts(parsed_rows)
         existing_fingerprints = await self._fetch_existing_bid_fingerprints(
-            event_id, donor_lookup, item_lookup
+            event_id, donor_lookup.users_by_email, item_lookup
         )
 
         created_count = 0
@@ -256,7 +309,8 @@ class AuctionBidImportService:
         for parsed_row in parsed_rows:
             row_issues = self._validate_row(
                 parsed_row,
-                donor_lookup,
+                donor_lookup.users_by_email,
+                donor_lookup.guest_emails_without_user,
                 item_lookup,
                 bidder_lookup,
                 updated_high_bids,
@@ -283,7 +337,7 @@ class AuctionBidImportService:
                     f"Missing donor or item at row {parsed_row.row_number}."
                 )
 
-            donor = donor_lookup[donor_email]
+            donor = donor_lookup.users_by_email[donor_email]
             item = item_lookup[item_code]
             bidder_number = bidder_lookup.get(donor.id)
             if bidder_number is None:
@@ -498,6 +552,7 @@ class AuctionBidImportService:
         self,
         parsed_row: ParsedRow,
         donor_lookup: dict[str, User],
+        guest_emails_without_user: set[str],
         item_lookup: dict[str, AuctionItem],
         bidder_lookup: dict[UUID, int],
         current_high_bids: dict[UUID, AuctionBid | None],
@@ -522,15 +577,28 @@ class AuctionBidImportService:
 
         donor_email = self._normalize_email(data.get("donor_email"))
         if donor_email and donor_email not in donor_lookup:
-            issues.append(
-                SchemaIssue(
-                    row_number=row_num,
-                    field_name="donor_email",
-                    severity=SchemaIssueSeverity.ERROR,
-                    message=f"Donor email '{donor_email}' not found",
-                    raw_value=donor_email,
+            if donor_email in guest_emails_without_user:
+                issues.append(
+                    SchemaIssue(
+                        row_number=row_num,
+                        field_name="donor_email",
+                        severity=SchemaIssueSeverity.ERROR,
+                        message=(
+                            f"Donor email '{donor_email}' is linked to a guest without a user account"
+                        ),
+                        raw_value=donor_email,
+                    )
                 )
-            )
+            else:
+                issues.append(
+                    SchemaIssue(
+                        row_number=row_num,
+                        field_name="donor_email",
+                        severity=SchemaIssueSeverity.ERROR,
+                        message=f"Donor email '{donor_email}' not found for this event",
+                        raw_value=donor_email,
+                    )
+                )
 
         item_code = self._normalize_item_code(data.get("auction_item_code"))
         if item_code and item_code not in item_lookup:
@@ -641,12 +709,43 @@ class AuctionBidImportService:
 
         return issues
 
-    async def _fetch_donors_by_email(self, emails: set[str]) -> dict[str, User]:
+    async def _fetch_donors_by_email(self, event_id: UUID, emails: set[str]) -> DonorLookup:
         if not emails:
-            return {}
-        result = await self.db.execute(select(User).where(User.email.in_(emails)))
-        users = result.scalars().all()
-        return {user.email.lower(): user for user in users}
+            return DonorLookup(users_by_email={}, guest_emails_without_user=set())
+
+        registrant_stmt = (
+            select(User)
+            .join(EventRegistration, EventRegistration.user_id == User.id)
+            .where(EventRegistration.event_id == event_id, User.email.in_(emails))
+        )
+        registrant_result = await self.db.execute(registrant_stmt)
+        registrant_users = registrant_result.scalars().all()
+        users_by_email: dict[str, User] = {
+            user.email.lower(): user for user in registrant_users if user.email
+        }
+
+        guest_stmt = (
+            select(RegistrationGuest.email, User)
+            .join(EventRegistration, RegistrationGuest.registration_id == EventRegistration.id)
+            .outerjoin(User, RegistrationGuest.user_id == User.id)
+            .where(EventRegistration.event_id == event_id, RegistrationGuest.email.in_(emails))
+        )
+        guest_result = await self.db.execute(guest_stmt)
+        guest_emails_without_user: set[str] = set()
+        for guest_email, user in guest_result.all():
+            normalized_email = self._normalize_email(guest_email)
+            if not normalized_email:
+                continue
+            if user is None:
+                if normalized_email not in users_by_email:
+                    guest_emails_without_user.add(normalized_email)
+                continue
+            users_by_email.setdefault(normalized_email, user)
+
+        return DonorLookup(
+            users_by_email=users_by_email,
+            guest_emails_without_user=guest_emails_without_user,
+        )
 
     async def _fetch_items_by_code(self, event_id: UUID, codes: set[str]) -> dict[str, AuctionItem]:
         if not codes:

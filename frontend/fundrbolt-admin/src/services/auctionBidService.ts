@@ -1,10 +1,10 @@
+import apiClient from '@/lib/axios'
 import type {
   AuctionBidDashboardResponse,
   AuctionBidImportConfirmRequest,
   AuctionBidImportSummary,
   AuctionBidPreflightResult,
 } from '@/types/auctionBidImport'
-import apiClient from '@/lib/axios'
 
 /**
  * Auction Bid Import Service
@@ -24,15 +24,32 @@ class AuctionBidService {
   ): Promise<AuctionBidPreflightResult> {
     const formData = new FormData()
     formData.append('file', file)
-    const response = await apiClient.post<AuctionBidPreflightResult>(
-      `/admin/events/${eventId}/auction-bids/import/preflight`,
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        signal,
-      }
-    )
-    return response.data
+    try {
+      logDebug('[auction-bids-import] preflight request', {
+        eventId,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+      })
+      const response = await apiClient.post<AuctionBidPreflightResult>(
+        `/admin/events/${eventId}/auction-bids/import/preflight`,
+        formData,
+        {
+          signal,
+        }
+      )
+      logDebug('[auction-bids-import] preflight response', {
+        eventId,
+        status: response.status,
+      })
+      return response.data
+    } catch (error) {
+      logError('[auction-bids-import] preflight request failed', {
+        eventId,
+        error,
+      })
+      throw error
+    }
   }
 
   async confirmImport(
@@ -44,16 +61,46 @@ class AuctionBidService {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('import_batch_id', payload.import_batch_id)
-    const response = await apiClient.post<AuctionBidImportSummary>(
-      `/admin/events/${eventId}/auction-bids/import/confirm`,
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        signal,
-      }
-    )
-    return response.data
+    try {
+      logDebug('[auction-bids-import] confirm request', {
+        eventId,
+        importBatchId: payload.import_batch_id,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+      })
+      const response = await apiClient.post<AuctionBidImportSummary>(
+        `/admin/events/${eventId}/auction-bids/import/confirm`,
+        formData,
+        {
+          signal,
+        }
+      )
+      logDebug('[auction-bids-import] confirm response', {
+        eventId,
+        importBatchId: payload.import_batch_id,
+        status: response.status,
+      })
+      return response.data
+    } catch (error) {
+      logError('[auction-bids-import] confirm request failed', {
+        eventId,
+        importBatchId: payload.import_batch_id,
+        error,
+      })
+      throw error
+    }
   }
+}
+
+const logDebug = (message: string, payload?: Record<string, unknown>) => {
+  // eslint-disable-next-line no-console
+  console.debug(message, payload)
+}
+
+const logError = (message: string, payload?: Record<string, unknown>) => {
+  // eslint-disable-next-line no-console
+  console.error(message, payload)
 }
 
 export const auctionBidService = new AuctionBidService()

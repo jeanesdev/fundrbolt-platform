@@ -21,7 +21,13 @@ from app.schemas.seating import (
     BidderNumberAssignmentResponse,
     EventSeatingConfigRequest,
     EventSeatingConfigResponse,
+    GuestBidderNumberResponse,
     GuestSeatingListResponse,
+    NextBidderNumberResponse,
+    RegistrationBidderNumberAutoAssignError,
+    RegistrationBidderNumberAutoAssignRequest,
+    RegistrationBidderNumberAutoAssignResponse,
+    RegistrationBidderNumberResponse,
     TableAssignmentRequest,
     TableAssignmentResponse,
     TableOccupancyResponse,
@@ -205,6 +211,44 @@ async def get_available_bidder_numbers(
         total_available=total_available,
         total_assigned=total_assigned,
     )
+
+
+@router.get(
+    "/{event_id}/seating/bidder-numbers/next",
+    response_model=NextBidderNumberResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_next_bidder_number(
+    event_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> NextBidderNumberResponse:
+    """Get the next available bidder number based on current assignments."""
+    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:  # type: ignore[attr-defined]
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
+        )
+
+    query = select(Event).where(Event.id == event_id)
+    result = await db.execute(query)
+    event = result.scalar_one_or_none()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event {event_id} not found",
+        )
+
+    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
+        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to manage this event",
+            )
+
+    next_number = await BidderNumberService.get_next_available_bidder_number(db, event_id)
+    return NextBidderNumberResponse(event_id=event_id, next_bidder_number=next_number)
 
 
 @router.patch(
@@ -852,6 +896,193 @@ async def auto_assign_guests(
 
 
 # Registration-level endpoints
+
+
+@router.post(
+    "/{event_id}/registrations/bidder-numbers/auto-assign",
+    response_model=RegistrationBidderNumberAutoAssignResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def auto_assign_registration_bidder_numbers(
+    event_id: UUID,
+    request: RegistrationBidderNumberAutoAssignRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> RegistrationBidderNumberAutoAssignResponse:
+    """Auto-assign bidder numbers to registration primary guests."""
+    if not request.registration_ids and not request.guest_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No registration_ids or guest_ids provided",
+        )
+    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:  # type: ignore[attr-defined]
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
+        )
+
+    event_query = select(Event).where(Event.id == event_id)
+    event_result = await db.execute(event_query)
+    event = event_result.scalar_one_or_none()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event {event_id} not found",
+        )
+
+    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
+        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to manage this event",
+            )
+
+    from app.models.event_registration import EventRegistration
+
+    registrations: dict[UUID, EventRegistration] = {}
+    if request.registration_ids:
+        registrations_result = await db.execute(
+            select(EventRegistration)
+            .options(
+                selectinload(EventRegistration.guests),
+                selectinload(EventRegistration.user),
+            )
+            .where(
+                EventRegistration.event_id == event_id,
+                EventRegistration.id.in_(request.registration_ids),
+            )
+        )
+        registrations = {reg.id: reg for reg in registrations_result.scalars().all()}
+
+    guests: dict[UUID, RegistrationGuest] = {}
+    if request.guest_ids:
+        guests_result = await db.execute(
+            select(RegistrationGuest)
+            .join(EventRegistration, RegistrationGuest.registration_id == EventRegistration.id)
+            .where(
+                EventRegistration.event_id == event_id,
+                RegistrationGuest.id.in_(request.guest_ids),
+            )
+        )
+        guests = {guest.id: guest for guest in guests_result.scalars().all()}
+
+    assigned_registrations: list[RegistrationBidderNumberResponse] = []
+    assigned_guests: list[GuestBidderNumberResponse] = []
+    skipped_registrations: list[UUID] = []
+    skipped_guests: list[UUID] = []
+    errors: list[RegistrationBidderNumberAutoAssignError] = []
+    next_start = request.starting_bidder_number
+
+    for registration_id in request.registration_ids:
+        registration = registrations.get(registration_id)
+        if not registration:
+            errors.append(
+                RegistrationBidderNumberAutoAssignError(
+                    target_type="registration",
+                    target_id=registration_id,
+                    message="Registration not found for event",
+                )
+            )
+            continue
+
+        primary_guest = next(
+            (guest for guest in registration.guests if guest.is_primary),
+            None,
+        )
+        if not primary_guest:
+            primary_guest = RegistrationGuest(
+                registration_id=registration.id,
+                user_id=registration.user_id,
+                name=f"{registration.user.first_name} {registration.user.last_name}",
+                email=registration.user.email,
+                phone=registration.user.phone,
+                status="confirmed",
+                is_primary=True,
+            )
+            db.add(primary_guest)
+            await db.flush()
+
+        if primary_guest.bidder_number is not None:
+            skipped_registrations.append(registration_id)
+            continue
+
+        try:
+            bidder_number = await BidderNumberService.assign_bidder_number_from_start(
+                db,
+                event_id,
+                primary_guest.id,
+                next_start,
+            )
+            assigned_registrations.append(
+                RegistrationBidderNumberResponse(
+                    registration_id=registration_id,
+                    bidder_number=bidder_number,
+                    assigned_at=datetime.now(UTC),
+                )
+            )
+            next_start = bidder_number + 1
+        except ValueError as exc:
+            errors.append(
+                RegistrationBidderNumberAutoAssignError(
+                    target_type="registration",
+                    target_id=registration_id,
+                    message=str(exc),
+                )
+            )
+
+    for guest_id in request.guest_ids:
+        guest = guests.get(guest_id)
+        if not guest:
+            errors.append(
+                RegistrationBidderNumberAutoAssignError(
+                    target_type="guest",
+                    target_id=guest_id,
+                    message="Guest not found for event",
+                )
+            )
+            continue
+
+        if guest.bidder_number is not None:
+            skipped_guests.append(guest_id)
+            continue
+
+        try:
+            bidder_number = await BidderNumberService.assign_bidder_number_from_start(
+                db,
+                event_id,
+                guest.id,
+                next_start,
+            )
+            assigned_guests.append(
+                GuestBidderNumberResponse(
+                    guest_id=guest_id,
+                    bidder_number=bidder_number,
+                    assigned_at=datetime.now(UTC),
+                )
+            )
+            next_start = bidder_number + 1
+        except ValueError as exc:
+            errors.append(
+                RegistrationBidderNumberAutoAssignError(
+                    target_type="guest",
+                    target_id=guest_id,
+                    message=str(exc),
+                )
+            )
+
+    assigned_count = len(assigned_registrations) + len(assigned_guests)
+    skipped_count = len(skipped_registrations) + len(skipped_guests)
+
+    return RegistrationBidderNumberAutoAssignResponse(
+        assigned_count=assigned_count,
+        skipped_count=skipped_count,
+        assigned_registrations=assigned_registrations,
+        assigned_guests=assigned_guests,
+        skipped_registrations=skipped_registrations,
+        skipped_guests=skipped_guests,
+        errors=errors,
+    )
 
 
 @router.patch(

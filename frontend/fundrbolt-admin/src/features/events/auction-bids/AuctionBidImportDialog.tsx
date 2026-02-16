@@ -1,21 +1,3 @@
-import { useRef, useState } from 'react'
-import axios from 'axios'
-import { auctionBidService } from '@/services/auctionBidService'
-import type {
-  AuctionBidImportIssue,
-  AuctionBidImportSummary,
-  AuctionBidPreflightResult,
-} from '@/types/auctionBidImport'
-import {
-  AlertCircle,
-  CheckCircle,
-  Download,
-  FileText,
-  Upload,
-  XCircle,
-} from 'lucide-react'
-import { getErrorMessage } from '@/lib/error-utils'
-import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,6 +11,24 @@ import {
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useToast } from '@/hooks/use-toast'
+import { getErrorMessage } from '@/lib/error-utils'
+import { auctionBidService } from '@/services/auctionBidService'
+import type {
+  AuctionBidImportIssue,
+  AuctionBidImportSummary,
+  AuctionBidPreflightResult,
+} from '@/types/auctionBidImport'
+import axios from 'axios'
+import {
+  AlertCircle,
+  CheckCircle,
+  Download,
+  FileText,
+  Upload,
+  XCircle,
+} from 'lucide-react'
+import { useRef, useState } from 'react'
 
 interface AuctionBidImportDialogProps {
   open: boolean
@@ -38,6 +38,23 @@ interface AuctionBidImportDialogProps {
 }
 
 type ImportStage = 'select' | 'preflight' | 'results' | 'import' | 'complete'
+const REQUEST_TIMEOUT_MS = 60000
+const LOG_PREFIX = '[auction-bids-import]'
+
+const logInfo = (message: string, payload?: Record<string, unknown>) => {
+  // eslint-disable-next-line no-console
+  console.info(message, payload)
+}
+
+const logWarn = (message: string, payload?: Record<string, unknown>) => {
+  // eslint-disable-next-line no-console
+  console.warn(message, payload)
+}
+
+const logError = (message: string, payload?: Record<string, unknown>) => {
+  // eslint-disable-next-line no-console
+  console.error(message, payload)
+}
 
 const statusVariant = (severity: AuctionBidImportIssue['severity']) => {
   switch (severity) {
@@ -150,19 +167,48 @@ export function AuctionBidImportDialog({
 
   const handlePreflight = async () => {
     if (!selectedFile) return
+    logInfo(`${LOG_PREFIX} preflight start`, {
+      eventId,
+      fileName: selectedFile.name,
+      fileSize: selectedFile.size,
+      fileType: selectedFile.type,
+    })
     activeRequest.current?.abort()
     const controller = new AbortController()
     activeRequest.current = controller
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let didTimeout = false
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        didTimeout = true
+        controller.abort()
+        logWarn(`${LOG_PREFIX} preflight timeout`, {
+          eventId,
+          fileName: selectedFile.name,
+        })
+        reject(new Error('Preflight timed out'))
+      }, REQUEST_TIMEOUT_MS)
+    })
 
     setIsProcessing(true)
     setStage('preflight')
 
     try {
-      const result = await auctionBidService.preflightImport(
+      const result = await Promise.race([
+        auctionBidService.preflightImport(
+          eventId,
+          selectedFile,
+          controller.signal
+        ),
+        timeoutPromise,
+      ])
+      logInfo(`${LOG_PREFIX} preflight success`, {
         eventId,
-        selectedFile,
-        controller.signal
-      )
+        totalRows: result.total_rows,
+        invalidRows: result.invalid_rows,
+        warningRows: result.warning_rows,
+      })
       setPreflightResult(result)
       setStage('results')
 
@@ -179,10 +225,24 @@ export function AuctionBidImportDialog({
         })
       }
     } catch (error) {
+      if (axios.isAxiosError(error)) {
+        logError(`${LOG_PREFIX} preflight error`, {
+          eventId,
+          code: error.code,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          url: error.config?.url,
+          method: error.config?.method,
+        })
+      } else {
+        logError(`${LOG_PREFIX} preflight error`, { eventId, error })
+      }
       if (axios.isAxiosError(error) && error.code === 'ERR_CANCELED') {
         toast({
-          title: 'Preflight Canceled',
-          description: 'Preflight was canceled before completion.',
+          title: didTimeout ? 'Preflight Timed Out' : 'Preflight Canceled',
+          description: didTimeout
+            ? 'Preflight exceeded 60 seconds. Please try again with a smaller file.'
+            : 'Preflight was canceled before completion.',
         })
         setStage('select')
         return
@@ -195,40 +255,86 @@ export function AuctionBidImportDialog({
       setStage('select')
     } finally {
       activeRequest.current = null
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
       setIsProcessing(false)
     }
   }
 
   const handleImport = async () => {
     if (!selectedFile || !preflightResult) return
+    logInfo(`${LOG_PREFIX} import start`, {
+      eventId,
+      fileName: selectedFile.name,
+      fileSize: selectedFile.size,
+      fileType: selectedFile.type,
+      importBatchId: preflightResult.import_batch_id,
+    })
     activeRequest.current?.abort()
     const controller = new AbortController()
     activeRequest.current = controller
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let didTimeout = false
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        didTimeout = true
+        controller.abort()
+        logWarn(`${LOG_PREFIX} import timeout`, {
+          eventId,
+          importBatchId: preflightResult.import_batch_id,
+        })
+        reject(new Error('Import timed out'))
+      }, REQUEST_TIMEOUT_MS)
+    })
 
     setIsProcessing(true)
     setStage('import')
 
     try {
-      const result = await auctionBidService.confirmImport(
+      const result = await Promise.race([
+        auctionBidService.confirmImport(
+          eventId,
+          { import_batch_id: preflightResult.import_batch_id },
+          selectedFile,
+          controller.signal
+        ),
+        timeoutPromise,
+      ])
+      logInfo(`${LOG_PREFIX} import success`, {
         eventId,
-        { import_batch_id: preflightResult.import_batch_id },
-        selectedFile,
-        controller.signal
-      )
+        importBatchId: result.import_batch_id,
+        createdBids: result.created_bids,
+        skippedBids: result.skipped_bids,
+      })
       setImportResult(result)
       setStage('complete')
       toast({
         title: 'Import Complete',
-        description: `Created ${result.created_bids} bids${
-          result.skipped_bids ? `, skipped ${result.skipped_bids}` : ''
-        }.`,
+        description: `Created ${result.created_bids} bids${result.skipped_bids ? `, skipped ${result.skipped_bids}` : ''
+          }.`,
       })
       onImportComplete?.(result)
     } catch (error) {
+      if (axios.isAxiosError(error)) {
+        logError(`${LOG_PREFIX} import error`, {
+          eventId,
+          code: error.code,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          url: error.config?.url,
+          method: error.config?.method,
+        })
+      } else {
+        logError(`${LOG_PREFIX} import error`, { eventId, error })
+      }
       if (axios.isAxiosError(error) && error.code === 'ERR_CANCELED') {
         toast({
-          title: 'Import Canceled',
-          description: 'Import was canceled before completion.',
+          title: didTimeout ? 'Import Timed Out' : 'Import Canceled',
+          description: didTimeout
+            ? 'Import exceeded 60 seconds. Please try again or contact support if this continues.'
+            : 'Import was canceled before completion.',
         })
         setStage('results')
         return
@@ -241,6 +347,9 @@ export function AuctionBidImportDialog({
       setStage('results')
     } finally {
       activeRequest.current = null
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
       setIsProcessing(false)
     }
   }
@@ -406,23 +515,23 @@ export function AuctionBidImportDialog({
 
                 {(preflightResult.row_errors.length > 0 ||
                   preflightResult.row_warnings.length > 0) && (
-                  <div className='space-y-2'>
-                    <div className='flex items-center gap-2 text-sm'>
-                      <AlertCircle className='text-muted-foreground h-4 w-4' />
-                      Issues
-                    </div>
-                    <ScrollArea className='border-border h-48 w-full rounded-md border p-3'>
-                      <div className='space-y-3'>
-                        {preflightResult.row_errors.map((issue, index) => (
-                          <IssueRow key={`error-${index}`} issue={issue} />
-                        ))}
-                        {preflightResult.row_warnings.map((issue, index) => (
-                          <IssueRow key={`warning-${index}`} issue={issue} />
-                        ))}
+                    <div className='space-y-2'>
+                      <div className='flex items-center gap-2 text-sm'>
+                        <AlertCircle className='text-muted-foreground h-4 w-4' />
+                        Issues
                       </div>
-                    </ScrollArea>
-                  </div>
-                )}
+                      <ScrollArea className='border-border h-48 w-full rounded-md border p-3'>
+                        <div className='space-y-3'>
+                          {preflightResult.row_errors.map((issue, index) => (
+                            <IssueRow key={`error-${index}`} issue={issue} />
+                          ))}
+                          {preflightResult.row_warnings.map((issue, index) => (
+                            <IssueRow key={`warning-${index}`} issue={issue} />
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
               </div>
             )}
 

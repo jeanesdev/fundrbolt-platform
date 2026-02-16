@@ -1244,6 +1244,7 @@ class AuditService:
         total_rows: int,
         error_count: int,
         ip_address: str | None = None,
+        commit: bool = True,
     ) -> None:
         """Log auction bid import attempts (preflight/confirm)."""
         from app.models.audit_log import AuditLog
@@ -1261,7 +1262,8 @@ class AuditService:
             },
         )
         db.add(audit_log)
-        await db.commit()
+        if commit:
+            await db.commit()
 
         logger.info(
             "Auction bid import",
