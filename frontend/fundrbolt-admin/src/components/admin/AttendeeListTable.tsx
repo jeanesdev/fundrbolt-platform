@@ -5,6 +5,16 @@
  * CSV export, and guest invitation features.
  */
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -34,6 +44,7 @@ import {
   getEventAttendees,
   sendGuestInvitation,
 } from '@/lib/api/admin-attendees'
+import { autoAssignRegistrationBidderNumbers } from '@/lib/api/admin-seating'
 import { cancelRegistration } from '@/lib/api/cancel-registration'
 import { getErrorMessage } from '@/lib/error-utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -111,6 +122,9 @@ export function AttendeeListTable({
     name: string
     bidder_number?: number | null
   } | null>(null)
+  const [autoAssignDialogOpen, setAutoAssignDialogOpen] = useState(false)
+  const [autoAssignPending, setAutoAssignPending] = useState(false)
+  const [autoAssignStartNumber, setAutoAssignStartNumber] = useState('100')
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [registrantToCancel, setRegistrantToCancel] = useState<{
     registration_id: string
@@ -305,6 +319,31 @@ export function AttendeeListTable({
   const activeAttendees = attendees.filter(
     (attendee) => attendee.status !== 'cancelled' && attendee.status !== 'canceled'
   ).length
+  const selectedAttendeeRows = attendees.filter((attendee) =>
+    selectedAttendees.has(attendee.id)
+  )
+  const eligibleSelectedAttendees = selectedAttendeeRows.filter(
+    (attendee) => attendee.status !== 'cancelled' && attendee.status !== 'canceled'
+  )
+  const selectedMissingBidderNumber = eligibleSelectedAttendees.filter(
+    (attendee) => !attendee.bidder_number
+  )
+  const registrantsMissingBidderNumber = selectedMissingBidderNumber.filter(
+    (attendee) => attendee.attendee_type === 'registrant'
+  )
+  const guestsMissingBidderNumber = selectedMissingBidderNumber.filter(
+    (attendee) => attendee.attendee_type === 'guest'
+  )
+  const registrantIdsToAssign = Array.from(
+    new Set(registrantsMissingBidderNumber.map((attendee) => attendee.registration_id))
+  )
+  const guestIdsToAssign = Array.from(
+    new Set(guestsMissingBidderNumber.map((attendee) => attendee.id))
+  )
+  const totalSelectedCount = selectedAttendeeRows.length
+  const totalEligibleSelectedCount = eligibleSelectedAttendees.length
+  const totalMissingCount = selectedMissingBidderNumber.length
+  const alreadyAssignedCount = totalEligibleSelectedCount - totalMissingCount
   const statusOptions = Array.from(new Set(attendees.map((attendee) => attendee.status))).sort()
   const matchesText = (value: string | null | undefined, needle: string) =>
     value?.toLowerCase().includes(needle.toLowerCase()) ?? false
@@ -515,6 +554,63 @@ export function AttendeeListTable({
     })
   }
 
+  const handleAutoAssignBidderNumbers = async () => {
+    if (registrantIdsToAssign.length === 0 && guestIdsToAssign.length === 0) {
+      toast.error('No selected attendees without bidder numbers')
+      return
+    }
+
+    const startingNumber = Number.parseInt(autoAssignStartNumber, 10)
+    if (Number.isNaN(startingNumber) || startingNumber < 100 || startingNumber > 999) {
+      toast.error('Starting bidder number must be between 100 and 999')
+      return
+    }
+
+    setAutoAssignPending(true)
+    const toastId = toast.loading(
+      `Assigning bidder numbers to ${totalMissingCount} attendee(s)...`
+    )
+    try {
+      const result = await autoAssignRegistrationBidderNumbers(
+        eventId,
+        registrantIdsToAssign,
+        guestIdsToAssign,
+        startingNumber
+      )
+
+      const summaryParts = []
+      if (result.assigned_count > 0) {
+        summaryParts.push(`Assigned ${result.assigned_count}`)
+      }
+      if (result.skipped_count > 0) {
+        summaryParts.push(`Skipped ${result.skipped_count}`)
+      }
+      if (result.errors.length > 0) {
+        summaryParts.push(`Failed ${result.errors.length}`)
+      }
+      const description = summaryParts.length > 0 ? summaryParts.join(' • ') : undefined
+
+      if (result.errors.length > 0) {
+        toast.error('Auto-assign completed with errors', {
+          id: toastId,
+          description,
+        })
+      } else {
+        toast.success('Auto-assign complete', { id: toastId, description })
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['event-attendees', eventId] })
+      setSelectedAttendees(new Set())
+      setAutoAssignDialogOpen(false)
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to auto-assign bidder numbers'), {
+        id: toastId,
+      })
+    } finally {
+      setAutoAssignPending(false)
+    }
+  }
+
   return (
     <div className='space-y-4'>
       {/* Toolbar */}
@@ -537,6 +633,15 @@ export function AttendeeListTable({
             }
           >
             Clear Filters
+          </Button>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => setAutoAssignDialogOpen(true)}
+            disabled={totalMissingCount === 0}
+          >
+            <Hash className='mr-2 h-4 w-4' />
+            Auto-Assign Bidder #
           </Button>
           <Button
             variant='outline'
@@ -792,6 +897,61 @@ export function AttendeeListTable({
         isPending={bulkCancelPending}
         onConfirm={handleBulkCancelConfirm}
       />
+
+      <AlertDialog
+        open={autoAssignDialogOpen}
+        onOpenChange={(open) => !autoAssignPending && setAutoAssignDialogOpen(open)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Auto-assign bidder numbers</AlertDialogTitle>
+            <AlertDialogDescription>
+              {totalSelectedCount === 0
+                ? 'Select attendees without bidder numbers to continue.'
+                : `Assign bidder numbers to ${totalMissingCount} attendee(s)?`}
+              {registrantsMissingBidderNumber.length > 0 && guestsMissingBidderNumber.length > 0 && (
+                <span className='mt-2 block text-xs text-muted-foreground'>
+                  Includes {registrantsMissingBidderNumber.length} registrant(s) and {guestsMissingBidderNumber.length} guest(s).
+                </span>
+              )}
+              {alreadyAssignedCount > 0 && (
+                <span className='mt-2 block text-xs text-muted-foreground'>
+                  {alreadyAssignedCount} selected attendee(s) already have bidder numbers and will be skipped.
+                </span>
+              )}
+              {totalSelectedCount > totalEligibleSelectedCount && (
+                <span className='mt-2 block text-xs text-muted-foreground'>
+                  {totalSelectedCount - totalEligibleSelectedCount} selected attendee(s) are canceled and will be skipped.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className='space-y-2'>
+            <label className='text-sm font-medium' htmlFor='auto-assign-start'>
+              Starting bidder number
+            </label>
+            <Input
+              id='auto-assign-start'
+              type='number'
+              min={100}
+              max={999}
+              value={autoAssignStartNumber}
+              onChange={(event) => setAutoAssignStartNumber(event.target.value)}
+              disabled={autoAssignPending}
+              className='font-mono'
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={autoAssignPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={autoAssignPending || totalMissingCount === 0}
+              onClick={handleAutoAssignBidderNumbers}
+            >
+              {autoAssignPending ? 'Assigning...' : 'Assign Numbers'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

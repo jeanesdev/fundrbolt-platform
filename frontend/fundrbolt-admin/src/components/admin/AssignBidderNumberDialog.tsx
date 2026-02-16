@@ -16,9 +16,12 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { assignBidderNumber } from '@/lib/api/admin-seating'
+import {
+  assignBidderNumber,
+  getNextAvailableBidderNumber,
+} from '@/lib/api/admin-seating'
 import { AlertTriangle, Hash, Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 interface AssignBidderNumberDialogProps {
@@ -47,6 +50,25 @@ export function AssignBidderNumberDialog({
   const [conflictInfo, setConflictInfo] = useState<{
     previous_holder_id: string
   } | null>(null)
+  const [nextAvailable, setNextAvailable] = useState<number | null>(null)
+  const [isLoadingNext, setIsLoadingNext] = useState(false)
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+    setIsLoadingNext(true)
+    getNextAvailableBidderNumber(eventId)
+      .then((response) => {
+        setNextAvailable(response.next_bidder_number)
+      })
+      .catch(() => {
+        setNextAvailable(null)
+      })
+      .finally(() => {
+        setIsLoadingNext(false)
+      })
+  }, [eventId, open])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,7 +91,7 @@ export function AssignBidderNumberDialog({
       if (result.previous_holder_id) {
         setConflictInfo({ previous_holder_id: result.previous_holder_id })
         toast.warning(
-          `Bidder number ${numberValue} was reassigned. The previous holder was swapped to another number.`,
+          `Bidder number ${numberValue} was reassigned. The previous holder was given a new number.`,
           { duration: 5000 }
         )
       } else {
@@ -129,7 +151,7 @@ export function AssignBidderNumberDialog({
                     <p className="font-medium">Number Swap Occurred</p>
                     <p className="mt-1 text-amber-700">
                       The previous holder of this number was automatically
-                      reassigned to another available number.
+                      reassigned to the next available number.
                     </p>
                   </div>
                 </div>
@@ -155,8 +177,28 @@ export function AssignBidderNumberDialog({
               />
               <p className="text-xs text-muted-foreground">
                 Three-digit number between 100 and 999. If already assigned, the
-                numbers will be automatically swapped.
+                previous holder will be reassigned to a new number.
               </p>
+              <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span>
+                  {isLoadingNext
+                    ? 'Loading next available bidder number...'
+                    : nextAvailable
+                      ? `Next available: ${nextAvailable}`
+                      : 'Next available: unavailable'}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={isSubmitting || !nextAvailable}
+                  onClick={() =>
+                    nextAvailable && setBidderNumber(nextAvailable.toString())
+                  }
+                >
+                  Use next
+                </Button>
+              </div>
             </div>
           </div>
 

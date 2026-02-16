@@ -24,6 +24,39 @@ export interface BidderNumberAssignmentResponse {
   previous_holder_id?: string | null
 }
 
+export interface RegistrationBidderNumberAssignment {
+  registration_id: string
+  bidder_number: number
+  assigned_at: string
+}
+
+export interface GuestBidderNumberAssignment {
+  guest_id: string
+  bidder_number: number
+  assigned_at: string
+}
+
+export interface RegistrationBidderNumberAutoAssignError {
+  target_type: 'registration' | 'guest'
+  target_id: string
+  message: string
+}
+
+export interface RegistrationBidderNumberAutoAssignResponse {
+  assigned_count: number
+  skipped_count: number
+  assigned_registrations: RegistrationBidderNumberAssignment[]
+  assigned_guests: GuestBidderNumberAssignment[]
+  skipped_registrations: string[]
+  skipped_guests: string[]
+  errors: RegistrationBidderNumberAutoAssignError[]
+}
+
+export interface NextBidderNumberResponse {
+  event_id: string
+  next_bidder_number: number
+}
+
 /**
  * Request to assign a guest to a table
  */
@@ -209,6 +242,43 @@ export const autoAssignGuests = async (
 ): Promise<AutoAssignResponse> => {
   const response = await apiClient.post<AutoAssignResponse>(
     `/admin/events/${eventId}/seating/auto-assign`
+  )
+
+  return response.data
+}
+
+/**
+ * Auto-assign bidder numbers to selected registrations.
+ *
+ * @param eventId - Event UUID
+ * @param registrationIds - Registration UUIDs
+ */
+export const autoAssignRegistrationBidderNumbers = async (
+  eventId: string,
+  registrationIds: string[],
+  guestIds: string[],
+  startingBidderNumber: number
+): Promise<RegistrationBidderNumberAutoAssignResponse> => {
+  const response = await apiClient.post<RegistrationBidderNumberAutoAssignResponse>(
+    `/admin/events/${eventId}/registrations/bidder-numbers/auto-assign`,
+    {
+      starting_bidder_number: startingBidderNumber,
+      registration_ids: registrationIds,
+      guest_ids: guestIds,
+    }
+  )
+
+  return response.data
+}
+
+/**
+ * Get the next available bidder number for an event.
+ */
+export const getNextAvailableBidderNumber = async (
+  eventId: string
+): Promise<NextBidderNumberResponse> => {
+  const response = await apiClient.get<NextBidderNumberResponse>(
+    `/admin/events/${eventId}/seating/bidder-numbers/next`
   )
 
   return response.data

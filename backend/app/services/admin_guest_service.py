@@ -108,6 +108,7 @@ class AdminGuestService:
                     "email": primary_guest.email or registration.user.email,
                     "phone": primary_guest.phone or (registration.user.phone or ""),
                     "number_of_guests": registration.number_of_guests,
+                    "bidder_number": primary_guest.bidder_number,
                     "status": primary_guest.status,
                     "created_at": primary_guest.created_at.isoformat(),
                 }
@@ -142,6 +143,7 @@ class AdminGuestService:
                     "email": registration.user.email,
                     "phone": registration.user.phone or "",
                     "number_of_guests": registration.number_of_guests,
+                    "bidder_number": None,
                     "status": registration.status,
                     "created_at": registration.created_at.isoformat(),
                 }
@@ -181,6 +183,7 @@ class AdminGuestService:
                     "email": guest.email or "",
                     "phone": guest.phone or "",
                     "guest_of": f"{registration.user.first_name} {registration.user.last_name}",
+                    "bidder_number": guest.bidder_number,
                     "status": guest.status or "confirmed",
                 }
 

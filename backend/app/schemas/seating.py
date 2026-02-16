@@ -120,6 +120,55 @@ class RegistrationBidderNumberResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class RegistrationBidderNumberAutoAssignRequest(BaseModel):
+    """Request schema for auto-assigning bidder numbers to registrations."""
+
+    starting_bidder_number: int = Field(
+        100,
+        ge=100,
+        le=999,
+        description="Starting bidder number for auto-assignment",
+    )
+    registration_ids: list[UUID] = Field(
+        default_factory=list,
+        description="List of registration IDs to auto-assign bidder numbers",
+    )
+    guest_ids: list[UUID] = Field(
+        default_factory=list,
+        description="List of guest IDs to auto-assign bidder numbers",
+    )
+
+
+class GuestBidderNumberResponse(BaseModel):
+    """Response schema for guest-level bidder number assignment."""
+
+    guest_id: UUID
+    bidder_number: int
+    assigned_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RegistrationBidderNumberAutoAssignError(BaseModel):
+    """Error details for a bidder number auto-assign request."""
+
+    target_type: str
+    target_id: UUID
+    message: str
+
+
+class RegistrationBidderNumberAutoAssignResponse(BaseModel):
+    """Response schema for registration bidder number auto-assign."""
+
+    assigned_count: int
+    skipped_count: int
+    assigned_registrations: list[RegistrationBidderNumberResponse] = Field(default_factory=list)
+    assigned_guests: list[GuestBidderNumberResponse] = Field(default_factory=list)
+    skipped_registrations: list[UUID] = Field(default_factory=list)
+    skipped_guests: list[UUID] = Field(default_factory=list)
+    errors: list[RegistrationBidderNumberAutoAssignError] = Field(default_factory=list)
+
+
 class RegistrationTableAssignmentResponse(BaseModel):
     """Response schema for registration-level table assignment."""
 
@@ -140,6 +189,13 @@ class AvailableBidderNumbersResponse(BaseModel):
     )
     total_available: int
     total_assigned: int
+
+
+class NextBidderNumberResponse(BaseModel):
+    """Response schema for next available bidder number."""
+
+    event_id: UUID
+    next_bidder_number: int
 
 
 # Admin Seating Management Schemas (T010)

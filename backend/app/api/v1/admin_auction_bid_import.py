@@ -1,5 +1,6 @@
 """Admin endpoints for auction bid import and dashboard."""
 
+import asyncio
 from typing import Annotated
 from uuid import UUID
 
@@ -86,7 +87,6 @@ async def preflight_auction_bid_import(
         filename = file.filename or "upload"
         service = AuctionBidImportService(db)
         result = await service.preflight(event_id, file_bytes, filename, current_user.id)
-        await db.commit()
 
         await AuditService.log_auction_bid_import(
             db=db,
@@ -95,9 +95,21 @@ async def preflight_auction_bid_import(
             stage="preflight",
             total_rows=result.total_rows,
             error_count=result.invalid_rows,
+            commit=False,
+        )
+        await db.commit()
+        logger.info(
+            "Auction bid preflight response ready",
+            extra={"event_id": str(event_id), "import_batch_id": result.import_batch_id},
         )
 
         return result
+    except asyncio.CancelledError:
+        logger.warning(
+            "Auction bid preflight cancelled",
+            extra={"event_id": str(event_id), "upload_filename": file.filename if file else None},
+        )
+        raise
     except AuctionBidImportError as exc:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
@@ -141,7 +153,6 @@ async def confirm_auction_bid_import(
             file_bytes=file_bytes,
             user_id=current_user.id,
         )
-        await db.commit()
 
         await AuditService.log_auction_bid_import(
             db=db,
@@ -150,9 +161,21 @@ async def confirm_auction_bid_import(
             stage="confirm",
             total_rows=result.created_bids,
             error_count=0,
+            commit=False,
+        )
+        await db.commit()
+        logger.info(
+            "Auction bid confirm response ready",
+            extra={"event_id": str(event_id), "import_batch_id": result.import_batch_id},
         )
 
         return result
+    except asyncio.CancelledError:
+        logger.warning(
+            "Auction bid confirm cancelled",
+            extra={"event_id": str(event_id), "import_batch_id": str(import_batch_id)},
+        )
+        raise
     except AuctionBidImportError as exc:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
