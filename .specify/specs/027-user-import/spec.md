@@ -1,6 +1,6 @@
 # Feature Specification: Admin User Import
 
-**Feature Branch**: `027-short-name-import`
+**Feature Branch**: `027-user-import`
 **Created**: 2026-02-16
 **Status**: Draft
 **Input**: User description: "short-name: import-users. description: i want to be able to import users via jsonnor csv file via the admin PWA users page. Give me examples ofneach file type. I want a pre-flight step and a confirmation. Follow the examples for importing donor registrations, ticket sales, auction bids, etc. If no password is generated set a random temporary password."

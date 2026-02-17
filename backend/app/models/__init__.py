@@ -53,6 +53,12 @@ from app.models.ticket_sales_import import (
     TicketSalesImportIssue,
 )
 from app.models.user import User
+from app.models.user_import import (
+    UserImportBatch,
+    UserImportIssue,
+    UserImportIssueSeverity,
+    UserImportStatus,
+)
 
 __all__ = [
     "AssignedTicket",
@@ -108,6 +114,10 @@ __all__ = [
     "TicketPurchase",
     "TicketSalesImportBatch",
     "TicketSalesImportIssue",
+    "UserImportBatch",
+    "UserImportIssue",
+    "UserImportIssueSeverity",
+    "UserImportStatus",
     "User",
     "UserConsent",
 ]

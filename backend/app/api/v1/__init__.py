@@ -10,6 +10,7 @@ from app.api.v1 import (
     admin_seating,
     admin_testimonials,
     admin_ticket_sales_import,
+    admin_user_import,
     auction_bids,
     auction_item_media,
     auction_items,
@@ -73,6 +74,7 @@ api_router.include_router(admin_auction_bid_import.router)
 api_router.include_router(admin_auction_item_import.router)
 api_router.include_router(admin_registration_import.router)
 api_router.include_router(admin_ticket_sales_import.router)
+api_router.include_router(admin_user_import.router)
 api_router.include_router(donor_seating.router, tags=["donor-seating"])
 api_router.include_router(ticket_packages.router, prefix="/admin", tags=["admin-tickets"])
 api_router.include_router(ticket_options.router, tags=["admin-tickets"])

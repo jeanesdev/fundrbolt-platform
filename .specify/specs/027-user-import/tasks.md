@@ -1,6 +1,6 @@
 # Tasks: Admin User Import
 
-**Input**: Design documents from `/specs/027-short-name-import/`
+**Input**: Design documents from `/specs/027-user-import/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
 **Tests**: Minimal API tests are included to align with constitution requirements.
@@ -11,11 +11,11 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create admin user import router scaffold in backend/app/api/v1/admin_user_import.py and register it in backend/app/api/v1/__init__.py
-- [ ] T002 [P] Create import schemas in backend/app/schemas/user_import.py
-- [ ] T003 [P] Create import batch models in backend/app/models/user_import.py
-- [ ] T004 Create migration for user import tables in backend/alembic/versions/<timestamp>_user_import_batches.py
-- [ ] T005 [P] Create frontend API client in frontend/fundrbolt-admin/src/features/users/api/users-import-api.ts
+- [X] T001 Create admin user import router scaffold in backend/app/api/v1/admin_user_import.py and register it in backend/app/api/v1/__init__.py
+- [X] T002 [P] Create import schemas in backend/app/schemas/user_import.py
+- [X] T003 [P] Create import batch models in backend/app/models/user_import.py
+- [X] T004 Create migration for user import tables in backend/alembic/versions/<timestamp>_user_import_batches.py
+- [X] T005 [P] Create frontend API client in frontend/fundrbolt-admin/src/features/users/api/users-import-api.ts
 
 ---
 
@@ -23,13 +23,13 @@
 
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
-- [ ] T006 Implement file parsing, checksum, and row limit validation in backend/app/services/user_import_service.py
-- [ ] T007 Add audit logging helper for user imports in backend/app/services/audit_service.py
-- [ ] T008 Implement error report generation in backend/app/services/user_import_service.py
-- [ ] T009 Add preflight token + checksum binding enforcement in backend/app/services/user_import_service.py
-- [ ] T010 Add NPO identifier mismatch warnings in backend/app/services/user_import_service.py
-- [ ] T011 Enforce user-management role checks in backend/app/api/v1/admin_user_import.py
-- [ ] T012 Validate NPO-scoped roles and reject Super Admin rows in backend/app/services/user_import_service.py
+- [X] T006 Implement file parsing, checksum, and row limit validation in backend/app/services/user_import_service.py
+- [X] T007 Add audit logging helper for user imports in backend/app/services/audit_service.py
+- [X] T008 Implement error report generation in backend/app/services/user_import_service.py
+- [X] T009 Add preflight token + checksum binding enforcement in backend/app/services/user_import_service.py
+- [X] T010 Add NPO identifier mismatch warnings in backend/app/services/user_import_service.py
+- [X] T011 Enforce user-management role checks in backend/app/api/v1/admin_user_import.py
+- [X] T012 Validate NPO-scoped roles and reject Super Admin rows in backend/app/services/user_import_service.py
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -43,20 +43,20 @@
 
 ### Tests for User Story 1
 
-- [ ] T013 [P] [US1] Add preflight API test in backend/app/tests/test_user_import_preflight.py
-- [ ] T014 [P] [US1] Add commit API test in backend/app/tests/test_user_import_commit.py
+- [X] T013 [P] [US1] Add preflight API test in backend/app/tests/test_user_import_preflight.py
+- [X] T014 [P] [US1] Add commit API test in backend/app/tests/test_user_import_commit.py
 
 ### Implementation for User Story 1
 
-- [ ] T015 [US1] Implement preflight endpoint in backend/app/api/v1/admin_user_import.py
-- [ ] T016 [US1] Implement commit endpoint in backend/app/api/v1/admin_user_import.py
-- [ ] T017 [US1] Implement preflight/commit workflows in backend/app/services/user_import_service.py
-- [ ] T018 [US1] Add import dialog component in frontend/fundrbolt-admin/src/features/users/components/users-import-dialog.tsx
-- [ ] T019 [US1] Wire preflight call and summary rendering in frontend/fundrbolt-admin/src/features/users/components/users-import-dialog.tsx
-- [ ] T020 [US1] Wire confirm import call and completion summary in frontend/fundrbolt-admin/src/features/users/components/users-import-dialog.tsx
-- [ ] T021 [US1] Add error report download action in frontend/fundrbolt-admin/src/features/users/components/users-import-dialog.tsx
-- [ ] T022 [US1] Add import entry point in frontend/fundrbolt-admin/src/features/users/components/users-primary-buttons.tsx
-- [ ] T023 [US1] Add dialog state wiring in frontend/fundrbolt-admin/src/features/users/components/users-dialogs.tsx
+- [X] T015 [US1] Implement preflight endpoint in backend/app/api/v1/admin_user_import.py
+- [X] T016 [US1] Implement commit endpoint in backend/app/api/v1/admin_user_import.py
+- [X] T017 [US1] Implement preflight/commit workflows in backend/app/services/user_import_service.py
+- [X] T018 [US1] Add import dialog component in frontend/fundrbolt-admin/src/features/users/components/users-import-dialog.tsx
+- [X] T019 [US1] Wire preflight call and summary rendering in frontend/fundrbolt-admin/src/features/users/components/users-import-dialog.tsx
+- [X] T020 [US1] Wire confirm import call and completion summary in frontend/fundrbolt-admin/src/features/users/components/users-import-dialog.tsx
+- [X] T021 [US1] Add error report download action in frontend/fundrbolt-admin/src/features/users/components/users-import-dialog.tsx
+- [X] T022 [US1] Add import entry point in frontend/fundrbolt-admin/src/features/users/components/users-primary-buttons.tsx
+- [X] T023 [US1] Add dialog state wiring in frontend/fundrbolt-admin/src/features/users/components/users-dialogs.tsx
 
 **Checkpoint**: User Story 1 is fully functional and independently testable
 
@@ -70,9 +70,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T024 [US2] Add JSON/CSV example panels and download links in frontend/fundrbolt-admin/src/features/users/components/users-import-dialog.tsx
-- [ ] T025 [US2] Enforce required CSV headers and JSON schema validation in backend/app/services/user_import_service.py
-- [ ] T026 [US2] Add file type guardrails for .json and .csv in frontend/fundrbolt-admin/src/features/users/components/users-import-dialog.tsx
+- [X] T024 [US2] Add JSON/CSV example panels and download links in frontend/fundrbolt-admin/src/features/users/components/users-import-dialog.tsx
+- [X] T025 [US2] Enforce required CSV headers and JSON schema validation in backend/app/services/user_import_service.py
+- [X] T026 [US2] Add file type guardrails for .json and .csv in frontend/fundrbolt-admin/src/features/users/components/users-import-dialog.tsx
 
 **Checkpoint**: User Story 2 works independently and supports both formats
 
@@ -86,10 +86,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T027 [US3] Implement duplicate detection and issue severity reporting in backend/app/services/user_import_service.py
-- [ ] T028 [US3] Implement existing user handling (skip in NPO, add membership in other NPO) in backend/app/services/user_import_service.py
-- [ ] T029 [US3] Integrate temporary password generation and reset email send in backend/app/services/user_import_service.py using backend/app/services/email_service.py
-- [ ] T030 [US3] Surface duplicate, skipped, and membership-added warnings in frontend/fundrbolt-admin/src/features/users/components/users-import-dialog.tsx
+- [X] T027 [US3] Implement duplicate detection and issue severity reporting in backend/app/services/user_import_service.py
+- [X] T028 [US3] Implement existing user handling (skip in NPO, add membership in other NPO) in backend/app/services/user_import_service.py
+- [X] T029 [US3] Integrate temporary password generation and reset email send in backend/app/services/user_import_service.py using backend/app/services/email_service.py
+- [X] T030 [US3] Surface duplicate, skipped, and membership-added warnings in frontend/fundrbolt-admin/src/features/users/components/users-import-dialog.tsx
 
 **Checkpoint**: User Story 3 works independently and reports duplicate handling and email delivery expectations
 
@@ -99,8 +99,8 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T031 Update user import API docs in backend/app/api/v1/admin_user_import.py docstrings
-- [ ] T032 Run quickstart validation steps from .specify/specs/027-short-name-import/quickstart.md
+- [X] T031 Update user import API docs in backend/app/api/v1/admin_user_import.py docstrings
+- [ ] T032 Run quickstart validation steps from .specify/specs/027-user-import/quickstart.md
 
 ---
 

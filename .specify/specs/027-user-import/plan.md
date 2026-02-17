@@ -1,7 +1,7 @@
 # Implementation Plan: Admin User Import
 
-**Branch**: `027-short-name-import` | **Date**: 2026-02-16 | **Spec**: [spec.md](spec.md)
-**Input**: Feature specification from `/specs/027-short-name-import/spec.md`
+**Branch**: `027-user-import` | **Date**: 2026-02-16 | **Spec**: [spec.md](spec.md)
+**Input**: Feature specification from `/specs/027-user-import/spec.md`
 
 ## Summary
 
@@ -37,7 +37,7 @@ Re-check after Phase 1 design: Pass
 ### Documentation (this feature)
 
 ```
-specs/027-short-name-import/
+specs/027-user-import/
 ├── plan.md              # This file (/speckit.plan command output)
 ├── research.md          # Phase 0 output (/speckit.plan command)
 ├── data-model.md        # Phase 1 output (/speckit.plan command)

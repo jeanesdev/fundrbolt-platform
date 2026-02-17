@@ -5,6 +5,7 @@ T159: Error handling and retry logic for email service failures
 """
 
 import asyncio
+import os
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -835,6 +836,16 @@ This is an automated notification from the Fundrbolt Platform.
         import asyncio
         from concurrent.futures import ThreadPoolExecutor
         from typing import Any
+
+        if settings.environment == "test" or "PYTEST_CURRENT_TEST" in os.environ:
+            logger.info(
+                "Email send skipped in test environment",
+                extra={
+                    "to": to_email,
+                    "subject": subject,
+                },
+            )
+            return
 
         def _send_sync() -> Any:
             """Synchronous send operation to run in thread pool."""

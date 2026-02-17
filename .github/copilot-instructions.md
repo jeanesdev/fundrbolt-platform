@@ -52,8 +52,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - PostgreSQL (registrations, check-ins, audit logs), Redis (sessions) (025-event-checkin-page)
 - Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 19, Vite 7, TanStack Router, Zustand, React Query, Radix UI, Recharts (026-event-dashboard-for)
 - PostgreSQL 15 (event data), Redis 7 (sessions) (026-event-dashboard-for)
-- Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router, Zustand, Radix UI (027-short-name-import)
-- PostgreSQL (user accounts, memberships, import audit), Redis (sessions) (027-short-name-import)
+- Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router, Zustand, Radix UI (027-user-import)
+- PostgreSQL (user accounts, memberships, import audit), Redis (sessions) (027-user-import)
 
 ## Project Structure
 ```
@@ -138,7 +138,7 @@ git commit -m "message"
 ```
 
 ## Recent Changes
-- 027-short-name-import: Added Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router, Zustand, Radix UI
+- 027-user-import: Added Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router, Zustand, Radix UI
 - 026-event-dashboard-for: Added Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 19, Vite 7, TanStack Router, Zustand, React Query, Radix UI, Recharts
 - 025-event-checkin-page: Added Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 18, Vite, TanStack Router, Zustand, Radix UI
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields

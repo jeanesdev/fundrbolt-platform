@@ -2,6 +2,7 @@ import type { User as ApiUser } from '../api/users-api'
 import { RoleAssignmentDialog } from './role-assignment-dialog'
 import { UsersActionDialog } from './users-action-dialog'
 import { UsersDeleteDialog } from './users-delete-dialog'
+import { UsersImportDialog } from './users-import-dialog'
 import { UsersInviteDialog } from './users-invite-dialog'
 import { useUsers } from './users-provider'
 import { UsersResetPasswordDialog } from './users-reset-password-dialog'
@@ -49,6 +50,12 @@ export function UsersDialogs() {
         key='user-invite'
         open={open === 'invite'}
         onOpenChange={() => setOpen('invite')}
+      />
+
+      <UsersImportDialog
+        key='user-import'
+        open={open === 'import'}
+        onOpenChange={() => setOpen('import')}
       />
 
       {currentRow && (

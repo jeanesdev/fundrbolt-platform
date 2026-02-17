@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-02-16
-**Feature**: [spec.md](.specify/specs/027-short-name-import/spec.md)
+**Feature**: [spec.md](.specify/specs/027-user-import/spec.md)
 
 ## Content Quality
 
