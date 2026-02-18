@@ -61,5 +61,7 @@ class BuyNowAvailability(Base, UUIDMixin, TimestampMixin):
 
     # Constraints
     __table_args__ = (
-        CheckConstraint("remaining_quantity >= 0", name="ck_buy_now_availability_quantity_nonnegative"),
+        CheckConstraint(
+            "remaining_quantity >= 0", name="ck_buy_now_availability_quantity_nonnegative"
+        ),
     )

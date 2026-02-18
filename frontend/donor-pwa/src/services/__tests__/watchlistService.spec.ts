@@ -2,11 +2,22 @@
  * Tests for watchlist service
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getWatchList, addToWatchList, removeFromWatchList } from '../watchlistService';
-import axios from 'axios';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import watchListService from '../watchlistService';
 
-vi.mock('axios');
+const apiClientMocks = vi.hoisted(() => ({
+  apiGet: vi.fn(),
+  apiPost: vi.fn(),
+  apiDelete: vi.fn(),
+}));
+
+vi.mock('@/lib/axios', () => ({
+  default: {
+    get: apiClientMocks.apiGet,
+    post: apiClientMocks.apiPost,
+    delete: apiClientMocks.apiDelete,
+  },
+}));
 
 describe('watchlistService', () => {
   beforeEach(() => {
@@ -23,23 +34,20 @@ describe('watchlistService', () => {
         total: 2,
       };
 
-      vi.mocked(axios.get).mockResolvedValue({ data: mockData });
+      apiClientMocks.apiGet.mockResolvedValue({ data: mockData });
 
-      const result = await getWatchList('event-id');
+      const result = await watchListService.getWatchList('event-id');
 
-      expect(axios.get).toHaveBeenCalledWith(
-        '/api/v1/watchlist',
-        expect.objectContaining({
-          params: { event_id: 'event-id' },
-        })
+      expect(apiClientMocks.apiGet).toHaveBeenCalledWith(
+        '/events/event-id/auction-items/watchlist'
       );
       expect(result).toEqual(mockData);
     });
 
     it('handles errors', async () => {
-      vi.mocked(axios.get).mockRejectedValue(new Error('Network error'));
+      apiClientMocks.apiGet.mockRejectedValue(new Error('Network error'));
 
-      await expect(getWatchList('event-id')).rejects.toThrow('Network error');
+      await expect(watchListService.getWatchList('event-id')).rejects.toThrow('Network error');
     });
   });
 
@@ -52,21 +60,20 @@ describe('watchlistService', () => {
         event_id: 'event-id',
       };
 
-      vi.mocked(axios.post).mockResolvedValue({ data: mockResponse });
+      apiClientMocks.apiPost.mockResolvedValue({ data: mockResponse });
 
-      const result = await addToWatchList('event-id', 'item-id');
+      const result = await watchListService.addToWatchList('event-id', 'item-id');
 
-      expect(axios.post).toHaveBeenCalledWith(
-        '/api/v1/watchlist',
-        { item_id: 'item-id' }
+      expect(apiClientMocks.apiPost).toHaveBeenCalledWith(
+        '/events/event-id/auction-items/item-id/watch'
       );
       expect(result).toEqual(mockResponse);
     });
 
     it('handles errors', async () => {
-      vi.mocked(axios.post).mockRejectedValue(new Error('Server error'));
+      apiClientMocks.apiPost.mockRejectedValue(new Error('Server error'));
 
-      await expect(addToWatchList('event-id', 'item-id')).rejects.toThrow(
+      await expect(watchListService.addToWatchList('event-id', 'item-id')).rejects.toThrow(
         'Server error'
       );
     });
@@ -74,20 +81,20 @@ describe('watchlistService', () => {
 
   describe('removeFromWatchList', () => {
     it('removes item from watch list successfully', async () => {
-      vi.mocked(axios.delete).mockResolvedValue({ status: 204 });
+      apiClientMocks.apiDelete.mockResolvedValue({ status: 204 });
 
-      await removeFromWatchList('event-id', 'item-id');
+      await watchListService.removeFromWatchList('event-id', 'item-id');
 
-      expect(axios.delete).toHaveBeenCalledWith(
-        '/api/v1/watchlist/item-id'
+      expect(apiClientMocks.apiDelete).toHaveBeenCalledWith(
+        '/events/event-id/auction-items/item-id/watch'
       );
     });
 
     it('handles errors', async () => {
-      vi.mocked(axios.delete).mockRejectedValue(new Error('Server error'));
+      apiClientMocks.apiDelete.mockRejectedValue(new Error('Server error'));
 
       await expect(
-        removeFromWatchList('event-id', 'item-id')
+        watchListService.removeFromWatchList('event-id', 'item-id')
       ).rejects.toThrow('Server error');
     });
   });

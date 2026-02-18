@@ -2,20 +2,28 @@
  * Tests for useItemViewTracking hook
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import auctionItemService from '@/services/auctionItemService';
 import { renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useItemViewTracking } from '../useItemViewTracking';
-import * as auctionItemService from '@/services/auctionItemService';
+
+const auctionItemMocks = vi.hoisted(() => ({
+  trackItemView: vi.fn(),
+}));
 
 // Mock the auction item service
 vi.mock('@/services/auctionItemService', () => ({
-  trackItemView: vi.fn(),
+  __esModule: true,
+  default: {
+    trackItemView: auctionItemMocks.trackItemView,
+  },
 }));
 
 describe('useItemViewTracking', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    auctionItemMocks.trackItemView.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -24,7 +32,7 @@ describe('useItemViewTracking', () => {
 
   it('tracks view when item is opened', () => {
     const { unmount } = renderHook(() =>
-      useItemViewTracking('test-item-id', true)
+      useItemViewTracking({ eventId: 'event-1', itemId: 'test-item-id', enabled: true })
     );
 
     // Advance timer by 5 seconds
@@ -34,6 +42,7 @@ describe('useItemViewTracking', () => {
     unmount();
 
     expect(auctionItemService.trackItemView).toHaveBeenCalledWith(
+      'event-1',
       'test-item-id',
       expect.any(Number)
     );
@@ -41,7 +50,7 @@ describe('useItemViewTracking', () => {
 
   it('does not track view for duration less than 1 second', () => {
     const { unmount } = renderHook(() =>
-      useItemViewTracking('test-item-id', true)
+      useItemViewTracking({ eventId: 'event-1', itemId: 'test-item-id', enabled: true })
     );
 
     // Advance timer by less than 1 second
@@ -54,7 +63,7 @@ describe('useItemViewTracking', () => {
 
   it('does not track view when not open', () => {
     const { unmount } = renderHook(() =>
-      useItemViewTracking('test-item-id', false)
+      useItemViewTracking({ eventId: 'event-1', itemId: 'test-item-id', enabled: false })
     );
 
     vi.advanceTimersByTime(5000);
@@ -65,7 +74,7 @@ describe('useItemViewTracking', () => {
 
   it('tracks correct duration', () => {
     const { unmount } = renderHook(() =>
-      useItemViewTracking('test-item-id', true)
+      useItemViewTracking({ eventId: 'event-1', itemId: 'test-item-id', enabled: true })
     );
 
     // Advance timer by 10 seconds
@@ -74,19 +83,20 @@ describe('useItemViewTracking', () => {
     unmount();
 
     expect(auctionItemService.trackItemView).toHaveBeenCalledWith(
+      'event-1',
       'test-item-id',
       expect.any(Number)
     );
 
     // Check that duration is approximately 10 seconds (allow for small variance)
     const callArgs = vi.mocked(auctionItemService.trackItemView).mock.calls[0];
-    expect(callArgs[1]).toBeGreaterThanOrEqual(9);
-    expect(callArgs[1]).toBeLessThanOrEqual(11);
+    expect(callArgs[2]).toBeGreaterThanOrEqual(9);
+    expect(callArgs[2]).toBeLessThanOrEqual(11);
   });
 
   it('resets tracking when item changes', () => {
     const { rerender, unmount } = renderHook(
-      ({ itemId }) => useItemViewTracking(itemId, true),
+      ({ itemId }) => useItemViewTracking({ eventId: 'event-1', itemId, enabled: true }),
       { initialProps: { itemId: 'item-1' } }
     );
 

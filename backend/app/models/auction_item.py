@@ -185,7 +185,7 @@ class AuctionItem(Base, UUIDMixin, TimestampMixin):
             "buy_now_price IS NULL OR buy_now_price >= starting_bid",
             name="ck_auction_items_buy_now_price_min",
         ),
-        CheckConstraint("quantity_available >= 1", name="ck_auction_items_quantity_min"),
+        CheckConstraint("quantity_available >= 0", name="ck_auction_items_quantity_min"),
         CheckConstraint(
             "(buy_now_enabled = false) OR (buy_now_enabled = true AND buy_now_price IS NOT NULL)",
             name="ck_auction_items_buy_now_consistency",

@@ -44,29 +44,29 @@ class TestWatchlistAPI:
     async def test_get_watchlist_authenticated(
         self,
         async_client: AsyncClient,
-        authenticated_headers: dict,
-        test_user: User,
+        user_auth_headers: dict,
+        test_donor_user: User,
         test_event: Event,
         db_session: AsyncSession,
     ):
         """Test GET /watchlist returns user's watch list."""
         # Create and add item to watch list
-        item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+        item = await _create_auction_item(db_session, test_event.id, test_donor_user.id)
+
         # Add to watch list
         response = await async_client.post(
             "/api/v1/watchlist",
             json={"item_id": str(item.id)},
-            headers=authenticated_headers,
+            headers=user_auth_headers,
         )
         assert response.status_code == status.HTTP_201_CREATED
-        
+
         # Get watch list
         response = await async_client.get(
             "/api/v1/watchlist",
-            headers=authenticated_headers,
+            headers=user_auth_headers,
         )
-        
+
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert "items" in data
@@ -83,24 +83,24 @@ class TestWatchlistAPI:
     async def test_add_to_watchlist_success(
         self,
         async_client: AsyncClient,
-        authenticated_headers: dict,
-        test_user: User,
+        user_auth_headers: dict,
+        test_donor_user: User,
         test_event: Event,
         db_session: AsyncSession,
     ):
         """Test POST /watchlist adds item successfully."""
-        item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+        item = await _create_auction_item(db_session, test_event.id, test_donor_user.id)
+
         response = await async_client.post(
             "/api/v1/watchlist",
             json={"item_id": str(item.id)},
-            headers=authenticated_headers,
+            headers=user_auth_headers,
         )
-        
+
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
         assert data["item_id"] == str(item.id)
-        assert data["user_id"] == str(test_user.id)
+        assert data["user_id"] == str(test_donor_user.id)
 
     async def test_add_to_watchlist_unauthenticated(
         self,
@@ -116,59 +116,59 @@ class TestWatchlistAPI:
     async def test_add_to_watchlist_invalid_item(
         self,
         async_client: AsyncClient,
-        authenticated_headers: dict,
+        user_auth_headers: dict,
     ):
         """Test POST /watchlist with non-existent item."""
         response = await async_client.post(
             "/api/v1/watchlist",
             json={"item_id": str(uuid.uuid4())},
-            headers=authenticated_headers,
+            headers=user_auth_headers,
         )
-        
+
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_remove_from_watchlist_success(
         self,
         async_client: AsyncClient,
-        authenticated_headers: dict,
-        test_user: User,
+        user_auth_headers: dict,
+        test_donor_user: User,
         test_event: Event,
         db_session: AsyncSession,
     ):
         """Test DELETE /watchlist/{item_id} removes item."""
-        item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+        item = await _create_auction_item(db_session, test_event.id, test_donor_user.id)
+
         # Add to watch list first
         await async_client.post(
             "/api/v1/watchlist",
             json={"item_id": str(item.id)},
-            headers=authenticated_headers,
+            headers=user_auth_headers,
         )
-        
+
         # Remove from watch list
         response = await async_client.delete(
             f"/api/v1/watchlist/{item.id}",
-            headers=authenticated_headers,
+            headers=user_auth_headers,
         )
-        
+
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
     async def test_remove_from_watchlist_not_watching(
         self,
         async_client: AsyncClient,
-        authenticated_headers: dict,
-        test_user: User,
+        user_auth_headers: dict,
+        test_donor_user: User,
         test_event: Event,
         db_session: AsyncSession,
     ):
         """Test DELETE /watchlist/{item_id} for item not in watch list."""
-        item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+        item = await _create_auction_item(db_session, test_event.id, test_donor_user.id)
+
         response = await async_client.delete(
             f"/api/v1/watchlist/{item.id}",
-            headers=authenticated_headers,
+            headers=user_auth_headers,
         )
-        
+
         # Should still return 204 even if not watching
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -177,7 +177,5 @@ class TestWatchlistAPI:
         async_client: AsyncClient,
     ):
         """Test DELETE /watchlist/{item_id} requires authentication."""
-        response = await async_client.delete(
-            f"/api/v1/watchlist/{uuid.uuid4()}"
-        )
+        response = await async_client.delete(f"/api/v1/watchlist/{uuid.uuid4()}")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED

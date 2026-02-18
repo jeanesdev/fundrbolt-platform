@@ -30,7 +30,7 @@ async def _create_auction_item(
         auction_type=AuctionType.SILENT.value,
         starting_bid=Decimal("100.00"),
         bid_increment=Decimal("10.00"),
-        buy_now_price=Decimal("500.00") if buy_now_enabled else None,
+        buy_now_price=Decimal("500.00"),
         buy_now_enabled=buy_now_enabled,
         quantity_available=10,
         status=ItemStatus.PUBLISHED.value,
@@ -53,7 +53,7 @@ class TestBuyNowAvailabilityService:
     ):
         """Test creating new buy-now availability."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = BuyNowAvailabilityService(db_session)
         availability = await service.update_availability(
             item_id=item.id,
@@ -63,12 +63,12 @@ class TestBuyNowAvailabilityService:
             remaining_quantity=5,
             override_reason="Special promotion",
         )
-        
+
         assert availability.item_id == item.id
         assert availability.enabled is True
         assert availability.remaining_quantity == 5
         assert availability.override_reason == "Special promotion"
-        
+
         # Check item fields updated
         await db_session.refresh(item)
         assert item.buy_now_enabled is True
@@ -82,22 +82,24 @@ class TestBuyNowAvailabilityService:
     ):
         """Test updating existing buy-now availability."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = BuyNowAvailabilityService(db_session)
-        
+
         # Create initial availability
         await service.update_availability(
-            item.id, test_event.id, test_user.id,
-            enabled=True, remaining_quantity=10
+            item.id, test_event.id, test_user.id, enabled=True, remaining_quantity=10
         )
-        
+
         # Update availability
         updated = await service.update_availability(
-            item.id, test_event.id, test_user.id,
-            enabled=True, remaining_quantity=3,
-            override_reason="Low stock"
+            item.id,
+            test_event.id,
+            test_user.id,
+            enabled=True,
+            remaining_quantity=3,
+            override_reason="Low stock",
         )
-        
+
         assert updated.remaining_quantity == 3
         assert updated.override_reason == "Low stock"
 
@@ -109,13 +111,12 @@ class TestBuyNowAvailabilityService:
     ):
         """Test that negative quantity raises error."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = BuyNowAvailabilityService(db_session)
-        
+
         with pytest.raises(ValueError, match="cannot be negative"):
             await service.update_availability(
-                item.id, test_event.id, test_user.id,
-                enabled=True, remaining_quantity=-1
+                item.id, test_event.id, test_user.id, enabled=True, remaining_quantity=-1
             )
 
     async def test_update_availability_item_not_found(
@@ -126,7 +127,7 @@ class TestBuyNowAvailabilityService:
     ):
         """Test updating availability for non-existent item."""
         service = BuyNowAvailabilityService(db_session)
-        
+
         with pytest.raises(ValueError, match="not found"):
             await service.update_availability(
                 item_id=uuid.uuid4(),
@@ -144,19 +145,18 @@ class TestBuyNowAvailabilityService:
     ):
         """Test getting buy-now availability."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = BuyNowAvailabilityService(db_session)
-        
+
         # No availability initially
         availability = await service.get_availability(item.id)
         assert availability is None
-        
+
         # Create availability
         await service.update_availability(
-            item.id, test_event.id, test_user.id,
-            enabled=True, remaining_quantity=5
+            item.id, test_event.id, test_user.id, enabled=True, remaining_quantity=5
         )
-        
+
         # Get availability
         availability = await service.get_availability(item.id)
         assert availability is not None
@@ -171,23 +171,22 @@ class TestBuyNowAvailabilityService:
     ):
         """Test successfully decrementing quantity."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = BuyNowAvailabilityService(db_session)
-        
+
         # Create availability with quantity 5
         await service.update_availability(
-            item.id, test_event.id, test_user.id,
-            enabled=True, remaining_quantity=5
+            item.id, test_event.id, test_user.id, enabled=True, remaining_quantity=5
         )
-        
+
         # Decrement by 1
         result = await service.decrement_quantity(item.id, 1)
         assert result is True
-        
+
         # Check quantity decreased
         availability = await service.get_availability(item.id)
         assert availability.remaining_quantity == 4
-        
+
         # Check item quantity updated
         await db_session.refresh(item)
         assert item.quantity_available == 4
@@ -200,24 +199,23 @@ class TestBuyNowAvailabilityService:
     ):
         """Test that decrementing to zero disables buy-now."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = BuyNowAvailabilityService(db_session)
-        
+
         # Create availability with quantity 1
         await service.update_availability(
-            item.id, test_event.id, test_user.id,
-            enabled=True, remaining_quantity=1
+            item.id, test_event.id, test_user.id, enabled=True, remaining_quantity=1
         )
-        
+
         # Decrement by 1 (to zero)
         result = await service.decrement_quantity(item.id, 1)
         assert result is True
-        
+
         # Check buy-now disabled
         availability = await service.get_availability(item.id)
         assert availability.remaining_quantity == 0
         assert availability.enabled is False
-        
+
         await db_session.refresh(item)
         assert item.buy_now_enabled is False
 
@@ -229,19 +227,18 @@ class TestBuyNowAvailabilityService:
     ):
         """Test that insufficient quantity returns False."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = BuyNowAvailabilityService(db_session)
-        
+
         # Create availability with quantity 2
         await service.update_availability(
-            item.id, test_event.id, test_user.id,
-            enabled=True, remaining_quantity=2
+            item.id, test_event.id, test_user.id, enabled=True, remaining_quantity=2
         )
-        
+
         # Try to decrement by 5 (more than available)
         result = await service.decrement_quantity(item.id, 5)
         assert result is False
-        
+
         # Quantity should be unchanged
         availability = await service.get_availability(item.id)
         assert availability.remaining_quantity == 2
@@ -254,8 +251,8 @@ class TestBuyNowAvailabilityService:
     ):
         """Test decrementing quantity for non-existent availability."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = BuyNowAvailabilityService(db_session)
-        
+
         with pytest.raises(ValueError, match="not found"):
             await service.decrement_quantity(item.id, 1)

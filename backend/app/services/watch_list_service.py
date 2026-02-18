@@ -160,7 +160,7 @@ class WatchListService:
         )
         result = await self.db.execute(stmt)
         count = result.scalar()
-        return count > 0
+        return (count or 0) > 0
 
     async def get_watchers(self, item_id: UUID) -> list[WatchListEntry]:
         """Get all watchers for an item (admin use).

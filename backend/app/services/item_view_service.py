@@ -56,9 +56,7 @@ class ItemViewService:
         await self.db.commit()
         await self.db.refresh(view)
 
-        logger.info(
-            f"Recorded view for item {item_id} by user {user_id}: {view_duration_seconds}s"
-        )
+        logger.info(f"Recorded view for item {item_id} by user {user_id}: {view_duration_seconds}s")
         return view
 
     async def get_item_views(self, item_id: UUID) -> list[ItemView]:
@@ -79,9 +77,7 @@ class ItemViewService:
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_view_stats(
-        self, item_id: UUID
-    ) -> dict[str, int]:
+    async def get_view_stats(self, item_id: UUID) -> dict[str, int]:
         """Get view statistics for an item.
 
         Args:
@@ -107,8 +103,8 @@ class ItemViewService:
         unique_viewers = unique_result.scalar()
 
         return {
-            "total_views": views_row.total_views or 0,
-            "total_duration_seconds": int(views_row.total_duration or 0),
+            "total_views": views_row.total_views if views_row else 0,
+            "total_duration_seconds": int(views_row.total_duration or 0) if views_row else 0,
             "unique_viewers": unique_viewers or 0,
         }
 

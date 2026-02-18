@@ -100,7 +100,7 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
       return 0;
     });
     return sorted;
-  }, [data?.watchers, sortField, sortOrder]);
+  }, [data, sortField, sortOrder]);
 
   const sortedViews = useMemo(() => {
     if (!data?.views) return [];
@@ -121,7 +121,7 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
       return 0;
     });
     return sorted;
-  }, [data?.views, sortField, sortOrder]);
+  }, [data, sortField, sortOrder]);
 
   const sortedBids = useMemo(() => {
     if (!data?.bids) return [];
@@ -142,7 +142,7 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
       return 0;
     });
     return sorted;
-  }, [data?.bids, sortField, sortOrder]);
+  }, [data, sortField, sortOrder]);
 
   if (isLoading) {
     return (

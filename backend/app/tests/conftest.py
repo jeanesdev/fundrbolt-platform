@@ -12,6 +12,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.pool import NullPool
 
+from app import models as app_models  # noqa: F401
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.main import app
@@ -78,6 +79,12 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
     Uses NullPool to avoid connection pooling in tests
     """
     engine = create_async_engine(test_database_url, poolclass=NullPool, echo=False)
+
+    async with engine.begin() as conn:
+        await conn.execute(text("DROP SCHEMA IF EXISTS public CASCADE"))
+        await conn.execute(text("CREATE SCHEMA public"))
+        await conn.execute(text("GRANT ALL ON SCHEMA public TO public"))
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
 
     # Create all tables including roles
     async with engine.begin() as conn:

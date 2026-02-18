@@ -46,6 +46,4 @@ class WatchListEntry(Base, UUIDMixin, TimestampMixin):
     user: Mapped["User"] = relationship("User")
 
     # Constraints
-    __table_args__ = (
-        UniqueConstraint("item_id", "user_id", name="uq_watch_list_item_user"),
-    )
+    __table_args__ = (UniqueConstraint("item_id", "user_id", name="uq_watch_list_item_user"),)

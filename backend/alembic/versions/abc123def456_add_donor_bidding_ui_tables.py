@@ -74,8 +74,18 @@ def upgrade() -> None:
             nullable=False,
             index=True,
         ),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
         sa.UniqueConstraint("item_id", "user_id", name="uq_watch_list_item_user"),
     )
 
@@ -106,8 +116,18 @@ def upgrade() -> None:
         ),
         sa.Column("view_started_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("view_duration_seconds", sa.Integer, nullable=False, server_default="0"),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
         sa.CheckConstraint("view_duration_seconds >= 0", name="ck_item_views_duration_nonnegative"),
     )
 
@@ -138,8 +158,18 @@ def upgrade() -> None:
         ),
         sa.Column("badge_label", sa.String(50), nullable=True),
         sa.Column("notice_message", sa.Text, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
     )
 
     # Create buy_now_availability table
@@ -170,9 +200,21 @@ def upgrade() -> None:
         sa.Column("enabled", sa.Boolean, nullable=False, server_default="false"),
         sa.Column("remaining_quantity", sa.Integer, nullable=False, server_default="0"),
         sa.Column("override_reason", sa.String(500), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
-        sa.CheckConstraint("remaining_quantity >= 0", name="ck_buy_now_availability_quantity_nonnegative"),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
+        sa.CheckConstraint(
+            "remaining_quantity >= 0", name="ck_buy_now_availability_quantity_nonnegative"
+        ),
     )
 
 

@@ -49,10 +49,10 @@ class TestItemViewService:
     ):
         """Test successfully recording an item view."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = ItemViewService(db_session)
         view_time = datetime.now(UTC)
-        
+
         view = await service.record_view(
             item_id=item.id,
             event_id=test_event.id,
@@ -60,7 +60,7 @@ class TestItemViewService:
             view_started_at=view_time,
             view_duration_seconds=30,
         )
-        
+
         assert view.item_id == item.id
         assert view.user_id == test_user.id
         assert view.event_id == test_event.id
@@ -75,22 +75,16 @@ class TestItemViewService:
     ):
         """Test getting all views for an item."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = ItemViewService(db_session)
-        
+
         # Record multiple views
-        await service.record_view(
-            item.id, test_event.id, test_user.id,
-            datetime.now(UTC), 30
-        )
-        await service.record_view(
-            item.id, test_event.id, test_user.id,
-            datetime.now(UTC), 45
-        )
-        
+        await service.record_view(item.id, test_event.id, test_user.id, datetime.now(UTC), 30)
+        await service.record_view(item.id, test_event.id, test_user.id, datetime.now(UTC), 45)
+
         # Get all views
         views = await service.get_item_views(item.id)
-        
+
         assert len(views) == 2
         assert views[0].view_duration_seconds in [30, 45]
 
@@ -102,22 +96,16 @@ class TestItemViewService:
     ):
         """Test getting view statistics for an item."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = ItemViewService(db_session)
-        
+
         # Record multiple views
-        await service.record_view(
-            item.id, test_event.id, test_user.id,
-            datetime.now(UTC), 30
-        )
-        await service.record_view(
-            item.id, test_event.id, test_user.id,
-            datetime.now(UTC), 45
-        )
-        
+        await service.record_view(item.id, test_event.id, test_user.id, datetime.now(UTC), 30)
+        await service.record_view(item.id, test_event.id, test_user.id, datetime.now(UTC), 45)
+
         # Get stats
         stats = await service.get_view_stats(item.id)
-        
+
         assert stats["total_views"] == 2
         assert stats["total_duration_seconds"] == 75
         assert stats["unique_viewers"] == 1
@@ -131,22 +119,16 @@ class TestItemViewService:
         """Test getting all views by a user."""
         item1 = await _create_auction_item(db_session, test_event.id, test_user.id)
         item2 = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = ItemViewService(db_session)
-        
+
         # Record views on different items
-        await service.record_view(
-            item1.id, test_event.id, test_user.id,
-            datetime.now(UTC), 30
-        )
-        await service.record_view(
-            item2.id, test_event.id, test_user.id,
-            datetime.now(UTC), 45
-        )
-        
+        await service.record_view(item1.id, test_event.id, test_user.id, datetime.now(UTC), 30)
+        await service.record_view(item2.id, test_event.id, test_user.id, datetime.now(UTC), 45)
+
         # Get user's views
         views = await service.get_user_views(test_user.id, test_event.id)
-        
+
         assert len(views) == 2
         item_ids = {v.item_id for v in views}
         assert item1.id in item_ids

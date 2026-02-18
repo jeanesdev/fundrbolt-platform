@@ -7,13 +7,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.middleware.auth import get_current_active_user
 from app.models.auction_item import AuctionItem
 from app.models.user import User
-from app.models.watch_list_entry import WatchListEntry
 from app.schemas.auction_gallery import AuctionGalleryResponse, AuctionItemSummary
 from app.schemas.watch_list import WatchListEntryCreate, WatchListEntryResponse
 from app.services.watch_list_service import WatchListService
@@ -147,9 +145,7 @@ async def add_to_watch_list(
             user_id=current_user.id,
         )
 
-        logger.info(
-            f"User {current_user.id} added item {entry_data.item_id} to watch list"
-        )
+        logger.info(f"User {current_user.id} added item {entry_data.item_id} to watch list")
         return WatchListEntryResponse.model_validate(entry)
 
     except ValueError as e:

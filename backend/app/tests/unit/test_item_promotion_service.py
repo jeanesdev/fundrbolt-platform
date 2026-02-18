@@ -48,7 +48,7 @@ class TestItemPromotionService:
     ):
         """Test creating a new promotion."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = ItemPromotionService(db_session)
         promotion = await service.update_promotion(
             item_id=item.id,
@@ -57,11 +57,11 @@ class TestItemPromotionService:
             badge_label="Hot Item",
             notice_message="Limited time offer!",
         )
-        
+
         assert promotion.item_id == item.id
         assert promotion.badge_label == "Hot Item"
         assert promotion.notice_message == "Limited time offer!"
-        
+
         # Check denormalized fields on item
         await db_session.refresh(item)
         assert item.promotion_badge == "Hot Item"
@@ -75,24 +75,22 @@ class TestItemPromotionService:
     ):
         """Test updating an existing promotion."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = ItemPromotionService(db_session)
-        
+
         # Create initial promotion
         await service.update_promotion(
-            item.id, test_event.id, test_user.id,
-            "Hot Item", "Limited time!"
+            item.id, test_event.id, test_user.id, "Hot Item", "Limited time!"
         )
-        
+
         # Update promotion
         updated = await service.update_promotion(
-            item.id, test_event.id, test_user.id,
-            "Super Deal", "Amazing value!"
+            item.id, test_event.id, test_user.id, "Super Deal", "Amazing value!"
         )
-        
+
         assert updated.badge_label == "Super Deal"
         assert updated.notice_message == "Amazing value!"
-        
+
         # Check denormalized fields updated
         await db_session.refresh(item)
         assert item.promotion_badge == "Super Deal"
@@ -106,7 +104,7 @@ class TestItemPromotionService:
     ):
         """Test updating promotion for non-existent item."""
         service = ItemPromotionService(db_session)
-        
+
         with pytest.raises(ValueError, match="not found"):
             await service.update_promotion(
                 item_id=uuid.uuid4(),
@@ -124,19 +122,18 @@ class TestItemPromotionService:
     ):
         """Test getting a promotion."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = ItemPromotionService(db_session)
-        
+
         # No promotion initially
         promotion = await service.get_promotion(item.id)
         assert promotion is None
-        
+
         # Create promotion
         await service.update_promotion(
-            item.id, test_event.id, test_user.id,
-            "Hot Item", "Limited time!"
+            item.id, test_event.id, test_user.id, "Hot Item", "Limited time!"
         )
-        
+
         # Get promotion
         promotion = await service.get_promotion(item.id)
         assert promotion is not None
@@ -150,27 +147,26 @@ class TestItemPromotionService:
     ):
         """Test deleting a promotion."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = ItemPromotionService(db_session)
-        
+
         # Create promotion
         await service.update_promotion(
-            item.id, test_event.id, test_user.id,
-            "Hot Item", "Limited time!"
+            item.id, test_event.id, test_user.id, "Hot Item", "Limited time!"
         )
-        
+
         await db_session.refresh(item)
         assert item.promotion_badge == "Hot Item"
-        
+
         # Delete promotion
         result = await service.delete_promotion(item.id)
         assert result is True
-        
+
         # Check denormalized fields cleared
         await db_session.refresh(item)
         assert item.promotion_badge is None
         assert item.promotion_notice is None
-        
+
     async def test_delete_promotion_not_exists(
         self,
         db_session: AsyncSession,
@@ -179,8 +175,8 @@ class TestItemPromotionService:
     ):
         """Test deleting non-existent promotion."""
         item = await _create_auction_item(db_session, test_event.id, test_user.id)
-        
+
         service = ItemPromotionService(db_session)
         result = await service.delete_promotion(item.id)
-        
+
         assert result is False

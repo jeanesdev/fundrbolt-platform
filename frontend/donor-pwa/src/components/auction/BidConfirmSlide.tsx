@@ -152,10 +152,10 @@ export function BidConfirmSlide({
                 style={{
                   background: isComplete
                     ? 'rgb(34, 197, 94)' // green when complete
-                    : `linear-gradient(to right, 
-                        rgb(var(--event-primary, 59, 130, 246)) 0%, 
-                        rgb(var(--event-primary, 59, 130, 246)) ${slidePercent}%, 
-                        rgb(229, 231, 235) ${slidePercent}%, 
+                    : `linear-gradient(to right,
+                        rgb(var(--event-primary, 59, 130, 246)) 0%,
+                        rgb(var(--event-primary, 59, 130, 246)) ${slidePercent}%,
+                        rgb(229, 231, 235) ${slidePercent}%,
                         rgb(229, 231, 235) 100%)`,
                 }}
               >

@@ -14,7 +14,7 @@ import type { AuctionItem } from '@/types/auction-item';
 import type { ItemPromotionUpdate } from '@/types/auction-engagement';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, Save, Sparkles, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 interface PromotionEditorProps {
@@ -31,19 +31,15 @@ export function PromotionEditor({
   onSuccess,
 }: PromotionEditorProps) {
   const queryClient = useQueryClient();
-  const [badge, setBadge] = useState<string>('');
-  const [notice, setNotice] = useState<string>('');
 
-  // Initialize form with current values
-  useEffect(() => {
-    // Check if item has promotion fields (they might not be in the base type yet)
-    const itemWithPromotion = item as AuctionItem & {
-      promotion_badge?: string | null;
-      promotion_notice?: string | null;
-    };
-    setBadge(itemWithPromotion.promotion_badge || '');
-    setNotice(itemWithPromotion.promotion_notice || '');
-  }, [item]);
+  // Check if item has promotion fields (they might not be in the base type yet)
+  const itemWithPromotion = item as AuctionItem & {
+    promotion_badge?: string | null;
+    promotion_notice?: string | null;
+  };
+
+  const [badge, setBadge] = useState<string>(itemWithPromotion.promotion_badge || '');
+  const [notice, setNotice] = useState<string>(itemWithPromotion.promotion_notice || '');
 
   const updatePromotionMutation = useMutation({
     mutationFn: (data: ItemPromotionUpdate) =>

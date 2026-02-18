@@ -2,15 +2,27 @@
  * Tests for WatchListButton component
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WatchListButton } from '../WatchListButton';
+
+const watchListMocks = vi.hoisted(() => ({
+  addToWatchList: vi.fn(),
+  removeFromWatchList: vi.fn(),
+}));
 
 // Mock the services
 vi.mock('@/services/watchlistService', () => ({
-  addToWatchList: vi.fn(),
-  removeFromWatchList: vi.fn(),
+  __esModule: true,
+  default: {
+    addToWatchList: watchListMocks.addToWatchList,
+    removeFromWatchList: watchListMocks.removeFromWatchList,
+  },
+  watchListService: {
+    addToWatchList: watchListMocks.addToWatchList,
+    removeFromWatchList: watchListMocks.removeFromWatchList,
+  },
 }));
 
 // Mock sonner toast
@@ -67,21 +79,31 @@ describe('WatchListButton', () => {
     expect(button).toBeInTheDocument();
   });
 
-  it('is disabled when disabled prop is true', () => {
-    renderComponent({ disabled: true });
-    const button = screen.getByRole('button');
-    expect(button).toBeDisabled();
-  });
+  it('calls onToggle and adds to watch list', async () => {
+    watchListMocks.addToWatchList.mockResolvedValue({});
+    const onToggle = vi.fn();
+    renderComponent({ isWatching: false, onToggle });
 
-  it('calls onClick when provided', async () => {
-    const onClick = vi.fn();
-    renderComponent({ onClick });
-    
     const button = screen.getByRole('button');
     fireEvent.click(button);
-    
+
     await waitFor(() => {
-      expect(onClick).toHaveBeenCalled();
+      expect(watchListMocks.addToWatchList).toHaveBeenCalledWith('test-event-id', 'test-item-id');
+      expect(onToggle).toHaveBeenCalledWith(true);
+    });
+  });
+
+  it('calls onToggle and removes from watch list', async () => {
+    watchListMocks.removeFromWatchList.mockResolvedValue(undefined);
+    const onToggle = vi.fn();
+    renderComponent({ isWatching: true, onToggle });
+
+    const button = screen.getByRole('button');
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(watchListMocks.removeFromWatchList).toHaveBeenCalledWith('test-event-id', 'test-item-id');
+      expect(onToggle).toHaveBeenCalledWith(false);
     });
   });
 });
