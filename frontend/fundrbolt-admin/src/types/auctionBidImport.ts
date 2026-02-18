@@ -36,14 +36,20 @@ export interface AuctionBidImportSummary {
 }
 
 export interface AuctionBidDashboardHighestBid {
+  auction_item_id: string
   auction_item_code: string
+  auction_item_title: string
   bid_amount: number
+  bidder_name: string
   bidder_email: string
 }
 
 export interface AuctionBidDashboardRecentBid {
+  auction_item_id: string
   auction_item_code: string
+  auction_item_title: string
   bid_amount: number
+  bidder_name: string
   bidder_email: string
   bid_time: string
 }
