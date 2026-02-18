@@ -417,7 +417,7 @@ class AuctionBidImportService:
         latest_ids = await self._latest_bid_records_for_event_subquery(event_id)
 
         highest_query = (
-            select(AuctionBid, AuctionItem, User.email)
+            select(AuctionBid, AuctionItem, User)
             .join(AuctionItem, AuctionBid.auction_item_id == AuctionItem.id)
             .join(User, AuctionBid.user_id == User.id)
             .where(
@@ -427,17 +427,20 @@ class AuctionBidImportService:
         )
         highest_rows = (await self.db.execute(highest_query)).all()
         highest_map: dict[UUID, AuctionBidDashboardHighestBid] = {}
-        for bid, item, email in highest_rows:
+        for bid, item, user in highest_rows:
             existing = highest_map.get(item.id)
             if not existing or bid.bid_amount > existing.bid_amount:
                 highest_map[item.id] = AuctionBidDashboardHighestBid(
+                    auction_item_id=item.id,
                     auction_item_code=item.external_id,
+                    auction_item_title=item.title,
                     bid_amount=bid.bid_amount,
-                    bidder_email=email,
+                    bidder_name=f"{user.first_name} {user.last_name}",
+                    bidder_email=user.email,
                 )
 
         recent_query = (
-            select(AuctionBid, AuctionItem, User.email)
+            select(AuctionBid, AuctionItem, User)
             .join(AuctionItem, AuctionBid.auction_item_id == AuctionItem.id)
             .join(User, AuctionBid.user_id == User.id)
             .where(AuctionBid.event_id == event_id)
@@ -447,12 +450,15 @@ class AuctionBidImportService:
         recent_rows = (await self.db.execute(recent_query)).all()
         recent_bids = [
             AuctionBidDashboardRecentBid(
+                auction_item_id=item.id,
                 auction_item_code=item.external_id,
+                auction_item_title=item.title,
                 bid_amount=bid.bid_amount,
-                bidder_email=email,
+                bidder_name=f"{user.first_name} {user.last_name}",
+                bidder_email=user.email,
                 bid_time=bid.placed_at,
             )
-            for bid, item, email in recent_rows
+            for bid, item, user in recent_rows
         ]
 
         return AuctionBidDashboardResponse(
