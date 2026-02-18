@@ -9,6 +9,8 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.npo import NPO, NPOStatus
+from app.models.npo_member import MemberRole, MemberStatus, NPOMember
 from app.models.user import User
 
 pytestmark = [pytest.mark.asyncio, pytest.mark.requires_email]
@@ -60,18 +62,27 @@ async def test_npo_admin_can_verify_their_npo_users(
         first_name="NPO",
         last_name="User",
         role_id=test_npo_admin_user.role_id,
-        npo_id=test_npo_id,
         email_verified=False,
         is_active=False,
     )
     npo_user.set_password("TestPass123!")
     db_session.add(npo_user)
+    await db_session.flush()
+
+    db_session.add(
+        NPOMember(
+            npo_id=test_npo_id,
+            user_id=npo_user.id,
+            role=MemberRole.STAFF,
+            status=MemberStatus.ACTIVE,
+        )
+    )
     await db_session.commit()
     await db_session.refresh(npo_user)
 
     # NPO admin verifies user in their NPO
     response = await async_client.post(
-        f"/api/v1/users/{npo_user.id}/verify-email",
+        f"/api/v1/users/{npo_user.id}/verify-email?npo_id={test_npo_id}",
         headers={"Authorization": f"Bearer {test_npo_admin_token}"},
     )
 
@@ -93,24 +104,44 @@ async def test_npo_admin_cannot_verify_other_npo_users(
 ) -> None:
     """Test that NPO admin cannot verify users from different NPO."""
     # Create a user in a different NPO
-    other_npo_id = uuid.uuid4()
+    other_npo = NPO(
+        name="Other NPO",
+        description="Other NPO for email verification tests",
+        mission_statement="Testing email verification",
+        email="other-npo@test.com",
+        phone="+1-555-0888",
+        status=NPOStatus.APPROVED,
+        created_by_user_id=test_npo_admin_user.id,
+    )
+    db_session.add(other_npo)
+    await db_session.flush()
+
     other_npo_user = User(
         email="othernpo@test.com",
         first_name="Other",
         last_name="NPO",
         role_id=test_donor_user.role_id,
-        npo_id=other_npo_id,
         email_verified=False,
         is_active=False,
     )
     other_npo_user.set_password("TestPass123!")
     db_session.add(other_npo_user)
+    await db_session.flush()
+
+    db_session.add(
+        NPOMember(
+            npo_id=other_npo.id,
+            user_id=other_npo_user.id,
+            role=MemberRole.STAFF,
+            status=MemberStatus.ACTIVE,
+        )
+    )
     await db_session.commit()
     await db_session.refresh(other_npo_user)
 
     # NPO admin tries to verify user from different NPO
     response = await async_client.post(
-        f"/api/v1/users/{other_npo_user.id}/verify-email",
+        f"/api/v1/users/{other_npo_user.id}/verify-email?npo_id={other_npo.id}",
         headers={"Authorization": f"Bearer {test_npo_admin_token}"},
     )
 

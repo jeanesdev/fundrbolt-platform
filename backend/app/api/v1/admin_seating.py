@@ -34,9 +34,24 @@ from app.schemas.seating import (
 )
 from app.services.auto_assign_service import AutoAssignService
 from app.services.bidder_number_service import BidderNumberService
+from app.services.permission_service import PermissionService
 from app.services.seating_service import SeatingService
 
 router = APIRouter(prefix="/admin/events", tags=["admin-seating"])
+
+
+async def _require_event_access(
+    db: AsyncSession,
+    current_user: User,
+    event: Event,
+    detail: str = "You do not have permission to manage this event",
+) -> None:
+    if current_user.role_name == "super_admin":  # type: ignore[attr-defined]
+        return
+
+    permission_service = PermissionService()
+    if not await permission_service.can_view_event(current_user, event.npo_id, db=db):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
 
 
 @router.patch(
@@ -91,12 +106,7 @@ async def configure_event_seating(
     # Super admins can manage any event, others must belong to the same NPO
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage this event",
-            )
+    await _require_event_access(db, current_user, event)
 
     # Validate both must be set together or both must be None
     if (config.table_count is None) != (config.max_guests_per_table is None):
@@ -191,12 +201,7 @@ async def get_available_bidder_numbers(
     # Super admins can manage any event, others must belong to the same NPO
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage this event",
-            )
+    await _require_event_access(db, current_user, event)
 
     # Get available bidder numbers
     available_numbers = await BidderNumberService.get_available_bidder_numbers(db, event_id, limit)
@@ -240,12 +245,7 @@ async def get_next_bidder_number(
             detail=f"Event {event_id} not found",
         )
 
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage this event",
-            )
+    await _require_event_access(db, current_user, event)
 
     next_number = await BidderNumberService.get_next_available_bidder_number(db, event_id)
     return NextBidderNumberResponse(event_id=event_id, next_bidder_number=next_number)
@@ -311,12 +311,7 @@ async def assign_bidder_number_manually(
 
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage this event",
-            )
+    await _require_event_access(db, current_user, event)
 
     # Get guest and verify they belong to this event
     guest_query = select(RegistrationGuest).where(RegistrationGuest.id == guest_id)
@@ -443,12 +438,7 @@ async def assign_guest_to_table(
 
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage this event",
-            )
+    await _require_event_access(db, current_user, event)
 
     # Get guest
     guest_query = select(RegistrationGuest).where(RegistrationGuest.id == guest_id)
@@ -535,12 +525,7 @@ async def remove_guest_from_table(
 
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage this event",
-            )
+    await _require_event_access(db, current_user, event)
 
     # Get guest
     guest_query = select(RegistrationGuest).where(RegistrationGuest.id == guest_id)
@@ -612,12 +597,7 @@ async def get_table_occupancy(
 
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage this event",
-            )
+    await _require_event_access(db, current_user, event)
 
     # Get table occupancy
     occupancy = await SeatingService.get_table_occupancy(db, event_id, table_number)
@@ -721,12 +701,7 @@ async def get_seating_guests(
     # Super admins can manage any event, others must belong to the same NPO
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage this event",
-            )
+    await _require_event_access(db, current_user, event)
 
     # Build query
     from app.models.event_registration import EventRegistration
@@ -859,12 +834,7 @@ async def auto_assign_guests(
 
     # Verify user has permission to manage this event
     # Super admins can manage any event, others must belong to the same NPO
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage this event",
-            )
+    await _require_event_access(db, current_user, event)
 
     # Perform auto-assignment
     try:
@@ -931,12 +901,7 @@ async def auto_assign_registration_bidder_numbers(
             detail=f"Event {event_id} not found",
         )
 
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage this event",
-            )
+    await _require_event_access(db, current_user, event)
 
     from app.models.event_registration import EventRegistration
 
@@ -1136,12 +1101,7 @@ async def assign_registration_bidder_number(
         )
 
     # Verify user has permission
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage this event",
-            )
+    await _require_event_access(db, current_user, event)
 
     # Get registration with guests
     from app.models.event_registration import EventRegistration
@@ -1250,12 +1210,7 @@ async def assign_registration_table(
         )
 
     # Verify user has permission
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage this event",
-            )
+    await _require_event_access(db, current_user, event)
 
     # Get registration with guests
     from app.models.event_registration import EventRegistration
@@ -1360,12 +1315,7 @@ async def unassign_registration_table(
         )
 
     # Verify user has permission
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage this event",
-            )
+    await _require_event_access(db, current_user, event)
 
     # Get registration with guests
     from app.models.event_registration import EventRegistration
@@ -1444,12 +1394,7 @@ async def get_all_table_occupancy(
         )
 
     # Verify user has permission
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage this event",
-            )
+    await _require_event_access(db, current_user, event)
 
     # Check if seating is configured
     if event.table_count is None or event.max_guests_per_table is None:
@@ -1656,12 +1601,7 @@ async def update_table_details(
         )
 
     # Verify user has permission to manage this event
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage this event",
-            )
+    await _require_event_access(db, current_user, event)
 
     # Validate table number is within range
     if event.table_count is None:
@@ -1894,12 +1834,9 @@ async def get_event_tables(
         )
 
     # Verify user has permission to manage this event
-    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to view this event",
-            )
+    await _require_event_access(
+        db, current_user, event, detail="You do not have permission to view this event"
+    )
 
     # Check if seating is configured
     if event.table_count is None:

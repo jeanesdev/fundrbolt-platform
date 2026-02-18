@@ -163,12 +163,11 @@ class TestEventListing:
     async def test_list_events_empty_result(
         self,
         npo_admin_client: AsyncClient,
+        test_npo_id: Any,
     ) -> None:
         """Test listing events with filters that return no results."""
-        import uuid
-
-        # Filter by non-existent NPO
-        response = await npo_admin_client.get(f"/api/v1/events?npo_id={uuid.uuid4()}")
+        # Filter by an NPO with no events
+        response = await npo_admin_client.get(f"/api/v1/events?npo_id={test_npo_id}")
 
         assert response.status_code == 200
         data = response.json()

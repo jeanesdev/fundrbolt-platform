@@ -10,6 +10,7 @@ These tests verify:
 """
 
 import uuid
+from typing import Any
 
 import pytest
 from httpx import AsyncClient
@@ -285,13 +286,13 @@ class TestUsersCreateContract:
         assert any("npo_id" in error["message"].lower() for error in data["detail"]["details"])
 
     @pytest.mark.asyncio
-    async def test_create_staff_with_npo_id_returns_400(
-        self, super_admin_client: AsyncClient
+    async def test_create_staff_with_npo_id_succeeds(
+        self, super_admin_client: AsyncClient, test_approved_npo: Any
     ) -> None:
-        """Test that creating staff with npo_id returns 400.
+        """Test that creating staff with npo_id succeeds.
 
         Contract: POST /api/v1/users
-        Expected: 422 Unprocessable Entity - staff role must not have npo_id
+        Expected: 201 Created - staff role requires npo_id
         """
         payload = {
             "email": "staff@example.com",
@@ -300,12 +301,11 @@ class TestUsersCreateContract:
             "last_name": "Staff",
             "phone": "+1-555-0127",
             "role": "staff",
-            "npo_id": "550e8400-e29b-41d4-a716-446655440000",  # Should not be allowed
+            "npo_id": str(test_approved_npo.id),
         }
         response = await super_admin_client.post("/api/v1/users", json=payload)
 
-        assert response.status_code == 422
+        assert response.status_code == 201
         data = response.json()
-        assert "detail" in data
-        # Check validation error message mentions npo_id should not be provided
-        assert any("npo_id" in error["message"].lower() for error in data["detail"]["details"])
+        assert data["role"] == "staff"
+        assert data["npo_id"] == str(test_approved_npo.id)

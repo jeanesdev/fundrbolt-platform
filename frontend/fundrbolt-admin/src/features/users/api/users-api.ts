@@ -23,7 +23,7 @@ export interface User {
   profile_picture_url: string | null
   social_media_links: Record<string, string> | null
   role: string
-  npo_id: string | null
+  npo_id?: string | null
   npo_memberships: NPOMembership[]
   email_verified: boolean
   is_active: boolean

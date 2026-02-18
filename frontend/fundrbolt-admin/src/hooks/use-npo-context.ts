@@ -34,7 +34,7 @@ export interface UseNpoContextReturn {
 
 export function useNpoContext(): UseNpoContextReturn {
   const queryClient = useQueryClient()
-  const { npoId: userNpoId, isNpoAdmin, isStaff } = useAuth()
+  const { npoId: userNpoId, npoMemberships, isSuperAdmin } = useAuth()
 
   const {
     selectedNpoId,
@@ -50,7 +50,8 @@ export function useNpoContext(): UseNpoContextReturn {
   const isFundrboltPlatformView = isFundrboltView()
 
   // Single NPO users (NPO Admin and Staff) should have only their NPO
-  const isSingleNpoUser = (isNpoAdmin || isStaff) && userNpoId !== null
+  const isSingleNpoUser =
+    !isSuperAdmin && npoMemberships.length === 1 && userNpoId !== null
 
   // Only SuperAdmin and Event Coordinator can change NPO selection
   // (NPO Admin and Staff are locked to their NPO)
@@ -59,11 +60,21 @@ export function useNpoContext(): UseNpoContextReturn {
   // Auto-select NPO for single-NPO users on mount
   useEffect(() => {
     if (isSingleNpoUser && userNpoId && selectedNpoId !== userNpoId) {
-      // Find NPO name from available NPOs or use placeholder
-      const npoName = availableNpos.find(npo => npo.id === userNpoId)?.name || 'My NPO'
+      const membershipName = npoMemberships[0]?.npo_name
+      const npoName =
+        availableNpos.find((npo) => npo.id === userNpoId)?.name ||
+        membershipName ||
+        'My NPO'
       setSelectedNpo(userNpoId, npoName)
     }
-  }, [isSingleNpoUser, userNpoId, selectedNpoId, availableNpos, setSelectedNpo])
+  }, [
+    isSingleNpoUser,
+    userNpoId,
+    selectedNpoId,
+    availableNpos,
+    npoMemberships,
+    setSelectedNpo,
+  ])
 
   // Invalidate queries when NPO selection changes
   const selectNpo = (npoId: string | null, npoName: string) => {
@@ -79,10 +90,18 @@ export function useNpoContext(): UseNpoContextReturn {
     storeSetAvailableNpos(npos)
 
     // For single-NPO users, auto-select their NPO
-    if (isSingleNpoUser && npos.length === 1 && npos[0].id) {
-      setSelectedNpo(npos[0].id, npos[0].name)
+    if (isSingleNpoUser && userNpoId) {
+      const fallbackName = npoMemberships[0]?.npo_name || 'My NPO'
+      const matched = npos.find((npo) => npo.id === userNpoId)
+      setSelectedNpo(userNpoId, matched?.name || fallbackName)
     }
-  }, [isSingleNpoUser, setSelectedNpo, storeSetAvailableNpos])
+  }, [
+    isSingleNpoUser,
+    npoMemberships,
+    setSelectedNpo,
+    storeSetAvailableNpos,
+    userNpoId,
+  ])
 
   return {
     selectedNpoId,
