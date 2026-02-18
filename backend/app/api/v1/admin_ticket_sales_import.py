@@ -15,6 +15,7 @@ from app.models.event import Event
 from app.models.user import User
 from app.schemas.ticket_sales_import import ImportResult, PreflightResult
 from app.services.audit_service import AuditService
+from app.services.permission_service import PermissionService
 from app.services.ticket_sales_import_service import (
     TicketSalesImportError,
     TicketSalesImportService,
@@ -38,7 +39,7 @@ class ImportConfirmRequest(BaseModel):
     confirm: bool
 
 
-def _require_event_admin(current_user: User, event: Event) -> None:
+async def _require_event_admin(db: AsyncSession, current_user: User, event: Event) -> None:
     """Check if user has admin permissions for the event."""
     if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:  # type: ignore[attr-defined]
         raise HTTPException(
@@ -47,7 +48,8 @@ def _require_event_admin(current_user: User, event: Event) -> None:
         )
 
     if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
+        permission_service = PermissionService()
+        if not await permission_service.can_view_event(current_user, event.npo_id, db=db):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to manage this event.",
@@ -76,7 +78,7 @@ async def preflight_import(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     # Check permissions
-    _require_event_admin(current_user, event)
+    await _require_event_admin(db, current_user, event)
 
     try:
         # Read file
@@ -143,7 +145,7 @@ async def commit_import(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     # Check permissions
-    _require_event_admin(current_user, event)
+    await _require_event_admin(db, current_user, event)
 
     # Validate confirmation
     if not confirm:

@@ -12,12 +12,11 @@ from app.core.security import (
     decode_token,
     generate_verification_token,
 )
+from app.models.npo import NPO
+from app.models.npo_member import MemberStatus, NPOMember
 from app.models.user import User
-from app.schemas.auth import (
-    LoginResponse,
-    UserCreate,
-    UserPublic,
-)
+from app.schemas.auth import LoginResponse, UserCreate, UserPublic
+from app.schemas.users import NPOMembershipInfo
 from app.services.redis_service import RedisService
 from app.services.session_service import SessionService
 
@@ -31,6 +30,27 @@ class AuthService:
     - Logout with session revocation
     - Token refresh
     """
+
+    @staticmethod
+    async def get_active_npo_memberships(
+        db: AsyncSession, user_id: uuid.UUID
+    ) -> list[NPOMembershipInfo]:
+        member_stmt = (
+            select(NPOMember, NPO.name)
+            .join(NPO, NPOMember.npo_id == NPO.id)
+            .where(NPOMember.user_id == user_id)
+            .where(NPOMember.status == MemberStatus.ACTIVE)
+        )
+        member_result = await db.execute(member_stmt)
+        return [
+            NPOMembershipInfo(
+                npo_id=member.npo_id,
+                npo_name=npo_name,
+                role=member.role.value,
+                status=member.status.value,
+            )
+            for member, npo_name in member_result.all()
+        ]
 
     @staticmethod
     async def register(
@@ -187,6 +207,8 @@ class AuthService:
         await db.refresh(user, ["role"])
 
         # Build response
+        npo_memberships = await AuthService.get_active_npo_memberships(db, user.id)
+        primary_npo_id = npo_memberships[0].npo_id if len(npo_memberships) == 1 else None
         user_public = UserPublic(
             id=user.id,
             email=user.email,
@@ -204,7 +226,8 @@ class AuthService:
             email_verified=user.email_verified,
             is_active=user.is_active,
             role=user.role.name,  # Get role name from relationship
-            npo_id=user.npo_id,
+            npo_id=primary_npo_id,
+            npo_memberships=npo_memberships,
             created_at=user.created_at,
         )
 

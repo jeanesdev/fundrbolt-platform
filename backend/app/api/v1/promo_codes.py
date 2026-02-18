@@ -15,9 +15,28 @@ from app.models.event import Event
 from app.models.ticket_management import PromoCode
 from app.models.user import User
 from app.schemas.ticket_management import PromoCodeCreate, PromoCodeRead, PromoCodeUpdate
+from app.services.permission_service import PermissionService
 
 logger = get_logger(__name__)
 router = APIRouter()
+
+
+async def _require_event_access(
+    db: AsyncSession,
+    current_user: User,
+    event_id: uuid.UUID,
+) -> Event:
+    event_result = await db.execute(select(Event).where(Event.id == event_id))
+    event = event_result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    permission_service = PermissionService()
+    has_access = await permission_service.can_view_event(current_user, event.npo_id, db=db)
+    if not has_access:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    return event
 
 
 @router.post(
@@ -43,11 +62,7 @@ async def create_promo_code(
     - Usage limit optional (unlimited if None)
     """
     # Verify event access
-    result = await db.execute(
-        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    await _require_event_access(db, current_user, event_id)
 
     # Check duplicate code (case-insensitive)
     dup_result = await db.execute(
@@ -111,11 +126,7 @@ async def list_promo_codes(
     - include_inactive: Show inactive codes (default: false)
     """
     # Verify event access
-    result = await db.execute(
-        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    await _require_event_access(db, current_user, event_id)
 
     # Build query
     query = select(PromoCode).where(PromoCode.event_id == event_id)
@@ -143,14 +154,12 @@ async def get_promo_code(
 ) -> Any:
     """Get a single promo code by ID."""
     # Verify event access and get promo code
+    await _require_event_access(db, current_user, event_id)
     result = await db.execute(
-        select(PromoCode)
-        .join(PromoCode.event)
-        .where(
+        select(PromoCode).where(
             and_(
                 PromoCode.id == promo_id,
                 PromoCode.event_id == event_id,
-                Event.npo_id == current_user.npo_id,
             )
         )
     )
@@ -181,14 +190,12 @@ async def update_promo_code(
     - Can update dates, usage_limit, and is_active at any time
     """
     # Get promo code
+    await _require_event_access(db, current_user, event_id)
     result = await db.execute(
-        select(PromoCode)
-        .join(PromoCode.event)
-        .where(
+        select(PromoCode).where(
             and_(
                 PromoCode.id == promo_id,
                 PromoCode.event_id == event_id,
-                Event.npo_id == current_user.npo_id,
             )
         )
     )
@@ -258,14 +265,12 @@ async def delete_promo_code(
     - Cannot delete if already used
     """
     # Get promo code
+    await _require_event_access(db, current_user, event_id)
     result = await db.execute(
-        select(PromoCode)
-        .join(PromoCode.event)
-        .where(
+        select(PromoCode).where(
             and_(
                 PromoCode.id == promo_id,
                 PromoCode.event_id == event_id,
-                Event.npo_id == current_user.npo_id,
             )
         )
     )
@@ -308,11 +313,7 @@ async def validate_promo_code(
     Returns the promo code if valid, raises 404/400 if invalid.
     """
     # Verify event access
-    result = await db.execute(
-        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    await _require_event_access(db, current_user, event_id)
 
     # Find promo code (case-insensitive)
     promo_result = await db.execute(

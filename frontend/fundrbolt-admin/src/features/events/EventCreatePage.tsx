@@ -6,7 +6,7 @@
 import { NPOSelect } from '@/components/npo/npo-select'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useAuthStore } from '@/stores/auth-store'
+import { useAuth } from '@/hooks/use-auth'
 import { useEventStore } from '@/stores/event-store'
 import type { EventCreateRequest, EventUpdateRequest } from '@/types/event'
 import { useNavigate } from '@tanstack/react-router'
@@ -17,7 +17,7 @@ import { EventForm } from './components/EventForm'
 
 export function EventCreatePage() {
   const navigate = useNavigate()
-  const user = useAuthStore((state) => state.user)
+  const { isSuperAdmin, npoId } = useAuth()
   const { createEvent, loadNPOBranding, npoBranding, npoBrandingLoading } = useEventStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedNpoId, setSelectedNpoId] = useState<string>('')
@@ -25,15 +25,14 @@ export function EventCreatePage() {
   // Determine NPO ID based on user role
   // Super Admin: Must select NPO from dropdown
   // NPO Admin/Staff: Auto-use their npo_id
-  const isSuperAdmin = user?.role === 'super_admin'
-  const npoId = isSuperAdmin ? selectedNpoId : (user?.npo_id || '')
+  const effectiveNpoId = isSuperAdmin ? selectedNpoId : npoId || ''
 
   // Load NPO branding when NPO is selected/determined
   useEffect(() => {
-    if (npoId) {
-      loadNPOBranding(npoId)
+    if (effectiveNpoId) {
+      loadNPOBranding(effectiveNpoId)
     }
-  }, [npoId, loadNPOBranding])
+  }, [effectiveNpoId, loadNPOBranding])
 
   const handleSubmit = async (data: EventCreateRequest & Partial<EventUpdateRequest>) => {
     setIsSubmitting(true)
@@ -99,7 +98,7 @@ export function EventCreatePage() {
       )}
 
       {/* Step 2: Event Form (shown when NPO is selected/determined) */}
-      {npoId && !npoBrandingLoading && (
+      {effectiveNpoId && !npoBrandingLoading && (
         <Card>
           <CardHeader>
             <CardTitle>Event Details</CardTitle>
@@ -110,7 +109,7 @@ export function EventCreatePage() {
           </CardHeader>
           <CardContent>
             <EventForm
-              npoId={npoId}
+              npoId={effectiveNpoId}
               npoBranding={npoBranding}
               onSubmit={handleSubmit}
               onCancel={handleCancel}
@@ -121,7 +120,7 @@ export function EventCreatePage() {
       )}
 
       {/* Loading state while branding loads */}
-      {npoId && npoBrandingLoading && (
+      {effectiveNpoId && npoBrandingLoading && (
         <Card>
           <CardHeader>
             <CardTitle>Loading Organization Details...</CardTitle>
@@ -139,7 +138,7 @@ export function EventCreatePage() {
       )}
 
       {/* Auto-show form for non-super-admin users without NPO */}
-      {!isSuperAdmin && !user?.npo_id && (
+      {!isSuperAdmin && !npoId && (
         <Card>
           <CardHeader>
             <CardTitle>No Organization</CardTitle>

@@ -44,7 +44,21 @@ from app.services.password_service import PasswordService
 
 MAX_IMPORT_ROWS = 5000
 REQUIRED_HEADERS = ["full_name", "email", "role"]
-OPTIONAL_HEADERS = ["npo_identifier", "phone", "title", "password"]
+OPTIONAL_HEADERS = [
+    "npo_identifier",
+    "phone",
+    "title",
+    "password",
+    "organization_name",
+    "address_line1",
+    "address_line2",
+    "city",
+    "state",
+    "postal_code",
+    "country",
+    "profile_picture_url",
+    "social_media_links",
+]
 
 ROLE_ALIASES = {
     "super_admin": "super_admin",
@@ -57,7 +71,7 @@ ROLE_ALIASES = {
     "donor": "donor",
 }
 
-ALLOWED_IMPORT_ROLES = {"npo_admin", "event_coordinator"}
+ALLOWED_IMPORT_ROLES = {"npo_admin", "event_coordinator", "donor"}
 
 MEMBER_ROLE_BY_USER_ROLE = {
     "npo_admin": MemberRole.ADMIN,
@@ -95,7 +109,7 @@ class UserImportService:
 
     async def preflight(
         self,
-        npo_id: UUID,
+        npo_id: UUID | None,
         file_bytes: bytes,
         filename: str,
         initiated_by_user_id: UUID,
@@ -109,7 +123,10 @@ class UserImportService:
                 f"File contains {len(parsed_rows)} rows. Maximum allowed is {MAX_IMPORT_ROWS}."
             )
 
-        npo = await self._fetch_npo(npo_id)
+        npo_name = None
+        if npo_id is not None:
+            npo = await self._fetch_npo(npo_id)
+            npo_name = npo.name
 
         raw_emails = [self._normalize_email(row.data.get("email")) for row in parsed_rows]
         email_values: list[str] = [email for email in raw_emails if email is not None]
@@ -119,7 +136,7 @@ class UserImportService:
 
         validated_rows = self._validate_rows(
             parsed_rows=parsed_rows,
-            npo_name=npo.name,
+            npo_name=npo_name,
             existing_users=existing_users,
             existing_member_ids=existing_members,
             role_ids=role_ids,
@@ -177,7 +194,7 @@ class UserImportService:
 
     async def commit(
         self,
-        npo_id: UUID,
+        npo_id: UUID | None,
         preflight_id: str,
         file_bytes: bytes,
         initiated_by_user_id: UUID,
@@ -201,7 +218,10 @@ class UserImportService:
             raise UserImportError("Cannot import file with errors. Please fix errors and re-run.")
 
         parsed_rows = self._parse_file(file_bytes, batch.file_type)
-        npo = await self._fetch_npo(npo_id)
+        npo_name = None
+        if npo_id is not None:
+            npo = await self._fetch_npo(npo_id)
+            npo_name = npo.name
 
         raw_emails = [self._normalize_email(row.data.get("email")) for row in parsed_rows]
         email_values: list[str] = [email for email in raw_emails if email is not None]
@@ -213,7 +233,7 @@ class UserImportService:
 
         validated_rows = self._validate_rows(
             parsed_rows=parsed_rows,
-            npo_name=npo.name,
+            npo_name=npo_name,
             existing_users=existing_users,
             existing_member_ids=existing_member_ids,
             role_ids=role_ids,
@@ -259,6 +279,30 @@ class UserImportService:
             existing_user = existing_users.get(row.email)
 
             if existing_user:
+                if npo_id is None:
+                    skipped_rows += 1
+                    results.append(
+                        ImportRowResult(
+                            row_number=row.row_number,
+                            email=row.email,
+                            full_name=row.full_name,
+                            status=ImportRowStatus.SKIPPED,
+                            message="Skipped: user already exists",
+                        )
+                    )
+                    continue
+                if row.role == "donor":
+                    skipped_rows += 1
+                    results.append(
+                        ImportRowResult(
+                            row_number=row.row_number,
+                            email=row.email,
+                            full_name=row.full_name,
+                            status=ImportRowStatus.SKIPPED,
+                            message="Skipped: donor role does not add NPO membership",
+                        )
+                    )
+                    continue
                 if existing_user.id in existing_member_ids:
                     skipped_rows += 1
                     results.append(
@@ -325,14 +369,25 @@ class UserImportService:
             if not password:
                 password = self._generate_temp_password()
 
+            social_media_links = row.data.get("social_media_links")
             user = User(
                 email=row.email,
                 first_name=first_name,
                 last_name=last_name,
                 phone=str(row.data.get("phone") or "").strip() or None,
+                organization_name=str(row.data.get("organization_name") or "").strip() or None,
+                address_line1=str(row.data.get("address_line1") or "").strip() or None,
+                address_line2=str(row.data.get("address_line2") or "").strip() or None,
+                city=str(row.data.get("city") or "").strip() or None,
+                state=str(row.data.get("state") or "").strip() or None,
+                postal_code=str(row.data.get("postal_code") or "").strip() or None,
+                country=str(row.data.get("country") or "").strip() or None,
+                profile_picture_url=str(row.data.get("profile_picture_url") or "").strip() or None,
+                social_media_links=social_media_links
+                if isinstance(social_media_links, dict)
+                else None,
                 password_hash=hash_password(password),
                 role_id=role_ids[row.role],
-                npo_id=npo_id,
                 email_verified=True,
                 is_active=True,
             )
@@ -340,7 +395,7 @@ class UserImportService:
             await self.db.flush()
 
             member_role = MEMBER_ROLE_BY_USER_ROLE.get(row.role)
-            if member_role:
+            if member_role and npo_id is not None:
                 self.db.add(
                     NPOMember(
                         npo_id=npo_id,
@@ -545,6 +600,56 @@ class UserImportService:
             return None
         return str(value).strip().lower()
 
+    def _parse_social_media_links(
+        self, value: Any, row_number: int, errors: list[PreflightIssue]
+    ) -> dict[str, Any] | None:
+        if value is None:
+            return None
+
+        if isinstance(value, dict):
+            return value
+
+        if isinstance(value, str):
+            cleaned = value.strip()
+            if not cleaned:
+                return None
+            try:
+                parsed = json.loads(cleaned)
+            except json.JSONDecodeError:
+                errors.append(
+                    PreflightIssue(
+                        row_number=row_number,
+                        field_name="social_media_links",
+                        severity=IssueSeverity.ERROR,
+                        message="social_media_links must be valid JSON",
+                        raw_value=cleaned,
+                    )
+                )
+                return None
+            if not isinstance(parsed, dict):
+                errors.append(
+                    PreflightIssue(
+                        row_number=row_number,
+                        field_name="social_media_links",
+                        severity=IssueSeverity.ERROR,
+                        message="social_media_links must be a JSON object",
+                        raw_value=cleaned,
+                    )
+                )
+                return None
+            return parsed
+
+        errors.append(
+            PreflightIssue(
+                row_number=row_number,
+                field_name="social_media_links",
+                severity=IssueSeverity.ERROR,
+                message="social_media_links must be a JSON object",
+                raw_value=str(value),
+            )
+        )
+        return None
+
     def _split_full_name(self, full_name: str | None) -> tuple[str | None, str | None]:
         if not full_name:
             return None, None
@@ -579,8 +684,8 @@ class UserImportService:
         users = result.scalars().all()
         return {user.email: user for user in users}
 
-    async def _fetch_existing_members(self, npo_id: UUID, users: list[User]) -> set[UUID]:
-        if not users:
+    async def _fetch_existing_members(self, npo_id: UUID | None, users: list[User]) -> set[UUID]:
+        if not users or npo_id is None:
             return set()
         user_ids = [user.id for user in users]
         result = await self.db.execute(
@@ -603,13 +708,15 @@ class UserImportService:
             raise UserImportError(f"Unsupported roles: {', '.join(sorted(missing_roles))}")
         return role_map
 
-    async def _fetch_preflight_batch(self, npo_id: UUID, preflight_id: UUID) -> UserImportBatch:
-        result = await self.db.execute(
-            select(UserImportBatch).where(
-                UserImportBatch.id == preflight_id,
-                UserImportBatch.npo_id == npo_id,
-            )
-        )
+    async def _fetch_preflight_batch(
+        self, npo_id: UUID | None, preflight_id: UUID
+    ) -> UserImportBatch:
+        filters = [UserImportBatch.id == preflight_id]
+        if npo_id is None:
+            filters.append(UserImportBatch.npo_id.is_(None))
+        else:
+            filters.append(UserImportBatch.npo_id == npo_id)
+        result = await self.db.execute(select(UserImportBatch).where(*filters))
         batch = result.scalar_one_or_none()
         if not batch:
             raise UserImportError("Preflight batch not found")
@@ -618,7 +725,7 @@ class UserImportService:
     def _validate_rows(
         self,
         parsed_rows: list[ParsedRow],
-        npo_name: str,
+        npo_name: str | None,
         existing_users: dict[str, User],
         existing_member_ids: set[UUID],
         role_ids: dict[str, UUID],
@@ -715,7 +822,7 @@ class UserImportService:
                         row_number=row.row_number,
                         field_name="role",
                         severity=IssueSeverity.ERROR,
-                        message="Role must be NPO-scoped (NPO Admin or Event Coordinator)",
+                        message="Role must be NPO Admin, Event Coordinator, or Donor",
                         raw_value=role,
                     )
                 )
@@ -751,7 +858,7 @@ class UserImportService:
                 )
 
             npo_identifier = self._normalize_identifier(row.data.get("npo_identifier"))
-            if npo_identifier and npo_identifier != npo_name.lower():
+            if npo_name and npo_identifier and npo_identifier != npo_name.lower():
                 warnings.append(
                     PreflightIssue(
                         row_number=row.row_number,
@@ -762,9 +869,51 @@ class UserImportService:
                     )
                 )
 
+            if npo_name and role == "donor":
+                warnings.append(
+                    PreflightIssue(
+                        row_number=row.row_number,
+                        field_name="role",
+                        severity=IssueSeverity.WARNING,
+                        message=(
+                            "Donor role does not add NPO membership; user will be created "
+                            "without membership"
+                        ),
+                        raw_value=role,
+                    )
+                )
+
+            social_links = self._parse_social_media_links(
+                row.data.get("social_media_links"), row.row_number, errors
+            )
+            row.data["social_media_links"] = social_links
+
             if email and email in existing_users:
                 existing_user = existing_users[email]
-                if existing_user.id in existing_member_ids:
+                if not npo_name:
+                    warnings.append(
+                        PreflightIssue(
+                            row_number=row.row_number,
+                            field_name="email",
+                            severity=IssueSeverity.WARNING,
+                            message="User already exists and will be skipped",
+                            raw_value=email,
+                        )
+                    )
+                elif role == "donor":
+                    warnings.append(
+                        PreflightIssue(
+                            row_number=row.row_number,
+                            field_name="email",
+                            severity=IssueSeverity.WARNING,
+                            message=(
+                                "User already exists; donor role does not add NPO "
+                                "membership and will be skipped"
+                            ),
+                            raw_value=email,
+                        )
+                    )
+                elif existing_user.id in existing_member_ids:
                     warnings.append(
                         PreflightIssue(
                             row_number=row.row_number,

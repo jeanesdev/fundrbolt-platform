@@ -25,7 +25,12 @@ interface AuthUser {
   first_name: string
   last_name: string
   role: string
-  npo_id: string | null
+  npo_memberships: {
+    npo_id: string
+    npo_name: string
+    role: string
+    status: string
+  }[]
 }
 
 export interface UseAuthReturn {
@@ -34,6 +39,7 @@ export interface UseAuthReturn {
   isLoading: boolean
   role: UserRole | null
   npoId: string | null
+  npoMemberships: AuthUser['npo_memberships']
 
   // Role checks
   isSuperAdmin: boolean
@@ -52,7 +58,8 @@ export function useAuth(): UseAuthReturn {
   const { user, isAuthenticated, isLoading } = useAuthStore()
 
   const role = user?.role as UserRole | null
-  const npoId = user?.npo_id || null
+  const npoMemberships = user?.npo_memberships || []
+  const npoId = npoMemberships.length === 1 ? npoMemberships[0].npo_id : null
 
   // Role checks
   const isSuperAdmin = role === 'super_admin'
@@ -79,6 +86,7 @@ export function useAuth(): UseAuthReturn {
     isLoading,
     role,
     npoId,
+    npoMemberships,
     isSuperAdmin,
     isNpoAdmin,
     isEventCoordinator,

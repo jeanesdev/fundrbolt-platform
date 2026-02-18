@@ -20,6 +20,7 @@ from app.services.admin_guest_service import AdminGuestService
 from app.services.application_service import ApplicationService
 from app.services.email_service import get_email_service
 from app.services.event_registration_service import EventRegistrationService
+from app.services.permission_service import PermissionService
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -54,7 +55,7 @@ def require_superadmin(current_user: Annotated[User, Depends(get_current_user)])
     return current_user
 
 
-def _require_event_admin(current_user: User, event: Event) -> None:
+async def _require_event_admin(db: AsyncSession, current_user: User, event: Event) -> None:
     allowed_roles = {
         "super_admin",
         "npo_admin",
@@ -70,7 +71,8 @@ def _require_event_admin(current_user: User, event: Event) -> None:
         )
 
     if user_role != "super_admin":
-        if getattr(current_user, "npo_id", None) != event.npo_id:
+        permission_service = PermissionService()
+        if not await permission_service.can_view_event(current_user, event.npo_id, db=db):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to manage this event.",
@@ -301,7 +303,7 @@ async def get_event_attendees(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
-    _require_event_admin(current_user, event)
+    await _require_event_admin(db, current_user, event)
 
     result = await AdminGuestService.get_event_attendees(
         db=db,
@@ -340,7 +342,7 @@ async def cancel_registration_admin(
             detail=f"Registration with ID {registration_id} not found",
         )
 
-    _require_event_admin(current_user, registration.event)
+    await _require_event_admin(db, current_user, registration.event)
 
     await EventRegistrationService.cancel_registration_admin(
         db,
@@ -381,7 +383,7 @@ async def get_meal_summary(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
-    _require_event_admin(current_user, event)
+    await _require_event_admin(db, current_user, event)
 
     return await AdminGuestService.get_meal_summary(db=db, event_id=event_id)
 
@@ -422,7 +424,7 @@ async def invite_guest_to_event(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
-    _require_event_admin(current_user, event)
+    await _require_event_admin(db, current_user, event)
 
     email_service = get_email_service()
     guest, email_sent = await AdminGuestService.invite_guest_to_event(
@@ -483,7 +485,7 @@ async def delete_guest(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Guest not found")
 
-    _require_event_admin(current_user, event)
+    await _require_event_admin(db, current_user, event)
 
     await AdminGuestService.delete_guest(
         db=db,
@@ -532,7 +534,7 @@ async def send_guest_invitation(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Guest not found")
 
-    _require_event_admin(current_user, event)
+    await _require_event_admin(db, current_user, event)
 
     email_service = get_email_service()
     success = await AdminGuestService.send_guest_invitation(

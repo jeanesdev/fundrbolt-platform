@@ -8,6 +8,8 @@ These tests verify:
 - Authorization rules are enforced
 """
 
+from typing import Any
+
 import pytest
 from httpx import AsyncClient
 
@@ -17,7 +19,7 @@ class TestUsersUpdateContract:
 
     @pytest.mark.asyncio
     async def test_update_user_with_organization_and_address(
-        self, super_admin_client: AsyncClient
+        self, super_admin_client: AsyncClient, test_approved_npo: Any
     ) -> None:
         """Test updating user with organization and address fields.
 
@@ -31,6 +33,7 @@ class TestUsersUpdateContract:
             "first_name": "Update",
             "last_name": "Test",
             "role": "staff",
+            "npo_id": str(test_approved_npo.id),
         }
         create_response = await super_admin_client.post("/api/v1/users", json=create_payload)
         assert create_response.status_code == 201
@@ -67,7 +70,7 @@ class TestUsersUpdateContract:
 
     @pytest.mark.asyncio
     async def test_update_user_partial_address_fields(
-        self, super_admin_client: AsyncClient
+        self, super_admin_client: AsyncClient, test_approved_npo: Any
     ) -> None:
         """Test updating only some address fields leaves others unchanged.
 
@@ -81,6 +84,7 @@ class TestUsersUpdateContract:
             "first_name": "Partial",
             "last_name": "Test",
             "role": "staff",
+            "npo_id": str(test_approved_npo.id),
             "organization_name": "Original Org",
             "city": "San Francisco",
             "state": "California",
@@ -112,7 +116,9 @@ class TestUsersUpdateContract:
         assert data["postal_code"] is None
 
     @pytest.mark.asyncio
-    async def test_update_user_clear_address_fields(self, super_admin_client: AsyncClient) -> None:
+    async def test_update_user_clear_address_fields(
+        self, super_admin_client: AsyncClient, test_approved_npo: Any
+    ) -> None:
         """Test clearing address fields by setting to null/empty.
 
         Contract: PATCH /api/v1/users/{user_id}
@@ -125,6 +131,7 @@ class TestUsersUpdateContract:
             "first_name": "Clear",
             "last_name": "Test",
             "role": "staff",
+            "npo_id": str(test_approved_npo.id),
             "organization_name": "To Be Cleared",
             "address_line1": "123 Main St",
             "city": "Seattle",
@@ -152,7 +159,7 @@ class TestUsersUpdateContract:
 
     @pytest.mark.asyncio
     async def test_update_user_address_max_length_validation(
-        self, super_admin_client: AsyncClient
+        self, super_admin_client: AsyncClient, test_approved_npo: Any
     ) -> None:
         """Test address field max length validation on update.
 
@@ -166,6 +173,7 @@ class TestUsersUpdateContract:
             "first_name": "Valid",
             "last_name": "Test",
             "role": "staff",
+            "npo_id": str(test_approved_npo.id),
         }
         create_response = await super_admin_client.post("/api/v1/users", json=create_payload)
         assert create_response.status_code == 201

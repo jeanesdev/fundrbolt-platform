@@ -17,9 +17,14 @@ Permission caching:
 """
 
 import uuid
-from typing import Any
+from typing import Any, cast
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.redis import get_redis
+from app.models.npo_member import MemberStatus, NPOMember
+from app.services.npo_permission_service import NPOPermissionService
 
 
 class PermissionService:
@@ -29,10 +34,10 @@ class PermissionService:
     PERMISSION_CACHE_TTL = 300
 
     # Roles that require npo_id
-    ROLES_REQUIRING_NPO = {"npo_admin", "event_coordinator"}
+    ROLES_REQUIRING_NPO = {"npo_admin", "event_coordinator", "staff"}
 
     # Roles that forbid npo_id
-    ROLES_FORBIDDING_NPO = {"donor", "staff"}
+    ROLES_FORBIDDING_NPO = {"donor"}
 
     # Roles that can view users
     ROLES_CAN_VIEW_USERS = {"super_admin", "npo_admin", "event_coordinator"}
@@ -42,6 +47,9 @@ class PermissionService:
 
     # Roles that can assign roles
     ROLES_CAN_ASSIGN_ROLES = {"super_admin", "npo_admin", "event_coordinator"}
+
+    def __init__(self) -> None:
+        self.npo_permission_service = NPOPermissionService()
 
     async def _get_cached_permission(self, cache_key: str) -> bool | None:
         """Get permission result from cache.
@@ -95,7 +103,12 @@ class PermissionService:
             # If Redis fails, cache will expire naturally
             pass
 
-    async def can_view_user(self, user: Any, target_user_npo_id: uuid.UUID | None) -> bool:
+    async def can_view_user(
+        self,
+        user: Any,
+        target_user_npo_id: uuid.UUID | None,
+        db: AsyncSession | None = None,
+    ) -> bool:
         """Check if user can view a target user.
 
         Args:
@@ -124,16 +137,25 @@ class PermissionService:
         elif user.role_name == "super_admin":
             result = True
         elif user.role_name in {"npo_admin", "event_coordinator"}:
-            if user.npo_id is None:
+            if target_user_npo_id is None:
                 result = False
+            elif db is None:
+                result = getattr(user, "npo_id", None) == target_user_npo_id
             else:
-                result = bool(target_user_npo_id == user.npo_id)
+                result = await self.npo_permission_service.is_npo_member(
+                    db, user, target_user_npo_id
+                )
 
         # Cache and return
         await self._set_cached_permission(cache_key, result)
         return result
 
-    async def can_create_user(self, user: Any, target_npo_id: uuid.UUID | None) -> bool:
+    async def can_create_user(
+        self,
+        user: Any,
+        target_npo_id: uuid.UUID | None,
+        db: AsyncSession | None = None,
+    ) -> bool:
         """Check if user can create a new user.
 
         Args:
@@ -162,15 +184,19 @@ class PermissionService:
         elif user.role_name == "super_admin":
             result = True
         elif user.role_name == "npo_admin":
-            if user.npo_id is None:
-                result = False
+            if target_npo_id is None:
+                result = True
+            elif db is None:
+                result = getattr(user, "npo_id", None) == target_npo_id
             else:
-                result = target_npo_id is None or target_npo_id == user.npo_id
+                result = await self.npo_permission_service.can_manage_npo(db, user, target_npo_id)
         elif user.role_name == "event_coordinator":
-            if user.npo_id is None:
+            if target_npo_id is None:
                 result = False
+            elif db is None:
+                result = getattr(user, "npo_id", None) == target_npo_id
             else:
-                result = bool(target_npo_id == user.npo_id)
+                result = await self.npo_permission_service.is_npo_member(db, user, target_npo_id)
 
         # Cache and return
         await self._set_cached_permission(cache_key, result)
@@ -213,7 +239,12 @@ class PermissionService:
         await self._set_cached_permission(cache_key, result)
         return result
 
-    async def can_modify_user(self, user: Any, target_user_npo_id: uuid.UUID | None) -> bool:
+    async def can_modify_user(
+        self,
+        user: Any,
+        target_user_npo_id: uuid.UUID | None,
+        db: AsyncSession | None = None,
+    ) -> bool:
         """Check if user can modify (update/delete) a target user.
 
         Args:
@@ -239,10 +270,14 @@ class PermissionService:
         if user.role_name == "super_admin":
             result = True
         elif user.role_name == "npo_admin":
-            if user.npo_id is None:
-                result = False
+            if target_user_npo_id is None:
+                result = True
+            elif db is None:
+                result = getattr(user, "npo_id", None) == target_user_npo_id
             else:
-                result = target_user_npo_id is None or target_user_npo_id == user.npo_id
+                result = await self.npo_permission_service.can_manage_npo(
+                    db, user, target_user_npo_id
+                )
 
         # Cache and return
         await self._set_cached_permission(cache_key, result)
@@ -290,7 +325,12 @@ class PermissionService:
 
         return True, None
 
-    async def can_view_npo(self, user: Any, target_npo_id: uuid.UUID) -> bool:
+    async def can_view_npo(
+        self,
+        user: Any,
+        target_npo_id: uuid.UUID,
+        db: AsyncSession | None = None,
+    ) -> bool:
         """Check if user can view a specific NPO.
 
         Args:
@@ -316,15 +356,20 @@ class PermissionService:
         if user.role_name == "super_admin":
             result = True
         elif user.role_name in {"npo_admin", "event_coordinator", "staff"}:
-            if user.npo_id is None:
+            if db is None:
                 result = False
             else:
-                result = bool(target_npo_id == user.npo_id)
+                result = await self.npo_permission_service.is_npo_member(db, user, target_npo_id)
 
         await self._set_cached_permission(cache_key, result)
         return result
 
-    async def can_modify_npo(self, user: Any, target_npo_id: uuid.UUID) -> bool:
+    async def can_modify_npo(
+        self,
+        user: Any,
+        target_npo_id: uuid.UUID,
+        db: AsyncSession | None = None,
+    ) -> bool:
         """Check if user can modify (update/delete) a specific NPO.
 
         Args:
@@ -349,15 +394,20 @@ class PermissionService:
         if user.role_name == "super_admin":
             result = True
         elif user.role_name == "npo_admin":
-            if user.npo_id is None:
+            if db is None:
                 result = False
             else:
-                result = bool(target_npo_id == user.npo_id)
+                result = await self.npo_permission_service.can_manage_npo(db, user, target_npo_id)
 
         await self._set_cached_permission(cache_key, result)
         return result
 
-    async def can_view_event(self, user: Any, event_npo_id: uuid.UUID) -> bool:
+    async def can_view_event(
+        self,
+        user: Any,
+        event_npo_id: uuid.UUID,
+        db: AsyncSession | None = None,
+    ) -> bool:
         """Check if user can view an event.
 
         Args:
@@ -382,16 +432,19 @@ class PermissionService:
         if user.role_name == "super_admin":
             result = True
         elif user.role_name in {"npo_admin", "event_coordinator", "staff"}:
-            if user.npo_id is None:
+            if db is None:
                 result = False
             else:
-                result = bool(event_npo_id == user.npo_id)
+                result = await self.npo_permission_service.is_npo_member(db, user, event_npo_id)
 
         await self._set_cached_permission(cache_key, result)
         return result
 
-    def get_npo_filter_for_user(
-        self, user: Any, requested_npo_id: uuid.UUID | None = None
+    async def get_npo_filter_for_user(
+        self,
+        db: AsyncSession | None,
+        user: Any,
+        requested_npo_id: uuid.UUID | None = None,
     ) -> uuid.UUID | None:
         """Get NPO filter to apply for list queries based on user role.
 
@@ -410,12 +463,28 @@ class PermissionService:
             - staff: Always filter to user.npo_id (ignore requested_npo_id)
         """
         if user.role_name == "super_admin":
-            # SuperAdmin respects NPO context selector
             return requested_npo_id
-        elif user.role_name in {"npo_admin", "event_coordinator", "staff"}:
-            # All other roles locked to their NPO
-            npo_id: uuid.UUID | None = user.npo_id
-            return npo_id
-        else:
-            # Donor role should never reach here (blocked at route level)
-            return None
+
+        if requested_npo_id is None:
+            if db is None:
+                raise PermissionError("Database session required for NPO scoping")
+
+            member_stmt = select(NPOMember.npo_id).where(
+                NPOMember.user_id == user.id,
+                NPOMember.status == MemberStatus.ACTIVE,
+            )
+            member_result = await db.execute(member_stmt)
+            npo_ids = list({cast(uuid.UUID, row[0]) for row in member_result.all()})
+
+            if len(npo_ids) == 1:
+                return npo_ids[0]
+
+            raise PermissionError("npo_id is required for non-super_admin users")
+
+        if db is None:
+            raise PermissionError("Database session required for NPO scoping")
+
+        if not await self.npo_permission_service.is_npo_member(db, user, requested_npo_id):
+            raise PermissionError("Insufficient permissions to access this NPO")
+
+        return requested_npo_id

@@ -23,12 +23,13 @@ from app.services.auction_bid_import_service import (
     AuctionBidImportService,
 )
 from app.services.audit_service import AuditService
+from app.services.permission_service import PermissionService
 
 router = APIRouter(prefix="/admin/events", tags=["admin-auction-bids-import"])
 logger = get_logger(__name__)
 
 
-def _require_event_admin(current_user: User, event: Event) -> None:
+async def _require_event_admin(db: AsyncSession, current_user: User, event: Event) -> None:
     if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:  # type: ignore[attr-defined]
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -36,7 +37,8 @@ def _require_event_admin(current_user: User, event: Event) -> None:
         )
 
     if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-        if hasattr(current_user, "npo_id") and current_user.npo_id != event.npo_id:
+        permission_service = PermissionService()
+        if not await permission_service.can_view_event(current_user, event.npo_id, db=db):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to manage this event.",
@@ -58,7 +60,7 @@ async def get_auction_bid_dashboard(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
-    _require_event_admin(current_user, event)
+    await _require_event_admin(db, current_user, event)
 
     service = AuctionBidImportService(db)
     return await service.get_dashboard(event_id)
@@ -80,7 +82,7 @@ async def preflight_auction_bid_import(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
-    _require_event_admin(current_user, event)
+    await _require_event_admin(db, current_user, event)
 
     try:
         file_bytes = await file.read()
@@ -142,7 +144,7 @@ async def confirm_auction_bid_import(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
-    _require_event_admin(current_user, event)
+    await _require_event_admin(db, current_user, event)
 
     try:
         file_bytes = await file.read()

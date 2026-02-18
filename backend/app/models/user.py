@@ -33,8 +33,8 @@ class User(Base, UUIDMixin, TimestampMixin):
     - Email must be unique and lowercase
     - Email verification required before login (email_verified=true AND is_active=true)
     - Password hashed with bcrypt (12+ rounds)
-    - NPO Admin and Event Coordinator roles MUST have npo_id set
-    - Staff and Donor roles MUST NOT have npo_id (staff use event assignments)
+    - NPO Admin and Event Coordinator roles MUST have active memberships
+    - Staff and Donor roles MUST NOT rely on a primary NPO
     - Default role on registration: "donor"
     - Organization name and address fields are optional for users who wish to provide
       business/organization information
@@ -97,10 +97,6 @@ class User(Base, UUIDMixin, TimestampMixin):
         ForeignKey("roles.id"),
         nullable=False,
         index=True,
-    )
-    npo_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        nullable=True,  # FK to organizations table (will be added when that table exists)
     )
 
     # Last login tracking

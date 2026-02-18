@@ -19,11 +19,34 @@ from app.schemas.ticket_management import (
     TicketPackageReorder,
     TicketPackageUpdate,
 )
+from app.services.permission_service import PermissionService
 from app.services.ticket_audit_service import TicketAuditService
 from app.services.ticket_image_service import ImageService
 
 logger = get_logger(__name__)
 router = APIRouter()
+
+
+async def _require_event_access(
+    db: AsyncSession,
+    current_user: User,
+    event_id: uuid.UUID,
+    *,
+    not_found_on_forbidden: bool,
+) -> Event:
+    event_result = await db.execute(select(Event).where(Event.id == event_id))
+    event = event_result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    permission_service = PermissionService()
+    has_access = await permission_service.can_view_event(current_user, event.npo_id, db=db)
+    if not has_access:
+        if not_found_on_forbidden:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    return event
 
 
 @router.post(
@@ -40,11 +63,7 @@ async def create_ticket_package(
 ) -> Any:
     """Create a new ticket package."""
     # Verify event access
-    result = await db.execute(
-        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    await _require_event_access(db, current_user, event_id, not_found_on_forbidden=True)
 
     # Check duplicate name
     dup_result = await db.execute(
@@ -109,11 +128,7 @@ async def list_ticket_packages(
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """List packages with availability status."""
-    result = await db.execute(
-        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    await _require_event_access(db, current_user, event_id, not_found_on_forbidden=True)
 
     query = select(TicketPackage).where(TicketPackage.event_id == event_id)
     if not include_disabled:
@@ -144,11 +159,7 @@ async def get_ticket_package(
     if not package:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
 
-    result = await db.execute(
-        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    await _require_event_access(db, current_user, event_id, not_found_on_forbidden=False)
 
     return TicketPackageRead.from_orm_with_availability(package)
 
@@ -171,11 +182,7 @@ async def update_ticket_package(
     if not package:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
 
-    result = await db.execute(
-        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    await _require_event_access(db, current_user, event_id, not_found_on_forbidden=False)
 
     # Optimistic locking
     if package.version != package_data.version:
@@ -242,11 +249,7 @@ async def delete_ticket_package(
     if not package:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
 
-    result = await db.execute(
-        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    await _require_event_access(db, current_user, event_id, not_found_on_forbidden=False)
 
     if package.sold_count > 0:
         raise HTTPException(
@@ -292,11 +295,7 @@ async def upload_package_image(
     if not package:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
 
-    result = await db.execute(
-        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    await _require_event_access(db, current_user, event_id, not_found_on_forbidden=False)
 
     try:
         # Use ImageService to upload
@@ -348,11 +347,7 @@ async def delete_package_image(
     if not package:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
 
-    result = await db.execute(
-        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    await _require_event_access(db, current_user, event_id, not_found_on_forbidden=False)
 
     if not package.image_url:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No image to delete")
@@ -402,11 +397,7 @@ async def reorder_packages(
     )
 
     # Verify event access
-    result = await db.execute(
-        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    await _require_event_access(db, current_user, event_id, not_found_on_forbidden=True)
 
     # Fetch all packages for this event to validate IDs
     packages_result = await db.execute(

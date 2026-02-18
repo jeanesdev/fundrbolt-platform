@@ -1,13 +1,15 @@
 """Admin endpoints for user import."""
 
-from typing import Annotated
+from typing import Annotated, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.middleware.auth import get_current_user, require_role
+from app.models.npo_member import MemberStatus, NPOMember
 from app.models.user import User
 from app.schemas.user_import import (
     ErrorReportRequest,
@@ -16,6 +18,7 @@ from app.schemas.user_import import (
     PreflightResult,
 )
 from app.services.audit_service import AuditService
+from app.services.npo_permission_service import NPOPermissionService
 from app.services.user_import_service import UserImportError, UserImportService
 
 router = APIRouter(prefix="/admin/users/import", tags=["admin-user-import"])
@@ -37,30 +40,37 @@ def _get_user_id(current_user: User) -> UUID:
     )
 
 
-def _resolve_npo_id(current_user: User, requested_npo_id: UUID | None) -> UUID:
+async def _resolve_npo_id(
+    db: AsyncSession, current_user: User, requested_npo_id: UUID | None
+) -> UUID | None:
     """Resolve target NPO id for imports based on user permissions."""
     role_name = getattr(current_user, "role_name", "unknown")
     if role_name == "super_admin":
-        if not requested_npo_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="npo_id is required for user import",
-            )
         return requested_npo_id
 
-    if current_user.npo_id is None:
+    if requested_npo_id is None:
+        member_stmt = select(NPOMember.npo_id).where(
+            NPOMember.user_id == current_user.id,
+            NPOMember.status == MemberStatus.ACTIVE,
+        )
+        member_result = await db.execute(member_stmt)
+        npo_ids = list({cast(UUID, row[0]) for row in member_result.all()})
+        if len(npo_ids) == 1:
+            return npo_ids[0]
+
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="NPO context is required for user import",
         )
 
-    if requested_npo_id and requested_npo_id != current_user.npo_id:
+    permission_service = NPOPermissionService()
+    if not await permission_service.is_npo_member(db, current_user, requested_npo_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to manage this NPO",
         )
 
-    return current_user.npo_id
+    return requested_npo_id
 
 
 @router.post("/preflight", response_model=PreflightResult, status_code=status.HTTP_200_OK)
@@ -82,7 +92,7 @@ async def preflight_user_import(
     if not file.filename:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Filename is required")
 
-    target_npo_id = _resolve_npo_id(current_user, npo_id)
+    target_npo_id = await _resolve_npo_id(db, current_user, npo_id)
 
     try:
         file_bytes = await file.read()
@@ -134,7 +144,7 @@ async def commit_user_import(
     if not file.filename:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Filename is required")
 
-    target_npo_id = _resolve_npo_id(current_user, npo_id)
+    target_npo_id = await _resolve_npo_id(db, current_user, npo_id)
 
     try:
         file_bytes = await file.read()

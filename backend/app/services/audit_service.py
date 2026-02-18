@@ -1399,7 +1399,7 @@ class AuditService:
     @staticmethod
     async def log_user_import(
         db: AsyncSession,
-        npo_id: uuid.UUID,
+        npo_id: uuid.UUID | None,
         initiated_by_user_id: uuid.UUID,
         stage: str,
         total_rows: int,
@@ -1418,7 +1418,7 @@ class AuditService:
             ip_address=ip_address or "unknown",
             user_agent=None,
             event_metadata={
-                "npo_id": str(npo_id),
+                "npo_id": str(npo_id) if npo_id else None,
                 "stage": stage,
                 "total_rows": total_rows,
                 "created_count": created_count,
@@ -1434,7 +1434,7 @@ class AuditService:
             "User import",
             extra={
                 "event_type": AuditEventType.USER_IMPORT.value,
-                "npo_id": str(npo_id),
+                "npo_id": str(npo_id) if npo_id else None,
                 "stage": stage,
                 "total_rows": total_rows,
                 "created_count": created_count,

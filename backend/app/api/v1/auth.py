@@ -92,6 +92,8 @@ async def register(
             # Continue with registration - user can resend verification email later
 
         # Build response
+        npo_memberships = await AuthService.get_active_npo_memberships(db, user.id)
+        primary_npo_id = npo_memberships[0].npo_id if len(npo_memberships) == 1 else None
         user_public = UserPublic(
             id=user.id,
             email=user.email,
@@ -109,7 +111,8 @@ async def register(
             email_verified=user.email_verified,
             is_active=user.is_active,
             role="donor",  # Hardcoded until Role model exists
-            npo_id=user.npo_id,
+            npo_id=primary_npo_id,
+            npo_memberships=npo_memberships,
             created_at=user.created_at,
         )
 
@@ -280,6 +283,8 @@ async def refresh_token(
         )
 
         # Construct UserPublic manually (role needs to be serialized as string)
+        npo_memberships = await AuthService.get_active_npo_memberships(db, user.id)
+        primary_npo_id = npo_memberships[0].npo_id if len(npo_memberships) == 1 else None
         user_public = UserPublic(
             id=user.id,
             email=user.email,
@@ -297,7 +302,8 @@ async def refresh_token(
             email_verified=user.email_verified,
             is_active=user.is_active,
             role=user.role.name,
-            npo_id=user.npo_id,
+            npo_id=primary_npo_id,
+            npo_memberships=npo_memberships,
             created_at=user.created_at,
         )
 

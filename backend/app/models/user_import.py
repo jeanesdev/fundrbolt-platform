@@ -38,10 +38,10 @@ class UserImportBatch(Base, UUIDMixin):
 
     __tablename__ = "user_import_batches"
 
-    npo_id: Mapped[uuid.UUID] = mapped_column(
+    npo_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("npos.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
     initiated_by_user_id: Mapped[uuid.UUID] = mapped_column(

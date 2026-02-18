@@ -17,9 +17,30 @@ from app.schemas.ticket_management import (
     CustomTicketOptionRead,
     CustomTicketOptionUpdate,
 )
+from app.services.permission_service import PermissionService
 
 logger = get_logger(__name__)
 router = APIRouter()
+
+
+async def _get_package_with_access(
+    db: AsyncSession,
+    current_user: User,
+    package_id: uuid.UUID,
+) -> TicketPackage:
+    result = await db.execute(
+        select(TicketPackage).join(TicketPackage.event).where(TicketPackage.id == package_id)
+    )
+    package = result.scalar_one_or_none()
+    if not package:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
+
+    permission_service = PermissionService()
+    has_access = await permission_service.can_view_event(current_user, package.event.npo_id, db=db)
+    if not has_access:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
+
+    return package
 
 
 @router.post(
@@ -42,19 +63,7 @@ async def create_custom_option(
     - display_order is auto-assigned if not provided
     """
     # Verify package access
-    result = await db.execute(
-        select(TicketPackage)
-        .join(TicketPackage.event)
-        .where(
-            and_(
-                TicketPackage.id == package_id,
-                TicketPackage.event.has(npo_id=current_user.npo_id),
-            )
-        )
-    )
-    package = result.scalar_one_or_none()
-    if not package:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
+    await _get_package_with_access(db, current_user, package_id)
 
     # Check 4-option limit
     count_result = await db.execute(
@@ -97,18 +106,7 @@ async def list_custom_options(
 ) -> Any:
     """List all custom options for a package."""
     # Verify package access
-    result = await db.execute(
-        select(TicketPackage)
-        .join(TicketPackage.event)
-        .where(
-            and_(
-                TicketPackage.id == package_id,
-                TicketPackage.event.has(npo_id=current_user.npo_id),
-            )
-        )
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
+    await _get_package_with_access(db, current_user, package_id)
 
     # Fetch options
     options_result = await db.execute(
@@ -131,17 +129,12 @@ async def get_custom_option(
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """Get a single custom option."""
+    await _get_package_with_access(db, current_user, package_id)
     result = await db.execute(
-        select(CustomTicketOption)
-        .join(CustomTicketOption.ticket_package)
-        .join(CustomTicketOption.ticket_package.event)
-        .where(
+        select(CustomTicketOption).where(
             and_(
                 CustomTicketOption.id == option_id,
                 CustomTicketOption.ticket_package_id == package_id,
-                CustomTicketOption.ticket_package.has(
-                    TicketPackage.event.has(npo_id=current_user.npo_id)
-                ),
             )
         )
     )
@@ -167,15 +160,12 @@ async def update_custom_option(
     Note: Cannot update if option has responses from donors.
     """
     # Verify package access and fetch option
+    await _get_package_with_access(db, current_user, package_id)
     result = await db.execute(
-        select(CustomTicketOption)
-        .join(TicketPackage, CustomTicketOption.ticket_package_id == TicketPackage.id)
-        .join(TicketPackage.event)
-        .where(
+        select(CustomTicketOption).where(
             and_(
                 CustomTicketOption.id == option_id,
                 CustomTicketOption.ticket_package_id == package_id,
-                TicketPackage.event.has(npo_id=current_user.npo_id),
             )
         )
     )
@@ -232,17 +222,12 @@ async def delete_custom_option(
     Note: Cannot delete if option has responses from donors.
     """
     # Fetch option
+    await _get_package_with_access(db, current_user, package_id)
     result = await db.execute(
-        select(CustomTicketOption)
-        .join(CustomTicketOption.ticket_package)
-        .join(CustomTicketOption.ticket_package.event)
-        .where(
+        select(CustomTicketOption).where(
             and_(
                 CustomTicketOption.id == option_id,
                 CustomTicketOption.ticket_package_id == package_id,
-                CustomTicketOption.ticket_package.has(
-                    TicketPackage.event.has(npo_id=current_user.npo_id)
-                ),
             )
         )
     )

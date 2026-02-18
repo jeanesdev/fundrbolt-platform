@@ -59,7 +59,7 @@ export interface ErrorReportResponse {
 }
 
 export async function preflightUserImport(
-  npoId: string,
+  npoId: string | null | undefined,
   file: File,
   signal?: AbortSignal
 ): Promise<PreflightResult> {
@@ -73,9 +73,7 @@ export async function preflightUserImport(
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-      params: {
-        npo_id: npoId,
-      },
+      params: npoId ? { npo_id: npoId } : undefined,
       signal,
     }
   )
@@ -84,7 +82,7 @@ export async function preflightUserImport(
 }
 
 export async function commitUserImport(
-  npoId: string,
+  npoId: string | null | undefined,
   preflightId: string,
   file: File,
   signal?: AbortSignal
@@ -101,9 +99,7 @@ export async function commitUserImport(
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-      params: {
-        npo_id: npoId,
-      },
+      params: npoId ? { npo_id: npoId } : undefined,
       signal,
     }
   )
@@ -122,8 +118,8 @@ export async function buildUserImportErrorReport(
 }
 
 export const USER_IMPORT_EXAMPLE_CSV =
-  'full_name,email,role,npo_identifier,phone,title,password\n' +
-  'Jordan Lee,jordan.lee@example.org,npo_admin,Hope Rising Foundation,555-123-4567,Development Director,\n'
+  'full_name,email,role,npo_identifier,phone,title,organization_name,address_line1,address_line2,city,state,postal_code,country,profile_picture_url,social_media_links,password\n' +
+  'Jordan Lee,jordan.lee@example.org,npo_admin,Hope Rising Foundation,555-123-4567,Development Director,Hope Rising Foundation,123 Hope St,Suite 200,Denver,CO,80202,USA,https://cdn.example.org/jordan.jpg,"{""linkedin"":""https://linkedin.com/in/jordan"",""website"":""https://hoperising.org""}",\n'
 
 export const USER_IMPORT_EXAMPLE_JSON = `[
   {
@@ -133,6 +129,18 @@ export const USER_IMPORT_EXAMPLE_JSON = `[
     "npo_identifier": "Hope Rising Foundation",
     "phone": "555-123-4567",
     "title": "Development Director",
+    "organization_name": "Hope Rising Foundation",
+    "address_line1": "123 Hope St",
+    "address_line2": "Suite 200",
+    "city": "Denver",
+    "state": "CO",
+    "postal_code": "80202",
+    "country": "USA",
+    "profile_picture_url": "https://cdn.example.org/jordan.jpg",
+    "social_media_links": {
+      "linkedin": "https://linkedin.com/in/jordan",
+      "website": "https://hoperising.org"
+    },
     "password": ""
   }
 ]`
