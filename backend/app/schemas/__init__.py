@@ -1,5 +1,15 @@
 """Pydantic schemas package."""
 
+from app.schemas.auction_bid_import import (
+    AuctionBidDashboardHighestBid,
+    AuctionBidDashboardRecentBid,
+    AuctionBidDashboardResponse,
+    AuctionBidImportConfirmRequest,
+    AuctionBidImportIssue,
+    AuctionBidImportIssueSeverity,
+    AuctionBidImportSummary,
+    AuctionBidPreflightResult,
+)
 from app.schemas.auth import (
     LoginRequest,
     LoginResponse,
@@ -181,4 +191,12 @@ __all__ = [
     "RegistrationGuestListResponse",
     "RegistrationGuestResponse",
     "RegistrationGuestUpdateRequest",
+    "AuctionBidDashboardHighestBid",
+    "AuctionBidDashboardRecentBid",
+    "AuctionBidDashboardResponse",
+    "AuctionBidImportConfirmRequest",
+    "AuctionBidImportIssue",
+    "AuctionBidImportIssueSeverity",
+    "AuctionBidImportSummary",
+    "AuctionBidPreflightResult",
 ]

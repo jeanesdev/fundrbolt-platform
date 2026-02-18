@@ -23,18 +23,35 @@ const apiClient = axios.create({
   timeout: 30000, // 30 seconds
 })
 
+const logAuth = (message: string, payload?: Record<string, unknown>) => {
+  // eslint-disable-next-line no-console
+  console.info(`[auth-refresh] ${message}`, payload)
+}
+
 // Flag to prevent multiple simultaneous refresh requests
 let isRefreshing = false
-let refreshSubscribers: Array<(token: string) => void> = []
+let refreshSubscribers: Array<{
+  resolve: (token: string) => void
+  reject: (error: AxiosError | Error) => void
+}> = []
 
 // Add subscriber to queue waiting for token refresh
-const subscribeTokenRefresh = (callback: (token: string) => void) => {
-  refreshSubscribers.push(callback)
+const subscribeTokenRefresh = (
+  resolve: (token: string) => void,
+  reject: (error: AxiosError | Error) => void
+) => {
+  refreshSubscribers.push({ resolve, reject })
 }
 
 // Notify all subscribers when token is refreshed
 const onTokenRefreshed = (token: string) => {
-  refreshSubscribers.forEach((callback) => callback(token))
+  refreshSubscribers.forEach(({ resolve }) => resolve(token))
+  refreshSubscribers = []
+}
+
+// Reject all subscribers when refresh fails
+const onTokenRefreshFailed = (error: AxiosError | Error) => {
+  refreshSubscribers.forEach(({ reject }) => reject(error))
   refreshSubscribers = []
 }
 
@@ -47,6 +64,11 @@ apiClient.interceptors.request.use(
     // Add Authorization header if token exists
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+
+    if (config.data instanceof FormData && config.headers) {
+      delete (config.headers as Record<string, string>)['Content-Type']
+      delete (config.headers as Record<string, string>)['content-type']
     }
 
     return config
@@ -126,6 +148,7 @@ apiClient.interceptors.response.use(
       if (!isRefreshing) {
         // Start refresh process
         isRefreshing = true
+        logAuth('start', { url: originalRequest.url })
 
         try {
           // Call refresh endpoint
@@ -136,6 +159,7 @@ apiClient.interceptors.response.use(
               headers: {
                 'Content-Type': 'application/json',
               },
+              timeout: 30000,
             }
           )
 
@@ -146,6 +170,7 @@ apiClient.interceptors.response.use(
 
           // Notify all queued requests
           onTokenRefreshed(access_token)
+          logAuth('success', { queued: refreshSubscribers.length })
 
           isRefreshing = false
 
@@ -155,7 +180,12 @@ apiClient.interceptors.response.use(
         } catch (refreshError) {
           // Refresh failed, logout user
           isRefreshing = false
-          refreshSubscribers = []
+          logAuth('failed', { error: refreshError })
+          onTokenRefreshFailed(
+            refreshError instanceof Error
+              ? refreshError
+              : new Error('Token refresh failed')
+          )
           useAuthStore.getState().reset()
 
           if (!window.location.pathname.startsWith('/sign-in')) {
@@ -166,11 +196,17 @@ apiClient.interceptors.response.use(
         }
       } else {
         // Another request is already refreshing, queue this request
-        return new Promise((resolve) => {
-          subscribeTokenRefresh((token: string) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`
-            resolve(apiClient(originalRequest))
-          })
+        logAuth('queue', { url: originalRequest.url })
+        return new Promise((resolve, reject) => {
+          subscribeTokenRefresh(
+            (token: string) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`
+              resolve(apiClient(originalRequest))
+            },
+            (error: AxiosError | Error) => {
+              reject(error)
+            }
+          )
         })
       }
     }

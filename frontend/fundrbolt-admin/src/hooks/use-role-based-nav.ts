@@ -10,7 +10,6 @@
  * - event_coordinator: Dashboard, NPOs (read-only), Events (assigned), Users (event users, read-only)
  * - staff: Dashboard, NPO (read-only), Events (assigned), Users (event users, read-only)
  */
-
 import type { EventStats } from '@/types/event'
 import { useAuth } from './use-auth'
 import { useEventContext } from './use-event-context'
@@ -47,9 +46,11 @@ export interface UseRoleBasedNavReturn {
 }
 
 export function useRoleBasedNav(): UseRoleBasedNavReturn {
-  const { role, isSuperAdmin, isNpoAdmin, isEventCoordinator, isStaff } = useAuth()
+  const { role, isSuperAdmin, isNpoAdmin, isEventCoordinator, isStaff } =
+    useAuth()
   const { selectedNpoId } = useNpoContext()
-  const { selectedEventId, selectedEventSlug } = useEventContext()
+  const { selectedEventId, selectedEventSlug, selectedEventName } =
+    useEventContext()
   const { data: eventStats } = useEventStats(selectedEventId)
 
   // Determine NPO link based on selected NPO
@@ -202,7 +203,9 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     })
     : []
 
-  const eventNavTitle = selectedEventId ? 'Event' : null
+  const eventNavTitle = selectedEventId
+    ? `Event${selectedEventName ? `: ${selectedEventName}` : ''}`
+    : null
 
   return {
     navItems,
@@ -229,7 +232,12 @@ const EVENT_SECTION_CONFIG: Array<{
     { title: 'Details', path: 'details', icon: 'FileText' },
     { title: 'Media', path: 'media', icon: 'Image', statKey: 'media_count' },
     { title: 'Links', path: 'links', icon: 'Link2', statKey: 'links_count' },
-    { title: 'Food Options', path: 'food', icon: 'Utensils', statKey: 'food_options_count' },
+    {
+      title: 'Food Options',
+      path: 'food',
+      icon: 'Utensils',
+      statKey: 'food_options_count',
+    },
     {
       title: 'Registrations',
       path: 'registrations',
@@ -239,6 +247,16 @@ const EVENT_SECTION_CONFIG: Array<{
     },
     { title: 'Seating', path: 'seating', icon: 'LayoutGrid' },
     { title: 'Tickets', path: 'tickets', icon: 'Ticket' },
-    { title: 'Sponsors', path: 'sponsors', icon: 'Award', statKey: 'sponsors_count' },
-    { title: 'Auction Items', path: 'auction-items', icon: 'Gavel', statKey: 'auction_items_count' },
+    {
+      title: 'Sponsors',
+      path: 'sponsors',
+      icon: 'Award',
+      statKey: 'sponsors_count',
+    },
+    {
+      title: 'Auction Items',
+      path: 'auction-items',
+      icon: 'Gavel',
+      statKey: 'auction_items_count',
+    },
   ]

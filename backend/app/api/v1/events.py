@@ -225,7 +225,7 @@ async def list_events(
 
     # Apply role-based filtering
     permission_service = PermissionService()
-    filtered_npo_id = permission_service.get_npo_filter_for_user(current_user, npo_id)
+    filtered_npo_id = await permission_service.get_npo_filter_for_user(db, current_user, npo_id)
 
     search_query = search.strip() if search and search.strip() else None
 
@@ -289,7 +289,7 @@ async def get_event_stats(
     from app.services.permission_service import PermissionService
 
     permission_service = PermissionService()
-    can_view = await permission_service.can_view_event(current_user, stats["npo_id"])
+    can_view = await permission_service.can_view_event(current_user, stats["npo_id"], db=db)
     if not can_view:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

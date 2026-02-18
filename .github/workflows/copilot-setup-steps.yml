@@ -6,6 +6,7 @@ on:
 
 jobs:
   setup-test-db:
+  copilot-setup-steps:
     name: Setup Test Database
     runs-on: ubuntu-latest
     timeout-minutes: 15

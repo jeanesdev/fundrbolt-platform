@@ -8,7 +8,12 @@ interface AuthUser {
   first_name: string
   last_name: string
   role: string
-  npo_id: string | null
+  npo_memberships: {
+    npo_id: string
+    npo_name: string
+    role: string
+    status: string
+  }[]
   profile_picture_url?: string | null
 }
 

@@ -4,7 +4,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
-from sqlalchemy import and_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -12,10 +12,29 @@ from app.core.logging import get_logger
 from app.middleware.auth import get_current_active_user
 from app.models.event import Event
 from app.models.user import User
+from app.services.permission_service import PermissionService
 from app.services.sales_tracking_service import SalesTrackingService
 
 logger = get_logger(__name__)
 router = APIRouter()
+
+
+async def _require_event_access(
+    db: AsyncSession,
+    current_user: User,
+    event_id: uuid.UUID,
+) -> Event:
+    event_result = await db.execute(select(Event).where(Event.id == event_id))
+    event = event_result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    permission_service = PermissionService()
+    has_access = await permission_service.can_view_event(current_user, event.npo_id, db=db)
+    if not has_access:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    return event
 
 
 @router.get(
@@ -30,11 +49,7 @@ async def get_event_sales_summary(
 ) -> Any:
     """Get aggregated sales summary for entire event."""
     # Verify event access
-    result = await db.execute(
-        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    await _require_event_access(db, current_user, event_id)
 
     service = SalesTrackingService(db)
     summary = await service.get_event_revenue_summary(event_id, sponsorships_only=sponsorships_only)
@@ -57,11 +72,7 @@ async def get_package_sales_details(
 ) -> Any:
     """Get detailed sales information for a specific package."""
     # Verify event access
-    result = await db.execute(
-        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    await _require_event_access(db, current_user, event_id)
 
     service = SalesTrackingService(db)
 
@@ -92,11 +103,7 @@ async def get_event_sales_list(
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """Get paginated list of ticket purchases for an event."""
-    result = await db.execute(
-        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    await _require_event_access(db, current_user, event_id)
 
     service = SalesTrackingService(db)
     try:
@@ -130,12 +137,7 @@ async def export_sales_csv(
 ) -> Response:
     """Export all ticket sales for an event as CSV file."""
     # Verify event access
-    result = await db.execute(
-        select(Event).where(and_(Event.id == event_id, Event.npo_id == current_user.npo_id))
-    )
-    event = result.scalar_one_or_none()
-    if not event:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    event = await _require_event_access(db, current_user, event_id)
 
     service = SalesTrackingService(db)
     csv_data = await service.generate_sales_csv_export(event_id)

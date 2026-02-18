@@ -66,7 +66,7 @@ export function RoleAssignmentDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       role: user?.role || '',
-      npo_id: user?.npo_id || '',
+      npo_id: user?.npo_memberships?.[0]?.npo_id || '',
     },
   })
 
@@ -75,7 +75,7 @@ export function RoleAssignmentDialog({
     if (user) {
       form.reset({
         role: user.role,
-        npo_id: user.npo_id || '',
+        npo_id: user.npo_memberships?.[0]?.npo_id || '',
       })
     }
   }, [user, form])
@@ -111,7 +111,7 @@ export function RoleAssignmentDialog({
         if (user) {
           form.reset({
             role: user.role,
-            npo_id: user.npo_id || '',
+            npo_id: user.npo_memberships?.[0]?.npo_id || '',
           })
         }
         onOpenChange(state)

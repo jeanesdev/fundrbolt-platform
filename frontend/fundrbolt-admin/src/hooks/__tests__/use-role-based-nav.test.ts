@@ -54,7 +54,10 @@ describe('useRoleBasedNav', () => {
     const { result } = renderHook(() => useRoleBasedNav())
 
     expect(result.current.navItems).toHaveLength(4)
-    expect(result.current.navItems[0]).toMatchObject({ title: 'Dashboard', href: '/' })
+    expect(result.current.navItems[0]).toMatchObject({
+      title: 'Dashboard',
+      href: '/',
+    })
     expect(result.current.eventNavItems).toHaveLength(0)
     expect(result.current.eventNavTitle).toBeNull()
   })
@@ -68,7 +71,7 @@ describe('useRoleBasedNav', () => {
 
     const { result } = renderHook(() => useRoleBasedNav())
 
-    expect(result.current.eventNavItems).toHaveLength(9)
+    expect(result.current.eventNavItems).toHaveLength(10)
     expect(result.current.eventNavItems[0]).toMatchObject({
       title: 'Details',
       href: '/events/gala-night/details',
@@ -102,7 +105,9 @@ describe('useRoleBasedNav', () => {
 
     const { result } = renderHook(() => useRoleBasedNav())
 
-    const myNpoLink = result.current.navItems.find((item) => item.title === 'My NPO')
+    const myNpoLink = result.current.navItems.find(
+      (item) => item.title === 'My NPO'
+    )
     expect(myNpoLink).toMatchObject({ href: '/npos/npo-123' })
     expect(result.current.canModifyNpos).toBe(true)
     expect(result.current.canModifyUsers).toBe(true)
@@ -119,7 +124,9 @@ describe('useRoleBasedNav', () => {
 
     const { result } = renderHook(() => useRoleBasedNav())
 
-    const usersNav = result.current.navItems.find((item) => item.title === 'Users')
+    const usersNav = result.current.navItems.find(
+      (item) => item.title === 'Users'
+    )
     expect(usersNav?.badge).toBe('Read-only')
     expect(result.current.canAccessUsers).toBe(false)
     expect(result.current.canModifyUsers).toBe(false)

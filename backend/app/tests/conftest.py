@@ -457,11 +457,9 @@ async def test_npo_admin_user(db_session: AsyncSession) -> Any:
     """
     Create a test npo_admin user.
 
-    Returns a User model instance with npo_admin role and npo_id.
+    Returns a User model instance with npo_admin role and NPO membership.
     Password: TestPass123
     """
-    import uuid
-
     from sqlalchemy import text
 
     from app.core.security import hash_password
@@ -470,9 +468,6 @@ async def test_npo_admin_user(db_session: AsyncSession) -> Any:
     # Get npo_admin role_id from database
     role_result = await db_session.execute(text("SELECT id FROM roles WHERE name = 'npo_admin'"))
     npo_admin_role_id = role_result.scalar_one()
-
-    # Create test NPO ID
-    npo_id = uuid.uuid4()
 
     # Create test npo_admin user
     user = User(
@@ -484,7 +479,6 @@ async def test_npo_admin_user(db_session: AsyncSession) -> Any:
         email_verified=True,
         is_active=True,
         role_id=npo_admin_role_id,
-        npo_id=npo_id,
     )
     db_session.add(user)
     await db_session.commit()
@@ -494,11 +488,47 @@ async def test_npo_admin_user(db_session: AsyncSession) -> Any:
 
 
 @pytest_asyncio.fixture
-async def test_npo_id(test_npo_admin_user: Any) -> Any:
+async def test_npo_id(db_session: AsyncSession, test_npo_admin_user: Any) -> Any:
     """
     Get the NPO ID from the test NPO admin user.
     """
-    return test_npo_admin_user.npo_id
+    from sqlalchemy import select
+
+    from app.models.npo_member import NPOMember
+
+    result = await db_session.execute(
+        select(NPOMember.npo_id).where(NPOMember.user_id == test_npo_admin_user.id)
+    )
+    existing_npo_id = result.scalar_one_or_none()
+    if existing_npo_id:
+        return existing_npo_id
+
+    from app.models.npo import NPO, NPOStatus
+    from app.models.npo_member import MemberRole, MemberStatus
+
+    npo = NPO(
+        name="Fixture Admin NPO",
+        description="Fixture NPO for admin user",
+        mission_statement="Test fixture NPO",
+        email="npoadmin-npo@test.com",
+        phone="+1-555-0900",
+        status=NPOStatus.APPROVED,
+        created_by_user_id=test_npo_admin_user.id,
+    )
+    db_session.add(npo)
+    await db_session.flush()
+
+    db_session.add(
+        NPOMember(
+            npo_id=npo.id,
+            user_id=test_npo_admin_user.id,
+            role=MemberRole.ADMIN,
+            status=MemberStatus.ACTIVE,
+        )
+    )
+    await db_session.commit()
+
+    return npo.id
 
 
 @pytest_asyncio.fixture
@@ -506,12 +536,13 @@ async def test_event_coordinator_user(db_session: AsyncSession, test_npo_id: Any
     """
     Create a test event_coordinator user.
 
-    Returns a User model instance with event_coordinator role and npo_id.
+    Returns a User model instance with event_coordinator role and NPO membership.
     Password: TestPass123
     """
     from sqlalchemy import text
 
     from app.core.security import hash_password
+    from app.models.npo_member import MemberRole, MemberStatus, NPOMember
     from app.models.user import User
 
     # Get event_coordinator role_id from database
@@ -530,9 +561,18 @@ async def test_event_coordinator_user(db_session: AsyncSession, test_npo_id: Any
         email_verified=True,
         is_active=True,
         role_id=event_coordinator_role_id,
-        npo_id=test_npo_id,
     )
     db_session.add(user)
+    await db_session.flush()
+
+    db_session.add(
+        NPOMember(
+            npo_id=test_npo_id,
+            user_id=user.id,
+            role=MemberRole.STAFF,
+            status=MemberStatus.ACTIVE,
+        )
+    )
     await db_session.commit()
     await db_session.refresh(user)
 
@@ -544,12 +584,13 @@ async def test_staff_user(db_session: AsyncSession, test_npo_id: Any) -> Any:
     """
     Create a test staff user.
 
-    Returns a User model instance with staff role and npo_id.
+    Returns a User model instance with staff role and NPO membership.
     Password: TestPass123
     """
     from sqlalchemy import text
 
     from app.core.security import hash_password
+    from app.models.npo_member import MemberRole, MemberStatus, NPOMember
     from app.models.user import User
 
     # Get staff role_id from database
@@ -566,9 +607,18 @@ async def test_staff_user(db_session: AsyncSession, test_npo_id: Any) -> Any:
         email_verified=True,
         is_active=True,
         role_id=staff_role_id,
-        npo_id=test_npo_id,
     )
     db_session.add(user)
+    await db_session.flush()
+
+    db_session.add(
+        NPOMember(
+            npo_id=test_npo_id,
+            user_id=user.id,
+            role=MemberRole.STAFF,
+            status=MemberStatus.ACTIVE,
+        )
+    )
     await db_session.commit()
     await db_session.refresh(user)
 
@@ -1659,10 +1709,6 @@ async def test_approved_npo(db_session: AsyncSession, test_npo_admin_user: Any) 
         status=MemberStatus.ACTIVE,
     )
     db_session.add(member)
-
-    # IMPORTANT: Update the user's npo_id to match this NPO
-    # This is needed for permission filtering in list_events
-    test_npo_admin_user.npo_id = npo.id
 
     await db_session.commit()
     await db_session.refresh(npo)

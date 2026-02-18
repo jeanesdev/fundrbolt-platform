@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.metrics import EVENTS_CLOSED_TOTAL, EVENTS_CREATED_TOTAL, EVENTS_PUBLISHED_TOTAL
+from app.models.auction_bid import AuctionBid
 from app.models.auction_item import AuctionItem
 from app.models.event import Event, EventLink, EventMedia, EventStatus, FoodOption
 from app.models.event_registration import EventRegistration
@@ -399,6 +400,12 @@ class EventService:
             .correlate(Event)
             .scalar_subquery()
         )
+        auction_bid_count = (
+            select(func.count(AuctionBid.id))
+            .where(AuctionBid.event_id == Event.id)
+            .correlate(Event)
+            .scalar_subquery()
+        )
         registration_count = (
             select(func.count(RegistrationGuest.id))
             .join(
@@ -463,6 +470,7 @@ class EventService:
                 food_option_count.label("food_options_count"),
                 sponsor_count.label("sponsors_count"),
                 auction_item_count.label("auction_items_count"),
+                auction_bid_count.label("auction_bids_count"),
                 registration_count.label("registrations_count"),
                 active_registration_count.label("active_registrations_count"),
                 guest_count.label("guest_count"),
@@ -486,6 +494,7 @@ class EventService:
             "food_options_count": mapping["food_options_count"],
             "sponsors_count": mapping["sponsors_count"],
             "auction_items_count": mapping["auction_items_count"],
+            "auction_bids_count": mapping["auction_bids_count"],
             "registrations_count": mapping["registrations_count"],
             "active_registrations_count": mapping["active_registrations_count"],
             "guest_count": mapping["guest_count"],

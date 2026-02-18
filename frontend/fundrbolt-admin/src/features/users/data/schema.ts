@@ -36,7 +36,6 @@ const userSchema = z.object({
   profile_picture_url: z.string().nullable(),
   social_media_links: z.record(z.string(), z.string()).nullable(),
   role: z.string(), // String role name from backend
-  npo_id: z.string().nullable(),
   npo_memberships: z.array(npoMembershipSchema).default([]),
   email_verified: z.boolean(),
   is_active: z.boolean(),

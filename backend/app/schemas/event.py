@@ -381,6 +381,7 @@ class EventStatsResponse(BaseModel):
     food_options_count: int
     sponsors_count: int
     auction_items_count: int
+    auction_bids_count: int
     registrations_count: int
     active_registrations_count: int
     guest_count: int

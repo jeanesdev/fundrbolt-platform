@@ -119,6 +119,7 @@ class TestEventStats:
         assert data["food_options_count"] == 1
         assert data["sponsors_count"] == 1
         assert data["auction_items_count"] == 1
+        assert data["auction_bids_count"] == 0
         assert data["registrations_count"] == 1
         assert data["active_registrations_count"] == 1
         assert data["guest_count"] == 2
