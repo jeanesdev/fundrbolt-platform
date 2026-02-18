@@ -400,8 +400,29 @@ class EventService:
             .scalar_subquery()
         )
         registration_count = (
-            select(func.count(EventRegistration.id))
-            .where(EventRegistration.event_id == Event.id)
+            select(func.count(RegistrationGuest.id))
+            .join(
+                EventRegistration,
+                RegistrationGuest.registration_id == EventRegistration.id,
+            )
+            .where(
+                EventRegistration.event_id == Event.id,
+                RegistrationGuest.is_primary.is_(True),
+            )
+            .correlate(Event)
+            .scalar_subquery()
+        )
+        active_registration_count = (
+            select(func.count(RegistrationGuest.id))
+            .join(
+                EventRegistration,
+                RegistrationGuest.registration_id == EventRegistration.id,
+            )
+            .where(
+                EventRegistration.event_id == Event.id,
+                RegistrationGuest.is_primary.is_(True),
+                RegistrationGuest.status != "cancelled",
+            )
             .correlate(Event)
             .scalar_subquery()
         )
@@ -411,7 +432,24 @@ class EventService:
                 EventRegistration,
                 RegistrationGuest.registration_id == EventRegistration.id,
             )
-            .where(EventRegistration.event_id == Event.id)
+            .where(
+                EventRegistration.event_id == Event.id,
+                RegistrationGuest.is_primary.is_(False),
+            )
+            .correlate(Event)
+            .scalar_subquery()
+        )
+        active_guest_count = (
+            select(func.count(RegistrationGuest.id))
+            .join(
+                EventRegistration,
+                RegistrationGuest.registration_id == EventRegistration.id,
+            )
+            .where(
+                EventRegistration.event_id == Event.id,
+                RegistrationGuest.is_primary.is_(False),
+                RegistrationGuest.status != "cancelled",
+            )
             .correlate(Event)
             .scalar_subquery()
         )
@@ -426,7 +464,9 @@ class EventService:
                 sponsor_count.label("sponsors_count"),
                 auction_item_count.label("auction_items_count"),
                 registration_count.label("registrations_count"),
+                active_registration_count.label("active_registrations_count"),
                 guest_count.label("guest_count"),
+                active_guest_count.label("active_guest_count"),
             )
             .where(Event.id == event_id)
             .limit(1)
@@ -447,7 +487,9 @@ class EventService:
             "sponsors_count": mapping["sponsors_count"],
             "auction_items_count": mapping["auction_items_count"],
             "registrations_count": mapping["registrations_count"],
+            "active_registrations_count": mapping["active_registrations_count"],
             "guest_count": mapping["guest_count"],
+            "active_guest_count": mapping["active_guest_count"],
         }
 
     @staticmethod

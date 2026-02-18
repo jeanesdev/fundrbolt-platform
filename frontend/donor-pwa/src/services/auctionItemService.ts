@@ -6,6 +6,7 @@ import type {
   AuctionItemListResponse,
   AuctionItemUpdate,
   AuctionType,
+  BidResponse,
   ItemStatus,
 } from '@/types/auction-item';
 
@@ -83,6 +84,65 @@ class AuctionItemService {
    */
   async deleteAuctionItem(eventId: string, itemId: string): Promise<void> {
     await apiClient.delete(`/events/${eventId}/auction-items/${itemId}`);
+  }
+
+  /**
+   * Place a bid on an auction item
+   */
+  async placeBid(
+    eventId: string,
+    itemId: string,
+    amount: number
+  ): Promise<BidResponse> {
+    const response = await apiClient.post<BidResponse>(
+      `/events/${eventId}/auction-items/${itemId}/bids`,
+      { amount }
+    );
+    return response.data;
+  }
+
+  /**
+   * Place a max bid on an auction item
+   */
+  async placeMaxBid(
+    eventId: string,
+    itemId: string,
+    maxAmount: number
+  ): Promise<BidResponse> {
+    const response = await apiClient.post<BidResponse>(
+      `/events/${eventId}/auction-items/${itemId}/bids/max`,
+      { max_amount: maxAmount }
+    );
+    return response.data;
+  }
+
+  /**
+   * Buy now an auction item
+   */
+  async buyNow(
+    eventId: string,
+    itemId: string,
+    quantity: number = 1
+  ): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post(
+      `/events/${eventId}/auction-items/${itemId}/buy-now`,
+      { quantity }
+    );
+    return response.data;
+  }
+
+  /**
+   * Track item view duration
+   */
+  async trackItemView(
+    eventId: string,
+    itemId: string,
+    durationSeconds: number
+  ): Promise<void> {
+    await apiClient.post(
+      `/events/${eventId}/auction-items/${itemId}/views`,
+      { duration_seconds: durationSeconds }
+    );
   }
 }
 

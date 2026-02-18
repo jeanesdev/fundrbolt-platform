@@ -137,7 +137,9 @@ export interface EventStats {
   sponsors_count: number
   auction_items_count: number
   registrations_count: number
+  active_registrations_count: number
   guest_count: number
+  active_guest_count: number
 }
 
 // ============================================

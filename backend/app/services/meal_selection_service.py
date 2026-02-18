@@ -86,8 +86,22 @@ class MealSelectionService:
                 detail="Food option does not belong to this event",
             )
 
-        # If guest_id provided, verify guest belongs to registration
-        if meal_data.guest_id:
+        # Resolve guest_id to primary guest when omitted
+        if meal_data.guest_id is None:
+            guest_result = await db.execute(
+                select(RegistrationGuest).where(
+                    RegistrationGuest.registration_id == meal_data.registration_id,
+                    RegistrationGuest.is_primary.is_(True),
+                )
+            )
+            guest = guest_result.scalar_one_or_none()
+            if not guest:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Primary guest record is missing",
+                )
+            meal_data.guest_id = guest.id
+        else:
             guest_result = await db.execute(
                 select(RegistrationGuest).where(RegistrationGuest.id == meal_data.guest_id)
             )

@@ -4,9 +4,12 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     admin,
+    admin_auction_engagement,
     admin_auction_item_import,
+    admin_registration_import,
     admin_seating,
     admin_testimonials,
+    admin_ticket_sales_import,
     auction_bids,
     auction_item_media,
     auction_items,
@@ -33,6 +36,7 @@ from app.api.v1 import (
     ticket_options,
     ticket_packages,
     users,
+    watchlist,
 )
 from app.api.v1.public import contact as public_contact
 from app.api.v1.public import events as public_events
@@ -55,8 +59,11 @@ api_router.include_router(sponsors.router, tags=["events", "sponsors"])
 api_router.include_router(registrations.router, tags=["registrations"])
 api_router.include_router(checkin.router, tags=["checkin"])
 api_router.include_router(auction_items.router, tags=["auction-items"])
+api_router.include_router(auction_items.donor_router, tags=["auction-items"])
 api_router.include_router(auction_item_media.router, tags=["auction-items", "media"])
 api_router.include_router(auction_bids.router, tags=["auction-bids"])
+api_router.include_router(watchlist.router, tags=["watchlist"])
+api_router.include_router(admin_auction_engagement.router, tags=["admin-auction-engagement"])
 api_router.include_router(legal_documents.router, prefix="/legal", tags=["legal"])
 api_router.include_router(consent.router, prefix="/consent", tags=["consent"])
 api_router.include_router(cookies.router, prefix="/cookies", tags=["cookies"])
@@ -67,6 +74,8 @@ api_router.include_router(public_testimonials.router, tags=["public-testimonials
 api_router.include_router(admin_testimonials.router, tags=["admin-testimonials"])
 api_router.include_router(admin_seating.router, tags=["admin-seating"])
 api_router.include_router(admin_auction_item_import.router)
+api_router.include_router(admin_registration_import.router)
+api_router.include_router(admin_ticket_sales_import.router)
 api_router.include_router(donor_seating.router, tags=["donor-seating"])
 api_router.include_router(ticket_packages.router, prefix="/admin", tags=["admin-tickets"])
 api_router.include_router(ticket_options.router, tags=["admin-tickets"])

@@ -4,11 +4,14 @@ from app.models.auction_bid import AuctionBid, BidActionAudit, PaddleRaiseContri
 from app.models.auction_item import AuctionItem
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin, UUIDMixin
+from app.models.buy_now_availability import BuyNowAvailability
 from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
 from app.models.event import Event, EventLink, EventMedia, FoodOption
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.event_table import EventTable
 from app.models.invitation import Invitation
+from app.models.item_promotion import ItemPromotion
+from app.models.item_view import ItemView
 from app.models.legal_document import LegalDocument
 from app.models.meal_selection import MealSelection
 from app.models.npo import NPO
@@ -16,6 +19,12 @@ from app.models.npo_application import NPOApplication
 from app.models.npo_branding import NPOBranding
 from app.models.npo_member import NPOMember
 from app.models.registration_guest import RegistrationGuest
+from app.models.registration_import import (
+    ImportBatchStatus,
+    RegistrationImportBatch,
+    RegistrationValidationIssue,
+    ValidationSeverity,
+)
 from app.models.role import Role
 from app.models.session import Session
 from app.models.sponsor import Sponsor
@@ -32,17 +41,24 @@ from app.models.ticket_management import (
     TicketPackage,
     TicketPurchase,
 )
+from app.models.ticket_sales_import import (
+    ImportFormat,
+    ImportStatus,
+    IssueSeverity,
+    TicketSalesImportBatch,
+    TicketSalesImportIssue,
+)
 from app.models.user import User
+from app.models.watch_list_entry import WatchListEntry
 
 __all__ = [
     "AssignedTicket",
     "AuctionBid",
     "AuctionItem",
     "AuditLog",
-    "BidActionAudit",
     "Base",
-    "TimestampMixin",
-    "UUIDMixin",
+    "BidActionAudit",
+    "BuyNowAvailability",
     "ConsentAuditLog",
     "CookieConsent",
     "CustomTicketOption",
@@ -53,7 +69,12 @@ __all__ = [
     "EventRegistration",
     "EventTable",
     "FoodOption",
+    "ImportFormat",
+    "ImportStatus",
     "Invitation",
+    "ItemPromotion",
+    "ItemView",
+    "IssueSeverity",
     "LegalDocument",
     "MealSelection",
     "NPO",
@@ -62,18 +83,27 @@ __all__ = [
     "NPOMember",
     "OptionResponse",
     "OptionType",
+    "PaddleRaiseContribution",
     "PaymentStatus",
     "PromoCode",
     "PromoCodeApplication",
-    "PaddleRaiseContribution",
     "RegistrationGuest",
+    "RegistrationImportBatch",
     "RegistrationStatus",
+    "RegistrationValidationIssue",
+    "ImportBatchStatus",
+    "ValidationSeverity",
     "Role",
     "Session",
     "Sponsor",
     "TicketAuditLog",
     "TicketPackage",
     "TicketPurchase",
+    "TimestampMixin",
+    "TicketSalesImportBatch",
+    "TicketSalesImportIssue",
     "User",
     "UserConsent",
+    "UUIDMixin",
+    "WatchListEntry",
 ]

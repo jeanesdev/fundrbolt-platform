@@ -2,11 +2,14 @@
  * AuctionItemDetailModal - Full-screen modal dialog for auction item details
  *
  * Displays complete auction item information including:
- * - Image gallery
+ * - Image gallery with swipe-through
  * - Full description
  * - Bid information
- * - Donated by / item webpage
+ * - Watch list button
+ * - Bid count
  * - Place bid button
+ * - Donated by / item webpage
+ * - View tracking
  */
 
 import { Button } from '@/components/ui/button';
@@ -17,11 +20,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { WatchListButton } from '@/components/auction/WatchListButton';
 import auctionItemService from '@/services/auctionItemService';
+import { useItemViewTracking } from '@/hooks/useItemViewTracking';
 import type { AuctionItemDetail } from '@/types/auction-item';
 import { useQuery } from '@tanstack/react-query';
-import { ExternalLink, Gavel, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Gavel, Loader2, Users } from 'lucide-react';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export interface AuctionItemDetailModalProps {
   eventId: string;
@@ -30,6 +36,8 @@ export interface AuctionItemDetailModalProps {
   eventDateTime?: string;
   onClose: () => void;
   onBid?: (item: AuctionItemDetail) => void;
+  isWatching?: boolean;
+  onWatchToggle?: (isWatching: boolean) => void;
 }
 
 /**
@@ -54,6 +62,8 @@ export function AuctionItemDetailModal({
   eventDateTime,
   onClose,
   onBid,
+  isWatching = false,
+  onWatchToggle,
 }: AuctionItemDetailModalProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
@@ -67,16 +77,34 @@ export function AuctionItemDetailModal({
     enabled: !!itemId,
   });
 
+  // Track view duration
+  useItemViewTracking({
+    eventId,
+    itemId,
+    enabled: !!itemId && eventStatus === 'active',
+  });
+
   const isOpen = !!itemId;
 
   if (!isOpen) return null;
 
-  const displayBid = item?.starting_bid ?? 0;
-  const bidLabel = 'Starting Bid'; // Will update when bidding is implemented
+  const displayBid = item?.current_bid_amount ?? item?.starting_bid ?? 0;
+  const hasCurrentBid = (item?.current_bid_amount ?? 0) > 0;
+  const bidLabel = hasCurrentBid ? 'Current High Bid' : 'Starting Bid';
+  const bidCount = item?.bid_count ?? 0;
+  const isBiddingOpen = item?.bidding_open !== false;
 
   // Get all images
   const images = item?.media?.filter((m) => m.media_type === 'image') || [];
   const selectedImage = images[selectedImageIndex];
+
+  const handlePrevImage = () => {
+    setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+  };
+
+  const handleNextImage = () => {
+    setSelectedImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -94,12 +122,37 @@ export function AuctionItemDetailModal({
             {images.length > 0 && (
               <div className="relative bg-muted">
                 {/* Main Image */}
-                <div className="aspect-video overflow-hidden">
+                <div className="aspect-video overflow-hidden relative">
                   <img
                     src={selectedImage?.file_path || item.primary_image_url || ''}
                     alt={item.title}
                     className="h-full w-full object-contain"
                   />
+
+                  {/* Image navigation buttons */}
+                  {images.length > 1 && (
+                    <>
+                      <button
+                        onClick={handlePrevImage}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors"
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="h-6 w-6" />
+                      </button>
+                      <button
+                        onClick={handleNextImage}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors"
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="h-6 w-6" />
+                      </button>
+
+                      {/* Image counter */}
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-3 py-1 text-sm text-white">
+                        {selectedImageIndex + 1} / {images.length}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Image Thumbnails */}
@@ -109,10 +162,12 @@ export function AuctionItemDetailModal({
                       <button
                         key={img.id}
                         onClick={() => setSelectedImageIndex(index)}
-                        className={`flex-shrink-0 overflow-hidden rounded border-2 transition-all ${index === selectedImageIndex
-                          ? 'border-primary'
-                          : 'border-transparent opacity-60 hover:opacity-100'
-                          }`}
+                        className={cn(
+                          'flex-shrink-0 overflow-hidden rounded border-2 transition-all',
+                          index === selectedImageIndex
+                            ? 'border-primary'
+                            : 'border-transparent opacity-60 hover:opacity-100'
+                        )}
                       >
                         <img
                           src={img.thumbnail_path || img.file_path}
@@ -124,12 +179,21 @@ export function AuctionItemDetailModal({
                   </div>
                 )}
 
+                {/* Promotion badge */}
+                {item.promotion_badge && (
+                  <div className="absolute left-4 top-4 rounded-full bg-amber-500/90 px-3 py-1 text-sm font-bold text-white shadow-lg">
+                    {item.promotion_badge}
+                  </div>
+                )}
+
                 {/* Auction Type Badge */}
                 <div
-                  className={`absolute left-4 top-4 rounded-full px-3 py-1 text-sm font-medium capitalize ${item.auction_type === 'live'
-                    ? 'bg-red-500/90 text-white'
-                    : 'bg-blue-500/90 text-white'
-                    }`}
+                  className={cn(
+                    'absolute right-4 top-4 rounded-full px-3 py-1 text-sm font-medium capitalize',
+                    item.auction_type === 'live'
+                      ? 'bg-red-500/90 text-white'
+                      : 'bg-blue-500/90 text-white'
+                  )}
                 >
                   {item.auction_type}
                 </div>
@@ -138,7 +202,7 @@ export function AuctionItemDetailModal({
 
             {/* Content Section */}
             <div className="p-6 space-y-6">
-              {/* Header */}
+              {/* Header with Watch Button */}
               <DialogHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -155,8 +219,29 @@ export function AuctionItemDetailModal({
                       Bid #{item.bid_number}
                     </DialogDescription>
                   </div>
+                  <WatchListButton
+                    eventId={eventId}
+                    itemId={item.id}
+                    isWatching={isWatching}
+                    onToggle={onWatchToggle}
+                    variant="icon"
+                  />
                 </div>
               </DialogHeader>
+
+              {/* Promotion notice */}
+              {item.promotion_notice && (
+                <div
+                  className="rounded-lg p-3 text-sm"
+                  style={{
+                    backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                    color: 'rgb(180, 83, 9)',
+                    borderLeft: '4px solid rgb(245, 158, 11)',
+                  }}
+                >
+                  {item.promotion_notice}
+                </div>
+              )}
 
               {/* Bid Info Card */}
               <div
@@ -178,6 +263,17 @@ export function AuctionItemDetailModal({
                   </span>
                 </div>
 
+                {/* Bid count */}
+                {bidCount > 0 && (
+                  <div
+                    className="flex items-center gap-2 mb-4 text-sm"
+                    style={{ color: 'var(--event-card-text-muted, #6B7280)' }}
+                  >
+                    <Users className="h-4 w-4" />
+                    {bidCount} bid{bidCount !== 1 ? 's' : ''} placed
+                  </div>
+                )}
+
                 {/* Bid Increment */}
                 {item.bid_increment > 0 && (
                   <p
@@ -192,7 +288,7 @@ export function AuctionItemDetailModal({
                 <Button
                   onClick={() => onBid?.(item)}
                   className="w-full"
-                  disabled={eventStatus !== 'active' || isEventInFuture}
+                  disabled={eventStatus !== 'active' || isEventInFuture || !isBiddingOpen}
                   style={{
                     backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
                     color: 'var(--event-text-on-primary, #FFFFFF)',
@@ -201,9 +297,9 @@ export function AuctionItemDetailModal({
                   <Gavel className="h-4 w-4 mr-2" />
                   {isEventInFuture
                     ? 'Event Not Started'
-                    : eventStatus === 'active'
+                    : eventStatus === 'active' && isBiddingOpen
                       ? 'Place Bid'
-                      : eventStatus === 'closed'
+                      : eventStatus === 'closed' || !isBiddingOpen
                         ? 'Bidding Closed'
                         : 'Event Not Active'}
                 </Button>

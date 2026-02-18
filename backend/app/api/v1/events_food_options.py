@@ -22,7 +22,7 @@ router = APIRouter(prefix="/events/{event_id}/food-options", tags=["events", "fo
 
 @router.post("", response_model=FoodOptionResponse, status_code=status.HTTP_201_CREATED)
 async def create_food_option(
-    event_id: uuid.UUID,
+    event_id: str,
     request: FoodOptionCreateRequest,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],
@@ -32,17 +32,21 @@ async def create_food_option(
 
     Food options can include dietary restrictions, meal types, or specific offerings.
     """
-    # Verify event exists
-    event = await EventService.get_event_by_id(db, event_id)
+    # Accept event_id as UUID or slug
+    try:
+        event_uuid = uuid.UUID(event_id)
+        event = await EventService.get_event_by_id(db, event_uuid)
+    except ValueError:
+        event = await EventService.get_event_by_slug(db, event_id)
     if not event:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Event with ID {event_id} not found",
+            detail=f"Event with ID or slug '{event_id}' not found",
         )
 
     # Create new food option
     food_option = FoodOption(
-        event_id=event_id,
+        event_id=event.id,
         name=request.name,
         description=request.description,
         display_order=request.display_order or 0,
@@ -54,7 +58,7 @@ async def create_food_option(
     await db.commit()  # Commit the transaction
 
     logger.info(
-        f"Created food option {food_option.id} for event {event_id} by user {current_user.id}"
+        f"Created food option {food_option.id} for event {event.id} by user {current_user.id}"
     )
 
     return FoodOptionResponse(
@@ -69,7 +73,7 @@ async def create_food_option(
 
 @router.patch("/{option_id}", response_model=FoodOptionResponse, status_code=status.HTTP_200_OK)
 async def update_food_option(
-    event_id: uuid.UUID,
+    event_id: str,
     option_id: uuid.UUID,
     request: FoodOptionUpdateRequest,
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -80,16 +84,20 @@ async def update_food_option(
 
     Can update name, description, or display order.
     """
-    # Verify event exists
-    event = await EventService.get_event_by_id(db, event_id)
+    # Accept event_id as UUID or slug
+    try:
+        event_uuid = uuid.UUID(event_id)
+        event = await EventService.get_event_by_id(db, event_uuid)
+    except ValueError:
+        event = await EventService.get_event_by_slug(db, event_id)
     if not event:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Event with ID {event_id} not found",
+            detail=f"Event with ID or slug '{event_id}' not found",
         )
 
     # Find the food option
-    query = select(FoodOption).where(FoodOption.id == option_id, FoodOption.event_id == event_id)
+    query = select(FoodOption).where(FoodOption.id == option_id, FoodOption.event_id == event.id)
     result = await db.execute(query)
     food_option = result.scalar_one_or_none()
 
@@ -111,7 +119,7 @@ async def update_food_option(
     await db.refresh(food_option)
     await db.commit()  # Commit the transaction
 
-    logger.info(f"Updated food option {option_id} for event {event_id} by user {current_user.id}")
+    logger.info(f"Updated food option {option_id} for event {event.id} by user {current_user.id}")
 
     return FoodOptionResponse(
         id=food_option.id,
@@ -125,7 +133,7 @@ async def update_food_option(
 
 @router.delete("/{option_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_food_option(
-    event_id: uuid.UUID,
+    event_id: str,
     option_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],
@@ -135,16 +143,20 @@ async def delete_food_option(
 
     Removes the food option from the event.
     """
-    # Verify event exists
-    event = await EventService.get_event_by_id(db, event_id)
+    # Accept event_id as UUID or slug
+    try:
+        event_uuid = uuid.UUID(event_id)
+        event = await EventService.get_event_by_id(db, event_uuid)
+    except ValueError:
+        event = await EventService.get_event_by_slug(db, event_id)
     if not event:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Event with ID {event_id} not found",
+            detail=f"Event with ID or slug '{event_id}' not found",
         )
 
     # Find the food option
-    query = select(FoodOption).where(FoodOption.id == option_id, FoodOption.event_id == event_id)
+    query = select(FoodOption).where(FoodOption.id == option_id, FoodOption.event_id == event.id)
     result = await db.execute(query)
     food_option = result.scalar_one_or_none()
 
@@ -158,4 +170,4 @@ async def delete_food_option(
     await db.delete(food_option)
     await db.commit()  # Commit the transaction
 
-    logger.info(f"Deleted food option {option_id} from event {event_id} by user {current_user.id}")
+    logger.info(f"Deleted food option {option_id} from event {event.id} by user {current_user.id}")
