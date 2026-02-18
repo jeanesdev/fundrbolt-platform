@@ -18,6 +18,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
+from app.models.npo import NPO, NPOStatus
+from app.models.npo_member import MemberRole, MemberStatus, NPOMember
 
 
 class TestUsersRoleUpdateContract:
@@ -339,7 +341,7 @@ class TestUsersRoleUpdateContract:
         Contract: PATCH /api/v1/users/{user_id}/role
         Expected: 200 OK with npo_id cleared
         """
-        # Create an npo_admin user with npo_id
+        # Create an npo_admin user with membership
         role_result = await db_session.execute(
             text("SELECT id FROM roles WHERE name = 'npo_admin'")
         )
@@ -352,9 +354,9 @@ class TestUsersRoleUpdateContract:
             text(
                 """
                 INSERT INTO users (id, email, first_name, last_name, password_hash,
-                                 email_verified, is_active, role_id, npo_id)
+                                 email_verified, is_active, role_id)
                 VALUES (:id, :email, :first_name, :last_name, :password_hash,
-                       :email_verified, :is_active, :role_id, :npo_id)
+                       :email_verified, :is_active, :role_id)
             """
             ),
             {
@@ -366,8 +368,24 @@ class TestUsersRoleUpdateContract:
                 "email_verified": True,
                 "is_active": True,
                 "role_id": npo_admin_role_id,
-                "npo_id": npo_id,
             },
+        )
+        db_session.add(
+            NPO(
+                id=npo_id,
+                name=f"Role Downgrade NPO {npo_id}",
+                email=f"role-downgrade-{npo_id}@example.com",
+                status=NPOStatus.APPROVED,
+                created_by_user_id=user_id,
+            )
+        )
+        db_session.add(
+            NPOMember(
+                npo_id=npo_id,
+                user_id=user_id,
+                role=MemberRole.ADMIN,
+                status=MemberStatus.ACTIVE,
+            )
         )
         await db_session.commit()
 

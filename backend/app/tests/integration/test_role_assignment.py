@@ -424,13 +424,12 @@ class TestRoleAssignmentIntegration:
                 """
                 INSERT INTO users (
                     id, email, password_hash, first_name, last_name, phone,
-                    email_verified, is_active, role_id, npo_id
+                    email_verified, is_active, role_id
                 )
                 VALUES (
                     :id, :email, :password_hash, :first_name, :last_name, :phone,
                     :email_verified, :is_active,
-                    (SELECT id FROM roles WHERE name = 'super_admin'),
-                    :npo_id
+                    (SELECT id FROM roles WHERE name = 'super_admin')
                 )
                 """
             ),
@@ -443,7 +442,6 @@ class TestRoleAssignmentIntegration:
                 "phone": "+1234567890",
                 "email_verified": True,
                 "is_active": True,
-                "npo_id": None,
             },
         )
         await db_session.commit()
