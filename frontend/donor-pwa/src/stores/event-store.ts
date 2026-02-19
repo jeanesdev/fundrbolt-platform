@@ -46,6 +46,12 @@ function getErrorMessage(error: unknown): string {
   return 'An unexpected error occurred'
 }
 
+export function getEventsWithDetails<T extends { event?: Event | null }>(registrations: T[]): Event[] {
+  return registrations
+    .map((registration) => registration.event)
+    .filter((event): event is Event => Boolean(event));
+}
+
 interface EventState {
   // Current event context
   currentEvent: EventDetail | null

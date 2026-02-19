@@ -40,6 +40,13 @@ export interface AuctionItem extends AuctionItemBase {
   created_at: string;
   updated_at: string;
   primary_image_url?: string | null; // Primary image thumbnail URL (with SAS token if Azure)
+  current_bid_amount?: number | null;
+  min_next_bid_amount?: number | null;
+  bid_count?: number;
+  bidding_open?: boolean;
+  watcher_count?: number;
+  promotion_badge?: string | null;
+  promotion_notice?: string | null;
 }
 
 export interface AuctionItemDetail extends AuctionItem {
@@ -131,4 +138,25 @@ export interface MediaListResponse {
 
 export interface MediaReorderRequest {
   media_order: string[];
+}
+
+// Bidding Types
+
+export interface BidRequest {
+  amount: number;
+}
+
+export interface MaxBidRequest {
+  max_amount: number;
+}
+
+export interface BidResponse {
+  id: string;
+  auction_item_id: string;
+  bidder_id: string;
+  amount: number;
+  is_max_bid: boolean;
+  bid_time: string;
+  is_winning: boolean;
+  outbid_notification_sent: boolean;
 }

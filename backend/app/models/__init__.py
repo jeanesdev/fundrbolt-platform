@@ -11,11 +11,14 @@ from app.models.auction_bid_import import (
 from app.models.auction_item import AuctionItem
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin, UUIDMixin
+from app.models.buy_now_availability import BuyNowAvailability
 from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
 from app.models.event import Event, EventLink, EventMedia, FoodOption
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.event_table import EventTable
 from app.models.invitation import Invitation
+from app.models.item_promotion import ItemPromotion
+from app.models.item_view import ItemView
 from app.models.legal_document import LegalDocument
 from app.models.meal_selection import MealSelection
 from app.models.npo import NPO
@@ -59,16 +62,16 @@ from app.models.user_import import (
     UserImportIssueSeverity,
     UserImportStatus,
 )
+from app.models.watch_list_entry import WatchListEntry
 
 __all__ = [
     "AssignedTicket",
     "AuctionBid",
     "AuctionItem",
     "AuditLog",
-    "BidActionAudit",
     "Base",
-    "TimestampMixin",
-    "UUIDMixin",
+    "BidActionAudit",
+    "BuyNowAvailability",
     "ConsentAuditLog",
     "CookieConsent",
     "CustomTicketOption",
@@ -82,6 +85,8 @@ __all__ = [
     "ImportFormat",
     "ImportStatus",
     "Invitation",
+    "ItemPromotion",
+    "ItemView",
     "IssueSeverity",
     "LegalDocument",
     "MealSelection",
@@ -91,10 +96,10 @@ __all__ = [
     "NPOMember",
     "OptionResponse",
     "OptionType",
+    "PaddleRaiseContribution",
     "PaymentStatus",
     "PromoCode",
     "PromoCodeApplication",
-    "PaddleRaiseContribution",
     "RegistrationGuest",
     "AuctionBidImportBatch",
     "AuctionBidImportFormat",
@@ -112,6 +117,7 @@ __all__ = [
     "TicketAuditLog",
     "TicketPackage",
     "TicketPurchase",
+    "TimestampMixin",
     "TicketSalesImportBatch",
     "TicketSalesImportIssue",
     "UserImportBatch",
@@ -120,4 +126,6 @@ __all__ = [
     "UserImportStatus",
     "User",
     "UserConsent",
+    "UUIDMixin",
+    "WatchListEntry",
 ]

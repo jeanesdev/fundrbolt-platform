@@ -77,6 +77,17 @@ class AuctionItemResponse(AuctionItemBase):
         None, description="URL of primary image (with SAS token if Azure)"
     )
 
+    # Bidding state fields
+    current_bid_amount: Decimal | None = None
+    min_next_bid_amount: Decimal | None = None
+    bid_count: int = 0
+    bidding_open: bool = False
+
+    # Engagement and promotion fields
+    watcher_count: int = 0
+    promotion_badge: str | None = None
+    promotion_notice: str | None = None
+
     model_config = {"from_attributes": True}
 
 
