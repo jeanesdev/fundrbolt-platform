@@ -15,23 +15,24 @@
  * - --event-accent: Accent/highlight color
  */
 
+import { BidConfirmSlide } from '@/components/auction/BidConfirmSlide'
+import { BidSliderModal } from '@/components/auction/BidSliderModal'
 import { AuctionGallery, CountdownTimer, EventDetails, EventSwitcher, MySeatingSection } from '@/components/event-home'
 import { AuctionItemDetailModal } from '@/components/event-home/AuctionItemDetailModal'
-import { BidSliderModal } from '@/components/auction/BidSliderModal'
-import { BidConfirmSlide } from '@/components/auction/BidConfirmSlide'
 import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEventBranding } from '@/hooks/use-event-branding'
 import { useEventContext } from '@/hooks/use-event-context'
-import { getMySeatingInfo, type SeatingInfoResponse } from '@/services/seating-service'
 import auctionItemService from '@/services/auctionItemService'
+import { getMySeatingInfo, type SeatingInfoResponse } from '@/services/seating-service'
 import watchListService from '@/services/watchlistService'
 import { useEventContextStore } from '@/stores/event-context-store'
 import { useEventStore } from '@/stores/event-store'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
+import type { AxiosError } from 'axios'
 import { AlertCircle, Calendar, Loader2, MapPin } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -44,11 +45,13 @@ import { toast } from 'sonner'
  */
 export function EventHomePage() {
   const navigate = useNavigate()
-  const { eventSlug } = useParams({ strict: false }) as { eventSlug: string }
+  const params = useParams({ strict: false }) as { eventSlug?: string; slug?: string }
+  const eventSlug = params.eventSlug ?? params.slug
   const { currentEvent, eventsLoading, eventsError, loadEventBySlug } = useEventStore()
   const { applyBranding, clearBranding } = useEventBranding()
   const { setSelectedEvent } = useEventContextStore()
   const { availableEvents } = useEventContext()
+
   const [selectedAuctionItemId, setSelectedAuctionItemId] = useState<string | null>(null)
   const [isItemWatching, setIsItemWatching] = useState(false)
   const [bidModalState, setBidModalState] = useState<{
@@ -112,8 +115,17 @@ export function EventHomePage() {
     enabled: !!currentEvent?.id,
     staleTime: 10 * 1000, // 10 seconds
     refetchInterval: 10 * 1000, // Poll every 10 seconds (T065)
-    retry: 1, // Don't retry too many times if user has no registration
+    retry: (failureCount, error) => {
+      const status = (error as AxiosError | undefined)?.response?.status
+      if (status === 404) {
+        return false
+      }
+      return failureCount < 1
+    },
   })
+
+  const seatingStatusCode = (seatingError as AxiosError | null)?.response?.status
+  const shouldShowSeatingError = !!seatingError && seatingStatusCode !== 404
 
   // Convert current event to RegisteredEventWithBranding for switcher
   const currentEventForSwitcher = useMemo((): RegisteredEventWithBranding | null => {
@@ -163,7 +175,6 @@ export function EventHomePage() {
     if (eventSlug) {
       loadEventBySlug(eventSlug).catch(() => {
         toast.error('Failed to load event')
-        // Clear the selected event to prevent infinite redirect loop
         setSelectedEvent(null, 'Select Event', null)
         navigate({ to: '/home' })
       })
@@ -456,6 +467,9 @@ export function EventHomePage() {
   }
 
   const bannerUrl = getBannerUrl()
+  const heroBackgroundImage = bannerUrl
+    ? `url("${encodeURI(bannerUrl)}")`
+    : undefined
 
   return (
     <div
@@ -467,7 +481,7 @@ export function EventHomePage() {
         {bannerUrl ? (
           <div
             className="w-full h-48 sm:h-64 md:h-80 bg-cover bg-center"
-            style={{ backgroundImage: `url(${bannerUrl})` }}
+            style={{ backgroundImage: heroBackgroundImage }}
           >
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60" />
           </div>
@@ -628,7 +642,7 @@ export function EventHomePage() {
           </div>
         )}
 
-        {seatingError && (
+        {shouldShowSeatingError && (
           <div className="mb-6">
             <Card className="border-destructive">
               <CardContent className="flex items-center gap-2 py-4 text-destructive">
@@ -639,7 +653,7 @@ export function EventHomePage() {
           </div>
         )}
 
-        {seatingInfo && !seatingError && !seatingLoading && (
+        {seatingInfo && !shouldShowSeatingError && !seatingLoading && (
           <div className="mb-6">
             <MySeatingSection seatingInfo={seatingInfo} />
           </div>

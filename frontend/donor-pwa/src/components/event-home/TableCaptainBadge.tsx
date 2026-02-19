@@ -28,6 +28,18 @@ export function TableCaptainBadge({
     <Badge
       variant={youAreCaptain ? 'default' : 'secondary'}
       className="flex items-center gap-1.5 w-fit text-sm py-1.5 px-3"
+      style={
+        youAreCaptain
+          ? {
+            backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
+            color: 'var(--event-text-on-primary, #FFFFFF)',
+          }
+          : {
+            backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+            color: 'var(--event-text-on-background, #000000)',
+            border: '1px solid rgb(var(--event-primary, 59, 130, 246) / 0.25)',
+          }
+      }
     >
       <Crown className="h-4 w-4" />
       {youAreCaptain ? (

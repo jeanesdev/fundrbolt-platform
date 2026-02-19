@@ -217,16 +217,17 @@ async def list_auction_items(
         if primary_media and primary_media.file_path:
             # Generate SAS URL for full-resolution image (not thumbnail)
             if primary_media.file_path.startswith("https://"):
-                blob_path = "/".join(
-                    primary_media.file_path.split(f"{settings.azure_storage_container_name}/")[1]
-                    .split("?")[0]
-                    .split("/")
-                )
                 try:
-                    item_dict["primary_image_url"] = media_service._generate_blob_sas_url(
-                        blob_path, expiry_hours=24
-                    )
-                except ValueError:
+                    container_path = f"{settings.azure_storage_container_name}/"
+                    if container_path in primary_media.file_path:
+                        blob_path = primary_media.file_path.split(container_path, 1)[1]
+                        blob_path = blob_path.split("?", 1)[0]
+                        item_dict["primary_image_url"] = media_service._generate_blob_sas_url(
+                            blob_path, expiry_hours=24
+                        )
+                    else:
+                        item_dict["primary_image_url"] = primary_media.file_path
+                except (ValueError, IndexError):
                     item_dict["primary_image_url"] = primary_media.file_path
             else:
                 item_dict["primary_image_url"] = primary_media.file_path

@@ -197,8 +197,9 @@ export const useEventStore = create<EventState>((set, get) => ({
         eventsLoading: false,
       })
     } catch (error) {
+      const errorMsg = getErrorMessage(error)
       set({
-        eventsError: getErrorMessage(error),
+        eventsError: errorMsg,
         eventsLoading: false,
       })
       throw error

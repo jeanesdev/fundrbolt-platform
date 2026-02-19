@@ -23,12 +23,24 @@ export function BidderNumberBadge({
   if (isCheckedIn && bidderNumber) {
     return (
       <div className="flex items-center gap-3">
-        <CheckCircle2 className="h-5 w-5 text-green-600" />
+        <CheckCircle2
+          className="h-5 w-5"
+          style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+        />
         <div>
-          <p className="text-sm font-medium text-muted-foreground">Your Bidder Number</p>
+          <p
+            className="text-sm font-medium"
+            style={{ color: 'var(--event-card-text-muted, #D1D5DB)' }}
+          >
+            Your Bidder Number
+          </p>
           <Badge
             variant="default"
-            className="text-lg font-bold px-4 py-1 mt-1 bg-primary hover:bg-primary"
+            className="text-lg font-bold px-4 py-1 mt-1"
+            style={{
+              backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
+              color: 'var(--event-text-on-primary, #FFFFFF)',
+            }}
           >
             #{bidderNumber}
           </Badge>
@@ -39,7 +51,14 @@ export function BidderNumberBadge({
 
   // If not checked in, show informational message
   return (
-    <Alert>
+    <Alert
+      className="border"
+      style={{
+        backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+        borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.25)',
+        color: 'var(--event-text-on-background, #000000)',
+      }}
+    >
       <Info className="h-4 w-4" />
       <AlertDescription>
         Check in at the event to see your bidder number.
