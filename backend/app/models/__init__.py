@@ -1,13 +1,6 @@
 """Database models package."""
 
 from app.models.auction_bid import AuctionBid, BidActionAudit, PaddleRaiseContribution
-from app.models.auction_bid_import import (
-    AuctionBidImportBatch,
-    AuctionBidImportFormat,
-    AuctionBidImportIssue,
-    AuctionBidImportIssueSeverity,
-    AuctionBidImportStatus,
-)
 from app.models.auction_item import AuctionItem
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin, UUIDMixin
@@ -57,12 +50,6 @@ from app.models.ticket_sales_import import (
 )
 from app.models.user import User
 from app.models.watch_list_entry import WatchListEntry
-from app.models.user_import import (
-    UserImportBatch,
-    UserImportIssue,
-    UserImportIssueSeverity,
-    UserImportStatus,
-)
 
 __all__ = [
     "AssignedTicket",
@@ -101,11 +88,6 @@ __all__ = [
     "PromoCode",
     "PromoCodeApplication",
     "RegistrationGuest",
-    "AuctionBidImportBatch",
-    "AuctionBidImportFormat",
-    "AuctionBidImportIssue",
-    "AuctionBidImportIssueSeverity",
-    "AuctionBidImportStatus",
     "RegistrationImportBatch",
     "RegistrationStatus",
     "RegistrationValidationIssue",
@@ -120,10 +102,6 @@ __all__ = [
     "TimestampMixin",
     "TicketSalesImportBatch",
     "TicketSalesImportIssue",
-    "UserImportBatch",
-    "UserImportIssue",
-    "UserImportIssueSeverity",
-    "UserImportStatus",
     "User",
     "UserConsent",
     "UUIDMixin",
