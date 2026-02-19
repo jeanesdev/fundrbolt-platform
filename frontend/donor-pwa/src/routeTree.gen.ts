@@ -302,7 +302,7 @@ export interface FileRoutesByFullPath {
   '/registrations': typeof AuthenticatedRegistrationsRoute
   '/events/$slug': typeof EventsSlugRouteWithChildren
   '/invitations/accept': typeof InvitationsAcceptRoute
-  '/checkin': typeof CheckinIndexRoute
+  '/checkin/': typeof CheckinIndexRoute
   '/events/$eventSlug': typeof AuthenticatedEventsEventSlugRouteRouteWithChildren
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/events/create': typeof AuthenticatedEventsCreateRoute
@@ -310,18 +310,18 @@ export interface FileRoutesByFullPath {
   '/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/settings/password': typeof AuthenticatedSettingsPasswordRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
-  '/events': typeof AuthenticatedEventsIndexRoute
-  '/npos': typeof AuthenticatedNposIndexRoute
+  '/events/': typeof AuthenticatedEventsIndexRoute
+  '/npos/': typeof AuthenticatedNposIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/events/$slug/': typeof EventsSlugIndexRoute
   '/events/$eventSlug/edit': typeof AuthenticatedEventsEventSlugEditRoute
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
   '/events/$eventSlug/': typeof AuthenticatedEventsEventSlugIndexRoute
-  '/npos/$npoId': typeof AuthenticatedNposNpoIdIndexRoute
+  '/npos/$npoId/': typeof AuthenticatedNposNpoIdIndexRoute
   '/events/$eventSlug/auction-items/create': typeof AuthenticatedEventsEventSlugAuctionItemsCreateRoute
-  '/events/$eventSlug/auction-items': typeof AuthenticatedEventsEventSlugAuctionItemsIndexRoute
+  '/events/$eventSlug/auction-items/': typeof AuthenticatedEventsEventSlugAuctionItemsIndexRoute
   '/events/$eventSlug/auction-items/$itemId/edit': typeof AuthenticatedEventsEventSlugAuctionItemsItemIdEditRoute
-  '/events/$eventSlug/auction-items/$itemId': typeof AuthenticatedEventsEventSlugAuctionItemsItemIdIndexRoute
+  '/events/$eventSlug/auction-items/$itemId/': typeof AuthenticatedEventsEventSlugAuctionItemsItemIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -432,7 +432,7 @@ export interface FileRouteTypes {
     | '/registrations'
     | '/events/$slug'
     | '/invitations/accept'
-    | '/checkin'
+    | '/checkin/'
     | '/events/$eventSlug'
     | '/errors/$error'
     | '/events/create'
@@ -440,18 +440,18 @@ export interface FileRouteTypes {
     | '/settings/consent'
     | '/settings/password'
     | '/events/$slug/register'
-    | '/events'
-    | '/npos'
+    | '/events/'
+    | '/npos/'
     | '/settings/'
     | '/events/$slug/'
     | '/events/$eventSlug/edit'
     | '/npos/$npoId/edit'
     | '/events/$eventSlug/'
-    | '/npos/$npoId'
+    | '/npos/$npoId/'
     | '/events/$eventSlug/auction-items/create'
-    | '/events/$eventSlug/auction-items'
+    | '/events/$eventSlug/auction-items/'
     | '/events/$eventSlug/auction-items/$itemId/edit'
-    | '/events/$eventSlug/auction-items/$itemId'
+    | '/events/$eventSlug/auction-items/$itemId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -566,7 +566,7 @@ declare module '@tanstack/react-router' {
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
-      fullPath: ''
+      fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -580,7 +580,7 @@ declare module '@tanstack/react-router' {
     '/checkin/': {
       id: '/checkin/'
       path: '/checkin'
-      fullPath: '/checkin'
+      fullPath: '/checkin/'
       preLoaderRoute: typeof CheckinIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -741,14 +741,14 @@ declare module '@tanstack/react-router' {
     '/_authenticated/npos/': {
       id: '/_authenticated/npos/'
       path: '/npos'
-      fullPath: '/npos'
+      fullPath: '/npos/'
       preLoaderRoute: typeof AuthenticatedNposIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/events/': {
       id: '/_authenticated/events/'
       path: '/events'
-      fullPath: '/events'
+      fullPath: '/events/'
       preLoaderRoute: typeof AuthenticatedEventsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
@@ -804,7 +804,7 @@ declare module '@tanstack/react-router' {
     '/_authenticated/npos/$npoId/': {
       id: '/_authenticated/npos/$npoId/'
       path: '/npos/$npoId'
-      fullPath: '/npos/$npoId'
+      fullPath: '/npos/$npoId/'
       preLoaderRoute: typeof AuthenticatedNposNpoIdIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
@@ -832,7 +832,7 @@ declare module '@tanstack/react-router' {
     '/_authenticated/events/$eventSlug/auction-items/': {
       id: '/_authenticated/events/$eventSlug/auction-items/'
       path: '/auction-items'
-      fullPath: '/events/$eventSlug/auction-items'
+      fullPath: '/events/$eventSlug/auction-items/'
       preLoaderRoute: typeof AuthenticatedEventsEventSlugAuctionItemsIndexRouteImport
       parentRoute: typeof AuthenticatedEventsEventSlugRouteRoute
     }
@@ -846,7 +846,7 @@ declare module '@tanstack/react-router' {
     '/_authenticated/events/$eventSlug/auction-items/$itemId/': {
       id: '/_authenticated/events/$eventSlug/auction-items/$itemId/'
       path: '/auction-items/$itemId'
-      fullPath: '/events/$eventSlug/auction-items/$itemId'
+      fullPath: '/events/$eventSlug/auction-items/$itemId/'
       preLoaderRoute: typeof AuthenticatedEventsEventSlugAuctionItemsItemIdIndexRouteImport
       parentRoute: typeof AuthenticatedEventsEventSlugRouteRoute
     }

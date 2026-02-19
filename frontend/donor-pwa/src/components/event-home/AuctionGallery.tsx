@@ -14,6 +14,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Eye, Gavel, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import apiClient from '@/lib/axios';
 import { cn } from '@/lib/utils';
 import watchListService from '@/services/watchlistService';
 import type {
@@ -60,18 +61,11 @@ async function fetchAuctionItems(
     searchParams.set('sort_by', params.sort_by);
   }
 
-  const response = await fetch(
-    `/api/v1/events/${eventId}/auction-items?${searchParams.toString()}`,
-    {
-      credentials: 'include',
-    }
-  );
+  const response = await apiClient.get(`/events/${eventId}/auction-items`, {
+    params: Object.fromEntries(searchParams.entries()),
+  });
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch auction items');
-  }
-
-  const data = await response.json();
+  const data = response.data;
 
   // Transform API response to match our types
   return {
@@ -103,8 +97,10 @@ async function fetchAuctionItems(
       page: data.pagination.page,
       limit: data.pagination.limit,
       total: data.pagination.total,
-      total_pages: data.pagination.total_pages,
-      has_more: data.pagination.page < data.pagination.total_pages,
+      total_pages: data.pagination.total_pages ?? data.pagination.pages ?? 0,
+      has_more:
+        data.pagination.page <
+        (data.pagination.total_pages ?? data.pagination.pages ?? 0),
     },
   };
 }

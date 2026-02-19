@@ -25,18 +25,37 @@ export function TableAssignmentCard({
   maxCapacity,
 }: TableAssignmentCardProps) {
   return (
-    <Card className="p-4 bg-primary/5 border-primary/20">
+    <Card
+      className="p-4 border"
+      style={{
+        backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+        borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.25)',
+      }}
+    >
       <div className="space-y-3">
         {/* Table Number and Name */}
         <div className="flex items-start gap-3">
-          <MapPin className="h-5 w-5 text-primary mt-0.5" />
+          <MapPin
+            className="h-5 w-5 mt-0.5"
+            style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+          />
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <Badge variant="default" className="text-lg font-semibold px-4 py-1">
+              <Badge
+                variant="default"
+                className="text-lg font-semibold px-4 py-1"
+                style={{
+                  backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
+                  color: 'var(--event-text-on-primary, #FFFFFF)',
+                }}
+              >
                 Table {tableNumber}
               </Badge>
               {tableName && (
-                <span className="text-base font-medium text-muted-foreground">
+                <span
+                  className="text-base font-medium"
+                  style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+                >
                   "{tableName}"
                 </span>
               )}
@@ -45,7 +64,10 @@ export function TableAssignmentCard({
         </div>
 
         {/* Occupancy */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div
+          className="flex items-center gap-2 text-sm"
+          style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+        >
           <Users className="h-4 w-4" />
           <span>
             {currentOccupancy} of {maxCapacity} seats filled

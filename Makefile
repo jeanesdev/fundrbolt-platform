@@ -1,4 +1,4 @@
-.PHONY: help install test lint format clean docker-up docker-down migrate dev-backend dev-frontend dev-fullstack validate-infra deploy-infra check-commits ngrok-start ngrok-stop ngrok-status ngrok-local
+.PHONY: help install test lint format clean docker-up docker-down migrate dev-backend dev-frontend dev-fullstack validate-infra deploy-infra check-commits ngrok-start ngrok-stop ngrok-status ngrok-local smoke-donor-event-page
 
 # Default target
 help:
@@ -14,6 +14,7 @@ help:
 	@echo "  make test             - Run all tests"
 	@echo "  make test-backend     - Run backend tests with coverage"
 	@echo "  make test-frontend    - Run frontend tests"
+	@echo "  make smoke-donor-event-page - Run donor event page smoke check"
 	@echo "  make test-watch       - Run backend tests in watch mode"
 	@echo ""
 	@echo "Code Quality:"
@@ -94,6 +95,10 @@ test-coverage:
 	@echo "Running backend tests with HTML coverage report..."
 	cd backend && poetry run pytest app/tests -v --cov=app --cov-report=html
 	@echo "Coverage report: backend/htmlcov/index.html"
+
+smoke-donor-event-page:
+	@echo "Running donor event page smoke check..."
+	cd frontend/donor-pwa && node tests/event-page-smoke.cjs
 
 # Code quality
 lint: lint-backend lint-frontend

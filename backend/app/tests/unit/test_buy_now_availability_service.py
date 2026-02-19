@@ -185,6 +185,7 @@ class TestBuyNowAvailabilityService:
 
         # Check quantity decreased
         availability = await service.get_availability(item.id)
+        assert availability is not None
         assert availability.remaining_quantity == 4
 
         # Check item quantity updated
@@ -213,6 +214,7 @@ class TestBuyNowAvailabilityService:
 
         # Check buy-now disabled
         availability = await service.get_availability(item.id)
+        assert availability is not None
         assert availability.remaining_quantity == 0
         assert availability.enabled is False
 
@@ -241,6 +243,7 @@ class TestBuyNowAvailabilityService:
 
         # Quantity should be unchanged
         availability = await service.get_availability(item.id)
+        assert availability is not None
         assert availability.remaining_quantity == 2
 
     async def test_decrement_quantity_not_found(

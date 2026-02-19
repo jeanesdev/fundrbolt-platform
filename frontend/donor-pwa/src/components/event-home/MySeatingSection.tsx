@@ -69,18 +69,37 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
-      <Card>
+      <Card
+        className="border"
+        style={{
+          backgroundColor: 'rgb(var(--event-card-bg, 147, 51, 234))',
+          borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.25)',
+          color: 'var(--event-card-text, #FFFFFF)',
+        }}
+      >
         <CardHeader>
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
+              <CardTitle
+                className="flex items-center gap-2"
+                style={{ color: 'var(--event-card-text, #FFFFFF)' }}
+              >
+                <MapPin
+                  className="h-5 w-5"
+                  style={{ color: 'var(--event-card-text, #FFFFFF)' }}
+                />
                 My Seating
               </CardTitle>
               {isOpen ? (
-                <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                <ChevronUp
+                  className="h-5 w-5"
+                  style={{ color: 'var(--event-card-text-muted, #D1D5DB)' }}
+                />
               ) : (
-                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                <ChevronDown
+                  className="h-5 w-5"
+                  style={{ color: 'var(--event-card-text-muted, #D1D5DB)' }}
+                />
               )}
             </div>
           </CollapsibleTrigger>
@@ -90,7 +109,14 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
           <CardContent className="space-y-4">
             {/* Pending Assignment Message */}
             {!hasTableAssignment && message && (
-              <Alert>
+              <Alert
+                className="border"
+                style={{
+                  backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                  borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.25)',
+                  color: 'var(--event-text-on-background, #000000)',
+                }}
+              >
                 <AlertDescription>{message}</AlertDescription>
               </Alert>
             )}
@@ -111,7 +137,9 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
                       captainFullName={tableAssignment.captainFullName}
                       youAreCaptain={tableAssignment.youAreCaptain}
                     />
-                    <Separator />
+                    <Separator
+                      style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.25)' }}
+                    />
                   </>
                 )}
 
@@ -119,15 +147,32 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
                 {!tableAssignment && (
                   <>
                     <div className="flex items-center gap-3">
-                      <MapPin className="h-5 w-5 text-muted-foreground" />
+                      <MapPin
+                        className="h-5 w-5"
+                        style={{ color: 'var(--event-card-text-muted, #D1D5DB)' }}
+                      />
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Table Number</p>
-                        <Badge variant="outline" className="text-lg font-semibold px-4 py-1 mt-1">
+                        <p
+                          className="text-sm font-medium"
+                          style={{ color: 'var(--event-card-text-muted, #D1D5DB)' }}
+                        >
+                          Table Number
+                        </p>
+                        <Badge
+                          variant="outline"
+                          className="text-lg font-semibold px-4 py-1 mt-1"
+                          style={{
+                            borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.45)',
+                            color: 'var(--event-card-text, #FFFFFF)',
+                          }}
+                        >
                           Table {myInfo.tableNumber}
                         </Badge>
                       </div>
                     </div>
-                    <Separator />
+                    <Separator
+                      style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.25)' }}
+                    />
                   </>
                 )}
 
@@ -137,17 +182,34 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
                   isCheckedIn={myInfo.checkedIn}
                 />
 
-                <Separator />
+                <Separator
+                  style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.25)' }}
+                />
 
                 {/* Tablemates */}
                 {tablemates.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <h3 className="text-sm font-semibold">Your Tablemates</h3>
+                        <Users
+                          className="h-4 w-4"
+                          style={{ color: 'var(--event-card-text-muted, #D1D5DB)' }}
+                        />
+                        <h3
+                          className="text-sm font-semibold"
+                          style={{ color: 'var(--event-card-text, #FFFFFF)' }}
+                        >
+                          Your Tablemates
+                        </h3>
                       </div>
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge
+                        variant="secondary"
+                        className="text-xs"
+                        style={{
+                          backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                          color: 'var(--event-text-on-background, #000000)',
+                        }}
+                      >
                         {tableCapacity.current}/{tableCapacity.max}
                       </Badge>
                     </div>
@@ -168,7 +230,14 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
 
                 {/* No Tablemates Yet */}
                 {tablemates.length === 0 && (
-                  <Alert>
+                  <Alert
+                    className="border"
+                    style={{
+                      backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                      borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.25)',
+                      color: 'var(--event-text-on-background, #000000)',
+                    }}
+                  >
                     <Users className="h-4 w-4" />
                     <AlertDescription>
                       You're the first at your table! More guests may be assigned soon.
