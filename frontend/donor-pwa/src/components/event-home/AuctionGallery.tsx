@@ -78,6 +78,13 @@ async function fetchAuctionItems(
         bid_number: number;
         primary_image_url?: string | null;
         starting_bid: number | string;
+        current_bid_amount?: number | string | null;
+        bid_count?: number;
+        bidding_open?: boolean;
+        watcher_count?: number;
+        promotion_badge?: string | null;
+        promotion_notice?: string | null;
+        min_next_bid_amount?: number | string | null;
       }) => ({
         id: item.id,
         title: item.title,
@@ -89,8 +96,23 @@ async function fetchAuctionItems(
           typeof item.starting_bid === 'string'
             ? parseFloat(item.starting_bid)
             : item.starting_bid,
-        current_bid: null, // Will be populated when bidding is implemented
-        bid_count: 0, // Will be populated when bidding is implemented
+        current_bid:
+          item.current_bid_amount == null
+            ? null
+            : typeof item.current_bid_amount === 'string'
+              ? parseFloat(item.current_bid_amount)
+              : item.current_bid_amount,
+        bid_count: item.bid_count ?? 0,
+        bidding_open: item.bidding_open,
+        watcher_count: item.watcher_count,
+        promotion_badge: item.promotion_badge ?? null,
+        promotion_notice: item.promotion_notice ?? null,
+        min_next_bid_amount:
+          item.min_next_bid_amount == null
+            ? undefined
+            : typeof item.min_next_bid_amount === 'string'
+              ? parseFloat(item.min_next_bid_amount)
+              : item.min_next_bid_amount,
       })
     ),
     pagination: {

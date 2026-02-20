@@ -47,6 +47,7 @@ security = HTTPBearerAuth()
 
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+    request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
     """Extract and validate JWT from Authorization header.
@@ -119,12 +120,7 @@ async def get_current_user(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        # Fetch user from database
-        from sqlalchemy import select
-
-        stmt = select(User).where(User.id == user_id)
-        result = await db.execute(stmt)
-        user = result.scalar_one_or_none()
+        user = await _get_user_with_role(db, user_id)
 
         if not user:
             raise HTTPException(
@@ -150,16 +146,7 @@ async def get_current_user(
                 },
             )
 
-        # Fetch role name from roles table and attach to user object
-        from sqlalchemy import text
-
-        role_stmt = text("SELECT name FROM roles WHERE id = :role_id")
-        role_result = await db.execute(role_stmt, {"role_id": user.role_id})
-        role_name_str = role_result.scalar_one_or_none()
-
-        # Attach role name to user object for permission checks
-        # Note: user.role is the SQLAlchemy relationship, so we use a custom attribute
-        user.role_name = role_name_str if role_name_str else "unknown"  # type: ignore[attr-defined]
+        user = await _apply_user_spoofing_if_requested(request, db, user)
 
         return user
 
@@ -235,30 +222,96 @@ async def get_current_user_optional(
         if is_blacklisted:
             return None
 
-        # Fetch user from database
-        from sqlalchemy import select
-
-        stmt = select(User).where(User.id == user_id)
-        result = await db.execute(stmt)
-        user = result.scalar_one_or_none()
+        user = await _get_user_with_role(db, user_id)
 
         if not user or not user.is_active:
             return None
 
-        # Fetch role name and attach to user object
-        from sqlalchemy import text
-
-        role_stmt = text("SELECT name FROM roles WHERE id = :role_id")
-        role_result = await db.execute(role_stmt, {"role_id": user.role_id})
-        role_name_str = role_result.scalar_one_or_none()
-
-        user.role_name = role_name_str if role_name_str else "unknown"  # type: ignore[attr-defined]
-
-        return user
+        return await _apply_user_spoofing_if_requested(request, db, user)
 
     except Exception:
         # Any error in token validation - return None (anonymous)
         return None
+
+
+async def _get_user_with_role(db: AsyncSession, user_id: UUID) -> User | None:
+    """Fetch a user and attach role_name for downstream authorization checks."""
+    from sqlalchemy import select, text
+
+    stmt = select(User).where(User.id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    if not user:
+        return None
+
+    role_stmt = text("SELECT name FROM roles WHERE id = :role_id")
+    role_result = await db.execute(role_stmt, {"role_id": user.role_id})
+    role_name_str = role_result.scalar_one_or_none()
+    user.role_name = role_name_str if role_name_str else "unknown"  # type: ignore[attr-defined]
+    return user
+
+
+async def _apply_user_spoofing_if_requested(
+    request: Request,
+    db: AsyncSession,
+    authenticated_user: User,
+) -> User:
+    """Apply X-Spoof-User-Id impersonation for super_admin users only."""
+    spoof_user_id_raw = request.headers.get("X-Spoof-User-Id")
+    if not spoof_user_id_raw:
+        return authenticated_user
+
+    if getattr(authenticated_user, "role_name", None) != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "error": {
+                    "code": "INSUFFICIENT_PERMISSIONS",
+                    "message": "Only super_admin users can spoof another user",
+                }
+            },
+        )
+
+    try:
+        spoof_user_id = uuid.UUID(spoof_user_id_raw)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "error": {
+                    "code": "INVALID_SPOOF_USER_ID",
+                    "message": "X-Spoof-User-Id must be a valid UUID",
+                }
+            },
+        ) from exc
+
+    spoofed_user = await _get_user_with_role(db, spoof_user_id)
+    if not spoofed_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "error": {
+                    "code": "SPOOF_USER_NOT_FOUND",
+                    "message": "Requested spoof user was not found",
+                }
+            },
+        )
+
+    if not spoofed_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "error": {
+                    "code": "ACCOUNT_DEACTIVATED",
+                    "message": "Cannot spoof an inactive user",
+                }
+            },
+        )
+
+    spoofed_user.spoofed_by_user_id = authenticated_user.id  # type: ignore[attr-defined]
+    spoofed_user.spoofed_by_email = authenticated_user.email  # type: ignore[attr-defined]
+    spoofed_user.spoofed_by_role = getattr(authenticated_user, "role_name", "unknown")  # type: ignore[attr-defined]
+    return spoofed_user
 
 
 async def get_current_active_user(current_user: Annotated[User, Depends(get_current_user)]) -> User:

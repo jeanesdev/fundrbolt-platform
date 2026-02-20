@@ -27,6 +27,7 @@ import { useEventContext } from '@/hooks/use-event-context'
 import auctionItemService from '@/services/auctionItemService'
 import { getMySeatingInfo, type SeatingInfoResponse } from '@/services/seating-service'
 import watchListService from '@/services/watchlistService'
+import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { useEventContextStore } from '@/stores/event-context-store'
 import { useEventStore } from '@/stores/event-store'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
@@ -51,6 +52,8 @@ export function EventHomePage() {
   const { applyBranding, clearBranding } = useEventBranding()
   const { setSelectedEvent } = useEventContextStore()
   const { availableEvents } = useEventContext()
+  const timeBaseRealMs = useDebugSpoofStore((state) => state.timeBaseRealMs)
+  const timeBaseSpoofMs = useDebugSpoofStore((state) => state.timeBaseSpoofMs)
 
   const [selectedAuctionItemId, setSelectedAuctionItemId] = useState<string | null>(null)
   const [isItemWatching, setIsItemWatching] = useState(false)
@@ -82,7 +85,7 @@ export function EventHomePage() {
     return availableEvents.map((event) => {
       // Check if event is past
       const eventDate = event.event_date ? new Date(event.event_date) : null
-      const now = new Date()
+      const now = getEffectiveNow()
       const is_past = eventDate ? eventDate < now : false
       const is_upcoming =
         eventDate && !is_past
@@ -106,7 +109,7 @@ export function EventHomePage() {
         npo_logo_url: null,
       }
     })
-  }, [availableEvents])
+  }, [availableEvents, timeBaseRealMs, timeBaseSpoofMs])
 
   // Fetch seating information for current event (T080, T065)
   const { data: seatingInfo, error: seatingError, isLoading: seatingLoading } = useQuery<SeatingInfoResponse>({
@@ -133,7 +136,7 @@ export function EventHomePage() {
 
     // Check if event is past
     const eventDate = new Date(currentEvent.event_datetime)
-    const now = new Date()
+    const now = getEffectiveNow()
     const is_past = eventDate < now
     const is_upcoming = !is_past && eventDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
@@ -160,7 +163,7 @@ export function EventHomePage() {
       npo_name: currentEvent.npo_name || 'Organization',
       npo_logo_url: null,
     }
-  }, [currentEvent])
+  }, [currentEvent, timeBaseRealMs, timeBaseSpoofMs])
 
   // Handle event switch from dropdown
   const handleEventSelect = useCallback(

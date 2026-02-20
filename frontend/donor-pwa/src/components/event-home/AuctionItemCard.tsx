@@ -7,6 +7,7 @@
  */
 
 import { cn } from '@/lib/utils';
+import { getEffectiveNow } from '@/stores/debug-spoof-store';
 import type { AuctionItemGalleryItem } from '@/types/auction-gallery';
 import { Eye, Gavel, Image as ImageIcon } from 'lucide-react';
 
@@ -52,7 +53,7 @@ export function AuctionItemCard({
   const displayBid = item.current_bid ?? item.starting_bid;
   const hasCurrentBid = item.current_bid !== null && item.current_bid > 0;
   const bidLabel = hasCurrentBid ? 'Current Bid' : 'Starting Bid';
-  const isEventInFuture = eventDateTime ? new Date(eventDateTime) > new Date() : false;
+  const isEventInFuture = eventDateTime ? new Date(eventDateTime) > getEffectiveNow() : false;
   const isBiddingOpen = item.bidding_open !== false; // Default to true if not specified
 
   const handleBidClick = (e: React.MouseEvent) => {

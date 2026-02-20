@@ -1,4 +1,6 @@
-import { expect, test } from 'playwright/test'
+/// <reference types="node" />
+
+import { expect, test } from '@playwright/test'
 
 const APP_URL = process.env.SMOKE_APP_URL ?? 'http://localhost:5174'
 const API_URL = process.env.SMOKE_API_URL ?? 'http://localhost:8000/api/v1'

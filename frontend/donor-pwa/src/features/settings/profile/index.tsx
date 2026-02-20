@@ -1,10 +1,14 @@
 import { ProfileForm } from '@/components/profile/ProfileForm'
 import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
 import { SocialMediaLinksForm } from '@/components/profile/social-media-links-form'
+import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import apiClient from '@/lib/axios'
 import { useAuthStore } from '@/stores/auth-store'
+import { useEventContextStore } from '@/stores/event-context-store'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
 import { useEffect } from 'react'
 import { toast } from 'sonner'
 import { ContentSection } from '../components/content-section'
@@ -12,6 +16,7 @@ import { ContentSection } from '../components/content-section'
 export function SettingsProfile() {
   const user = useAuthStore((state) => state.user)
   const updateUser = useAuthStore((state) => state.updateUser)
+  const selectedEventSlug = useEventContextStore((state) => state.selectedEventSlug)
   const queryClient = useQueryClient()
 
   // T047: Fetch current user data
@@ -80,6 +85,17 @@ export function SettingsProfile() {
       desc='Update your profile information and picture. Email cannot be changed here.'
     >
       <div className='space-y-6'>
+        {selectedEventSlug && (
+          <div>
+            <Button asChild variant='outline' className='gap-2'>
+              <Link to='/events/$eventSlug' params={{ eventSlug: selectedEventSlug }}>
+                <ArrowLeft className='h-4 w-4' />
+                Back to Event
+              </Link>
+            </Button>
+          </div>
+        )}
+
         <div>
           <h3 className='text-lg font-medium'>Profile Picture</h3>
           <p className='text-muted-foreground text-sm'>
