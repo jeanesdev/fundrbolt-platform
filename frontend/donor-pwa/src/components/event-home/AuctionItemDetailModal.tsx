@@ -12,6 +12,7 @@
  * - View tracking
  */
 
+import { WatchListButton } from '@/components/auction/WatchListButton';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -20,14 +21,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { WatchListButton } from '@/components/auction/WatchListButton';
-import auctionItemService from '@/services/auctionItemService';
 import { useItemViewTracking } from '@/hooks/useItemViewTracking';
+import { cn } from '@/lib/utils';
+import auctionItemService from '@/services/auctionItemService';
+import { getEffectiveNow } from '@/stores/debug-spoof-store';
 import type { AuctionItemDetail } from '@/types/auction-item';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, ExternalLink, Gavel, Loader2, Users } from 'lucide-react';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
+import { useEffect, useMemo, useState } from 'react';
 
 export interface AuctionItemDetailModalProps {
   eventId: string;
@@ -68,7 +69,7 @@ export function AuctionItemDetailModal({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   // Check if event is in the future
-  const isEventInFuture = eventDateTime ? new Date(eventDateTime) > new Date() : false;
+  const isEventInFuture = eventDateTime ? new Date(eventDateTime) > getEffectiveNow() : false;
 
   // Fetch auction item details
   const { data: item, isLoading } = useQuery({
@@ -94,8 +95,35 @@ export function AuctionItemDetailModal({
   const bidCount = item?.bid_count ?? 0;
   const isBiddingOpen = item?.bidding_open !== false;
 
-  // Get all images
-  const images = item?.media?.filter((m) => m.media_type === 'image') || [];
+  const images = useMemo(() => {
+    if (!item?.media) return [];
+
+    const seen = new Set<string>();
+    return item.media.filter((media) => {
+      if (media.media_type !== 'image') {
+        return false;
+      }
+
+      const identity = `${media.file_path}|${media.thumbnail_path || ''}`;
+      if (seen.has(identity)) {
+        return false;
+      }
+
+      seen.add(identity);
+      return true;
+    });
+  }, [item?.media]);
+
+  useEffect(() => {
+    setSelectedImageIndex(0);
+  }, [itemId]);
+
+  useEffect(() => {
+    if (selectedImageIndex >= images.length && images.length > 0) {
+      setSelectedImageIndex(images.length - 1);
+    }
+  }, [images.length, selectedImageIndex]);
+
   const selectedImage = images[selectedImageIndex];
 
   const handlePrevImage = () => {
@@ -120,7 +148,10 @@ export function AuctionItemDetailModal({
           <div className="flex flex-col">
             {/* Image Section */}
             {images.length > 0 && (
-              <div className="relative bg-muted">
+              <div
+                className="relative"
+                style={{ backgroundColor: 'rgb(var(--event-card-bg, 147, 51, 234))' }}
+              >
                 {/* Main Image */}
                 <div className="aspect-video overflow-hidden relative">
                   <img

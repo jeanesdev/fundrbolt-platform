@@ -119,3 +119,17 @@ As an admin, I can view detailed engagement and bidding activity for each item a
 - **SC-002**: Donors can complete the bid flow (open slider → confirm → success notification) in under 60 seconds.
 - **SC-003**: At least 80% of donors who use watch list features return to a watched item at least once during the event.
 - **SC-004**: Admins can retrieve watcher lists, view durations, and bid histories for an item within 10 seconds.
+
+## Implementation Update (2026-02-19)
+
+The following implementation updates were completed to improve demo/testing workflows and donor auction accuracy:
+
+- Added a super-admin-only debug spoof control in the donor profile dropdown to:
+	- Spoof effective current time for event-state simulation (e.g., simulate live event window).
+	- Spoof active user context via `X-Spoof-User-Id` for donor experience testing.
+- Added backend support for secure super-admin impersonation in auth middleware (header-based, UUID-validated, active-user validated).
+- Updated donor auction gallery mapping to use API bid-state fields (`current_bid_amount`, `bid_count`, `bidding_open`, promotions/watchers) instead of placeholder defaults.
+- Fixed duplicate gallery images in the auction detail modal by de-duplicating repeated media entries by image identity.
+- Updated auction detail modal image-section background styling to follow event theming variables.
+- Added profile-page quick navigation back to the current selected event.
+- Added automated test coverage for spoofing behavior in both backend contract tests and frontend store tests.
