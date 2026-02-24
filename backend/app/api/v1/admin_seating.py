@@ -287,11 +287,17 @@ async def assign_bidder_number_manually(
         HTTPException 403: User lacks permission to manage event
         HTTPException 400: Guest does not belong to event or assignment failed
     """
-    # Require NPO Admin or NPO Staff role
-    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:  # type: ignore[attr-defined]
+    # Require event-management role
+    if current_user.role_name not in [  # type: ignore[attr-defined]
+        "super_admin",
+        "npo_admin",
+        "npo_staff",
+        "event_coordinator",
+        "staff",
+    ]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
+            detail="Insufficient permissions to assign bidder numbers.",
         )
 
     # Get event
@@ -414,11 +420,17 @@ async def assign_guest_to_table(
         HTTPException 403: User lacks permission to manage event
         HTTPException 400: Table assignment validation failed (invalid number or at capacity)
     """
-    # Require NPO Admin or NPO Staff role
-    if current_user.role_name not in ["super_admin", "npo_admin", "npo_staff"]:  # type: ignore[attr-defined]
+    # Require event-management role
+    if current_user.role_name not in [  # type: ignore[attr-defined]
+        "super_admin",
+        "npo_admin",
+        "npo_staff",
+        "event_coordinator",
+        "staff",
+    ]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Insufficient permissions. NPO Admin or NPO Staff role required.",
+            detail="Insufficient permissions to assign bidder numbers.",
         )
 
     # Get event

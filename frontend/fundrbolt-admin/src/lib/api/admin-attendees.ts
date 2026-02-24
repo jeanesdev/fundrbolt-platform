@@ -3,7 +3,6 @@
  *
  * Handles API requests for event attendee management, meal summaries, and guest invitations.
  */
-
 import apiClient from '@/lib/axios'
 
 export interface Attendee {
@@ -18,6 +17,10 @@ export interface Attendee {
   meal_selection?: string | null
   meal_description?: string | null
   bidder_number?: number | null
+  table_number?: number | null
+  is_table_captain?: boolean
+  checked_in?: boolean
+  check_in_time?: string | null
   status: string
   created_at: string
 }

@@ -21,7 +21,7 @@ description: "Task list for event check-in page"
 **Purpose**: Project initialization and basic structure
 
 - [X] T001 Verify existing admin PWA and backend module locations for check-in feature in backend/app and frontend/fundrbolt-admin/src
-- [X] T002 [P] Create contracts reference note in docs/operations/ (or feature README) if required by team conventions
+- [ ] T002 [P] Create contracts reference note in docs/operations/ (or feature README) if required by team conventions
 
 ---
 
@@ -30,7 +30,7 @@ description: "Task list for event check-in page"
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
 - [X] T003 Define/extend SQLAlchemy models and migrations for check-in records and ticket transfer audit in backend/app/models/ and backend/alembic/versions/
-- [X] T004 [P] Add Pydantic schemas for check-in/search/dashboard payloads in backend/app/schemas/
+- [ ] T004 [P] Add Pydantic schemas for check-in/search/dashboard payloads in backend/app/schemas/
 - [X] T005 [P] Add service layer scaffolding for check-in operations in backend/app/services/
 - [X] T006 [P] Add API router scaffolding for check-in endpoints in backend/app/api/
 - [X] T007 [P] Add admin PWA route placeholder for check-in page in frontend/fundrbolt-admin/src/routes/
@@ -47,16 +47,16 @@ description: "Task list for event check-in page"
 
 ### Implementation for User Story 1
 
-- [X] T008 [P] [US1] Implement search endpoint in backend/app/api/ for /checkins/search
-- [X] T009 [P] [US1] Implement check-in endpoint in backend/app/api/ for /checkins/{registration_id}/check-in
-- [X] T010 [P] [US1] Implement check-out endpoint with required reason in backend/app/api/ for /checkins/{registration_id}/check-out
-- [X] T011 [US1] Implement check-in service logic and audit logging in backend/app/services/
-- [X] T012 [P] [US1] Implement dashboard endpoint in backend/app/api/ for /checkins/dashboard
+- [ ] T008 [P] [US1] Implement search endpoint in backend/app/api/ for /checkins/search
+- [ ] T009 [P] [US1] Implement check-in endpoint in backend/app/api/ for /checkins/{registration_id}/check-in
+- [ ] T010 [P] [US1] Implement check-out endpoint with required reason in backend/app/api/ for /checkins/{registration_id}/check-out
+- [ ] T011 [US1] Implement check-in service logic and audit logging in backend/app/services/
+- [ ] T012 [P] [US1] Implement dashboard endpoint in backend/app/api/ for /checkins/dashboard
 - [X] T013 [P] [US1] Add admin PWA check-in page shell and route in frontend/fundrbolt-admin/src/pages/ and frontend/fundrbolt-admin/src/routes/
 - [X] T014 [P] [US1] Add search UI and results list in frontend/fundrbolt-admin/src/components/
 - [X] T015 [P] [US1] Add check-in/check-out actions UI with reason capture in frontend/fundrbolt-admin/src/components/
 - [X] T016 [US1] Integrate check-in API client in frontend/fundrbolt-admin/src/services/ and wire to page
-- [X] T017 [US1] Add dashboard totals + searchable checked-in list UI in frontend/fundrbolt-admin/src/components/
+- [ ] T017 [US1] Add dashboard totals + searchable checked-in list UI in frontend/fundrbolt-admin/src/components/
 
 **Checkpoint**: User Story 1 is fully functional and independently testable
 
@@ -70,14 +70,14 @@ description: "Task list for event check-in page"
 
 ### Implementation for User Story 2
 
-- [X] T018 [P] [US2] Implement donor update endpoint in backend/app/api/ for /registrations/{registration_id}/donor
-- [X] T019 [P] [US2] Implement seating update endpoint with uniqueness enforcement in backend/app/api/ for /registrations/{registration_id}/seating
-- [X] T020 [P] [US2] Implement dinner selection endpoint in backend/app/api/ for /registrations/{registration_id}/dinner-selection
-- [X] T021 [US2] Implement update logic in backend/app/services/ with validation and conflict handling
-- [X] T022 [P] [US2] Add donor info edit UI in frontend/fundrbolt-admin/src/components/
-- [X] T023 [P] [US2] Add bidder/table assignment UI with conflict feedback in frontend/fundrbolt-admin/src/components/
-- [X] T024 [P] [US2] Add dinner selection UI in frontend/fundrbolt-admin/src/components/
-- [X] T025 [US2] Wire update APIs in frontend/fundrbolt-admin/src/services/ and update page state
+- [ ] T018 [P] [US2] Implement donor update endpoint in backend/app/api/ for /registrations/{registration_id}/donor
+- [ ] T019 [P] [US2] Implement seating update endpoint with uniqueness enforcement in backend/app/api/ for /registrations/{registration_id}/seating
+- [ ] T020 [P] [US2] Implement dinner selection endpoint in backend/app/api/ for /registrations/{registration_id}/dinner-selection
+- [ ] T021 [US2] Implement update logic in backend/app/services/ with validation and conflict handling
+- [ ] T022 [P] [US2] Add donor info edit UI in frontend/fundrbolt-admin/src/components/
+- [ ] T023 [P] [US2] Add bidder/table assignment UI with conflict feedback in frontend/fundrbolt-admin/src/components/
+- [ ] T024 [P] [US2] Add dinner selection UI in frontend/fundrbolt-admin/src/components/
+- [ ] T025 [US2] Wire update APIs in frontend/fundrbolt-admin/src/services/ and update page state
 
 **Checkpoint**: User Story 2 works independently with User Story 1 intact
 
@@ -91,12 +91,12 @@ description: "Task list for event check-in page"
 
 ### Implementation for User Story 3
 
-- [X] T026 [P] [US3] Implement registration creation endpoint in backend/app/api/ for /registrations
-- [X] T027 [P] [US3] Implement ticket transfer endpoint in backend/app/api/ for /registrations/{registration_id}/transfer
-- [X] T028 [US3] Implement registration and transfer service logic with audit logging in backend/app/services/
-- [X] T029 [P] [US3] Add register new donor UI flow in frontend/fundrbolt-admin/src/components/
-- [X] T030 [P] [US3] Add ticket transfer UI flow in frontend/fundrbolt-admin/src/components/
-- [X] T031 [US3] Wire registration/transfer APIs in frontend/fundrbolt-admin/src/services/ and update page state
+- [ ] T026 [P] [US3] Implement registration creation endpoint in backend/app/api/ for /registrations
+- [ ] T027 [P] [US3] Implement ticket transfer endpoint in backend/app/api/ for /registrations/{registration_id}/transfer
+- [ ] T028 [US3] Implement registration and transfer service logic with audit logging in backend/app/services/
+- [ ] T029 [P] [US3] Add register new donor UI flow in frontend/fundrbolt-admin/src/components/
+- [ ] T030 [P] [US3] Add ticket transfer UI flow in frontend/fundrbolt-admin/src/components/
+- [ ] T031 [US3] Wire registration/transfer APIs in frontend/fundrbolt-admin/src/services/ and update page state
 
 **Checkpoint**: User Story 3 works independently with User Stories 1 and 2 intact
 
@@ -106,8 +106,8 @@ description: "Task list for event check-in page"
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [X] T032 [P] Add audit log visibility (read-only) in backend/app/api/ if required by admin tooling
-- [X] T033 Update quickstart validation steps in .specify/specs/025-event-checkin-page/quickstart.md if implementation differs
+- [ ] T032 [P] Add audit log visibility (read-only) in backend/app/api/ if required by admin tooling
+- [ ] T033 Update quickstart validation steps in .specify/specs/025-event-checkin-page/quickstart.md if implementation differs
 
 ---
 

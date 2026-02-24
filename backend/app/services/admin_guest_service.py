@@ -109,6 +109,14 @@ class AdminGuestService:
                     "phone": primary_guest.phone or (registration.user.phone or ""),
                     "number_of_guests": registration.number_of_guests,
                     "bidder_number": primary_guest.bidder_number,
+                    "table_number": primary_guest.table_number,
+                    "is_table_captain": primary_guest.is_table_captain,
+                    "checked_in": bool(primary_guest.check_in_time),
+                    "check_in_time": (
+                        primary_guest.check_in_time.isoformat()
+                        if primary_guest.check_in_time
+                        else None
+                    ),
                     "status": primary_guest.status,
                     "created_at": primary_guest.created_at.isoformat(),
                 }
@@ -144,6 +152,10 @@ class AdminGuestService:
                     "phone": registration.user.phone or "",
                     "number_of_guests": registration.number_of_guests,
                     "bidder_number": None,
+                    "table_number": None,
+                    "is_table_captain": False,
+                    "checked_in": False,
+                    "check_in_time": None,
                     "status": registration.status,
                     "created_at": registration.created_at.isoformat(),
                 }
@@ -184,6 +196,12 @@ class AdminGuestService:
                     "phone": guest.phone or "",
                     "guest_of": f"{registration.user.first_name} {registration.user.last_name}",
                     "bidder_number": guest.bidder_number,
+                    "table_number": guest.table_number,
+                    "is_table_captain": guest.is_table_captain,
+                    "checked_in": bool(guest.check_in_time),
+                    "check_in_time": (
+                        guest.check_in_time.isoformat() if guest.check_in_time else None
+                    ),
                     "status": guest.status or "confirmed",
                 }
 
