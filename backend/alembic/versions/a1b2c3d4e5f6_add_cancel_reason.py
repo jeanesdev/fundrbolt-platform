@@ -8,7 +8,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "a1b2c3d4e5f6"
-down_revision = None  # Set this to the latest revision id in your project
+down_revision = "f1a2b3c4d5e6"
 branch_labels = None
 depends_on = None
 
