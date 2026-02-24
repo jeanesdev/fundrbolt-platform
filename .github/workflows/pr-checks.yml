@@ -12,6 +12,32 @@ permissions:
   checks: write
 
 jobs:
+  detect-checkin-changes:
+    name: Detect Check-in Changes
+    runs-on: ubuntu-latest
+    outputs:
+      checkin: ${{ steps.filter.outputs.checkin }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            checkin:
+              - 'backend/alembic/**'
+              - 'backend/app/api/v1/checkin.py'
+              - 'backend/app/api/v1/admin.py'
+              - 'backend/app/services/checkin_service.py'
+              - 'backend/app/services/admin_guest_service.py'
+              - 'frontend/fundrbolt-admin/src/features/events/sections/EventCheckInSection.tsx'
+              - 'frontend/fundrbolt-admin/src/services/checkin-service.ts'
+              - 'frontend/fundrbolt-admin/src/routes/_authenticated/events/$eventId/checkin.tsx'
+              - 'frontend/donor-pwa/playwright.checkin.config.ts'
+              - 'frontend/donor-pwa/tests/checkin/**'
+
   # Backend validation
   backend-validation:
     name: Backend Tests & Linting
@@ -164,6 +190,8 @@ jobs:
 
   checkin-smoke:
     name: Check-in API Smoke (Playwright)
+    needs: detect-checkin-changes
+    if: needs.detect-checkin-changes.outputs.checkin == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
