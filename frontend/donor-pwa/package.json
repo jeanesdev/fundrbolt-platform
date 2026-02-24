@@ -14,7 +14,8 @@
     "knip": "knip",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:checkin:e2e": "playwright test -c playwright.checkin.config.ts"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.51.0",
