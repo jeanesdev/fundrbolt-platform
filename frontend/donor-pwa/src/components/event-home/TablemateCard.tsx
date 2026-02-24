@@ -11,7 +11,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { User } from 'lucide-react';
+import { Hash, User } from 'lucide-react';
 
 interface TablemateCardProps {
   name: string | null;
@@ -37,37 +37,71 @@ export function TablemateCard({
     : '?';
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
+    <Card
+      className="transition-shadow hover:shadow-md border"
+      style={{
+        backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+        borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.25)',
+        color: 'var(--event-text-on-background, #000000)',
+      }}
+    >
+      <CardContent className="p-2">
+        <div className="flex items-center gap-2">
           {/* Avatar */}
-          <Avatar className="h-12 w-12">
+          <Avatar className="h-8 w-8">
             {profileImageUrl && <AvatarImage src={profileImageUrl} alt={name || 'Guest'} />}
-            <AvatarFallback className="bg-primary/10 text-primary">
+            <AvatarFallback
+              className="border"
+              style={{
+                backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.45)',
+                color: 'rgb(var(--event-primary, 59, 130, 246))',
+              }}
+            >
               {initials}
             </AvatarFallback>
           </Avatar>
 
           {/* Guest Info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <p className="font-medium text-sm truncate">{name || 'Guest'}</p>
               {bidderNumber && (
-                <Badge variant="secondary" className="shrink-0">
-                  #{bidderNumber}
+                <Badge
+                  variant="outline"
+                  className="shrink-0 flex items-center gap-1 px-1.5 py-0 text-[11px]"
+                  style={{
+                    borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.45)',
+                    color: 'rgb(var(--event-primary, 59, 130, 246))',
+                  }}
+                >
+                  <Hash className="h-3 w-3" />{bidderNumber}
                 </Badge>
               )}
             </div>
             {company && (
-              <p className="text-xs text-muted-foreground truncate">{company}</p>
+              <p
+                className="text-xs truncate"
+                style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+              >
+                {company}
+              </p>
             )}
             {!bidderNumber && (
-              <p className="text-xs text-muted-foreground italic">Not checked in</p>
+              <p
+                className="text-xs italic"
+                style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+              >
+                Not checked in
+              </p>
             )}
           </div>
 
           {/* User icon for visual consistency */}
-          <User className="h-4 w-4 text-muted-foreground shrink-0" />
+          <User
+            className="h-4 w-4 shrink-0"
+            style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+          />
         </div>
       </CardContent>
     </Card>

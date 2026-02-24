@@ -6,6 +6,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 import { useAuthStore } from '@/stores/auth-store';
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store';
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -36,10 +37,20 @@ apiClient.interceptors.request.use(
   (config) => {
     // Get access token from auth store
     const token = useAuthStore.getState().accessToken;
+    const spoofedUser = useDebugSpoofStore.getState().spoofedUser;
+    const spoofedNowIso = useDebugSpoofStore.getState().getEffectiveNowIso();
 
     // Add Authorization header if token exists
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    if (spoofedUser?.id) {
+      config.headers['X-Spoof-User-Id'] = spoofedUser.id;
+    }
+
+    if (spoofedNowIso) {
+      config.headers['X-Debug-Now'] = spoofedNowIso;
     }
 
     return config;

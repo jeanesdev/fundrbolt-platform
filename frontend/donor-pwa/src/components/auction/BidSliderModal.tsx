@@ -17,17 +17,18 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Slider } from '@/components/ui/slider';
-import { cn } from '@/lib/utils';
+import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker';
+import '@ncdai/react-wheel-picker/style.css';
 import { DollarSign, TrendingUp } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export interface BidSliderModalProps {
   isOpen: boolean;
   onClose: () => void;
   itemTitle: string;
-  currentBid: number;
-  minNextBid: number;
-  bidIncrement: number;
+  currentBid: number | string | null | undefined;
+  minNextBid: number | string | null | undefined;
+  bidIncrement: number | string | null | undefined;
   allowMaxBid?: boolean;
   onPlaceBid: (amount: number) => void;
   onSetMaxBid?: (amount: number) => void;
@@ -45,6 +46,12 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+function toFiniteNumber(value: number | string | null | undefined): number | null {
+  if (value === null || value === undefined) return null;
+  const parsed = typeof value === 'string' ? Number(value) : value;
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 /**
  * BidSliderModal component
  */
@@ -59,17 +66,34 @@ export function BidSliderModal({
   onPlaceBid,
   onSetMaxBid,
 }: BidSliderModalProps) {
+  const safeCurrentBid = toFiniteNumber(currentBid) ?? 0;
+  const parsedBidIncrement = toFiniteNumber(bidIncrement) ?? 1;
+  const safeBidIncrement = parsedBidIncrement > 0 ? parsedBidIncrement : 1;
+  const parsedMinNextBid = toFiniteNumber(minNextBid) ?? 0;
+  const safeMinNextBid = parsedMinNextBid > 0 ? parsedMinNextBid : safeCurrentBid + safeBidIncrement;
+
   // Calculate slider range: 10 increments above minimum
-  const maxSliderAmount = minNextBid + bidIncrement * 10;
-  const [sliderValue, setSliderValue] = useState<number[]>([minNextBid]);
-  const selectedAmount = sliderValue[0] ?? minNextBid;
+  const maxSliderAmount = safeMinNextBid + safeBidIncrement * 10;
+  const [sliderValue, setSliderValue] = useState<number[]>([safeMinNextBid]);
+  const selectedAmount = sliderValue[0] ?? safeMinNextBid;
+
+  const wheelOptions = useMemo(() => {
+    const values: Array<{ value: number; label: string }> = [];
+    for (let amount = safeMinNextBid; amount <= maxSliderAmount; amount += safeBidIncrement) {
+      values.push({
+        value: amount,
+        label: formatCurrency(amount),
+      });
+    }
+    return values;
+  }, [safeMinNextBid, maxSliderAmount, safeBidIncrement]);
 
   // Reset slider when modal opens or values change
   useEffect(() => {
     if (isOpen) {
-      setSliderValue([minNextBid]);
+      setSliderValue([safeMinNextBid]);
     }
-  }, [isOpen, minNextBid]);
+  }, [isOpen, safeMinNextBid]);
 
   const handlePlaceBid = () => {
     onPlaceBid(selectedAmount);
@@ -80,9 +104,6 @@ export function BidSliderModal({
       onSetMaxBid(selectedAmount);
     }
   };
-
-  // Calculate slider position percentage (inverted for vertical display)
-  const sliderPercent = ((selectedAmount - minNextBid) / (maxSliderAmount - minNextBid)) * 100;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -122,7 +143,7 @@ export function BidSliderModal({
                 className="text-xl font-bold"
                 style={{ color: 'var(--event-card-text, #000000)' }}
               >
-                {formatCurrency(currentBid)}
+                {formatCurrency(safeCurrentBid)}
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -136,7 +157,7 @@ export function BidSliderModal({
                 className="text-base font-semibold"
                 style={{ color: 'var(--event-card-text, #000000)' }}
               >
-                {formatCurrency(minNextBid)}
+                {formatCurrency(safeMinNextBid)}
               </span>
             </div>
           </div>
@@ -168,9 +189,9 @@ export function BidSliderModal({
               <Slider
                 value={sliderValue}
                 onValueChange={setSliderValue}
-                min={minNextBid}
+                min={safeMinNextBid}
                 max={maxSliderAmount}
-                step={bidIncrement}
+                step={safeBidIncrement}
                 orientation="vertical"
                 className="h-full"
                 aria-label="Bid amount"
@@ -182,7 +203,7 @@ export function BidSliderModal({
                   className="text-xs"
                   style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
                 >
-                  Min: {formatCurrency(minNextBid)}
+                  Min: {formatCurrency(safeMinNextBid)}
                 </div>
                 <div
                   className="text-xs"
@@ -193,43 +214,40 @@ export function BidSliderModal({
               </div>
             </div>
 
-            {/* Increment guide */}
+            {/* Spinner-style amount selector */}
             <div className="flex-1 space-y-3">
               <div
                 className="text-sm font-medium mb-2"
                 style={{ color: 'var(--event-text-on-background, #000000)' }}
               >
-                Quick Select
+                Bid Amount
               </div>
-              {[0, 1, 2, 3, 4].map((multiplier) => {
-                const amount = minNextBid + bidIncrement * multiplier;
-                if (amount > maxSliderAmount) return null;
-                return (
-                  <button
-                    key={multiplier}
-                    onClick={() => setSliderValue([amount])}
-                    className={cn(
-                      'w-full rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                      'hover:opacity-80 border',
-                      selectedAmount === amount ? 'border-2' : 'border-transparent'
-                    )}
-                    style={
-                      selectedAmount === amount
-                        ? {
-                            backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
-                            color: 'var(--event-text-on-primary, #FFFFFF)',
-                            borderColor: 'rgb(var(--event-accent, 147, 51, 234))',
-                          }
-                        : {
-                            backgroundColor: 'rgb(var(--event-card-bg, 147, 51, 234))',
-                            color: 'var(--event-card-text, #000000)',
-                          }
-                    }
-                  >
-                    {formatCurrency(amount)}
-                  </button>
-                );
-              })}
+              <div
+                className="rounded-xl border px-2 py-2"
+                style={{
+                  borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.45)',
+                  backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                }}
+              >
+                <WheelPickerWrapper className="h-44">
+                  <WheelPicker
+                    value={selectedAmount}
+                    onValueChange={(value) => setSliderValue([Number(value)])}
+                    options={wheelOptions}
+                    visibleCount={20}
+                    dragSensitivity={1.1}
+                    scrollSensitivity={1.0}
+                    optionItemHeight={44}
+                    classNames={{
+                      optionItem: 'text-sm text-center text-[var(--event-text-muted-on-background,#6B7280)]',
+                      highlightWrapper:
+                        'border-y border-[rgb(var(--event-primary,59,130,246)/0.45)]',
+                      highlightItem:
+                        'text-lg font-semibold text-[var(--event-text-on-background,#000000)]',
+                    }}
+                  />
+                </WheelPickerWrapper>
+              </div>
             </div>
           </div>
 
@@ -252,8 +270,13 @@ export function BidSliderModal({
               <Button
                 onClick={handleSetMaxBid}
                 variant="outline"
-                className="w-full"
+                className="w-full font-semibold"
                 size="lg"
+                style={{
+                  color: 'var(--event-text-on-background, #000000)',
+                  borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.55)',
+                  backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                }}
               >
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Set as Max Bid - {formatCurrency(selectedAmount)}

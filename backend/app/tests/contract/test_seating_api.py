@@ -492,6 +492,42 @@ class TestDonorSeatingEndpoint:
         assert data["my_info"]["bidder_number"] is None
         assert "check in at the event" in data["message"].lower()
 
+    async def test_get_donor_seating_info_spoof_before_check_in_shows_bidder_number(
+        self,
+        super_admin_client: AsyncClient,
+        test_event: Any,
+        test_donor: Any,
+        test_registration: Any,
+        db_session: AsyncSession,
+    ) -> None:
+        """Test spoofed donor seating shows bidder number even before check-in."""
+        test_event.table_count = 10
+        test_event.max_guests_per_table = 8
+
+        primary_guest_query = select(RegistrationGuest).where(
+            RegistrationGuest.registration_id == test_registration.id,
+            RegistrationGuest.is_primary.is_(True),
+        )
+        primary_guest = (await db_session.execute(primary_guest_query)).scalar_one()
+        primary_guest.table_number = 5
+        primary_guest.bidder_number = 150
+        primary_guest.bidder_number_assigned_at = datetime.now(UTC)
+        primary_guest.checked_in = False
+        primary_guest.check_in_time = None
+        await db_session.commit()
+
+        response = await super_admin_client.get(
+            f"/api/v1/donor/events/{test_event.id}/my-seating",
+            headers={"X-Spoof-User-Id": str(test_donor.id)},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["my_info"]["table_number"] == 5
+        assert data["my_info"]["checked_in"] is False
+        assert data["my_info"]["bidder_number"] == 150
+        assert data["message"] is None
+
     async def test_get_donor_seating_info_no_assignment(
         self,
         donor_client: AsyncClient,

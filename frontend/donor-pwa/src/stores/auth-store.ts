@@ -4,6 +4,7 @@ import {
   getRefreshToken,
   saveRefreshToken,
 } from '@/lib/storage/tokens'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { create } from 'zustand'
 
 interface AuthUser {
@@ -124,6 +125,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     })
     // Clear refresh token from localStorage
     clearRefreshToken()
+    useDebugSpoofStore.getState().reset()
   },
 
   // API methods

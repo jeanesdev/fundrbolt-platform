@@ -22,6 +22,7 @@ export interface AuctionItemGalleryItem {
   promotion_badge?: string | null;
   promotion_notice?: string | null;
   min_next_bid_amount?: number;
+  category?: string | null;
 }
 
 /**
@@ -51,4 +52,9 @@ export type AuctionFilterType = 'all' | 'silent' | 'live';
 /**
  * Sort options for auction gallery
  */
-export type AuctionSortType = 'newest' | 'highest_bid';
+export type AuctionSortType =
+  | 'highest_bid'
+  | 'lowest_bid'
+  | 'most_bids'
+  | 'item_number'
+  | 'title';

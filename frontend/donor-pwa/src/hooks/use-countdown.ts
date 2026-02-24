@@ -8,6 +8,7 @@
  * @returns Countdown values (days, hours, minutes, seconds) and state flags
  */
 
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export interface CountdownValues {
@@ -33,8 +34,7 @@ const DAY = HOUR * 24;
 /**
  * Calculate countdown values from milliseconds remaining
  */
-function calculateCountdown(targetTime: number): CountdownValues {
-  const now = Date.now();
+function calculateCountdown(targetTime: number, now: number): CountdownValues {
   const totalMs = Math.max(0, targetTime - now);
   const isExpired = totalMs <= 0;
 
@@ -93,6 +93,7 @@ export function useCountdown(
   }
 ): CountdownValues {
   const { updateInterval = 1000, onExpire } = options || {};
+  const getEffectiveNowMs = useDebugSpoofStore((state) => state.getEffectiveNowMs);
 
   // Memoize target timestamp
   const targetTime = useMemo(() => {
@@ -103,12 +104,12 @@ export function useCountdown(
 
   // Initialize state
   const [countdown, setCountdown] = useState<CountdownValues>(() =>
-    calculateCountdown(targetTime)
+    calculateCountdown(targetTime, getEffectiveNowMs())
   );
 
   // Update callback
   const updateCountdown = useCallback(() => {
-    const newCountdown = calculateCountdown(targetTime);
+    const newCountdown = calculateCountdown(targetTime, getEffectiveNowMs());
     setCountdown((prev) => {
       // Only trigger onExpire once when transitioning to expired
       if (!prev.isExpired && newCountdown.isExpired && onExpire) {
@@ -116,7 +117,7 @@ export function useCountdown(
       }
       return newCountdown;
     });
-  }, [targetTime, onExpire]);
+  }, [targetTime, onExpire, getEffectiveNowMs]);
 
   // Setup interval
   useEffect(() => {
@@ -139,8 +140,8 @@ export function useCountdown(
 
   // Recalculate when targetDate changes
   useEffect(() => {
-    setCountdown(calculateCountdown(targetTime));
-  }, [targetTime]);
+    setCountdown(calculateCountdown(targetTime, getEffectiveNowMs()));
+  }, [targetTime, getEffectiveNowMs]);
 
   return countdown;
 }
