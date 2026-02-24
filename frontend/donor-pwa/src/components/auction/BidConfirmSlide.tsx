@@ -15,9 +15,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Check, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export interface BidConfirmSlideProps {
@@ -90,6 +91,23 @@ export function BidConfirmSlide({
         className="max-w-md"
         style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}
       >
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="absolute top-3 right-3"
+          onClick={onClose}
+          aria-label="Close confirm bid"
+          disabled={isConfirmed}
+          style={{
+            color: 'var(--event-text-on-background, #000000)',
+            borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.4)',
+            backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+          }}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+
         <AlertDialogHeader>
           <AlertDialogTitle
             className="text-xl font-bold text-center"
@@ -136,7 +154,7 @@ export function BidConfirmSlide({
           {/* Swipe-to-confirm slider */}
           <div className="space-y-2">
             <div
-              className="text-sm font-medium text-center"
+              className="text-sm font-semibold text-center"
               style={{ color: 'var(--event-text-on-background, #000000)' }}
             >
               Slide to Confirm
@@ -155,8 +173,8 @@ export function BidConfirmSlide({
                     : `linear-gradient(to right,
                         rgb(var(--event-primary, 59, 130, 246)) 0%,
                         rgb(var(--event-primary, 59, 130, 246)) ${slidePercent}%,
-                        rgb(229, 231, 235) ${slidePercent}%,
-                        rgb(229, 231, 235) 100%)`,
+                        rgb(var(--event-secondary, 147, 51, 234)) ${slidePercent}%,
+                        rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
                 }}
               >
                 <div className="flex items-center justify-between px-4 py-3">
@@ -169,14 +187,20 @@ export function BidConfirmSlide({
                   >
                     <ArrowRight
                       className="h-5 w-5"
-                      style={{ color: 'var(--event-text-on-primary, #FFFFFF)' }}
+                      style={{ color: 'var(--event-text-on-secondary, #FFFFFF)' }}
                     />
                   </div>
 
                   {/* Center text */}
                   <div
-                    className="text-sm font-medium"
-                    style={{ color: 'var(--event-text-on-primary, #FFFFFF)' }}
+                    className="text-sm font-semibold"
+                    style={{
+                      color: isComplete
+                        ? 'var(--event-text-on-primary, #FFFFFF)'
+                        : slidePercent >= 50
+                          ? 'var(--event-text-on-primary, #FFFFFF)'
+                          : 'var(--event-text-on-secondary, #FFFFFF)',
+                    }}
                   >
                     {isComplete ? 'Confirmed!' : 'Slide to Confirm'}
                   </div>
@@ -212,14 +236,29 @@ export function BidConfirmSlide({
             </div>
 
             <div
-              className="text-xs text-center"
-              style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+              className="text-xs text-center font-medium"
+              style={{ color: 'var(--event-text-on-background, #000000)' }}
             >
               {isMaxBid
                 ? 'Slide to confirm your maximum bid'
                 : 'Slide to confirm and place your bid'}
             </div>
           </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full font-semibold"
+            onClick={onClose}
+            disabled={isConfirmed}
+            style={{
+              color: 'var(--event-text-on-background, #000000)',
+              borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.55)',
+              backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+            }}
+          >
+            Cancel
+          </Button>
         </div>
       </AlertDialogContent>
     </AlertDialog>

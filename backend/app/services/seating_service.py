@@ -318,6 +318,7 @@ class SeatingService:
         db: AsyncSession,
         user_id: UUID,
         event_id: UUID,
+        include_unchecked_in_bidder_numbers: bool = False,
     ) -> dict[str, Any]:
         """
         Get seating information for a donor's event registration.
@@ -362,10 +363,16 @@ class SeatingService:
                 logger.warning(f"No registration found for user={user_id}, event={event_id}")
                 raise ValueError(f"User {user_id} has no registration for event {event_id}")
 
-            # Find user's guest record (first guest or guest linked to user)
+            # Find user's guest record with resilient fallback order:
+            # 1) guest explicitly linked to user_id
+            # 2) primary guest
+            # 3) first guest record
             my_guest = next(
                 (g for g in registration.guests if g.user_id == user_id),
-                registration.guests[0] if registration.guests else None,
+                next(
+                    (g for g in registration.guests if g.is_primary),
+                    registration.guests[0] if registration.guests else None,
+                ),
             )
 
             if not my_guest:
@@ -377,13 +384,15 @@ class SeatingService:
             # Check if user is checked in
             is_checked_in = my_guest.check_in_time is not None
 
-            # Build my_info (hide bidder number if not checked in)
+            # Build my_info (hide bidder number if not checked in, unless spoof override enabled)
             from app.schemas.seating import MySeatingInfo
+
+            show_bidder_numbers = is_checked_in or include_unchecked_in_bidder_numbers
 
             my_info = MySeatingInfo(
                 guest_id=my_guest.id,
                 full_name=my_guest.name,
-                bidder_number=my_guest.bidder_number if is_checked_in else None,
+                bidder_number=my_guest.bidder_number if show_bidder_numbers else None,
                 table_number=my_guest.table_number,
                 checked_in=is_checked_in,
             )
@@ -408,17 +417,19 @@ class SeatingService:
                 tablemates_result = await db.execute(tablemates_query)
                 tablemate_guests = tablemates_result.scalars().all()
 
-                # Build tablemate info (show bidder numbers only for checked-in guests)
+                # Build tablemate info (show bidder numbers only for checked-in guests,
+                # unless spoof override enabled)
                 from app.schemas.seating import TablemateInfo
 
                 for tm_guest in tablemate_guests:
                     tm_is_checked_in = tm_guest.check_in_time is not None
+                    tm_show_bidder_number = tm_is_checked_in or include_unchecked_in_bidder_numbers
 
                     tablemates.append(
                         TablemateInfo(
                             guest_id=tm_guest.id,
                             name=tm_guest.name,
-                            bidder_number=tm_guest.bidder_number if tm_is_checked_in else None,
+                            bidder_number=tm_guest.bidder_number if tm_show_bidder_number else None,
                             company=None,  # TODO: Add company field to guest model if needed
                             profile_image_url=None,  # TODO: Add profile image URL if available
                         )
@@ -496,7 +507,7 @@ class SeatingService:
             message = None
             if not has_table_assignment:
                 message = "Your table assignment is pending. Please check back later."
-            elif not is_checked_in:
+            elif not is_checked_in and not include_unchecked_in_bidder_numbers:
                 message = "Check in at the event to see your bidder number."
             logger.info(
                 f"Seating info retrieved for user={user_id}, table={my_guest.table_number}, checked_in={is_checked_in}"

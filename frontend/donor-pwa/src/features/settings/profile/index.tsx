@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import apiClient from '@/lib/axios'
 import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { useEventContextStore } from '@/stores/event-context-store'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -16,12 +17,13 @@ import { ContentSection } from '../components/content-section'
 export function SettingsProfile() {
   const user = useAuthStore((state) => state.user)
   const updateUser = useAuthStore((state) => state.updateUser)
+  const spoofedUserId = useDebugSpoofStore((state) => state.spoofedUser?.id)
   const selectedEventSlug = useEventContextStore((state) => state.selectedEventSlug)
   const queryClient = useQueryClient()
 
   // T047: Fetch current user data
   const { data: userData, isLoading } = useQuery({
-    queryKey: ['user', 'me'],
+    queryKey: ['user', 'me', spoofedUserId ?? 'self'],
     queryFn: async () => {
       const response = await apiClient.get('/users/me')
       return response.data

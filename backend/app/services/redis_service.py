@@ -276,6 +276,41 @@ class RedisService:
         return False
 
     @staticmethod
+    async def is_rate_limited(key: str, max_attempts: int, window_seconds: int) -> bool:
+        """Check if rate limit is exceeded without incrementing attempts.
+
+        Args:
+            key: Rate limit key
+            max_attempts: Maximum attempts allowed
+            window_seconds: Time window in seconds
+
+        Returns:
+            True if rate limited, False otherwise
+        """
+        redis = await get_redis()
+        now = datetime.utcnow().timestamp()
+        window_start = now - window_seconds
+
+        await redis.zremrangebyscore(key, 0, window_start)
+        count = await redis.zcount(key, window_start, now)
+        return count >= max_attempts
+
+    @staticmethod
+    async def increment_rate_limit(key: str, window_seconds: int) -> None:
+        """Increment rate limit attempt counter using sliding window.
+
+        Args:
+            key: Rate limit key
+            window_seconds: Time window in seconds
+        """
+        redis = await get_redis()
+        now = datetime.utcnow().timestamp()
+        member = f"{now}:{datetime.utcnow().isoformat()}"
+
+        await redis.zadd(key, {member: now})
+        await redis.expire(key, window_seconds)
+
+    @staticmethod
     async def reset_rate_limit(key: str) -> None:
         """Reset rate limit counter.
 

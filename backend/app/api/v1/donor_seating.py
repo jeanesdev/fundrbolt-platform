@@ -184,7 +184,15 @@ async def get_my_seating_info(
     - 404: User has no registration for this event
     """
     try:
-        seating_info = await SeatingService.get_donor_seating_info(db, current_user.id, event_id)
+        include_unchecked_in_bidder_numbers = (
+            getattr(current_user, "spoofed_by_user_id", None) is not None
+        )
+        seating_info = await SeatingService.get_donor_seating_info(
+            db,
+            current_user.id,
+            event_id,
+            include_unchecked_in_bidder_numbers=include_unchecked_in_bidder_numbers,
+        )
         return SeatingInfoResponse(**seating_info)
     except ValueError as e:
         logger.warning(

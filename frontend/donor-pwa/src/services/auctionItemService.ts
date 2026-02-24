@@ -95,8 +95,13 @@ class AuctionItemService {
     amount: number
   ): Promise<BidResponse> {
     const response = await apiClient.post<BidResponse>(
-      `/events/${eventId}/auction-items/${itemId}/bids`,
-      { amount }
+      '/auction/bids',
+      {
+        event_id: eventId,
+        auction_item_id: itemId,
+        bid_amount: amount,
+        bid_type: 'regular',
+      }
     );
     return response.data;
   }
@@ -110,8 +115,14 @@ class AuctionItemService {
     maxAmount: number
   ): Promise<BidResponse> {
     const response = await apiClient.post<BidResponse>(
-      `/events/${eventId}/auction-items/${itemId}/bids/max`,
-      { max_amount: maxAmount }
+      '/auction/bids',
+      {
+        event_id: eventId,
+        auction_item_id: itemId,
+        bid_amount: maxAmount,
+        max_bid: maxAmount,
+        bid_type: 'proxy_auto',
+      }
     );
     return response.data;
   }

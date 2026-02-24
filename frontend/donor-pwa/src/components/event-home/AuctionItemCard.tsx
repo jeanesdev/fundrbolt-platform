@@ -9,12 +9,16 @@
 import { cn } from '@/lib/utils';
 import { getEffectiveNow } from '@/stores/debug-spoof-store';
 import type { AuctionItemGalleryItem } from '@/types/auction-gallery';
-import { Eye, Gavel, Image as ImageIcon } from 'lucide-react';
+import { Eye, Gavel, Heart, Image as ImageIcon } from 'lucide-react';
 
 export interface AuctionItemCardProps {
   item: AuctionItemGalleryItem;
   onBidClick?: (item: AuctionItemGalleryItem) => void;
   onClick?: (item: AuctionItemGalleryItem) => void;
+  isWatched?: boolean;
+  currentUserMaxBid?: number | null;
+  isCurrentUserWinning?: boolean;
+  onToggleWatch?: (item: AuctionItemGalleryItem, nextWatched: boolean) => void;
   eventStatus?: 'draft' | 'active' | 'closed';
   eventDateTime?: string;
   className?: string;
@@ -46,15 +50,26 @@ export function AuctionItemCard({
   item,
   onBidClick,
   onClick,
+  isWatched = false,
+  currentUserMaxBid = null,
+  isCurrentUserWinning = false,
+  onToggleWatch,
   eventStatus,
   eventDateTime,
   className,
 }: AuctionItemCardProps) {
-  const displayBid = item.current_bid ?? item.starting_bid;
+  const isLiveAuctionItem = item.auction_type === 'live';
+  const displayBid = isLiveAuctionItem ? (item.current_bid ?? null) : (item.current_bid ?? item.starting_bid);
   const hasCurrentBid = item.current_bid !== null && item.current_bid > 0;
-  const bidLabel = hasCurrentBid ? 'Current Bid' : 'Starting Bid';
+  const bidLabel = isCurrentUserWinning && hasCurrentBid
+    ? 'Currently Winning Bid at:'
+    : hasCurrentBid
+      ? 'Current Bid'
+      : 'Starting Bid';
   const isEventInFuture = eventDateTime ? new Date(eventDateTime) > getEffectiveNow() : false;
-  const isBiddingOpen = item.bidding_open !== false; // Default to true if not specified
+  const isEffectivelyLive = eventStatus === 'active' && !isEventInFuture;
+  const isBiddingOpen =
+    eventStatus !== 'closed' && (item.bidding_open !== false || isEffectivelyLive);
 
   const handleBidClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click when clicking bid button
@@ -65,11 +80,17 @@ export function AuctionItemCard({
     onClick?.(item);
   };
 
+  const handleWatchClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleWatch?.(item, !isWatched);
+  };
+
   return (
     <div
       onClick={handleCardClick}
       className={cn(
         'group flex flex-col overflow-hidden rounded-lg border shadow-sm transition-shadow hover:shadow-md',
+        isCurrentUserWinning && hasCurrentBid && 'border-2',
         // Use event accent color for border on hover
         'hover:border-[var(--event-accent,rgb(147,51,234))]',
         onClick && 'cursor-pointer',
@@ -77,10 +98,17 @@ export function AuctionItemCard({
       )}
       style={{
         backgroundColor: 'rgb(var(--event-card-bg, 147, 51, 234))',
+        borderColor:
+          isCurrentUserWinning && hasCurrentBid
+            ? 'rgb(22, 163, 74)'
+            : undefined,
       }}
     >
       {/* Thumbnail */}
-      <div className="relative aspect-square w-full overflow-hidden bg-muted">
+      <div
+        className="relative aspect-square w-full overflow-hidden"
+        style={{ backgroundColor: 'rgb(var(--event-card-bg, 147, 51, 234) / 0.15)' }}
+      >
         {item.thumbnail_url ? (
           <img
             src={item.thumbnail_url}
@@ -89,16 +117,39 @@ export function AuctionItemCard({
             loading="lazy"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-muted/50">
+          <div
+            className="flex h-full w-full items-center justify-center"
+            style={{ backgroundColor: 'rgb(var(--event-card-bg, 147, 51, 234) / 0.2)' }}
+          >
             <ImageIcon className="h-12 w-12 text-muted-foreground/40" aria-hidden="true" />
           </div>
         )}
 
         {/* Promotion badge */}
         {item.promotion_badge && (
-          <div className="absolute left-2 top-2 rounded-full bg-amber-500/90 px-2 py-0.5 text-xs font-bold text-white shadow-md">
+          <div
+            className={cn(
+              'absolute left-2 rounded-full bg-amber-500/90 px-2 py-0.5 text-xs font-bold text-white shadow-md',
+              onToggleWatch ? 'top-11' : 'top-2'
+            )}
+          >
             {item.promotion_badge}
           </div>
+        )}
+
+        {onToggleWatch && (
+          <button
+            type="button"
+            onClick={handleWatchClick}
+            className="absolute left-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white transition-colors hover:bg-black/80"
+            aria-label={isWatched ? 'Remove from watch list' : 'Add to watch list'}
+            title={isWatched ? 'Remove from watch list' : 'Add to watch list'}
+          >
+            <Heart
+              className={cn('h-4 w-4', isWatched && 'fill-current')}
+              aria-hidden="true"
+            />
+          </button>
         )}
 
         {/* Auction type badge */}
@@ -112,6 +163,23 @@ export function AuctionItemCard({
         >
           {item.auction_type}
         </div>
+
+        {isCurrentUserWinning && hasCurrentBid && (
+          <div
+            className={cn(
+              'absolute left-2 rounded-full bg-green-600/90 px-2 py-0.5 text-xs font-bold text-white shadow-md',
+              item.promotion_badge
+                ? onToggleWatch
+                  ? 'top-20'
+                  : 'top-11'
+                : onToggleWatch
+                  ? 'top-11'
+                  : 'top-2'
+            )}
+          >
+            Currently Winning
+          </div>
+        )}
 
         {/* Watcher count badge */}
         {item.watcher_count !== undefined && item.watcher_count > 0 && (
@@ -141,54 +209,77 @@ export function AuctionItemCard({
         </h3>
 
         {/* Bid info */}
-        <div className="mt-auto space-y-1">
-          <div className="flex items-baseline justify-between">
-            <span
-              className="text-xs"
-              style={{ color: 'var(--event-card-text-muted, #6B7280)' }}
-            >
-              {bidLabel}
-            </span>
-            {item.bid_count > 0 && (
-              <span
-                className="text-xs"
-                style={{ color: 'var(--event-card-text-muted, #6B7280)' }}
+        {(displayBid !== null || item.bid_count > 0) && (
+          <div className="mt-auto space-y-1">
+            <div className="flex items-baseline justify-between">
+              {displayBid !== null && (
+                <span
+                  className="text-xs"
+                  style={{ color: 'var(--event-card-text-muted, #6B7280)' }}
+                >
+                  {isLiveAuctionItem ? 'Current Bid' : bidLabel}
+                </span>
+              )}
+              {item.bid_count > 0 && (
+                <span
+                  className="text-xs"
+                  style={{ color: 'var(--event-card-text-muted, #6B7280)' }}
+                >
+                  {item.bid_count} bid{item.bid_count !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+            {displayBid !== null && (
+              <div
+                className="text-lg font-bold"
+                style={{ color: 'var(--event-card-text, #000000)' }}
               >
-                {item.bid_count} bid{item.bid_count !== 1 ? 's' : ''}
-              </span>
+                {formatCurrency(displayBid)}
+              </div>
+            )}
+            {currentUserMaxBid !== null && currentUserMaxBid > 0 && (
+              <div
+                className="text-xs font-medium"
+                style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+              >
+                Your Max Bid: {formatCurrency(currentUserMaxBid)}
+              </div>
             )}
           </div>
-          <div
-            className="text-lg font-bold"
-            style={{ color: 'var(--event-card-text, #000000)' }}
-          >
-            {formatCurrency(displayBid)}
-          </div>
-        </div>
+        )}
 
-        {/* Bid button */}
-        <button
-          onClick={handleBidClick}
-          disabled={eventStatus !== 'active' || isEventInFuture || !isBiddingOpen}
-          className={cn(
-            'mt-3 flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-            'disabled:pointer-events-none disabled:opacity-50'
-          )}
-          style={{
-            backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
-            color: 'var(--event-text-on-primary, #FFFFFF)',
-          }}
-        >
-          <Gavel className="h-4 w-4" aria-hidden="true" />
-          {isEventInFuture
-            ? 'Not Started'
-            : eventStatus === 'active' && isBiddingOpen
-              ? 'Place Bid'
-              : eventStatus === 'closed' || !isBiddingOpen
-                ? 'Closed'
-                : 'Not Active'}
-        </button>
+        {/* Bid controls */}
+        {isLiveAuctionItem ? (
+          <p
+            className="mt-3 text-center text-xs font-medium"
+            style={{ color: 'var(--event-card-text-muted, #6B7280)' }}
+          >
+            Live auction coming up!
+          </p>
+        ) : (
+          <button
+            onClick={handleBidClick}
+            disabled={eventStatus !== 'active' || isEventInFuture || !isBiddingOpen}
+            className={cn(
+              'mt-3 flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+              'disabled:pointer-events-none disabled:opacity-50'
+            )}
+            style={{
+              backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
+              color: 'var(--event-text-on-primary, #FFFFFF)',
+            }}
+          >
+            <Gavel className="h-4 w-4" aria-hidden="true" />
+            {isEventInFuture
+              ? 'Not Started'
+              : eventStatus === 'active' && isBiddingOpen
+                ? 'Place Bid'
+                : eventStatus === 'closed' || !isBiddingOpen
+                  ? 'Closed'
+                  : 'Not Active'}
+          </button>
+        )}
       </div>
     </div>
   );

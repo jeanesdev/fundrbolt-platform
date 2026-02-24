@@ -297,17 +297,6 @@ async def _apply_user_spoofing_if_requested(
             },
         )
 
-    if not spoofed_user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={
-                "error": {
-                    "code": "ACCOUNT_DEACTIVATED",
-                    "message": "Cannot spoof an inactive user",
-                }
-            },
-        )
-
     spoofed_user.spoofed_by_user_id = authenticated_user.id  # type: ignore[attr-defined]
     spoofed_user.spoofed_by_email = authenticated_user.email  # type: ignore[attr-defined]
     spoofed_user.spoofed_by_role = getattr(authenticated_user, "role_name", "unknown")  # type: ignore[attr-defined]
@@ -336,7 +325,11 @@ async def get_current_active_user(current_user: Annotated[User, Depends(get_curr
             # User is authenticated AND email verified
             return {"user_id": current_user.id}
     """
-    if not current_user.email_verified:
+    # Allow super_admin spoof sessions to access active-user routes even when the
+    # spoofed account has not verified email, so debug impersonation remains usable.
+    is_spoofed_session = getattr(current_user, "spoofed_by_user_id", None) is not None
+
+    if not current_user.email_verified and not is_spoofed_session:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={

@@ -14,13 +14,15 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
 import useDialogState from '@/hooks/use-dialog-state'
 import apiClient from '@/lib/axios'
 import { useAuthStore } from '@/stores/auth-store'
 import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { useEventStore } from '@/stores/event-store'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 interface UserOption {
@@ -30,14 +32,26 @@ interface UserOption {
   email: string
 }
 
+function toDateTimeLocalInputValue(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
 export function ProfileDropdown() {
   const [open, setOpen] = useDialogState()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [userSearch, setUserSearch] = useState('')
+  const [spoofTimeInput, setSpoofTimeInput] = useState('')
   const user = useAuthStore((state) => state.user)
   const getProfilePictureUrl = useAuthStore((state) => state.getProfilePictureUrl)
   const spoofedUser = useDebugSpoofStore((state) => state.spoofedUser)
   const timeBaseSpoofMs = useDebugSpoofStore((state) => state.timeBaseSpoofMs)
   const getEffectiveNowMs = useDebugSpoofStore((state) => state.getEffectiveNowMs)
+  const currentEventDateTime = useEventStore((state) => state.currentEvent?.event_datetime)
   const setSpoofedTime = useDebugSpoofStore((state) => state.setSpoofedTime)
   const clearSpoofedTime = useDebugSpoofStore((state) => state.clearSpoofedTime)
   const setSpoofedUser = useDebugSpoofStore((state) => state.setSpoofedUser)
@@ -66,22 +80,32 @@ export function ProfileDropdown() {
 
   const profilePictureUrl = getProfilePictureUrl()
 
-  const handleSpoofTimePrompt = () => {
-    const currentValue =
-      timeBaseSpoofMs !== null
-        ? new Date(getEffectiveNowMs()).toISOString().slice(0, 16)
-        : ''
+  useEffect(() => {
+    if (timeBaseSpoofMs !== null) {
+      setSpoofTimeInput(toDateTimeLocalInputValue(new Date(getEffectiveNowMs())))
+    }
+  }, [timeBaseSpoofMs, getEffectiveNowMs])
 
-    const input = window.prompt(
-      'Enter spoofed date/time (ISO or YYYY-MM-DDTHH:mm). Leave blank to clear.',
-      currentValue
-    )
+  const filteredUsers = useMemo(() => {
+    const users = usersData?.items ?? []
+    const term = userSearch.trim().toLowerCase()
 
-    if (input === null) {
-      return
+    if (!term) {
+      return users
     }
 
-    const trimmed = input.trim()
+    return users.filter((candidate) => {
+      const fullName = `${candidate.first_name} ${candidate.last_name}`.toLowerCase()
+      return fullName.includes(term) || candidate.email.toLowerCase().includes(term)
+    })
+  }, [usersData?.items, userSearch])
+
+  const spoofUserTriggerLabel = spoofedUser?.label ? `Spoof User: ${spoofedUser.label}` : 'Spoof User'
+  const eventStartDate = currentEventDateTime ? new Date(currentEventDateTime) : null
+  const hasValidEventStart = !!eventStartDate && !Number.isNaN(eventStartDate.getTime())
+
+  const handleSpoofTimeApply = () => {
+    const trimmed = spoofTimeInput.trim()
     if (!trimmed) {
       clearSpoofedTime()
       toast.success('Time spoof cleared')
@@ -96,24 +120,6 @@ export function ProfileDropdown() {
 
     setSpoofedTime(parsed)
     toast.success('Time spoof enabled')
-  }
-
-  const handleSpoofUserByIdPrompt = () => {
-    const input = window.prompt('Enter user ID to spoof. Leave blank to clear.', spoofedUser?.id || '')
-
-    if (input === null) {
-      return
-    }
-
-    const trimmed = input.trim()
-    if (!trimmed) {
-      clearSpoofedUser()
-      toast.success('User spoof cleared')
-      return
-    }
-
-    setSpoofedUser(trimmed, trimmed)
-    toast.success('User spoof enabled')
   }
 
   return (
@@ -136,6 +142,9 @@ export function ProfileDropdown() {
               <p className='text-muted-foreground text-xs leading-none'>
                 {user?.email || 'Not logged in'}
               </p>
+              {spoofedUser?.label && (
+                <p className='text-amber-600 text-xs leading-none'>Spoofing: {spoofedUser.label}</p>
+              )}
               {(spoofedUser || timeBaseSpoofMs !== null) && (
                 <p className='text-amber-600 text-xs leading-none'>
                   Debug spoof active
@@ -151,21 +160,91 @@ export function ProfileDropdown() {
             <>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Debug Tools</DropdownMenuLabel>
-              <DropdownMenuItem onClick={handleSpoofTimePrompt}>
-                {timeBaseSpoofMs !== null ? 'Update Spoof Time' : 'Spoof Time'}
-              </DropdownMenuItem>
-              {timeBaseSpoofMs !== null && (
-                <DropdownMenuItem onClick={clearSpoofedTime}>
-                  Clear Spoof Time
-                </DropdownMenuItem>
-              )}
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>Spoof User</DropdownMenuSubTrigger>
-                <DropdownMenuSubContent className='w-72'>
-                  <DropdownMenuItem onClick={handleSpoofUserByIdPrompt}>
-                    Enter User ID...
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                <DropdownMenuSubTrigger>
+                  {timeBaseSpoofMs !== null ? 'Update Spoof Time' : 'Spoof Time'}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent
+                  className='w-80 p-3'
+                  onCloseAutoFocus={(event) => event.preventDefault()}
+                >
+                  <div className='space-y-2'>
+                    <p className='text-muted-foreground text-xs'>
+                      Set effective event time (local).
+                    </p>
+                    <Input
+                      type='datetime-local'
+                      value={spoofTimeInput}
+                      onChange={(event) => setSpoofTimeInput(event.target.value)}
+                      placeholder='YYYY-MM-DDTHH:mm'
+                      onKeyDown={(event) => event.stopPropagation()}
+                    />
+                    {timeBaseSpoofMs !== null && (
+                      <p className='text-muted-foreground text-xs'>
+                        Current spoof: {new Date(getEffectiveNowMs()).toLocaleString()}
+                      </p>
+                    )}
+                    <div className='flex items-center gap-2'>
+                      <Button type='button' size='sm' onClick={handleSpoofTimeApply}>
+                        Apply
+                      </Button>
+                      <Button
+                        type='button'
+                        size='sm'
+                        variant='outline'
+                        disabled={!hasValidEventStart}
+                        onClick={() => {
+                          if (!eventStartDate) return
+                          setSpoofedTime(eventStartDate)
+                          setSpoofTimeInput(toDateTimeLocalInputValue(eventStartDate))
+                          toast.success('Time spoof set to event start')
+                        }}
+                      >
+                        Event Start
+                      </Button>
+                      <Button
+                        type='button'
+                        size='sm'
+                        variant='outline'
+                        onClick={() => {
+                          setSpoofTimeInput('')
+                          clearSpoofedTime()
+                          toast.success('Time spoof cleared')
+                        }}
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                  </div>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>{spoofUserTriggerLabel}</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent
+                  className='w-80 p-3'
+                  onCloseAutoFocus={(event) => event.preventDefault()}
+                >
+                  <div className='mb-3 flex items-center justify-between'>
+                    <p className='text-muted-foreground text-xs'>Select a user to spoof</p>
+                    <Button
+                      type='button'
+                      size='sm'
+                      variant='outline'
+                      onClick={() => {
+                        clearSpoofedUser()
+                        toast.success('User spoof cleared')
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                  <Input
+                    value={userSearch}
+                    onChange={(event) => setUserSearch(event.target.value)}
+                    placeholder='Search users by name or email'
+                    onKeyDown={(event) => event.stopPropagation()}
+                    className='mb-2'
+                  />
                   <DropdownMenuRadioGroup
                     value={spoofedUser?.id || '__none__'}
                     onValueChange={(value) => {
@@ -176,18 +255,24 @@ export function ProfileDropdown() {
                       const match = usersData?.items?.find((candidate) => candidate.id === value)
                       if (!match) return
                       setSpoofedUser(value, `${match.first_name} ${match.last_name}`.trim())
+                      toast.success('User spoof enabled')
                     }}
                   >
                     <DropdownMenuRadioItem value='__none__'>No Spoof User</DropdownMenuRadioItem>
-                    {usersLoading && (
-                      <DropdownMenuItem disabled>Loading users...</DropdownMenuItem>
-                    )}
-                    {!usersLoading &&
-                      usersData?.items?.map((candidate) => (
-                        <DropdownMenuRadioItem key={candidate.id} value={candidate.id}>
-                          {candidate.first_name} {candidate.last_name} ({candidate.email})
-                        </DropdownMenuRadioItem>
-                      ))}
+                    <div className='mt-2 max-h-64 overflow-y-auto pr-1'>
+                      {usersLoading && (
+                        <DropdownMenuItem disabled>Loading users...</DropdownMenuItem>
+                      )}
+                      {!usersLoading && filteredUsers.length === 0 && (
+                        <DropdownMenuItem disabled>No users found</DropdownMenuItem>
+                      )}
+                      {!usersLoading &&
+                        filteredUsers.map((candidate) => (
+                          <DropdownMenuRadioItem key={candidate.id} value={candidate.id}>
+                            {candidate.first_name} {candidate.last_name} ({candidate.email})
+                          </DropdownMenuRadioItem>
+                        ))}
+                    </div>
                   </DropdownMenuRadioGroup>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
