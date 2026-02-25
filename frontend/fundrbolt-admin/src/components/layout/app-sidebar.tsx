@@ -9,6 +9,7 @@ import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
 import { LogoWhiteGold } from '@fundrbolt/shared/assets'
 import {
   Award,
+  BarChart3,
   Building2,
   Calendar,
   ClipboardCheck,
@@ -42,6 +43,7 @@ const iconMap = {
   Ticket,
   Award,
   Gavel,
+  BarChart3,
 }
 
 export function AppSidebar() {

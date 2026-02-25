@@ -16,8 +16,8 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create frontend feature folder and barrel file in frontend/fundrbolt-admin/src/features/event-dashboard/index.ts
-- [ ] T002 Create backend API module file backend/app/api/admin/event_dashboard.py
+- [X] T001 Create frontend feature folder and barrel file in frontend/fundrbolt-admin/src/features/event-dashboard/index.ts
+- [X] T002 Create backend API module file backend/app/api/admin/event_dashboard.py
 
 ---
 
@@ -27,12 +27,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Define dashboard schemas in backend/app/schemas/event_dashboard.py (summary, sources, pacing, cashflow, waterfall, alerts, segments, projections)
-- [ ] T004 Create service scaffolding in backend/app/services/event_dashboard_service.py (interfaces for summary, projections, segments)
-- [ ] T005 Register admin dashboard routes in backend/app/api/admin/event_dashboard.py and include router in backend/app/api/admin/__init__.py
-- [ ] T006 [P] Add API client module in frontend/fundrbolt-admin/src/services/event-dashboard.ts for dashboard, projections, segments endpoints
-- [ ] T007 [P] Add React Query hooks in frontend/fundrbolt-admin/src/features/event-dashboard/hooks/useEventDashboard.ts
-- [ ] T008 Add route shell in frontend/fundrbolt-admin/src/routes/admin/event-dashboard.tsx with role guard placeholder
+- [X] T003 Define dashboard schemas in backend/app/schemas/event_dashboard.py (summary, sources, pacing, cashflow, waterfall, alerts, segments, projections)
+- [X] T004 Create service scaffolding in backend/app/services/event_dashboard_service.py (interfaces for summary, projections, segments)
+- [X] T005 Register admin dashboard routes in backend/app/api/admin/event_dashboard.py and include router in backend/app/api/admin/__init__.py
+- [X] T006 [P] Add API client module in frontend/fundrbolt-admin/src/services/event-dashboard.ts for dashboard, projections, segments endpoints
+- [X] T007 [P] Add React Query hooks in frontend/fundrbolt-admin/src/features/event-dashboard/hooks/useEventDashboard.ts
+- [X] T008 Add route shell in frontend/fundrbolt-admin/src/routes/admin/event-dashboard.tsx with role guard placeholder
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -46,17 +46,17 @@
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Implement dashboard summary aggregation in backend/app/services/event_dashboard_service.py (totals, pacing, sources, waterfall, cashflow, alerts)
-- [ ] T010 [US1] Implement GET /api/v1/admin/events/{event_id}/dashboard in backend/app/api/admin/event_dashboard.py
-- [ ] T011 [US1] Create dashboard page layout in frontend/fundrbolt-admin/src/features/event-dashboard/pages/EventDashboardPage.tsx
-- [ ] T012 [P] [US1] Add summary cards component in frontend/fundrbolt-admin/src/features/event-dashboard/components/SummaryCards.tsx
-- [ ] T013 [P] [US1] Add revenue source breakdown chart in frontend/fundrbolt-admin/src/features/event-dashboard/components/SourceBreakdownChart.tsx
-- [ ] T014 [P] [US1] Add pacing chart component in frontend/fundrbolt-admin/src/features/event-dashboard/components/PacingChart.tsx
-- [ ] T015 [P] [US1] Add waterfall chart component in frontend/fundrbolt-admin/src/features/event-dashboard/components/WaterfallChart.tsx
-- [ ] T016 [P] [US1] Add cashflow timeline component in frontend/fundrbolt-admin/src/features/event-dashboard/components/CashflowTimeline.tsx
-- [ ] T017 [P] [US1] Add alert cards component in frontend/fundrbolt-admin/src/features/event-dashboard/components/AlertCards.tsx
-- [ ] T018 [US1] Wire auto-refresh (60s) + manual refresh in frontend/fundrbolt-admin/src/features/event-dashboard/pages/EventDashboardPage.tsx
-- [ ] T019 [US1] Add empty/error/loading states for summary in frontend/fundrbolt-admin/src/features/event-dashboard/pages/EventDashboardPage.tsx
+- [X] T009 [US1] Implement dashboard summary aggregation in backend/app/services/event_dashboard_service.py (totals, pacing, sources, waterfall, cashflow, alerts)
+- [X] T010 [US1] Implement GET /api/v1/admin/events/{event_id}/dashboard in backend/app/api/admin/event_dashboard.py
+- [X] T011 [US1] Create dashboard page layout in frontend/fundrbolt-admin/src/features/event-dashboard/pages/EventDashboardPage.tsx
+- [X] T012 [P] [US1] Add summary cards component in frontend/fundrbolt-admin/src/features/event-dashboard/components/SummaryCards.tsx
+- [X] T013 [P] [US1] Add revenue source breakdown chart in frontend/fundrbolt-admin/src/features/event-dashboard/components/SourceBreakdownChart.tsx
+- [X] T014 [P] [US1] Add pacing chart component in frontend/fundrbolt-admin/src/features/event-dashboard/components/PacingChart.tsx
+- [X] T015 [P] [US1] Add waterfall chart component in frontend/fundrbolt-admin/src/features/event-dashboard/components/WaterfallChart.tsx
+- [X] T016 [P] [US1] Add cashflow timeline component in frontend/fundrbolt-admin/src/features/event-dashboard/components/CashflowTimeline.tsx
+- [X] T017 [P] [US1] Add alert cards component in frontend/fundrbolt-admin/src/features/event-dashboard/components/AlertCards.tsx
+- [X] T018 [US1] Wire auto-refresh (60s) + manual refresh in frontend/fundrbolt-admin/src/features/event-dashboard/pages/EventDashboardPage.tsx
+- [X] T019 [US1] Add empty/error/loading states for summary in frontend/fundrbolt-admin/src/features/event-dashboard/pages/EventDashboardPage.tsx
 
 **Checkpoint**: User Story 1 is fully functional and testable independently
 
@@ -70,12 +70,12 @@
 
 ### Implementation for User Story 2
 
-- [ ] T020 [US2] Implement projection adjustment logic in backend/app/services/event_dashboard_service.py
-- [ ] T021 [US2] Implement GET/POST /api/v1/admin/events/{event_id}/dashboard/projections in backend/app/api/admin/event_dashboard.py
-- [ ] T022 [US2] Add projection controls component in frontend/fundrbolt-admin/src/features/event-dashboard/components/ProjectionControls.tsx
-- [ ] T023 [US2] Add scenario toggle component in frontend/fundrbolt-admin/src/features/event-dashboard/components/ScenarioToggle.tsx
-- [ ] T024 [US2] Update summary calculations for projections in frontend/fundrbolt-admin/src/features/event-dashboard/pages/EventDashboardPage.tsx
-- [ ] T025 [US2] Add projection reset handling in frontend/fundrbolt-admin/src/features/event-dashboard/components/ProjectionControls.tsx
+- [X] T020 [US2] Implement projection adjustment logic in backend/app/services/event_dashboard_service.py
+- [X] T021 [US2] Implement GET/POST /api/v1/admin/events/{event_id}/dashboard/projections in backend/app/api/admin/event_dashboard.py
+- [X] T022 [US2] Add projection controls component in frontend/fundrbolt-admin/src/features/event-dashboard/components/ProjectionControls.tsx
+- [X] T023 [US2] Add scenario toggle component in frontend/fundrbolt-admin/src/features/event-dashboard/components/ScenarioToggle.tsx
+- [X] T024 [US2] Update summary calculations for projections in frontend/fundrbolt-admin/src/features/event-dashboard/pages/EventDashboardPage.tsx
+- [X] T025 [US2] Add projection reset handling in frontend/fundrbolt-admin/src/features/event-dashboard/components/ProjectionControls.tsx
 
 **Checkpoint**: User Stories 1 and 2 work independently with projections updating totals
 
@@ -89,12 +89,12 @@
 
 ### Implementation for User Story 3
 
-- [ ] T026 [US3] Implement segment aggregation logic in backend/app/services/event_dashboard_service.py
-- [ ] T027 [US3] Implement GET /api/v1/admin/events/{event_id}/dashboard/segments in backend/app/api/admin/event_dashboard.py
-- [ ] T028 [US3] Add segment drilldown container in frontend/fundrbolt-admin/src/features/event-dashboard/components/SegmentDrilldown.tsx
-- [ ] T029 [P] [US3] Add leaderboard view in frontend/fundrbolt-admin/src/features/event-dashboard/components/SegmentLeaderboard.tsx
-- [ ] T030 [P] [US3] Add heatmap view in frontend/fundrbolt-admin/src/features/event-dashboard/components/SegmentHeatmap.tsx
-- [ ] T031 [US3] Wire segment filters and query params in frontend/fundrbolt-admin/src/features/event-dashboard/components/SegmentDrilldown.tsx
+- [X] T026 [US3] Implement segment aggregation logic in backend/app/services/event_dashboard_service.py
+- [X] T027 [US3] Implement GET /api/v1/admin/events/{event_id}/dashboard/segments in backend/app/api/admin/event_dashboard.py
+- [X] T028 [US3] Add segment drilldown container in frontend/fundrbolt-admin/src/features/event-dashboard/components/SegmentDrilldown.tsx
+- [X] T029 [P] [US3] Add leaderboard view in frontend/fundrbolt-admin/src/features/event-dashboard/components/SegmentLeaderboard.tsx
+- [X] T030 [P] [US3] Add heatmap view in frontend/fundrbolt-admin/src/features/event-dashboard/components/SegmentHeatmap.tsx
+- [X] T031 [US3] Wire segment filters and query params in frontend/fundrbolt-admin/src/features/event-dashboard/components/SegmentDrilldown.tsx
 
 **Checkpoint**: All user stories are independently functional
 
@@ -104,10 +104,10 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T032 [P] Add role guard enforcement in frontend/fundrbolt-admin/src/routes/admin/event-dashboard.tsx
-- [ ] T033 Add navigation entry in frontend/fundrbolt-admin/src/components/nav/AdminSidebar.tsx
-- [ ] T034 [P] Add refresh timestamp display in frontend/fundrbolt-admin/src/features/event-dashboard/components/LastRefreshed.tsx
-- [ ] T035 Run quickstart flow validation against frontend/fundrbolt-admin/src/features/event-dashboard/pages/EventDashboardPage.tsx
+- [X] T032 [P] Add role guard enforcement in frontend/fundrbolt-admin/src/routes/admin/event-dashboard.tsx
+- [X] T033 Add navigation entry in frontend/fundrbolt-admin/src/components/nav/AdminSidebar.tsx
+- [X] T034 [P] Add refresh timestamp display in frontend/fundrbolt-admin/src/features/event-dashboard/components/LastRefreshed.tsx
+- [X] T035 Run quickstart flow validation against frontend/fundrbolt-admin/src/features/event-dashboard/pages/EventDashboardPage.tsx
 
 ---
 

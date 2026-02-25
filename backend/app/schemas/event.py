@@ -37,6 +37,11 @@ class EventCreateRequest(BaseModel):
     venue_state: str | None = Field(default=None, max_length=50)
     venue_zip: str | None = Field(default=None, max_length=20)
     attire: str | None = Field(default=None, max_length=100)
+    fundraising_goal: float | None = Field(
+        default=None,
+        ge=0,
+        description="Optional fundraising goal for this event",
+    )
     primary_contact_name: str | None = Field(default=None, max_length=255)
     primary_contact_email: str | None = Field(default=None, max_length=255)
     primary_contact_phone: str | None = Field(default=None, max_length=20)
@@ -91,6 +96,7 @@ class EventUpdateRequest(BaseModel):
     venue_state: str | None = Field(default=None, max_length=50)
     venue_zip: str | None = Field(default=None, max_length=20)
     attire: str | None = Field(default=None, max_length=100)
+    fundraising_goal: float | None = Field(default=None, ge=0)
     primary_contact_name: str | None = Field(default=None, max_length=255)
     primary_contact_email: str | None = Field(default=None, max_length=255)
     primary_contact_phone: str | None = Field(default=None, max_length=20)
@@ -347,6 +353,7 @@ class EventDetailResponse(BaseModel):
     venue_state: str | None
     venue_zip: str | None
     attire: str | None
+    fundraising_goal: float | None
     primary_contact_name: str | None
     primary_contact_email: str | None
     primary_contact_phone: str | None
@@ -403,6 +410,7 @@ class EventPublicResponse(BaseModel):
     venue_state: str | None
     venue_zip: str | None
     attire: str | None
+    fundraising_goal: float | None
     primary_contact_name: str | None
     primary_contact_email: str | None
     primary_contact_phone: str | None

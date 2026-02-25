@@ -229,6 +229,7 @@ const EVENT_SECTION_CONFIG: Array<{
   statKey?: EventStatKey
   getBadgeValue?: (stats: EventStats) => number
 }> = [
+    { title: 'Dashboard', path: 'dashboard', icon: 'BarChart3' },
     { title: 'Details', path: 'details', icon: 'FileText' },
     { title: 'Media', path: 'media', icon: 'Image', statKey: 'media_count' },
     { title: 'Links', path: 'links', icon: 'Link2', statKey: 'links_count' },

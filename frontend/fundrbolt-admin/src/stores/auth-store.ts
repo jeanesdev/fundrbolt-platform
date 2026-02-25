@@ -1,4 +1,5 @@
 import apiClient from '@/lib/axios'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -103,14 +104,16 @@ export const useAuthStore = create<AuthState>()(
 
       setLoading: (loading) => set({ isLoading: loading }),
 
-      reset: () =>
+      reset: () => {
         set({
           user: null,
           accessToken: '',
           refreshToken: '',
           isAuthenticated: false,
           error: null,
-        }),
+        })
+        useDebugSpoofStore.getState().reset()
+      },
 
       // API methods
       login: async (credentials: LoginRequest): Promise<LoginResponse> => {
