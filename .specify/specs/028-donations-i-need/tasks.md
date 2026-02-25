@@ -9,9 +9,9 @@
 
 **Purpose**: Prepare donation-domain file structure and API module registration points.
 
-- [ ] T001 Create donation domain module stubs in `backend/app/models/donation.py`, `backend/app/models/donation_label.py`, `backend/app/models/donation_label_assignment.py`, `backend/app/schemas/donation.py`, `backend/app/schemas/donation_label.py`, `backend/app/services/donation_service.py`, `backend/app/services/donation_label_service.py`, and `backend/app/api/v1/admin_donations.py`
-- [ ] T002 [P] Add donation test file scaffolds in `backend/app/tests/contract/test_admin_donations_api.py`, `backend/app/tests/contract/test_admin_donation_labels_api.py`, `backend/app/tests/integration/test_donation_access.py`, `backend/app/tests/integration/test_donation_attribution.py`, and `backend/app/tests/integration/test_donation_label_filters.py`
-- [ ] T003 [P] Add donation seed utility scaffold in `backend/seed_donation_labels.py`
+- [x] T001 Create donation domain module stubs in `backend/app/models/donation.py`, `backend/app/models/donation_label.py`, `backend/app/models/donation_label_assignment.py`, `backend/app/schemas/donation.py`, `backend/app/schemas/donation_label.py`, `backend/app/services/donation_service.py`, `backend/app/services/donation_label_service.py`, and `backend/app/api/v1/admin_donations.py`
+- [x] T002 [P] Add donation test file scaffolds in `backend/app/tests/contract/test_admin_donations_api.py`, `backend/app/tests/contract/test_admin_donation_labels_api.py`, `backend/app/tests/integration/test_donation_access.py`, `backend/app/tests/integration/test_donation_attribution.py`, and `backend/app/tests/integration/test_donation_label_filters.py`
+- [x] T003 [P] Add donation seed utility scaffold in `backend/seed_donation_labels.py`
 
 ---
 
@@ -21,12 +21,12 @@
 
 **⚠️ CRITICAL**: No user story work begins until this phase is complete.
 
-- [ ] T004 Create Alembic migration for donation tables, constraints, and indexes in `backend/alembic/versions/028_add_donations_and_labels.py`
-- [ ] T005 [P] Implement SQLAlchemy `Donation` model with event/user linkage and void lifecycle fields in `backend/app/models/donation.py`
-- [ ] T006 [P] Implement SQLAlchemy `DonationLabel` and `DonationLabelAssignment` models in `backend/app/models/donation_label.py` and `backend/app/models/donation_label_assignment.py`
-- [ ] T007 Update model exports and cross-model relationships in `backend/app/models/__init__.py`, `backend/app/models/event.py`, and `backend/app/models/user.py`
-- [ ] T008 Add base donation API router wiring in `backend/app/api/v1/admin.py` and `backend/app/api/v1/admin_donations.py`
-- [ ] T009 Implement shared role guard utility for donation write/read scopes in `backend/app/services/permission_service.py`
+- [x] T004 Create Alembic migration for donation tables, constraints, and indexes in `backend/alembic/versions/028_add_donations_and_labels.py`
+- [x] T005 [P] Implement SQLAlchemy `Donation` model with event/user linkage and void lifecycle fields in `backend/app/models/donation.py`
+- [x] T006 [P] Implement SQLAlchemy `DonationLabel` and `DonationLabelAssignment` models in `backend/app/models/donation_label.py` and `backend/app/models/donation_label_assignment.py`
+- [x] T007 Update model exports and cross-model relationships in `backend/app/models/__init__.py`, `backend/app/models/event.py`, and `backend/app/models/user.py`
+- [x] T008 Add base donation API router wiring in `backend/app/api/v1/admin.py` and `backend/app/api/v1/admin_donations.py`
+- [x] T009 Implement shared role guard utility for donation write/read scopes in `backend/app/services/permission_service.py`
 
 **Checkpoint**: Foundation complete — user stories can now be implemented and validated independently.
 
@@ -40,16 +40,16 @@
 
 ### Tests for User Story 1
 
-- [ ] T010 [P] [US1] Add contract tests for donation create/get/update/void endpoints in `backend/app/tests/contract/test_admin_donations_api.py`
-- [ ] T011 [P] [US1] Add integration tests for role-based read-only/write access in `backend/app/tests/integration/test_donation_access.py`
+- [x] T010 [P] [US1] Add contract tests for donation create/get/update/void endpoints in `backend/app/tests/contract/test_admin_donations_api.py`
+- [x] T011 [P] [US1] Add integration tests for role-based read-only/write access in `backend/app/tests/integration/test_donation_access.py`
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Implement donation create/update/detail/list schemas with amount validation in `backend/app/schemas/donation.py`
-- [ ] T013 [US1] Implement donation CRUD + void business logic in `backend/app/services/donation_service.py`
-- [ ] T014 [US1] Implement event-scoped donation CRUD/void endpoints in `backend/app/api/v1/admin_donations.py`
-- [ ] T015 [US1] Enforce reporting-role write denial and admin/staff write permission checks in `backend/app/api/v1/admin_donations.py` and `backend/app/services/permission_service.py`
-- [ ] T016 [US1] Add default active-only listing behavior (`include_voided=false`) in `backend/app/services/donation_service.py`
+- [x] T012 [US1] Implement donation create/update/detail/list schemas with amount validation in `backend/app/schemas/donation.py`
+- [x] T013 [US1] Implement donation CRUD + void business logic in `backend/app/services/donation_service.py`
+- [x] T014 [US1] Implement event-scoped donation CRUD/void endpoints in `backend/app/api/v1/admin_donations.py`
+- [x] T015 [US1] Enforce reporting-role write denial and admin/staff write permission checks in `backend/app/api/v1/admin_donations.py` and `backend/app/services/permission_service.py`
+- [x] T016 [US1] Add default active-only listing behavior (`include_voided=false`) in `backend/app/services/donation_service.py`
 
 **Checkpoint**: US1 is independently functional and demo-ready as MVP.
 
@@ -63,15 +63,15 @@
 
 ### Tests for User Story 2
 
-- [ ] T017 [P] [US2] Add contract tests for paddle raise and donation label assignment payload behavior in `backend/app/tests/contract/test_admin_donations_api.py`
-- [ ] T018 [P] [US2] Add integration tests for attribution assignment/removal workflows in `backend/app/tests/integration/test_donation_attribution.py`
+- [x] T017 [P] [US2] Add contract tests for paddle raise and donation label assignment payload behavior in `backend/app/tests/contract/test_admin_donations_api.py`
+- [x] T018 [P] [US2] Add integration tests for attribution assignment/removal workflows in `backend/app/tests/integration/test_donation_attribution.py`
 
 ### Implementation for User Story 2
 
-- [ ] T019 [US2] Extend donation schemas to support `is_paddle_raise` and label assignment fields in `backend/app/schemas/donation.py`
-- [ ] T020 [US2] Implement attribution assignment/removal methods with assignment timestamp handling in `backend/app/services/donation_service.py`
-- [ ] T021 [US2] Seed event-scoped default labels (`Last Hero`, `Coin Toss`) in `backend/seed_donation_labels.py`
-- [ ] T022 [US2] Return paddle raise and assigned label data from donation endpoints in `backend/app/api/v1/admin_donations.py`
+- [x] T019 [US2] Extend donation schemas to support `is_paddle_raise` and label assignment fields in `backend/app/schemas/donation.py`
+- [x] T020 [US2] Implement attribution assignment/removal methods with assignment timestamp handling in `backend/app/services/donation_service.py`
+- [x] T021 [US2] Seed event-scoped default labels (`Last Hero`, `Coin Toss`) in `backend/seed_donation_labels.py`
+- [x] T022 [US2] Return paddle raise and assigned label data from donation endpoints in `backend/app/api/v1/admin_donations.py`
 
 **Checkpoint**: US2 attribution workflows are independently functional.
 
@@ -85,17 +85,17 @@
 
 ### Tests for User Story 3
 
-- [ ] T023 [P] [US3] Add contract tests for label management endpoints in `backend/app/tests/contract/test_admin_donation_labels_api.py`
-- [ ] T024 [P] [US3] Add integration tests for `label_match_mode=all|any` query behavior in `backend/app/tests/integration/test_donation_label_filters.py`
-- [ ] T024A [US3] Add integration test proving multiple donations for the same donor within one event are accepted in `backend/app/tests/integration/test_donation_label_filters.py`
+- [x] T023 [P] [US3] Add contract tests for label management endpoints in `backend/app/tests/contract/test_admin_donation_labels_api.py`
+- [x] T024 [P] [US3] Add integration tests for `label_match_mode=all|any` query behavior in `backend/app/tests/integration/test_donation_label_filters.py`
+- [x] T024A [US3] Add integration test proving multiple donations for the same donor within one event are accepted in `backend/app/tests/integration/test_donation_label_filters.py`
 
 ### Implementation for User Story 3
 
-- [ ] T025 [US3] Implement donation label create/update/list/retire schemas in `backend/app/schemas/donation_label.py`
-- [ ] T026 [US3] Implement event-scoped donation label service with uniqueness and retirement rules in `backend/app/services/donation_label_service.py`
-- [ ] T027 [US3] Implement event-scoped donation label endpoints in `backend/app/api/v1/admin_donations.py`
-- [ ] T028 [US3] Implement multi-label filtering with default `ALL` and optional `ANY` in `backend/app/services/donation_service.py`
-- [ ] T029 [US3] Enforce same-event label assignment validation in `backend/app/services/donation_service.py`
+- [x] T025 [US3] Implement donation label create/update/list/retire schemas in `backend/app/schemas/donation_label.py`
+- [x] T026 [US3] Implement event-scoped donation label service with uniqueness and retirement rules in `backend/app/services/donation_label_service.py`
+- [x] T027 [US3] Implement event-scoped donation label endpoints in `backend/app/api/v1/admin_donations.py`
+- [x] T028 [US3] Implement multi-label filtering with default `ALL` and optional `ANY` in `backend/app/services/donation_service.py`
+- [x] T029 [US3] Enforce same-event label assignment validation in `backend/app/services/donation_service.py`
 
 **Checkpoint**: US3 label management and filtering are independently functional.
 
@@ -105,13 +105,13 @@
 
 **Purpose**: Finalize documentation, quality gates, and contract alignment.
 
-- [ ] T030 [P] Update donation API docstrings and response examples in `backend/app/api/v1/admin_donations.py`
-- [ ] T031 [P] Validate backend implementation in `backend/app/api/v1/admin_donations.py` and `backend/app/schemas/` against `.specify/specs/028-donations-i-need/contracts/donations.openapi.yaml`; update code (not contract) unless contract defect is confirmed
-- [ ] T032 Run backend quality gates and resolve donation-related failures in `backend/app/models/donation.py`, `backend/app/schemas/donation.py`, `backend/app/services/donation_service.py`, `backend/app/api/v1/admin_donations.py`, and `backend/app/tests/`
+- [x] T030 [P] Update donation API docstrings and response examples in `backend/app/api/v1/admin_donations.py`
+- [x] T031 [P] Validate backend implementation in `backend/app/api/v1/admin_donations.py` and `backend/app/schemas/` against `.specify/specs/028-donations-i-need/contracts/donations.openapi.yaml`; update code (not contract) unless contract defect is confirmed
+- [x] T032 Run backend quality gates and resolve donation-related failures in `backend/app/models/donation.py`, `backend/app/schemas/donation.py`, `backend/app/services/donation_service.py`, `backend/app/api/v1/admin_donations.py`, and `backend/app/tests/`
 - [ ] T033 Enforce unit test coverage threshold (>=80%) using `cd backend && poetry run pytest --cov=app --cov-report=term-missing --cov-fail-under=80`
-- [ ] T034 Add performance verification tests for SC-002 and SC-003 in `backend/app/tests/integration/test_donation_performance.py`
-- [ ] T035 Add KPI verification assertions for SC-001, SC-004, and SC-005 in `backend/app/tests/integration/test_donation_kpis.py` (SC-001: >=95% complete required fields on first submit in fixture run; SC-004: >=90% donations carry paddle raise or >=1 label; SC-005: assert 3 attribution queries return totals without manual transformations)
-- [ ] T036 Update backend feature documentation for donation operations and KPI/performance validation steps in `backend/README.md`
+- [x] T034 Add performance verification tests for SC-002 and SC-003 in `backend/app/tests/integration/test_donation_performance.py`
+- [x] T035 Add KPI verification assertions for SC-001, SC-004, and SC-005 in `backend/app/tests/integration/test_donation_kpis.py` (SC-001: >=95% complete required fields on first submit in fixture run; SC-004: >=90% donations carry paddle raise or >=1 label; SC-005: assert 3 attribution queries return totals without manual transformations)
+- [x] T036 Update backend feature documentation for donation operations and KPI/performance validation steps in `backend/README.md`
 
 ---
 

@@ -259,6 +259,30 @@ Interactive API documentation is automatically generated:
 
 - `GET /api/v1/donor/events/{event_id}/my-seating` - Get donor's seating information, tablemates, and bidder number (gated by check-in)
 
+**Donations** (Admin):
+
+- `POST /api/v1/events/{event_id}/donations` - Create donation for donor with amount, paddle raise flag, and optional labels
+- `GET /api/v1/events/{event_id}/donations` - List donations with filters (`donor_user_id`, `status`, `is_paddle_raise`, `label_ids[]`, date range)
+- `GET /api/v1/events/{event_id}/donations/{donation_id}` - Get donation details
+- `PATCH /api/v1/events/{event_id}/donations/{donation_id}` - Update donation amount, attribution, notes, and labels
+- `POST /api/v1/events/{event_id}/donations/{donation_id}/void` - Void donation with reason (immutable audit behavior)
+
+**Donation Labels** (Admin):
+
+- `POST /api/v1/events/{event_id}/donation-labels` - Create reusable donation attribution label
+- `GET /api/v1/events/{event_id}/donation-labels` - List active labels for event
+- `PATCH /api/v1/events/{event_id}/donation-labels/{label_id}` - Update label name
+- `DELETE /api/v1/events/{event_id}/donation-labels/{label_id}` - Retire label from future use (historical assignments preserved)
+
+**Donation KPI & Performance Validation**:
+
+- Run performance verification tests (SC-002, SC-003):
+   - `poetry run pytest app/tests/integration/test_donation_performance.py -v`
+- Run KPI verification tests (SC-001, SC-004, SC-005):
+   - `poetry run pytest app/tests/integration/test_donation_kpis.py -v`
+- Run all donation integration tests:
+   - `poetry run pytest app/tests/integration/test_donation_*.py -v`
+
 **Metrics** (Prometheus):
 
 - `GET /metrics` - Prometheus-formatted metrics
