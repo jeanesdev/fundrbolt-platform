@@ -23,6 +23,8 @@ from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from app.models.auction_item import AuctionItem
+    from app.models.donation import Donation
+    from app.models.donation_label import DonationLabel
     from app.models.event_registration import EventRegistration
     from app.models.event_table import EventTable
     from app.models.npo import NPO
@@ -302,6 +304,16 @@ class Event(Base, UUIDMixin, TimestampMixin):
     )
     ticket_purchases: Mapped[list["TicketPurchase"]] = relationship(
         "TicketPurchase",
+        back_populates="event",
+        cascade="all, delete-orphan",
+    )
+    donations: Mapped[list["Donation"]] = relationship(
+        "Donation",
+        back_populates="event",
+        cascade="all, delete-orphan",
+    )
+    donation_labels: Mapped[list["DonationLabel"]] = relationship(
+        "DonationLabel",
         back_populates="event",
         cascade="all, delete-orphan",
     )

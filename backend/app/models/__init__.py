@@ -13,6 +13,9 @@ from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin, UUIDMixin
 from app.models.buy_now_availability import BuyNowAvailability
 from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
+from app.models.donation import Donation, DonationStatus
+from app.models.donation_label import DonationLabel
+from app.models.donation_label_assignment import DonationLabelAssignment
 from app.models.event import Event, EventLink, EventMedia, FoodOption
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.event_table import EventTable
@@ -75,6 +78,10 @@ __all__ = [
     "ConsentAuditLog",
     "CookieConsent",
     "CustomTicketOption",
+    "Donation",
+    "DonationLabel",
+    "DonationLabelAssignment",
+    "DonationStatus",
     "DiscountType",
     "Event",
     "EventLink",

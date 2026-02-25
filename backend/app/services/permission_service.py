@@ -48,6 +48,25 @@ class PermissionService:
     # Roles that can assign roles
     ROLES_CAN_ASSIGN_ROLES = {"super_admin", "npo_admin", "event_coordinator"}
 
+    # Donation permissions
+    ROLES_CAN_VIEW_DONATIONS = {
+        "super_admin",
+        "npo_admin",
+        "npo_staff",
+        "event_coordinator",
+        "staff",
+        "npo_reporting",
+        "event_reporting",
+        "reporting",
+    }
+    ROLES_CAN_MANAGE_DONATIONS = {
+        "super_admin",
+        "npo_admin",
+        "npo_staff",
+        "event_coordinator",
+        "staff",
+    }
+
     def __init__(self) -> None:
         self.npo_permission_service = NPOPermissionService()
 
@@ -488,3 +507,11 @@ class PermissionService:
             raise PermissionError("Insufficient permissions to access this NPO")
 
         return requested_npo_id
+
+    def can_view_donations(self, user: Any) -> bool:
+        """Return whether a role can read donation data."""
+        return getattr(user, "role_name", None) in self.ROLES_CAN_VIEW_DONATIONS
+
+    def can_manage_donations(self, user: Any) -> bool:
+        """Return whether a role can create/update/void donations and labels."""
+        return getattr(user, "role_name", None) in self.ROLES_CAN_MANAGE_DONATIONS

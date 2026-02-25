@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.api.v1 import admin_donations
 from app.core.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.event import Event
@@ -770,3 +771,6 @@ async def send_guest_invitation(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to send invitation",
         )
+
+
+router.include_router(admin_donations.router)
