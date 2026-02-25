@@ -4,7 +4,9 @@
   "version": "2.2.0",
   "type": "module",
   "scripts": {
+    "predev": "mkdir -p .tanstack/tmp",
     "dev": "vite",
+    "prebuild": "mkdir -p .tanstack/tmp",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
@@ -14,7 +16,8 @@
     "knip": "knip",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:checkin:smoke": "playwright test -c playwright.checkin.config.ts"
   },
   "dependencies": {
     "@fundrbolt/shared": "workspace:*",
@@ -73,6 +76,7 @@
   "devDependencies": {
     "@eslint/js": "^9.37.0",
     "@faker-js/faker": "^10.0.0",
+    "@playwright/test": "^1.58.2",
     "@tanstack/eslint-plugin-query": "^5.91.0",
     "@tanstack/react-query-devtools": "^5.90.2",
     "@tanstack/react-router-devtools": "^1.132.51",

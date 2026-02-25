@@ -11,6 +11,7 @@ import {
   Award,
   Building2,
   Calendar,
+  ClipboardCheck,
   FileText,
   Gavel,
   Image as ImageIcon,
@@ -21,9 +22,9 @@ import {
   Users,
   Utensils,
 } from 'lucide-react'
+import { EventSelector } from './EventSelector'
 import { NavGroup } from './nav-group'
 import { NpoSelector } from './NpoSelector'
-import { EventSelector } from './EventSelector'
 import type { NavGroup as NavGroupType } from './types'
 
 // Map icon string names to lucide-react icon components
@@ -36,6 +37,7 @@ const iconMap = {
   Link2,
   Utensils,
   Users,
+  ClipboardCheck,
   LayoutGrid,
   Ticket,
   Award,

@@ -20,7 +20,7 @@ description: "Task list for event check-in page"
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Verify existing admin PWA and backend module locations for check-in feature in backend/app and frontend/fundrbolt-admin/src
+- [X] T001 Verify existing admin PWA and backend module locations for check-in feature in backend/app and frontend/fundrbolt-admin/src
 - [ ] T002 [P] Create contracts reference note in docs/operations/ (or feature README) if required by team conventions
 
 ---
@@ -29,11 +29,11 @@ description: "Task list for event check-in page"
 
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
-- [ ] T003 Define/extend SQLAlchemy models and migrations for check-in records and ticket transfer audit in backend/app/models/ and backend/alembic/versions/
+- [X] T003 Define/extend SQLAlchemy models and migrations for check-in records and ticket transfer audit in backend/app/models/ and backend/alembic/versions/
 - [ ] T004 [P] Add Pydantic schemas for check-in/search/dashboard payloads in backend/app/schemas/
-- [ ] T005 [P] Add service layer scaffolding for check-in operations in backend/app/services/
-- [ ] T006 [P] Add API router scaffolding for check-in endpoints in backend/app/api/
-- [ ] T007 [P] Add admin PWA route placeholder for check-in page in frontend/fundrbolt-admin/src/routes/
+- [X] T005 [P] Add service layer scaffolding for check-in operations in backend/app/services/
+- [X] T006 [P] Add API router scaffolding for check-in endpoints in backend/app/api/
+- [X] T007 [P] Add admin PWA route placeholder for check-in page in frontend/fundrbolt-admin/src/routes/
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -52,10 +52,10 @@ description: "Task list for event check-in page"
 - [ ] T010 [P] [US1] Implement check-out endpoint with required reason in backend/app/api/ for /checkins/{registration_id}/check-out
 - [ ] T011 [US1] Implement check-in service logic and audit logging in backend/app/services/
 - [ ] T012 [P] [US1] Implement dashboard endpoint in backend/app/api/ for /checkins/dashboard
-- [ ] T013 [P] [US1] Add admin PWA check-in page shell and route in frontend/fundrbolt-admin/src/pages/ and frontend/fundrbolt-admin/src/routes/
-- [ ] T014 [P] [US1] Add search UI and results list in frontend/fundrbolt-admin/src/components/
-- [ ] T015 [P] [US1] Add check-in/check-out actions UI with reason capture in frontend/fundrbolt-admin/src/components/
-- [ ] T016 [US1] Integrate check-in API client in frontend/fundrbolt-admin/src/services/ and wire to page
+- [X] T013 [P] [US1] Add admin PWA check-in page shell and route in frontend/fundrbolt-admin/src/pages/ and frontend/fundrbolt-admin/src/routes/
+- [X] T014 [P] [US1] Add search UI and results list in frontend/fundrbolt-admin/src/components/
+- [X] T015 [P] [US1] Add check-in/check-out actions UI with reason capture in frontend/fundrbolt-admin/src/components/
+- [X] T016 [US1] Integrate check-in API client in frontend/fundrbolt-admin/src/services/ and wire to page
 - [ ] T017 [US1] Add dashboard totals + searchable checked-in list UI in frontend/fundrbolt-admin/src/components/
 
 **Checkpoint**: User Story 1 is fully functional and independently testable

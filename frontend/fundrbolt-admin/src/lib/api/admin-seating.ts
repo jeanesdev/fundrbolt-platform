@@ -145,6 +145,24 @@ export const assignBidderNumber = async (
 }
 
 /**
+ * Assign or reassign bidder number to a registration's primary attendee.
+ *
+ * @param eventId - Event UUID
+ * @param registrationId - Registration UUID
+ * @param bidderNumber - Bidder number to assign (100-999)
+ */
+export const assignRegistrationBidderNumber = async (
+  eventId: string,
+  registrationId: string,
+  bidderNumber: number
+): Promise<void> => {
+  await apiClient.patch(
+    `/admin/events/${eventId}/registrations/${registrationId}/bidder-number`,
+    { bidder_number: bidderNumber }
+  )
+}
+
+/**
  * Assign a guest to a table
  *
  * Validates table number is within event configuration and checks capacity.

@@ -1,4 +1,4 @@
-.PHONY: help install test lint format clean docker-up docker-down migrate dev-backend dev-frontend dev-fullstack validate-infra deploy-infra check-commits ngrok-start ngrok-stop ngrok-status ngrok-local smoke-donor-event-page
+.PHONY: help install test lint format clean docker-up docker-down migrate dev-backend dev-frontend dev-fullstack validate-infra deploy-infra check-commits ngrok-start ngrok-stop ngrok-status ngrok-local smoke-donor-event-page test-checkin-e2e
 
 # Default target
 help:
@@ -14,6 +14,7 @@ help:
 	@echo "  make test             - Run all tests"
 	@echo "  make test-backend     - Run backend tests with coverage"
 	@echo "  make test-frontend    - Run frontend tests"
+	@echo "  make test-checkin-e2e - Run donor check-in Playwright smoke tests"
 	@echo "  make smoke-donor-event-page - Run donor event page smoke check"
 	@echo "  make test-watch       - Run backend tests in watch mode"
 	@echo ""
@@ -86,6 +87,10 @@ test-backend:
 test-frontend:
 	@echo "Running frontend tests..."
 	cd frontend/fundrbolt-admin && pnpm test
+
+test-checkin-e2e:
+	@echo "Running donor check-in Playwright smoke tests..."
+	cd frontend/donor-pwa && pnpm test:checkin:e2e
 
 test-watch:
 	@echo "Running backend tests in watch mode..."

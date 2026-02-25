@@ -245,6 +245,7 @@ const EVENT_SECTION_CONFIG: Array<{
       getBadgeValue: (stats) =>
         stats.active_registrations_count + stats.active_guest_count,
     },
+    { title: 'Check-in', path: 'checkin', icon: 'ClipboardCheck' },
     { title: 'Seating', path: 'seating', icon: 'LayoutGrid' },
     { title: 'Tickets', path: 'tickets', icon: 'Ticket' },
     {
