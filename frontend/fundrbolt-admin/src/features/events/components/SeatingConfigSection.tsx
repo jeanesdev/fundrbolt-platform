@@ -3,6 +3,16 @@
  * UI component for configuring event seating (table count and max guests per table)
  */
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -32,6 +42,7 @@ export function SeatingConfigSection({
   const [maxGuestsPerTable, setMaxGuestsPerTable] = useState<string>(
     initialConfig?.max_guests_per_table?.toString() || '',
   )
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false)
 
   const handleTableCountChange = (value: string) => {
     setTableCount(value)
@@ -155,11 +166,37 @@ export function SeatingConfigSection({
 
       {(tableCount !== '' || maxGuestsPerTable !== '') && (
         <div className="flex justify-end">
-          <Button variant="outline" size="sm" onClick={handleClear} disabled={disabled}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setConfirmClearOpen(true)}
+            disabled={disabled}
+          >
             Clear Configuration
           </Button>
         </div>
       )}
+
+      <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear seating configuration?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove both table count and max guests per table from this event.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={disabled}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClear}
+              disabled={disabled}
+            >
+              Clear Configuration
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

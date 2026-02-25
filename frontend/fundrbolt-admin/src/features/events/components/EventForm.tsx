@@ -34,6 +34,27 @@ import { ColorPicker } from './ColorPicker.tsx'
 import { RichTextEditor } from './RichTextEditor.tsx'
 import { SeatingConfigSection, type SeatingConfig } from './SeatingConfigSection.tsx'
 
+const parseCurrencyInput = (value: string): number | null => {
+  const sanitized = value.replace(/[^\d.]/g, '')
+  if (!sanitized) return null
+
+  const parsed = Number(sanitized)
+  if (!Number.isFinite(parsed) || parsed < 0) return null
+
+  return Math.round(parsed)
+}
+
+const formatGoalCurrency = (value: number | null | undefined): string => {
+  if (value === null || value === undefined || !Number.isFinite(value) || value < 0) return ''
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value)
+}
+
 // Phone number formatting helper
 const formatPhoneNumber = (value: string): string => {
   const phoneNumber = value.replace(/\D/g, '')
@@ -69,6 +90,7 @@ const eventFormSchema = z.object({
   venue_state: z.string().optional(),
   venue_zip: z.string().optional(),
   attire: z.string().optional(),
+  fundraising_goal: z.number().min(0, 'Goal must be zero or greater').nullable().optional(),
   primary_contact_name: z.string().optional(),
   primary_contact_email: z.string().email('Invalid email address').optional().or(z.literal('')),
   primary_contact_phone: z.string().optional(),
@@ -109,6 +131,9 @@ export function EventForm({
     table_count: event?.table_count ?? null,
     max_guests_per_table: event?.max_guests_per_table ?? null,
   })
+  const [goalInputValue, setGoalInputValue] = useState<string>(
+    formatGoalCurrency(event?.fundraising_goal ?? null),
+  )
 
   // Initialize form with existing event data or NPO branding defaults
   const form = useForm<EventFormValues>({
@@ -128,6 +153,7 @@ export function EventForm({
       venue_state: event?.venue_state || '',
       venue_zip: event?.venue_zip || '',
       attire: event?.attire || '',
+      fundraising_goal: event?.fundraising_goal ?? null,
       primary_contact_name: event?.primary_contact_name || '',
       primary_contact_email: event?.primary_contact_email || '',
       primary_contact_phone: event?.primary_contact_phone || '',
@@ -234,6 +260,16 @@ export function EventForm({
     initAutocomplete()
   }, [form])
 
+  useEffect(() => {
+    const subscription = form.watch((values, { name }) => {
+      if (name === 'fundraising_goal') {
+        setGoalInputValue(formatGoalCurrency(values.fundraising_goal))
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [form])
+
   const handleSubmit = async (values: EventFormValues) => {
     const baseData = {
       ...values,
@@ -242,6 +278,7 @@ export function EventForm({
       event_datetime: new Date(values.event_datetime).toISOString(),
       table_count: seatingConfig.table_count,
       max_guests_per_table: seatingConfig.max_guests_per_table,
+      fundraising_goal: values.fundraising_goal ?? null,
     }
 
     // Add version for optimistic locking on updates
@@ -580,6 +617,50 @@ export function EventForm({
                   <Input placeholder="e.g., Black Tie, Cocktail Attire, Business Casual" {...field} />
                 </FormControl>
                 <FormDescription>Dress code or recommended attire for guests</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="fundraising_goal"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Event Goal (USD)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="$500,000"
+                    value={goalInputValue}
+                    onFocus={(event) => {
+                      const currentValue = parseCurrencyInput(event.target.value)
+                      setGoalInputValue(currentValue !== null ? String(currentValue) : '')
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault()
+                      }
+                    }}
+                    onChange={(event) => {
+                      const rawValue = event.target.value
+                      setGoalInputValue(rawValue)
+
+                      const parsedValue = parseCurrencyInput(rawValue)
+                      field.onChange(parsedValue)
+                    }}
+                    onBlur={(event) => {
+                      field.onBlur()
+                      const parsedValue = parseCurrencyInput(event.target.value)
+                      field.onChange(parsedValue)
+                      setGoalInputValue(formatGoalCurrency(parsedValue))
+                    }}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Set the dashboard fundraising goal used for progress and pacing.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

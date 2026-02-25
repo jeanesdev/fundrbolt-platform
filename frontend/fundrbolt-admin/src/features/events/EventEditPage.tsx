@@ -4,6 +4,7 @@
  */
 
 import { Button } from '@/components/ui/button'
+import { getErrorMessage } from '@/lib/error-utils'
 import { useAuctionItemStore } from '@/stores/auctionItemStore'
 import { useEventStore } from '@/stores/event-store'
 import { useSponsorStore } from '@/stores/sponsorStore'
@@ -12,7 +13,7 @@ import type {
   EventUpdateRequest,
   FoodOptionCreateRequest,
 } from '@/types/event'
-import { Outlet, useNavigate, useParams, useLocation } from '@tanstack/react-router'
+import { Outlet, useLocation, useNavigate, useParams } from '@tanstack/react-router'
 import { Clock } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -48,6 +49,7 @@ export function EventEditPage() {
   const { sponsors, fetchSponsors } = useSponsorStore()
   const { items: auctionItems, fetchAuctionItems } = useAuctionItemStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const apiEventId = currentEvent?.id ?? eventId
 
   const loadEvent = useCallback(() => {
     if (eventId) {
@@ -93,14 +95,14 @@ export function EventEditPage() {
   const handleSubmit = async (data: EventUpdateRequest) => {
     setIsSubmitting(true)
     try {
-      await updateEvent(eventId, data)
+      await updateEvent(apiEventId, data)
       toast.success('Event updated successfully!')
     } catch (err: unknown) {
       const error = err as { response?: { status: number } }
       if (error?.response?.status === 409) {
         toast.error('Event was modified by another user. Please refresh and try again.')
       } else {
-        toast.error('Failed to update event')
+        toast.error(getErrorMessage(err, 'Failed to update event'))
       }
     } finally {
       setIsSubmitting(false)
@@ -115,7 +117,7 @@ export function EventEditPage() {
     if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) return
 
     try {
-      await deleteEvent(eventId)
+      await deleteEvent(apiEventId)
       toast.success('Event deleted successfully')
       navigate({ to: '/events' })
     } catch (err) {
@@ -125,18 +127,18 @@ export function EventEditPage() {
   }
 
   const handleMediaUpload = async (file: File) => {
-    await uploadMedia(eventId, file)
+    await uploadMedia(apiEventId, file)
     // Note: Toast notification is shown by MediaUploader component
   }
 
   const handleMediaDelete = async (mediaId: string) => {
-    await deleteMedia(eventId, mediaId)
+    await deleteMedia(apiEventId, mediaId)
     // Note: Toast notification is shown by MediaUploader component
   }
 
   const handleLinkCreate = async (data: EventLinkCreateRequest) => {
     try {
-      await createLink(eventId, data)
+      await createLink(apiEventId, data)
       toast.success('Link added successfully!')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to add link'
@@ -146,7 +148,7 @@ export function EventEditPage() {
 
   const handleLinkDelete = async (linkId: string) => {
     try {
-      await deleteLink(eventId, linkId)
+      await deleteLink(apiEventId, linkId)
       toast.success('Link deleted successfully!')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete link'
@@ -156,7 +158,7 @@ export function EventEditPage() {
 
   const handleFoodOptionCreate = async (data: FoodOptionCreateRequest) => {
     try {
-      await createFoodOption(eventId, data)
+      await createFoodOption(apiEventId, data)
       toast.success('Food option added successfully!')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to add food option'
@@ -166,7 +168,7 @@ export function EventEditPage() {
 
   const handleFoodOptionDelete = async (optionId: string) => {
     try {
-      await deleteFoodOption(eventId, optionId)
+      await deleteFoodOption(apiEventId, optionId)
       toast.success('Food option deleted successfully!')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete food option'

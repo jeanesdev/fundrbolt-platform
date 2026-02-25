@@ -3,6 +3,7 @@
 import enum
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -11,6 +12,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     Text,
 )
@@ -147,6 +149,11 @@ class Event(Base, UUIDMixin, TimestampMixin):
         String(100),
         nullable=True,
         comment="Dress code or attire (e.g., 'Black Tie', 'Cocktail Attire', 'Business Casual')",
+    )
+    fundraising_goal: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 2),
+        nullable=True,
+        comment="Optional fundraising goal for event dashboard totals",
     )
 
     # Primary Contact Information

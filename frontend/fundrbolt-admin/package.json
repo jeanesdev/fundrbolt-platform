@@ -17,7 +17,8 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "test:checkin:smoke": "playwright test -c playwright.checkin.config.ts"
+    "test:checkin:smoke": "playwright test -c playwright.checkin.config.ts",
+    "test:dashboard:smoke": "playwright test -c playwright.checkin.config.ts tests/checkin/dashboard-page-smoke.spec.ts"
   },
   "dependencies": {
     "@fundrbolt/shared": "workspace:*",

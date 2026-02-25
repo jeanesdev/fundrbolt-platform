@@ -1,5 +1,6 @@
 import { isRetryableError, retryWithBackoff } from '@/lib/retry'
 import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 // Global flag to track if consent modal is already shown
@@ -64,6 +65,13 @@ apiClient.interceptors.request.use(
     // Add Authorization header if token exists
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+
+    const spoofedNowIso = useDebugSpoofStore.getState().getEffectiveNowIso()
+    if (spoofedNowIso) {
+      config.headers['X-Debug-Now'] = spoofedNowIso
+    } else {
+      delete (config.headers as Record<string, string>)['X-Debug-Now']
     }
 
     if (config.data instanceof FormData && config.headers) {
