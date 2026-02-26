@@ -55,6 +55,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router, Zustand, Radix UI (027-user-import)
 - PostgreSQL (user accounts, memberships, import audit), Redis (sessions) (027-user-import)
 - Python 3.11+ (backend), TypeScript 5.x (existing admin frontend, no mandatory scope expansion) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic, PostgreSQL driver stack already in repo (028-donations-i-need)
+- Python 3.11+ (backend), TypeScript 5.x + React 19 (admin frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React, TanStack Router, Zustand, React Query, Radix UI (029-quick-bid-entry)
+- PostgreSQL 15 (primary), Redis 7 (existing session/cache path where applicable) (029-quick-bid-entry)
 
 ## Project Structure
 ```
@@ -139,9 +141,9 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 029-quick-bid-entry: Added Python 3.11+ (backend), TypeScript 5.x + React 19 (admin frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React, TanStack Router, Zustand, React Query, Radix UI
 - 028-donations-i-need: Added Python 3.11+ (backend), TypeScript 5.x (existing admin frontend, no mandatory scope expansion) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic, PostgreSQL driver stack already in repo
 - 027-user-import: Added Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router, Zustand, Radix UI
-- 026-event-dashboard-for: Added Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 19, Vite 7, TanStack Router, Zustand, React Query, Radix UI, Recharts
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields
   - ✅ Updated registration_guests with is_table_captain boolean field
   - ✅ US1 - Customize Table Capacity: Event coordinators can set custom capacity per table (1-20), system enforces limits

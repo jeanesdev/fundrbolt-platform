@@ -1,0 +1,352 @@
+openapi: 3.0.3
+info:
+  title: Quick Entry Admin API
+  version: 0.1.0
+  description: Contract for rapid live auction bid and paddle raise donation entry.
+servers:
+  - url: /api/v1
+paths:
+  /admin/events/{event_id}/quick-entry/live-auction/bids:
+    post:
+      summary: Create live auction bid
+      operationId: createQuickEntryLiveBid
+      tags: [QuickEntry]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLiveBidRequest'
+      responses:
+        '201':
+          description: Bid created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveBidEntry'
+        '400':
+          description: Invalid request (amount/item validation)
+        '403':
+          description: Forbidden for user role
+        '404':
+          description: Event or item not found
+        '409':
+          description: Bidder not found for event
+
+  /admin/events/{event_id}/quick-entry/live-auction/bids/{bid_id}:
+    delete:
+      summary: Delete live auction bid entry
+      operationId: deleteQuickEntryLiveBid
+      tags: [QuickEntry]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/BidId'
+      responses:
+        '204':
+          description: Bid deleted
+        '403':
+          description: Forbidden for user role
+        '404':
+          description: Bid not found
+
+  /admin/events/{event_id}/quick-entry/live-auction/items/{item_id}/winner:
+    post:
+      summary: Assign live auction winner to highest valid bid
+      operationId: assignQuickEntryWinner
+      tags: [QuickEntry]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignWinnerRequest'
+      responses:
+        '200':
+          description: Winner assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WinnerAssignmentResponse'
+        '400':
+          description: Confirmation missing/invalid
+        '403':
+          description: Forbidden for user role
+        '404':
+          description: Event/item not found
+        '409':
+          description: No valid bids available
+
+  /admin/events/{event_id}/quick-entry/paddle-raise/donations:
+    post:
+      summary: Create paddle raise donation
+      operationId: createQuickEntryDonation
+      tags: [QuickEntry]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDonationRequest'
+      responses:
+        '201':
+          description: Donation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonationEntry'
+        '400':
+          description: Invalid request
+        '403':
+          description: Forbidden for user role
+        '404':
+          description: Event not found
+        '409':
+          description: Bidder not found for event
+
+  /admin/events/{event_id}/quick-entry/summary:
+    get:
+      summary: Get quick entry summary metrics
+      operationId: getQuickEntrySummary
+      tags: [QuickEntry]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - in: query
+          name: mode
+          required: true
+          schema:
+            $ref: '#/components/schemas/QuickEntryMode'
+        - in: query
+          name: item_id
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Required when mode is LIVE_AUCTION
+      responses:
+        '200':
+          description: Summary metrics
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/LiveAuctionSummary'
+                  - $ref: '#/components/schemas/PaddleRaiseSummary'
+        '400':
+          description: Invalid mode/item combination
+        '403':
+          description: Forbidden for user role
+        '404':
+          description: Event or item not found
+
+components:
+  parameters:
+    EventId:
+      in: path
+      name: event_id
+      required: true
+      schema:
+        type: string
+        format: uuid
+    BidId:
+      in: path
+      name: bid_id
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ItemId:
+      in: path
+      name: item_id
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    QuickEntryMode:
+      type: string
+      enum: [LIVE_AUCTION, PADDLE_RAISE]
+
+    CreateLiveBidRequest:
+      type: object
+      required: [item_id, amount, bidder_number]
+      properties:
+        item_id:
+          type: string
+          format: uuid
+        amount:
+          type: integer
+          minimum: 1
+          description: Whole-dollar amount only
+        bidder_number:
+          type: integer
+          minimum: 1
+
+    CreateDonationRequest:
+      type: object
+      required: [amount, bidder_number]
+      properties:
+        amount:
+          type: integer
+          minimum: 1
+          description: Whole-dollar amount only
+        bidder_number:
+          type: integer
+          minimum: 1
+        label_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Optional predefined labels
+        custom_label:
+          type: string
+          maxLength: 80
+          description: Optional custom label
+
+    AssignWinnerRequest:
+      type: object
+      required: [confirm]
+      properties:
+        confirm:
+          type: boolean
+          enum: [true]
+          description: Explicit user confirmation
+
+    LiveBidEntry:
+      type: object
+      required:
+        [id, event_id, item_id, amount, bidder_number, donor_name, table_number, accepted_at, entered_by]
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        item_id:
+          type: string
+          format: uuid
+        amount:
+          type: integer
+        bidder_number:
+          type: integer
+        donor_name:
+          type: string
+        table_number:
+          nullable: true
+          oneOf:
+            - type: string
+            - type: integer
+        accepted_at:
+          type: string
+          format: date-time
+        entered_by:
+          type: string
+          format: uuid
+
+    DonationEntry:
+      type: object
+      required: [id, event_id, amount, bidder_number, donor_name, entered_at, entered_by, labels]
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        amount:
+          type: integer
+        bidder_number:
+          type: integer
+        donor_name:
+          type: string
+        entered_at:
+          type: string
+          format: date-time
+        entered_by:
+          type: string
+          format: uuid
+        labels:
+          type: array
+          items:
+            type: object
+            required: [label]
+            properties:
+              label:
+                type: string
+
+    WinnerAssignmentResponse:
+      type: object
+      required: [item_id, winner_bid_id, winning_amount, winner_bidder_number, assigned_at]
+      properties:
+        item_id:
+          type: string
+          format: uuid
+        winner_bid_id:
+          type: string
+          format: uuid
+        winning_amount:
+          type: integer
+        winner_bidder_number:
+          type: integer
+        assigned_at:
+          type: string
+          format: date-time
+
+    LiveAuctionSummary:
+      type: object
+      required: [mode, item_id, current_highest_bid, bid_count, unique_bidder_count, updated_at]
+      properties:
+        mode:
+          type: string
+          enum: [LIVE_AUCTION]
+        item_id:
+          type: string
+          format: uuid
+        current_highest_bid:
+          type: integer
+        bid_count:
+          type: integer
+        unique_bidder_count:
+          type: integer
+        updated_at:
+          type: string
+          format: date-time
+
+    PaddleRaiseSummary:
+      type: object
+      required: [mode, total_pledged, donation_count, unique_donor_count, participation_percent, by_amount_level, updated_at]
+      properties:
+        mode:
+          type: string
+          enum: [PADDLE_RAISE]
+        total_pledged:
+          type: integer
+        donation_count:
+          type: integer
+        unique_donor_count:
+          type: integer
+        participation_percent:
+          type: number
+          format: float
+        by_amount_level:
+          type: array
+          items:
+            type: object
+            required: [amount, count]
+            properties:
+              amount:
+                type: integer
+              count:
+                type: integer
+        updated_at:
+          type: string
+          format: date-time
