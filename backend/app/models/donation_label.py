@@ -1,4 +1,4 @@
-"""Donation label model for event-scoped attribution tags."""
+"""Donation label model for attribution tags."""
 
 import uuid
 from datetime import datetime
@@ -17,14 +17,14 @@ if TYPE_CHECKING:
 
 
 class DonationLabel(Base, UUIDMixin, TimestampMixin):
-    """Reusable event-scoped label for donation attribution."""
+    """Reusable label for donation attribution."""
 
     __tablename__ = "donation_labels"
 
-    event_id: Mapped[uuid.UUID] = mapped_column(
+    event_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("events.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -37,7 +37,7 @@ class DonationLabel(Base, UUIDMixin, TimestampMixin):
     )
     retired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    event: Mapped["Event"] = relationship("Event", back_populates="donation_labels")
+    event: Mapped["Event | None"] = relationship("Event", back_populates="donation_labels")
     assignments: Mapped[list["DonationLabelAssignment"]] = relationship(
         "DonationLabelAssignment",
         back_populates="label",

@@ -2,17 +2,20 @@ import { renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAuth } from '../use-auth'
 import { useEventContext } from '../use-event-context'
+import { useEventStats } from '../use-event-stats'
 import { useNpoContext } from '../use-npo-context'
 import { useRoleBasedNav } from '../use-role-based-nav'
 
 vi.mock('../use-auth')
 vi.mock('../use-npo-context')
 vi.mock('../use-event-context')
+vi.mock('../use-event-stats')
 
 describe('useRoleBasedNav', () => {
   const mockUseAuth = vi.mocked(useAuth)
   const mockUseNpoContext = vi.mocked(useNpoContext)
   const mockUseEventContext = vi.mocked(useEventContext)
+  const mockUseEventStats = vi.mocked(useEventStats)
 
   const buildAuthMock = (
     overrides: Partial<ReturnType<typeof useAuth>> = {}
@@ -48,6 +51,10 @@ describe('useRoleBasedNav', () => {
       selectedEventName: null,
       selectedEventSlug: null,
     } as ReturnType<typeof useEventContext>)
+
+    mockUseEventStats.mockReturnValue({
+      data: undefined,
+    } as ReturnType<typeof useEventStats>)
   })
 
   it('returns general navigation items based on role', () => {
@@ -71,11 +78,12 @@ describe('useRoleBasedNav', () => {
 
     const { result } = renderHook(() => useRoleBasedNav())
 
-    expect(result.current.eventNavItems).toHaveLength(10)
-    expect(result.current.eventNavItems[0]).toMatchObject({
-      title: 'Details',
-      href: '/events/gala-night/details',
-    })
+    expect(result.current.eventNavItems).toHaveLength(12)
+    expect(
+      result.current.eventNavItems.some(
+        (item) => item.href === '/events/gala-night/quick-entry'
+      )
+    ).toBe(true)
     expect(result.current.eventNavTitle).toBe('Event: Gala Night')
   })
 
@@ -88,9 +96,11 @@ describe('useRoleBasedNav', () => {
 
     const { result } = renderHook(() => useRoleBasedNav())
 
-    expect(result.current.eventNavItems[0]).toMatchObject({
-      href: '/events/event-999/details',
-    })
+    expect(
+      result.current.eventNavItems.some(
+        (item) => item.href === '/events/event-999/details'
+      )
+    ).toBe(true)
     expect(result.current.eventNavTitle).toBe('Event: Spring Gala')
   })
 

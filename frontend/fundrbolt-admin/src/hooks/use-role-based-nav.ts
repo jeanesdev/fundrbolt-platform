@@ -261,4 +261,9 @@ const EVENT_SECTION_CONFIG: Array<{
       icon: 'Gavel',
       statKey: 'auction_items_count',
     },
+    {
+      title: 'Quick Entry',
+      path: 'quick-entry',
+      icon: 'Gavel',
+    },
   ]

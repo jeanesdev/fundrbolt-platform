@@ -1,4 +1,5 @@
 import apiClient from '@/lib/axios'
+import type { AuctionItem } from '@/types/auction-item'
 
 export async function getQuickEntryStatus(eventId: string): Promise<{ status: string }> {
   const response = await apiClient.get(`/admin/events/${eventId}/quick-entry/status`)
@@ -94,6 +95,20 @@ export interface QuickEntryDonationLabel {
 
 export interface QuickEntryDonationLabelList {
   items: QuickEntryDonationLabel[]
+}
+
+export async function getQuickEntryLiveAuctionItems(eventId: string): Promise<AuctionItem[]> {
+  const response = await apiClient.get<{ items: AuctionItem[] }>(
+    `/events/${eventId}/auction-items`,
+    {
+      params: {
+        auction_type: 'live',
+        page: 1,
+        limit: 100,
+      },
+    }
+  )
+  return response.data.items
 }
 
 export async function createLiveBid(

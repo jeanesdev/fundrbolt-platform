@@ -95,9 +95,10 @@ class PaddleRaiseService(QuickEntryServiceBase):
         event_id: UUID,
     ) -> list[DonationLabel]:
         """List active donation labels for paddle raise mode."""
+        del event_id
         stmt = (
             select(DonationLabel)
-            .where(DonationLabel.event_id == event_id, DonationLabel.is_active.is_(True))
+            .where(DonationLabel.is_active.is_(True))
             .order_by(DonationLabel.name.asc())
         )
         result = await db.execute(stmt)
@@ -161,12 +162,12 @@ class PaddleRaiseService(QuickEntryServiceBase):
         event_id: UUID,
         label_ids: list[UUID],
     ) -> list[DonationLabel]:
+        del event_id
         if not label_ids:
             return []
 
         stmt = select(DonationLabel).where(
             DonationLabel.id.in_(label_ids),
-            DonationLabel.event_id == event_id,
             DonationLabel.is_active.is_(True),
         )
         result = await db.execute(stmt)
@@ -174,7 +175,7 @@ class PaddleRaiseService(QuickEntryServiceBase):
         if len(labels) != len(set(label_ids)):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="One or more labels are invalid for this event",
+                detail="One or more labels are invalid or inactive",
             )
         return labels
 

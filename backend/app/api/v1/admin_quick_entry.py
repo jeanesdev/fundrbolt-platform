@@ -260,7 +260,7 @@ async def list_quick_entry_donation_labels(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> QuickEntryDonationLabelListResponse:
-    """List active event donation labels for paddle raise quick-entry."""
+    """List active donation labels for paddle raise quick-entry."""
     event = await _get_event_or_404(db, event_id)
     await _require_quick_entry_access(db, current_user, event)
     labels = await PaddleRaiseService.list_available_labels(db, event_id=event_id)
