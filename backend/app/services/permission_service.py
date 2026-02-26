@@ -66,6 +66,11 @@ class PermissionService:
         "event_coordinator",
         "staff",
     }
+    ROLES_CAN_USE_QUICK_ENTRY = {
+        "super_admin",
+        "npo_admin",
+        "npo_staff",
+    }
 
     def __init__(self) -> None:
         self.npo_permission_service = NPOPermissionService()
@@ -515,3 +520,7 @@ class PermissionService:
     def can_manage_donations(self, user: Any) -> bool:
         """Return whether a role can create/update/void donations and labels."""
         return getattr(user, "role_name", None) in self.ROLES_CAN_MANAGE_DONATIONS
+
+    def can_use_quick_entry(self, user: Any) -> bool:
+        """Return whether a role can access quick-entry workflows."""
+        return getattr(user, "role_name", None) in self.ROLES_CAN_USE_QUICK_ENTRY

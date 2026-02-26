@@ -20,11 +20,11 @@
 
 **Purpose**: Prepare quick-entry module scaffolding in backend and admin frontend.
 
-- [ ] T001 Create quick-entry feature folder scaffolding in `frontend/fundrbolt-admin/src/features/quick-entry/` (components, hooks, api, types)
-- [ ] T002 Create backend quick-entry module placeholders in `backend/app/services/quick_entry/` and `backend/app/schemas/quick_entry/`
-- [ ] T003 [P] Add quick-entry route placeholder in `frontend/fundrbolt-admin/src/routes/_authenticated/events/$eventId/quick-entry.tsx`
-- [ ] T004 [P] Add quick-entry API router placeholder in `backend/app/api/v1/admin_quick_entry.py`
-- [ ] T005 Wire router exports for quick-entry in `backend/app/api/v1/__init__.py`
+- [X] T001 Create quick-entry feature folder scaffolding in `frontend/fundrbolt-admin/src/features/quick-entry/` (components, hooks, api, types)
+- [X] T002 Create backend quick-entry module placeholders in `backend/app/services/quick_entry/` and `backend/app/schemas/quick_entry/`
+- [X] T003 [P] Add quick-entry route placeholder in `frontend/fundrbolt-admin/src/routes/_authenticated/events/$eventId/quick-entry.tsx`
+- [X] T004 [P] Add quick-entry API router placeholder in `backend/app/api/v1/admin_quick_entry.py`
+- [X] T005 Wire router exports for quick-entry in `backend/app/api/v1/__init__.py`
 
 ---
 
@@ -34,15 +34,15 @@
 
 **⚠️ CRITICAL**: No user story work should start until this phase is complete.
 
-- [ ] T006 Create Alembic migration for quick-entry persistence and indexes in `backend/alembic/versions/*_quick_entry_tables.py`
-- [ ] T007 [P] Implement SQLAlchemy model for live quick-entry bids in `backend/app/models/quick_entry_bid.py`
-- [ ] T008 [P] Implement SQLAlchemy model for paddle raise quick-entry donations in `backend/app/models/quick_entry_donation.py`
-- [ ] T009 [P] Implement SQLAlchemy model for donation label links in `backend/app/models/quick_entry_donation_label.py`
-- [ ] T010 Update model exports/relationships in `backend/app/models/__init__.py` and related existing models referencing event/bidder/donation entities
-- [ ] T011 Implement shared Pydantic request/response schemas in `backend/app/schemas/quick_entry/schemas.py`
-- [ ] T012 Implement role guard helper for quick-entry roles (Super Admin/NPO Admin/NPO Staff) in `backend/app/services/permission_service.py`
-- [ ] T013 Implement shared quick-entry service base (bidder lookup, amount validation, audit logging helpers) in `backend/app/services/quick_entry/service_base.py`
-- [ ] T014 Add quick-entry API router registration in `backend/app/main.py` (or central API registration module used by v1 routes)
+- [X] T006 Create Alembic migration for quick-entry persistence and indexes in `backend/alembic/versions/*_quick_entry_tables.py`
+- [X] T007 [P] Implement SQLAlchemy model for live quick-entry bids in `backend/app/models/quick_entry_bid.py`
+- [X] T008 [P] Implement SQLAlchemy model for paddle raise quick-entry donations in `backend/app/models/quick_entry_donation.py`
+- [X] T009 [P] Implement SQLAlchemy model for donation label links in `backend/app/models/quick_entry_donation_label.py`
+- [X] T010 Update model exports/relationships in `backend/app/models/__init__.py` and related existing models referencing event/bidder/donation entities
+- [X] T011 Implement shared Pydantic request/response schemas in `backend/app/schemas/quick_entry/schemas.py`
+- [X] T012 Implement role guard helper for quick-entry roles (Super Admin/NPO Admin/NPO Staff) in `backend/app/services/permission_service.py`
+- [X] T013 Implement shared quick-entry service base (bidder lookup, amount validation, audit logging helpers) in `backend/app/services/quick_entry/service_base.py`
+- [X] T014 Add quick-entry API router registration in `backend/app/main.py` (or central API registration module used by v1 routes)
 
 **Checkpoint**: Foundation is complete and user stories can proceed.
 
@@ -56,14 +56,14 @@
 
 ### Implementation for User Story 1
 
-- [ ] T015 [US1] Implement live bid creation service method (validation, bidder lookup reject, first-in ranking metadata) in `backend/app/services/quick_entry/live_auction_service.py`
-- [ ] T016 [US1] Implement `POST /admin/events/{event_id}/quick-entry/live-auction/bids` endpoint in `backend/app/api/v1/admin_quick_entry.py`
-- [ ] T017 [P] [US1] Add backend contract test for live bid create success/error paths in `backend/app/tests/contract/test_admin_quick_entry_live_bids.py`
-- [ ] T018 [P] [US1] Add backend integration test for unmatched bidder rejection and no-record behavior in `backend/app/tests/integration/test_quick_entry_live_bids.py`
-- [ ] T019 [P] [US1] Implement quick-entry API client methods for live bid create in `frontend/fundrbolt-admin/src/features/quick-entry/api/quickEntryApi.ts`
-- [ ] T020 [P] [US1] Build live mode entry form component (amount + bidder fields, formatting, keyboard focus cycle) in `frontend/fundrbolt-admin/src/features/quick-entry/components/LiveBidEntryForm.tsx`
-- [ ] T021 [US1] Implement quick-entry page route shell with mode selector and live item selector in `frontend/fundrbolt-admin/src/routes/_authenticated/events/$eventId/quick-entry.tsx`
-- [ ] T022 [US1] Connect live form submit flow (Enter/Tab behavior, reset/refocus, error toast/state) in `frontend/fundrbolt-admin/src/features/quick-entry/hooks/useLiveBidEntry.ts`
+- [X] T015 [US1] Implement live bid creation service method (validation, bidder lookup reject, first-in ranking metadata) in `backend/app/services/quick_entry/live_auction_service.py`
+- [X] T016 [US1] Implement `POST /admin/events/{event_id}/quick-entry/live-auction/bids` endpoint in `backend/app/api/v1/admin_quick_entry.py`
+- [X] T017 [P] [US1] Add backend contract test for live bid create success/error paths in `backend/app/tests/contract/test_admin_quick_entry_live_bids.py`
+- [X] T018 [P] [US1] Add backend integration test for unmatched bidder rejection and no-record behavior in `backend/app/tests/integration/test_quick_entry_live_bids.py`
+- [X] T019 [P] [US1] Implement quick-entry API client methods for live bid create in `frontend/fundrbolt-admin/src/features/quick-entry/api/quickEntryApi.ts`
+- [X] T020 [P] [US1] Build live mode entry form component (amount + bidder fields, formatting, keyboard focus cycle) in `frontend/fundrbolt-admin/src/features/quick-entry/components/LiveBidEntryForm.tsx`
+- [X] T021 [US1] Implement quick-entry page route shell with mode selector and live item selector in `frontend/fundrbolt-admin/src/routes/_authenticated/events/$eventId/quick-entry.tsx`
+- [X] T022 [US1] Connect live form submit flow (Enter/Tab behavior, reset/refocus, error toast/state) in `frontend/fundrbolt-admin/src/features/quick-entry/hooks/useLiveBidEntry.ts`
 
 **Checkpoint**: US1 is fully functional and independently testable as MVP.
 
@@ -77,12 +77,12 @@
 
 ### Implementation for User Story 2
 
-- [ ] T023 [US2] Implement live summary and bid-log query service methods in `backend/app/services/quick_entry/live_auction_service.py`
-- [ ] T024 [US2] Implement live bid delete endpoint `DELETE /admin/events/{event_id}/quick-entry/live-auction/bids/{bid_id}` in `backend/app/api/v1/admin_quick_entry.py`
-- [ ] T025 [US2] Implement winner assignment endpoint `POST /admin/events/{event_id}/quick-entry/live-auction/items/{item_id}/winner` with confirmation in `backend/app/api/v1/admin_quick_entry.py`
-- [ ] T026 [P] [US2] Add backend contract tests for delete/winner/summary endpoints in `backend/app/tests/contract/test_admin_quick_entry_live_controls.py`
-- [ ] T027 [P] [US2] Implement frontend live bid log + metrics cards + delete action in `frontend/fundrbolt-admin/src/features/quick-entry/components/LiveBidLogAndMetrics.tsx`
-- [ ] T028 [US2] Implement winner assignment confirmation action and refresh workflow in `frontend/fundrbolt-admin/src/features/quick-entry/hooks/useLiveAuctionControls.ts`
+- [X] T023 [US2] Implement live summary and bid-log query service methods in `backend/app/services/quick_entry/live_auction_service.py`
+- [X] T024 [US2] Implement live bid delete endpoint `DELETE /admin/events/{event_id}/quick-entry/live-auction/bids/{bid_id}` in `backend/app/api/v1/admin_quick_entry.py`
+- [X] T025 [US2] Implement winner assignment endpoint `POST /admin/events/{event_id}/quick-entry/live-auction/items/{item_id}/winner` with confirmation in `backend/app/api/v1/admin_quick_entry.py`
+- [X] T026 [P] [US2] Add backend contract tests for delete/winner/summary endpoints in `backend/app/tests/contract/test_admin_quick_entry_live_controls.py`
+- [X] T027 [P] [US2] Implement frontend live bid log + metrics cards + delete action in `frontend/fundrbolt-admin/src/features/quick-entry/components/LiveBidLogAndMetrics.tsx`
+- [X] T028 [US2] Implement winner assignment confirmation action and refresh workflow in `frontend/fundrbolt-admin/src/features/quick-entry/hooks/useLiveAuctionControls.ts`
 
 **Checkpoint**: US1 + US2 are independently testable and operational for live auction control.
 
@@ -96,12 +96,12 @@
 
 ### Implementation for User Story 3
 
-- [ ] T029 [US3] Implement paddle donation creation and label-link persistence service logic in `backend/app/services/quick_entry/paddle_raise_service.py`
-- [ ] T030 [US3] Implement `POST /admin/events/{event_id}/quick-entry/paddle-raise/donations` and paddle summary mode branch in `backend/app/api/v1/admin_quick_entry.py`
-- [ ] T031 [P] [US3] Add backend contract tests for paddle donation create and summary responses in `backend/app/tests/contract/test_admin_quick_entry_paddle_raise.py`
-- [ ] T032 [P] [US3] Add backend integration tests for optional labels and unmatched bidder rejection in `backend/app/tests/integration/test_quick_entry_paddle_raise.py`
-- [ ] T033 [P] [US3] Implement paddle entry form + label checklist + custom label input in `frontend/fundrbolt-admin/src/features/quick-entry/components/PaddleRaiseEntryForm.tsx`
-- [ ] T034 [US3] Implement paddle submit behavior (bidder clear/refocus) and paddle metrics panel in `frontend/fundrbolt-admin/src/features/quick-entry/hooks/usePaddleRaiseEntry.ts`
+- [X] T029 [US3] Implement paddle donation creation and label-link persistence service logic in `backend/app/services/quick_entry/paddle_raise_service.py`
+- [X] T030 [US3] Implement `POST /admin/events/{event_id}/quick-entry/paddle-raise/donations` and paddle summary mode branch in `backend/app/api/v1/admin_quick_entry.py`
+- [X] T031 [P] [US3] Add backend contract tests for paddle donation create and summary responses in `backend/app/tests/contract/test_admin_quick_entry_paddle_raise.py`
+- [X] T032 [P] [US3] Add backend integration tests for optional labels and unmatched bidder rejection in `backend/app/tests/integration/test_quick_entry_paddle_raise.py`
+- [X] T033 [P] [US3] Implement paddle entry form + label checklist + custom label input in `frontend/fundrbolt-admin/src/features/quick-entry/components/PaddleRaiseEntryForm.tsx`
+- [X] T034 [US3] Implement paddle submit behavior (bidder clear/refocus) and paddle metrics panel in `frontend/fundrbolt-admin/src/features/quick-entry/hooks/usePaddleRaiseEntry.ts`
 
 **Checkpoint**: All user stories are independently functional.
 
@@ -111,12 +111,12 @@
 
 **Purpose**: Final hardening, docs alignment, and CI-quality validation across stories.
 
-- [ ] T035 [P] Update OpenAPI docs/examples to match implemented quick-entry behavior in `backend/app/api/v1/admin_quick_entry.py` and `backend/app/schemas/quick_entry/schemas.py`
-- [ ] T036 [P] Add frontend accessibility and keyboard interaction refinements for quick-entry controls in `frontend/fundrbolt-admin/src/features/quick-entry/components/`
-- [ ] T037 Add audit-log verification for create/delete/winner actions in `backend/app/services/quick_entry/service_base.py` and integration assertions in `backend/app/tests/integration/test_quick_entry_audit.py`
-- [ ] T038 Run backend CI checks (`ruff`, `ruff format --check`, `mypy`, `pytest`) from `backend/` and resolve any feature-related failures
-- [ ] T039 Run frontend CI checks (`pnpm lint`, `pnpm format:check`, `pnpm build`) from `frontend/fundrbolt-admin/` and resolve any feature-related failures
-- [ ] T040 Execute quickstart walkthrough and capture completion notes in `/home/jjeanes/dev/fundrbolt-platform/.specify/specs/029-quick-bid-entry/quickstart.md`
+- [X] T035 [P] Update OpenAPI docs/examples to match implemented quick-entry behavior in `backend/app/api/v1/admin_quick_entry.py` and `backend/app/schemas/quick_entry/schemas.py`
+- [X] T036 [P] Add frontend accessibility and keyboard interaction refinements for quick-entry controls in `frontend/fundrbolt-admin/src/features/quick-entry/components/`
+- [X] T037 Add audit-log verification for create/delete/winner actions in `backend/app/services/quick_entry/service_base.py` and integration assertions in `backend/app/tests/integration/test_quick_entry_audit.py`
+- [X] T038 Run backend CI checks (`ruff`, `ruff format --check`, `mypy`, `pytest`) from `backend/` and resolve any feature-related failures
+- [X] T039 Run frontend CI checks (`pnpm lint`, `pnpm format:check`, `pnpm build`) from `frontend/fundrbolt-admin/` and resolve any feature-related failures
+- [X] T040 Execute quickstart walkthrough and capture completion notes in `/home/jjeanes/dev/fundrbolt-platform/.specify/specs/029-quick-bid-entry/quickstart.md`
 
 ---
 

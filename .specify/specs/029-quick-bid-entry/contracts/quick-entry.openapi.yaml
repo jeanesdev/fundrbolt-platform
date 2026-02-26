@@ -110,6 +110,25 @@ paths:
         '409':
           description: Bidder not found for event
 
+  /admin/events/{event_id}/quick-entry/donation-labels:
+    get:
+      summary: List active donation labels for quick-entry paddle raise mode
+      operationId: listQuickEntryDonationLabels
+      tags: [QuickEntry]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: Label list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonationLabelList'
+        '403':
+          description: Forbidden for user role
+        '404':
+          description: Event not found
+
   /admin/events/{event_id}/quick-entry/summary:
     get:
       summary: Get quick entry summary metrics
@@ -303,7 +322,7 @@ components:
 
     LiveAuctionSummary:
       type: object
-      required: [mode, item_id, current_highest_bid, bid_count, unique_bidder_count, updated_at]
+      required: [mode, item_id, current_highest_bid, bid_count, unique_bidder_count, bids, updated_at]
       properties:
         mode:
           type: string
@@ -317,9 +336,37 @@ components:
           type: integer
         unique_bidder_count:
           type: integer
+        bids:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiveBidLogItem'
         updated_at:
           type: string
           format: date-time
+
+    LiveBidLogItem:
+      type: object
+      required: [id, amount, bidder_number, accepted_at, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        amount:
+          type: integer
+        bidder_number:
+          type: integer
+        donor_name:
+          type: string
+          nullable: true
+        table_number:
+          type: string
+          nullable: true
+        accepted_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [active, deleted, winning]
 
     PaddleRaiseSummary:
       type: object
@@ -350,3 +397,19 @@ components:
         updated_at:
           type: string
           format: date-time
+
+    DonationLabelList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [id, name]
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string

@@ -28,6 +28,9 @@ from app.models.npo import NPO
 from app.models.npo_application import NPOApplication
 from app.models.npo_branding import NPOBranding
 from app.models.npo_member import NPOMember
+from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
+from app.models.quick_entry_donation import QuickEntryDonation
+from app.models.quick_entry_donation_label import QuickEntryDonationLabelLink
 from app.models.registration_guest import RegistrationGuest
 from app.models.registration_import import (
     ImportBatchStatus,
@@ -107,6 +110,10 @@ __all__ = [
     "PaymentStatus",
     "PromoCode",
     "PromoCodeApplication",
+    "QuickEntryBid",
+    "QuickEntryBidStatus",
+    "QuickEntryDonation",
+    "QuickEntryDonationLabelLink",
     "RegistrationGuest",
     "AuctionBidImportBatch",
     "AuctionBidImportFormat",

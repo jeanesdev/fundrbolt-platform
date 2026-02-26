@@ -54,6 +54,7 @@ import { Route as AuthenticatedEventsEventIdTicketsRouteImport } from './routes/
 import { Route as AuthenticatedEventsEventIdSponsorsRouteImport } from './routes/_authenticated/events/$eventId/sponsors'
 import { Route as AuthenticatedEventsEventIdSeatingRouteImport } from './routes/_authenticated/events/$eventId/seating'
 import { Route as AuthenticatedEventsEventIdRegistrationsRouteImport } from './routes/_authenticated/events/$eventId/registrations'
+import { Route as AuthenticatedEventsEventIdQuickEntryRouteImport } from './routes/_authenticated/events/$eventId/quick-entry'
 import { Route as AuthenticatedEventsEventIdMediaRouteImport } from './routes/_authenticated/events/$eventId/media'
 import { Route as AuthenticatedEventsEventIdLinksRouteImport } from './routes/_authenticated/events/$eventId/links'
 import { Route as AuthenticatedEventsEventIdFoodRouteImport } from './routes/_authenticated/events/$eventId/food'
@@ -313,6 +314,12 @@ const AuthenticatedEventsEventIdRegistrationsRoute =
     path: '/registrations',
     getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
+const AuthenticatedEventsEventIdQuickEntryRoute =
+  AuthenticatedEventsEventIdQuickEntryRouteImport.update({
+    id: '/quick-entry',
+    path: '/quick-entry',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdMediaRoute =
   AuthenticatedEventsEventIdMediaRouteImport.update({
     id: '/media',
@@ -454,6 +461,7 @@ export interface FileRoutesByFullPath {
   '/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
   '/events/$eventId/media': typeof AuthenticatedEventsEventIdMediaRoute
+  '/events/$eventId/quick-entry': typeof AuthenticatedEventsEventIdQuickEntryRoute
   '/events/$eventId/registrations': typeof AuthenticatedEventsEventIdRegistrationsRoute
   '/events/$eventId/seating': typeof AuthenticatedEventsEventIdSeatingRoute
   '/events/$eventId/sponsors': typeof AuthenticatedEventsEventIdSponsorsRoute
@@ -510,6 +518,7 @@ export interface FileRoutesByTo {
   '/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
   '/events/$eventId/media': typeof AuthenticatedEventsEventIdMediaRoute
+  '/events/$eventId/quick-entry': typeof AuthenticatedEventsEventIdQuickEntryRoute
   '/events/$eventId/registrations': typeof AuthenticatedEventsEventIdRegistrationsRoute
   '/events/$eventId/seating': typeof AuthenticatedEventsEventIdSeatingRoute
   '/events/$eventId/sponsors': typeof AuthenticatedEventsEventIdSponsorsRoute
@@ -573,6 +582,7 @@ export interface FileRoutesById {
   '/_authenticated/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/_authenticated/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
   '/_authenticated/events/$eventId/media': typeof AuthenticatedEventsEventIdMediaRoute
+  '/_authenticated/events/$eventId/quick-entry': typeof AuthenticatedEventsEventIdQuickEntryRoute
   '/_authenticated/events/$eventId/registrations': typeof AuthenticatedEventsEventIdRegistrationsRoute
   '/_authenticated/events/$eventId/seating': typeof AuthenticatedEventsEventIdSeatingRoute
   '/_authenticated/events/$eventId/sponsors': typeof AuthenticatedEventsEventIdSponsorsRoute
@@ -635,6 +645,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/food'
     | '/events/$eventId/links'
     | '/events/$eventId/media'
+    | '/events/$eventId/quick-entry'
     | '/events/$eventId/registrations'
     | '/events/$eventId/seating'
     | '/events/$eventId/sponsors'
@@ -691,6 +702,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/food'
     | '/events/$eventId/links'
     | '/events/$eventId/media'
+    | '/events/$eventId/quick-entry'
     | '/events/$eventId/registrations'
     | '/events/$eventId/seating'
     | '/events/$eventId/sponsors'
@@ -753,6 +765,7 @@ export interface FileRouteTypes {
     | '/_authenticated/events/$eventId/food'
     | '/_authenticated/events/$eventId/links'
     | '/_authenticated/events/$eventId/media'
+    | '/_authenticated/events/$eventId/quick-entry'
     | '/_authenticated/events/$eventId/registrations'
     | '/_authenticated/events/$eventId/seating'
     | '/_authenticated/events/$eventId/sponsors'
@@ -1108,6 +1121,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsEventIdRegistrationsRouteImport
       parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
+    '/_authenticated/events/$eventId/quick-entry': {
+      id: '/_authenticated/events/$eventId/quick-entry'
+      path: '/quick-entry'
+      fullPath: '/events/$eventId/quick-entry'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdQuickEntryRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
     '/_authenticated/events/$eventId/media': {
       id: '/_authenticated/events/$eventId/media'
       path: '/media'
@@ -1278,6 +1298,7 @@ interface AuthenticatedEventsEventIdRouteRouteChildren {
   AuthenticatedEventsEventIdFoodRoute: typeof AuthenticatedEventsEventIdFoodRoute
   AuthenticatedEventsEventIdLinksRoute: typeof AuthenticatedEventsEventIdLinksRoute
   AuthenticatedEventsEventIdMediaRoute: typeof AuthenticatedEventsEventIdMediaRoute
+  AuthenticatedEventsEventIdQuickEntryRoute: typeof AuthenticatedEventsEventIdQuickEntryRoute
   AuthenticatedEventsEventIdRegistrationsRoute: typeof AuthenticatedEventsEventIdRegistrationsRoute
   AuthenticatedEventsEventIdSeatingRoute: typeof AuthenticatedEventsEventIdSeatingRoute
   AuthenticatedEventsEventIdSponsorsRoute: typeof AuthenticatedEventsEventIdSponsorsRoute
@@ -1301,6 +1322,8 @@ const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRo
     AuthenticatedEventsEventIdFoodRoute: AuthenticatedEventsEventIdFoodRoute,
     AuthenticatedEventsEventIdLinksRoute: AuthenticatedEventsEventIdLinksRoute,
     AuthenticatedEventsEventIdMediaRoute: AuthenticatedEventsEventIdMediaRoute,
+    AuthenticatedEventsEventIdQuickEntryRoute:
+      AuthenticatedEventsEventIdQuickEntryRoute,
     AuthenticatedEventsEventIdRegistrationsRoute:
       AuthenticatedEventsEventIdRegistrationsRoute,
     AuthenticatedEventsEventIdSeatingRoute:
