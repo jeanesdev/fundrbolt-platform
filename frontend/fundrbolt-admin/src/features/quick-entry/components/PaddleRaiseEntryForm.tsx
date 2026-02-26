@@ -1,6 +1,10 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useRef } from 'react'
 
-import type { QuickEntryDonationLabel, QuickEntryPaddleSummary } from '../api/quickEntryApi'
+import type {
+  QuickEntryDonationLabel,
+  QuickEntryPaddleDonationResponse,
+  QuickEntryPaddleSummary,
+} from '../api/quickEntryApi'
 
 interface PaddleRaiseEntryFormProps {
   amount: string
@@ -8,6 +12,9 @@ interface PaddleRaiseEntryFormProps {
   customLabel: string
   selectedLabelIds: string[]
   labels: QuickEntryDonationLabel[]
+  labelsError?: unknown
+  isLoadingLabels?: boolean
+  recentDonations?: QuickEntryPaddleDonationResponse[]
   summary: QuickEntryPaddleSummary | undefined
   submitToken: number
   disabled?: boolean
@@ -30,6 +37,9 @@ export function PaddleRaiseEntryForm({
   customLabel,
   selectedLabelIds,
   labels,
+  labelsError,
+  isLoadingLabels,
+  recentDonations = [],
   summary,
   submitToken,
   disabled,
@@ -126,6 +136,19 @@ export function PaddleRaiseEntryForm({
 
         <div className="space-y-2 rounded-md border p-3">
           <p className="text-sm font-medium">Donation Labels (optional)</p>
+          {isLoadingLabels ? (
+            <p className="text-sm text-muted-foreground">Loading donation labels...</p>
+          ) : null}
+          {!isLoadingLabels && labelsError ? (
+            <p className="text-sm text-destructive">
+              Failed to load donation labels. Run latest backend migrations and refresh.
+            </p>
+          ) : null}
+          {!isLoadingLabels && !labelsError && labels.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No donation labels found. Run latest backend migrations and refresh.
+            </p>
+          ) : null}
           <div className="grid gap-2 md:grid-cols-2">
             {labels.map((label) => (
               <label key={label.id} className="inline-flex items-center gap-2 text-sm">
@@ -168,6 +191,42 @@ export function PaddleRaiseEntryForm({
             <li className="text-muted-foreground">No donations entered yet.</li>
           ) : null}
         </ul>
+      </div>
+
+      <div className="overflow-x-auto rounded-md border">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead>
+            <tr className="bg-muted/20 text-left">
+              <th className="px-3 py-2">Amount</th>
+              <th className="px-3 py-2">Bidder</th>
+              <th className="px-3 py-2">Donor</th>
+              <th className="px-3 py-2">Labels</th>
+              <th className="px-3 py-2">Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentDonations.map((donation) => (
+              <tr key={donation.id} className="border-t">
+                <td className="px-3 py-2">${donation.amount.toLocaleString('en-US')}</td>
+                <td className="px-3 py-2">{donation.bidder_number}</td>
+                <td className="px-3 py-2">{donation.donor_name ?? '—'}</td>
+                <td className="px-3 py-2">
+                  {donation.labels.length
+                    ? donation.labels.map((label) => label.label).join(', ')
+                    : '—'}
+                </td>
+                <td className="px-3 py-2">{new Date(donation.entered_at).toLocaleTimeString()}</td>
+              </tr>
+            ))}
+            {recentDonations.length === 0 ? (
+              <tr>
+                <td className="px-3 py-4 text-center text-muted-foreground" colSpan={5}>
+                  No paddle raise donations entered yet.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
       </div>
     </section>
   )

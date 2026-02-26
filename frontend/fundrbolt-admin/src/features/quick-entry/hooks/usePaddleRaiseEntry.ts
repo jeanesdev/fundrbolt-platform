@@ -7,13 +7,23 @@ import {
   createPaddleDonation,
   getPaddleRaiseSummary,
   getQuickEntryDonationLabels,
+  type QuickEntryPaddleDonationResponse,
 } from '../api/quickEntryApi'
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof AxiosError) {
+    const payload = error.response?.data as
+      | { detail?: string | { message?: string; detail?: string } }
+      | undefined
+    const detail = payload?.detail
     const apiMessage =
-      (error.response?.data as { detail?: { message?: string } })?.detail?.message ??
-      error.response?.data?.detail
+      typeof detail === 'string'
+        ? detail
+        : typeof detail?.message === 'string'
+          ? detail.message
+          : typeof detail?.detail === 'string'
+            ? detail.detail
+            : undefined
     if (typeof apiMessage === 'string') {
       return apiMessage
     }
@@ -24,6 +34,12 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback
 }
 
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value
+  )
+}
+
 export function usePaddleRaiseEntry(eventId: string) {
   const queryClient = useQueryClient()
   const [amount, setAmount] = useState('')
@@ -31,6 +47,7 @@ export function usePaddleRaiseEntry(eventId: string) {
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([])
   const [customLabel, setCustomLabel] = useState('')
   const [submitToken, setSubmitToken] = useState(0)
+  const [recentDonations, setRecentDonations] = useState<QuickEntryPaddleDonationResponse[]>([])
 
   const parsedAmount = useMemo(
     () => Number.parseInt(amount.replace(/,/g, ''), 10),
@@ -52,6 +69,9 @@ export function usePaddleRaiseEntry(eventId: string) {
 
   const mutation = useMutation({
     mutationFn: async () => {
+      if (!isUuid(eventId)) {
+        throw new Error('Event context is still loading. Please try again.')
+      }
       if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
         throw new Error('Enter a valid amount')
       }
@@ -66,9 +86,11 @@ export function usePaddleRaiseEntry(eventId: string) {
         custom_label: customLabel.trim() || undefined,
       })
     },
-    onSuccess: () => {
+    onSuccess: (donation) => {
       setBidderNumber('')
       setSubmitToken((current) => current + 1)
+      setRecentDonations((current) => [donation, ...current].slice(0, 25))
+      toast.success('Donation submitted')
       queryClient.invalidateQueries({ queryKey: ['quick-entry'] })
     },
     onError: (error) => {
@@ -83,7 +105,10 @@ export function usePaddleRaiseEntry(eventId: string) {
     selectedLabelIds,
     customLabel,
     labels: labelsQuery.data?.items ?? [],
+    labelsError: labelsQuery.error,
+    isLoadingLabels: labelsQuery.isLoading,
     summary: summaryQuery.data,
+    recentDonations,
     isSubmitting: mutation.isPending,
     setAmount,
     setBidderNumber,

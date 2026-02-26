@@ -16,10 +16,11 @@ import {
 } from '@/components/ui/select'
 import { useEventContext } from '@/hooks/use-event-context'
 import { cn } from '@/lib/utils'
+import { eventApi } from '@/services/event-service'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { Check, ChevronsUpDown } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { type KeyboardEvent, useEffect, useMemo, useState } from 'react'
 
 import { getQuickEntryLiveAuctionItems } from '../api/quickEntryApi'
 import { useLiveAuctionControls } from '../hooks/useLiveAuctionControls'
@@ -34,18 +35,26 @@ export function QuickEntryPage() {
   const { selectedEventId, availableEvents } = useEventContext()
   const [mode, setMode] = useState<'LIVE_AUCTION' | 'PADDLE_RAISE'>('LIVE_AUCTION')
   const [itemMenuOpen, setItemMenuOpen] = useState(false)
+  const [itemSearch, setItemSearch] = useState('')
   const [selectedItemId, setSelectedItemId] = useState('')
 
-  const resolvedEventId = useMemo(() => {
-    const uuidPattern =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-    if (uuidPattern.test(eventId)) {
-      return eventId
-    }
+  const isRouteEventUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      eventId
+    )
 
-    const matchedBySlug = availableEvents.find((event) => event.slug === eventId)
-    return matchedBySlug?.id ?? selectedEventId ?? eventId
-  }, [eventId, availableEvents, selectedEventId])
+  const routeEventQuery = useQuery({
+    queryKey: ['quick-entry', 'event-by-slug', eventId],
+    queryFn: () => eventApi.getEventBySlug(eventId),
+    enabled: !isRouteEventUuid,
+  })
+
+  const resolvedEventId = isRouteEventUuid
+    ? eventId
+    : routeEventQuery.data?.id ??
+    availableEvents.find((event) => event.slug === eventId)?.id ??
+    selectedEventId ??
+    ''
 
   const auctionItemsQuery = useQuery({
     queryKey: ['quick-entry', 'live-items', resolvedEventId],
@@ -62,6 +71,38 @@ export function QuickEntryPage() {
     [liveAuctionItems, selectedItemId]
   )
 
+  const selectLiveItem = (itemId: string) => {
+    setSelectedItemId(itemId)
+    setItemMenuOpen(false)
+    setItemSearch('')
+  }
+
+  const handleItemSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Tab') {
+      return
+    }
+
+    const search = itemSearch.trim().toLowerCase()
+    if (!search) {
+      return
+    }
+
+    const matching = liveAuctionItems.find((item) =>
+      item.bid_number.toString().startsWith(search) || item.title.toLowerCase().includes(search)
+    )
+    if (!matching) {
+      return
+    }
+
+    event.preventDefault()
+    selectLiveItem(matching.id)
+    window.setTimeout(() => {
+      const amountInput = document.getElementById('quick-entry-amount') as HTMLInputElement | null
+      amountInput?.focus()
+      amountInput?.select()
+    }, 0)
+  }
+
   const {
     amount,
     bidderNumber,
@@ -72,6 +113,15 @@ export function QuickEntryPage() {
     submitToken,
   } =
     useLiveBidEntry(resolvedEventId, selectedItemId)
+
+  useEffect(() => {
+    if (!selectedItem) {
+      return
+    }
+    if (selectedItem.starting_bid > 0) {
+      setAmount(Math.round(selectedItem.starting_bid).toLocaleString('en-US'))
+    }
+  }, [selectedItem, setAmount])
 
   const {
     summary,
@@ -88,6 +138,8 @@ export function QuickEntryPage() {
     selectedLabelIds,
     customLabel,
     labels,
+    labelsError,
+    isLoadingLabels,
     summary: paddleSummary,
     isSubmitting: isSubmittingPaddle,
     setAmount: setPaddleAmount,
@@ -96,6 +148,7 @@ export function QuickEntryPage() {
     setSelectedLabelIds,
     submitDonation,
     submitToken: paddleSubmitToken,
+    recentDonations,
   } = usePaddleRaiseEntry(resolvedEventId)
 
   return (
@@ -148,7 +201,12 @@ export function QuickEntryPage() {
               </PopoverTrigger>
               <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                 <Command>
-                  <CommandInput placeholder="Search item number or name..." />
+                  <CommandInput
+                    placeholder="Search item number or name..."
+                    value={itemSearch}
+                    onValueChange={setItemSearch}
+                    onKeyDown={handleItemSearchKeyDown}
+                  />
                   <CommandList>
                     <CommandEmpty>No live auction items found.</CommandEmpty>
                     <CommandGroup>
@@ -156,10 +214,7 @@ export function QuickEntryPage() {
                         <CommandItem
                           key={item.id}
                           value={`${item.bid_number} ${item.title}`}
-                          onSelect={() => {
-                            setSelectedItemId(item.id)
-                            setItemMenuOpen(false)
-                          }}
+                          onSelect={() => selectLiveItem(item.id)}
                         >
                           <Check
                             className={cn(
@@ -200,6 +255,9 @@ export function QuickEntryPage() {
               <p className="text-sm text-muted-foreground">
                 {selectedItem.description || 'No description provided.'}
               </p>
+              <p className="text-sm text-muted-foreground">
+                Starting Bid: ${Math.round(selectedItem.starting_bid).toLocaleString('en-US')}
+              </p>
             </div>
           </div>
         </section>
@@ -233,6 +291,9 @@ export function QuickEntryPage() {
           customLabel={customLabel}
           selectedLabelIds={selectedLabelIds}
           labels={labels}
+          labelsError={labelsError}
+          isLoadingLabels={isLoadingLabels}
+          recentDonations={recentDonations}
           summary={paddleSummary}
           submitToken={paddleSubmitToken}
           disabled={isSubmittingPaddle}

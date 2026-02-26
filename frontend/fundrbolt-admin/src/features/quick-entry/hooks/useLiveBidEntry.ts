@@ -5,6 +5,31 @@ import { toast } from 'sonner'
 
 import { createLiveBid, getQuickEntryStatus } from '../api/quickEntryApi'
 
+function getApiErrorMessage(error: AxiosError): string | null {
+  const response = error.response?.data as
+    | { detail?: string | { message?: string; detail?: string } }
+    | undefined
+  const detail = response?.detail
+  if (typeof detail === 'string') {
+    return detail
+  }
+  if (detail && typeof detail === 'object') {
+    if (typeof detail.message === 'string') {
+      return detail.message
+    }
+    if (typeof detail.detail === 'string') {
+      return detail.detail
+    }
+  }
+  return null
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value
+  )
+}
+
 export function useQuickEntryStatus(eventId: string) {
   return useQuery({
     queryKey: ['quick-entry', 'status', eventId],
@@ -27,6 +52,9 @@ export function useLiveBidEntry(eventId: string, selectedItemId: string) {
 
   const mutation = useMutation({
     mutationFn: async () => {
+      if (!isUuid(eventId)) {
+        throw new Error('Event context is still loading. Please try again.')
+      }
       if (!selectedItemId) {
         throw new Error('Select a live auction item first')
       }
@@ -52,12 +80,7 @@ export function useLiveBidEntry(eventId: string, selectedItemId: string) {
     onError: (error) => {
       let message = 'Failed to submit bid'
       if (error instanceof AxiosError) {
-        const detail =
-          (error.response?.data as { detail?: { message?: string } })?.detail?.message ??
-          error.response?.data?.detail
-        if (typeof detail === 'string') {
-          message = detail
-        }
+        message = getApiErrorMessage(error) ?? message
       } else if (error instanceof Error) {
         message = error.message
       }
