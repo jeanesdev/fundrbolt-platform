@@ -8,6 +8,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.donation_label import DonationLabel
 from app.models.event_registration import EventRegistration
@@ -34,7 +35,9 @@ class PaddleRaiseService(QuickEntryServiceBase):
     ) -> tuple[QuickEntryDonation, str | None, list[str]]:
         """Create paddle raise donation and optional label links."""
         cls.validate_whole_dollar_amount(amount)
-        bidder = await cls.lookup_bidder(db=db, event_id=event_id, bidder_number=bidder_number)
+        bidder = await cls.lookup_bidder_optional(
+            db=db, event_id=event_id, bidder_number=bidder_number
+        )
 
         labels = await cls._validate_predefined_labels(
             db=db, event_id=event_id, label_ids=label_ids
@@ -45,7 +48,7 @@ class PaddleRaiseService(QuickEntryServiceBase):
             event_id=event_id,
             amount=amount,
             bidder_number=bidder_number,
-            donor_user_id=bidder.donor_user_id,
+            donor_user_id=bidder.donor_user_id if bidder is not None else None,
             entered_at=datetime.now(UTC),
             entered_by_user_id=entered_by_user_id,
         )
@@ -86,7 +89,56 @@ class PaddleRaiseService(QuickEntryServiceBase):
         if custom_label_value is not None:
             label_output.append(custom_label_value)
 
-        return donation, bidder.donor_display_name, label_output
+        return donation, bidder.donor_display_name if bidder is not None else None, label_output
+
+    @classmethod
+    async def list_donations(
+        cls,
+        db: AsyncSession,
+        *,
+        event_id: UUID,
+    ) -> list[tuple[QuickEntryDonation, str | None, list[str]]]:
+        """List all paddle raise donations for an event, newest first."""
+        stmt = (
+            select(QuickEntryDonation)
+            .where(QuickEntryDonation.event_id == event_id)
+            .options(
+                selectinload(QuickEntryDonation.label_links).selectinload(
+                    QuickEntryDonationLabelLink.label
+                )
+            )
+            .order_by(QuickEntryDonation.entered_at.desc())
+        )
+        result = await db.execute(stmt)
+        donations = list(result.scalars().all())
+
+        # Bulk-fetch donor names by bidder number for this event
+        bidder_numbers = list({d.bidder_number for d in donations})
+        guests: dict[int, str | None] = {}
+        if bidder_numbers:
+            guest_stmt = (
+                select(RegistrationGuest.bidder_number, RegistrationGuest.name)
+                .join(EventRegistration, EventRegistration.id == RegistrationGuest.registration_id)
+                .where(
+                    EventRegistration.event_id == event_id,
+                    RegistrationGuest.bidder_number.in_(bidder_numbers),
+                )
+            )
+            guest_result = await db.execute(guest_stmt)
+            guests = {int(row[0]): row[1] for row in guest_result.all()}
+
+        output = []
+        for donation in donations:
+            donor_name = guests.get(donation.bidder_number)
+            labels: list[str] = []
+            for link in donation.label_links:
+                if link.label is not None:
+                    labels.append(link.label.name)
+                elif link.custom_label_text is not None:
+                    labels.append(link.custom_label_text)
+            output.append((donation, donor_name, labels))
+
+        return output
 
     @staticmethod
     async def list_available_labels(

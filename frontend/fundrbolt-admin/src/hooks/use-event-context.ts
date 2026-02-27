@@ -13,7 +13,7 @@
 import { eventApi } from '@/services/event-service'
 import { useEventContextStore, type EventContextOption } from '@/stores/event-context-store'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useNpoContext } from './use-npo-context'
 
 export interface UseEventContextReturn {
@@ -93,9 +93,17 @@ export function useEventContext(): UseEventContextReturn {
     }
   }, [data, isManualSelection, setAvailableEvents, applySmartDefault])
 
-  // Clear event selection when NPO changes
+  // Clear event selection when NPO changes, but not on initial mount
+  const prevNpoIdRef = useRef<string | null | undefined>(undefined)
   useEffect(() => {
-    storeClearEvent()
+    if (prevNpoIdRef.current === undefined) {
+      prevNpoIdRef.current = selectedNpoId
+      return
+    }
+    if (prevNpoIdRef.current !== selectedNpoId) {
+      prevNpoIdRef.current = selectedNpoId
+      storeClearEvent()
+    }
   }, [selectedNpoId, storeClearEvent])
 
   // Select event with manual flag and invalidate queries

@@ -68,6 +68,33 @@ class QuickEntryServiceBase:
         )
 
     @staticmethod
+    async def lookup_bidder_optional(
+        db: AsyncSession,
+        event_id: UUID,
+        bidder_number: int,
+    ) -> BidderLookupResult | None:
+        """Resolve bidder-to-donor mapping; returns None if bidder is not registered."""
+        stmt = select(RegistrationGuest).where(
+            and_(
+                RegistrationGuest.registration_id == EventRegistration.id,
+                EventRegistration.event_id == event_id,
+                RegistrationGuest.bidder_number == bidder_number,
+            )
+        )
+        result = await db.execute(stmt)
+        guest = result.scalar_one_or_none()
+
+        if guest is None:
+            return None
+
+        return BidderLookupResult(
+            bidder_number=bidder_number,
+            donor_user_id=guest.user_id,
+            donor_display_name=guest.name,
+            table_number=guest.table_number,
+        )
+
+    @staticmethod
     def log_quick_entry_action(
         db: AsyncSession,
         *,

@@ -36,18 +36,18 @@ interface AuctionBidsDashboardProps {
 }
 
 type SortDirection = 'asc' | 'desc'
-type HighestSortKey = 'itemCode' | 'itemName' | 'bidderName' | 'amount'
-type RecentSortKey = 'itemCode' | 'itemName' | 'bidderName' | 'amount' | 'time'
+type HighestSortKey = 'itemNumber' | 'itemName' | 'bidderName' | 'amount'
+type RecentSortKey = 'itemNumber' | 'itemName' | 'bidderName' | 'amount' | 'time'
 
 type HighestFilters = {
-  itemCode: string
+  itemNumber: string
   itemName: string
   bidderName: string
   amount: string
 }
 
 type RecentFilters = {
-  itemCode: string
+  itemNumber: string
   itemName: string
   bidderName: string
   amount: string
@@ -77,7 +77,7 @@ export function AuctionBidsDashboard({
   const [highestSortKey, setHighestSortKey] = useState<HighestSortKey>('amount')
   const [highestSortDirection, setHighestSortDirection] = useState<SortDirection>('desc')
   const [highestFilters, setHighestFilters] = useState<HighestFilters>({
-    itemCode: '',
+    itemNumber: '',
     itemName: '',
     bidderName: '',
     amount: '',
@@ -85,7 +85,7 @@ export function AuctionBidsDashboard({
   const [recentSortKey, setRecentSortKey] = useState<RecentSortKey>('time')
   const [recentSortDirection, setRecentSortDirection] = useState<SortDirection>('desc')
   const [recentFilters, setRecentFilters] = useState<RecentFilters>({
-    itemCode: '',
+    itemNumber: '',
     itemName: '',
     bidderName: '',
     amount: '',
@@ -182,8 +182,8 @@ export function AuctionBidsDashboard({
   const filteredHighestBids = useMemo(() => {
     return highestBids.filter((bid) => {
       const bidderName = bid.bidder_name || bid.bidder_email
-      if (highestFilters.itemCode) {
-        if (!normalizeText(bid.auction_item_code).includes(normalizeText(highestFilters.itemCode))) {
+      if (highestFilters.itemNumber) {
+        if (!String(bid.auction_item_number).includes(highestFilters.itemNumber)) {
           return false
         }
       }
@@ -211,13 +211,8 @@ export function AuctionBidsDashboard({
     const direction = highestSortDirection === 'asc' ? 1 : -1
     bids.sort((a, b) => {
       switch (highestSortKey) {
-        case 'itemCode':
-          return (
-            a.auction_item_code.localeCompare(b.auction_item_code, undefined, {
-              numeric: true,
-              sensitivity: 'base',
-            }) * direction
-          )
+        case 'itemNumber':
+          return (a.auction_item_number - b.auction_item_number) * direction
         case 'itemName':
           return (
             a.auction_item_title.localeCompare(b.auction_item_title, undefined, {
@@ -240,8 +235,8 @@ export function AuctionBidsDashboard({
   const filteredRecentBids = useMemo(() => {
     return recentBids.filter((bid) => {
       const bidderName = bid.bidder_name || bid.bidder_email
-      if (recentFilters.itemCode) {
-        if (!normalizeText(bid.auction_item_code).includes(normalizeText(recentFilters.itemCode))) {
+      if (recentFilters.itemNumber) {
+        if (!String(bid.auction_item_number).includes(recentFilters.itemNumber)) {
           return false
         }
       }
@@ -274,13 +269,8 @@ export function AuctionBidsDashboard({
     const direction = recentSortDirection === 'asc' ? 1 : -1
     bids.sort((a, b) => {
       switch (recentSortKey) {
-        case 'itemCode':
-          return (
-            a.auction_item_code.localeCompare(b.auction_item_code, undefined, {
-              numeric: true,
-              sensitivity: 'base',
-            }) * direction
-          )
+        case 'itemNumber':
+          return (a.auction_item_number - b.auction_item_number) * direction
         case 'itemName':
           return (
             a.auction_item_title.localeCompare(b.auction_item_title, undefined, {
@@ -358,18 +348,18 @@ export function AuctionBidsDashboard({
               <TableHeader>
                 <TableRow>
                   {renderHeader(
-                    'Item Code',
-                    'itemCode',
+                    'Item #',
+                    'itemNumber',
                     highestSortKey,
                     highestSortDirection,
                     (key) => handleHighestSortChange(key as HighestSortKey),
-                    highestFilters.itemCode,
+                    highestFilters.itemNumber,
                     (value) =>
                       setHighestFilters((prev) => ({
                         ...prev,
-                        itemCode: value,
+                        itemNumber: value,
                       })),
-                    'Search item code'
+                    'Search item #'
                   )}
                   {renderHeader(
                     'Item Name',
@@ -426,7 +416,7 @@ export function AuctionBidsDashboard({
                           params={{ eventId, itemId: bid.auction_item_id }}
                           className='text-primary underline-offset-4 hover:underline'
                         >
-                          {bid.auction_item_code}
+                          {bid.auction_item_number}
                         </Link>
                       </TableCell>
                       <TableCell>{bid.auction_item_title}</TableCell>
@@ -462,18 +452,18 @@ export function AuctionBidsDashboard({
               <TableHeader>
                 <TableRow>
                   {renderHeader(
-                    'Item Code',
-                    'itemCode',
+                    'Item #',
+                    'itemNumber',
                     recentSortKey,
                     recentSortDirection,
                     (key) => handleRecentSortChange(key as RecentSortKey),
-                    recentFilters.itemCode,
+                    recentFilters.itemNumber,
                     (value) =>
                       setRecentFilters((prev) => ({
                         ...prev,
-                        itemCode: value,
+                        itemNumber: value,
                       })),
-                    'Search item code'
+                    'Search item #'
                   )}
                   {renderHeader(
                     'Item Name',
@@ -546,7 +536,7 @@ export function AuctionBidsDashboard({
                           params={{ eventId, itemId: bid.auction_item_id }}
                           className='text-primary underline-offset-4 hover:underline'
                         >
-                          {bid.auction_item_code}
+                          {bid.auction_item_number}
                         </Link>
                       </TableCell>
                       <TableCell>{bid.auction_item_title}</TableCell>

@@ -7,6 +7,7 @@ interface LiveBidEntryFormProps {
   onBidderNumberChange: (value: string) => void
   onSubmit: () => void
   disabled?: boolean
+  isSubmitting?: boolean
   focusAmountToken?: number
 }
 
@@ -23,6 +24,7 @@ export function LiveBidEntryForm({
   onBidderNumberChange,
   onSubmit,
   disabled,
+  isSubmitting,
   focusAmountToken,
 }: LiveBidEntryFormProps) {
   const amountRef = useRef<HTMLInputElement>(null)
@@ -61,7 +63,7 @@ export function LiveBidEntryForm({
   }
 
   return (
-    <form className="grid gap-3 md:grid-cols-2" onSubmit={handleSubmit}>
+    <form className="grid grid-cols-2 gap-3" onSubmit={handleSubmit}>
       <div className="space-y-1">
         <label className="text-sm font-medium" htmlFor="quick-entry-amount">
           Amount
@@ -94,6 +96,16 @@ export function LiveBidEntryForm({
           placeholder="123"
           disabled={disabled}
         />
+      </div>
+
+      <div className="col-span-2">
+        <button
+          type="submit"
+          className="bg-primary text-primary-foreground w-full rounded-md px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={disabled}
+        >
+          {isSubmitting ? 'Submitting…' : 'Submit Bid'}
+        </button>
       </div>
     </form>
   )

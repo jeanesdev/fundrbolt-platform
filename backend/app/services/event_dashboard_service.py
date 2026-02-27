@@ -13,9 +13,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.auction_bid import AuctionBid, BidStatus, PaddleRaiseContribution
 from app.models.event import Event
 from app.models.event_registration import EventRegistration
+from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
+from app.models.quick_entry_buy_now_bid import QuickEntryBuyNowBid
+from app.models.quick_entry_donation import QuickEntryDonation
 from app.models.registration_guest import RegistrationGuest
 from app.models.sponsor import Sponsor
 from app.models.ticket_management import PaymentStatus, TicketPurchase
+from app.models.user import User
 from app.schemas.event_dashboard import (
     AlertCard,
     CashflowPoint,
@@ -88,17 +92,45 @@ class EventDashboardService:
         paddle_stmt = select(func.coalesce(func.sum(PaddleRaiseContribution.amount), 0)).where(
             PaddleRaiseContribution.event_id == event_id
         )
+        qe_paddle_stmt = select(func.coalesce(func.sum(QuickEntryDonation.amount), 0)).where(
+            QuickEntryDonation.event_id == event_id
+        )
+        qe_live_auction_high_bids = (
+            select(
+                QuickEntryBid.item_id.label("item_id"),
+                func.max(QuickEntryBid.amount).label("max_bid"),
+            )
+            .where(
+                QuickEntryBid.event_id == event_id,
+                QuickEntryBid.status.in_([QuickEntryBidStatus.ACTIVE, QuickEntryBidStatus.WINNING]),
+            )
+            .group_by(QuickEntryBid.item_id)
+            .subquery()
+        )
+        qe_live_auction_stmt = select(
+            func.coalesce(func.sum(qe_live_auction_high_bids.c.max_bid), 0)
+        )
+        buy_now_stmt = select(func.coalesce(func.sum(QuickEntryBuyNowBid.amount), 0)).where(
+            QuickEntryBuyNowBid.event_id == event_id
+        )
 
         tickets_total = Decimal((await self.db.execute(ticket_stmt)).scalar_one() or 0)
         sponsorship_total = Decimal((await self.db.execute(sponsor_stmt)).scalar_one() or 0)
         auction_total = Decimal((await self.db.execute(auction_stmt)).scalar_one() or 0)
         paddle_total = Decimal((await self.db.execute(paddle_stmt)).scalar_one() or 0)
+        qe_paddle_total = Decimal((await self.db.execute(qe_paddle_stmt)).scalar_one() or 0)
+        qe_live_auction_total = Decimal(
+            (await self.db.execute(qe_live_auction_stmt)).scalar_one() or 0
+        )
+        buy_now_total = Decimal((await self.db.execute(buy_now_stmt)).scalar_one() or 0)
 
         return {
             "tickets": tickets_total,
             "sponsorships": sponsorship_total,
             "silent_auction": auction_total,
-            "paddle_raise": paddle_total,
+            "live_auction": qe_live_auction_total,
+            "buy_it_now": buy_now_total,
+            "paddle_raise": paddle_total + qe_paddle_total,
             "donations": Decimal("0"),
             "fees_other": Decimal("0"),
         }
@@ -372,13 +404,28 @@ class EventDashboardService:
         return {int(row[0]): Decimal(row[1]) for row in rows if row[0] is not None}
 
     async def _ticket_totals_by_user(self, event_id: UUID) -> dict[UUID, Decimal]:
+        # For imported tickets, `user_id` is the importer, not the buyer.
+        # Join purchaser_email → User → EventRegistration to find the real buyer.
+        # Fall back to TicketPurchase.user_id when no email match exists.
+        buyer_user = User.__table__.alias("buyer_user")
+        buyer_reg = EventRegistration.__table__.alias("buyer_reg")
         stmt = (
-            select(TicketPurchase.user_id, func.coalesce(func.sum(TicketPurchase.total_price), 0))
+            select(
+                func.coalesce(buyer_reg.c.user_id, TicketPurchase.user_id).label(
+                    "effective_user_id"
+                ),
+                func.coalesce(func.sum(TicketPurchase.total_price), 0).label("total"),
+            )
+            .outerjoin(buyer_user, buyer_user.c.email == TicketPurchase.purchaser_email)
+            .outerjoin(
+                buyer_reg,
+                (buyer_reg.c.user_id == buyer_user.c.id) & (buyer_reg.c.event_id == event_id),
+            )
             .where(
                 TicketPurchase.event_id == event_id,
                 TicketPurchase.payment_status == PaymentStatus.COMPLETED,
             )
-            .group_by(TicketPurchase.user_id)
+            .group_by(func.coalesce(buyer_reg.c.user_id, TicketPurchase.user_id))
         )
         result = await self.db.execute(stmt)
         rows = list(result.all())

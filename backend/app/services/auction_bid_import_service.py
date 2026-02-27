@@ -432,7 +432,7 @@ class AuctionBidImportService:
             if not existing or bid.bid_amount > existing.bid_amount:
                 highest_map[item.id] = AuctionBidDashboardHighestBid(
                     auction_item_id=item.id,
-                    auction_item_code=item.external_id,
+                    auction_item_number=item.bid_number,
                     auction_item_title=item.title,
                     bid_amount=bid.bid_amount,
                     bidder_name=f"{user.first_name} {user.last_name}",
@@ -451,7 +451,7 @@ class AuctionBidImportService:
         recent_bids = [
             AuctionBidDashboardRecentBid(
                 auction_item_id=item.id,
-                auction_item_code=item.external_id,
+                auction_item_number=item.bid_number,
                 auction_item_title=item.title,
                 bid_amount=bid.bid_amount,
                 bidder_name=f"{user.first_name} {user.last_name}",

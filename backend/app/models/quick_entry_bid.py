@@ -51,7 +51,11 @@ class QuickEntryBid(Base, UUIDMixin, TimestampMixin):
     )
     amount: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[QuickEntryBidStatus] = mapped_column(
-        Enum(QuickEntryBidStatus, values_callable=lambda x: [e.value for e in x]),
+        Enum(
+            QuickEntryBidStatus,
+            values_callable=lambda x: [e.value for e in x],
+            name="quick_entry_bid_status",
+        ),
         nullable=False,
         default=QuickEntryBidStatus.ACTIVE,
         server_default=QuickEntryBidStatus.ACTIVE.value,

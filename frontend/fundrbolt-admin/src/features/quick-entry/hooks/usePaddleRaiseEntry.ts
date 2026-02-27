@@ -1,13 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AxiosError } from 'axios'
 import { useMemo, useState } from 'react'
+import { AxiosError } from 'axios'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-
 import {
   createPaddleDonation,
+  getPaddleDonations,
   getPaddleRaiseSummary,
   getQuickEntryDonationLabels,
-  type QuickEntryPaddleDonationResponse,
 } from '../api/quickEntryApi'
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -47,13 +46,15 @@ export function usePaddleRaiseEntry(eventId: string) {
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([])
   const [customLabel, setCustomLabel] = useState('')
   const [submitToken, setSubmitToken] = useState(0)
-  const [recentDonations, setRecentDonations] = useState<QuickEntryPaddleDonationResponse[]>([])
 
   const parsedAmount = useMemo(
     () => Number.parseInt(amount.replace(/,/g, ''), 10),
     [amount]
   )
-  const parsedBidder = useMemo(() => Number.parseInt(bidderNumber, 10), [bidderNumber])
+  const parsedBidder = useMemo(
+    () => Number.parseInt(bidderNumber, 10),
+    [bidderNumber]
+  )
 
   const labelsQuery = useQuery({
     queryKey: ['quick-entry', 'labels', eventId],
@@ -64,6 +65,12 @@ export function usePaddleRaiseEntry(eventId: string) {
   const summaryQuery = useQuery({
     queryKey: ['quick-entry', 'paddle-summary', eventId],
     queryFn: () => getPaddleRaiseSummary(eventId),
+    enabled: !!eventId,
+  })
+
+  const donationsQuery = useQuery({
+    queryKey: ['quick-entry', 'paddle-donations', eventId],
+    queryFn: () => getPaddleDonations(eventId),
     enabled: !!eventId,
   })
 
@@ -86,10 +93,9 @@ export function usePaddleRaiseEntry(eventId: string) {
         custom_label: customLabel.trim() || undefined,
       })
     },
-    onSuccess: (donation) => {
+    onSuccess: () => {
       setBidderNumber('')
       setSubmitToken((current) => current + 1)
-      setRecentDonations((current) => [donation, ...current].slice(0, 25))
       toast.success('Donation submitted')
       queryClient.invalidateQueries({ queryKey: ['quick-entry'] })
     },
@@ -108,7 +114,7 @@ export function usePaddleRaiseEntry(eventId: string) {
     labelsError: labelsQuery.error,
     isLoadingLabels: labelsQuery.isLoading,
     summary: summaryQuery.data,
-    recentDonations,
+    recentDonations: donationsQuery.data?.items ?? [],
     isSubmitting: mutation.isPending,
     setAmount,
     setBidderNumber,
