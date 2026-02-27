@@ -244,7 +244,7 @@
 }
 
 .animate-hero-enter {
-  animation: hero-enter 0.5s ease-out forwards;
+  animation: hero-enter 0.5s ease-out both;
 }
 
 .animate-bid-bounce {
@@ -261,8 +261,24 @@
 
 /* Stagger delays for card grids */
 .stagger-1 { animation-delay: 0.05s; }
-.stagger-2 { animation-delay: 0.10s; }
-.stagger-3 { animation-delay: 0.15s; }
-.stagger-4 { animation-delay: 0.20s; }
-.stagger-5 { animation-delay: 0.25s; }
-.stagger-6 { animation-delay: 0.30s; }
+.stagger-2 { animation-delay: 0.12s; }
+.stagger-3 { animation-delay: 0.20s; }
+.stagger-4 { animation-delay: 0.28s; }
+.stagger-5 { animation-delay: 0.36s; }
+.stagger-6 { animation-delay: 0.44s; }
+
+/* Tab page transition — full page slide/fade on tab switch */
+@keyframes tab-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-tab-page {
+  animation: tab-page-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

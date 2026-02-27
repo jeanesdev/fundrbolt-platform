@@ -14,7 +14,7 @@ export type DonorTab = 'home' | 'auction' | 'watchlist' | 'seat'
 interface TabConfig {
   id: DonorTab
   label: string
-  icon: React.ComponentType<{ className?: string }>
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
 }
 
 const TABS: TabConfig[] = [

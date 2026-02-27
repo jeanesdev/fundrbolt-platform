@@ -85,7 +85,8 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
     }>
   }
 
-  const myInfoSource = seatingInfo.myInfo ?? seatingInfoRecord.my_info
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const myInfoSource: any = seatingInfo.myInfo ?? seatingInfoRecord.my_info
   const myInfo: MySeatingInfo = {
     guestId: myInfoSource?.guestId ?? myInfoSource?.guest_id ?? '',
     fullName: myInfoSource?.fullName ?? myInfoSource?.full_name ?? null,
@@ -94,7 +95,8 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
     checkedIn: myInfoSource?.checkedIn ?? myInfoSource?.checked_in ?? false,
   }
 
-  const tablematesSource =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tablematesSource: any[] =
     seatingInfo.tablemates ?? seatingInfoRecord.tablemates ?? []
   const tablemates: TablemateInfo[] = tablematesSource.map((t) => ({
     guestId: t.guestId ?? t.guest_id ?? '',
@@ -111,7 +113,8 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
     max: tableCapacitySource?.max ?? 0,
   }
 
-  const tableAssignmentSource =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tableAssignmentSource: any =
     seatingInfo.tableAssignment ?? seatingInfoRecord.table_assignment
   const tableAssignment: TableAssignment | null = tableAssignmentSource
     ? {

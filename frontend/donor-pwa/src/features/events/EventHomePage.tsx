@@ -25,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEventBranding } from '@/hooks/use-event-branding'
 import { useEventContext } from '@/hooks/use-event-context'
 import { cn } from '@/lib/utils'
+import apiClient from '@/lib/axios'
 import auctionItemService from '@/services/auctionItemService'
 import {
   getMySeatingInfo,
@@ -35,6 +36,7 @@ import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { useEventContextStore } from '@/stores/event-context-store'
 import { useEventStore } from '@/stores/event-store'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
+import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
 import {
   keepPreviousData,
   useMutation,
@@ -137,8 +139,8 @@ export function EventHomePage() {
         id: event.id,
         name: event.name,
         slug: event.slug,
-        event_datetime: event.event_date || null,
-        timezone: null,
+        event_datetime: event.event_date || '',
+        timezone: '',
         is_past,
         is_upcoming,
         thumbnail_url: event.logo_url || null,
@@ -183,10 +185,9 @@ export function EventHomePage() {
     const is_upcoming =
       !is_past &&
       eventDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-    const thumbnail_url =
-      ('banner_url' in currentEvent && currentEvent.banner_url) ||
+    const thumbnail_url: string | null =
+      ('banner_url' in currentEvent ? (currentEvent as { banner_url?: string | null }).banner_url ?? null : null) ||
       currentEvent.media?.[0]?.file_url ||
-      currentEvent.logo_url ||
       null
     return {
       id: currentEvent.id,
@@ -302,6 +303,20 @@ export function EventHomePage() {
       return maxBidItemMap[itemId] !== undefined && !winningItemMap[itemId]
     }).length
   }, [watchListData, maxBidItemMap, winningItemMap])
+
+  // Preview items for home tab (top 6 by bid count)
+  const { data: previewItemsData } = useQuery({
+    queryKey: ['auction-items', currentEvent?.id, 'all', 'preview'],
+    queryFn: async () => {
+      const response = await apiClient.get<{ items: AuctionItemGalleryItem[] }>(
+        `/events/${currentEvent!.id}/auction-items`,
+        { params: { auction_type: 'all', page: 1, limit: 20 } }
+      )
+      return response.data
+    },
+    enabled: !!currentEvent?.id,
+    staleTime: 30000,
+  })
 
   // Place bid mutation
   const { mutate: mutatePlaceBid, isPending: isPlacingBid } = useMutation({
@@ -479,11 +494,11 @@ export function EventHomePage() {
       const banner = currentEvent.media.find((m) => m.media_type === 'image' && m.display_order === 0)
       return banner?.file_url || currentEvent.media[0]?.file_url || null
     }
-    return currentEvent.logo_url || null
+    return null
   }
   const bannerUrl = getBannerUrl()
 
-  const getLogoUrl = () => currentEvent.logo_url || null
+  const getLogoUrl = () => currentEvent.media?.find((m) => m.media_type === 'image')?.file_url || null
 
   const getEventStatus = (): EventStatus => {
     if (!currentEventForSwitcher) return 'upcoming'
@@ -498,99 +513,248 @@ export function EventHomePage() {
 
   // ─── Tab content ─────────────────────────────────────────────────────────────
 
-  const homeTabContent = (
-    <div className='animate-tab-slide-in'>
-      {/* Hero Section */}
-      <EventHeroSection
-        eventName={currentEvent.name}
-        npoName={currentEvent.npo_name}
-        logoUrl={getLogoUrl()}
-        bannerUrl={bannerUrl}
-        eventDate={currentEvent.event_datetime}
-        venueName={currentEvent.venue_name}
-        status={eventStatus}
-        onAddToCalendar={generateICSFile}
-        venueMapLink={venueMapLink}
-        switcherSlot={
-          currentEventForSwitcher && eventsForSwitcher.length > 0 ? (
-            <EventSwitcher
-              currentEvent={currentEventForSwitcher}
-              events={eventsForSwitcher}
-              onEventSelect={handleEventSelect}
-            />
-          ) : undefined
-        }
-        profileSlot={<ProfileDropdown />}
-      />
+  // Top preview items for home tab (top 6 by bid activity)
+  const previewItems: AuctionItemGalleryItem[] = useMemo(() => {
+    const items = previewItemsData?.items ?? []
+    return [...items]
+      .sort((a, b) => (b.bid_count ?? 0) - (a.bid_count ?? 0))
+      .slice(0, 6)
+  }, [previewItemsData])
 
-      <div className='px-4 py-5 space-y-4'>
+  const sharedAuctionProps = {
+    onItemClick: (item: AuctionItemGalleryItem, isWinning: boolean) => {
+      setSelectedAuctionItemId(item.id)
+      setWinningItemMap((prev) => ({ ...prev, [item.id]: isWinning }))
+      const isWatched =
+        watchListData?.watch_list?.some((e) => e.auction_item_id === item.id) ?? false
+      setIsItemWatching(isWatched)
+    },
+  }
+
+  const heroAndNav = (
+    <EventHeroSection
+      eventName={currentEvent.name}
+      npoName={currentEvent.npo_name}
+      logoUrl={getLogoUrl()}
+      bannerUrl={bannerUrl}
+      eventDate={currentEvent.event_datetime}
+      venueName={currentEvent.venue_name}
+      status={eventStatus}
+      onAddToCalendar={generateICSFile}
+      venueMapLink={venueMapLink}
+      switcherSlot={
+        currentEventForSwitcher && eventsForSwitcher.length > 0 ? (
+          <EventSwitcher
+            currentEvent={currentEventForSwitcher}
+            events={eventsForSwitcher}
+            onEventSelect={handleEventSelect}
+          />
+        ) : undefined
+      }
+      profileSlot={<ProfileDropdown />}
+    />
+  )
+
+  const homeTabContent = (
+    <>
+      {heroAndNav}
+
+      <div className='px-4 py-4 space-y-5'>
         {/* Countdown */}
         {currentEvent.event_datetime && !currentEventForSwitcher?.is_past && (
-          <CountdownTimer
-            targetDate={currentEvent.event_datetime}
-            eventName={currentEvent.name}
-            hideOnExpire={true}
-          />
+          <div className='animate-card-enter stagger-1'>
+            <CountdownTimer
+              targetDate={currentEvent.event_datetime}
+              eventName={currentEvent.name}
+              hideOnExpire={true}
+            />
+          </div>
+        )}
+
+        {/* Auction Preview Strip */}
+        {previewItems.length > 0 && (
+          <div className='animate-card-enter stagger-2'>
+            <div className='mb-3 flex items-center justify-between'>
+              <h2
+                className='text-base font-bold'
+                style={{ color: 'var(--event-text-on-background, #111827)' }}
+              >
+                {eventStatus === 'live' ? '🔥 Live Auction' : '🎁 Auction Items'}
+              </h2>
+              <button
+                onClick={() => setActiveTab('auction')}
+                className='text-xs font-semibold'
+                style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+              >
+                See All →
+              </button>
+            </div>
+            <div className='flex gap-3 overflow-x-auto pb-1 -mx-1 px-1' style={{ scrollSnapType: 'x mandatory' }}>
+              {previewItems.map((item, i) => (
+                <div
+                  key={item.id}
+                  className={cn('flex-none w-44 animate-card-enter', `stagger-${Math.min(i + 1, 6)}`)}
+                  style={{ scrollSnapAlign: 'start' }}
+                  onClick={() => {
+                    setSelectedAuctionItemId(item.id)
+                    const isWatched = watchListData?.watch_list?.some((e) => e.auction_item_id === item.id) ?? false
+                    setIsItemWatching(isWatched)
+                  }}
+                >
+                  <div
+                    className='group relative overflow-hidden rounded-2xl border cursor-pointer transition-all active:scale-95 hover:shadow-lg'
+                    style={{
+                      backgroundColor: 'rgb(var(--event-card-bg, 255, 255, 255))',
+                      borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
+                    }}
+                  >
+                    {/* Image */}
+                    <div className='relative overflow-hidden' style={{ paddingTop: '80%' }}>
+                      <div className='absolute inset-0'>
+                        {item.thumbnail_url ? (
+                          <img
+                            src={item.thumbnail_url}
+                            alt={item.title}
+                            className='h-full w-full object-cover transition-transform duration-500 group-hover:scale-105'
+                            loading='lazy'
+                          />
+                        ) : (
+                          <div
+                            className='flex h-full w-full items-center justify-center'
+                            style={{ background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246) / 0.15), rgb(var(--event-secondary, 147, 51, 234) / 0.15))` }}
+                          >
+                            <span className='text-3xl'>🎁</span>
+                          </div>
+                        )}
+                        <div className='absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 to-transparent' />
+                      </div>
+                      {(item.bid_count ?? 0) >= 3 && (
+                        <div className='absolute top-1.5 right-1.5 text-sm'>🔥</div>
+                      )}
+                    </div>
+                    {/* Info */}
+                    <div className='p-2.5'>
+                      <p
+                        className='text-xs font-semibold truncate leading-tight mb-1'
+                        style={{ color: 'var(--event-text-on-background, #111827)' }}
+                      >
+                        {item.title}
+                      </p>
+                      <p
+                        className='text-sm font-black'
+                        style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+                      >
+                        {item.current_bid
+                          ? `$${item.current_bid.toLocaleString()}`
+                          : item.starting_bid
+                            ? `From $${item.starting_bid.toLocaleString()}`
+                            : 'No bids yet'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {/* "Browse All" card */}
+              <div
+                className='flex-none w-40 animate-card-enter stagger-6 cursor-pointer'
+                style={{ scrollSnapAlign: 'start' }}
+                onClick={() => setActiveTab('auction')}
+              >
+                <div
+                  className='flex h-full min-h-[180px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed'
+                  style={{ borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.3)' }}
+                >
+                  <span className='text-3xl'>🔨</span>
+                  <p
+                    className='text-xs font-bold text-center leading-tight'
+                    style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+                  >
+                    Browse All Items
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CTA for bidding (when no items yet) */}
+        {previewItems.length === 0 && eventStatus !== 'past' && (
+          <div className='animate-card-enter stagger-2'>
+            <button
+              onClick={() => setActiveTab('auction')}
+              className='w-full rounded-2xl p-4 text-left transition-all active:scale-[0.98] hover:shadow-md'
+              style={{
+                background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
+              }}
+            >
+              <p className='text-lg font-black text-white'>Browse Auction Items</p>
+              <p className='text-sm text-white/80'>Place bids and win amazing items →</p>
+            </button>
+          </div>
         )}
 
         {/* Event Details */}
-        <EventDetails
-          eventDatetime={currentEvent.event_datetime}
-          timezone={currentEvent.timezone}
-          venueName={currentEvent.venue_name}
-          venueAddress={currentEvent.venue_address}
-          venueCity={currentEvent.venue_city}
-          venueState={currentEvent.venue_state}
-          venueZip={currentEvent.venue_zip}
-          attire={currentEvent.attire}
-          contactEmail={currentEvent.primary_contact_email}
-          contactPhone={currentEvent.primary_contact_phone}
-          eventWebsite={currentEvent.links?.find((l) => l.link_type === 'website')?.url}
-          isPast={currentEventForSwitcher?.is_past}
-          isUpcoming={currentEventForSwitcher?.is_upcoming}
-        />
+        <div className='animate-card-enter stagger-3'>
+          <EventDetails
+            eventDatetime={currentEvent.event_datetime}
+            timezone={currentEvent.timezone}
+            venueName={currentEvent.venue_name}
+            venueAddress={currentEvent.venue_address}
+            venueCity={currentEvent.venue_city}
+            venueState={currentEvent.venue_state}
+            venueZip={currentEvent.venue_zip}
+            attire={currentEvent.attire}
+            contactEmail={currentEvent.primary_contact_email}
+            contactPhone={currentEvent.primary_contact_phone}
+            eventWebsite={currentEvent.links?.find((l) => l.link_type === 'website')?.url}
+            isPast={currentEventForSwitcher?.is_past}
+            isUpcoming={currentEventForSwitcher?.is_upcoming}
+          />
+        </div>
 
         {/* About */}
         {currentEvent.description && (
           <div
-            className='rounded-2xl p-4'
+            className='rounded-2xl border p-4 animate-card-enter stagger-4'
             style={{
-              backgroundColor: 'rgb(var(--event-card-bg, 147, 51, 234))',
+              backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.08)',
               borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
             }}
           >
             <h3
-              className='mb-2 text-sm font-semibold uppercase tracking-wider'
-              style={{ color: 'var(--event-card-text-muted, #D1D5DB)' }}
+              className='mb-2 text-xs font-bold uppercase tracking-widest'
+              style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
             >
               About This Event
             </h3>
-            <p className='text-sm leading-relaxed' style={{ color: 'var(--event-card-text, #FFFFFF)' }}>
+            <p className='text-sm leading-relaxed' style={{ color: 'var(--event-text-on-background, #374151)' }}>
               {currentEvent.description}
             </p>
           </div>
         )}
 
         {/* Sponsors */}
-        <SponsorsCarousel eventId={currentEvent.id} />
+        <div className='animate-card-enter stagger-5'>
+          <SponsorsCarousel eventId={currentEvent.id} />
+        </div>
       </div>
-    </div>
+    </>
   )
 
   const auctionTabContent = (
-    <div className='animate-tab-slide-in'>
-      {/* Sticky filter header */}
+    <>
+      {/* Sticky header */}
       <div
         className='sticky top-0 z-20 px-4 py-3 border-b backdrop-blur-md'
         style={{
-          backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.9)',
+          backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.92)',
           borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
         }}
       >
         <div className='flex items-center justify-between'>
           <h2
             className='text-base font-bold'
-            style={{ color: 'var(--event-text-on-background, #000000)' }}
+            style={{ color: 'var(--event-text-on-background, #111827)' }}
           >
             Auction Items
           </h2>
@@ -613,30 +777,24 @@ export function EventHomePage() {
           initialSort='highest_bid'
           eventStatus={currentEvent.status}
           eventDateTime={currentEvent.event_datetime}
-          onItemClick={(item, isWinning) => {
-            setSelectedAuctionItemId(item.id)
-            setWinningItemMap((prev) => ({ ...prev, [item.id]: isWinning }))
-            const isWatched =
-              watchListData?.watch_list?.some((e) => e.auction_item_id === item.id) ?? false
-            setIsItemWatching(isWatched)
-          }}
+          onItemClick={(item, isWinning) => sharedAuctionProps.onItemClick(item, isWinning)}
         />
       </div>
-    </div>
+    </>
   )
 
   const watchlistTabContent = (
-    <div className='animate-tab-slide-in'>
+    <>
       <div
         className='sticky top-0 z-20 px-4 py-3 border-b backdrop-blur-md'
         style={{
-          backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.9)',
+          backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.92)',
           borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
         }}
       >
         <h2
           className='text-base font-bold'
-          style={{ color: 'var(--event-text-on-background, #000000)' }}
+          style={{ color: 'var(--event-text-on-background, #111827)' }}
         >
           Watching
         </h2>
@@ -651,29 +809,29 @@ export function EventHomePage() {
         {!watchListData?.watch_list?.length ? (
           <div className='flex flex-col items-center justify-center py-20 text-center'>
             <div
-              className='mb-4 flex h-16 w-16 items-center justify-center rounded-full'
+              className='mb-4 flex h-20 w-20 items-center justify-center rounded-full'
               style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.1)' }}
             >
-              <span className='text-3xl'>👁️</span>
+              <span className='text-4xl'>👁️</span>
             </div>
             <p
-              className='mb-1 text-base font-semibold'
-              style={{ color: 'var(--event-text-on-background, #000000)' }}
+              className='mb-1 text-base font-bold'
+              style={{ color: 'var(--event-text-on-background, #111827)' }}
             >
               Nothing here yet
             </p>
             <p
-              className='text-sm'
+              className='text-sm mb-4'
               style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
             >
-              Heart items in the Bid tab to watch them
+              Tap the ♥ on any item in the Bid tab to watch it
             </p>
             <button
               onClick={() => setActiveTab('auction')}
-              className='mt-4 rounded-xl px-5 py-2.5 text-sm font-semibold text-white'
-              style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))' }}
+              className='rounded-2xl px-6 py-3 text-sm font-bold text-white transition-all active:scale-95 hover:shadow-lg'
+              style={{ background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)), rgb(var(--event-secondary, 147, 51, 234)))` }}
             >
-              Browse Auction Items
+              🔨 Browse Auction Items
             </button>
           </div>
         ) : (
@@ -686,31 +844,25 @@ export function EventHomePage() {
             initialSort='highest_bid'
             eventStatus={currentEvent.status}
             eventDateTime={currentEvent.event_datetime}
-            onItemClick={(item, isWinning) => {
-              setSelectedAuctionItemId(item.id)
-              setWinningItemMap((prev) => ({ ...prev, [item.id]: isWinning }))
-              const isWatched =
-                watchListData?.watch_list?.some((e) => e.auction_item_id === item.id) ?? false
-              setIsItemWatching(isWatched)
-            }}
+            onItemClick={(item, isWinning) => sharedAuctionProps.onItemClick(item, isWinning)}
           />
         )}
       </div>
-    </div>
+    </>
   )
 
   const seatTabContent = (
-    <div className='animate-tab-slide-in'>
+    <>
       <div
         className='sticky top-0 z-20 px-4 py-3 border-b backdrop-blur-md'
         style={{
-          backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.9)',
+          backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.92)',
           borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
         }}
       >
         <h2
           className='text-base font-bold'
-          style={{ color: 'var(--event-text-on-background, #000000)' }}
+          style={{ color: 'var(--event-text-on-background, #111827)' }}
         >
           My Seat
         </h2>
@@ -728,54 +880,60 @@ export function EventHomePage() {
 
         {shouldShowSeatingError && (
           <div
-            className='flex items-center gap-3 rounded-2xl border p-4'
+            className='flex items-center gap-3 rounded-2xl border p-4 animate-card-enter'
             style={{
               borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
-              backgroundColor: 'rgb(var(--event-card-bg, 147, 51, 234))',
+              backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.06)',
             }}
           >
             <AlertCircle className='h-5 w-5 text-destructive flex-shrink-0' />
-            <p className='text-sm' style={{ color: 'var(--event-card-text, #FFFFFF)' }}>
+            <p className='text-sm' style={{ color: 'var(--event-text-on-background, #374151)' }}>
               Unable to load seating information. Please try again later.
             </p>
           </div>
         )}
 
         {seatingInfo && !shouldShowSeatingError && !seatingLoading && (
-          <MySeatingSection seatingInfo={seatingInfo} />
+          <div className='animate-card-enter'>
+            <MySeatingSection seatingInfo={seatingInfo} />
+          </div>
         )}
 
         {!seatingLoading && !seatingInfo && !shouldShowSeatingError && (
           <div className='flex flex-col items-center justify-center py-20 text-center'>
             <div
-              className='mb-4 flex h-16 w-16 items-center justify-center rounded-full'
+              className='mb-5 flex h-24 w-24 items-center justify-center rounded-full animate-float'
               style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.1)' }}
             >
-              <span className='text-3xl'>🪑</span>
+              <span className='text-5xl'>🪑</span>
             </div>
             <p
-              className='mb-1 text-base font-semibold'
-              style={{ color: 'var(--event-text-on-background, #000000)' }}
+              className='mb-2 text-lg font-bold'
+              style={{ color: 'var(--event-text-on-background, #111827)' }}
             >
-              No seating assigned yet
+              No Seat Assigned Yet
             </p>
             <p
-              className='text-sm'
+              className='text-sm max-w-xs'
               style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
             >
-              Your table will appear here once assigned
+              Your table assignment will appear here once the event coordinator assigns seating.
+              Check back closer to the event!
             </p>
           </div>
         )}
       </div>
-    </div>
+    </>
   )
 
-  // Tab badge: seat tab gets badge if user has no bidder number yet (needs check-in)
+  // Tab badge: seat tab gets badge if user hasn't checked in
   const needsCheckIn =
     seatingInfo &&
     !seatingInfo.myInfo?.checkedIn &&
     !(seatingInfo as { my_info?: { checked_in?: boolean } }).my_info?.checked_in
+
+  // Spoof is active?
+  const isSpoofActive = spoofedUserId !== undefined || timeBaseSpoofMs !== null
 
   // ─── Main render ─────────────────────────────────────────────────────────────
   return (
@@ -783,19 +941,32 @@ export function EventHomePage() {
       className='flex h-svh flex-col overflow-hidden'
       style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}
     >
-      {/* Tab content — scrollable */}
+      {/* Debug spoof banner */}
+      {isSpoofActive && (
+        <div className='flex-none bg-amber-500 px-3 py-1.5 z-50 flex items-center gap-2'>
+          <span className='text-xs'>⚠️</span>
+          <p className='text-xs font-semibold text-white flex-1 truncate'>
+            {spoofedUserId && timeBaseSpoofMs !== null
+              ? `Debug: Spoofing user + time`
+              : spoofedUserId
+                ? `Debug: Spoofing user`
+                : `Debug: Spoofing time`}
+          </p>
+          <span className='text-xs text-amber-100 font-medium'>Tap profile to edit</span>
+        </div>
+      )}
+
+      {/* Tab content — scrollable, key triggers re-animation on tab switch */}
       <main
-        className={cn(
-          'flex-1 overflow-y-auto overflow-x-hidden',
-          // bottom padding to clear the fixed bottom nav
-          'pb-20'
-        )}
+        className='flex-1 overflow-y-auto overflow-x-hidden pb-20'
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
-        {activeTab === 'home' && homeTabContent}
-        {activeTab === 'auction' && auctionTabContent}
-        {activeTab === 'watchlist' && watchlistTabContent}
-        {activeTab === 'seat' && seatTabContent}
+        <div key={activeTab} className='animate-tab-page min-h-full'>
+          {activeTab === 'home' && homeTabContent}
+          {activeTab === 'auction' && auctionTabContent}
+          {activeTab === 'watchlist' && watchlistTabContent}
+          {activeTab === 'seat' && seatTabContent}
+        </div>
       </main>
 
       {/* Fixed bottom navigation */}

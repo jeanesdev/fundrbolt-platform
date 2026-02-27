@@ -51,7 +51,7 @@ function StatusBadge({ status }: { status: EventStatus }) {
   if (status === 'live') {
     return (
       <span
-        className='animate-live-glow inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider text-white'
+        className='animate-live-glow inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg'
         style={{ backgroundColor: 'rgb(239, 68, 68)' }}
       >
         <Radio className='h-3 w-3 animate-pulse' />
@@ -63,7 +63,7 @@ function StatusBadge({ status }: { status: EventStatus }) {
   if (status === 'upcoming') {
     return (
       <span
-        className='inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider text-white'
+        className='inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg'
         style={{
           backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.9)',
         }}
@@ -95,95 +95,98 @@ export function EventHeroSection({
 }: EventHeroSectionProps) {
   const heroBackground = bannerUrl
     ? undefined
-    : `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`
+    : `linear-gradient(150deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 60%, rgb(var(--event-primary, 59, 130, 246) / 0.8) 100%)`
 
   return (
-    <div className='relative overflow-hidden' style={{ minHeight: '52vw', maxHeight: '320px' }}>
+    <div
+      className='relative'
+      style={{ minHeight: '260px', height: 'min(68vw, 340px)' }}
+    >
       {/* Background */}
       {bannerUrl ? (
         <div
           className='absolute inset-0 bg-cover bg-center'
           style={{ backgroundImage: `url(${bannerUrl})` }}
         >
-          {/* Dark overlay for readability */}
-          <div className='absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/70' />
+          <div className='absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/75' />
         </div>
       ) : (
-        <div className='absolute inset-0' style={{ background: heroBackground }}>
-          {/* Subtle shimmer overlay */}
-          <div className='absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/20' />
-          {/* Decorative circles */}
+        <div className='absolute inset-0 overflow-hidden' style={{ background: heroBackground }}>
+          {/* Animated shimmer overlay */}
+          <div className='absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-black/30' />
+          {/* Decorative glowing circles */}
           <div
-            className='absolute -top-12 -right-12 h-48 w-48 rounded-full opacity-20'
+            className='absolute -top-16 -right-16 h-64 w-64 rounded-full opacity-25 blur-xl'
             style={{ backgroundColor: 'rgb(var(--event-secondary, 147, 51, 234))' }}
           />
           <div
-            className='absolute -bottom-8 -left-8 h-32 w-32 rounded-full opacity-15'
+            className='absolute -bottom-12 -left-12 h-48 w-48 rounded-full opacity-20 blur-lg'
             style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))' }}
+          />
+          <div
+            className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-72 w-72 rounded-full opacity-10 blur-2xl'
+            style={{ backgroundColor: 'rgb(255, 255, 255)' }}
           />
         </div>
       )}
 
       {/* Top bar: switcher left, profile right */}
-      <div className='absolute top-0 left-0 right-0 flex items-start justify-between px-3 pt-3 z-10'>
+      <div className='absolute top-0 left-0 right-0 flex items-start justify-between px-3 pt-safe-top pt-3 z-20'>
         {switcherSlot ? (
-          <div className='rounded-xl bg-black/30 backdrop-blur-md'>
+          <div className='rounded-xl bg-black/40 backdrop-blur-md shadow-lg'>
             {switcherSlot}
           </div>
         ) : (
           <div />
         )}
         {profileSlot && (
-          <div className='rounded-xl bg-black/30 p-0.5 backdrop-blur-md'>
+          <div className='rounded-xl bg-black/40 backdrop-blur-md shadow-lg overflow-visible'>
             {profileSlot}
           </div>
         )}
       </div>
 
-      {/* Center: logo */}
-      <div className='absolute inset-0 flex flex-col items-center justify-center z-10 pt-8'>
-        <div className='animate-float mb-2'>
-          <Avatar className='h-16 w-16 border-2 border-white/50 shadow-2xl'>
+      {/* Center: logo + status badge */}
+      <div className='absolute inset-0 flex flex-col items-center justify-center z-10 pt-10'>
+        <div className='animate-float'>
+          <Avatar className='h-20 w-20 border-2 border-white/60 shadow-2xl ring-4 ring-white/20'>
             <AvatarImage src={logoUrl ?? undefined} alt={eventName} />
             <AvatarFallback
-              className='text-lg font-bold text-white'
-              style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.6)' }}
+              className='text-2xl font-black text-white'
+              style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.5)' }}
             >
               {getInitials(eventName)}
             </AvatarFallback>
           </Avatar>
         </div>
 
-        <div className='px-4 text-center animate-hero-enter'>
+        <div className='mt-2 animate-hero-enter'>
           <StatusBadge status={status} />
         </div>
       </div>
 
       {/* Bottom: event name + meta */}
-      <div className='absolute bottom-0 left-0 right-0 p-3 z-10'>
-        <div
-          className='animate-hero-enter'
-          style={{ animationDelay: '0.1s', opacity: 0 }}
-        >
+      <div className='absolute bottom-0 left-0 right-0 px-4 pb-3 z-10'>
+        {/* subtle gradient for text legibility */}
+        <div className='absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/60 to-transparent -z-10 pointer-events-none' />
+
+        <div className='animate-hero-enter stagger-2'>
           {npoName && (
-            <p className='mb-0.5 text-xs font-medium uppercase tracking-wider text-white/70'>
+            <p className='mb-0.5 text-xs font-semibold uppercase tracking-widest text-white/70'>
               {npoName}
             </p>
           )}
-          <h1 className='text-xl font-bold leading-tight text-white drop-shadow-lg sm:text-2xl'>
+          <h1 className='text-2xl font-black leading-tight text-white drop-shadow-lg sm:text-3xl'>
             {eventName}
           </h1>
         </div>
 
         {/* Date + venue chips */}
-        <div
-          className='mt-1.5 flex flex-wrap items-center gap-2 animate-hero-enter'
-          style={{ animationDelay: '0.2s', opacity: 0 }}
-        >
+        <div className='mt-2 flex flex-wrap items-center gap-2 animate-hero-enter stagger-3'>
           {eventDate && (
             <button
               onClick={onAddToCalendar}
-              className='inline-flex items-center gap-1 rounded-full bg-black/30 px-2.5 py-0.5 text-xs text-white/90 backdrop-blur-sm transition-opacity hover:bg-black/40'
+              className='inline-flex items-center gap-1 rounded-full bg-black/35 px-2.5 py-1 text-xs font-medium text-white/95 backdrop-blur-sm transition-all hover:bg-black/50 active:scale-95'
             >
               <Calendar className='h-3 w-3' />
               {formatEventDate(eventDate)}
@@ -194,7 +197,7 @@ export function EventHeroSection({
               href={venueMapLink ?? undefined}
               target='_blank'
               rel='noopener noreferrer'
-              className='inline-flex items-center gap-1 rounded-full bg-black/30 px-2.5 py-0.5 text-xs text-white/90 backdrop-blur-sm transition-opacity hover:bg-black/40'
+              className='inline-flex items-center gap-1 rounded-full bg-black/35 px-2.5 py-1 text-xs font-medium text-white/95 backdrop-blur-sm transition-all hover:bg-black/50 active:scale-95'
               onClick={(e) => !venueMapLink && e.preventDefault()}
             >
               <MapPin className='h-3 w-3' />
