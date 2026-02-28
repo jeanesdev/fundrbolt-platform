@@ -1,15 +1,15 @@
 /**
  * BottomTabNav — Native-app-style bottom navigation for the Donor PWA
  *
- * Four tabs:  Home | Bid | Watching | My Seat
+ * Three tabs:  Home | Bid | My Info
  * Active tab uses the event primary brand colour.
  * Supports a badge count on any tab.
  */
 
 import { cn } from '@/lib/utils'
-import { Gavel, Home, MapPin, Eye, Star } from 'lucide-react'
+import { Gavel, Home, MapPin } from 'lucide-react'
 
-export type DonorTab = 'home' | 'auction' | 'watchlist' | 'myitems' | 'seat'
+export type DonorTab = 'home' | 'auction' | 'seat'
 
 interface TabConfig {
   id: DonorTab
@@ -20,8 +20,6 @@ interface TabConfig {
 const TABS: TabConfig[] = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'auction', label: 'Bid', icon: Gavel },
-  { id: 'watchlist', label: 'Watching', icon: Eye },
-  { id: 'myitems', label: 'My Items', icon: Star },
   { id: 'seat', label: 'My Info', icon: MapPin },
 ]
 

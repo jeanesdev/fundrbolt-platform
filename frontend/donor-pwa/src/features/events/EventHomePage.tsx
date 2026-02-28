@@ -24,7 +24,6 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEventBranding } from '@/hooks/use-event-branding'
 import { useEventContext } from '@/hooks/use-event-context'
-import { cn } from '@/lib/utils'
 import apiClient from '@/lib/axios'
 import auctionItemService from '@/services/auctionItemService'
 import {
@@ -289,37 +288,6 @@ export function EventHomePage() {
     staleTime: 30000,
   })
 
-  // Outbid count for badge
-  const outbidCount = useMemo(() => {
-    if (!watchListData?.watch_list) return 0
-    return watchListData.watch_list.filter((entry) => {
-      const itemId = entry.auction_item_id
-      return maxBidItemMap[itemId] !== undefined && !winningItemMap[itemId]
-    }).length
-  }, [watchListData, maxBidItemMap, winningItemMap])
-
-  // Preview items for home tab (top 6 by bid count)
-  const { data: previewItemsData } = useQuery({
-    queryKey: ['auction-items', currentEvent?.id, 'all', 'preview'],
-    queryFn: async () => {
-      const response = await apiClient.get<{ items: AuctionItemGalleryItem[] }>(
-        `/events/${currentEvent!.id}/auction-items`,
-        { params: { auction_type: 'all', page: 1, limit: 20 } }
-      )
-      return response.data
-    },
-    enabled: !!currentEvent?.id,
-    staleTime: 30000,
-  })
-
-  // Sorted preview items (must be before any early returns)
-  const previewItems: AuctionItemGalleryItem[] = useMemo(() => {
-    const items = previewItemsData?.items ?? []
-    return [...items]
-      .sort((a, b) => (b.bid_count ?? 0) - (a.bid_count ?? 0))
-      .slice(0, 6)
-  }, [previewItemsData])
-
   // Place bid mutation
   const { mutate: mutatePlaceBid, isPending: isPlacingBid } = useMutation({
     mutationFn: ({ itemId, amount }: { itemId: string; amount: number }) =>
@@ -578,114 +546,8 @@ export function EventHomePage() {
           </div>
         )}
 
-        {/* Auction Preview Strip */}
-        {previewItems.length > 0 && (
-          <div className='animate-card-enter stagger-2'>
-            <div className='mb-3 flex items-center justify-between'>
-              <h2
-                className='text-base font-bold'
-                style={{ color: 'var(--event-text-on-background, #111827)' }}
-              >
-                {eventStatus === 'live' ? '🔥 Live Auction' : '🎁 Auction Items'}
-              </h2>
-              <button
-                onClick={() => setActiveTab('auction')}
-                className='text-xs font-semibold'
-                style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
-              >
-                See All →
-              </button>
-            </div>
-            <div className='flex gap-3 overflow-x-auto pb-1 -mx-1 px-1' style={{ scrollSnapType: 'x mandatory' }}>
-              {previewItems.map((item, i) => (
-                <div
-                  key={item.id}
-                  className={cn('flex-none w-44 animate-card-enter', `stagger-${Math.min(i + 1, 6)}`)}
-                  style={{ scrollSnapAlign: 'start' }}
-                  onClick={() => {
-                    setSelectedAuctionItemId(item.id)
-                    const isWatched = watchListData?.watch_list?.some((e) => e.auction_item_id === item.id) ?? false
-                    setIsItemWatching(isWatched)
-                  }}
-                >
-                  <div
-                    className='group relative overflow-hidden rounded-2xl border cursor-pointer transition-all active:scale-95 hover:shadow-lg'
-                    style={{
-                      backgroundColor: 'rgb(var(--event-card-bg, 255, 255, 255))',
-                      borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
-                    }}
-                  >
-                    {/* Image */}
-                    <div className='relative overflow-hidden' style={{ paddingTop: '80%' }}>
-                      <div className='absolute inset-0'>
-                        {item.thumbnail_url ? (
-                          <img
-                            src={item.thumbnail_url}
-                            alt={item.title}
-                            className='h-full w-full object-cover transition-transform duration-500 group-hover:scale-105'
-                            loading='lazy'
-                          />
-                        ) : (
-                          <div
-                            className='flex h-full w-full flex-col items-center justify-center gap-1'
-                            style={{ background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246) / 0.35) 0%, rgb(var(--event-secondary, 147, 51, 234) / 0.45) 100%)` }}
-                          >
-                            <span className='text-3xl'>🎁</span>
-                          </div>
-                        )}
-                        <div className='absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 to-transparent' />
-                      </div>
-                      {(item.bid_count ?? 0) >= 3 && (
-                        <div className='absolute top-1.5 right-1.5 text-sm'>🔥</div>
-                      )}
-                    </div>
-                    {/* Info */}
-                    <div className='p-2.5'>
-                      <p
-                        className='text-xs font-semibold truncate leading-tight mb-1'
-                        style={{ color: 'var(--event-text-on-background, #111827)' }}
-                      >
-                        {item.title}
-                      </p>
-                      <p
-                        className='text-sm font-black'
-                        style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
-                      >
-                        {item.current_bid
-                          ? `$${item.current_bid.toLocaleString()}`
-                          : item.starting_bid
-                            ? `From $${item.starting_bid.toLocaleString()}`
-                            : 'No bids yet'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {/* "Browse All" card */}
-              <div
-                className='flex-none w-40 animate-card-enter stagger-6 cursor-pointer'
-                style={{ scrollSnapAlign: 'start' }}
-                onClick={() => setActiveTab('auction')}
-              >
-                <div
-                  className='flex h-full min-h-[180px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed'
-                  style={{ borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.3)' }}
-                >
-                  <span className='text-3xl'>🔨</span>
-                  <p
-                    className='text-xs font-bold text-center leading-tight'
-                    style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
-                  >
-                    Browse All Items
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* CTA for bidding (when no items yet) */}
-        {previewItems.length === 0 && eventStatus !== 'past' && (
+        {/* CTA for bidding */}
+        {eventStatus !== 'past' && (
           <div className='animate-card-enter stagger-2'>
             <button
               onClick={() => setActiveTab('auction')}
@@ -748,6 +610,8 @@ export function EventHomePage() {
     </>
   )
 
+  const [showMyItems, setShowMyItems] = useState(false)
+
   const auctionTabContent = (
     <>
       {/* Sticky header */}
@@ -759,12 +623,27 @@ export function EventHomePage() {
         }}
       >
         <div className='flex items-center justify-between'>
-          <h2
-            className='text-base font-bold'
-            style={{ color: 'var(--event-text-on-background, #111827)' }}
-          >
-            Auction Items
-          </h2>
+          <div className='flex items-center gap-3'>
+            <h2
+              className='text-base font-bold'
+              style={{ color: 'var(--event-text-on-background, #111827)' }}
+            >
+              {showMyItems ? 'My Items' : 'Auction Items'}
+            </h2>
+            <button
+              onClick={() => setShowMyItems(!showMyItems)}
+              className='rounded-full px-3 py-1 text-xs font-semibold transition-all active:scale-95'
+              style={showMyItems ? {
+                background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)), rgb(var(--event-secondary, 147, 51, 234)))`,
+                color: '#FFFFFF',
+              } : {
+                backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.12)',
+                color: 'rgb(var(--event-primary, 59, 130, 246))',
+              }}
+            >
+              {showMyItems ? '← All Items' : '⭐ My Items'}
+            </button>
+          </div>
           <div className='flex items-center gap-2'>
             {eventStatus === 'live' && (
               <span className='flex items-center gap-1.5 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white animate-live-glow'>
@@ -788,117 +667,7 @@ export function EventHomePage() {
           eventStatus={currentEvent.status}
           eventDateTime={currentEvent.event_datetime}
           onItemClick={(item, isWinning) => sharedAuctionProps.onItemClick(item, isWinning)}
-        />
-      </div>
-    </>
-  )
-
-  const watchlistTabContent = (
-    <>
-      <div
-        className='sticky top-0 z-20 px-4 py-3 border-b backdrop-blur-md'
-        style={{
-          backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.92)',
-          borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
-        }}
-      >
-        <div className='flex items-center justify-between'>
-          <div>
-            <h2
-              className='text-base font-bold'
-              style={{ color: 'var(--event-text-on-background, #111827)' }}
-            >
-              Watching
-            </h2>
-            {outbidCount > 0 && (
-              <p className='text-xs text-amber-500 font-medium mt-0.5'>
-                ⚡ You've been outbid on {outbidCount} item{outbidCount !== 1 ? 's' : ''}
-              </p>
-            )}
-          </div>
-          <ProfileDropdown />
-        </div>
-      </div>
-
-      <div className='px-3 py-3'>
-        {!watchListData?.watch_list?.length ? (
-          <div className='flex flex-col items-center justify-center py-20 text-center'>
-            <div
-              className='mb-4 flex h-20 w-20 items-center justify-center rounded-full'
-              style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.1)' }}
-            >
-              <span className='text-4xl'>👁️</span>
-            </div>
-            <p
-              className='mb-1 text-base font-bold'
-              style={{ color: 'var(--event-text-on-background, #111827)' }}
-            >
-              Nothing here yet
-            </p>
-            <p
-              className='text-sm mb-4'
-              style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
-            >
-              Tap the ♥ on any item in the Bid tab to watch it
-            </p>
-            <button
-              onClick={() => setActiveTab('auction')}
-              className='rounded-2xl px-6 py-3 text-sm font-bold text-white transition-all active:scale-95 hover:shadow-lg'
-              style={{ background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)), rgb(var(--event-secondary, 147, 51, 234)))` }}
-            >
-              🔨 Browse Auction Items
-            </button>
-          </div>
-        ) : (
-          <AuctionGallery
-            eventId={currentEvent.id}
-            watchlistScope={watchlistScope}
-            maxBidItemMap={maxBidItemMap}
-            winningItemMap={winningItemMap}
-            initialFilter='all'
-            initialSort='highest_bid'
-            eventStatus={currentEvent.status}
-            eventDateTime={currentEvent.event_datetime}
-            onItemClick={(item, isWinning) => sharedAuctionProps.onItemClick(item, isWinning)}
-          />
-        )}
-      </div>
-    </>
-  )
-
-  const myitemsTabContent = (
-    <>
-      {/* Sticky header */}
-      <div
-        className='sticky top-0 z-20 px-4 py-3 border-b backdrop-blur-md'
-        style={{
-          backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.92)',
-          borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
-        }}
-      >
-        <div className='flex items-center justify-between'>
-          <h2
-            className='text-base font-bold'
-            style={{ color: 'var(--event-text-on-background, #111827)' }}
-          >
-            My Items
-          </h2>
-          <ProfileDropdown />
-        </div>
-      </div>
-
-      <div className='px-3 py-3'>
-        <AuctionGallery
-          eventId={currentEvent.id}
-          watchlistScope={watchlistScope}
-          maxBidItemMap={maxBidItemMap}
-          winningItemMap={winningItemMap}
-          initialFilter='all'
-          initialSort='highest_bid'
-          eventStatus={currentEvent.status}
-          eventDateTime={currentEvent.event_datetime}
-          onItemClick={(item, isWinning) => sharedAuctionProps.onItemClick(item, isWinning)}
-          showOnlyMyItems={true}
+          showOnlyMyItems={showMyItems}
         />
       </div>
     </>
@@ -999,11 +768,9 @@ export function EventHomePage() {
         className='flex-1 overflow-y-auto overflow-x-hidden pb-20'
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
-        <div key={activeTab} className='animate-tab-page min-h-full'>
+        <div key={`${activeTab}-${showMyItems}`} className='animate-tab-page min-h-full'>
           {activeTab === 'home' && homeTabContent}
           {activeTab === 'auction' && auctionTabContent}
-          {activeTab === 'watchlist' && watchlistTabContent}
-          {activeTab === 'myitems' && myitemsTabContent}
           {activeTab === 'seat' && seatTabContent}
         </div>
       </main>
@@ -1013,7 +780,6 @@ export function EventHomePage() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         badges={{
-          watchlist: outbidCount > 0 ? outbidCount : undefined,
           seat: needsCheckIn ? 1 : undefined,
         }}
       />

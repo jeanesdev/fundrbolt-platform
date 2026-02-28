@@ -211,6 +211,22 @@ export function ProfileDropdown() {
                         type='button'
                         size='sm'
                         variant='outline'
+                        disabled={!hasValidEventStart}
+                        onClick={() => {
+                          if (!eventStartDate) return
+                          // 1 hour before event start, so countdown is visible
+                          const beforeEvent = new Date(eventStartDate.getTime() - 60 * 60 * 1000)
+                          setSpoofedTime(beforeEvent)
+                          setSpoofTimeInput(toDateTimeLocalInputValue(beforeEvent))
+                          toast.success('Time spoof set to 1hr before event')
+                        }}
+                      >
+                        1hr Before
+                      </Button>
+                      <Button
+                        type='button'
+                        size='sm'
+                        variant='outline'
                         onClick={() => {
                           setSpoofTimeInput('')
                           clearSpoofedTime()

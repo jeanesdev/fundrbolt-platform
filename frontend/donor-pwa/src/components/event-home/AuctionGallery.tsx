@@ -612,6 +612,11 @@ export function AuctionGallery({
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             aria-label="Search auction items"
+            style={{
+              backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+              borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.4)',
+              color: 'var(--event-text-on-background, #111827)',
+            }}
           />
 
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
