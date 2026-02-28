@@ -70,7 +70,7 @@ export function EventHomePage() {
   const [isItemWatching, setIsItemWatching] = useState(false)
   const [winningItemMap, setWinningItemMap] = useState<Record<string, boolean>>({})
   const [maxBidItemMap, setMaxBidItemMap] = useState<Record<string, number>>({})
-
+  const [showMyItems, setShowMyItems] = useState(false)
   // Restore bid flags from localStorage
   useEffect(() => {
     if (!currentEvent?.id) return
@@ -610,8 +610,6 @@ export function EventHomePage() {
       </div>
     </>
   )
-
-  const [showMyItems, setShowMyItems] = useState(false)
 
   const auctionTabContent = (
     <>
