@@ -461,14 +461,15 @@ export function EventHomePage() {
   const getBannerUrl = () => {
     if ('banner_url' in currentEvent && currentEvent.banner_url) return currentEvent.banner_url as string
     if (currentEvent.media?.length) {
-      // Prefer a non-logo, non-map image as banner
+      // Prefer a non-logo image as banner
       const banner = currentEvent.media.find(
         (m) =>
           m.media_type === 'image' &&
-          !m.file_name.toLowerCase().includes('logo') &&
-          !m.file_name.toLowerCase().includes('map')
+          !m.file_name.toLowerCase().includes('logo')
       )
-      return banner?.file_url || currentEvent.media[0]?.file_url || null
+      // Fall back to any image if all are logos
+      const anyImage = currentEvent.media.find((m) => m.media_type === 'image')
+      return banner?.file_url || anyImage?.file_url || currentEvent.media[0]?.file_url || null
     }
     return null
   }

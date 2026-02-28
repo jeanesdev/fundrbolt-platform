@@ -10,7 +10,7 @@
  */
 
 import { Calendar, MapPin, Radio } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 
 export type EventStatus = 'live' | 'upcoming' | 'past'
 
@@ -81,9 +81,9 @@ export function EventHeroSection({
   switcherSlot,
   profileSlot,
 }: EventHeroSectionProps) {
-  const heroBackground = bannerUrl
-    ? undefined
-    : `linear-gradient(150deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 60%, rgb(var(--event-primary, 59, 130, 246) / 0.8) 100%)`
+  const gradientBg = `linear-gradient(150deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 60%, rgb(var(--event-primary, 59, 130, 246) / 0.8) 100%)`
+  const [bannerFailed, setBannerFailed] = useState(false)
+  const showBanner = bannerUrl && !bannerFailed
 
   return (
     <div
@@ -91,15 +91,22 @@ export function EventHeroSection({
       style={{ minHeight: '220px', height: 'min(60vw, 300px)' }}
     >
       {/* Background */}
-      {bannerUrl ? (
+      {showBanner ? (
         <div
           className='absolute inset-0 bg-cover bg-center'
           style={{ backgroundImage: `url(${bannerUrl})` }}
         >
+          {/* Hidden img to detect load failures */}
+          <img
+            src={bannerUrl}
+            alt=''
+            className='hidden'
+            onError={() => setBannerFailed(true)}
+          />
           <div className='absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/80' />
         </div>
       ) : (
-        <div className='absolute inset-0 overflow-hidden' style={{ background: heroBackground }}>
+        <div className='absolute inset-0 overflow-hidden' style={{ background: gradientBg }}>
           {/* Shimmer overlay */}
           <div className='absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-black/30' />
           {/* Decorative glowing circles */}
