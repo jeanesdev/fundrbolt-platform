@@ -7,9 +7,9 @@
  */
 
 import { cn } from '@/lib/utils'
-import { Gavel, Home, MapPin, Eye } from 'lucide-react'
+import { Gavel, Home, MapPin, Eye, Star } from 'lucide-react'
 
-export type DonorTab = 'home' | 'auction' | 'watchlist' | 'seat'
+export type DonorTab = 'home' | 'auction' | 'watchlist' | 'myitems' | 'seat'
 
 interface TabConfig {
   id: DonorTab
@@ -21,7 +21,8 @@ const TABS: TabConfig[] = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'auction', label: 'Bid', icon: Gavel },
   { id: 'watchlist', label: 'Watching', icon: Eye },
-  { id: 'seat', label: 'My Seat', icon: MapPin },
+  { id: 'myitems', label: 'My Items', icon: Star },
+  { id: 'seat', label: 'My Info', icon: MapPin },
 ]
 
 export interface BottomTabNavProps {

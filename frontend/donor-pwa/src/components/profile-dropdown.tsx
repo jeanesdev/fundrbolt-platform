@@ -122,6 +122,8 @@ export function ProfileDropdown() {
     toast.success('Time spoof enabled')
   }
 
+  const isSpoofActive = isSuperAdmin && (!!spoofedUser || timeBaseSpoofMs !== null)
+
   return (
     <>
       <DropdownMenu modal={false} open={!!menuOpen} onOpenChange={setMenuOpen}>
@@ -131,6 +133,9 @@ export function ProfileDropdown() {
               <AvatarImage src={profilePictureUrl || undefined} alt={user?.email || 'User'} />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
+            {isSpoofActive && (
+              <span className='absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-amber-400 border-2 border-white animate-pulse' />
+            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className='w-56' align='end' forceMount>

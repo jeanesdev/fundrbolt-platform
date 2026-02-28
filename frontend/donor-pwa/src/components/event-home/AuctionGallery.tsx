@@ -174,6 +174,8 @@ export interface AuctionGalleryProps {
   eventStatus?: 'draft' | 'active' | 'closed';
   eventDateTime?: string;
   className?: string;
+  /** When true, only shows items in the user's watchlist or that they've bid on */
+  showOnlyMyItems?: boolean;
 }
 
 const ITEMS_PER_PAGE = 12;
@@ -206,6 +208,7 @@ export function AuctionGallery({
   eventStatus,
   eventDateTime,
   className,
+  showOnlyMyItems = false,
 }: AuctionGalleryProps) {
   const authUserId = useAuthStore((state) => state.user?.id);
   const spoofedUserId = useDebugSpoofStore((state) => state.spoofedUser?.id);
@@ -505,6 +508,16 @@ export function AuctionGallery({
     (item) => !watchedItemIds.has(item.id) && !isItemCurrentlyWinning(item.id)
   );
 
+  // My Items: watched + bid on (max bid set)
+  const myItemIds = showOnlyMyItems
+    ? new Set([
+        ...Array.from(watchedItemIds),
+        ...Object.keys(winningItemMap),
+        ...Object.keys(maxBidItemMap),
+      ])
+    : null;
+  const myItems = myItemIds ? items.filter((item) => myItemIds.has(item.id)) : [];
+
   // Handle bid click
   const handleBidClick = (item: AuctionItemGalleryItem) => {
     onItemClick?.(item, isItemCurrentlyWinning(item.id));
@@ -549,7 +562,8 @@ export function AuctionGallery({
 
   return (
     <div className={cn('space-y-6', className)}>
-      {/* Filter controls */}
+      {/* Filter controls — hidden in My Items mode */}
+      {!showOnlyMyItems && (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div
@@ -601,10 +615,23 @@ export function AuctionGallery({
           />
 
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger aria-label="Category filter">
+            <SelectTrigger
+              aria-label="Category filter"
+              style={{
+                backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.4)',
+                color: 'var(--event-text-on-background, #111827)',
+              }}
+            >
               <SelectValue placeholder="Category" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent
+              style={{
+                backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                color: 'var(--event-text-on-background, #111827)',
+                borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.3)',
+              }}
+            >
               <SelectItem value="all">All Categories</SelectItem>
               {categories.map((category) => (
                 <SelectItem
@@ -621,10 +648,23 @@ export function AuctionGallery({
             value={sortBy}
             onValueChange={(value) => setSortBy(value as AuctionSortType)}
           >
-            <SelectTrigger aria-label="Sort items">
+            <SelectTrigger
+              aria-label="Sort items"
+              style={{
+                backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.4)',
+                color: 'var(--event-text-on-background, #111827)',
+              }}
+            >
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent
+              style={{
+                backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                color: 'var(--event-text-on-background, #111827)',
+                borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.3)',
+              }}
+            >
               {sortOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -634,9 +674,10 @@ export function AuctionGallery({
           </Select>
         </div>
       </div>
+      )}
 
       {/* Empty state */}
-      {items.length === 0 && (
+      {items.length === 0 && !showOnlyMyItems && (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
           <Gavel className="h-12 w-12 text-muted-foreground/40" aria-hidden="true" />
           <h3
@@ -654,8 +695,47 @@ export function AuctionGallery({
         </div>
       )}
 
-      {/* Watched Items Section */}
-      {watchedItems.length > 0 && (
+      {/* My Items mode: show only items user has interacted with */}
+      {showOnlyMyItems && (
+        <>
+          {myItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div
+                className="mb-4 flex h-20 w-20 items-center justify-center rounded-full"
+                style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.1)' }}
+              >
+                <span className="text-4xl">⭐</span>
+              </div>
+              <p className="mb-1 text-base font-bold" style={{ color: 'var(--event-text-on-background, #111827)' }}>
+                No items yet
+              </p>
+              <p className="text-sm" style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}>
+                Watch or bid on items to see them here
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {myItems.map((item) => (
+                <AuctionItemCard
+                  key={item.id}
+                  item={item}
+                  isWatched={watchedItemIds.has(item.id)}
+                  currentUserMaxBid={maxBidItemMap[item.id] ?? null}
+                  isCurrentUserWinning={isItemCurrentlyWinning(item.id)}
+                  onToggleWatch={handleToggleWatch}
+                  onClick={handleBidClick}
+                  onBidClick={handleBidClick}
+                  eventStatus={eventStatus}
+                  eventDateTime={eventDateTime}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Watched Items Section (non-My-Items mode) */}
+      {!showOnlyMyItems && watchedItems.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-4">
             <Eye
@@ -694,8 +774,8 @@ export function AuctionGallery({
         </div>
       )}
 
-      {/* All Items Section */}
-      {items.length > 0 && watchedItems.length > 0 && (
+      {/* All Items Section (non-My-Items mode) */}
+      {!showOnlyMyItems && items.length > 0 && watchedItems.length > 0 && (
         <h3
           className="text-lg font-semibold mt-8"
           style={{ color: 'var(--event-text-on-background, #000000)' }}
@@ -704,8 +784,8 @@ export function AuctionGallery({
         </h3>
       )}
 
-      {/* Items grid */}
-      {items.length > 0 && (
+      {/* Items grid (non-My-Items mode) */}
+      {!showOnlyMyItems && items.length > 0 && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {(watchedItems.length > 0 ? unwatchedItems : items).map((item) => (
             <AuctionItemCard
@@ -725,7 +805,7 @@ export function AuctionGallery({
       )}
 
       {/* Infinite scroll trigger */}
-      {hasNextPage && (
+      {hasNextPage && !showOnlyMyItems && (
         <div
           ref={loadMoreRef}
           className="flex items-center justify-center py-4"

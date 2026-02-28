@@ -78,9 +78,7 @@ export function EventHomePage() {
     const storageKey = `fundrbolt-bid-flags:${currentEvent.id}:${watchlistScope}`
     const stored = localStorage.getItem(storageKey)
     if (!stored) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setWinningItemMap({})
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMaxBidItemMap({})
       return
     }
@@ -89,14 +87,10 @@ export function EventHomePage() {
         winning?: Record<string, boolean>
         maxBid?: Record<string, number>
       }
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setWinningItemMap(parsed.winning ?? {})
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMaxBidItemMap(parsed.maxBid ?? {})
     } catch {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setWinningItemMap({})
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMaxBidItemMap({})
     }
   }, [currentEvent?.id, watchlistScope])
@@ -499,14 +493,27 @@ export function EventHomePage() {
   const getBannerUrl = () => {
     if ('banner_url' in currentEvent && currentEvent.banner_url) return currentEvent.banner_url as string
     if (currentEvent.media?.length) {
-      const banner = currentEvent.media.find((m) => m.media_type === 'image' && m.display_order === 0)
+      // Prefer a non-logo, non-map image as banner
+      const banner = currentEvent.media.find(
+        (m) =>
+          m.media_type === 'image' &&
+          !m.file_name.toLowerCase().includes('logo') &&
+          !m.file_name.toLowerCase().includes('map')
+      )
       return banner?.file_url || currentEvent.media[0]?.file_url || null
     }
     return null
   }
   const bannerUrl = getBannerUrl()
 
-  const getLogoUrl = () => currentEvent.media?.find((m) => m.media_type === 'image')?.file_url || null
+  const getLogoUrl = () => {
+    if (!currentEvent.media?.length) return null
+    // Prefer image with "logo" in name, else first image
+    const logo = currentEvent.media.find(
+      (m) => m.media_type === 'image' && m.file_name.toLowerCase().includes('logo')
+    )
+    return logo?.file_url || null
+  }
 
   const getEventStatus = (): EventStatus => {
     if (!currentEventForSwitcher) return 'upcoming'
@@ -859,6 +866,44 @@ export function EventHomePage() {
     </>
   )
 
+  const myitemsTabContent = (
+    <>
+      {/* Sticky header */}
+      <div
+        className='sticky top-0 z-20 px-4 py-3 border-b backdrop-blur-md'
+        style={{
+          backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.92)',
+          borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
+        }}
+      >
+        <div className='flex items-center justify-between'>
+          <h2
+            className='text-base font-bold'
+            style={{ color: 'var(--event-text-on-background, #111827)' }}
+          >
+            My Items
+          </h2>
+          <ProfileDropdown />
+        </div>
+      </div>
+
+      <div className='px-3 py-3'>
+        <AuctionGallery
+          eventId={currentEvent.id}
+          watchlistScope={watchlistScope}
+          maxBidItemMap={maxBidItemMap}
+          winningItemMap={winningItemMap}
+          initialFilter='all'
+          initialSort='highest_bid'
+          eventStatus={currentEvent.status}
+          eventDateTime={currentEvent.event_datetime}
+          onItemClick={(item, isWinning) => sharedAuctionProps.onItemClick(item, isWinning)}
+          showOnlyMyItems={true}
+        />
+      </div>
+    </>
+  )
+
   const seatTabContent = (
     <>
       <div
@@ -873,7 +918,7 @@ export function EventHomePage() {
             className='text-base font-bold'
             style={{ color: 'var(--event-text-on-background, #111827)' }}
           >
-            My Seat
+            My Info
           </h2>
           <ProfileDropdown />
         </div>
@@ -943,30 +988,12 @@ export function EventHomePage() {
     !seatingInfo.myInfo?.checkedIn &&
     !(seatingInfo as { my_info?: { checked_in?: boolean } }).my_info?.checked_in
 
-  // Spoof is active?
-  const isSpoofActive = spoofedUserId !== undefined || timeBaseSpoofMs !== null
-
   // ─── Main render ─────────────────────────────────────────────────────────────
   return (
     <div
       className='flex h-svh flex-col overflow-hidden'
       style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}
     >
-      {/* Debug spoof banner */}
-      {isSpoofActive && (
-        <div className='flex-none bg-amber-500 px-3 py-1.5 z-50 flex items-center gap-2'>
-          <span className='text-xs'>⚠️</span>
-          <p className='text-xs font-semibold text-white flex-1 truncate'>
-            {spoofedUserId && timeBaseSpoofMs !== null
-              ? `Debug: Spoofing user + time`
-              : spoofedUserId
-                ? `Debug: Spoofing user`
-                : `Debug: Spoofing time`}
-          </p>
-          <span className='text-xs text-amber-100 font-medium'>Tap profile to edit</span>
-        </div>
-      )}
-
       {/* Tab content — scrollable, key triggers re-animation on tab switch */}
       <main
         className='flex-1 overflow-y-auto overflow-x-hidden pb-20'
@@ -976,6 +1003,7 @@ export function EventHomePage() {
           {activeTab === 'home' && homeTabContent}
           {activeTab === 'auction' && auctionTabContent}
           {activeTab === 'watchlist' && watchlistTabContent}
+          {activeTab === 'myitems' && myitemsTabContent}
           {activeTab === 'seat' && seatTabContent}
         </div>
       </main>
