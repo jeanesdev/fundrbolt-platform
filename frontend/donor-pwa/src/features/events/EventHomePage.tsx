@@ -318,6 +318,14 @@ export function EventHomePage() {
     staleTime: 30000,
   })
 
+  // Sorted preview items (must be before any early returns)
+  const previewItems: AuctionItemGalleryItem[] = useMemo(() => {
+    const items = previewItemsData?.items ?? []
+    return [...items]
+      .sort((a, b) => (b.bid_count ?? 0) - (a.bid_count ?? 0))
+      .slice(0, 6)
+  }, [previewItemsData])
+
   // Place bid mutation
   const { mutate: mutatePlaceBid, isPending: isPlacingBid } = useMutation({
     mutationFn: ({ itemId, amount }: { itemId: string; amount: number }) =>
@@ -512,14 +520,6 @@ export function EventHomePage() {
   const eventStatus = getEventStatus()
 
   // ─── Tab content ─────────────────────────────────────────────────────────────
-
-  // Top preview items for home tab (top 6 by bid activity)
-  const previewItems: AuctionItemGalleryItem[] = useMemo(() => {
-    const items = previewItemsData?.items ?? []
-    return [...items]
-      .sort((a, b) => (b.bid_count ?? 0) - (a.bid_count ?? 0))
-      .slice(0, 6)
-  }, [previewItemsData])
 
   const sharedAuctionProps = {
     onItemClick: (item: AuctionItemGalleryItem, isWinning: boolean) => {
