@@ -560,13 +560,13 @@ export function EventHomePage() {
       {heroAndNav}
 
       <div className='px-4 py-4 space-y-5'>
-        {/* Countdown */}
-        {currentEvent.event_datetime && !currentEventForSwitcher?.is_past && (
+        {/* Countdown — show if event is in the future */}
+        {currentEvent.event_datetime && (
           <div className='animate-card-enter stagger-1'>
             <CountdownTimer
               targetDate={currentEvent.event_datetime}
               eventName={currentEvent.name}
-              hideOnExpire={true}
+              hideOnExpire={false}
             />
           </div>
         )}
@@ -620,8 +620,8 @@ export function EventHomePage() {
                           />
                         ) : (
                           <div
-                            className='flex h-full w-full items-center justify-center'
-                            style={{ background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246) / 0.15), rgb(var(--event-secondary, 147, 51, 234) / 0.15))` }}
+                            className='flex h-full w-full flex-col items-center justify-center gap-1'
+                            style={{ background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246) / 0.35) 0%, rgb(var(--event-secondary, 147, 51, 234) / 0.45) 100%)` }}
                           >
                             <span className='text-3xl'>🎁</span>
                           </div>
@@ -758,12 +758,15 @@ export function EventHomePage() {
           >
             Auction Items
           </h2>
-          {eventStatus === 'live' && (
-            <span className='flex items-center gap-1.5 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white animate-live-glow'>
-              <span className='h-1.5 w-1.5 rounded-full bg-white animate-pulse' />
-              LIVE
-            </span>
-          )}
+          <div className='flex items-center gap-2'>
+            {eventStatus === 'live' && (
+              <span className='flex items-center gap-1.5 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white animate-live-glow'>
+                <span className='h-1.5 w-1.5 rounded-full bg-white animate-pulse' />
+                LIVE
+              </span>
+            )}
+            <ProfileDropdown />
+          </div>
         </div>
       </div>
 
@@ -792,17 +795,22 @@ export function EventHomePage() {
           borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
         }}
       >
-        <h2
-          className='text-base font-bold'
-          style={{ color: 'var(--event-text-on-background, #111827)' }}
-        >
-          Watching
-        </h2>
-        {outbidCount > 0 && (
-          <p className='text-xs text-amber-500 font-medium mt-0.5'>
-            ⚡ You've been outbid on {outbidCount} item{outbidCount !== 1 ? 's' : ''}
-          </p>
-        )}
+        <div className='flex items-center justify-between'>
+          <div>
+            <h2
+              className='text-base font-bold'
+              style={{ color: 'var(--event-text-on-background, #111827)' }}
+            >
+              Watching
+            </h2>
+            {outbidCount > 0 && (
+              <p className='text-xs text-amber-500 font-medium mt-0.5'>
+                ⚡ You've been outbid on {outbidCount} item{outbidCount !== 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
+          <ProfileDropdown />
+        </div>
       </div>
 
       <div className='px-3 py-3'>
@@ -860,12 +868,15 @@ export function EventHomePage() {
           borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
         }}
       >
-        <h2
-          className='text-base font-bold'
-          style={{ color: 'var(--event-text-on-background, #111827)' }}
-        >
-          My Seat
-        </h2>
+        <div className='flex items-center justify-between'>
+          <h2
+            className='text-base font-bold'
+            style={{ color: 'var(--event-text-on-background, #111827)' }}
+          >
+            My Seat
+          </h2>
+          <ProfileDropdown />
+        </div>
       </div>
 
       <div className='px-4 py-4'>

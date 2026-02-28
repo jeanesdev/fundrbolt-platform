@@ -3,14 +3,12 @@
  *
  * Features:
  * - Full-width gradient (event primary → secondary) or banner image
- * - Event logo centered with floating animation
- * - Event name, NPO name with entrance animations
+ * - Event name, NPO name with entrance animations (no avatar clutter when no logo)
  * - Status badge: LIVE (red glow) / UPCOMING (blue) / PAST (grey)
  * - Date + venue chips
  * - EventSwitcher dropdown + Profile button in top corners
  */
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Calendar, MapPin, Radio } from 'lucide-react'
 import type { ReactNode } from 'react'
 
@@ -30,12 +28,6 @@ export interface EventHeroSectionProps {
   switcherSlot?: ReactNode
   /** Slot for the profile button (rendered top-right) */
   profileSlot?: ReactNode
-}
-
-function getInitials(name: string): string {
-  const words = name.split(' ').filter(Boolean)
-  if (words.length >= 2) return `${words[0][0]}${words[1][0]}`.toUpperCase()
-  return (words[0]?.[0] || 'E').toUpperCase()
 }
 
 function formatEventDate(dateString: string): string {
@@ -100,7 +92,7 @@ export function EventHeroSection({
   return (
     <div
       className='relative'
-      style={{ minHeight: '260px', height: 'min(68vw, 340px)' }}
+      style={{ minHeight: '220px', height: 'min(60vw, 300px)' }}
     >
       {/* Background */}
       {bannerUrl ? (
@@ -108,11 +100,11 @@ export function EventHeroSection({
           className='absolute inset-0 bg-cover bg-center'
           style={{ backgroundImage: `url(${bannerUrl})` }}
         >
-          <div className='absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/75' />
+          <div className='absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/80' />
         </div>
       ) : (
         <div className='absolute inset-0 overflow-hidden' style={{ background: heroBackground }}>
-          {/* Animated shimmer overlay */}
+          {/* Shimmer overlay */}
           <div className='absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-black/30' />
           {/* Decorative glowing circles */}
           <div
@@ -123,10 +115,19 @@ export function EventHeroSection({
             className='absolute -bottom-12 -left-12 h-48 w-48 rounded-full opacity-20 blur-lg'
             style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))' }}
           />
-          <div
-            className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-72 w-72 rounded-full opacity-10 blur-2xl'
-            style={{ backgroundColor: 'rgb(255, 255, 255)' }}
-          />
+        </div>
+      )}
+
+      {/* If there's a logo image, show it as a small badge in top-center */}
+      {logoUrl && (
+        <div className='absolute top-12 left-1/2 -translate-x-1/2 z-10'>
+          <div className='animate-float'>
+            <img
+              src={logoUrl}
+              alt={eventName}
+              className='h-14 w-14 rounded-xl border-2 border-white/60 shadow-2xl object-cover'
+            />
+          </div>
         </div>
       )}
 
@@ -146,31 +147,15 @@ export function EventHeroSection({
         )}
       </div>
 
-      {/* Center: logo + status badge */}
-      <div className='absolute inset-0 flex flex-col items-center justify-center z-10 pt-10'>
-        <div className='animate-float'>
-          <Avatar className='h-20 w-20 border-2 border-white/60 shadow-2xl ring-4 ring-white/20'>
-            <AvatarImage src={logoUrl ?? undefined} alt={eventName} />
-            <AvatarFallback
-              className='text-2xl font-black text-white'
-              style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.5)' }}
-            >
-              {getInitials(eventName)}
-            </AvatarFallback>
-          </Avatar>
-        </div>
+      {/* Bottom: event name + meta — main content area */}
+      <div className='absolute bottom-0 left-0 right-0 px-4 pb-4 z-10'>
+        {/* gradient scrim for text legibility */}
+        <div className='absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black/70 to-transparent -z-10 pointer-events-none' />
 
-        <div className='mt-2 animate-hero-enter'>
-          <StatusBadge status={status} />
-        </div>
-      </div>
-
-      {/* Bottom: event name + meta */}
-      <div className='absolute bottom-0 left-0 right-0 px-4 pb-3 z-10'>
-        {/* subtle gradient for text legibility */}
-        <div className='absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/60 to-transparent -z-10 pointer-events-none' />
-
-        <div className='animate-hero-enter stagger-2'>
+        <div className='animate-hero-enter stagger-1'>
+          <div className='mb-2'>
+            <StatusBadge status={status} />
+          </div>
           {npoName && (
             <p className='mb-0.5 text-xs font-semibold uppercase tracking-widest text-white/70'>
               {npoName}
@@ -182,11 +167,11 @@ export function EventHeroSection({
         </div>
 
         {/* Date + venue chips */}
-        <div className='mt-2 flex flex-wrap items-center gap-2 animate-hero-enter stagger-3'>
+        <div className='mt-2.5 flex flex-wrap items-center gap-2 animate-hero-enter stagger-2'>
           {eventDate && (
             <button
               onClick={onAddToCalendar}
-              className='inline-flex items-center gap-1 rounded-full bg-black/35 px-2.5 py-1 text-xs font-medium text-white/95 backdrop-blur-sm transition-all hover:bg-black/50 active:scale-95'
+              className='inline-flex items-center gap-1 rounded-full bg-black/40 px-2.5 py-1 text-xs font-medium text-white/95 backdrop-blur-sm transition-all hover:bg-black/55 active:scale-95'
             >
               <Calendar className='h-3 w-3' />
               {formatEventDate(eventDate)}
@@ -197,7 +182,7 @@ export function EventHeroSection({
               href={venueMapLink ?? undefined}
               target='_blank'
               rel='noopener noreferrer'
-              className='inline-flex items-center gap-1 rounded-full bg-black/35 px-2.5 py-1 text-xs font-medium text-white/95 backdrop-blur-sm transition-all hover:bg-black/50 active:scale-95'
+              className='inline-flex items-center gap-1 rounded-full bg-black/40 px-2.5 py-1 text-xs font-medium text-white/95 backdrop-blur-sm transition-all hover:bg-black/55 active:scale-95'
               onClick={(e) => !venueMapLink && e.preventDefault()}
             >
               <MapPin className='h-3 w-3' />
