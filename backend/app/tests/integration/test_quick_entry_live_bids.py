@@ -37,13 +37,13 @@ async def _create_live_item(npo_admin_client: AsyncClient, event_id: Any) -> str
 class TestQuickEntryLiveBidIntegration:
     """Integration coverage for quick-entry unmatched bidder handling."""
 
-    async def test_unmatched_bidder_rejected_without_creating_record(
+    async def test_unmatched_bidder_accepted_without_donor_link(
         self,
         npo_admin_client: AsyncClient,
         test_event: Any,
         db_session: AsyncSession,
     ) -> None:
-        """Unmatched bidder returns conflict and leaves bid table unchanged."""
+        """Unmatched bidder number is accepted; bid is created with donor_user_id=None."""
         item_id = await _create_live_item(npo_admin_client, test_event.id)
         initial_count = await _count_event_quick_entry_bids(db_session, test_event.id)
 
@@ -52,12 +52,10 @@ class TestQuickEntryLiveBidIntegration:
             json={"item_id": item_id, "amount": 250, "bidder_number": 9999},
         )
 
-        assert response.status_code == 409
-        assert response.json()["detail"]["code"] == 409
-        assert (
-            response.json()["detail"]["message"]
-            == "Bidder number is not assigned to a donor for this event"
-        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["bidder_number"] == 9999
+        assert data["donor_name"] is None  # no registration match
 
         final_count = await _count_event_quick_entry_bids(db_session, test_event.id)
-        assert final_count == initial_count
+        assert final_count == initial_count + 1

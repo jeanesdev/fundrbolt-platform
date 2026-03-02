@@ -134,3 +134,66 @@ class QuickEntryDonationLabelListResponse(BaseModel):
     """List response for selectable quick-entry donation labels."""
 
     items: list[QuickEntryDonationLabelResponse]
+
+
+class QuickEntryPaddleDonationListResponse(BaseModel):
+    """List response for quick-entry paddle raise donations."""
+
+    items: list[QuickEntryPaddleDonationResponse]
+
+
+class QuickEntryBuyNowItemResponse(BaseModel):
+    """Auction item available for buy-it-now quick entry."""
+
+    id: UUID
+    bid_number: int
+    title: str
+    buy_now_price: float
+    primary_image_url: str | None = None
+
+
+class QuickEntryBuyNowItemListResponse(BaseModel):
+    """List response for buy-it-now auction items."""
+
+    items: list[QuickEntryBuyNowItemResponse]
+
+
+class QuickEntryBuyNowBidCreateRequest(BaseModel):
+    """Request payload for recording a quick-entry buy-it-now bid."""
+
+    item_id: UUID
+    amount: int = Field(..., ge=1)
+    bidder_number: int = Field(..., ge=1)
+
+
+class QuickEntryBuyNowBidResponse(BaseModel):
+    """Response for a recorded quick-entry buy-it-now bid."""
+
+    id: UUID
+    event_id: UUID
+    item_id: UUID
+    bidder_number: int
+    donor_name: str | None = None
+    amount: int
+    entered_at: datetime
+    entered_by: str
+
+
+class QuickEntryBuyNowBidListResponse(BaseModel):
+    """List response for quick-entry buy-it-now bids."""
+
+    items: list[QuickEntryBuyNowBidResponse]
+
+
+class QuickEntryBuyNowSummaryResponse(BaseModel):
+    """Event-level summary for quick-entry buy-it-now bids."""
+
+    total_raised: int
+    bid_count: int
+
+
+class QuickEntryLiveAuctionOverviewResponse(BaseModel):
+    """Event-level overview for the live auction quick-entry tab."""
+
+    items_with_winner: int
+    total_items: int

@@ -39,7 +39,9 @@ export interface AuctionItem extends AuctionItemBase {
   created_by: string;
   created_at: string;
   updated_at: string;
-  primary_image_url?: string | null; // Primary image thumbnail URL (with SAS token if Azure)
+  primary_image_url?: string | null;
+  current_bid_amount?: number | null;
+  bid_count?: number;
 }
 
 export interface AuctionItemDetail extends AuctionItem {

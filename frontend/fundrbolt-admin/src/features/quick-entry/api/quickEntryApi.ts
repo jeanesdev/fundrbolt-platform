@@ -1,7 +1,12 @@
+import type { AuctionItem } from '@/types/auction-item'
 import apiClient from '@/lib/axios'
 
-export async function getQuickEntryStatus(eventId: string): Promise<{ status: string }> {
-  const response = await apiClient.get(`/admin/events/${eventId}/quick-entry/status`)
+export async function getQuickEntryStatus(
+  eventId: string
+): Promise<{ status: string }> {
+  const response = await apiClient.get(
+    `/admin/events/${eventId}/quick-entry/status`
+  )
   return response.data
 }
 
@@ -96,6 +101,22 @@ export interface QuickEntryDonationLabelList {
   items: QuickEntryDonationLabel[]
 }
 
+export async function getQuickEntryLiveAuctionItems(
+  eventId: string
+): Promise<AuctionItem[]> {
+  const response = await apiClient.get<{ items: AuctionItem[] }>(
+    `/events/${eventId}/auction-items`,
+    {
+      params: {
+        auction_type: 'live',
+        page: 1,
+        limit: 100,
+      },
+    }
+  )
+  return response.data.items
+}
+
 export async function createLiveBid(
   eventId: string,
   payload: CreateLiveBidPayload
@@ -111,14 +132,22 @@ export async function getLiveAuctionSummary(
   eventId: string,
   itemId: string
 ): Promise<QuickEntryLiveSummary> {
-  const response = await apiClient.get(`/admin/events/${eventId}/quick-entry/summary`, {
-    params: { mode: 'LIVE_AUCTION', item_id: itemId },
-  })
+  const response = await apiClient.get(
+    `/admin/events/${eventId}/quick-entry/summary`,
+    {
+      params: { mode: 'LIVE_AUCTION', item_id: itemId },
+    }
+  )
   return response.data
 }
 
-export async function deleteLiveBid(eventId: string, bidId: string): Promise<void> {
-  await apiClient.delete(`/admin/events/${eventId}/quick-entry/live-auction/bids/${bidId}`)
+export async function deleteLiveBid(
+  eventId: string,
+  bidId: string
+): Promise<void> {
+  await apiClient.delete(
+    `/admin/events/${eventId}/quick-entry/live-auction/bids/${bidId}`
+  )
 }
 
 export async function assignWinner(
@@ -128,6 +157,28 @@ export async function assignWinner(
   const response = await apiClient.post(
     `/admin/events/${eventId}/quick-entry/live-auction/items/${itemId}/winner`,
     { confirm: true }
+  )
+  return response.data
+}
+
+export async function removeWinner(
+  eventId: string,
+  itemId: string
+): Promise<void> {
+  await apiClient.delete(
+    `/admin/events/${eventId}/quick-entry/live-auction/items/${itemId}/winner`
+  )
+}
+
+export interface QuickEntryPaddleDonationListResponse {
+  items: QuickEntryPaddleDonationResponse[]
+}
+
+export async function getPaddleDonations(
+  eventId: string
+): Promise<QuickEntryPaddleDonationListResponse> {
+  const response = await apiClient.get(
+    `/admin/events/${eventId}/quick-entry/paddle-raise/donations`
   )
   return response.data
 }
@@ -143,16 +194,111 @@ export async function createPaddleDonation(
   return response.data
 }
 
-export async function getPaddleRaiseSummary(eventId: string): Promise<QuickEntryPaddleSummary> {
-  const response = await apiClient.get(`/admin/events/${eventId}/quick-entry/summary`, {
-    params: { mode: 'PADDLE_RAISE' },
-  })
+export async function getPaddleRaiseSummary(
+  eventId: string
+): Promise<QuickEntryPaddleSummary> {
+  const response = await apiClient.get(
+    `/admin/events/${eventId}/quick-entry/summary`,
+    {
+      params: { mode: 'PADDLE_RAISE' },
+    }
+  )
   return response.data
 }
 
 export async function getQuickEntryDonationLabels(
   eventId: string
 ): Promise<QuickEntryDonationLabelList> {
-  const response = await apiClient.get(`/admin/events/${eventId}/quick-entry/donation-labels`)
+  const response = await apiClient.get(
+    `/admin/events/${eventId}/quick-entry/donation-labels`
+  )
   return response.data
+}
+
+// ---------------------------------------------------------------------------
+// Buy-It-Now
+// ---------------------------------------------------------------------------
+
+export interface QuickEntryBuyNowItem {
+  id: string
+  bid_number: number
+  title: string
+  buy_now_price: number
+  primary_image_url: string | null
+}
+
+export interface QuickEntryBuyNowSummary {
+  total_raised: number
+  bid_count: number
+}
+
+export interface QuickEntryBuyNowBidResponse {
+  id: string
+  event_id: string
+  item_id: string
+  bidder_number: number
+  donor_name: string | null
+  amount: number
+  entered_at: string
+  entered_by: string
+}
+
+export interface CreateBuyNowBidPayload {
+  item_id: string
+  amount: number
+  bidder_number: number
+}
+
+export interface QuickEntryLiveAuctionOverview {
+  items_with_winner: number
+  total_items: number
+}
+
+export async function getLiveAuctionOverview(
+  eventId: string
+): Promise<QuickEntryLiveAuctionOverview> {
+  const response = await apiClient.get<QuickEntryLiveAuctionOverview>(
+    `/admin/events/${eventId}/quick-entry/live-auction/overview`
+  )
+  return response.data
+}
+
+export async function getBuyNowSummary(eventId: string): Promise<QuickEntryBuyNowSummary> {
+  const response = await apiClient.get<QuickEntryBuyNowSummary>(
+    `/admin/events/${eventId}/quick-entry/buy-now/summary`
+  )
+  return response.data
+}
+
+export async function getBuyNowItems(eventId: string): Promise<QuickEntryBuyNowItem[]> {
+  const response = await apiClient.get<{ items: QuickEntryBuyNowItem[] }>(
+    `/admin/events/${eventId}/quick-entry/buy-now/items`
+  )
+  return response.data.items
+}
+
+export async function createBuyNowBid(
+  eventId: string,
+  payload: CreateBuyNowBidPayload
+): Promise<QuickEntryBuyNowBidResponse> {
+  const response = await apiClient.post(
+    `/admin/events/${eventId}/quick-entry/buy-now/bids`,
+    payload
+  )
+  return response.data
+}
+
+export async function getBuyNowBids(
+  eventId: string,
+  itemId: string
+): Promise<QuickEntryBuyNowBidResponse[]> {
+  const response = await apiClient.get<{ items: QuickEntryBuyNowBidResponse[] }>(
+    `/admin/events/${eventId}/quick-entry/buy-now/bids`,
+    { params: { item_id: itemId } }
+  )
+  return response.data.items
+}
+
+export async function deleteBuyNowBid(eventId: string, bidId: string): Promise<void> {
+  await apiClient.delete(`/admin/events/${eventId}/quick-entry/buy-now/bids/${bidId}`)
 }

@@ -1,4 +1,4 @@
-"""Seed default donation labels for events.
+"""Seed default global donation labels.
 
 Usage:
     cd backend && poetry run python seed_donation_labels.py
@@ -11,38 +11,38 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db_connection
 from app.models.donation_label import DonationLabel
-from app.models.event import Event
 
-DEFAULT_LABELS = ["Last Hero", "Coin Toss"]
+DEFAULT_LABELS = ["Last Leader", "Head or Tails", "Table Raise"]
 
 
 async def seed_donation_labels() -> None:
-    """Create default donation labels for all events when missing."""
+    """Create default global donation labels when missing."""
     conn = await get_db_connection()
     created_count = 0
     try:
         async with AsyncSession(conn, expire_on_commit=False) as session:
-            events = (await session.execute(select(Event.id))).scalars().all()
-            for event_id in events:
-                existing_names = set(
-                    (
-                        await session.execute(
-                            select(DonationLabel.name).where(DonationLabel.event_id == event_id)
-                        )
+            existing_names = {
+                name.casefold()
+                for name in (
+                    await session.execute(
+                        select(DonationLabel.name).where(DonationLabel.is_active.is_(True))
                     )
-                    .scalars()
-                    .all()
                 )
-                for label_name in DEFAULT_LABELS:
-                    if label_name not in existing_names:
-                        session.add(
-                            DonationLabel(
-                                event_id=event_id,
-                                name=label_name,
-                                is_active=True,
-                            )
-                        )
-                        created_count += 1
+                .scalars()
+                .all()
+            }
+
+            for label_name in DEFAULT_LABELS:
+                if label_name.casefold() in existing_names:
+                    continue
+                session.add(
+                    DonationLabel(
+                        event_id=None,
+                        name=label_name,
+                        is_active=True,
+                    )
+                )
+                created_count += 1
             await session.commit()
     finally:
         await conn.close()

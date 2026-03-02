@@ -1,19 +1,28 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AxiosError } from 'axios'
 import { useMemo, useState } from 'react'
+import { AxiosError } from 'axios'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-
 import {
   createPaddleDonation,
+  getPaddleDonations,
   getPaddleRaiseSummary,
   getQuickEntryDonationLabels,
 } from '../api/quickEntryApi'
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof AxiosError) {
+    const payload = error.response?.data as
+      | { detail?: string | { message?: string; detail?: string } }
+      | undefined
+    const detail = payload?.detail
     const apiMessage =
-      (error.response?.data as { detail?: { message?: string } })?.detail?.message ??
-      error.response?.data?.detail
+      typeof detail === 'string'
+        ? detail
+        : typeof detail?.message === 'string'
+          ? detail.message
+          : typeof detail?.detail === 'string'
+            ? detail.detail
+            : undefined
     if (typeof apiMessage === 'string') {
       return apiMessage
     }
@@ -22,6 +31,12 @@ function getErrorMessage(error: unknown, fallback: string): string {
     return error.message
   }
   return fallback
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value
+  )
 }
 
 export function usePaddleRaiseEntry(eventId: string) {
@@ -36,7 +51,10 @@ export function usePaddleRaiseEntry(eventId: string) {
     () => Number.parseInt(amount.replace(/,/g, ''), 10),
     [amount]
   )
-  const parsedBidder = useMemo(() => Number.parseInt(bidderNumber, 10), [bidderNumber])
+  const parsedBidder = useMemo(
+    () => Number.parseInt(bidderNumber, 10),
+    [bidderNumber]
+  )
 
   const labelsQuery = useQuery({
     queryKey: ['quick-entry', 'labels', eventId],
@@ -50,8 +68,17 @@ export function usePaddleRaiseEntry(eventId: string) {
     enabled: !!eventId,
   })
 
+  const donationsQuery = useQuery({
+    queryKey: ['quick-entry', 'paddle-donations', eventId],
+    queryFn: () => getPaddleDonations(eventId),
+    enabled: !!eventId,
+  })
+
   const mutation = useMutation({
     mutationFn: async () => {
+      if (!isUuid(eventId)) {
+        throw new Error('Event context is still loading. Please try again.')
+      }
       if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
         throw new Error('Enter a valid amount')
       }
@@ -69,6 +96,7 @@ export function usePaddleRaiseEntry(eventId: string) {
     onSuccess: () => {
       setBidderNumber('')
       setSubmitToken((current) => current + 1)
+      toast.success('Donation submitted')
       queryClient.invalidateQueries({ queryKey: ['quick-entry'] })
     },
     onError: (error) => {
@@ -83,7 +111,10 @@ export function usePaddleRaiseEntry(eventId: string) {
     selectedLabelIds,
     customLabel,
     labels: labelsQuery.data?.items ?? [],
+    labelsError: labelsQuery.error,
+    isLoadingLabels: labelsQuery.isLoading,
     summary: summaryQuery.data,
+    recentDonations: donationsQuery.data?.items ?? [],
     isSubmitting: mutation.isPending,
     setAmount,
     setBidderNumber,

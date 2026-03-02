@@ -36,28 +36,26 @@ async def _count_event_paddle_donations(db_session: AsyncSession, event_id: Any)
 class TestQuickEntryPaddleRaiseIntegration:
     """Integration coverage for paddle raise quick-entry."""
 
-    async def test_unmatched_bidder_rejected_without_creating_donation(
+    async def test_unmatched_bidder_accepted_without_donor_association(
         self,
         npo_admin_client: AsyncClient,
         test_event: Any,
         db_session: AsyncSession,
     ) -> None:
-        """Unmatched bidder returns conflict and does not persist donation rows."""
+        """Unmatched bidder number is accepted; donation is created with no donor link."""
         initial_count = await _count_event_paddle_donations(db_session, test_event.id)
 
         response = await npo_admin_client.post(
             f"/api/v1/admin/events/{test_event.id}/quick-entry/paddle-raise/donations",
             json={"amount": 300, "bidder_number": 9999, "label_ids": []},
         )
-        assert response.status_code == 409
-        assert response.json()["detail"]["code"] == 409
-        assert (
-            response.json()["detail"]["message"]
-            == "Bidder number is not assigned to a donor for this event"
-        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["bidder_number"] == 9999
+        assert data["donor_name"] is None
 
         final_count = await _count_event_paddle_donations(db_session, test_event.id)
-        assert final_count == initial_count
+        assert final_count == initial_count + 1
 
     async def test_optional_labels_allow_successful_create(
         self,

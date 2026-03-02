@@ -23,7 +23,7 @@ import {
 export function EventDashboardPage() {
   const { currentEvent } = useEventWorkspace()
   const [scenario, setScenario] = useState<ScenarioType>('base')
-  const [segmentType, setSegmentType] = useState<SegmentType>('table')
+  const [segmentType, setSegmentType] = useState<SegmentType>('guest')
 
   const summaryQuery = useEventDashboard(currentEvent.id, scenario)
   const projectionsQuery = useEventDashboardProjections(currentEvent.id, scenario)

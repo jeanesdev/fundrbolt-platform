@@ -55,7 +55,7 @@ class AuctionBidImportSummary(BaseModel):
 
 class AuctionBidDashboardHighestBid(BaseModel):
     auction_item_id: UUID
-    auction_item_code: str
+    auction_item_number: int
     auction_item_title: str
     bid_amount: Decimal
     bidder_name: str
@@ -64,7 +64,7 @@ class AuctionBidDashboardHighestBid(BaseModel):
 
 class AuctionBidDashboardRecentBid(BaseModel):
     auction_item_id: UUID
-    auction_item_code: str
+    auction_item_number: int
     auction_item_title: str
     bid_amount: Decimal
     bidder_name: str

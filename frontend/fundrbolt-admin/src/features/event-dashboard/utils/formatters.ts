@@ -47,6 +47,8 @@ export function titleFromKey(value: string): string {
 export function formatSourceLabel(source: string): string {
   const aliases: Record<string, string> = {
     silent_auction: 'Silent Auction',
+    live_auction: 'Live Auction',
+    buy_it_now: 'Buy It Now',
     paddle_raise: 'Paddle Raise',
     fees_other: 'Fees & Other',
   }
