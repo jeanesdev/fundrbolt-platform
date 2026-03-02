@@ -2,9 +2,10 @@
 
 import logging
 import uuid
+from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -16,6 +17,31 @@ from app.services.seating_service import SeatingService
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/donor/events", tags=["donor-seating"])
+
+
+def _is_super_admin_session(user: User) -> bool:
+    role_name = getattr(user, "role_name", None)
+    if role_name == "super_admin":
+        return True
+    return getattr(user, "spoofed_by_role", None) == "super_admin"
+
+
+def _parse_reference_now(debug_now: str | None, user: User) -> datetime | None:
+    if debug_now is None or not _is_super_admin_session(user):
+        return None
+
+    try:
+        parsed = datetime.fromisoformat(debug_now.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid X-Debug-Now header format. Use ISO-8601 timestamp.",
+        ) from exc
+
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+
+    return parsed.astimezone(UTC)
 
 
 @router.get(
@@ -166,6 +192,7 @@ async def get_my_seating_info(
     event_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)],
+    debug_now: str | None = Header(default=None, alias="X-Debug-Now"),
 ) -> SeatingInfoResponse:
     """
     Get current user's seating information for an event.
@@ -187,11 +214,13 @@ async def get_my_seating_info(
         include_unchecked_in_bidder_numbers = (
             getattr(current_user, "spoofed_by_user_id", None) is not None
         )
+        reference_now = _parse_reference_now(debug_now, current_user)
         seating_info = await SeatingService.get_donor_seating_info(
             db,
             current_user.id,
             event_id,
             include_unchecked_in_bidder_numbers=include_unchecked_in_bidder_numbers,
+            reference_now=reference_now,
         )
         return SeatingInfoResponse(**seating_info)
     except ValueError as e:

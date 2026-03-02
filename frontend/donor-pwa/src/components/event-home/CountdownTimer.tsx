@@ -1,88 +1,72 @@
 /**
- * CountdownTimer Component
+ * CountdownTimer Component — Redesigned (Premium Native App)
  *
- * Displays a real-time countdown to an event date.
- * Features:
- * - Days, hours, minutes, seconds display
- * - Emphasized styling when within 24 hours
- * - Urgent styling when within 1 hour
- * - Automatic hide when expired
- * - Event-branded colors via CSS variables
+ * Dramatic, large countdown with animated digit transitions.
+ * Uses event brand gradient background.
  */
 
 import { useCountdown } from '@/hooks/use-countdown';
 import { cn } from '@/lib/utils';
-import { Clock } from 'lucide-react';
 
 export interface CountdownTimerProps {
-  /** Target date/time to count down to (ISO string or Date) */
   targetDate: string | Date | null | undefined;
-  /** Event name for context */
   eventName?: string;
-  /** Whether to hide when countdown expires (default: true) */
   hideOnExpire?: boolean;
-  /** Optional callback when countdown expires */
   onExpire?: () => void;
-  /** Additional CSS classes */
   className?: string;
 }
 
 /**
- * TimeUnit - Individual time unit display
+ * Single animated digit block
  */
-function TimeUnit({
+function DigitBlock({
   value,
   label,
-  emphasized,
+  urgent,
 }: {
   value: number;
   label: string;
-  emphasized?: boolean;
+  urgent?: boolean;
 }) {
+  const displayValue = String(value).padStart(2, '0');
+
   return (
-    <div className="flex flex-col items-center">
-      <span
+    <div className='flex flex-col items-center gap-1'>
+      <div
         className={cn(
-          'font-bold tabular-nums transition-all duration-300',
-          emphasized ? 'text-4xl sm:text-5xl' : 'text-2xl sm:text-3xl'
+          'relative flex h-16 w-16 items-center justify-center rounded-2xl sm:h-20 sm:w-20',
+          'shadow-lg backdrop-blur-sm border',
+          urgent ? 'border-red-200/70 bg-black/35' : 'border-white/30 bg-black/35'
         )}
-        style={{ color: 'var(--event-card-text, #000000)' }}
       >
-        {String(value).padStart(2, '0')}
-      </span>
-      <span
-        className={cn(
-          'uppercase tracking-wider transition-all duration-300',
-          emphasized ? 'text-sm' : 'text-xs'
-        )}
-        style={{ color: 'var(--event-card-text-muted, #6B7280)' }}
-      >
+        <span
+          key={displayValue}
+          className='font-black tabular-nums text-white text-3xl sm:text-4xl leading-none'
+        >
+          {displayValue}
+        </span>
+      </div>
+      <span className='text-[10px] font-semibold uppercase tracking-widest text-white/85'>
         {label}
       </span>
     </div>
   );
 }
 
-/**
- * Separator between time units
- */
-function Separator({ emphasized }: { emphasized?: boolean }) {
+function Dot({ urgent }: { urgent?: boolean }) {
   return (
     <span
+      aria-hidden='true'
       className={cn(
-        'font-bold transition-all duration-300',
-        emphasized ? 'text-4xl sm:text-5xl' : 'text-2xl sm:text-3xl'
+        'pb-7 text-xl font-black leading-none sm:text-2xl',
+        urgent ? 'text-red-200/80' : 'text-white/65'
       )}
-      style={{ color: 'var(--event-card-text-muted, #6B7280)' }}
     >
       :
     </span>
   );
 }
 
-/**
- * CountdownTimer component
- */
 export function CountdownTimer({
   targetDate,
   eventName,
@@ -92,95 +76,64 @@ export function CountdownTimer({
 }: CountdownTimerProps) {
   const countdown = useCountdown(targetDate, { onExpire });
 
-  // Hide if expired and hideOnExpire is true
-  if (countdown.isExpired && hideOnExpire) {
-    return null;
-  }
+  if (countdown.isExpired && hideOnExpire) return null;
 
-  const { days, hours, minutes, seconds, isWithin24Hours, isWithin1Hour, isExpired } =
-    countdown;
+  const { days, hours, minutes, seconds, isWithin1Hour, isExpired } = countdown;
+  const urgent = isWithin1Hour && !isExpired;
 
-  // Show urgent styling when within 1 hour
-  const isUrgent = isWithin1Hour && !isExpired;
-  // Show emphasized styling when within 24 hours
-  const isEmphasized = isWithin24Hours && !isExpired;
+  const label = isExpired
+    ? 'Event is live'
+    : urgent
+      ? '⚡ Starting very soon!'
+      : eventName
+        ? `Countdown to ${eventName}`
+        : 'Event Countdown';
 
   return (
     <div
       className={cn(
-        'rounded-lg border p-4 sm:p-6 transition-all duration-300',
-        isUrgent && 'border-red-500/50 bg-red-500/5 animate-pulse',
-        isEmphasized && !isUrgent && 'scale-[1.02]',
+        'relative overflow-hidden rounded-2xl p-5 sm:p-6',
+        urgent && 'animate-pulse',
         className
       )}
       style={{
-        backgroundColor: isUrgent ? undefined : 'rgb(var(--event-card-bg, 147, 51, 234))',
-        borderColor: isEmphasized && !isUrgent
-          ? 'rgb(var(--event-primary, 59, 130, 246))'
-          : isUrgent
-            ? undefined
-            : 'rgb(var(--event-primary, 59, 130, 246) / 0.3)',
+        background: urgent
+          ? 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'
+          : `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246) / 0.9) 0%, rgb(var(--event-secondary, 147, 51, 234) / 0.9) 100%)`,
       }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-center gap-2 mb-4">
-        <Clock
-          className={cn(
-            'transition-all duration-300',
-            isEmphasized ? 'h-5 w-5' : 'h-4 w-4'
-          )}
-          style={{ color: 'var(--event-card-text, #000000)' }}
-        />
-        <span
-          className={cn(
-            'font-medium transition-all duration-300',
-            isEmphasized ? 'text-base' : 'text-sm',
-            isUrgent && 'text-red-600'
-          )}
-          style={{
-            color: isUrgent ? undefined : 'var(--event-card-text, #000000)',
-          }}
-        >
-          {isExpired
-            ? 'Event has started!'
-            : isUrgent
-              ? 'Starting very soon!'
-              : isEmphasized
-                ? 'Starting soon!'
-                : eventName
-                  ? `Countdown to ${eventName}`
-                  : 'Event Countdown'}
-        </span>
+      {/* Contrast scrim */}
+      <div className='pointer-events-none absolute inset-0 bg-black/35' />
+
+      {/* Decorative blur circles */}
+      <div className='pointer-events-none absolute -top-8 -right-8 h-32 w-32 rounded-full bg-white/5 blur-2xl' />
+      <div className='pointer-events-none absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-white/5 blur-2xl' />
+
+      <div className='relative z-10'>
+        <p className='mb-4 text-center text-xs font-semibold uppercase tracking-widest text-white'>
+          {label}
+        </p>
+
+        {!isExpired ? (
+          <div className='flex items-end justify-center gap-2 sm:gap-3'>
+            {days > 0 && (
+              <>
+                <DigitBlock value={days} label='Days' urgent={urgent} />
+                <Dot urgent={urgent} />
+              </>
+            )}
+            <DigitBlock value={hours} label='Hours' urgent={urgent} />
+            <Dot urgent={urgent} />
+            <DigitBlock value={minutes} label='Mins' urgent={urgent} />
+            <Dot urgent={urgent} />
+            <DigitBlock value={seconds} label='Secs' urgent={urgent} />
+          </div>
+        ) : (
+          <p className='text-center text-2xl font-black text-white'>
+            Live now
+          </p>
+        )}
       </div>
-
-      {/* Countdown display */}
-      {!isExpired && (
-        <div className="flex items-center justify-center gap-2 sm:gap-4">
-          {days > 0 && (
-            <>
-              <TimeUnit value={days} label="Days" emphasized={isEmphasized} />
-              <Separator emphasized={isEmphasized} />
-            </>
-          )}
-          <TimeUnit value={hours} label="Hours" emphasized={isEmphasized} />
-          <Separator emphasized={isEmphasized} />
-          <TimeUnit value={minutes} label="Mins" emphasized={isEmphasized} />
-          <Separator emphasized={isEmphasized} />
-          <TimeUnit value={seconds} label="Secs" emphasized={isEmphasized} />
-        </div>
-      )}
-
-      {/* Expired message */}
-      {isExpired && !hideOnExpire && (
-        <div className="text-center">
-          <span
-            className="text-xl font-bold"
-            style={{ color: 'var(--event-card-text, #000000)' }}
-          >
-            The event has begun!
-          </span>
-        </div>
-      )}
     </div>
   );
 }

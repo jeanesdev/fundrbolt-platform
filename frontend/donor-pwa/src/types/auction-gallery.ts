@@ -47,7 +47,7 @@ export interface AuctionItemGalleryResponse {
 /**
  * Filter type for auction gallery
  */
-export type AuctionFilterType = 'all' | 'silent' | 'live';
+export type AuctionFilterType = 'all' | 'silent' | 'live' | 'my';
 
 /**
  * Sort options for auction gallery

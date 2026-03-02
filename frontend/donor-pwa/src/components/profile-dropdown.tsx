@@ -41,6 +41,106 @@ function toDateTimeLocalInputValue(date: Date): string {
   return `${year}-${month}-${day}T${hours}:${minutes}`
 }
 
+function parseEventStartForSpoof(
+  eventDateTime: string | null | undefined,
+  eventTimezone: string | null | undefined
+): Date | null {
+  if (!eventDateTime) return null
+
+  const hasExplicitTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(eventDateTime)
+  if (hasExplicitTimezone) {
+    const parsed = new Date(eventDateTime)
+    if (Number.isNaN(parsed.getTime())) {
+      return null
+    }
+    return parsed
+  }
+
+  const localMatch = eventDateTime.match(
+    /^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2}))?/,
+  )
+
+  if (!localMatch) {
+    const fallbackParsed = new Date(eventDateTime)
+    return Number.isNaN(fallbackParsed.getTime()) ? null : fallbackParsed
+  }
+
+  const year = Number(localMatch[1])
+  const month = Number(localMatch[2])
+  const day = Number(localMatch[3])
+  const hour = Number(localMatch[4])
+  const minute = Number(localMatch[5])
+  const second = Number(localMatch[6] ?? '0')
+
+  if (!eventTimezone) {
+    const parsed = new Date(year, month - 1, day, hour, minute, second)
+    return Number.isNaN(parsed.getTime()) ? null : parsed
+  }
+
+  const targetAsUtcMs = Date.UTC(year, month - 1, day, hour, minute, second)
+
+  const formatInTimeZone = (date: Date) => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: eventTimezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).formatToParts(date)
+
+    const getPart = (type: Intl.DateTimeFormatPartTypes): number => {
+      const value = parts.find((part) => part.type === type)?.value
+      return value ? Number(value) : 0
+    }
+
+    return {
+      year: getPart('year'),
+      month: getPart('month'),
+      day: getPart('day'),
+      hour: getPart('hour'),
+      minute: getPart('minute'),
+      second: getPart('second'),
+    }
+  }
+
+  try {
+    let guessUtcMs = targetAsUtcMs
+
+    for (let i = 0; i < 3; i += 1) {
+      const zoned = formatInTimeZone(new Date(guessUtcMs))
+      if (!zoned.year || !zoned.month || !zoned.day) break
+
+      const guessAsLocalUtcMs = Date.UTC(
+        zoned.year,
+        zoned.month - 1,
+        zoned.day,
+        zoned.hour,
+        zoned.minute,
+        zoned.second,
+      )
+      const diffMs = targetAsUtcMs - guessAsLocalUtcMs
+      if (diffMs === 0) break
+      guessUtcMs += diffMs
+    }
+
+    const resolved = new Date(guessUtcMs)
+    if (Number.isNaN(resolved.getTime())) {
+      return null
+    }
+
+    return resolved
+  } catch {
+    const parsed = new Date(eventDateTime)
+    if (Number.isNaN(parsed.getTime())) {
+      return null
+    }
+    return parsed
+  }
+}
+
 export function ProfileDropdown() {
   const [open, setOpen] = useDialogState()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -51,7 +151,7 @@ export function ProfileDropdown() {
   const spoofedUser = useDebugSpoofStore((state) => state.spoofedUser)
   const timeBaseSpoofMs = useDebugSpoofStore((state) => state.timeBaseSpoofMs)
   const getEffectiveNowMs = useDebugSpoofStore((state) => state.getEffectiveNowMs)
-  const currentEventDateTime = useEventStore((state) => state.currentEvent?.event_datetime)
+  const currentEvent = useEventStore((state) => state.currentEvent)
   const setSpoofedTime = useDebugSpoofStore((state) => state.setSpoofedTime)
   const clearSpoofedTime = useDebugSpoofStore((state) => state.clearSpoofedTime)
   const setSpoofedUser = useDebugSpoofStore((state) => state.setSpoofedUser)
@@ -82,7 +182,13 @@ export function ProfileDropdown() {
 
   useEffect(() => {
     if (timeBaseSpoofMs !== null) {
-      setSpoofTimeInput(toDateTimeLocalInputValue(new Date(getEffectiveNowMs())))
+      const timeoutId = window.setTimeout(() => {
+        setSpoofTimeInput(toDateTimeLocalInputValue(new Date(getEffectiveNowMs())))
+      }, 0)
+
+      return () => {
+        window.clearTimeout(timeoutId)
+      }
     }
   }, [timeBaseSpoofMs, getEffectiveNowMs])
 
@@ -101,7 +207,30 @@ export function ProfileDropdown() {
   }, [usersData?.items, userSearch])
 
   const spoofUserTriggerLabel = spoofedUser?.label ? `Spoof User: ${spoofedUser.label}` : 'Spoof User'
-  const eventStartDate = currentEventDateTime ? new Date(currentEventDateTime) : null
+
+  const currentEventRecord = currentEvent as Record<string, unknown> | null
+  const resolvedEventDateTime =
+    currentEvent?.event_datetime ??
+    (typeof currentEventRecord?.eventDateTime === 'string'
+      ? currentEventRecord.eventDateTime
+      : null) ??
+    (typeof currentEventRecord?.event_date === 'string'
+      ? currentEventRecord.event_date
+      : null) ??
+    (typeof currentEventRecord?.eventDate === 'string'
+      ? currentEventRecord.eventDate
+      : null)
+
+  const resolvedEventTimezone =
+    currentEvent?.timezone ??
+    (typeof currentEventRecord?.event_timezone === 'string'
+      ? currentEventRecord.event_timezone
+      : null) ??
+    (typeof currentEventRecord?.time_zone === 'string'
+      ? currentEventRecord.time_zone
+      : null)
+
+  const eventStartDate = parseEventStartForSpoof(resolvedEventDateTime, resolvedEventTimezone)
   const hasValidEventStart = !!eventStartDate && !Number.isNaN(eventStartDate.getTime())
 
   const handleSpoofTimeApply = () => {
@@ -122,6 +251,8 @@ export function ProfileDropdown() {
     toast.success('Time spoof enabled')
   }
 
+  const isSpoofActive = isSuperAdmin && (!!spoofedUser || timeBaseSpoofMs !== null)
+
   return (
     <>
       <DropdownMenu modal={false} open={!!menuOpen} onOpenChange={setMenuOpen}>
@@ -131,6 +262,9 @@ export function ProfileDropdown() {
               <AvatarImage src={profilePictureUrl || undefined} alt={user?.email || 'User'} />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
+            {isSpoofActive && (
+              <span className='absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-amber-400 border-2 border-white animate-pulse' />
+            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className='w-56' align='end' forceMount>

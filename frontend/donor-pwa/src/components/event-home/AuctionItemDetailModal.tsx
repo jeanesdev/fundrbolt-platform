@@ -40,7 +40,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 export interface AuctionItemDetailModalProps {
   eventId: string
@@ -114,6 +114,8 @@ export function AuctionItemDetailModal({
   const [manualBidInputError, setManualBidInputError] = useState<string | null>(
     null
   )
+  const [loadedImageSources, setLoadedImageSources] = useState<Record<string, true>>({})
+  const [preloadedImageSources, setPreloadedImageSources] = useState<Record<string, true>>({})
   const [placeBidSlideValue, setPlaceBidSlideValue] = useState<number[]>([0])
   const [maxBidSlideValue, setMaxBidSlideValue] = useState<number[]>([0])
   const [buyNowSlideValue, setBuyNowSlideValue] = useState<number[]>([0])
@@ -134,6 +136,9 @@ export function AuctionItemDetailModal({
     queryKey: ['auction-item-detail', eventId, itemId],
     queryFn: () => auctionItemService.getAuctionItem(eventId, itemId!),
     enabled: !!itemId && !!eventId,
+    staleTime: 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
   })
   const isLiveAuctionItem = item?.auction_type === 'live'
 
@@ -239,6 +244,78 @@ export function AuctionItemDetailModal({
 
   const selectedImage =
     images[Math.min(selectedImageIndex, Math.max(images.length - 1, 0))]
+  const selectedImageThumbnailSrc = selectedImage?.thumbnail_path || ''
+  const activeImageSrc = selectedImage?.file_path || item?.primary_image_url || ''
+  const activeImageDisplaySrc = selectedImageThumbnailSrc || activeImageSrc
+  const activeImageSrcSet =
+    selectedImageThumbnailSrc && selectedImageThumbnailSrc !== activeImageSrc
+      ? `${selectedImageThumbnailSrc} 640w, ${activeImageSrc} 1920w`
+      : undefined
+  const isPrimaryImageLoading =
+    !!isOpen &&
+    !!item &&
+    !!activeImageSrc &&
+    !loadedImageSources[activeImageSrc] &&
+    !preloadedImageSources[activeImageSrc]
+
+  useEffect(() => {
+    if (!isOpen || !item || !activeImageSrc || loadedImageSources[activeImageSrc]) {
+      return
+    }
+
+    const preloadedImage = new Image()
+
+    preloadedImage.onload = () => {
+      setLoadedImageSources((prev) => ({
+        ...prev,
+        [activeImageSrc]: true,
+      }))
+    }
+
+    preloadedImage.onerror = () => {
+      setLoadedImageSources((prev) => ({
+        ...prev,
+        [activeImageSrc]: true,
+      }))
+    }
+
+    preloadedImage.src = activeImageSrc
+  }, [activeImageSrc, isOpen, item, loadedImageSources])
+
+  useEffect(() => {
+    if (!isOpen || !item) {
+      return
+    }
+
+    const urls = [
+      item.primary_image_url,
+      ...images.map((image) => image.thumbnail_path),
+      ...images.map((image) => image.file_path),
+    ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+
+    const uniqueUrls = Array.from(new Set(urls)).slice(0, 10)
+
+    uniqueUrls.forEach((url) => {
+      if (loadedImageSources[url] || preloadedImageSources[url]) {
+        return
+      }
+
+      const preloadedImage = new Image()
+      preloadedImage.onload = () => {
+        setPreloadedImageSources((prev) => ({
+          ...prev,
+          [url]: true,
+        }))
+      }
+      preloadedImage.onerror = () => {
+        setPreloadedImageSources((prev) => ({
+          ...prev,
+          [url]: true,
+        }))
+      }
+      preloadedImage.src = url
+    })
+  }, [images, isOpen, item, loadedImageSources, preloadedImageSources])
 
   const openFullscreenImage = (src: string, alt: string) => {
     if (!src) {
@@ -422,9 +499,27 @@ export function AuctionItemDetailModal({
             backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
           }}
         >
-          {isLoading ? (
-            <div className='flex items-center justify-center py-20'>
-              <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
+          {!isOpen ? null : isLoading ? (
+            <div className='space-y-4 p-6'>
+              <div
+                className='relative aspect-video overflow-hidden rounded-lg'
+                style={{
+                  backgroundColor: 'rgb(var(--event-card-bg, 147, 51, 234) / 0.18)',
+                }}
+              >
+                <div className='absolute inset-0 animate-pulse' />
+                <div className='absolute inset-0 flex items-center justify-center'>
+                  <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
+                </div>
+              </div>
+              <div
+                className='h-6 w-3/4 rounded animate-pulse'
+                style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.18)' }}
+              />
+              <div
+                className='h-4 w-1/2 rounded animate-pulse'
+                style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.14)' }}
+              />
             </div>
           ) : item ? (
             <div className='flex flex-col'>
@@ -438,15 +533,44 @@ export function AuctionItemDetailModal({
                 >
                   {/* Main Image */}
                   <div className='relative aspect-video overflow-hidden'>
+                    {isPrimaryImageLoading && (
+                      <div
+                        className='absolute inset-0 z-10 flex items-center justify-center animate-pulse'
+                        style={{
+                          backgroundColor: 'rgb(var(--event-card-bg, 147, 51, 234) / 0.28)',
+                        }}
+                      >
+                        <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
+                      </div>
+                    )}
                     <img
-                      src={
-                        selectedImage?.file_path || item.primary_image_url || ''
-                      }
+                      src={activeImageDisplaySrc}
+                      srcSet={activeImageSrcSet}
+                      sizes='(max-width: 768px) 100vw, 960px'
                       alt={item.title}
-                      className='h-full w-full cursor-zoom-in object-contain'
+                      className={cn(
+                        'h-full w-full cursor-zoom-in object-contain transition-opacity duration-300',
+                        isPrimaryImageLoading ? 'opacity-0' : 'opacity-100'
+                      )}
+                      loading='eager'
+                      fetchPriority='high'
+                      decoding='async'
+                      onLoad={() => {
+                        if (!activeImageSrc) return
+                        setLoadedImageSources((prev) => ({
+                          ...prev,
+                          [activeImageSrc]: true,
+                        }))
+                      }}
+                      onError={() => {
+                        if (!activeImageSrc) return
+                        setLoadedImageSources((prev) => ({
+                          ...prev,
+                          [activeImageSrc]: true,
+                        }))
+                      }}
                       onClick={() => {
-                        const src =
-                          selectedImage?.file_path || item.primary_image_url || ''
+                        const src = activeImageSrc
                         openFullscreenImage(src, item.title)
                       }}
                     />
@@ -495,6 +619,8 @@ export function AuctionItemDetailModal({
                             src={img.thumbnail_path || img.file_path}
                             alt={`${item.title} ${index + 1}`}
                             className='h-16 w-16 object-cover'
+                            loading='lazy'
+                            decoding='async'
                           />
                         </button>
                       ))}
@@ -511,7 +637,7 @@ export function AuctionItemDetailModal({
                   {showWinningState && (
                     <div
                       className={cn(
-                        'absolute left-4 rounded-full bg-green-600/90 px-3 py-1 text-sm font-bold text-white shadow-lg',
+                        'animate-winning-badge-glow absolute left-4 rounded-full bg-green-600/90 px-3 py-1 text-sm font-bold text-white shadow-lg',
                         item.promotion_badge ? 'top-14' : 'top-4'
                       )}
                     >
@@ -522,7 +648,7 @@ export function AuctionItemDetailModal({
                   {/* Auction Type Badge */}
                   <div
                     className={cn(
-                      'absolute top-4 right-4 rounded-full px-3 py-1 text-sm font-medium capitalize',
+                      'absolute top-4 right-16 rounded-full px-3 py-1 text-sm font-medium capitalize',
                       item.auction_type === 'live'
                         ? 'bg-red-500/90 text-white'
                         : 'bg-blue-500/90 text-white'

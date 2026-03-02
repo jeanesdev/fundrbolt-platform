@@ -1,7 +1,7 @@
 """Seating assignment and table management service."""
 
 import logging
-from datetime import UTC
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -319,6 +319,7 @@ class SeatingService:
         user_id: UUID,
         event_id: UUID,
         include_unchecked_in_bidder_numbers: bool = False,
+        reference_now: datetime | None = None,
     ) -> dict[str, Any]:
         """
         Get seating information for a donor's event registration.
@@ -449,11 +450,11 @@ class SeatingService:
 
                 # Get table customization details (Feature 014: US4)
                 # Only show after event has started
-                from datetime import datetime
+                effective_now = reference_now or datetime.now(UTC)
 
                 event_has_started = (
                     registration.event.event_datetime is not None
-                    and registration.event.event_datetime <= datetime.now(UTC)
+                    and registration.event.event_datetime <= effective_now
                 )
 
                 if event_has_started:

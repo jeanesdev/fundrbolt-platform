@@ -30,3 +30,11 @@ export type { EventDetailsProps } from './EventDetails'
 
 // Sponsors Carousel
 export { SponsorsCarousel } from './SponsorsCarousel'
+
+// Bottom Tab Navigation (redesign)
+export { BottomTabNav } from './BottomTabNav'
+export type { BottomTabNavProps, DonorTab } from './BottomTabNav'
+
+// Event Hero Section (redesign)
+export { EventHeroSection } from './EventHeroSection'
+export type { EventHeroSectionProps, EventStatus } from './EventHeroSection'
