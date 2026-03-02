@@ -1,0 +1,426 @@
+openapi: 3.0.3
+info:
+  title: Donation Tracking API
+  version: 1.0.0
+  description: Event-scoped donation and donation-label management contracts.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+
+paths:
+  /events/{event_id}/donations:
+    get:
+      summary: List donations for an event
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - in: query
+          name: donor_user_id
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: is_paddle_raise
+          schema:
+            type: boolean
+        - in: query
+          name: include_voided
+          schema:
+            type: boolean
+            default: false
+        - in: query
+          name: label_ids
+          description: Repeated query parameter of label UUIDs to filter by
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+          style: form
+          explode: true
+        - in: query
+          name: label_match_mode
+          schema:
+            type: string
+            enum: [all, any]
+            default: all
+      responses:
+        '200':
+          description: Donation list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonationListResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      summary: Create donation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DonationCreateRequest'
+      responses:
+        '201':
+          description: Donation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Donation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{event_id}/donations/{donation_id}:
+    get:
+      summary: Get donation by id
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/DonationIdPath'
+      responses:
+        '200':
+          description: Donation details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Donation'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update donation
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/DonationIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DonationUpdateRequest'
+      responses:
+        '200':
+          description: Donation updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Donation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Void donation (soft delete)
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/DonationIdPath'
+      responses:
+        '200':
+          description: Donation voided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Donation'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /events/{event_id}/donation-labels:
+    get:
+      summary: List donation labels for an event
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - in: query
+          name: include_inactive
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Donation label list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DonationLabel'
+                required: [items]
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      summary: Create donation label
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DonationLabelCreateRequest'
+      responses:
+        '201':
+          description: Donation label created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonationLabel'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /events/{event_id}/donation-labels/{label_id}:
+    get:
+      summary: Get donation label by id
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/LabelIdPath'
+      responses:
+        '200':
+          description: Donation label details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonationLabel'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update donation label
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/LabelIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DonationLabelUpdateRequest'
+      responses:
+        '200':
+          description: Donation label updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonationLabel'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Retire donation label
+      parameters:
+        - $ref: '#/components/parameters/EventIdPath'
+        - $ref: '#/components/parameters/LabelIdPath'
+      responses:
+        '200':
+          description: Donation label retired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonationLabel'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    EventIdPath:
+      in: path
+      name: event_id
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DonationIdPath:
+      in: path
+      name: donation_id
+      required: true
+      schema:
+        type: string
+        format: uuid
+    LabelIdPath:
+      in: path
+      name: label_id
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Forbidden for current role
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    Donation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        donor_user_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: decimal
+          minimum: 0.01
+        is_paddle_raise:
+          type: boolean
+        status:
+          type: string
+          enum: [active, voided]
+        label_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - event_id
+        - donor_user_id
+        - amount
+        - is_paddle_raise
+        - status
+        - label_ids
+        - created_at
+        - updated_at
+
+    DonationCreateRequest:
+      type: object
+      properties:
+        donor_user_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: decimal
+          minimum: 0.01
+        is_paddle_raise:
+          type: boolean
+          default: false
+        label_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required: [donor_user_id, amount]
+
+    DonationUpdateRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: decimal
+          minimum: 0.01
+        is_paddle_raise:
+          type: boolean
+        label_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+      minProperties: 1
+
+    DonationListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Donation'
+      required: [items]
+
+    DonationLabel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required: [id, event_id, name, is_active, created_at, updated_at]
+
+    DonationLabelCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required: [name]
+
+    DonationLabelUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        is_active:
+          type: boolean
+      minProperties: 1
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required: [detail]

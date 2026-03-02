@@ -41,13 +41,13 @@ echo "Test Date: $(date -Iseconds)"
 echo ""
 
 # Resource names
-SOURCE_RG="augeo-${SOURCE_ENV}-rg"
-TARGET_RG="augeo-${TARGET_ENV}-rg"
-SOURCE_DB="augeo-${SOURCE_ENV}-db"
-TARGET_DB="augeo-${TARGET_ENV}-db"
+SOURCE_RG="fundrbolt-${SOURCE_ENV}-rg"
+TARGET_RG="fundrbolt-${TARGET_ENV}-rg"
+SOURCE_DB="fundrbolt-${SOURCE_ENV}-db"
+TARGET_DB="fundrbolt-${TARGET_ENV}-db"
 TARGET_DB_RESTORE="${TARGET_DB}-restore-test"
-SOURCE_REDIS="augeo-${SOURCE_ENV}-cache"
-TARGET_REDIS="augeo-${TARGET_ENV}-cache"
+SOURCE_REDIS="fundrbolt-${SOURCE_ENV}-cache"
+TARGET_REDIS="fundrbolt-${TARGET_ENV}-cache"
 
 # Test results
 TEST_START=$(date +%s)
@@ -154,7 +154,7 @@ log "🔬 Performing data integrity checks..."
 # - Verify data matches source (within RPO window)
 
 log "⚠️  Manual verification required:"
-log "  1. Connect to restored database: psql -h $RESTORED_DB_HOST -U augeo_admin -d augeo"
+log "  1. Connect to restored database: psql -h $RESTORED_DB_HOST -U fundrbolt_admin -d fundrbolt"
 log "  2. Verify table counts match source database"
 log "  3. Check recent transactions are present (within 15-minute RPO)"
 log "  4. Test application connectivity to restored database"
@@ -205,7 +205,7 @@ log "📤 Exporting Redis data..."
 # Get storage account for backup
 STORAGE_ACCOUNT=$(az storage account list \
     --resource-group "$SOURCE_RG" \
-    --query "[?contains(name, 'augeo')].name" -o tsv | head -1)
+    --query "[?contains(name, 'fundrbolt')].name" -o tsv | head -1)
 
 if [ -z "$STORAGE_ACCOUNT" ]; then
     log "❌ Error: Storage account not found"

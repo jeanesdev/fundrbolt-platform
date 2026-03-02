@@ -21,7 +21,7 @@ const renderWithProviders = (component: React.ReactElement) => {
 describe('AboutPage', () => {
   it('renders the page title', () => {
     renderWithProviders(<AboutPage />);
-    expect(screen.getByRole('heading', { name: /about augeo/i, level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /about fundrbolt/i, level: 1 })).toBeInTheDocument();
   });
 
   it('renders the mission statement section', () => {

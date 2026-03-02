@@ -1,6 +1,6 @@
-# Augeo Platform Infrastructure
+# Fundrbolt Platform Infrastructure
 
-This directory contains the Infrastructure as Code (IaC) for deploying the Augeo platform to Microsoft Azure.
+This directory contains the Infrastructure as Code (IaC) for deploying the Fundrbolt platform to Microsoft Azure.
 
 ## Structure
 

@@ -10,8 +10,8 @@
  * - Token expiry: localStorage (for session management)
  */
 
-const REFRESH_TOKEN_KEY = 'augeo_refresh_token'
-const TOKEN_EXPIRY_KEY = 'augeo_token_expiry'
+const REFRESH_TOKEN_KEY = 'fundrbolt_refresh_token'
+const TOKEN_EXPIRY_KEY = 'fundrbolt_token_expiry'
 
 /**
  * Saves refresh token to localStorage with expiry timestamp.

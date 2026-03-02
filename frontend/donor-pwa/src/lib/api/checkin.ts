@@ -20,6 +20,11 @@ export interface RegistrationGuest {
   invited_by_admin: boolean
   invitation_sent_at: string | null
   checked_in: boolean
+  check_in_time: string | null
+  status: string
+  cancellation_reason: string | null
+  cancellation_note: string | null
+  is_primary: boolean
   created_at: string
   updated_at: string
 }
@@ -28,8 +33,8 @@ export interface EventRegistration {
   id: string
   user_id: string
   event_id: string
+  ticket_purchase_id: string | null
   status: string
-  ticket_type: string | null
   number_of_guests: number
   check_in_time: string | null
   created_at: string

@@ -99,12 +99,12 @@ Items that are deferred, blocked, or waiting for future consideration.
 - **Current State**:
   - Mock mode working (logs to console) - sufficient for development and testing
   - Infrastructure code complete (Azure Communication Services Bicep module ready)
-  - Domain purchased (augeo.app) and DNS zone deployed
+  - Domain purchased (fundrbolt.com) and DNS zone deployed
   - Email configuration documented in /docs/operations/email-configuration.md
 - **Files**: `backend/app/services/email_service.py`
 - **Dependencies** (All Ready):
   - ✅ Azure Communication Services Email resource (Bicep module ready)
-  - ✅ Domain ownership (augeo.app purchased from Namecheap, expires 10/28/2026)
+  - ✅ Domain ownership (fundrbolt.com purchased from Namecheap, expires 10/28/2026)
   - ✅ DNS infrastructure (Azure DNS zone deployed, nameservers configured)
   - ⏳ DNS records (SPF, DKIM, DMARC) - Waiting for DNS propagation (24-48 hours)
   - ⏳ Production frontend URLs - Need full production deployment (T162)

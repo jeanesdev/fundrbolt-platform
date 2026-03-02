@@ -39,7 +39,7 @@ class AuctionItemBase(BaseModel):
 class AuctionItemCreate(AuctionItemBase):
     """Schema for creating auction items."""
 
-    pass
+    external_id: str | None = Field(None, min_length=1, max_length=200)
 
 
 class AuctionItemUpdate(BaseModel):
@@ -66,6 +66,8 @@ class AuctionItemResponse(AuctionItemBase):
 
     id: UUID
     event_id: UUID
+    external_id: str
+    category: str | None = None
     bid_number: int = Field(..., ge=100, le=999)
     status: ItemStatus
     created_by: UUID
@@ -74,6 +76,17 @@ class AuctionItemResponse(AuctionItemBase):
     primary_image_url: str | None = Field(
         None, description="URL of primary image (with SAS token if Azure)"
     )
+
+    # Bidding state fields
+    current_bid_amount: Decimal | None = None
+    min_next_bid_amount: Decimal | None = None
+    bid_count: int = 0
+    bidding_open: bool = False
+
+    # Engagement and promotion fields
+    watcher_count: int = 0
+    promotion_badge: str | None = None
+    promotion_notice: str | None = None
 
     model_config = {"from_attributes": True}
 

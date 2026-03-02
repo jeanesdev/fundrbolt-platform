@@ -4,11 +4,11 @@
   "parameters": {
     "resourceGroup": {
       "type": "string",
-      "defaultValue": "augeo-production-rg"
+      "defaultValue": "fundrbolt-production-rg"
     }
   },
   "metadata": {
-    "name": "Augeo Infrastructure Health Workbook",
+    "name": "Fundrbolt Infrastructure Health Workbook",
     "description": "Comprehensive infrastructure metrics for App Service, PostgreSQL, Redis, and Azure resources",
     "version": "1.0.0",
     "sections": [

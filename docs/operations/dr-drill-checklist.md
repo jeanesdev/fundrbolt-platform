@@ -54,8 +54,8 @@ Execute DR drills quarterly according to this schedule:
 
 ```bash
 az postgres flexible-server backup list \
-    --resource-group "augeo-production-rg" \
-    --server-name "augeo-production-db"
+    --resource-group "fundrbolt-production-rg" \
+    --server-name "fundrbolt-production-db"
 ```
 
 - [ ] **Step 2**: Initiate point-in-time restore to staging (15 min)
@@ -99,8 +99,8 @@ az postgres flexible-server backup list \
 
 ```bash
 az redis export \
-    --name "augeo-production-cache" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-production-cache" \
+    --resource-group "fundrbolt-production-rg" \
     --container "backups" \
     --prefix "redis-drill-$(date +%Y%m%d)"
 ```
@@ -110,8 +110,8 @@ az redis export \
 
 ```bash
 az redis import \
-    --name "augeo-staging-cache" \
-    --resource-group "augeo-staging-rg" \
+    --name "fundrbolt-staging-cache" \
+    --resource-group "fundrbolt-staging-rg" \
     --files "backups/redis-drill-*.rdb"
 ```
 
@@ -197,8 +197,8 @@ az redis import \
 
 ```bash
 az postgres flexible-server geo-restore \
-    --resource-group "augeo-production-rg-dr" \
-    --name "augeo-production-db-dr" \
+    --resource-group "fundrbolt-production-rg-dr" \
+    --name "fundrbolt-production-db-dr" \
     --source-server "<source-server-id>" \
     --location "westus2"
 ```
@@ -219,8 +219,8 @@ az postgres flexible-server geo-restore \
 
 ```bash
 az network dns record-set a update \
-    --resource-group "augeo-production-rg" \
-    --zone-name "augeo.app" \
+    --resource-group "fundrbolt-production-rg" \
+    --zone-name "fundrbolt.com" \
     --name "api" \
     --set aRecords[0].ipv4Address="<new-ip>"
 ```
@@ -228,8 +228,8 @@ az network dns record-set a update \
 - [ ] **Step 7**: Verify DNS propagation (10 min)
 
 ```bash
-nslookup api.augeo.app
-curl https://api.augeo.app/health
+nslookup api.fundrbolt.com
+curl https://api.fundrbolt.com/health
 ```
 
 - [ ] **Step 8**: Test complete application functionality (30 min)

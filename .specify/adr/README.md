@@ -1,6 +1,6 @@
 # Architecture Decision Records (ADR)
 
-This directory contains records of architectural decisions made during the development of the Augeo Platform.
+This directory contains records of architectural decisions made during the development of the Fundrbolt Platform.
 
 ## What is an ADR?
 

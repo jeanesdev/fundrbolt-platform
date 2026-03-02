@@ -38,7 +38,7 @@ async def seed_testimonials() -> None:
 
         testimonials_data = [
             {
-                "quote_text": "Augeo completely transformed our annual gala. The mobile bidding feature was a game-changer - our donors loved being able to bid from their seats without missing a moment of the program. We raised 40% more than last year!",
+                "quote_text": "Fundrbolt completely transformed our annual gala. The mobile bidding feature was a game-changer - our donors loved being able to bid from their seats without missing a moment of the program. We raised 40% more than last year!",
                 "author_name": "Sarah Johnson",
                 "author_role": "npo_admin",
                 "organization_name": "Hope for Tomorrow Foundation",
@@ -47,7 +47,7 @@ async def seed_testimonials() -> None:
                 "is_published": True,
             },
             {
-                "quote_text": "As a donor, I appreciate how easy Augeo makes it to support the causes I care about. The real-time notifications kept me engaged throughout the event, and the checkout process was seamless. I've bid on items at three different galas using Augeo and had a great experience every time.",
+                "quote_text": "As a donor, I appreciate how easy Fundrbolt makes it to support the causes I care about. The real-time notifications kept me engaged throughout the event, and the checkout process was seamless. I've bid on items at three different galas using Fundrbolt and had a great experience every time.",
                 "author_name": "Michael Chen",
                 "author_role": "donor",
                 "organization_name": None,
@@ -56,7 +56,7 @@ async def seed_testimonials() -> None:
                 "is_published": True,
             },
             {
-                "quote_text": "I've been an auctioneer for over 15 years, and Augeo is hands down the best platform I've used. The dashboard gives me real-time insights into bidding activity, and the automated notifications keep donors engaged without me having to do anything. It makes my job so much easier!",
+                "quote_text": "I've been an auctioneer for over 15 years, and Fundrbolt is hands down the best platform I've used. The dashboard gives me real-time insights into bidding activity, and the automated notifications keep donors engaged without me having to do anything. It makes my job so much easier!",
                 "author_name": "Jennifer Martinez",
                 "author_role": "auctioneer",
                 "organization_name": "Professional Auctioneers Association",
@@ -65,7 +65,7 @@ async def seed_testimonials() -> None:
                 "is_published": True,
             },
             {
-                "quote_text": "The analytics provided by Augeo helped us understand our donor behavior better than ever before. We could see which items generated the most interest and adjust our strategy in real-time. The platform paid for itself many times over.",
+                "quote_text": "The analytics provided by Fundrbolt helped us understand our donor behavior better than ever before. We could see which items generated the most interest and adjust our strategy in real-time. The platform paid for itself many times over.",
                 "author_name": "Robert Williams",
                 "author_role": "npo_admin",
                 "organization_name": "Community Arts Center",
@@ -74,7 +74,7 @@ async def seed_testimonials() -> None:
                 "is_published": True,
             },
             {
-                "quote_text": "I was skeptical about mobile bidding at first, but Augeo won me over immediately. The interface is so intuitive that even my less tech-savvy friends had no trouble using it. Plus, getting notifications when someone outbids you adds a fun, competitive element to the event!",
+                "quote_text": "I was skeptical about mobile bidding at first, but Fundrbolt won me over immediately. The interface is so intuitive that even my less tech-savvy friends had no trouble using it. Plus, getting notifications when someone outbids you adds a fun, competitive element to the event!",
                 "author_name": "Emily Davis",
                 "author_role": "donor",
                 "organization_name": None,

@@ -37,6 +37,11 @@ class EventCreateRequest(BaseModel):
     venue_state: str | None = Field(default=None, max_length=50)
     venue_zip: str | None = Field(default=None, max_length=20)
     attire: str | None = Field(default=None, max_length=100)
+    fundraising_goal: float | None = Field(
+        default=None,
+        ge=0,
+        description="Optional fundraising goal for this event",
+    )
     primary_contact_name: str | None = Field(default=None, max_length=255)
     primary_contact_email: str | None = Field(default=None, max_length=255)
     primary_contact_phone: str | None = Field(default=None, max_length=20)
@@ -91,6 +96,7 @@ class EventUpdateRequest(BaseModel):
     venue_state: str | None = Field(default=None, max_length=50)
     venue_zip: str | None = Field(default=None, max_length=20)
     attire: str | None = Field(default=None, max_length=100)
+    fundraising_goal: float | None = Field(default=None, ge=0)
     primary_contact_name: str | None = Field(default=None, max_length=255)
     primary_contact_email: str | None = Field(default=None, max_length=255)
     primary_contact_phone: str | None = Field(default=None, max_length=20)
@@ -100,6 +106,13 @@ class EventUpdateRequest(BaseModel):
     secondary_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     background_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     accent_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    table_count: int | None = Field(default=None, ge=1, description="Number of tables for seating")
+    max_guests_per_table: int | None = Field(
+        default=None, ge=1, description="Maximum guests per table"
+    )
+    seating_layout_image_url: str | None = Field(
+        default=None, max_length=500, description="Azure Blob URL for event space layout image"
+    )
     version: int | None = Field(default=None, description="Current version for optimistic locking")
 
     @field_validator("name")
@@ -340,6 +353,7 @@ class EventDetailResponse(BaseModel):
     venue_state: str | None
     venue_zip: str | None
     attire: str | None
+    fundraising_goal: float | None
     primary_contact_name: str | None
     primary_contact_email: str | None
     primary_contact_phone: str | None
@@ -349,6 +363,9 @@ class EventDetailResponse(BaseModel):
     secondary_color: str | None
     background_color: str | None
     accent_color: str | None
+    table_count: int | None = None
+    max_guests_per_table: int | None = None
+    seating_layout_image_url: str | None = None
     version: int
     created_at: datetime
     updated_at: datetime
@@ -360,6 +377,22 @@ class EventDetailResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class EventStatsResponse(BaseModel):
+    """Summary counts for event-specific navigation badges."""
+
+    event_id: uuid.UUID
+    media_count: int
+    links_count: int
+    food_options_count: int
+    sponsors_count: int
+    auction_items_count: int
+    auction_bids_count: int
+    registrations_count: int
+    active_registrations_count: int
+    guest_count: int
+    active_guest_count: int
 
 
 class EventPublicResponse(BaseModel):
@@ -377,6 +410,7 @@ class EventPublicResponse(BaseModel):
     venue_state: str | None
     venue_zip: str | None
     attire: str | None
+    fundraising_goal: float | None
     primary_contact_name: str | None
     primary_contact_email: str | None
     primary_contact_phone: str | None

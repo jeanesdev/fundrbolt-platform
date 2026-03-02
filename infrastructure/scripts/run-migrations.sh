@@ -22,8 +22,8 @@ fi
 echo "Running database migrations for $ENVIRONMENT environment..."
 
 # Resource names
-RESOURCE_GROUP="augeo-${ENVIRONMENT}-rg"
-APP_NAME="augeo-${ENVIRONMENT}-api"
+RESOURCE_GROUP="fundrbolt-${ENVIRONMENT}-rg"
+APP_NAME="fundrbolt-${ENVIRONMENT}-api"
 
 # Get database connection string from App Service
 echo "Retrieving database connection string..."

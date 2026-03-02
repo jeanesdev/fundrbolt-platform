@@ -3,6 +3,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
@@ -10,6 +11,7 @@ from app.core.database import get_db
 from app.middleware.auth import get_current_user, require_role
 from app.models.user import User
 from app.schemas.users import (
+    NPOMembershipInfo,
     ProfileUpdateRequest,
     RoleUpdateRequest,
     UserActivateRequest,
@@ -34,9 +36,28 @@ async def build_user_response(user: User, db: AsyncSession) -> dict[str, object]
     Returns:
         dict with all user fields including role name and address fields
     """
-    # Get role name
-    from sqlalchemy import select
+    from app.models.npo import NPO
+    from app.models.npo_member import MemberStatus, NPOMember
 
+    member_stmt = (
+        select(NPOMember, NPO.name)
+        .join(NPO, NPOMember.npo_id == NPO.id)
+        .where(NPOMember.user_id == user.id)
+        .where(NPOMember.status == MemberStatus.ACTIVE)
+    )
+    member_result = await db.execute(member_stmt)
+    npo_memberships = [
+        NPOMembershipInfo(
+            npo_id=member.npo_id,
+            npo_name=npo_name,
+            role=member.role.value,
+            status=member.status.value,
+        )
+        for member, npo_name in member_result.all()
+    ]
+    primary_npo_id = npo_memberships[0].npo_id if len(npo_memberships) == 1 else None
+
+    # Get role name
     from app.models.base import Base
 
     roles_table = Base.metadata.tables["roles"]
@@ -60,7 +81,8 @@ async def build_user_response(user: User, db: AsyncSession) -> dict[str, object]
         "profile_picture_url": user.profile_picture_url,
         "social_media_links": user.social_media_links,
         "role": role_name,
-        "npo_id": user.npo_id,
+        "npo_id": primary_npo_id,
+        "npo_memberships": npo_memberships,
         "email_verified": user.email_verified,
         "is_active": user.is_active,
         "last_login_at": user.last_login_at,
@@ -97,7 +119,6 @@ async def get_current_user_profile(
         email_verified=current_user.email_verified,
         is_active=current_user.is_active,
         role=role_name,
-        npo_id=current_user.npo_id,
         created_at=current_user.created_at,
         updated_at=current_user.updated_at,
         last_login_at=current_user.last_login_at,
@@ -198,7 +219,6 @@ async def update_current_user_profile(
             email_verified=updated_user.email_verified,
             is_active=updated_user.is_active,
             role=role_name,
-            npo_id=updated_user.npo_id,
             created_at=updated_user.created_at,
             updated_at=updated_user.updated_at,
             last_login_at=updated_user.last_login_at,
@@ -338,6 +358,7 @@ async def create_user(
 @require_role("super_admin", "npo_admin", "event_coordinator")
 async def get_user(
     user_id: uuid.UUID,
+    npo_id: uuid.UUID | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, object]:
@@ -362,11 +383,32 @@ async def get_user(
     user_service = UserService()
 
     try:
-        user = await user_service.get_user(db=db, current_user=current_user, user_id=user_id)
+        user = await user_service.get_user(
+            db=db, current_user=current_user, user_id=user_id, npo_id=npo_id
+        )
+
+        from app.models.npo import NPO
+        from app.models.npo_member import MemberStatus, NPOMember
+
+        member_stmt = (
+            select(NPOMember, NPO.name)
+            .join(NPO, NPOMember.npo_id == NPO.id)
+            .where(NPOMember.user_id == user.id)
+            .where(NPOMember.status == MemberStatus.ACTIVE)
+        )
+        member_result = await db.execute(member_stmt)
+        npo_memberships = [
+            NPOMembershipInfo(
+                npo_id=member.npo_id,
+                npo_name=npo_name,
+                role=member.role.value,
+                status=member.status.value,
+            )
+            for member, npo_name in member_result.all()
+        ]
+        primary_npo_id = npo_memberships[0].npo_id if len(npo_memberships) == 1 else None
 
         # Get role name
-        from sqlalchemy import select
-
         from app.models.base import Base
 
         roles_table = Base.metadata.tables["roles"]
@@ -390,8 +432,8 @@ async def get_user(
             "profile_picture_url": user.profile_picture_url,
             "social_media_links": user.social_media_links,
             "role": role_name,
-            "npo_id": user.npo_id,
-            "npo_memberships": [],  # Will be populated by service if needed
+            "npo_id": primary_npo_id,
+            "npo_memberships": npo_memberships,
             "email_verified": user.email_verified,
             "is_active": user.is_active,
             "last_login_at": user.last_login_at,
@@ -409,6 +451,7 @@ async def get_user(
 async def update_user(
     user_id: uuid.UUID,
     user_data: UserUpdateRequest,
+    npo_id: uuid.UUID | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, object]:
@@ -434,7 +477,11 @@ async def update_user(
 
     try:
         user = await user_service.update_user(
-            db=db, current_user=current_user, user_id=user_id, user_data=user_data
+            db=db,
+            current_user=current_user,
+            user_id=user_id,
+            user_data=user_data,
+            npo_id=npo_id,
         )
 
         # Log user update
@@ -469,6 +516,7 @@ async def update_user(
 @require_role("super_admin", "npo_admin")
 async def delete_user(
     user_id: uuid.UUID,
+    npo_id: uuid.UUID | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> None:
@@ -489,7 +537,9 @@ async def delete_user(
     user_service = UserService()
 
     try:
-        user = await user_service.deactivate_user(db=db, current_user=current_user, user_id=user_id)
+        user = await user_service.deactivate_user(
+            db=db, current_user=current_user, user_id=user_id, npo_id=npo_id
+        )
 
         # Log user deletion/deactivation
         ip_address = None
@@ -512,6 +562,7 @@ async def delete_user(
 async def update_user_role(
     user_id: uuid.UUID,
     role_data: RoleUpdateRequest,
+    npo_id: uuid.UUID | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, object]:
@@ -543,8 +594,20 @@ async def update_user_role(
     user_service = UserService()
 
     try:
+        effective_npo_id = role_data.npo_id or npo_id
+        if role_data.npo_id and npo_id and role_data.npo_id != npo_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="npo_id query param must match role payload",
+            )
+        if getattr(current_user, "role_name", None) != "super_admin" and effective_npo_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="npo_id is required for role updates",
+            )
+
         # First, get the user to retrieve old role
-        old_user = await user_service.get_user(db, current_user, user_id)
+        old_user = await user_service.get_user(db, current_user, user_id, npo_id=effective_npo_id)
 
         from sqlalchemy import select
 
@@ -561,7 +624,7 @@ async def update_user_role(
             current_user=current_user,
             user_id=user_id,
             role=role_data.role,
-            npo_id=role_data.npo_id,
+            npo_id=effective_npo_id,
         )
 
         # Get new role name
@@ -582,20 +645,7 @@ async def update_user_role(
             ip_address=ip_address,
         )
 
-        return {
-            "id": user.id,
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "phone": user.phone,
-            "role": new_role_name,
-            "npo_id": user.npo_id,
-            "email_verified": user.email_verified,
-            "is_active": user.is_active,
-            "last_login_at": user.last_login_at,
-            "created_at": user.created_at,
-            "updated_at": user.updated_at,
-        }
+        return await build_user_response(user, db)
     except ValueError as e:
         if "not found" in str(e).lower():
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
@@ -609,6 +659,7 @@ async def update_user_role(
 async def activate_user(
     user_id: uuid.UUID,
     activate_data: UserActivateRequest,
+    npo_id: uuid.UUID | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, object]:
@@ -635,22 +686,12 @@ async def activate_user(
     try:
         if activate_data.is_active:
             user = await user_service.activate_user(
-                db=db, current_user=current_user, user_id=user_id
+                db=db, current_user=current_user, user_id=user_id, npo_id=npo_id
             )
         else:
             user = await user_service.deactivate_user(
-                db=db, current_user=current_user, user_id=user_id
+                db=db, current_user=current_user, user_id=user_id, npo_id=npo_id
             )
-
-        # Get role name
-        from sqlalchemy import select
-
-        from app.models.base import Base
-
-        roles_table = Base.metadata.tables["roles"]
-        role_stmt = select(roles_table.c.name).where(roles_table.c.id == user.role_id)
-        role_result = await db.execute(role_stmt)
-        role_name = role_result.scalar_one()
 
         # Log activation change
         ip_address = None
@@ -672,20 +713,7 @@ async def activate_user(
                 ip_address=ip_address,
             )
 
-        return {
-            "id": user.id,
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "phone": user.phone,
-            "role": role_name,
-            "npo_id": user.npo_id,
-            "email_verified": user.email_verified,
-            "is_active": user.is_active,
-            "last_login_at": user.last_login_at,
-            "created_at": user.created_at,
-            "updated_at": user.updated_at,
-        }
+        return await build_user_response(user, db)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except PermissionError as e:
@@ -696,6 +724,7 @@ async def activate_user(
 @require_role("super_admin", "npo_admin")
 async def verify_user_email(
     user_id: uuid.UUID,
+    npo_id: uuid.UUID | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, object]:
@@ -716,23 +745,13 @@ async def verify_user_email(
         403: Insufficient permissions
         404: User not found
     """
-    from sqlalchemy import select, update
-
-    from app.models.base import Base
+    from sqlalchemy import update
 
     try:
-        # Get the user
-        user_stmt = select(User).where(User.id == user_id)
-        result = await db.execute(user_stmt)
-        user = result.scalar_one_or_none()
-
-        if not user:
-            raise ValueError("User not found")
-
-        # Check permissions
-        if current_user.role_name == "npo_admin":  # type: ignore[attr-defined]
-            if user.npo_id != current_user.npo_id:
-                raise PermissionError("You can only verify emails for users in your NPO")
+        user_service = UserService()
+        await user_service.get_user(
+            db=db, current_user=current_user, user_id=user_id, npo_id=npo_id
+        )
 
         # Update email_verified
         update_stmt = (
@@ -742,26 +761,7 @@ async def verify_user_email(
         updated_user = result.scalar_one()
         await db.commit()
 
-        # Get role name
-        roles_table = Base.metadata.tables["roles"]
-        role_stmt = select(roles_table.c.name).where(roles_table.c.id == updated_user.role_id)
-        role_result = await db.execute(role_stmt)
-        role_name = role_result.scalar_one()
-
-        return {
-            "id": updated_user.id,
-            "email": updated_user.email,
-            "first_name": updated_user.first_name,
-            "last_name": updated_user.last_name,
-            "phone": updated_user.phone,
-            "role": role_name,
-            "npo_id": updated_user.npo_id,
-            "email_verified": updated_user.email_verified,
-            "is_active": updated_user.is_active,
-            "last_login_at": updated_user.last_login_at,
-            "created_at": updated_user.created_at,
-            "updated_at": updated_user.updated_at,
-        }
+        return await build_user_response(updated_user, db)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except PermissionError as e:

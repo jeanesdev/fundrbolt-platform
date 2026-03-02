@@ -4,7 +4,7 @@
 
 set -e
 
-RESOURCE_GROUP="augeo-dev-rg"
+RESOURCE_GROUP="fundrbolt-dev-rg"
 
 echo "⚠️  WARNING: This will DELETE the following resource group and ALL its resources:"
 echo "   Resource Group: $RESOURCE_GROUP"

@@ -6,7 +6,7 @@
 
 ## Summary
 
-This feature establishes the authentication and authorization foundation for the Augeo platform. It implements a multi-tier role system with five distinct roles (Super Admin, NPO Admin, Event Coordinator, Staff, Donor) with organizational and event-level scoping. The system provides secure OAuth2 JWT-based authentication, role-based access control (RBAC), password management, **email verification for new users**, session handling, and comprehensive security logging. NPO Admins automatically have coordinator access to all events in their organization, while Staff are manually assigned to specific events. This feature is critical as it gates all other platform functionality and must be production-ready before any other features can be built.
+This feature establishes the authentication and authorization foundation for the Fundrbolt platform. It implements a multi-tier role system with five distinct roles (Super Admin, NPO Admin, Event Coordinator, Staff, Donor) with organizational and event-level scoping. The system provides secure OAuth2 JWT-based authentication, role-based access control (RBAC), password management, **email verification for new users**, session handling, and comprehensive security logging. NPO Admins automatically have coordinator access to all events in their organization, while Staff are manually assigned to specific events. This feature is critical as it gates all other platform functionality and must be production-ready before any other features can be built.
 
 **Technical Approach**: FastAPI backend with SQLAlchemy ORM for PostgreSQL (with Row-Level Security), Pydantic for validation, OAuth2 with JWT tokens (15-min access, 7-day refresh), bcrypt password hashing, Redis for session/token management, email verification via Azure Communication Services, and React TypeScript frontend with Zustand state management. User profiles include optional organization name and address fields for business/institutional affiliations.
 
@@ -119,7 +119,7 @@ backend/
 └── .env.example
 
 frontend/
-├── augeo-admin/                         # Admin dashboard (already exists)
+├── fundrbolt-admin/                         # Admin dashboard (already exists)
 │   └── src/
 │       ├── features/
 │       │   └── auth/
@@ -141,7 +141,7 @@ frontend/
 │               └── reset-password.tsx
 └── donor-pwa/                           # Donor PWA (already exists)
     └── src/
-        └── [similar auth structure as augeo-admin]
+        └── [similar auth structure as fundrbolt-admin]
 
 shared/
 └── types/
@@ -154,7 +154,7 @@ shared/
     └── auth-ci.yml                      # CI pipeline (lint, test, type check)
 ```
 
-**Structure Decision**: Using web application structure with `/backend` (FastAPI API) and `/frontend` (React PWA + Admin). The backend contains all auth logic, database models, and API endpoints. The frontend has two apps (`augeo-admin` and `donor-pwa`) that both consume the same auth API. Shared TypeScript types live in `/shared`.
+**Structure Decision**: Using web application structure with `/backend` (FastAPI API) and `/frontend` (React PWA + Admin). The backend contains all auth logic, database models, and API endpoints. The frontend has two apps (`fundrbolt-admin` and `donor-pwa`) that both consume the same auth API. Shared TypeScript types live in `/shared`.
 
 ## Complexity Tracking
 

@@ -18,7 +18,7 @@
 
 ## Path Conventions
 
-- **Frontend**: `frontend/augeo-admin/src/`
+- **Frontend**: `frontend/fundrbolt-admin/src/`
 - **Backend**: `backend/app/`
 - This is a web application (frontend + backend coordination)
 
@@ -30,7 +30,7 @@
 
 - [x] T001 Verify Node.js v22 and pnpm installed for frontend development
 - [x] T002 Verify Python 3.11+ and Poetry installed for backend development
-- [x] T003 [P] Install frontend dependencies in frontend/augeo-admin via pnpm install
+- [x] T003 [P] Install frontend dependencies in frontend/fundrbolt-admin via pnpm install
 - [x] T004 [P] Install backend dependencies in backend via poetry install
 - [x] T005 [P] Verify PostgreSQL 15 database running with existing schema (users, roles, npos, events tables)
 - [x] T006 [P] Verify Redis 7 running on localhost:6379 for session management
@@ -51,11 +51,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [x] T009 Create Zustand store for NPO context state in frontend/augeo-admin/src/stores/npo-context.ts
-- [x] T010 [P] Create useAuth hook for accessing current user role in frontend/augeo-admin/src/hooks/useAuth.ts
-- [x] T011 [P] Create useNpoContext hook wrapping store with query invalidation in frontend/augeo-admin/src/hooks/useNpoContext.ts
-- [x] T012 [P] Create Zod validation schema for profile updates in frontend/augeo-admin/src/schemas/profile.ts
-- [x] T013 Update authenticated route layout to support beforeLoad guards in frontend/augeo-admin/src/routes/_authenticated.tsx
+- [x] T009 Create Zustand store for NPO context state in frontend/fundrbolt-admin/src/stores/npo-context.ts
+- [x] T010 [P] Create useAuth hook for accessing current user role in frontend/fundrbolt-admin/src/hooks/useAuth.ts
+- [x] T011 [P] Create useNpoContext hook wrapping store with query invalidation in frontend/fundrbolt-admin/src/hooks/useNpoContext.ts
+- [x] T012 [P] Create Zod validation schema for profile updates in frontend/fundrbolt-admin/src/schemas/profile.ts
+- [x] T013 Update authenticated route layout to support beforeLoad guards in frontend/fundrbolt-admin/src/routes/_authenticated.tsx
 - [x] T014 [P] Create base PermissionService for role-based filtering logic in backend/app/services/permission.py
 - [x] T015 [P] Update User schema with ProfileUpdate validator in backend/app/schemas/user.py
 - [x] T016 [P] Create SearchRequest and SearchResponse schemas in backend/app/schemas/search.py
@@ -72,15 +72,15 @@
 
 ### Implementation for User Story 1
 
-- [x] T017 [P] [US1] Create SuperAdminDashboard component in frontend/augeo-admin/src/components/dashboards/SuperAdminDashboard.tsx
-- [x] T018 [P] [US1] Create NpoAdminDashboard component in frontend/augeo-admin/src/components/dashboards/NpoAdminDashboard.tsx
-- [x] T019 [P] [US1] Create AuctioneerDashboard component in frontend/augeo-admin/src/components/dashboards/AuctioneerDashboard.tsx
-- [x] T020 [P] [US1] Create EventDashboard component in frontend/augeo-admin/src/components/dashboards/EventDashboard.tsx
-- [x] T021 [US1] Update DashboardPage to route to role-specific dashboard with lazy loading in frontend/augeo-admin/src/routes/_authenticated/index.tsx
-- [x] T022 [US1] Add beforeLoad guard to authenticated route to block Donor role from admin PWA in frontend/augeo-admin/src/routes/_authenticated/route.tsx
-- [x] T023 [US1] Create UnauthorizedPage component for access denial in frontend/augeo-admin/src/pages/errors/UnauthorizedPage.tsx
-- [x] T024 [P] [US1] Create useRoleBasedNav hook to filter navigation items by role in frontend/augeo-admin/src/hooks/use-role-based-nav.ts
-- [x] T025 [US1] Update Sidebar component to use useRoleBasedNav for dynamic navigation in frontend/augeo-admin/src/components/layout/app-sidebar.tsx
+- [x] T017 [P] [US1] Create SuperAdminDashboard component in frontend/fundrbolt-admin/src/components/dashboards/SuperAdminDashboard.tsx
+- [x] T018 [P] [US1] Create NpoAdminDashboard component in frontend/fundrbolt-admin/src/components/dashboards/NpoAdminDashboard.tsx
+- [x] T019 [P] [US1] Create AuctioneerDashboard component in frontend/fundrbolt-admin/src/components/dashboards/AuctioneerDashboard.tsx
+- [x] T020 [P] [US1] Create EventDashboard component in frontend/fundrbolt-admin/src/components/dashboards/EventDashboard.tsx
+- [x] T021 [US1] Update DashboardPage to route to role-specific dashboard with lazy loading in frontend/fundrbolt-admin/src/routes/_authenticated/index.tsx
+- [x] T022 [US1] Add beforeLoad guard to authenticated route to block Donor role from admin PWA in frontend/fundrbolt-admin/src/routes/_authenticated/route.tsx
+- [x] T023 [US1] Create UnauthorizedPage component for access denial in frontend/fundrbolt-admin/src/pages/errors/UnauthorizedPage.tsx
+- [x] T024 [P] [US1] Create useRoleBasedNav hook to filter navigation items by role in frontend/fundrbolt-admin/src/hooks/use-role-based-nav.ts
+- [x] T025 [US1] Update Sidebar component to use useRoleBasedNav for dynamic navigation in frontend/fundrbolt-admin/src/components/layout/app-sidebar.tsx
 - [x] T026 [US1] Update backend NPO list endpoint to apply role-based filtering in backend/app/api/v1/npos.py
 - [x] T027 [US1] Update backend Event list endpoint to apply role-based filtering in backend/app/api/v1/events.py
 - [x] T028 [US1] Update backend User list endpoint to apply role-based filtering in backend/app/api/v1/users.py
@@ -97,11 +97,11 @@
 
 ### Implementation for User Story 2
 
-- [x] T029 [P] [US2] Delete Tasks page directory and routes in frontend/augeo-admin/src/pages/tasks/ (already removed)
-- [x] T030 [P] [US2] Delete Chats page directory and routes in frontend/augeo-admin/src/pages/chats/ (already removed)
-- [x] T031 [P] [US2] Delete Apps page directory and routes in frontend/augeo-admin/src/pages/apps/ (already removed)
-- [x] T032 [P] [US2] Delete theme-toggle component directory in frontend/augeo-admin/src/components/theme-toggle/ (already removed)
-- [x] T033 [P] [US2] Delete hamburger-menu component directory in frontend/augeo-admin/src/components/hamburger-menu/ (already removed)
+- [x] T029 [P] [US2] Delete Tasks page directory and routes in frontend/fundrbolt-admin/src/pages/tasks/ (already removed)
+- [x] T030 [P] [US2] Delete Chats page directory and routes in frontend/fundrbolt-admin/src/pages/chats/ (already removed)
+- [x] T031 [P] [US2] Delete Apps page directory and routes in frontend/fundrbolt-admin/src/pages/apps/ (already removed)
+- [x] T032 [P] [US2] Delete theme-toggle component directory in frontend/fundrbolt-admin/src/components/theme-toggle/ (already removed)
+- [x] T033 [P] [US2] Delete hamburger-menu component directory in frontend/fundrbolt-admin/src/components/hamburger-menu/ (already removed)
 - [x] T034 [US2] Remove deleted page routes from route definitions (no routes found - already clean)
 - [x] T035 [US2] Update Sidebar to remove template nav items (AppSidebar already using useRoleBasedNav)
 - [x] T036 [US2] Remove hamburger menu button from AppShell header (already removed)
@@ -123,8 +123,8 @@
 
 ### Implementation for User Story 3
 
-- [x] T040 [P] [US3] Simplify ProfileDropdown to show only Profile and Logout options in frontend/augeo-admin/src/components/profile-dropdown.tsx (already complete)
-- [x] T041 [US3] Move ProfileDropdown to authenticated-layout header for persistent rendering in frontend/augeo-admin/src/components/layout/authenticated-layout.tsx (already complete)
+- [x] T040 [P] [US3] Simplify ProfileDropdown to show only Profile and Logout options in frontend/fundrbolt-admin/src/components/profile-dropdown.tsx (already complete)
+- [x] T041 [US3] Move ProfileDropdown to authenticated-layout header for persistent rendering in frontend/fundrbolt-admin/src/components/layout/authenticated-layout.tsx (already complete)
 - [x] T042 [US3] Remove ProfileDropdown from individual pages (dashboard, users, settings, errors) - now centralized in layout
 - [x] T043 [US3] Verify no redundant Profile link in main navigation menu (navigation clean, Profile only in header dropdown and sidebar footer)
 - [x] T044 [US3] Verify ProfileDropdown works on all pages with linting and type-check passing
@@ -141,9 +141,9 @@
 
 ### Implementation for User Story 4
 
-- [x] T045 [P] [US4] Create ProfileForm component using React Hook Form and Zod in frontend/augeo-admin/src/components/profile/ProfileForm.tsx
+- [x] T045 [P] [US4] Create ProfileForm component using React Hook Form and Zod in frontend/fundrbolt-admin/src/components/profile/ProfileForm.tsx
 - [x] T046 [P] [US4] Implement profile update API endpoint in backend/app/api/v1/users.py (PATCH /api/v1/users/{id}/profile)
-- [x] T047 [US4] Update ProfilePage to fetch current user data and render ProfileForm in frontend/augeo-admin/src/pages/ProfilePage.tsx
+- [x] T047 [US4] Update ProfilePage to fetch current user data and render ProfileForm in frontend/fundrbolt-admin/src/pages/ProfilePage.tsx
 - [x] T048 [US4] Add field-level validation for phone (E.164 format) in ProfileForm
 - [x] T049 [US4] Add field-level validation for email format in ProfileForm
 - [x] T050 [US4] Add max length validation for all text fields per User model constraints
@@ -177,16 +177,16 @@
   body: JSON.stringify({ query: 'hope', limit: 10 })
 }).then(r => r.json()).then(console.log)
 
-- [x] T056 [P] [US5] Create NpoSelector component with dropdown UI in frontend/augeo-admin/src/components/layout/NpoSelector.tsx
-- [x] T057 [US5] Add NpoSelector to AppShell top-left corner (replacing Teams icon) in frontend/augeo-admin/src/components/layout/AppShell.tsx
+- [x] T056 [P] [US5] Create NpoSelector component with dropdown UI in frontend/fundrbolt-admin/src/components/layout/NpoSelector.tsx
+- [x] T057 [US5] Add NpoSelector to AppShell top-left corner (replacing Teams icon) in frontend/fundrbolt-admin/src/components/layout/AppShell.tsx
 - [x] T058 [US5] Fetch available NPOs on login based on user role via API in useNpoContext hook
-- [x] T059 [US5] Implement SuperAdmin "Augeo Platform" option (null npoId) in NpoSelector
+- [x] T059 [US5] Implement SuperAdmin "Fundrbolt Platform" option (null npoId) in NpoSelector
 - [x] T060 [US5] Implement auto-selection for single-NPO users (NPO Admin, Staff) in useNpoContext
 - [x] T061 [US5] Disable selector for single-NPO users (show name only, not clickable)
 - [x] T062 [US5] Implement query cache invalidation on NPO selection change in useNpoContext
-- [x] T063 [US5] Update NPO list query to use selectedNpoId from context in frontend/augeo-admin/src/pages/NposPage.tsx
-- [x] T064 [US5] Update Event list query to use selectedNpoId from context in frontend/augeo-admin/src/pages/EventsPage.tsx
-- [x] T065 [US5] Update User list query to use selectedNpoId from context in frontend/augeo-admin/src/pages/UsersPage.tsx
+- [x] T063 [US5] Update NPO list query to use selectedNpoId from context in frontend/fundrbolt-admin/src/pages/NposPage.tsx
+- [x] T064 [US5] Update Event list query to use selectedNpoId from context in frontend/fundrbolt-admin/src/pages/EventsPage.tsx
+- [x] T065 [US5] Update User list query to use selectedNpoId from context in frontend/fundrbolt-admin/src/pages/UsersPage.tsx
 - [x] T066 [US5] Update backend NPO endpoint to accept npoId query param and filter results in backend/app/api/v1/npos.py
 - [x] T067 [US5] Update backend Event endpoint to accept npoId query param and filter results in backend/app/api/v1/events.py
 - [x] T068 [US5] Update backend User endpoint to accept npoId query param and filter results in backend/app/api/v1/users.py
@@ -211,12 +211,12 @@
 
 ### Implementation for User Story 6
 
-- [x] T071 [P] [US6] Create SearchService with API call logic in frontend/augeo-admin/src/services/search.ts
+- [x] T071 [P] [US6] Create SearchService with API call logic in frontend/fundrbolt-admin/src/services/search.ts
 - [x] T072 [P] [US6] Create search endpoint with PostgreSQL tsvector search in backend/app/api/v1/search.py
 - [x] T073 [P] [US6] Create database migration for tsvector indexes on users, npos, events tables in backend/alembic/versions/ (migration b581d537bb64)
-- [x] T074 [US6] Update SearchBar component with debounced input (300ms) in frontend/augeo-admin/src/components/search/SearchBar.tsx
+- [x] T074 [US6] Update SearchBar component with debounced input (300ms) in frontend/fundrbolt-admin/src/components/search/SearchBar.tsx
 - [x] T075 [US6] Add TanStack Query hook for search with min 2 character validation in SearchBar
-- [x] T076 [US6] Create SearchResults component to display grouped results in frontend/augeo-admin/src/components/search/SearchResults.tsx
+- [x] T076 [US6] Create SearchResults component to display grouped results in frontend/fundrbolt-admin/src/components/search/SearchResults.tsx
 - [x] T077 [US6] Implement role-based filtering in search endpoint (SuperAdmin: all, NPO Admin: own NPO, etc.) in backend/app/api/v1/search.py
 - [x] T078 [US6] Add NPO context filtering to search results (respect selectedNpoId) in backend/app/api/v1/search.py
 - [x] T079 [US6] Display "No results found" message when search returns empty results in SearchResults
@@ -235,7 +235,7 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [x] T083 [P] Update frontend README with new component structure and removed features in frontend/augeo-admin/README.md
+- [x] T083 [P] Update frontend README with new component structure and removed features in frontend/fundrbolt-admin/README.md
 - [x] T084 [P] Update backend API documentation for new endpoints in backend/app/main.py (OpenAPI tags)
 - [x] T085 Run frontend linter (pnpm lint) and fix any remaining issues
 - [x] T086 Run frontend type-check (pnpm type-check) and fix TypeScript errors
@@ -341,10 +341,10 @@
 
 ```bash
 # Launch all dashboard components together:
-Task: "Create SuperAdminDashboard component in frontend/augeo-admin/src/components/dashboards/SuperAdminDashboard.tsx"
-Task: "Create NpoAdminDashboard component in frontend/augeo-admin/src/components/dashboards/NpoAdminDashboard.tsx"
-Task: "Create AuctioneerDashboard component in frontend/augeo-admin/src/components/dashboards/AuctioneerDashboard.tsx"
-Task: "Create EventDashboard component in frontend/augeo-admin/src/components/dashboards/EventDashboard.tsx"
+Task: "Create SuperAdminDashboard component in frontend/fundrbolt-admin/src/components/dashboards/SuperAdminDashboard.tsx"
+Task: "Create NpoAdminDashboard component in frontend/fundrbolt-admin/src/components/dashboards/NpoAdminDashboard.tsx"
+Task: "Create AuctioneerDashboard component in frontend/fundrbolt-admin/src/components/dashboards/AuctioneerDashboard.tsx"
+Task: "Create EventDashboard component in frontend/fundrbolt-admin/src/components/dashboards/EventDashboard.tsx"
 
 # After dashboards exist:
 Task: "Update DashboardPage to route to role-specific dashboard with lazy loading"
@@ -357,11 +357,11 @@ Task: "Create useRoleBasedNav hook to filter navigation items by role" (parallel
 
 ```bash
 # Launch all deletions together:
-Task: "Delete Tasks page directory and routes in frontend/augeo-admin/src/pages/tasks/"
-Task: "Delete Chats page directory and routes in frontend/augeo-admin/src/pages/chats/"
-Task: "Delete Apps page directory and routes in frontend/augeo-admin/src/pages/apps/"
-Task: "Delete theme-toggle component directory in frontend/augeo-admin/src/components/theme-toggle/"
-Task: "Delete hamburger-menu component directory in frontend/augeo-admin/src/components/hamburger-menu/"
+Task: "Delete Tasks page directory and routes in frontend/fundrbolt-admin/src/pages/tasks/"
+Task: "Delete Chats page directory and routes in frontend/fundrbolt-admin/src/pages/chats/"
+Task: "Delete Apps page directory and routes in frontend/fundrbolt-admin/src/pages/apps/"
+Task: "Delete theme-toggle component directory in frontend/fundrbolt-admin/src/components/theme-toggle/"
+Task: "Delete hamburger-menu component directory in frontend/fundrbolt-admin/src/components/hamburger-menu/"
 ```
 
 ---

@@ -14,8 +14,8 @@
 ## Path Conventions
 
 - **Backend**: `backend/app/`, `backend/alembic/`
-- **Frontend**: `frontend/augeo-admin/src/`
-- **Tests**: `backend/app/tests/`, `frontend/augeo-admin/src/tests/`
+- **Frontend**: `frontend/fundrbolt-admin/src/`
+- **Tests**: `backend/app/tests/`, `frontend/fundrbolt-admin/src/tests/`
 
 ---
 
@@ -70,8 +70,8 @@
 
 ### Frontend Core Types
 
-- [x] T018 [P] Create LogoSize enum in `frontend/augeo-admin/src/types/sponsor.ts` (mirror backend)
-- [x] T019 Create Sponsor interface in `frontend/augeo-admin/src/types/sponsor.ts` with all 25 fields
+- [x] T018 [P] Create LogoSize enum in `frontend/fundrbolt-admin/src/types/sponsor.ts` (mirror backend)
+- [x] T019 Create Sponsor interface in `frontend/fundrbolt-admin/src/types/sponsor.ts` with all 25 fields
 - [x] T020 Create SponsorCreateRequest interface
 - [x] T021 Create SponsorUpdateRequest interface
 - [x] T022 Create SponsorLogoUploadRequest interface
@@ -139,7 +139,7 @@
 
 ### Frontend Services (User Story 1)
 
-- [x] T035 [P] [US1] Create SponsorService in `frontend/augeo-admin/src/services/sponsor-service.ts` with:
+- [x] T035 [P] [US1] Create SponsorService in `frontend/fundrbolt-admin/src/services/sponsor-service.ts` with:
   - listSponsors(eventId: string) → Promise\<Sponsor\[\]\> ✅
   - createSponsor(eventId: string, data: SponsorCreateRequest) → Promise\<SponsorCreateResponse\> ✅
   - requestLogoUploadUrl(eventId: string, sponsorId: string, request: LogoUploadRequest) → Promise\<LogoUploadResponse\> ✅
@@ -150,38 +150,38 @@
 
 ### Frontend State Management (User Story 1)
 
-- [x] T037 [US1] Create sponsor store in `frontend/augeo-admin/src/stores/sponsor-store.ts` with Zustand:
+- [x] T037 [US1] Create sponsor store in `frontend/fundrbolt-admin/src/stores/sponsor-store.ts` with Zustand:
   - State: sponsors: Sponsor[], loading: boolean, error: string | null ✅
   - Actions: fetchSponsors(eventId), addSponsor(eventId, data), clearSponsors() ✅
   - Optimistic updates for add sponsor ✅
 
 ### Frontend Components (User Story 1)
 
-- [x] T038 [P] [US1] Create SponsorCard component in `frontend/augeo-admin/src/features/events/components/SponsorCard.tsx`:
+- [x] T038 [P] [US1] Create SponsorCard component in `frontend/fundrbolt-admin/src/features/events/components/SponsorCard.tsx`:
   - Display thumbnail logo (lazy loading with loading="lazy") ✅
   - Display sponsor name ✅
   - Apply logo size CSS class based on logo_size field (xsmall=64px, small=96px, medium=128px, large=192px, xlarge=256px) ✅
   - Clickable if website_url provided (open in new tab with rel="noopener noreferrer") ✅
   - Aria-label for accessibility ✅
-- [x] T039 [P] [US1] Create SponsorList component in `frontend/augeo-admin/src/features/events/components/SponsorList.tsx`:
+- [x] T039 [P] [US1] Create SponsorList component in `frontend/fundrbolt-admin/src/features/events/components/SponsorList.tsx`:
   - Grid layout for sponsor cards ✅
   - Loading skeleton state ✅
   - Empty state ("No sponsors yet" with add button) ✅
   - Error state with retry button ✅
-- [x] T040 [US1] Create SponsorForm component in `frontend/augeo-admin/src/features/events/components/SponsorForm.tsx`:
+- [x] T040 [US1] Create SponsorForm component in `frontend/fundrbolt-admin/src/features/events/components/SponsorForm.tsx`:
   - React Hook Form with Zod validation ✅
   - Name field (required, max 200 chars) ✅
   - Logo file upload (required, 5MB max, format validation) ✅
   - File upload with progress indicator ✅
   - Form validation errors display ✅
   - Submit → call create API → upload logo → confirm upload ✅
-- [x] T041 [US1] Create SponsorsTab component in `frontend/augeo-admin/src/features/events/components/SponsorsTab.tsx`:
+- [x] T041 [US1] Create SponsorsTab component in `frontend/fundrbolt-admin/src/features/events/components/SponsorsTab.tsx`:
   - Integrate SponsorList and SponsorForm ✅
   - Fetch sponsors on tab mount using useSponsorStore ✅
   - Add sponsor button toggles form modal/drawer ✅
   - Success toast on sponsor creation ✅
   - Error toast on failures ✅
-- [x] T042 [US1] Update EventDetailTabs in `frontend/augeo-admin/src/features/events/components/EventDetail.tsx`:
+- [x] T042 [US1] Update EventDetailTabs in `frontend/fundrbolt-admin/src/features/events/components/EventDetail.tsx`:
   - Add "Sponsors" tab to tabs array ✅
   - Conditional render SponsorsTab component when active ✅
   - Lazy load sponsors on tab activation ✅
@@ -226,7 +226,7 @@
   - Test file size validation (6MB rejection) ✅
   - Test ordering by display_order ✅
   - **Result**: 4 integration tests created with full Azure Blob Storage mocking
-- [x] T050 [P] [US1] Frontend component test for SponsorList in `frontend/augeo-admin/src/tests/features/events/SponsorList.test.tsx`:
+- [x] T050 [P] [US1] Frontend component test for SponsorList in `frontend/fundrbolt-admin/src/tests/features/events/SponsorList.test.tsx`:
   - Test renders empty state ✅
   - Test renders sponsor cards ✅
   - Test loading state ✅
@@ -235,7 +235,7 @@
   - Test add button visibility (readonly vs editable) ✅
   - Test edge cases (single sponsor, same size grouping) ✅
   - **Result**: 19 tests created
-- [x] T051 [P] [US1] Frontend component test for SponsorForm in `frontend/augeo-admin/src/tests/features/events/SponsorForm.test.tsx`:
+- [x] T051 [P] [US1] Frontend component test for SponsorForm in `frontend/fundrbolt-admin/src/tests/features/events/SponsorForm.test.tsx`:
   - Test form validation (name required, file size limit) ✅
   - Test file upload success flow ✅
   - Test error handling ✅
@@ -260,7 +260,7 @@
 
 ### Frontend Components (User Story 2)
 
-- [x] T052 [P] [US2] Add logo_size field to SponsorForm in `frontend/augeo-admin/src/features/events/components/SponsorForm.tsx`:
+- [x] T052 [P] [US2] Add logo_size field to SponsorForm in `frontend/fundrbolt-admin/src/features/events/components/SponsorForm.tsx`:
   - Dropdown/select for LogoSize enum (xsmall, small, medium, large, xlarge) ✅
   - Default value: "large" ✅ (Fixed from "medium" to match backend)
   - Zod validation with enum ✅
@@ -270,7 +270,7 @@
   - Placeholder: e.g., "Gold", "Platinum", "Title Sponsor" ✅
   - Validation: max length 100 ✅
   - **Result**: Already implemented in Phase 3, verified functional
-- [x] T054 [US2] Update SponsorCard in `frontend/augeo-admin/src/features/events/components/SponsorCard.tsx`:
+- [x] T054 [US2] Update SponsorCard in `frontend/fundrbolt-admin/src/features/events/components/SponsorCard.tsx`:
   - Apply CSS size classes based on logo_size (xsmall=64px, small=96px, medium=128px, large=192px, xlarge=256px) ✅
   - Display sponsor_level badge/label if present ✅
   - Tailwind classes: w-16 (xsmall), w-24 (small), w-32 (medium), w-48 (large), w-64 (xlarge) ✅
@@ -289,7 +289,7 @@
   - Test logo_size rejects invalid values ✅
   - Test sponsor_level field ✅
   - **Result**: Already exists (test_create_sponsor_with_default_logo_size, test_create_sponsor_with_all_logo_sizes, test_create_sponsor_rejects_invalid_logo_size, test_create_sponsor_with_sponsor_level)
-- [x] T057 [P] [US2] Frontend test for logo_size display in `frontend/augeo-admin/src/tests/features/events/SponsorCard.test.tsx`:
+- [x] T057 [P] [US2] Frontend test for logo_size display in `frontend/fundrbolt-admin/src/tests/features/events/SponsorCard.test.tsx`:
   - Test xlarge logo renders with w-64 (256px) ✅
   - Test xsmall logo renders with w-16 (64px) ✅
   - Test all logo sizes render correct CSS classes ✅
@@ -344,7 +344,7 @@
 
 ### Frontend Services (User Story 6)
 
-- [x] T063 [P] [US6] Add updateSponsor method to `frontend/augeo-admin/src/services/sponsorService.ts`:
+- [x] T063 [P] [US6] Add updateSponsor method to `frontend/fundrbolt-admin/src/services/sponsorService.ts`:
   - updateSponsor(eventId: string, sponsorId: string, data: SponsorUpdateRequest) → Promise\<Sponsor\> ✅
   - **Result**: Already implemented (lines 51-63)
 - [x] T064 [P] [US6] Add deleteSponsor method to SponsorService:
@@ -356,7 +356,7 @@
 
 ### Frontend State Management (User Story 6)
 
-- [x] T066 [US6] Add update/delete actions to `frontend/augeo-admin/src/stores/sponsorStore.ts`:
+- [x] T066 [US6] Add update/delete actions to `frontend/fundrbolt-admin/src/stores/sponsorStore.ts`:
   - updateSponsor(eventId, sponsorId, data) with optimistic update ✅
   - deleteSponsor(eventId, sponsorId) with optimistic removal ✅
   - getSponsor(eventId, sponsorId) for fetching single sponsor ✅
@@ -364,13 +364,13 @@
 
 ### Frontend Components (User Story 6)
 
-- [x] T067 [P] [US6] Add edit mode to SponsorForm in `frontend/augeo-admin/src/features/events/components/SponsorForm.tsx`:
+- [x] T067 [P] [US6] Add edit mode to SponsorForm in `frontend/fundrbolt-admin/src/features/events/components/SponsorForm.tsx`:
   - Accept optional sponsor prop for edit mode ✅
   - Pre-populate form with existing sponsor data ✅
   - Submit → call update API instead of create ✅
   - Optional logo replacement (new upload flow) ✅
   - **Result**: Already implemented with sponsor prop and form pre-population
-- [x] T068 [P] [US6] Add edit/delete buttons to SponsorCard in `frontend/augeo-admin/src/features/events/components/SponsorCard.tsx`:
+- [x] T068 [P] [US6] Add edit/delete buttons to SponsorCard in `frontend/fundrbolt-admin/src/features/events/components/SponsorCard.tsx`:
   - Edit button opens SponsorForm in edit mode ✅
   - Delete button shows confirmation dialog ✅
   - Confirmation → call deleteSponsor → remove from UI ✅
@@ -402,12 +402,12 @@
   - Test returns sponsor details ✅
   - Test 404 for non-existent sponsor ✅
   - **Result**: Already exists (test_get_sponsor_by_id, test_get_sponsor_not_found)
-- [x] T073 [P] [US6] Frontend test for edit flow in `frontend/augeo-admin/src/tests/features/events/SponsorForm.test.tsx`:
+- [x] T073 [P] [US6] Frontend test for edit flow in `frontend/fundrbolt-admin/src/tests/features/events/SponsorForm.test.tsx`:
   - Test form pre-populated in edit mode ✅
   - Test update submission ✅
   - Test logo replacement ✅
   - **Result**: Already exists (Edit Mode section with 5 tests)
-- [x] T074 [P] [US6] Frontend test for delete flow in `frontend/augeo-admin/src/tests/features/events/SponsorCard.test.tsx`:
+- [x] T074 [P] [US6] Frontend test for delete flow in `frontend/fundrbolt-admin/src/tests/features/events/SponsorCard.test.tsx`:
   - Test delete confirmation dialog ✅ (delegated to parent)
   - Test deletion removes sponsor from list ✅ (handled via onDelete callback)
   - **Result**: Component tests verify button presence and callback passing
@@ -424,7 +424,7 @@
 
 ### Frontend Components (User Story 3)
 
-- [x] T075 [P] [US3] Add contact fields section to SponsorForm in `frontend/augeo-admin/src/features/events/components/SponsorForm.tsx`:
+- [x] T075 [P] [US3] Add contact fields section to SponsorForm in `frontend/fundrbolt-admin/src/features/events/components/SponsorForm.tsx`:
   - contact_name (optional, max 200 chars) ✅
   - contact_email (optional, email validation) ✅
   - contact_phone (optional, max 20 chars) ✅
@@ -464,7 +464,7 @@
   - Test update sponsor contact information ✅ (test_update_sponsor_contact_information)
   - Test donation_amount validation ✅ (test_donation_amount_validation)
   - **Result**: 5 new tests added (TestSponsorContactInformation class)
-- [x] T080 [P] [US3] Frontend test for contact form in `frontend/augeo-admin/src/tests/features/events/SponsorForm.test.tsx`:
+- [x] T080 [P] [US3] Frontend test for contact form in `frontend/fundrbolt-admin/src/tests/features/events/SponsorForm.test.tsx`:
   - Test contact fields optional ✅ (should allow submission without contact fields)
   - Test email validation ✅ (should validate email format, should accept valid email)
   - Test all contact fields submitted ✅ (should submit all contact fields)
@@ -484,7 +484,7 @@
 
 ### Frontend Components (User Story 4)
 
-- [x] T081 [P] [US4] Add financial fields to SponsorForm in `frontend/augeo-admin/src/features/events/components/SponsorForm.tsx`:
+- [x] T081 [P] [US4] Add financial fields to SponsorForm in `frontend/fundrbolt-admin/src/features/events/components/SponsorForm.tsx`:
   - donation_amount (optional, number input, non-negative, max 9,999,999,999.99)
   - notes (optional, textarea, no max length)
   - Collapsible "Financial Information" section
@@ -511,7 +511,7 @@
   - Test notes field accepts long text (5000 characters)
   - Test notes field optional (can be None)
   - **ADDED**: TestSponsorFinancialTracking class with 4 new tests
-- [x] T085 [P] [US4] Frontend test for financial form in `frontend/augeo-admin/src/tests/features/events/SponsorForm.test.tsx`:
+- [x] T085 [P] [US4] Frontend test for financial form in `frontend/fundrbolt-admin/src/tests/features/events/SponsorForm.test.tsx`:
   - Test donation_amount validation (non-negative) - Phase 6
   - Test notes field - existing test
   - **VERIFIED**: Adequate test coverage from Phase 6 and existing tests
@@ -528,12 +528,12 @@
 
 ### Frontend Components (User Story 5)
 
-- [x] T086 [P] [US5] Add website_url field to SponsorForm in `frontend/augeo-admin/src/features/events/components/SponsorForm.tsx`:
+- [x] T086 [P] [US5] Add website_url field to SponsorForm in `frontend/fundrbolt-admin/src/features/events/components/SponsorForm.tsx`:
   - Text input (optional, URL validation)
   - Placeholder: `https://example.com`
   - Zod validation: z.string().url().optional()
   - **NOTE**: Field already existed from Phase 3 implementation
-- [x] T087 [US5] Make SponsorCard logo/name clickable in `frontend/augeo-admin/src/features/events/components/SponsorCard.tsx`:
+- [x] T087 [US5] Make SponsorCard logo/name clickable in `frontend/fundrbolt-admin/src/features/events/components/SponsorCard.tsx`:
   - If website_url present: wrap in anchor tag with link
   - target="_blank" rel="noopener noreferrer"
   - aria-label="Visit {sponsor.name} website"
@@ -549,7 +549,7 @@
   - Test update sponsor website_url ✅
   - Test clear website_url (set to null) ✅
   - **ADDED**: TestSponsorWebsiteLinks class with 5 new tests
-- [x] T089 [P] [US5] Frontend test for clickable logo in `frontend/augeo-admin/src/tests/features/events/SponsorCard.test.tsx`:
+- [x] T089 [P] [US5] Frontend test for clickable logo in `frontend/fundrbolt-admin/src/tests/features/events/SponsorCard.test.tsx`:
   - Test logo is clickable link if website_url present ✅
   - Test link has target="_blank" and rel="noopener noreferrer" ✅
   - Test logo is not clickable if no website_url ✅
@@ -597,19 +597,19 @@
 
 ### Frontend Services (Reordering)
 
-- [x] T092 [P] Add reorderSponsors method to `frontend/augeo-admin/src/services/sponsorService.ts`:
+- [x] T092 [P] Add reorderSponsors method to `frontend/fundrbolt-admin/src/services/sponsorService.ts`:
   - ✅ Already existed from Phase 3
   - reorderSponsors(eventId: string, request: ReorderRequest) → Promise<Sponsor[]>
 
 ### Frontend State Management (Reordering)
 
-- [x] T093 Add reorder action to `frontend/augeo-admin/src/stores/sponsorStore.ts`:
+- [x] T093 Add reorder action to `frontend/fundrbolt-admin/src/stores/sponsorStore.ts`:
   - ✅ Already existed from Phase 3
   - reorderSponsors(eventId, request) with optimistic updates and error handling
 
 ### Frontend Components (Reordering)
 
-- [x] T094 Add drag-and-drop to SponsorList in `frontend/augeo-admin/src/features/events/components/SponsorList.tsx`:
+- [x] T094 Add drag-and-drop to SponsorList in `frontend/fundrbolt-admin/src/features/events/components/SponsorList.tsx`:
   - ✅ Installed @dnd-kit/core 6.3.1, @dnd-kit/sortable 10.0.0, @dnd-kit/utilities 3.2.2
   - Wrapped sponsor cards in DndContext with sensors (MouseSensor, TouchSensor)
   - Created SortableSponsorCard wrapper component for drag functionality
@@ -623,7 +623,7 @@
 - [x] T095 [P] Contract test for PATCH /sponsors/reorder in `backend/app/tests/contract/test_sponsors_api.py`:
   - ⚠️ SKIPPED: Backend already functional, contract tests were hanging
   - Backend reorder service works correctly (verified via frontend integration)
-- [x] T096 [P] Frontend test for drag-and-drop in `frontend/augeo-admin/src/tests/features/events/SponsorList.test.tsx`:
+- [x] T096 [P] Frontend test for drag-and-drop in `frontend/fundrbolt-admin/src/tests/features/events/SponsorList.test.tsx`:
   - ✅ 8 new tests added (all passing):
     - should accept onReorder callback prop
     - should render drag-and-drop context when onReorder provided and not readonly
@@ -652,7 +652,7 @@
   - Added Event Sponsors API section with 6 endpoints
   - Added Sponsor Logo Management section with technical details
   - Commit: 641a219e
-- [x] T098 [P] Update frontend README in `frontend/augeo-admin/README.md` with Sponsors tab usage
+- [x] T098 [P] Update frontend README in `frontend/fundrbolt-admin/README.md` with Sponsors tab usage
   - Added comprehensive Event Sponsors Management section (100+ lines)
   - Documented features, components, permissions, state management
   - Included TypeScript usage example
@@ -664,8 +664,8 @@
 
 - [ ] T100 [P] Add Prometheus metrics in `backend/app/core/metrics.py`:
   - DEFERRED: Basic health metrics already exist
-  - Future: augeo_sponsor_uploads_total counter (status: success/failure)
-  - Future: augeo_sponsor_operations_total counter (operation: create/update/delete, status)
+  - Future: fundrbolt_sponsor_uploads_total counter (status: success/failure)
+  - Future: fundrbolt_sponsor_operations_total counter (operation: create/update/delete, status)
 - [ ] T101 [P] Add structured logging for sponsor operations:
   - DEFERRED: Existing structured logging framework sufficient
   - Future: Enhanced logging for sponsor-specific operations
@@ -903,17 +903,17 @@ Each iteration adds value without breaking previous functionality.
 
 ### Frontend Files Created/Modified
 
-- `frontend/augeo-admin/src/types/sponsor.ts` (T018-T024)
-- `frontend/augeo-admin/src/services/sponsor-service.ts` (T035, T036, T063-T065, T092)
-- `frontend/augeo-admin/src/stores/sponsor-store.ts` (T037, T066, T093)
-- `frontend/augeo-admin/src/features/events/components/SponsorCard.tsx` (T038, T054, T068, T082, T087)
-- `frontend/augeo-admin/src/features/events/components/SponsorList.tsx` (T039, T055, T094)
-- `frontend/augeo-admin/src/features/events/components/SponsorForm.tsx` (T040, T052, T053, T067, T069, T075, T076, T081, T086)
-- `frontend/augeo-admin/src/features/events/components/SponsorsTab.tsx` (T041)
-- `frontend/augeo-admin/src/features/events/components/EventDetail.tsx` (T042)
-- `frontend/augeo-admin/src/tests/features/events/SponsorList.test.tsx` (T050, T096)
-- `frontend/augeo-admin/src/tests/features/events/SponsorForm.test.tsx` (T051, T073, T080, T085)
-- `frontend/augeo-admin/src/tests/features/events/SponsorCard.test.tsx` (T057, T074, T089)
+- `frontend/fundrbolt-admin/src/types/sponsor.ts` (T018-T024)
+- `frontend/fundrbolt-admin/src/services/sponsor-service.ts` (T035, T036, T063-T065, T092)
+- `frontend/fundrbolt-admin/src/stores/sponsor-store.ts` (T037, T066, T093)
+- `frontend/fundrbolt-admin/src/features/events/components/SponsorCard.tsx` (T038, T054, T068, T082, T087)
+- `frontend/fundrbolt-admin/src/features/events/components/SponsorList.tsx` (T039, T055, T094)
+- `frontend/fundrbolt-admin/src/features/events/components/SponsorForm.tsx` (T040, T052, T053, T067, T069, T075, T076, T081, T086)
+- `frontend/fundrbolt-admin/src/features/events/components/SponsorsTab.tsx` (T041)
+- `frontend/fundrbolt-admin/src/features/events/components/EventDetail.tsx` (T042)
+- `frontend/fundrbolt-admin/src/tests/features/events/SponsorList.test.tsx` (T050, T096)
+- `frontend/fundrbolt-admin/src/tests/features/events/SponsorForm.test.tsx` (T051, T073, T080, T085)
+- `frontend/fundrbolt-admin/src/tests/features/events/SponsorCard.test.tsx` (T057, T074, T089)
 
 ### Total Tasks: 112
 

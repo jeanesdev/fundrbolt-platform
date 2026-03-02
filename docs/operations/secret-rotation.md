@@ -37,24 +37,24 @@ NEW_JWT_SECRET=$(openssl rand -base64 32)
 
 # 2. Store new secret in Key Vault
 az keyvault secret set \
-    --vault-name "augeo-production-kv" \
+    --vault-name "fundrbolt-production-kv" \
     --name "jwt-secret" \
     --value "$NEW_JWT_SECRET" \
     --description "JWT signing secret (rotated $(date -I))"
 
 # 3. Restart App Service to load new secret
 az webapp restart \
-    --name "augeo-production-api" \
-    --resource-group "augeo-production-rg"
+    --name "fundrbolt-production-api" \
+    --resource-group "fundrbolt-production-rg"
 
 # 4. Wait for health check
 sleep 30
-curl -f https://api.augeo.app/health
+curl -f https://api.fundrbolt.com/health
 
 # 5. Verify application logs
 az webapp log tail \
-    --name "augeo-production-api" \
-    --resource-group "augeo-production-rg"
+    --name "fundrbolt-production-api" \
+    --resource-group "fundrbolt-production-rg"
 ```
 
 ### Verification
@@ -70,14 +70,14 @@ az webapp log tail \
 ```bash
 # Restore previous secret version
 az keyvault secret set-attributes \
-    --vault-name "augeo-production-kv" \
+    --vault-name "fundrbolt-production-kv" \
     --name "jwt-secret" \
     --version <previous-version-id>
 
 # Restart App Service
 az webapp restart \
-    --name "augeo-production-api" \
-    --resource-group "augeo-production-rg"
+    --name "fundrbolt-production-api" \
+    --resource-group "fundrbolt-production-rg"
 ```
 
 ## 2. Database Password Rotation
@@ -98,37 +98,37 @@ NEW_DB_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
 
 # 2. Update PostgreSQL password
 az postgres flexible-server update \
-    --resource-group "augeo-production-rg" \
-    --name "augeo-production-db" \
+    --resource-group "fundrbolt-production-rg" \
+    --name "fundrbolt-production-db" \
     --admin-password "$NEW_DB_PASSWORD"
 
 # 3. Get database connection details
 DB_HOST=$(az postgres flexible-server show \
-    --resource-group "augeo-production-rg" \
-    --name "augeo-production-db" \
+    --resource-group "fundrbolt-production-rg" \
+    --name "fundrbolt-production-db" \
     --query "fullyQualifiedDomainName" -o tsv)
 
-DB_USER="augeo_admin"
-DB_NAME="augeo_production"
+DB_USER="fundrbolt_admin"
+DB_NAME="fundrbolt_production"
 
 # 4. Construct new connection string
 NEW_DB_URL="postgresql://${DB_USER}:${NEW_DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}?sslmode=require"
 
 # 5. Update Key Vault secret
 az keyvault secret set \
-    --vault-name "augeo-production-kv" \
+    --vault-name "fundrbolt-production-kv" \
     --name "database-url" \
     --value "$NEW_DB_URL" \
     --description "PostgreSQL connection string (rotated $(date -I))"
 
 # 6. Restart App Service
 az webapp restart \
-    --name "augeo-production-api" \
-    --resource-group "augeo-production-rg"
+    --name "fundrbolt-production-api" \
+    --resource-group "fundrbolt-production-rg"
 
 # 7. Verify database connectivity
 sleep 30
-curl -f https://api.augeo.app/health/detailed
+curl -f https://api.fundrbolt.com/health/detailed
 ```
 
 ### Verification
@@ -144,20 +144,20 @@ curl -f https://api.augeo.app/health/detailed
 ```bash
 # Restore previous database password
 az postgres flexible-server update \
-    --resource-group "augeo-production-rg" \
-    --name "augeo-production-db" \
+    --resource-group "fundrbolt-production-rg" \
+    --name "fundrbolt-production-db" \
     --admin-password "<previous-password>"
 
 # Restore previous secret version
 az keyvault secret set-attributes \
-    --vault-name "augeo-production-kv" \
+    --vault-name "fundrbolt-production-kv" \
     --name "database-url" \
     --version <previous-version-id>
 
 # Restart App Service
 az webapp restart \
-    --name "augeo-production-api" \
-    --resource-group "augeo-production-rg"
+    --name "fundrbolt-production-api" \
+    --resource-group "fundrbolt-production-rg"
 ```
 
 ## 3. Redis Key Rotation
@@ -175,20 +175,20 @@ Redis access key rotation is automated by Azure but requires updating the connec
 ```bash
 # 1. Regenerate Redis secondary key
 az redis regenerate-keys \
-    --resource-group "augeo-production-rg" \
-    --name "augeo-production-cache" \
+    --resource-group "fundrbolt-production-rg" \
+    --name "fundrbolt-production-cache" \
     --key-type Secondary
 
 # 2. Get new secondary key
 REDIS_KEY=$(az redis list-keys \
-    --resource-group "augeo-production-rg" \
-    --name "augeo-production-cache" \
+    --resource-group "fundrbolt-production-rg" \
+    --name "fundrbolt-production-cache" \
     --query "secondaryKey" -o tsv)
 
 # 3. Get Redis hostname
 REDIS_HOST=$(az redis show \
-    --resource-group "augeo-production-rg" \
-    --name "augeo-production-cache" \
+    --resource-group "fundrbolt-production-rg" \
+    --name "fundrbolt-production-cache" \
     --query "hostName" -o tsv)
 
 # 4. Construct new connection string
@@ -196,24 +196,24 @@ NEW_REDIS_URL="rediss://:${REDIS_KEY}@${REDIS_HOST}:6380/0?ssl_cert_reqs=require
 
 # 5. Update Key Vault secret
 az keyvault secret set \
-    --vault-name "augeo-production-kv" \
+    --vault-name "fundrbolt-production-kv" \
     --name "redis-url" \
     --value "$NEW_REDIS_URL" \
     --description "Redis connection string with secondary key (rotated $(date -I))"
 
 # 6. Restart App Service
 az webapp restart \
-    --name "augeo-production-api" \
-    --resource-group "augeo-production-rg"
+    --name "fundrbolt-production-api" \
+    --resource-group "fundrbolt-production-rg"
 
 # 7. Verify Redis connectivity
 sleep 30
-curl -f https://api.augeo.app/health/detailed
+curl -f https://api.fundrbolt.com/health/detailed
 
 # 8. Regenerate primary key after verification
 az redis regenerate-keys \
-    --resource-group "augeo-production-rg" \
-    --name "augeo-production-cache" \
+    --resource-group "fundrbolt-production-rg" \
+    --name "fundrbolt-production-cache" \
     --key-type Primary
 ```
 
@@ -251,18 +251,18 @@ External service API keys should be rotated through the provider's dashboard.
 
 # 2. Update Key Vault secret
 az keyvault secret set \
-    --vault-name "augeo-production-kv" \
+    --vault-name "fundrbolt-production-kv" \
     --name "stripe-api-key" \
     --value "sk_live_<new-key>" \
     --description "Stripe API key (rotated $(date -I))"
 
 # 3. Restart App Service
 az webapp restart \
-    --name "augeo-production-api" \
-    --resource-group "augeo-production-rg"
+    --name "fundrbolt-production-api" \
+    --resource-group "fundrbolt-production-rg"
 
 # 4. Test Stripe integration
-curl -X POST https://api.augeo.app/api/v1/payments/test
+curl -X POST https://api.fundrbolt.com/api/v1/payments/test
 
 # 5. Revoke old API key in Stripe Dashboard
 ```
@@ -290,18 +290,18 @@ Email service credentials rotation depends on the provider (SendGrid, Mailgun, e
 
 # 2. Update Key Vault secrets
 az keyvault secret set \
-    --vault-name "augeo-production-kv" \
+    --vault-name "fundrbolt-production-kv" \
     --name "email-smtp-password" \
     --value "<new-password>" \
     --description "SMTP password (rotated $(date -I))"
 
 # 3. Restart App Service
 az webapp restart \
-    --name "augeo-production-api" \
-    --resource-group "augeo-production-rg"
+    --name "fundrbolt-production-api" \
+    --resource-group "fundrbolt-production-rg"
 
 # 4. Test email sending
-curl -X POST https://api.augeo.app/api/v1/auth/verify-email/resend
+curl -X POST https://api.fundrbolt.com/api/v1/auth/verify-email/resend
 ```
 
 ### SMTP Verification
@@ -333,15 +333,15 @@ Follow the standard rotation procedure for the compromised secret type.
 ```bash
 # Review Key Vault audit logs
 az monitor activity-log list \
-    --resource-group "augeo-production-rg" \
+    --resource-group "fundrbolt-production-rg" \
     --start-time "2025-01-01T00:00:00Z" \
     --query "[?contains(authorization.action, 'Microsoft.KeyVault')]" \
     --output table
 
 # Review App Service logs
 az webapp log tail \
-    --name "augeo-production-api" \
-    --resource-group "augeo-production-rg"
+    --name "fundrbolt-production-api" \
+    --resource-group "fundrbolt-production-rg"
 ```
 
 ### 4. Notify Stakeholders
@@ -388,13 +388,13 @@ jobs:
 ```bash
 # Verify managed identity
 az webapp identity show \
-    --name "augeo-production-api" \
-    --resource-group "augeo-production-rg"
+    --name "fundrbolt-production-api" \
+    --resource-group "fundrbolt-production-rg"
 
 # Verify role assignment
 az role assignment list \
     --assignee <principal-id> \
-    --scope /subscriptions/<sub-id>/resourceGroups/augeo-production-rg/providers/Microsoft.KeyVault/vaults/augeo-production-kv
+    --scope /subscriptions/<sub-id>/resourceGroups/fundrbolt-production-rg/providers/Microsoft.KeyVault/vaults/fundrbolt-production-kv
 ```
 
 ### Connection Errors After Rotation
@@ -402,12 +402,12 @@ az role assignment list \
 ```bash
 # Check secret value format
 az keyvault secret show \
-    --vault-name "augeo-production-kv" \
+    --vault-name "fundrbolt-production-kv" \
     --name "database-url" \
     --query "value"
 
 # Test connection manually
-psql "postgresql://augeo_admin:<password>@augeo-production-db.postgres.database.azure.com:5432/augeo_production?sslmode=require"
+psql "postgresql://fundrbolt_admin:<password>@fundrbolt-production-db.postgres.database.azure.com:5432/fundrbolt_production?sslmode=require"
 ```
 
 ### Health Check Failing
@@ -415,11 +415,11 @@ psql "postgresql://augeo_admin:<password>@augeo-production-db.postgres.database.
 ```bash
 # View application logs
 az webapp log tail \
-    --name "augeo-production-api" \
-    --resource-group "augeo-production-rg"
+    --name "fundrbolt-production-api" \
+    --resource-group "fundrbolt-production-rg"
 
 # Check detailed health endpoint
-curl -v https://api.augeo.app/health/detailed
+curl -v https://api.fundrbolt.com/health/detailed
 ```
 
 ## Related Documentation

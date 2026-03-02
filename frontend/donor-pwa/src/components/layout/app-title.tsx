@@ -1,12 +1,12 @@
-import { Link } from '@tanstack/react-router'
-import { Menu, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { cn } from '@/lib/utils'
+import { Link } from '@tanstack/react-router'
+import { Menu, X } from 'lucide-react'
 import { Button } from '../ui/button'
 
 export function AppTitle() {
@@ -25,7 +25,7 @@ export function AppTitle() {
               onClick={() => setOpenMobile(false)}
               className='grid flex-1 text-start text-sm leading-tight'
             >
-              <span className='truncate font-bold'>Augeo Platform</span>
+              <span className='truncate font-bold'>Fundrbolt Platform</span>
               <span className='truncate text-xs'>NPO Management</span>
             </Link>
             <ToggleSidebar />

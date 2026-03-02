@@ -6,9 +6,9 @@ set -euo pipefail
 
 # Accept environment parameter (default: production)
 ENVIRONMENT="${1:-production}"
-DOMAIN="augeo.app"
-RESOURCE_GROUP="augeo-${ENVIRONMENT}-rg"
-EMAIL_SERVICE="augeo-${ENVIRONMENT}-email"
+DOMAIN="fundrbolt.com"
+RESOURCE_GROUP="fundrbolt-${ENVIRONMENT}-rg"
+EMAIL_SERVICE="fundrbolt-${ENVIRONMENT}-email"
 
 echo "🔍 Checking DNS record propagation..."
 echo ""

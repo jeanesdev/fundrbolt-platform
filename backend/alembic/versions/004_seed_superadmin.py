@@ -27,7 +27,7 @@ def upgrade() -> None:
     from app.core.security import hash_password
 
     # Get super admin credentials from environment
-    super_admin_email = os.getenv("SUPER_ADMIN_EMAIL", "admin@augeo.app")
+    super_admin_email = os.getenv("SUPER_ADMIN_EMAIL", "admin@fundrbolt.com")
     super_admin_password = os.getenv("SUPER_ADMIN_PASSWORD", "")
     super_admin_first_name = os.getenv("SUPER_ADMIN_FIRST_NAME", "Super")
     super_admin_last_name = os.getenv("SUPER_ADMIN_LAST_NAME", "Admin")
@@ -106,7 +106,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Remove super admin user."""
     # Get super admin email from environment (or use default)
-    super_admin_email = os.getenv("SUPER_ADMIN_EMAIL", "admin@augeo.app")
+    super_admin_email = os.getenv("SUPER_ADMIN_EMAIL", "admin@fundrbolt.com")
 
     # Delete super admin user
     conn = op.get_bind()

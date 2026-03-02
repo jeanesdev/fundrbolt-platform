@@ -44,7 +44,7 @@ describe('ContactPage', () => {
   it('displays hero subtitle with value proposition', () => {
     renderWithProviders(<ContactPage />);
     expect(
-      screen.getByText(/have questions about augeo\? we're here to help/i)
+      screen.getByText(/have questions about fundrbolt\? we're here to help/i)
     ).toBeInTheDocument();
   });
 
@@ -56,7 +56,7 @@ describe('ContactPage', () => {
 
   it('displays support email address', () => {
     renderWithProviders(<ContactPage />);
-    expect(screen.getByText('support@augeo.app')).toBeInTheDocument();
+    expect(screen.getByText('support@fundrbolt.com')).toBeInTheDocument();
   });
 
   it('shows expected response time', () => {
@@ -148,7 +148,7 @@ describe('ContactPage', () => {
   it('shows demo request resource description', () => {
     renderWithProviders(<ContactPage />);
     expect(
-      screen.getByText(/schedule a personalized demo to see augeo in action/i)
+      screen.getByText(/schedule a personalized demo to see fundrbolt in action/i)
     ).toBeInTheDocument();
   });
 

@@ -5,11 +5,11 @@
 set -euo pipefail
 
 ENVIRONMENT="dev"
-RESOURCE_GROUP="augeo-${ENVIRONMENT}-rg"
+RESOURCE_GROUP="fundrbolt-${ENVIRONMENT}-rg"
 LOCATION="eastus"
-ACS_NAME="augeo-${ENVIRONMENT}-acs"
-EMAIL_SERVICE_NAME="augeo-${ENVIRONMENT}-email"
-DOMAIN="augeo.app"
+ACS_NAME="fundrbolt-${ENVIRONMENT}-acs"
+EMAIL_SERVICE_NAME="fundrbolt-${ENVIRONMENT}-email"
+DOMAIN="fundrbolt.com"
 
 echo "📧 Adding Azure Communication Services to Dev Environment"
 echo "=========================================================="
@@ -90,7 +90,7 @@ CONNECTION_STRING=$(az communication list-key \
     --query "primaryConnectionString" -o tsv)
 
 # Store in Key Vault
-KEY_VAULT_NAME="augeo-${ENVIRONMENT}-kv"
+KEY_VAULT_NAME="fundrbolt-${ENVIRONMENT}-kv"
 echo "🔐 Storing connection string in Key Vault: $KEY_VAULT_NAME..."
 
 az keyvault secret set \

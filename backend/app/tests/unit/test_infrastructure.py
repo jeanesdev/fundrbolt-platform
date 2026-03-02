@@ -12,7 +12,7 @@ class TestInfrastructure:
         from app.core.config import get_settings
 
         settings = get_settings()
-        assert settings.project_name == "Augeo Platform API"
+        assert settings.project_name == "Fundrbolt Platform API"
         assert settings.jwt_algorithm == "HS256"
 
     def test_database_imports(self) -> None:
@@ -60,4 +60,4 @@ class TestInfrastructure:
         from app.main import app
 
         assert app is not None
-        assert app.title == "Augeo Platform API"
+        assert app.title == "Fundrbolt Platform API"

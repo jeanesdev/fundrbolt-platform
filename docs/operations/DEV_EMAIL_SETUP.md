@@ -22,7 +22,7 @@ SMTP_HOST=localhost
 SMTP_PORT=1025
 SMTP_USERNAME=
 SMTP_PASSWORD=
-EMAIL_FROM=noreply@augeo.app
+EMAIL_FROM=noreply@fundrbolt.com
 ```
 
 ### Test Emails

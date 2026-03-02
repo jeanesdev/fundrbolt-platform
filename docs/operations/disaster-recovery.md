@@ -1,10 +1,10 @@
 # Disaster Recovery Procedures
 
-Comprehensive disaster recovery (DR) procedures for the Augeo platform, including backup strategies, restore procedures, and RTO/RPO targets.
+Comprehensive disaster recovery (DR) procedures for the Fundrbolt platform, including backup strategies, restore procedures, and RTO/RPO targets.
 
 ## Overview
 
-The Augeo platform implements a multi-layered backup strategy to ensure business continuity and data protection:
+The Fundrbolt platform implements a multi-layered backup strategy to ensure business continuity and data protection:
 
 - **PostgreSQL**: Automated backups with point-in-time restore (PITR)
 - **Redis**: AOF persistence (production) with export to blob storage
@@ -57,16 +57,16 @@ The Augeo platform implements a multi-layered backup strategy to ensure business
 
 ```bash
 # Get storage account credentials
-STORAGE_ACCOUNT="augeo-production-storage"
+STORAGE_ACCOUNT="fundrbolt-production-storage"
 STORAGE_KEY=$(az storage account keys list \
-    --resource-group "augeo-production-rg" \
+    --resource-group "fundrbolt-production-rg" \
     --account-name "$STORAGE_ACCOUNT" \
     --query "[0].value" -o tsv)
 
 # Export Redis data
 az redis export \
-    --name "augeo-production-cache" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-production-cache" \
+    --resource-group "fundrbolt-production-rg" \
     --container "backups" \
     --prefix "redis-backup-$(date +%Y%m%d-%H%M%S)" \
     --file-format "rdb" \
@@ -101,8 +101,8 @@ az redis export \
 
 ```bash
 # Connect to database
-psql -h augeo-production-db.postgres.database.azure.com \
-     -U augeo_admin -d augeo
+psql -h fundrbolt-production-db.postgres.database.azure.com \
+     -U fundrbolt_admin -d fundrbolt
 
 # Check table counts
 SELECT COUNT(*) FROM users;
@@ -118,13 +118,13 @@ SELECT MAX(updated_at) FROM users;
 ```bash
 # List available backups
 az postgres flexible-server backup list \
-    --resource-group "augeo-production-rg" \
-    --server-name "augeo-production-db"
+    --resource-group "fundrbolt-production-rg" \
+    --server-name "fundrbolt-production-db"
 
 # Check earliest restore point
 az postgres flexible-server show \
-    --name "augeo-production-db" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-production-db" \
+    --resource-group "fundrbolt-production-rg" \
     --query "backup.earliestRestoreDate"
 ```
 
@@ -135,15 +135,15 @@ az postgres flexible-server show \
 RESTORE_TIME="2025-10-27T18:00:00Z"  # Point before corruption
 
 az postgres flexible-server restore \
-    --resource-group "augeo-staging-rg" \
-    --name "augeo-staging-db-restore" \
-    --source-server "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/augeo-production-rg/providers/Microsoft.DBforPostgreSQL/flexibleServers/augeo-production-db" \
+    --resource-group "fundrbolt-staging-rg" \
+    --name "fundrbolt-staging-db-restore" \
+    --source-server "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/fundrbolt-production-rg/providers/Microsoft.DBforPostgreSQL/flexibleServers/fundrbolt-production-db" \
     --restore-time "$RESTORE_TIME"
 
 # Wait for restore (10-15 minutes)
 az postgres flexible-server wait \
-    --name "augeo-staging-db-restore" \
-    --resource-group "augeo-staging-rg" \
+    --name "fundrbolt-staging-db-restore" \
+    --resource-group "fundrbolt-staging-rg" \
     --created
 ```
 
@@ -152,11 +152,11 @@ az postgres flexible-server wait \
 ```bash
 # Connect to restored database
 RESTORED_HOST=$(az postgres flexible-server show \
-    --name "augeo-staging-db-restore" \
-    --resource-group "augeo-staging-rg" \
+    --name "fundrbolt-staging-db-restore" \
+    --resource-group "fundrbolt-staging-rg" \
     --query "fullyQualifiedDomainName" -o tsv)
 
-psql -h "$RESTORED_HOST" -U augeo_admin -d augeo
+psql -h "$RESTORED_HOST" -U fundrbolt_admin -d fundrbolt
 
 # Verify data integrity
 SELECT COUNT(*) FROM users;
@@ -169,20 +169,20 @@ SELECT MAX(updated_at) FROM users;
 ```bash
 # Stop application traffic (enable maintenance mode)
 az webapp stop \
-    --name "augeo-production-api" \
-    --resource-group "augeo-production-rg"
+    --name "fundrbolt-production-api" \
+    --resource-group "fundrbolt-production-rg"
 
 # Rename current database (backup)
 az postgres flexible-server update \
-    --name "augeo-production-db" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-production-db" \
+    --resource-group "fundrbolt-production-rg" \
     --tags "status=backup-$(date +%Y%m%d)"
 
 # Restore production database
 az postgres flexible-server restore \
-    --resource-group "augeo-production-rg" \
-    --name "augeo-production-db-restored" \
-    --source-server "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/augeo-production-rg/providers/Microsoft.DBforPostgreSQL/flexibleServers/augeo-production-db" \
+    --resource-group "fundrbolt-production-rg" \
+    --name "fundrbolt-production-db-restored" \
+    --source-server "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/fundrbolt-production-rg/providers/Microsoft.DBforPostgreSQL/flexibleServers/fundrbolt-production-db" \
     --restore-time "$RESTORE_TIME"
 
 # Update App Service connection string
@@ -190,15 +190,15 @@ az postgres flexible-server restore \
 
 # Start application
 az webapp start \
-    --name "augeo-production-api" \
-    --resource-group "augeo-production-rg"
+    --name "fundrbolt-production-api" \
+    --resource-group "fundrbolt-production-rg"
 ```
 
 6. **Verify service restoration**
 
 ```bash
 # Check health endpoint
-curl https://api.augeo.app/health/detailed
+curl https://api.fundrbolt.com/health/detailed
 
 # Monitor Application Insights for errors
 # Check user login functionality
@@ -220,8 +220,8 @@ curl https://api.augeo.app/health/detailed
 
 ```bash
 az redis show \
-    --name "augeo-production-cache" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-production-cache" \
+    --resource-group "fundrbolt-production-rg" \
     --query "{provisioningState:provisioningState,redisVersion:redisVersion}"
 ```
 
@@ -229,8 +229,8 @@ az redis show \
 
 ```bash
 az redis show \
-    --name "augeo-production-cache" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-production-cache" \
+    --resource-group "fundrbolt-production-rg" \
     --query "redisConfiguration"
 ```
 
@@ -243,24 +243,24 @@ Redis will automatically restore from AOF file on restart. This is the preferred
 ```bash
 # List available Redis backups
 az storage blob list \
-    --account-name "augeo-production-storage" \
+    --account-name "fundrbolt-production-storage" \
     --container-name "backups" \
     --prefix "redis-backup" \
     --output table
 
 # Import Redis data
 az redis import \
-    --name "augeo-production-cache" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-production-cache" \
+    --resource-group "fundrbolt-production-rg" \
     --files "backups/redis-backup-20251027-120000.rdb" \
-    --storage-account-name "augeo-production-storage"
+    --storage-account-name "fundrbolt-production-storage"
 ```
 
 5. **Verify cache restoration**
 
 ```bash
 # Check Redis key count
-redis-cli -h augeo-production-cache.redis.cache.windows.net \
+redis-cli -h fundrbolt-production-cache.redis.cache.windows.net \
     -p 6380 --tls --askpass INFO keyspace
 
 # Test session retrieval
@@ -294,14 +294,14 @@ NEW_REGION="westus2"  # Paired region
 
 # Create new resource group
 az group create \
-    --name "augeo-production-rg-dr" \
+    --name "fundrbolt-production-rg-dr" \
     --location "$NEW_REGION"
 
 # Restore database from geo-redundant backup
 az postgres flexible-server geo-restore \
-    --resource-group "augeo-production-rg-dr" \
-    --name "augeo-production-db-dr" \
-    --source-server "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/augeo-production-rg/providers/Microsoft.DBforPostgreSQL/flexibleServers/augeo-production-db" \
+    --resource-group "fundrbolt-production-rg-dr" \
+    --name "fundrbolt-production-db-dr" \
+    --source-server "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/fundrbolt-production-rg/providers/Microsoft.DBforPostgreSQL/flexibleServers/fundrbolt-production-db" \
     --location "$NEW_REGION"
 ```
 
@@ -323,15 +323,15 @@ az postgres flexible-server geo-restore \
 ```bash
 # Update A record to point to new region
 az network dns record-set a update \
-    --resource-group "augeo-production-rg" \
-    --zone-name "augeo.app" \
+    --resource-group "fundrbolt-production-rg" \
+    --zone-name "fundrbolt.com" \
     --name "api" \
     --set aRecords[0].ipv4Address="<new-app-service-ip>"
 
 # Update CNAME for Static Web App
 az network dns record-set cname update \
-    --resource-group "augeo-production-rg" \
-    --zone-name "augeo.app" \
+    --resource-group "fundrbolt-production-rg" \
+    --zone-name "fundrbolt.com" \
     --name "admin" \
     --cname "<new-static-web-app-url>"
 ```
@@ -340,12 +340,12 @@ az network dns record-set cname update \
 
 ```bash
 # Check DNS propagation
-nslookup api.augeo.app
-nslookup admin.augeo.app
+nslookup api.fundrbolt.com
+nslookup admin.fundrbolt.com
 
 # Test endpoints
-curl https://api.augeo.app/health
-curl https://admin.augeo.app
+curl https://api.fundrbolt.com/health
+curl https://admin.fundrbolt.com
 ```
 
 **Expected RTO**: 3-4 hours (full regional failover)
@@ -364,7 +364,7 @@ curl https://admin.augeo.app
 ```bash
 # Check audit logs for deletion events
 az monitor activity-log list \
-    --resource-group "augeo-production-rg" \
+    --resource-group "fundrbolt-production-rg" \
     --start-time "2025-10-27T00:00:00Z" \
     --query "[?contains(operationName.value, 'delete')]"
 ```
@@ -374,14 +374,14 @@ az monitor activity-log list \
 ```bash
 # List deleted blobs
 az storage blob list \
-    --account-name "augeo-production-storage" \
+    --account-name "fundrbolt-production-storage" \
     --container-name "backups" \
     --include d \
     --output table
 
 # Undelete blob
 az storage blob undelete \
-    --account-name "augeo-production-storage" \
+    --account-name "fundrbolt-production-storage" \
     --container-name "backups" \
     --name "deleted-file.dat"
 ```
@@ -391,14 +391,14 @@ az storage blob undelete \
 ```bash
 # List blob versions
 az storage blob list \
-    --account-name "augeo-production-storage" \
+    --account-name "fundrbolt-production-storage" \
     --container-name "backups" \
     --include v \
     --output table
 
 # Copy previous version
 az storage blob copy start \
-    --account-name "augeo-production-storage" \
+    --account-name "fundrbolt-production-storage" \
     --destination-container "backups" \
     --destination-blob "restored-file.dat" \
     --source-container "backups" \
@@ -473,19 +473,19 @@ Monitor backup health to ensure DR readiness:
 ```bash
 # Check PostgreSQL backup status
 az postgres flexible-server backup list \
-    --resource-group "augeo-production-rg" \
-    --server-name "augeo-production-db"
+    --resource-group "fundrbolt-production-rg" \
+    --server-name "fundrbolt-production-db"
 
 # Verify latest backup timestamp
 az postgres flexible-server show \
-    --name "augeo-production-db" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-production-db" \
+    --resource-group "fundrbolt-production-rg" \
     --query "backup.earliestRestoreDate"
 
 # Check Redis persistence
 az redis show \
-    --name "augeo-production-cache" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-production-cache" \
+    --resource-group "fundrbolt-production-rg" \
     --query "redisConfiguration.\"aof-backup-enabled\""
 ```
 
@@ -509,14 +509,14 @@ az postgres flexible-server list \
 
 # Verify source database is healthy
 az postgres flexible-server show \
-    --name "augeo-production-db" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-production-db" \
+    --resource-group "fundrbolt-production-rg" \
     --query "state"
 
 # Check available restore points
 az postgres flexible-server show \
-    --name "augeo-production-db" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-production-db" \
+    --resource-group "fundrbolt-production-rg" \
     --query "backup.earliestRestoreDate"
 ```
 
@@ -529,8 +529,8 @@ az postgres flexible-server show \
 
 # Check Redis status
 az redis show \
-    --name "augeo-production-cache" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-production-cache" \
+    --resource-group "fundrbolt-production-rg" \
     --query "provisioningState"
 ```
 
@@ -544,8 +544,8 @@ Geo-restore requires:
 ```bash
 # Verify geo-redundant backup enabled
 az postgres flexible-server show \
-    --name "augeo-production-db" \
-    --resource-group "augeo-production-rg" \
+    --name "fundrbolt-production-db" \
+    --resource-group "fundrbolt-production-rg" \
     --query "backup.geoRedundantBackup"
 ```
 

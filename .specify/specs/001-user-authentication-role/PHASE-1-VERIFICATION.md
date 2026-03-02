@@ -16,7 +16,7 @@ api/  core/  middleware/  models/  schemas/  services/  tests/  __init__.py
 ### T002 ✅ Poetry Project Configuration
 ```bash
 $ grep "name =" backend/pyproject.toml
-name = "augeo-backend"
+name = "fundrbolt-backend"
 ```
 **Dependencies verified**:
 - fastapi ^0.104.0
@@ -45,8 +45,8 @@ $ test -f backend/.env.example && echo "✅ Exists"
 ### T005 ✅ Docker Compose
 ```bash
 $ sudo docker-compose ps
-augeo_postgres   Up (healthy)   0.0.0.0:5432->5432/tcp
-augeo_redis      Up (healthy)   0.0.0.0:6379->6379/tcp
+fundrbolt_postgres   Up (healthy)   0.0.0.0:5432->5432/tcp
+fundrbolt_redis      Up (healthy)   0.0.0.0:6379->6379/tcp
 ```
 **Status**: Both services running and healthy
 
@@ -73,7 +73,7 @@ $ test -f .github/workflows/backend-ci.yml && echo "✅ Exists"
 
 ### T009-T010 ✅ Frontend Dependencies
 ```bash
-$ test -f frontend/augeo-admin/package.json && echo "✅ Exists"
+$ test -f frontend/fundrbolt-admin/package.json && echo "✅ Exists"
 ✅ Exists
 ```
 **Dependencies verified**:
@@ -156,7 +156,7 @@ Next: Phase 2 - Foundational Infrastructure
 ## Verification Command
 ```bash
 # Run this to verify everything:
-cd /home/jjeanes/augeo-platform
+cd /home/jjeanes/fundrbolt-platform
 sudo docker-compose ps  # Both services should be healthy
 cd backend && poetry check  # Should pass
 cd .. && pre-commit run --all-files  # Should pass

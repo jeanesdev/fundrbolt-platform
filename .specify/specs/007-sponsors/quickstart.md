@@ -580,7 +580,7 @@ AZURE_STORAGE_ACCOUNT_NAME=your-storage-account
 AZURE_STORAGE_CONTAINER_NAME=event-media  # Reuse existing container
 
 # Database (already configured)
-DATABASE_URL=postgresql+asyncpg://user:pass@localhost/augeo
+DATABASE_URL=postgresql+asyncpg://user:pass@localhost/fundrbolt
 ```
 
 ### Development Setup
@@ -597,7 +597,7 @@ DATABASE_URL=postgresql+asyncpg://user:pass@localhost/augeo
 2. **Frontend**:
 
    ```bash
-   cd frontend/augeo-admin
+   cd frontend/fundrbolt-admin
    pnpm install
    pnpm dev
    ```

@@ -1,4 +1,4 @@
-"""Registration Guest Service - Business logic for managing event guests."""
+"""Guest management service for donor-facing operations."""
 
 import logging
 import uuid
@@ -7,6 +7,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.event import Event
 from app.models.event_registration import EventRegistration
 from app.models.registration_guest import RegistrationGuest
 from app.models.user import User
@@ -14,6 +15,7 @@ from app.schemas.registration_guest import (
     RegistrationGuestCreateRequest,
     RegistrationGuestUpdateRequest,
 )
+from app.services.bidder_number_service import BidderNumberService
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +70,32 @@ class GuestService:
         )
 
         db.add(guest)
+        await db.flush()  # Flush to get guest ID before bidder number assignment
+
+        # Get event from registration to check if seating is configured
+        event_result = await db.execute(
+            select(Event)
+            .join(EventRegistration)
+            .where(EventRegistration.id == guest_data.registration_id)
+        )
+        event = event_result.scalar_one()
+
+        # Automatically assign bidder number if seating is configured
+        if event.table_count is not None and event.max_guests_per_table is not None:
+            try:
+                bidder_number = await BidderNumberService.assign_bidder_number(
+                    db, event.id, guest.id
+                )
+                logger.info(
+                    f"Automatically assigned bidder number {bidder_number} to guest {guest.id} "
+                    f"for event {event.id}"
+                )
+            except ValueError as e:
+                # Log error but don't fail guest creation
+                logger.warning(
+                    f"Failed to auto-assign bidder number for guest {guest.id}: {str(e)}"
+                )
+
         await db.commit()
         await db.refresh(guest)
 

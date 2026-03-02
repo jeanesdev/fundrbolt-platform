@@ -17,6 +17,12 @@ export interface AuctionItemGalleryItem {
   starting_bid: number;
   current_bid: number | null;
   bid_count: number;
+  bidding_open?: boolean;
+  watcher_count?: number;
+  promotion_badge?: string | null;
+  promotion_notice?: string | null;
+  min_next_bid_amount?: number;
+  category?: string | null;
 }
 
 /**
@@ -41,9 +47,14 @@ export interface AuctionItemGalleryResponse {
 /**
  * Filter type for auction gallery
  */
-export type AuctionFilterType = 'all' | 'silent' | 'live';
+export type AuctionFilterType = 'all' | 'silent' | 'live' | 'my';
 
 /**
  * Sort options for auction gallery
  */
-export type AuctionSortType = 'newest' | 'highest_bid';
+export type AuctionSortType =
+  | 'highest_bid'
+  | 'lowest_bid'
+  | 'most_bids'
+  | 'item_number'
+  | 'title';

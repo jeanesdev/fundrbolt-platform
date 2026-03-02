@@ -200,10 +200,10 @@ class TestPermissionService:
         # npo_admin requires npo_id
         assert service.role_requires_npo_id("npo_admin") is True
         assert service.role_requires_npo_id("event_coordinator") is True
+        assert service.role_requires_npo_id("staff") is True
 
         # Other roles don't require npo_id
         assert service.role_requires_npo_id("super_admin") is False
-        assert service.role_requires_npo_id("staff") is False
         assert service.role_requires_npo_id("donor") is False
 
     @pytest.mark.asyncio
@@ -213,9 +213,9 @@ class TestPermissionService:
 
         service = PermissionService()
 
-        # donor and staff forbid npo_id
+        # donor forbids npo_id
         assert service.role_forbids_npo_id("donor") is True
-        assert service.role_forbids_npo_id("staff") is True
+        assert service.role_forbids_npo_id("staff") is False
 
         # Other roles don't forbid npo_id
         assert service.role_forbids_npo_id("super_admin") is False

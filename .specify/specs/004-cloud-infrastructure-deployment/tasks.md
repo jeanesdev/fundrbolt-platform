@@ -22,7 +22,7 @@
 - [x] T003 Create Bicep parameters directory at /infrastructure/bicep/parameters/
 - [x] T004 Create deployment scripts directory at /infrastructure/scripts/
 - [x] T005 Create operations documentation directory at /docs/operations/
-- [x] T006 [P] Create Azure-specific config directories at /backend/.azure/ and /frontend/augeo-admin/.azure/
+- [x] T006 [P] Create Azure-specific config directories at /backend/.azure/ and /frontend/fundrbolt-admin/.azure/
 - [x] T007 [P] Install Azure CLI and Bicep CLI locally (verify with `az --version` and `az bicep version`)
 - [x] T008 [P] Configure VS Code Azure extensions (Azure Account, Azure Resources, Bicep)
 
@@ -123,7 +123,7 @@
 
 - [x] T046 [P] [US2] Create App Service configuration template at /backend/.azure/app-settings.json
 - [x] T047 [P] [US2] Create container startup script at /backend/.azure/startup.sh
-- [x] T048 [P] [US2] Create Static Web App configuration at /frontend/augeo-admin/.azure/staticwebapp.config.json
+- [x] T048 [P] [US2] Create Static Web App configuration at /frontend/fundrbolt-admin/.azure/staticwebapp.config.json
 
 ### GitHub Configuration for User Story 2
 
@@ -161,33 +161,33 @@
 ### Domain Configuration for User Story 3
 
 - [x] T063 [US3] Update main.bicep to include DNS Zone and Communication Services modules
-- [x] T064 [US3] Update production parameters with custom domain configuration (augeo.app)
+- [x] T064 [US3] Update production parameters with custom domain configuration (fundrbolt.com)
 - [x] T065 [US3] Deploy DNS Zone to production and retrieve nameserver records
 - [x] T066 [US3] Update domain registrar nameservers to Azure DNS nameservers
-- [x] T067 [US3] Create DNS records for frontend and backend custom domains (admin.augeo.app, api.augeo.app)
-- [x] T068 [US3] Configure custom domain on App Service (api.augeo.app)
-- [x] T069 [US3] Configure custom domain on Static Web App (admin.augeo.app)
+- [x] T067 [US3] Create DNS records for frontend and backend custom domains (admin.fundrbolt.com, api.fundrbolt.com)
+- [x] T068 [US3] Configure custom domain on App Service (api.fundrbolt.com)
+- [x] T069 [US3] Configure custom domain on Static Web App (admin.fundrbolt.com)
 - [x] T070 [US3] Verify SSL/TLS certificates auto-provisioned within 15 minutes
 
 ### Email Configuration for User Story 3
 
 - [x] T071 [US3] Deploy Azure Communication Services to production environment
-- [x] T072 [US3] Add custom domain to Azure Communication Services (augeo.app)
+- [x] T072 [US3] Add custom domain to Azure Communication Services (fundrbolt.com)
 - [x] T073 [US3] Retrieve domain verification TXT record from ACS
 - [x] T074 [US3] Create DNS TXT record for domain ownership verification
 - [x] T075 [US3] Verify domain ownership in Azure Communication Services
 - [x] T076 [US3] Create SPF DNS record (v=spf1 include:spf.azurecomm.net ~all)
 - [x] T077 [US3] Retrieve DKIM signing keys from ACS and create CNAME records
-- [x] T078 [US3] Create DMARC DNS record (v=DMARC1; p=quarantine; rua=mailto:dmarc@augeo.app)
+- [x] T078 [US3] Create DMARC DNS record (v=DMARC1; p=quarantine; rua=mailto:dmarc@fundrbolt.com)
 - [x] T079 [US3] Test email delivery with mail-tester.com and verify 100% authentication score
-- [x] T080 [US3] Configure sender addresses (noreply at augeo.app, support at augeo.app, billing at augeo.app)
+- [x] T080 [US3] Configure sender addresses (noreply at fundrbolt.com, support at fundrbolt.com, billing at fundrbolt.com)
 - [x] T081 [US3] Update backend App Service config with ACS connection string
 - [x] T082 [US3] Test email sending from application and verify 30-second delivery
 - [x] T083 [US3] Document DNS configuration in /docs/operations/dns-configuration.md
 - [x] T084 [US3] Document email setup in /docs/operations/email-configuration.md
 
 **Checkpoint**: Custom domain configured with SSL, branded email sending operational with 95%+ deliverability ✅
-**Note**: Domain purchased (augeo.app), DNS zone deployed, nameservers configured. Email configuration code complete but not deployed (minimal deployment only).
+**Note**: Domain purchased (fundrbolt.com), DNS zone deployed, nameservers configured. Email configuration code complete but not deployed (minimal deployment only).
 
 ---
 

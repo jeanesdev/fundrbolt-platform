@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     )
 
     # Project
-    project_name: str = "Augeo Platform API"
+    project_name: str = "Fundrbolt Platform API"
 
     # Environment
     environment: Literal["development", "staging", "production", "test"] = "development"
@@ -39,12 +39,15 @@ class Settings(BaseSettings):
     # Azure Communication Services (Email) - Optional for local dev
     azure_communication_connection_string: str | None = None
     email_from_address: EmailStr
-    email_from_name: str = "Augeo Platform"
+    email_from_name: str = "Fundrbolt Platform"
 
     # Azure Blob Storage (for NPO logo uploads) - Optional for local dev
     azure_storage_connection_string: str | None = None
     azure_storage_container_name: str = "npo-assets"
     azure_storage_account_name: str | None = None
+
+    # Azure CDN (for branding assets in emails)
+    azure_cdn_logo_base_url: str = "https://fundrboltdevstor.blob.core.windows.net/branding/logos"
 
     # Frontend URLs (for email links)
     frontend_admin_url: str = "http://localhost:5173"
@@ -61,11 +64,24 @@ class Settings(BaseSettings):
     rate_limit_login_window_minutes: int = 15
 
     # CORS
-    cors_origins: str = "http://localhost:5173,http://localhost:5174"
+    cors_origins: str = (
+        "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174"
+    )
 
     def get_cors_origins_list(self) -> list[str]:
         """Parse CORS origins from comma-separated string."""
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        parsed_origins = [
+            origin.strip() for origin in self.cors_origins.split(",") if origin.strip()
+        ]
+
+        origin_set = set(parsed_origins)
+        for origin in parsed_origins:
+            if "localhost" in origin:
+                origin_set.add(origin.replace("localhost", "127.0.0.1"))
+            if "127.0.0.1" in origin:
+                origin_set.add(origin.replace("127.0.0.1", "localhost"))
+
+        return sorted(origin_set)
 
     @field_validator("jwt_secret_key")
     @classmethod

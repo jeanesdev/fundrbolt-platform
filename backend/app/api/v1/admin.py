@@ -3,17 +3,26 @@
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from fastapi import APIRouter, Body, Depends, HTTPException, status
+from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from app.api.v1 import admin_donations
 from app.core.database import get_db
 from app.middleware.auth import get_current_user
+from app.models.event import Event
+from app.models.event_registration import EventRegistration
+from app.models.registration_guest import RegistrationGuest
 from app.models.user import User
+from app.schemas.event_registration import EventRegistrationCancelRequest
 from app.schemas.npo import NPOResponse
 from app.services.admin_guest_service import AdminGuestService
 from app.services.application_service import ApplicationService
 from app.services.email_service import get_email_service
+from app.services.event_registration_service import EventRegistrationService
+from app.services.permission_service import PermissionService
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -23,6 +32,29 @@ class ApplicationReviewRequest(BaseModel):
 
     decision: str  # "approve" or "reject"
     notes: str | None = None
+
+
+class AdminRegistrationDetailsUpdateRequest(BaseModel):
+    """Request schema for event-admin registration detail updates."""
+
+    first_name: str | None = Field(default=None, max_length=100)
+    last_name: str | None = Field(default=None, max_length=100)
+    email: EmailStr | None = None
+    phone: str | None = Field(default=None, max_length=20)
+
+
+class AdminGuestDetailsUpdateRequest(BaseModel):
+    """Request schema for event-admin guest detail updates."""
+
+    name: str | None = Field(default=None, max_length=255)
+    email: EmailStr | None = None
+    phone: str | None = Field(default=None, max_length=20)
+
+
+class AdminGuestReplaceUserRequest(BaseModel):
+    """Request schema for replacing a guest ticket with an existing user."""
+
+    email: EmailStr
 
 
 def require_superadmin(current_user: Annotated[User, Depends(get_current_user)]) -> User:
@@ -46,6 +78,30 @@ def require_superadmin(current_user: Annotated[User, Depends(get_current_user)])
             detail="SuperAdmin privileges required for this operation",
         )
     return current_user
+
+
+async def _require_event_admin(db: AsyncSession, current_user: User, event: Event) -> None:
+    allowed_roles = {
+        "super_admin",
+        "npo_admin",
+        "npo_staff",
+        "event_coordinator",
+        "staff",
+    }
+    user_role = getattr(current_user, "role_name", None)
+    if user_role not in allowed_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to manage this event.",
+        )
+
+    if user_role != "super_admin":
+        permission_service = PermissionService()
+        if not await permission_service.can_view_event(current_user, event.npo_id, db=db):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to manage this event.",
+            )
 
 
 @router.get(
@@ -245,7 +301,7 @@ async def get_event_attendees(
     include_meal_selections: bool = False,
     format: str = "json",
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_superadmin),
+    current_user: User = Depends(get_current_user),
 ) -> Any:
     """
     Get all attendees for an event.
@@ -267,6 +323,13 @@ async def get_event_attendees(
     """
     from fastapi.responses import Response
 
+    event_result = await db.execute(select(Event).where(Event.id == event_id))
+    event = event_result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    await _require_event_admin(db, current_user, event)
+
     result = await AdminGuestService.get_event_attendees(
         db=db,
         event_id=event_id,
@@ -285,6 +348,234 @@ async def get_event_attendees(
     return {"attendees": result, "total": len(result)}
 
 
+@router.patch(
+    "/events/{event_id}/registrations/{registration_id}/details",
+    status_code=status.HTTP_200_OK,
+    summary="Update registrant contact details",
+)
+async def update_registration_details_admin(
+    event_id: UUID,
+    registration_id: UUID,
+    details: AdminRegistrationDetailsUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Update registrant contact details from the admin check-in page."""
+    registration_result = await db.execute(
+        select(EventRegistration)
+        .options(
+            selectinload(EventRegistration.user),
+            selectinload(EventRegistration.guests),
+            selectinload(EventRegistration.event),
+        )
+        .where(
+            EventRegistration.id == registration_id,
+            EventRegistration.event_id == event_id,
+        )
+    )
+    registration = registration_result.scalar_one_or_none()
+    if not registration:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Registration not found for event",
+        )
+
+    await _require_event_admin(db, current_user, registration.event)
+
+    user = registration.user
+    if details.first_name is not None:
+        user.first_name = details.first_name.strip() or user.first_name
+    if details.last_name is not None:
+        user.last_name = details.last_name.strip() or user.last_name
+    if details.email is not None:
+        user.email = details.email.lower()
+    if details.phone is not None:
+        user.phone = details.phone.strip() or None
+
+    primary_guest = next((guest for guest in registration.guests if guest.is_primary), None)
+    if primary_guest:
+        primary_guest.name = f"{user.first_name} {user.last_name}".strip()
+        primary_guest.email = user.email
+        primary_guest.phone = user.phone
+
+    await db.commit()
+    await db.refresh(user)
+
+    return {
+        "registration_id": str(registration.id),
+        "user_id": str(user.id),
+        "name": f"{user.first_name} {user.last_name}".strip(),
+        "email": user.email,
+        "phone": user.phone,
+    }
+
+
+@router.patch(
+    "/events/{event_id}/guests/{guest_id}/details",
+    status_code=status.HTTP_200_OK,
+    summary="Update guest details",
+)
+async def update_guest_details_admin(
+    event_id: UUID,
+    guest_id: UUID,
+    details: AdminGuestDetailsUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Update guest contact details from the admin check-in page."""
+    guest_result = await db.execute(
+        select(RegistrationGuest)
+        .join(EventRegistration, RegistrationGuest.registration_id == EventRegistration.id)
+        .options(selectinload(RegistrationGuest.registration).selectinload(EventRegistration.event))
+        .where(
+            RegistrationGuest.id == guest_id,
+            EventRegistration.event_id == event_id,
+        )
+    )
+    guest = guest_result.scalar_one_or_none()
+    if not guest:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Guest not found for event",
+        )
+
+    await _require_event_admin(db, current_user, guest.registration.event)
+
+    if details.name is not None:
+        guest.name = details.name.strip() or None
+    if details.email is not None:
+        guest.email = details.email.lower()
+    if details.phone is not None:
+        guest.phone = details.phone.strip() or None
+
+    await db.commit()
+    await db.refresh(guest)
+
+    return {
+        "guest_id": str(guest.id),
+        "user_id": str(guest.user_id) if guest.user_id else None,
+        "name": guest.name,
+        "email": guest.email,
+        "phone": guest.phone,
+    }
+
+
+@router.post(
+    "/events/{event_id}/guests/{guest_id}/replace-user",
+    status_code=status.HTTP_200_OK,
+    summary="Replace guest ticket with existing user",
+)
+async def replace_guest_user_admin(
+    event_id: UUID,
+    guest_id: UUID,
+    payload: AdminGuestReplaceUserRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Replace a guest ticket by linking it to an existing user account."""
+    guest_result = await db.execute(
+        select(RegistrationGuest)
+        .join(EventRegistration, RegistrationGuest.registration_id == EventRegistration.id)
+        .options(selectinload(RegistrationGuest.registration).selectinload(EventRegistration.event))
+        .where(
+            RegistrationGuest.id == guest_id,
+            EventRegistration.event_id == event_id,
+        )
+    )
+    guest = guest_result.scalar_one_or_none()
+    if not guest:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Guest not found for event",
+        )
+
+    await _require_event_admin(db, current_user, guest.registration.event)
+
+    user_result = await db.execute(select(User).where(User.email == payload.email.lower()))
+    user = user_result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No user account found for that email",
+        )
+
+    existing_registration_result = await db.execute(
+        select(EventRegistration).where(
+            EventRegistration.event_id == event_id,
+            EventRegistration.user_id == user.id,
+        )
+    )
+    existing_registration = existing_registration_result.scalar_one_or_none()
+    if existing_registration and existing_registration.id != guest.registration_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User is already registered for this event",
+        )
+
+    existing_guest_result = await db.execute(
+        select(RegistrationGuest)
+        .join(EventRegistration, RegistrationGuest.registration_id == EventRegistration.id)
+        .where(
+            EventRegistration.event_id == event_id,
+            RegistrationGuest.user_id == user.id,
+            RegistrationGuest.id != guest.id,
+        )
+    )
+    existing_guest = existing_guest_result.scalar_one_or_none()
+    if existing_guest:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User is already linked to another guest ticket for this event",
+        )
+
+    guest.user_id = user.id
+    guest.name = f"{user.first_name} {user.last_name}".strip()
+    guest.email = user.email
+    guest.phone = user.phone
+
+    await db.commit()
+    await db.refresh(guest)
+
+    return {
+        "guest_id": str(guest.id),
+        "user_id": str(user.id),
+        "name": guest.name,
+        "email": guest.email,
+        "phone": guest.phone,
+        "message": "Guest ticket successfully replaced with user",
+    }
+
+
+@router.delete(
+    "/registrations/{registration_id}/cancel",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Cancel event registration",
+    description="Cancel a registration with reason/note (event admin)",
+)
+async def cancel_registration_admin(
+    registration_id: UUID,
+    cancel_data: EventRegistrationCancelRequest = Body(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    registration = await EventRegistrationService.get_registration_by_id(db, registration_id)
+    if not registration:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Registration with ID {registration_id} not found",
+        )
+
+    await _require_event_admin(db, current_user, registration.event)
+
+    await EventRegistrationService.cancel_registration_admin(
+        db,
+        registration_id,
+        current_user,
+        cancellation_reason=cancel_data.cancellation_reason,
+        cancellation_note=cancel_data.cancellation_note,
+    )
+
+
 @router.get(
     "/events/{event_id}/meal-summary",
     summary="Get event meal summary",
@@ -293,7 +584,7 @@ async def get_event_attendees(
 async def get_meal_summary(
     event_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_superadmin),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """
     Get meal selection summary for an event.
@@ -310,6 +601,13 @@ async def get_meal_summary(
     Returns:
         Meal summary with counts per option
     """
+    event_result = await db.execute(select(Event).where(Event.id == event_id))
+    event = event_result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    await _require_event_admin(db, current_user, event)
+
     return await AdminGuestService.get_meal_summary(db=db, event_id=event_id)
 
 
@@ -323,7 +621,7 @@ async def invite_guest_to_event(
     event_id: UUID,
     guest_data: dict[str, Any],
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_superadmin),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """
     Invite a new guest to an event by creating a registration and sending invitation.
@@ -344,6 +642,13 @@ async def invite_guest_to_event(
     Raises:
         HTTPException: If event not found or email fails
     """
+    event_result = await db.execute(select(Event).where(Event.id == event_id))
+    event = event_result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    await _require_event_admin(db, current_user, event)
+
     email_service = get_email_service()
     guest, email_sent = await AdminGuestService.invite_guest_to_event(
         db=db,
@@ -369,13 +674,14 @@ async def invite_guest_to_event(
 @router.delete(
     "/guests/{guest_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Delete a guest",
-    description="Delete a guest and their meal selections",
+    summary="Cancel a guest",
+    description="Cancel a guest and remove their meal selections",
 )
 async def delete_guest(
     guest_id: UUID,
+    cancel_data: EventRegistrationCancelRequest | None = Body(default=None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_superadmin),
+    current_user: User = Depends(get_current_user),
 ) -> None:
     """
     Delete a guest from an event.
@@ -392,7 +698,24 @@ async def delete_guest(
     Raises:
         HTTPException: If guest not found
     """
-    await AdminGuestService.delete_guest(db=db, guest_id=guest_id)
+    event_result = await db.execute(
+        select(Event)
+        .join(EventRegistration, EventRegistration.event_id == Event.id)
+        .join(RegistrationGuest, RegistrationGuest.registration_id == EventRegistration.id)
+        .where(RegistrationGuest.id == guest_id)
+    )
+    event = event_result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Guest not found")
+
+    await _require_event_admin(db, current_user, event)
+
+    await AdminGuestService.delete_guest(
+        db=db,
+        guest_id=guest_id,
+        cancellation_reason=cancel_data.cancellation_reason if cancel_data else None,
+        cancellation_note=cancel_data.cancellation_note if cancel_data else None,
+    )
 
 
 @router.post(
@@ -404,7 +727,7 @@ async def delete_guest(
 async def send_guest_invitation(
     guest_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_superadmin),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, str]:
     """
     Send invitation email to a guest.
@@ -424,6 +747,18 @@ async def send_guest_invitation(
     Raises:
         HTTPException: If guest not found or email fails
     """
+    event_result = await db.execute(
+        select(Event)
+        .join(EventRegistration, EventRegistration.event_id == Event.id)
+        .join(RegistrationGuest, RegistrationGuest.registration_id == EventRegistration.id)
+        .where(RegistrationGuest.id == guest_id)
+    )
+    event = event_result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Guest not found")
+
+    await _require_event_admin(db, current_user, event)
+
     email_service = get_email_service()
     success = await AdminGuestService.send_guest_invitation(
         db=db, guest_id=guest_id, email_service=email_service
@@ -436,3 +771,6 @@ async def send_guest_invitation(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to send invitation",
         )
+
+
+router.include_router(admin_donations.router)

@@ -3,17 +3,23 @@
 import logging
 import uuid
 from datetime import datetime, timedelta
+from typing import Any
 
 import pytz
 from fastapi import HTTPException, status
 from slugify import slugify
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.metrics import EVENTS_CLOSED_TOTAL, EVENTS_CREATED_TOTAL, EVENTS_PUBLISHED_TOTAL
-from app.models.event import Event, EventStatus
+from app.models.auction_bid import AuctionBid
+from app.models.auction_item import AuctionItem
+from app.models.event import Event, EventLink, EventMedia, EventStatus, FoodOption
+from app.models.event_registration import EventRegistration
 from app.models.npo import NPO, NPOStatus
+from app.models.registration_guest import RegistrationGuest
+from app.models.sponsor import Sponsor
 from app.models.user import User
 from app.schemas.event import EventCreateRequest, EventUpdateRequest
 
@@ -321,8 +327,9 @@ class EventService:
         status_filter: EventStatus | None = None,
         page: int = 1,
         per_page: int = 20,
+        search_query: str | None = None,
     ) -> tuple[list[Event], int]:
-        """List events with filtering and pagination."""
+        """List events with filtering, pagination, and optional search."""
         from sqlalchemy.orm import selectinload
 
         query = select(Event).options(selectinload(Event.npo))
@@ -331,6 +338,16 @@ class EventService:
             query = query.where(Event.npo_id == npo_id)
         if status_filter:
             query = query.where(Event.status == status_filter)
+        if search_query:
+            trimmed = search_query.strip()
+            if trimmed:
+                like_pattern = f"%{trimmed}%"
+                query = query.where(
+                    or_(
+                        Event.name.ilike(like_pattern),
+                        Event.slug.ilike(like_pattern),
+                    )
+                )
 
         # Count total
         count_query = select(func.count()).select_from(query.subquery())
@@ -345,6 +362,144 @@ class EventService:
         events = list(result.scalars().all())
 
         return events, total
+
+    @staticmethod
+    async def get_event_stats(
+        db: AsyncSession,
+        event_id: uuid.UUID,
+    ) -> dict[str, Any] | None:
+        """Aggregate badge counts for an event."""
+
+        media_count = (
+            select(func.count(EventMedia.id))
+            .where(EventMedia.event_id == Event.id)
+            .correlate(Event)
+            .scalar_subquery()
+        )
+        link_count = (
+            select(func.count(EventLink.id))
+            .where(EventLink.event_id == Event.id)
+            .correlate(Event)
+            .scalar_subquery()
+        )
+        food_option_count = (
+            select(func.count(FoodOption.id))
+            .where(FoodOption.event_id == Event.id)
+            .correlate(Event)
+            .scalar_subquery()
+        )
+        sponsor_count = (
+            select(func.count(Sponsor.id))
+            .where(Sponsor.event_id == Event.id)
+            .correlate(Event)
+            .scalar_subquery()
+        )
+        auction_item_count = (
+            select(func.count(AuctionItem.id))
+            .where(AuctionItem.event_id == Event.id)
+            .correlate(Event)
+            .scalar_subquery()
+        )
+        auction_bid_count = (
+            select(func.count(AuctionBid.id))
+            .where(AuctionBid.event_id == Event.id)
+            .correlate(Event)
+            .scalar_subquery()
+        )
+        registration_count = (
+            select(func.count(RegistrationGuest.id))
+            .join(
+                EventRegistration,
+                RegistrationGuest.registration_id == EventRegistration.id,
+            )
+            .where(
+                EventRegistration.event_id == Event.id,
+                RegistrationGuest.is_primary.is_(True),
+            )
+            .correlate(Event)
+            .scalar_subquery()
+        )
+        active_registration_count = (
+            select(func.count(RegistrationGuest.id))
+            .join(
+                EventRegistration,
+                RegistrationGuest.registration_id == EventRegistration.id,
+            )
+            .where(
+                EventRegistration.event_id == Event.id,
+                RegistrationGuest.is_primary.is_(True),
+                RegistrationGuest.status != "cancelled",
+            )
+            .correlate(Event)
+            .scalar_subquery()
+        )
+        guest_count = (
+            select(func.count(RegistrationGuest.id))
+            .join(
+                EventRegistration,
+                RegistrationGuest.registration_id == EventRegistration.id,
+            )
+            .where(
+                EventRegistration.event_id == Event.id,
+                RegistrationGuest.is_primary.is_(False),
+            )
+            .correlate(Event)
+            .scalar_subquery()
+        )
+        active_guest_count = (
+            select(func.count(RegistrationGuest.id))
+            .join(
+                EventRegistration,
+                RegistrationGuest.registration_id == EventRegistration.id,
+            )
+            .where(
+                EventRegistration.event_id == Event.id,
+                RegistrationGuest.is_primary.is_(False),
+                RegistrationGuest.status != "cancelled",
+            )
+            .correlate(Event)
+            .scalar_subquery()
+        )
+
+        query = (
+            select(
+                Event.id,
+                Event.npo_id,
+                media_count.label("media_count"),
+                link_count.label("links_count"),
+                food_option_count.label("food_options_count"),
+                sponsor_count.label("sponsors_count"),
+                auction_item_count.label("auction_items_count"),
+                auction_bid_count.label("auction_bids_count"),
+                registration_count.label("registrations_count"),
+                active_registration_count.label("active_registrations_count"),
+                guest_count.label("guest_count"),
+                active_guest_count.label("active_guest_count"),
+            )
+            .where(Event.id == event_id)
+            .limit(1)
+        )
+
+        result = await db.execute(query)
+        row = result.first()
+        if not row:
+            return None
+
+        mapping = row._mapping
+        return {
+            "event_id": mapping["id"],
+            "npo_id": mapping["npo_id"],
+            "media_count": mapping["media_count"],
+            "links_count": mapping["links_count"],
+            "food_options_count": mapping["food_options_count"],
+            "sponsors_count": mapping["sponsors_count"],
+            "auction_items_count": mapping["auction_items_count"],
+            "auction_bids_count": mapping["auction_bids_count"],
+            "registrations_count": mapping["registrations_count"],
+            "active_registrations_count": mapping["active_registrations_count"],
+            "guest_count": mapping["guest_count"],
+            "active_guest_count": mapping["active_guest_count"],
+        }
 
     @staticmethod
     async def _generate_unique_slug(

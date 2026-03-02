@@ -2,7 +2,7 @@
 
 ## Overview
 
-Implements comprehensive legal documentation and GDPR compliance system for Augeo Platform, including Terms of Service, Privacy Policy, Cookie Consent, consent tracking, and data rights management.
+Implements comprehensive legal documentation and GDPR compliance system for Fundrbolt Platform, including Terms of Service, Privacy Policy, Cookie Consent, consent tracking, and data rights management.
 
 ## Summary
 

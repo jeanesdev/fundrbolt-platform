@@ -6,7 +6,7 @@
 
 ## Overview
 
-This guide provides step-by-step instructions for implementing the NPO creation and management feature in the Augeo fundraising platform. The feature enables users to create non-profit organizations with comprehensive branding, staff management, and approval workflows.
+This guide provides step-by-step instructions for implementing the NPO creation and management feature in the Fundrbolt fundraising platform. The feature enables users to create non-profit organizations with comprehensive branding, staff management, and approval workflows.
 
 ## Prerequisites
 
@@ -238,7 +238,7 @@ AZURE_STORAGE_CONTAINER_NAME=npo-assets
 
 # Email Service
 SENDGRID_API_KEY=your_api_key
-FROM_EMAIL=noreply@augeo.app
+FROM_EMAIL=noreply@fundrbolt.com
 
 # Application Settings
 NPO_LOGO_MAX_SIZE=5242880  # 5MB
@@ -422,6 +422,6 @@ After successful implementation:
 
 ## Support Contacts
 
-- **Technical Issues**: dev-team@augeo.app
-- **Business Requirements**: product@augeo.app
-- **Security Concerns**: security@augeo.app
+- **Technical Issues**: dev-team@fundrbolt.com
+- **Business Requirements**: product@fundrbolt.com
+- **Security Concerns**: security@fundrbolt.com

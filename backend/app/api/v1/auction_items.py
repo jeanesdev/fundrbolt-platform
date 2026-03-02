@@ -1,16 +1,19 @@
 """API routes for auction item management."""
 
 import logging
+from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.middleware.auth import get_current_active_user, get_current_user_optional
-from app.models.auction_item import AuctionType, ItemStatus
+from app.models.auction_bid import AuctionBid, BidStatus
+from app.models.auction_item import AuctionItemMedia, AuctionType, ItemStatus
 from app.models.user import User
 from app.schemas.auction_item import (
     AuctionItemCreate,
@@ -20,11 +23,16 @@ from app.schemas.auction_item import (
     AuctionItemUpdate,
     PaginationInfo,
 )
+from app.schemas.auction_item_media import MediaResponse
+from app.schemas.item_view import ItemViewCreate, ItemViewResponse
+from app.services.auction_item_media_service import AuctionItemMediaService
 from app.services.auction_item_service import AuctionItemService
+from app.services.item_view_service import ItemViewService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/events/{event_id}/auction-items", tags=["Auction Items"])
+donor_router = APIRouter(prefix="/auction/items", tags=["Auction Items"])
 
 
 @router.post(
@@ -185,18 +193,43 @@ async def list_auction_items(
     # Calculate pagination
     total_pages = (total + limit - 1) // limit if total > 0 else 0
 
-    # Enrich items with primary image URLs
-    from sqlalchemy import select
-
-    from app.models.auction_item import AuctionItemMedia
-    from app.services.auction_item_media_service import AuctionItemMediaService
+    # Enrich items with primary image URLs and bid aggregates
 
     settings = get_settings()
     media_service = AuctionItemMediaService(settings, db)
 
+    item_ids = [item.id for item in items]
+    bid_aggregates: dict[UUID, tuple[Decimal | None, int]] = {}
+    if item_ids:
+        bid_aggregate_stmt = (
+            select(
+                AuctionBid.auction_item_id,
+                func.max(AuctionBid.bid_amount),
+                func.count(AuctionBid.id),
+            )
+            .where(
+                AuctionBid.auction_item_id.in_(item_ids),
+                AuctionBid.bid_status.notin_(
+                    [BidStatus.CANCELLED.value, BidStatus.WITHDRAWN.value]
+                ),
+            )
+            .group_by(AuctionBid.auction_item_id)
+        )
+        bid_aggregate_result = await db.execute(bid_aggregate_stmt)
+        for auction_item_id, max_bid, bid_count in bid_aggregate_result.all():
+            bid_aggregates[auction_item_id] = (max_bid, int(bid_count or 0))
+
     enriched_items = []
     for item in items:
         item_dict = AuctionItemResponse.model_validate(item).model_dump()
+
+        current_bid_amount, bid_count = bid_aggregates.get(item.id, (None, 0))
+        item_dict["current_bid_amount"] = current_bid_amount
+        item_dict["bid_count"] = bid_count
+        if current_bid_amount is not None:
+            item_dict["min_next_bid_amount"] = current_bid_amount + item.bid_increment
+        else:
+            item_dict["min_next_bid_amount"] = item.starting_bid + item.bid_increment
 
         # Fetch primary image (first image by display_order)
         media_stmt = (
@@ -214,16 +247,17 @@ async def list_auction_items(
         if primary_media and primary_media.file_path:
             # Generate SAS URL for full-resolution image (not thumbnail)
             if primary_media.file_path.startswith("https://"):
-                blob_path = "/".join(
-                    primary_media.file_path.split(f"{settings.azure_storage_container_name}/")[1]
-                    .split("?")[0]
-                    .split("/")
-                )
                 try:
-                    item_dict["primary_image_url"] = media_service._generate_blob_sas_url(
-                        blob_path, expiry_hours=24
-                    )
-                except ValueError:
+                    container_path = f"{settings.azure_storage_container_name}/"
+                    if container_path in primary_media.file_path:
+                        blob_path = primary_media.file_path.split(container_path, 1)[1]
+                        blob_path = blob_path.split("?", 1)[0]
+                        item_dict["primary_image_url"] = media_service._generate_blob_sas_url(
+                            blob_path, expiry_hours=24
+                        )
+                    else:
+                        item_dict["primary_image_url"] = primary_media.file_path
+                except (ValueError, IndexError):
                     item_dict["primary_image_url"] = primary_media.file_path
             else:
                 item_dict["primary_image_url"] = primary_media.file_path
@@ -291,11 +325,6 @@ async def get_auction_item(
     # Future: Add NPO-specific permissions here if needed
 
     # Fetch media with SAS URLs
-    from sqlalchemy import select
-
-    from app.models.auction_item import AuctionItemMedia
-    from app.schemas.auction_item_media import MediaResponse
-    from app.services.auction_item_media_service import AuctionItemMediaService
 
     settings = get_settings()
     media_service = AuctionItemMediaService(settings, db)
@@ -309,43 +338,57 @@ async def get_auction_item(
     media_result = await db.execute(media_stmt)
     media_items = media_result.scalars().all()
 
+    bid_aggregate_stmt = select(
+        func.max(AuctionBid.bid_amount),
+        func.count(AuctionBid.id),
+    ).where(
+        AuctionBid.auction_item_id == item_id,
+        AuctionBid.bid_status.notin_([BidStatus.CANCELLED.value, BidStatus.WITHDRAWN.value]),
+    )
+    bid_aggregate_result = await db.execute(bid_aggregate_stmt)
+    current_bid_amount, bid_count = bid_aggregate_result.one()
+
     # Convert media URLs to SAS URLs
     media_responses = []
     for media in media_items:
         media_dict = MediaResponse.model_validate(media).model_dump()
+        container_path = f"{settings.azure_storage_container_name}/"
 
         # Generate SAS URLs for file_path and thumbnail_path if using Azure Blob Storage
         if media.file_path and media.file_path.startswith("https://"):
-            blob_path = "/".join(
-                media.file_path.split(f"{settings.azure_storage_container_name}/")[1]
-                .split("?")[0]
-                .split("/")
-            )
-            try:
-                media_dict["file_path"] = media_service._generate_blob_sas_url(
-                    blob_path, expiry_hours=24
-                )
-            except ValueError:
-                pass
+            if container_path in media.file_path:
+                try:
+                    blob_path = media.file_path.split(container_path, 1)[1]
+                    blob_path = blob_path.split("?", 1)[0]
+                    media_dict["file_path"] = media_service._generate_blob_sas_url(
+                        blob_path, expiry_hours=24
+                    )
+                except (ValueError, IndexError):
+                    pass
 
         if media.thumbnail_path and media.thumbnail_path.startswith("https://"):
-            thumb_blob_path = "/".join(
-                media.thumbnail_path.split(f"{settings.azure_storage_container_name}/")[1]
-                .split("?")[0]
-                .split("/")
-            )
-            try:
-                media_dict["thumbnail_path"] = media_service._generate_blob_sas_url(
-                    thumb_blob_path, expiry_hours=24
-                )
-            except ValueError:
-                pass
+            if container_path in media.thumbnail_path:
+                try:
+                    thumb_blob_path = media.thumbnail_path.split(container_path, 1)[1]
+                    thumb_blob_path = thumb_blob_path.split("?", 1)[0]
+                    media_dict["thumbnail_path"] = media_service._generate_blob_sas_url(
+                        thumb_blob_path, expiry_hours=24
+                    )
+                except (ValueError, IndexError):
+                    pass
 
         media_responses.append(media_dict)
 
     # Build response dictionary with all fields
     response_dict = {
         **AuctionItemResponse.model_validate(item).model_dump(),
+        "current_bid_amount": current_bid_amount,
+        "bid_count": int(bid_count or 0),
+        "min_next_bid_amount": (
+            current_bid_amount + item.bid_increment
+            if current_bid_amount is not None
+            else item.starting_bid + item.bid_increment
+        ),
         "media": media_responses,
     }
 
@@ -457,6 +500,82 @@ async def delete_auction_item(
     try:
         await service.delete_auction_item(item_id=item_id)
         logger.info(f"User {current_user.id} deleted auction item {item_id}")
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+
+
+# Donor-facing endpoints (no event_id in path)
+@donor_router.post(
+    "/{item_id}/views",
+    response_model=ItemViewResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Record item view",
+    description="Record that a user viewed an auction item with duration tracking.",
+)
+async def record_item_view(
+    item_id: UUID,
+    view_data: ItemViewCreate,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ItemViewResponse:
+    """Record an item view.
+
+    **Permissions**: Authenticated users
+
+    Records that a user viewed an auction item, including when they started
+    viewing and for how long. This data is used for engagement analytics.
+
+    Args:
+        item_id: UUID of auction item
+        view_data: View data (view_started_at, view_duration_seconds)
+        current_user: Authenticated user
+        db: Database session
+
+    Returns:
+        Created item view record
+
+    Raises:
+        HTTPException 401: Not authenticated
+        HTTPException 404: Item not found
+        HTTPException 422: Validation error (negative duration, etc.)
+    """
+    # Verify item exists and get event_id
+    service = AuctionItemService(db)
+    item = await service.get_auction_item_by_id(item_id)
+
+    if not item:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Auction item {item_id} not found",
+        )
+
+    # Validate that item_id in path matches body
+    if view_data.item_id != item_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Item ID in path must match item ID in request body",
+        )
+
+    view_service = ItemViewService(db)
+
+    try:
+        view = await view_service.record_view(
+            item_id=item_id,
+            event_id=item.event_id,
+            user_id=current_user.id,
+            view_started_at=view_data.view_started_at,
+            view_duration_seconds=view_data.view_duration_seconds,
+        )
+
+        logger.info(
+            f"User {current_user.id} viewed item {item_id} for "
+            f"{view_data.view_duration_seconds} seconds"
+        )
+        return ItemViewResponse.model_validate(view)
 
     except ValueError as e:
         raise HTTPException(

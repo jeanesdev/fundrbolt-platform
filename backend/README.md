@@ -1,6 +1,6 @@
-# Augeo Platform - Backend API
+# Fundrbolt Platform - Backend API
 
-FastAPI-based backend API for the Augeo nonprofit auction platform, featuring authentication, role-based access control, and multi-tenant data isolation.
+FastAPI-based backend API for the Fundrbolt nonprofit auction platform, featuring authentication, role-based access control, and multi-tenant data isolation.
 
 ## 🚀 Quick Start
 
@@ -105,6 +105,34 @@ mypy app --strict --ignore-missing-imports
 pre-commit run --all-files
 ```
 
+## 🧰 Dev Utilities
+
+### Azure OpenAI Image Generator (CLI)
+
+Generate demo images for auction items from a JSON file (dev-only utility).
+
+**Required environment variables**:
+- `AZURE_OPENAI_ENDPOINT`
+- `AZURE_OPENAI_API_KEY`
+- `AZURE_OPENAI_DEPLOYMENT`
+- `AZURE_OPENAI_API_VERSION`
+
+**Example usage**:
+```bash
+poetry run python backend/scripts/image_generator_cli.py \
+   --input ignore/example_auction_items.json \
+   --output ignore/generated-images \
+   --max-images 3 \
+   --prompt-prefix "Realistic Professional Marketing Studio simple elegant photo of" \
+   --prompt-suffix "high detail"
+```
+
+**Notes**:
+- Output folder must exist.
+- Existing files are skipped and logged as skipped.
+- The run stops on the first generation failure.
+- Use `--dry-run` to validate inputs without generating images.
+
 ### Database Migrations
 
 ```bash
@@ -206,14 +234,63 @@ Interactive API documentation is automatically generated:
 - Logos stored in Azure Blob Storage with automatic cleanup on delete
 - Logo sizes: xlarge, large, medium, small, xsmall (controls display size/prominence)
 
+**Seating Assignment** (Admin):
+
+- `PATCH /api/v1/admin/events/{event_id}/seating/config` - Configure event seating (table count, max guests per table)
+- `GET /api/v1/admin/events/{event_id}/seating/bidder-numbers/available` - Get available bidder numbers (100-999 range)
+- `PATCH /api/v1/admin/events/{event_id}/registrations/{registration_id}/bidder-number` - Assign bidder number to registration
+- `PATCH /api/v1/admin/events/{event_id}/registrations/{registration_id}/table` - Assign table number to registration
+- `DELETE /api/v1/admin/events/{event_id}/registrations/{registration_id}/table` - Remove table assignment
+- `GET /api/v1/admin/events/{event_id}/seating/guests` - List all guests with seating info (paginated)
+- `GET /api/v1/admin/events/{event_id}/seating/tables` - Get table occupancy data
+- `POST /api/v1/admin/events/{event_id}/seating/auto-assign` - Auto-assign bidder numbers to unassigned registrations
+
+**Seating Features**:
+
+- **Event Configuration**: Set table count and max guests per table
+- **Bidder Numbers**: Automatic assignment (100-999 range), manual override, duplicate prevention
+- **Table Assignment**: Manual assignment with capacity validation, drag-and-drop UI support
+- **Auto-Assignment**: Party-aware algorithm keeps groups together, respects table capacity
+- **Guest Tracking**: Distinguishes between primary registrants and accompanying guests
+- **Check-in Integration**: Bidder numbers visible to donors only after check-in
+- **Donor View**: Donors can see their seating info, tablemates, and bidder number (after check-in)
+
+**Seating Assignment** (Donor):
+
+- `GET /api/v1/donor/events/{event_id}/my-seating` - Get donor's seating information, tablemates, and bidder number (gated by check-in)
+
+**Donations** (Admin):
+
+- `POST /api/v1/events/{event_id}/donations` - Create donation for donor with amount, paddle raise flag, and optional labels
+- `GET /api/v1/events/{event_id}/donations` - List donations with filters (`donor_user_id`, `status`, `is_paddle_raise`, `label_ids[]`, date range)
+- `GET /api/v1/events/{event_id}/donations/{donation_id}` - Get donation details
+- `PATCH /api/v1/events/{event_id}/donations/{donation_id}` - Update donation amount, attribution, notes, and labels
+- `POST /api/v1/events/{event_id}/donations/{donation_id}/void` - Void donation with reason (immutable audit behavior)
+
+**Donation Labels** (Admin):
+
+- `POST /api/v1/events/{event_id}/donation-labels` - Create reusable donation attribution label
+- `GET /api/v1/events/{event_id}/donation-labels` - List active labels for event
+- `PATCH /api/v1/events/{event_id}/donation-labels/{label_id}` - Update label name
+- `DELETE /api/v1/events/{event_id}/donation-labels/{label_id}` - Retire label from future use (historical assignments preserved)
+
+**Donation KPI & Performance Validation**:
+
+- Run performance verification tests (SC-002, SC-003):
+   - `poetry run pytest app/tests/integration/test_donation_performance.py -v`
+- Run KPI verification tests (SC-001, SC-004, SC-005):
+   - `poetry run pytest app/tests/integration/test_donation_kpis.py -v`
+- Run all donation integration tests:
+   - `poetry run pytest app/tests/integration/test_donation_*.py -v`
+
 **Metrics** (Prometheus):
 
 - `GET /metrics` - Prometheus-formatted metrics
-  - `augeo_http_requests_total` - HTTP requests by method/path/status
-  - `augeo_db_failures_total` - Database connection failures
-  - `augeo_redis_failures_total` - Redis connection failures
-  - `augeo_email_failures_total` - Email send failures
-  - `augeo_up` - Application up/down status (1=up, 0=down)
+  - `fundrbolt_http_requests_total` - HTTP requests by method/path/status
+  - `fundrbolt_db_failures_total` - Database connection failures
+  - `fundrbolt_redis_failures_total` - Redis connection failures
+  - `fundrbolt_email_failures_total` - Email send failures
+  - `fundrbolt_up` - Application up/down status (1=up, 0=down)
 
 ## 🛠️ Tech Stack
 

@@ -397,7 +397,7 @@ f6a01f90-8940-4aa7-9274-8742a1cc868e
 ss -tuln | grep 5173
 
 # If not, start it
-cd frontend/augeo-admin
+cd frontend/fundrbolt-admin
 pnpm dev
 ```
 

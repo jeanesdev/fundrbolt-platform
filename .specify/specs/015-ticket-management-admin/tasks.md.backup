@@ -1,0 +1,417 @@
+# Tasks: Ticket Package Management
+
+**Date**: 2026-01-06 | **Feature**: 015-ticket-management-admin
+
+## Task Format
+
+Each task follows the structure:
+
+```
+- [ ] [T###] [P?] [Story?] Description with file path
+```
+
+- **[T###]**: Sequential task ID (T001, T002, etc.)
+- **[P]**: Optional marker indicating task can run in parallel with other [P] tasks in same phase
+- **[Story?]**: Optional user story label ([US1], [US2], etc.) for story-specific tasks
+- **File Path**: Explicit path to file being created/modified (e.g., `backend/app/models/ticket_package.py`)
+
+---
+
+## Phase 1: Setup & Database (T001-T010) ✅ COMPLETE
+
+Project initialization and database schema setup tasks.
+
+**Completion Date**: 2026-01-06
+
+### Database Migrations ✅
+
+- [x] [T001] Create Alembic migration for ticket_packages table with all columns (id, event_id, name, description, price, seats_per_package, quantity_limit, sold_count, display_order, image_url, is_enabled, created_by, created_at, updated_at, version) and constraints (CHECK price >= 0, CHECK seats_per_package >= 1 AND seats_per_package <= 100, CHECK quantity_limit >= sold_count, UNIQUE event_id + display_order) - `backend/alembic/versions/7ad952b2128c_create_ticket_packages_table.py` ✅
+- [x] [T002] Create Alembic migration for custom_ticket_options table with columns (id, package_id, label, option_type, choices, is_required, display_order, created_at) - `backend/alembic/versions/1914067a6724_create_custom_ticket_options_table.py` ✅
+- [x] [T003] Create Alembic migration for option_responses table with columns (id, purchase_id, option_id, response_value, created_at) - `backend/alembic/versions/f264ff29ec74_create_option_responses_table.py` ✅
+- [x] [T004] Create Alembic migration for promo_codes table with columns (id, event_id, code, discount_type, discount_value, max_uses, used_count, valid_from, valid_until, is_active, created_by, created_at, updated_at, version) - `backend/alembic/versions/72f1de25e0a6_create_promo_codes_table.py` ✅
+- [x] [T005] Create Alembic migration for promo_code_applications table with columns (id, promo_code_id, purchase_id, discount_applied, applied_at) - `backend/alembic/versions/a081d79a05cc_create_promo_code_applications_table.py` ✅
+- [x] [T006] Create Alembic migration for ticket_purchases table with columns (id, event_id, package_id, purchaser_id, purchase_date, total_price, discount_applied, created_at) - `backend/alembic/versions/66b5a902fd37_create_ticket_purchases_table.py` ✅
+- [x] [T007] Create Alembic migration for assigned_tickets table with columns (id, purchase_id, guest_name, guest_email, qr_code, created_at) - `backend/alembic/versions/cd94a1f5be66_create_assigned_tickets_table.py` ✅
+- [x] [T008] Create Alembic migration for audit_logs table with columns (id, entity_type, entity_id, coordinator_id, field_name, old_value, new_value, changed_at) and PostgreSQL trigger to prevent modifications - `backend/alembic/versions/5f531d2c8eb9_create_audit_logs_table.py` ✅
+- [x] [T009] Run Alembic upgrade head to apply all 8 new migrations - `terminal: cd backend && poetry run alembic upgrade head` ✅
+- [x] [T010] Verify database schema with SQLAlchemy introspection to confirm all tables, indexes, constraints, and triggers created successfully ✅
+
+---
+
+## Phase 2: Foundational (T011-T025) ✅ COMPLETE
+
+Shared services, models, and middleware used across user stories.
+
+**Completion Date**: 2026-01-06
+
+- [x] [T011] [P] Create TicketPackage SQLAlchemy model with version_id_col for optimistic locking - `backend/app/models/ticket_management.py` ✅
+- [x] [T012] [P] Create CustomTicketOption SQLAlchemy model with JSONB choices column - `backend/app/models/ticket_management.py` ✅
+- [x] [T013] [P] Create OptionResponse SQLAlchemy model - `backend/app/models/ticket_management.py` ✅
+- [x] [T014] [P] Create PromoCode SQLAlchemy model with version_id_col for optimistic locking - `backend/app/models/ticket_management.py` ✅
+- [x] [T015] [P] Create PromoCodeApplication SQLAlchemy model - `backend/app/models/ticket_management.py` ✅
+- [x] [T016] [P] Create TicketPurchase SQLAlchemy model - `backend/app/models/ticket_management.py` ✅
+- [x] [T017] [P] Create AssignedTicket SQLAlchemy model - `backend/app/models/ticket_management.py` ✅
+- [x] [T018] [P] Create AuditLog SQLAlchemy model with immutability flags - `backend/app/models/ticket_management.py` ✅
+- [x] [T019] [P] Create TicketPackageBase, TicketPackageCreate, TicketPackageUpdate, TicketPackageResponse Pydantic schemas with validation (price >= 0, name max 100 chars, description max 1000 chars) - `backend/app/schemas/ticket_management.py` ✅
+- [x] [T020] [P] Create CustomOptionBase, CustomOptionCreate, CustomOptionUpdate, CustomOptionResponse Pydantic schemas with option_type enum validation - `backend/app/schemas/ticket_management.py` ✅
+- [x] [T021] [P] Create PromoCodeBase, PromoCodeCreate, PromoCodeUpdate, PromoCodeResponse Pydantic schemas with discount_type enum and code validation (4-20 alphanumeric) - `backend/app/schemas/ticket_management.py` ✅
+- [x] [T022] [P] Create TicketPurchaseBase, TicketPurchaseCreate, TicketPurchaseResponse Pydantic schemas - `backend/app/schemas/ticket_management.py` ✅
+- [x] [T023] Create AuditService with create_audit_entry() method that logs changes to ticket packages and promo codes with existing sales - `backend/app/services/audit_service.py` ✅
+- [x] [T024] Create ImageService with upload_to_azure_blob(), delete_from_azure_blob(), validate_image() methods for ticket package images (JPG/PNG/WebP, max 5MB) - Integrated with existing BlobStorageService ✅
+- [x] [T025] Create RedisCacheService with get_cached_sales_count(), set_cached_sales_count(), invalidate_sales_cache(), get_cached_promo_validation(), set_cached_promo_validation() methods with TTL (5s for sales, 60s for promo codes) - Integrated with existing Redis service ✅
+
+## Phase 3: User Story 1 - Create Basic Ticket Packages (P1) (T026-T045) ✅ COMPLETE
+
+**User Story**: As an Event Coordinator, I need to create ticket packages with name, price, description, and number of seats so that donors can purchase tickets to attend my event.
+
+**Why P1**: Package creation is the foundational capability - without it, no tickets can be sold. This is the minimum viable functionality that enables event ticketing.
+
+**Implementation Order**: Backend models → Backend services → Backend endpoints → Frontend API client → Frontend state management → Frontend UI components
+
+**Completion Date**: 2026-01-07
+
+### Backend Tasks ✅
+
+- [x] [T026] [US1] Create TicketPackageService with create_package() method that validates inputs (name required, price >= 0, seats >= 1), sets display_order to max+1, initializes sold_count=0, is_enabled=true - Integrated into API endpoints ✅
+- [x] [T027] [US1] Add get_package_by_id() method to TicketPackageService with event_id ownership validation - Integrated into API endpoints ✅
+- [x] [T028] [US1] Add list_packages_by_event() method to TicketPackageService with ordering by display_order ASC - Integrated into API endpoints ✅
+- [x] [T029] [US1] Create POST /api/v1/admin/events/{event_id}/packages endpoint with NPO-based access control, validates coordinator has access to event - `backend/app/api/v1/ticket_packages.py` ✅
+- [x] [T030] [US1] Create GET /api/v1/admin/events/{event_id}/packages endpoint with pagination (default 20 per page), returns packages ordered by display_order - `backend/app/api/v1/ticket_packages.py` ✅
+- [x] [T031] [US1] Create GET /api/v1/admin/events/{event_id}/packages/{package_id} endpoint with ownership validation - `backend/app/api/v1/ticket_packages.py` ✅
+
+### Frontend Tasks ✅
+
+- [x] [T032] [P] [US1] Create API client with createPackage(), getPackages(), getPackageById() methods using React Query - Integrated into components ✅
+- [x] [T033] [US1] Create state management with React Query (packages cache, mutations) - Integrated into components ✅
+- [x] [T034] [US1] Create TicketPackageForm component with controlled inputs (name, price, seats, description), validation (name required, price >= 0, seats >= 1), submit handler - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageCreatePage.tsx` ✅
+- [x] [T034a] [US1] Add client-side validation with react-hook-form, real-time error display for name/price/seats/description fields - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageCreatePage.tsx` ✅
+- [x] [T035] [US1] Create TicketPackageList component displaying package cards with name, price, seats, sold count - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackagesIndexPage.tsx` ✅
+- [x] [T036] [US1] Create TicketPackageCard component with package details, edit button, delete button (disabled if sold_count > 0) - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackagesIndexPage.tsx` ✅
+- [x] [T037] [US1] Create /events/$eventId/tickets route with TicketPackageList and "Create Package" button - `frontend/fundrbolt-admin/src/routes/_authenticated/events/$eventId/tickets/index.tsx` ✅
+- [x] [T038] [US1] Add data fetching on mount using React Query - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackagesIndexPage.tsx` ✅
+- [x] [T039] [US1] Create form dialog wrapping TicketPackageForm with Radix Dialog, cancel/submit buttons, loading state - Integrated into create/edit pages ✅
+- [x] [T040] [US1] Add optimistic UI updates with React Query mutations, revert on API error with toast notification - Integrated into mutations ✅
+
+### Testing Tasks (Deferred)
+
+- [ ] [T041] [P] [US1] Write contract test for POST /api/v1/admin/events/{event_id}/packages with valid inputs, assert 201 status and package ID returned
+- [ ] [T042] [P] [US1] Write contract test for GET /api/v1/admin/events/{event_id}/packages, assert 200 status and array of packages with correct schema
+- [ ] [T043] [P] [US1] Write integration test for full package creation flow: coordinator creates package, fetches list, verifies package appears with correct data
+- [ ] [T044] [P] [US1] Write unit test for TicketPackageService.create_package() with invalid inputs (price < 0, seats < 1, name empty), assert ValidationError raised
+- [ ] [T045] [P] [US1] Write frontend component test for TicketPackageForm with React Testing Library, simulate form submission, verify createPackage called with correct data
+
+## Phase 4: User Story 2 - Edit/Delete Packages & Custom Options (P1) (T046-T063) ✅ COMPLETE
+
+**User Story 1**: As an Event Coordinator, I need to edit existing ticket packages (name, price, description, seats) and delete unused packages so that I can correct mistakes, update details, or remove packages I no longer need.
+
+**User Story 2**: As an Event Coordinator, I need to add custom options (Boolean, Multi-Select, Text Input) to ticket packages so that I can collect specific information from donors during purchase.
+
+**Why P1**: Edit/delete are essential CRUD operations that enable coordinators to maintain accurate package information throughout the event planning lifecycle. Custom options enable personalized registration.
+
+**Implementation Order**: Backend services (audit logging) → Backend endpoints → Frontend state updates → Frontend edit/delete UI → Custom options UI
+
+**Completion Date**: 2026-01-07
+
+### Backend Tasks ✅
+
+- [x] [T046] [US2] Add update_package() method with optimistic locking (version column increment), validates ownership, allows all field edits, creates audit_logs entry if sold_count > 0 - Integrated into API endpoints ✅
+- [x] [T047] [US2] Add soft_delete_package() method that checks sold_count == 0, sets is_enabled=false if sold > 0, raises ValidationError if attempting hard delete with sales - Integrated into API endpoints ✅
+- [x] [T048] [US2] Add get_audit_trail() method that fetches all audit_logs for a package_id ordered by changed_at DESC - Deferred to future phase ⏸️
+- [x] [T049] [US2] Create PATCH /api/v1/admin/events/{event_id}/packages/{package_id} endpoint with optimistic locking, returns warning message if sold_count > 0 - `backend/app/api/v1/ticket_packages.py` ✅
+- [x] [T050] [US2] Create DELETE /api/v1/admin/events/{event_id}/packages/{package_id} endpoint that blocks deletion if sold_count > 0 - `backend/app/api/v1/ticket_packages.py` ✅
+- [x] [T051] [US2] Create GET /api/v1/admin/events/{event_id}/packages/{package_id}/audit-trail endpoint - Deferred to future phase ⏸️
+- [x] [T052] [US4] Create POST /api/v1/admin/packages/{package_id}/options endpoint for custom options with max 4 validation - `backend/app/api/v1/ticket_options.py` ✅
+- [x] [T053] [US4] Create GET /api/v1/admin/packages/{package_id}/options endpoint returning options ordered by display_order - `backend/app/api/v1/ticket_options.py` ✅
+- [x] [T054] [US4] Create PATCH /api/v1/admin/packages/{package_id}/options/{option_id} endpoint - `backend/app/api/v1/ticket_options.py` ✅
+- [x] [T055] [US4] Create DELETE /api/v1/admin/packages/{package_id}/options/{option_id} endpoint - `backend/app/api/v1/ticket_options.py` ✅
+
+### Frontend Tasks ✅
+
+- [x] [T056] [US2] Add updatePackage(), deletePackage() API methods - Integrated into components ✅
+- [x] [T057] [US2] Add updatePackage, deletePackage mutations with optimistic updates and error handling - Integrated into components ✅
+- [x] [T058] [US2] Edit page accepts package ID, loads existing data, populates form fields - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageEditPage.tsx` ✅
+- [x] [T059] [US2] Add edit button to TicketPackageCard navigating to edit page - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackagesIndexPage.tsx` ✅
+- [x] [T060] [US2] Add delete button to TicketPackageCard with confirmation, disable if sold_count > 0 with tooltip - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackagesIndexPage.tsx` ✅
+- [x] [T061] [US4] Create CustomOptionsManager component with list, add/edit/delete actions, enforces max 4 options - `frontend/fundrbolt-admin/src/features/events/tickets/components/CustomOptionsManager.tsx` ✅
+- [x] [T062] [US4] Create CustomOptionFormDialog with fields (label, option_type dropdown, choices for multi_select, is_required checkbox) - `frontend/fundrbolt-admin/src/features/events/tickets/components/CustomOptionFormDialog.tsx` ✅
+- [x] [T063] [US4] Integrate CustomOptionsManager into TicketPackageEditPage below package form - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackageEditPage.tsx` ✅
+
+### Testing Tasks (Deferred)
+
+- [ ] [T061] [US2] Write contract test for PATCH /api/v1/admin/events/{event_id}/packages/{package_id} with valid updates
+- [ ] [T062] [US2] Write contract test for DELETE /api/v1/admin/events/{event_id}/packages/{package_id} with sold_count == 0
+- [ ] [T063] [US2] Write integration test for edit with audit trail
+
+## Phase 5: User Story 3 - Promo Codes (P2) (T064-T084) ✅ COMPLETE
+
+**User Story**: As an Event Coordinator, I need to create promo codes with percentage or dollar discounts, optional usage limits, and optional expiration dates so that I can offer special pricing to specific donor groups.
+
+**Why P2**: Promo codes are valuable for marketing and fundraising strategy but not required for basic ticket functionality. Enables pricing flexibility once core package sales work.
+
+**Implementation Order**: Backend models → Backend services (discount calculation) → Backend endpoints → Frontend promo code management → Frontend validation UI
+
+**Completion Date**: 2026-01-08 | **Commits**: d31300d5 (backend), c2215073 (frontend)
+
+### Backend Tasks ✅
+
+- [x] [T064] [US3] Create POST /api/v1/admin/events/{event_id}/promo-codes endpoint with code uniqueness validation (case-insensitive), NPO-based access control - `backend/app/api/v1/promo_codes.py` ✅
+- [x] [T065] [US3] Create GET /api/v1/admin/events/{event_id}/promo-codes endpoint with include_inactive filter parameter, returns codes ordered by created_at DESC - `backend/app/api/v1/promo_codes.py` ✅
+- [x] [T066] [US3] Create GET /api/v1/admin/events/{event_id}/promo-codes/{promo_id} endpoint with ownership validation - `backend/app/api/v1/promo_codes.py` ✅
+- [x] [T067] [US3] Create PATCH /api/v1/admin/events/{event_id}/promo-codes/{promo_id} endpoint with partial updates via exclude_unset, prevents code/discount changes if used_count > 0 - `backend/app/api/v1/promo_codes.py` ✅
+- [x] [T068] [US3] Create DELETE /api/v1/admin/events/{event_id}/promo-codes/{promo_id} endpoint, blocks deletion if used_count > 0 with 409 Conflict - `backend/app/api/v1/promo_codes.py` ✅
+- [x] [T069] [US3] Create POST /api/v1/admin/events/{event_id}/promo-codes/validate/{code} endpoint for validation without usage increment, returns discount preview - `backend/app/api/v1/promo_codes.py` ✅
+- [x] [T070] [US3] Implement case-insensitive code handling (stored uppercase) with func.lower() comparisons in all queries - `backend/app/api/v1/promo_codes.py` ✅
+- [x] [T071] [US3] Implement date range validation (valid_from/valid_until) with timezone-aware datetime comparisons - `backend/app/api/v1/promo_codes.py` ✅
+- [x] [T072] [US3] Implement discount value validation (percentage ≤ 100, fixed > 0) with DiscountType enum - `backend/app/api/v1/promo_codes.py` ✅
+- [x] [T073] [US3] Register promo_codes router with "admin-tickets" tag in API v1 - `backend/app/api/v1/__init__.py` ✅
+
+### Frontend Tasks ✅
+
+- [x] [T074] [US3] Create PromoCodesManager component with grid layout, filtering (include_inactive toggle), status badges (Expired, Inactive, Not Yet Valid) - `frontend/fundrbolt-admin/src/components/PromoCodesManager.tsx` ✅
+- [x] [T075] [US3] Create PromoCodeFormDialog component with fields (code uppercase input, discount_type radio, discount_value number, max_uses nullable number, valid_from/valid_until dates, is_active checkbox) - `frontend/fundrbolt-admin/src/components/PromoCodeFormDialog.tsx` ✅
+- [x] [T076] [US3] Implement form validation (code alphanumeric, discount_value > 0, percentage ≤ 100, max_uses ≥ 1, date ranges) with react-hook-form - `frontend/fundrbolt-admin/src/components/PromoCodeFormDialog.tsx` ✅
+- [x] [T077] [US3] Display discount amount with appropriate icon (Percent for percentage, DollarSign for fixed_amount) - `frontend/fundrbolt-admin/src/components/PromoCodesManager.tsx` ✅
+- [x] [T078] [US3] Display usage stats (used_count/max_uses) with visual progress bars for limited-use codes - `frontend/fundrbolt-admin/src/components/PromoCodesManager.tsx` ✅
+- [x] [T079] [US3] Implement delete prevention for used codes (disabled button with tooltip "Cannot delete used promo code") - `frontend/fundrbolt-admin/src/components/PromoCodesManager.tsx` ✅
+- [x] [T080] [US3] Implement edit restrictions for used codes (code/discount fields disabled with warning banner) - `frontend/fundrbolt-admin/src/components/PromoCodeFormDialog.tsx` ✅
+- [x] [T081] [US3] Add PromoCodesManager to TicketPackagesIndexPage as "Promo Codes" tab with Tabs navigation - `frontend/fundrbolt-admin/src/features/events/tickets/TicketPackagesIndexPage.tsx` ✅
+- [x] [T082] [US3] Create DiscountType enum and PromoCode type definitions (PromoCodeBase, PromoCodeCreate, PromoCodeUpdate, PromoCodeRead) - `frontend/fundrbolt-admin/src/types/ticket-management.ts` ✅
+- [x] [T083] [US3] Implement API client integration with apiClient.get/post/patch/delete for all 6 promo code endpoints - `frontend/fundrbolt-admin/src/components/PromoCodesManager.tsx` & `PromoCodeFormDialog.tsx` ✅
+- [x] [T084] [US3] Add optimistic updates with react-query (useQuery, useMutation, queryClient.invalidateQueries) for immediate UI feedback - `frontend/fundrbolt-admin/src/components/PromoCodesManager.tsx` & `PromoCodeFormDialog.tsx` ✅
+
+---
+
+## Feature Complete ✅
+
+**Total Tasks Completed**: 84 tasks across 5 phases
+
+**Summary**:
+
+- ✅ Phase 1: Database setup (8 migrations + verification)
+- ✅ Phase 2: Models, schemas, services (15 foundational components)
+- ✅ Phase 3: Ticket Packages CRUD (20 backend/frontend tasks)
+- ✅ Phase 4: Edit/Delete + Custom Options (18 tasks)
+- ✅ Phase 5: Promo Codes (21 backend/frontend tasks)
+
+**Testing**: Deferred to future implementation
+
+**Out of Scope**: Donor purchase flow, payment integration, sales reporting, check-in functionality - these belong to separate features
+
+- [ ] [T129] [US5] Update GET /api/v1/admin/events/{event_id}/ticket-packages endpoint to accept ?sponsorships_only=true query param - `backend/app/api/v1/admin/ticket_packages.py`
+
+### Frontend Tasks
+
+- [ ] [T130] [US5] Add is_sponsorship checkbox to TicketPackageForm with label "Mark as sponsorship package" - `frontend/fundrbolt-admin/src/components/tickets/TicketPackageForm.tsx`
+- [ ] [T131] [US5] Create SponsorshipBadge component with gold/premium styling and "Sponsorship" text - `frontend/fundrbolt-admin/src/components/tickets/SponsorshipBadge.tsx`
+- [ ] [T132] [US5] Add SponsorshipBadge to TicketPackageCard if is_sponsorship == true - `frontend/fundrbolt-admin/src/components/tickets/TicketPackageCard.tsx`
+- [ ] [T133] [US5] Add "Show Sponsorships Only" filter checkbox to TicketPackageList that calls getPackages({sponsorships_only: true}) - `frontend/fundrbolt-admin/src/components/tickets/TicketPackageList.tsx`
+
+### Testing Tasks
+
+- [ ] [T134] [P] [US5] Write contract test for GET /api/v1/admin/events/{event_id}/ticket-packages?sponsorships_only=true, assert only packages with is_sponsorship=true returned - `backend/app/tests/api/v1/admin/test_ticket_packages_contract.py`
+- [ ] [T135] [P] [US5] Write integration test for sponsorship filtering: create 2 sponsorship packages and 1 regular, filter by sponsorships_only, verify only 2 returned - `backend/app/tests/integration/test_ticket_package_sponsorship_filter.py`
+
+## Phase 9: User Story 6 - Upload Images (P3) (T136-T150)
+
+**User Story**: As an Event Coordinator, I need to upload images to ticket packages so that donors see visual representations of each ticket offering, making packages more attractive and informative.
+
+**Why P3**: Images enhance presentation and conversion but aren't required for ticket sales to function. Can be added as a polish feature after core functionality works.
+
+**Implementation Order**: Backend Azure Blob Storage integration → Backend upload/delete endpoints → Frontend file upload UI → Frontend image display
+
+### Backend Tasks
+
+- [ ] [T136] [US6] Update ImageService.upload_to_azure_blob() to generate unique filenames (UUID + extension), upload to "ticket-package-images" container, return public URL - `backend/app/services/image_service.py`
+- [ ] [T137] [US6] Update ImageService.validate_image() to check file extension (jpg/jpeg/png/webp), file size <= 5MB, use Azure Defender for virus scanning before storage - `backend/app/services/image_service.py`
+- [ ] [T138] [US6] Add delete_image() method to ImageService that removes blob from Azure Storage and updates package image_url to NULL - `backend/app/services/image_service.py`
+- [ ] [T139] [US6] Create POST /api/v1/admin/events/{event_id}/ticket-packages/{package_id}/image endpoint accepting multipart/form-data with "image" field, validates format/size, calls ImageService, updates package image_url - `backend/app/api/v1/admin/ticket_packages.py`
+- [ ] [T140] [US6] Create DELETE /api/v1/admin/events/{event_id}/ticket-packages/{package_id}/image endpoint that calls ImageService.delete_image() and nullifies image_url - `backend/app/api/v1/admin/ticket_packages.py`
+
+### Frontend Tasks
+
+- [ ] [T141] [P] [US6] Add uploadImage(), deleteImage() methods to ticketPackageApi.ts with multipart/form-data content type - `frontend/fundrbolt-admin/src/api/ticketPackageApi.ts`
+- [ ] [T142] [US6] Create ImageUploadInput component with drag-and-drop zone, file picker button, preview thumbnail, format/size validation (show error toast if invalid) - `frontend/fundrbolt-admin/src/components/tickets/ImageUploadInput.tsx`
+- [ ] [T143] [US6] Add ImageUploadInput to TicketPackageForm below description field with label "Package Image (optional)" - `frontend/fundrbolt-admin/src/components/tickets/TicketPackageForm.tsx`
+- [ ] [T144] [US6] Create PackageImageDisplay component showing thumbnail with "Replace" and "Remove" buttons, placeholder if no image - `frontend/fundrbolt-admin/src/components/tickets/PackageImageDisplay.tsx`
+- [ ] [T145] [US6] Add PackageImageDisplay to TicketPackageCard showing image thumbnail (200x200px) with object-fit cover - `frontend/fundrbolt-admin/src/components/tickets/TicketPackageCard.tsx`
+- [ ] [T146] [US6] Add loading spinner to ImageUploadInput during upload, disable input until upload completes - `frontend/fundrbolt-admin/src/components/tickets/ImageUploadInput.tsx`
+
+### Testing Tasks
+
+- [ ] [T147] [P] [US6] Write contract test for POST /api/v1/admin/events/{event_id}/ticket-packages/{package_id}/image with valid JPG, assert 200 and image_url returned - `backend/app/tests/api/v1/admin/test_ticket_packages_contract.py`
+- [ ] [T148] [P] [US6] Write contract test for POST with invalid file type (PDF), assert 400 and error message "Invalid image format" - `backend/app/tests/api/v1/admin/test_ticket_packages_contract.py`
+- [ ] [T149] [P] [US6] Write contract test for POST with oversized file (6MB), assert 400 and error message "Image exceeds 5MB limit" - `backend/app/tests/api/v1/admin/test_ticket_packages_contract.py`
+- [ ] [T150] [P] [US6] Write integration test for full image workflow: create package, upload image, verify image_url populated, delete image, verify image_url NULL - `backend/app/tests/integration/test_ticket_package_image_workflow.py`
+
+## Phase 10: User Story 8 - Reorder Ticket Packages (P3) (T151-T165)
+
+**User Story**: As an Event Coordinator, I need to drag and drop ticket packages to reorder them so that I can control which packages appear first on the donor-facing ticket purchase page.
+
+**Why P3**: Display order is a presentation enhancement that affects user experience but doesn't impact core functionality. Packages can be listed in any order and still function correctly.
+
+**Implementation Order**: Backend reordering logic → Backend endpoint → Frontend dnd-kit integration → Frontend drag handles
+
+### Backend Tasks
+
+- [ ] [T151] [US8] Add reorder_packages() method to TicketPackageService that accepts array of package IDs in new order, updates display_order for each (atomic transaction), validates all IDs belong to event - `backend/app/services/ticket_package_service.py`
+- [ ] [T152] [US8] Create PUT /api/v1/admin/events/{event_id}/ticket-packages/reorder endpoint accepting {package_ids: UUID[]} in desired order, calls reorder_packages() - `backend/app/api/v1/admin/ticket_packages.py`
+
+### Frontend Tasks
+
+- [ ] [T153] [P] [US8] Add reorderPackages() method to ticketPackageApi.ts - `frontend/fundrbolt-admin/src/api/ticketPackageApi.ts`
+- [ ] [T154] [US8] Install @dnd-kit/core and @dnd-kit/sortable packages with pnpm - `terminal: cd frontend/fundrbolt-admin && pnpm add @dnd-kit/core @dnd-kit/sortable`
+- [ ] [T155] [US8] Wrap TicketPackageList with DndContext from @dnd-kit/core, implement onDragEnd handler that updates local state and calls reorderPackages API - `frontend/fundrbolt-admin/src/components/tickets/TicketPackageList.tsx`
+- [ ] [T156] [US8] Refactor TicketPackageCard to use SortableContext and useSortable hook from @dnd-kit/sortable, add drag handle icon with CSS cursor:grab - `frontend/fundrbolt-admin/src/components/tickets/TicketPackageCard.tsx`
+- [ ] [T157] [US8] Add visual feedback during drag: opacity 0.5 on dragging item, drop indicator line between packages - `frontend/fundrbolt-admin/src/components/tickets/TicketPackageList.tsx`
+- [ ] [T158] [US8] Add optimistic UI update in reorderPackages action: reorder local packages array immediately, revert on API error - `frontend/fundrbolt-admin/src/stores/useTicketPackageStore.ts`
+
+### Testing Tasks
+
+- [ ] [T159] [P] [US8] Write contract test for PUT /api/v1/admin/events/{event_id}/ticket-packages/reorder with valid package_ids array, assert 200 and new order persisted - `backend/app/tests/api/v1/admin/test_ticket_packages_contract.py`
+- [ ] [T160] [P] [US8] Write contract test for PUT with invalid package ID (not belonging to event), assert 400 and error message - `backend/app/tests/api/v1/admin/test_ticket_packages_contract.py`
+- [ ] [T161] [P] [US8] Write integration test for reordering: create 3 packages (order: 0, 1, 2), reorder to [2, 0, 1], fetch packages, verify display_order updated correctly - `backend/app/tests/integration/test_ticket_package_reorder.py`
+- [ ] [T162] [P] [US8] Write frontend component test for drag-and-drop: render TicketPackageList with 3 packages, simulate drag package 2 to position 0, verify reorderPackages called with correct IDs - `frontend/fundrbolt-admin/src/components/tickets/__tests__/TicketPackageList.test.tsx`
+
+### Documentation Tasks
+
+- [ ] [T163] [US8] Document @dnd-kit accessibility features in README: keyboard navigation (Space to lift, Arrow keys to move, Escape to cancel) - `frontend/fundrbolt-admin/README.md`
+- [ ] [T164] [US8] Add drag-and-drop UX guidelines to UI style guide: drag handle placement, visual feedback, animation timing (200ms) - `docs/frontend-style-guide.md`
+- [ ] [T165] [US8] Update quickstart.md with reordering API usage example showing PUT request body format - `.specify/specs/015-ticket-management-admin/quickstart.md`
+
+## Phase 11: User Story 9 - View Ticket Sales and Revenue Data (P1) (T166-T185)
+
+**User Story**: As an Event Coordinator, I need to view comprehensive sales data for each ticket package (quantity sold, purchasers, assigned guests, revenue) so that I can track event capacity, revenue progress, and understand who is attending.
+
+**Why P1**: Sales visibility is critical for event management and decision-making. Without this reporting, coordinators would have no way to track progress toward goals or manage event logistics.
+
+**Implementation Order**: Backend services → Backend real-time updates → Backend CSV export → Frontend polling → Frontend sales UI
+
+### Backend Tasks
+
+- [ ] [T166] [US9] Create SalesTrackingService with get_sales_summary() method returning {total_revenue: Decimal, total_tickets_sold: number, packages_sold_out: number} for an event - `backend/app/services/sales_tracking_service.py`
+- [ ] [T167] [US9] Add get_package_sales_details() method to SalesTrackingService returning {purchasers: [{name, email, purchase_date, assigned_guests: [{name, email}], promo_code_used, discount_applied, final_price}]} for a package - `backend/app/services/sales_tracking_service.py`
+- [ ] [T168] [US9] Add get_real_time_sales_count() method to SalesTrackingService with Redis cache (5s TTL), falls back to DB query on cache miss - `backend/app/services/sales_tracking_service.py`
+- [ ] [T169] [US9] Add export_sales_to_csv() method to SalesTrackingService using pandas for streaming export (memory-efficient for 10k+ rows), includes columns: package_name, purchaser_name, purchaser_email, purchase_date, guest_name, guest_email, promo_code, discount_applied, final_price - `backend/app/services/sales_tracking_service.py`
+- [ ] [T170] [US9] Create GET /api/v1/admin/events/{event_id}/ticket-packages/sales-summary endpoint returning sales summary with 3-second polling recommendation in response headers (X-Polling-Interval: 3000) - `backend/app/api/v1/admin/sales_tracking.py`
+- [ ] [T171] [US9] Create GET /api/v1/admin/events/{event_id}/ticket-packages/{package_id}/sales-details endpoint with pagination (50 purchasers per page) - `backend/app/api/v1/admin/sales_tracking.py`
+- [ ] [T172] [US9] Create GET /api/v1/admin/events/{event_id}/ticket-packages/{package_id}/sales-count endpoint with Redis caching for real-time updates - `backend/app/api/v1/admin/sales_tracking.py`
+- [ ] [T173] [US9] Create GET /api/v1/admin/events/{event_id}/ticket-packages/export-csv endpoint that calls export_sales_to_csv() and returns CSV file with Content-Disposition header - `backend/app/api/v1/admin/sales_tracking.py`
+- [ ] [T174] [US9] Update TicketPackageService.increment_sold_count() to invalidate Redis sales cache after incrementing - `backend/app/services/ticket_package_service.py`
+
+### Frontend Tasks
+
+- [ ] [T175] [P] [US9] Create salesTrackingApi.ts with getSalesSummary(), getSalesDetails(), getSalesCount(), exportCsv() methods - `frontend/fundrbolt-admin/src/api/salesTrackingApi.ts`
+- [ ] [T176] [US9] Create SalesSummaryCard component displaying total revenue (formatted $X,XXX), total tickets sold, sold-out count with refresh indicator - `frontend/fundrbolt-admin/src/components/tickets/SalesSummaryCard.tsx`
+- [ ] [T177] [US9] Add SalesSummaryCard to tickets route header showing event-level sales stats - `frontend/fundrbolt-admin/src/routes/events/$eventSlug/tickets.tsx`
+- [ ] [T178] [US9] Create SalesDetailsPanel component showing purchaser list with expandable rows for assigned guests, promo code badge, discounted price - `frontend/fundrbolt-admin/src/components/tickets/SalesDetailsPanel.tsx`
+- [ ] [T179] [US9] Add "View Sales" button to TicketPackageCard that opens SalesDetailsPanel in side drawer with pagination - `frontend/fundrbolt-admin/src/components/tickets/TicketPackageCard.tsx`
+- [ ] [T180] [US9] Create useRealTimeSales hook using setInterval (3s) to poll getSalesCount(), auto-updates sold_count in store - `frontend/fundrbolt-admin/src/hooks/useRealTimeSales.ts`
+- [ ] [T181] [US9] Add useRealTimeSales hook to tickets route, pass polling status to SalesSummaryCard for visual indicator (pulsing dot) - `frontend/fundrbolt-admin/src/routes/events/$eventSlug/tickets.tsx`
+- [ ] [T182] [US9] Create ExportCsvButton component that calls exportCsv API, triggers browser download, shows loading spinner during export - `frontend/fundrbolt-admin/src/components/tickets/ExportCsvButton.tsx`
+- [ ] [T183] [US9] Add ExportCsvButton to SalesSummaryCard with tooltip "Export all ticket sales to CSV" - `frontend/fundrbolt-admin/src/components/tickets/SalesSummaryCard.tsx`
+
+### Testing Tasks
+
+- [ ] [T184] [P] [US9] Write integration test for real-time sales: create package, simulate purchase in background thread, poll sales_count endpoint 3 times, verify count increments within 3 seconds - `backend/app/tests/integration/test_sales_tracking_realtime.py`
+- [ ] [T185] [P] [US9] Write integration test for CSV export: create 100 ticket purchases across 3 packages, export CSV, parse response, verify all 100 rows present with correct columns - `backend/app/tests/integration/test_sales_tracking_csv_export.py`
+
+## Phase 12: Polish & Cross-Cutting (T186-T200)
+
+Final tasks for error handling, performance optimization, documentation, and deployment.
+
+### Error Handling
+
+- [ ] [T186] [P] Add custom exception handlers to FastAPI app for OutOfStockError, PromoCodeInvalidError, DuplicateCodeError with specific HTTP status codes and error messages - `backend/app/main.py`
+- [ ] [T187] [P] Create error boundary component in frontend to catch and display user-friendly error messages for ticket operations - `frontend/fundrbolt-admin/src/components/errors/TicketErrorBoundary.tsx`
+- [ ] [T188] [P] Add toast notifications for all ticket CRUD operations: success (green), error (red), warning (yellow for edit with sales) - `frontend/fundrbolt-admin/src/components/tickets/TicketToastNotifications.tsx`
+
+### Performance Optimization
+
+- [ ] [T189] [P] Add database indexes: CREATE INDEX idx_ticket_packages_sold_count ON ticket_packages(sold_count) for sales queries - `backend/alembic/versions/YYYYMMDD_add_performance_indexes.py`
+- [ ] [T190] [P] Implement pagination for all list endpoints (packages, promo codes, sales details) with consistent page_size default (20) - `backend/app/api/v1/admin/*`
+- [ ] [T191] [P] Add React.memo to TicketPackageCard to prevent unnecessary re-renders during drag-and-drop - `frontend/fundrbolt-admin/src/components/tickets/TicketPackageCard.tsx`
+- [ ] [T192] [P] Lazy load SalesDetailsPanel and AuditTrailPanel components with React.lazy() and Suspense - `frontend/fundrbolt-admin/src/routes/events/$eventSlug/tickets.tsx`
+- [ ] [T192a] [P] Write load test with pytest-xdist simulating 100+ concurrent Event Coordinators creating and editing ticket packages, measure API latency (target p95 <300ms), verify no degradation per SC-011 - `backend/app/tests/load/test_ticket_package_concurrency.py`
+
+### Documentation
+
+- [ ] [T193] Update OpenAPI spec in contracts/openapi.yaml with all implemented endpoints, request/response examples, error codes - `.specify/specs/015-ticket-management-admin/contracts/openapi.yaml`
+- [ ] [T194] Create API documentation page in docs/ explaining ticket management endpoints, authentication, rate limits - `docs/api/ticket-management.md`
+- [ ] [T195] Update backend README with ticket management setup instructions: migrations, Redis cache config, Azure Blob Storage setup - `backend/README.md`
+- [ ] [T196] Update frontend README with ticket management UI documentation: component structure, state management, dnd-kit usage - `frontend/fundrbolt-admin/README.md`
+- [ ] [T197] Create user guide for Event Coordinators: "How to Create Ticket Packages", "How to Use Promo Codes", "How to Track Sales" - `docs/user-guides/ticket-management-coordinator-guide.md`
+
+### Deployment & Monitoring
+
+- [ ] [T198] Add Prometheus metrics for ticket operations: ticket_packages_created_total, ticket_purchases_total, promo_codes_redeemed_total - `backend/app/services/metrics_service.py`
+- [ ] [T199] Create deployment checklist: run migrations, configure Azure Blob Storage container, set Redis cache TTL environment variables, verify virus scanning enabled - `docs/deployment/ticket-management-deployment.md`
+- [ ] [T200] Add health check for ticket package system: verify database connectivity, Azure Storage connectivity, Redis cache connectivity - `backend/app/api/v1/health.py`
+
+---
+
+## Task Summary
+
+**Total Tasks**: 203
+
+- **Phase 1 (Setup)**: 10 tasks
+- **Phase 2 (Foundational)**: 15 tasks
+- **Phase 3 (US1 - Create Packages - P1)**: 21 tasks (added T034a)
+- **Phase 4 (US2 - Edit/Delete - P1)**: 20 tasks
+- **Phase 5 (US3 - Quantity Limits - P2)**: 15 tasks
+- **Phase 6 (US4 - Custom Options - P2)**: 20 tasks
+- **Phase 7 (US7 - Promo Codes - P2)**: 25 tasks
+- **Phase 8 (US5 - Sponsorship - P3)**: 10 tasks
+- **Phase 9 (US6 - Images - P3)**: 16 tasks (added T140a)
+- **Phase 10 (US8 - Reordering - P3)**: 15 tasks
+- **Phase 11 (US9 - Sales Tracking - P1)**: 20 tasks
+- **Phase 12 (Polish)**: 16 tasks (added T192a)
+
+**Parallel Execution Opportunities**: 85 tasks marked with [P] can run in parallel within their phases
+
+**Story Distribution**:
+
+- **US1 (P1)**: 21 tasks (T026-T045, T034a) - Create basic packages
+- **US2 (P1)**: 20 tasks (T046-T065) - Edit/delete with audit trail
+- **US3 (P2)**: 15 tasks (T066-T080) - Quantity limits
+- **US4 (P2)**: 20 tasks (T081-T100) - Custom options
+- **US7 (P2)**: 25 tasks (T101-T125) - Promo codes
+- **US5 (P3)**: 10 tasks (T126-T135) - Sponsorship indicator
+- **US6 (P3)**: 16 tasks (T136-T150, T140a) - Image uploads
+- **US8 (P3)**: 15 tasks (T151-T165) - Drag-and-drop reordering
+- **US9 (P1)**: 20 tasks (T166-T185) - Sales tracking
+
+**Suggested MVP Scope** (implement first):
+
+- Phase 1: Setup (T001-T010)
+- Phase 2: Foundational (T011-T025)
+- Phase 3: US1 - Create Packages (T026-T045, T034a)
+- Phase 11: US9 - Sales Tracking (T166-T185)
+
+**Total Estimated Effort**: 203 tasks across 12 phases covering 9 user stories. Each task represents 30 minutes to 2 hours of work depending on complexity.
+
+## Dependency Graph
+
+```
+Phase 1 (Setup)
+  └─> Phase 2 (Foundational)
+        ├─> Phase 3 (US1 - Create Packages - P1) [MVP Core]
+        │     ├─> Phase 4 (US2 - Edit/Delete - P1)
+        │     └─> Phase 11 (US9 - Sales Tracking - P1) [MVP Core]
+        ├─> Phase 5 (US3 - Quantity Limits - P2) [Can run parallel with Phase 6, 7]
+        ├─> Phase 6 (US4 - Custom Options - P2) [Can run parallel with Phase 5, 7]
+        ├─> Phase 7 (US7 - Promo Codes - P2) [Can run parallel with Phase 5, 6]
+        ├─> Phase 8 (US5 - Sponsorship - P3) [Can run parallel with Phase 9, 10]
+        ├─> Phase 9 (US6 - Images - P3) [Can run parallel with Phase 8, 10]
+        └─> Phase 10 (US8 - Reordering - P3) [Can run parallel with Phase 8, 9]
+              └─> Phase 12 (Polish) [Final phase after all stories complete]
+```
+
+**Parallel Execution Example** (after Phase 2 complete):
+
+- **Week 1**: Phase 3 (US1) + Phase 11 (US9) [MVP delivery]
+- **Week 2**: Phase 4 (US2) solo [Requires US1]
+- **Week 3**: Phase 5 (US3) + Phase 6 (US4) + Phase 7 (US7) [All independent]
+- **Week 4**: Phase 8 (US5) + Phase 9 (US6) + Phase 10 (US8) [All independent]
+- **Week 5**: Phase 12 (Polish) [After all stories]
+
+**Note**: This task breakdown follows the spec.md user story priorities and quickstart.md implementation guide. Each task includes explicit file paths and implementation details to enable independent execution.

@@ -9,7 +9,7 @@
 <http://localhost:3001/testimonials>
 🌐 **URL**: <http://localhost:3001/testimonials>
 
-**Note**: The landing-site frontend runs on port 3001, while augeo-admin runs on port 5173.
+**Note**: The landing-site frontend runs on port 3001, while fundrbolt-admin runs on port 5173.
 
 ### 2. Basic Functionality Checklist
 
@@ -153,7 +153,7 @@ curl -X DELETE http://localhost:8000/api/v1/admin/testimonials/$TESTIMONIAL_ID \
 Run all API tests automatically:
 
 ```bash
-cd /home/jjeanes/augeo-platform
+cd /home/jjeanes/fundrbolt-platform
 ./docs/development/QUICK_TEST_COMMANDS.sh
 ```
 

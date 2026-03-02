@@ -92,6 +92,8 @@ async def register(
             # Continue with registration - user can resend verification email later
 
         # Build response
+        npo_memberships = await AuthService.get_active_npo_memberships(db, user.id)
+        primary_npo_id = npo_memberships[0].npo_id if len(npo_memberships) == 1 else None
         user_public = UserPublic(
             id=user.id,
             email=user.email,
@@ -109,7 +111,8 @@ async def register(
             email_verified=user.email_verified,
             is_active=user.is_active,
             role="donor",  # Hardcoded until Role model exists
-            npo_id=user.npo_id,
+            npo_id=primary_npo_id,
+            npo_memberships=npo_memberships,
             created_at=user.created_at,
         )
 
@@ -182,10 +185,14 @@ async def login(
     ip_address = request.client.host if request.client else "unknown"
     user_agent = request.headers.get("User-Agent", "unknown")
 
-    # Check rate limit (5 attempts per 15 min per IP)
+    # Check rate limit (5 failed attempts per 15 min per IP)
     redis_service = RedisService()
     rate_limit_key = f"login_attempt:{ip_address}"
-    if await redis_service.check_rate_limit(rate_limit_key, max_attempts=5, window_seconds=900):
+    if await redis_service.is_rate_limited(
+        rate_limit_key,
+        max_attempts=5,
+        window_seconds=900,
+    ):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail={
@@ -205,12 +212,17 @@ async def login(
             user_agent=user_agent,
         )
 
+        # Successful login clears failed-attempt counter for this IP
+        await redis_service.reset_rate_limit(rate_limit_key)
+
         return login_response
 
     except ValueError as e:
         error_msg = str(e)
 
         if "Invalid email or password" in error_msg:
+            # Only failed credential attempts count toward login rate limiting
+            await redis_service.increment_rate_limit(rate_limit_key, window_seconds=900)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail={
@@ -280,6 +292,8 @@ async def refresh_token(
         )
 
         # Construct UserPublic manually (role needs to be serialized as string)
+        npo_memberships = await AuthService.get_active_npo_memberships(db, user.id)
+        primary_npo_id = npo_memberships[0].npo_id if len(npo_memberships) == 1 else None
         user_public = UserPublic(
             id=user.id,
             email=user.email,
@@ -297,7 +311,8 @@ async def refresh_token(
             email_verified=user.email_verified,
             is_active=user.is_active,
             role=user.role.name,
-            npo_id=user.npo_id,
+            npo_id=primary_npo_id,
+            npo_memberships=npo_memberships,
             created_at=user.created_at,
         )
 

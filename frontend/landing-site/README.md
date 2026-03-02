@@ -1,6 +1,6 @@
-# Augeo Landing Site
+# Fundrbolt Landing Site
 
-Public-facing landing page for the Augeo platform.
+Public-facing landing page for the Fundrbolt platform.
 
 ## Features
 
@@ -108,4 +108,4 @@ The app proxies API requests to the backend server:
 
 ## License
 
-Private - Augeo Platform
+Private - Fundrbolt Platform

@@ -35,7 +35,7 @@ Add these secrets to your GitHub repository at: `Settings > Secrets and variable
 
 **Secret Name:** `AZURE_STORAGE_ACCOUNT_NAME_TEST`
 
-**Value:** The name of your storage account (e.g., `augeodevtest`)
+**Value:** The name of your storage account (e.g., `fundrboltdevtest`)
 
 **Cost optimization:**
 - Use the cheapest storage tier (Hot tier, LRS replication)

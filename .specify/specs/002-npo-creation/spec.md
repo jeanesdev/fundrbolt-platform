@@ -1,7 +1,7 @@
 # NPO Creation and Management Feature
 
 ## Overview
-This feature enables users to create and manage Non-Profit Organizations (NPOs) within the Augeo platform, including detailed setup, branding configuration, and administrative workflows.
+This feature enables users to create and manage Non-Profit Organizations (NPOs) within the Fundrbolt platform, including detailed setup, branding configuration, and administrative workflows.
 
 ## Clarifications
 

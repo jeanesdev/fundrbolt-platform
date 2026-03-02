@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document captures the technical research and decisions made for implementing the authentication and role management system for the Augeo platform. All decisions prioritize security, performance, and alignment with the constitution's principles.
+This document captures the technical research and decisions made for implementing the authentication and role management system for the Fundrbolt platform. All decisions prioritize security, performance, and alignment with the constitution's principles.
 
 ---
 
@@ -367,7 +367,7 @@ async def check_rate_limit(ip: str, redis: Redis) -> bool:
 **Chosen Approach**:
 1. User requests reset → backend generates random token (32 bytes)
 2. Backend stores token hash in Redis with 1-hour TTL, key: `password_reset:{token_hash}`
-3. Backend sends email with reset link: `https://app.augeo.com/reset-password?token={token}`
+3. Backend sends email with reset link: `https://app.fundrbolt.com/reset-password?token={token}`
 4. User clicks link → frontend displays form
 5. User submits new password + token → backend validates token, updates password, invalidates all sessions
 6. Token is deleted from Redis after successful reset (single-use)
@@ -530,7 +530,7 @@ axios.interceptors.response.use(
 1. User registers → account created with `email_verified = false`, `is_active = false`
 2. Backend generates email verification token (32 bytes, URL-safe base64)
 3. Backend stores token hash in Redis with 24-hour TTL, key: `email_verify:{token_hash}`
-4. Backend sends email with verification link: `https://app.augeo.com/verify-email?token={token}`
+4. Backend sends email with verification link: `https://app.fundrbolt.com/verify-email?token={token}`
 5. User clicks link → backend validates token, sets `email_verified = true`, `is_active = true`
 6. User can now login with verified email
 7. Token is deleted from Redis after successful verification (single-use)
@@ -615,7 +615,7 @@ async def login(data: LoginRequest, db: Session):
 
 **Chosen Approach**:
 1. **Development**: Alembic seed migration creates default super admin
-   - Email: From `SUPERADMIN_EMAIL` env var (default: `admin@augeo.local`)
+   - Email: From `SUPERADMIN_EMAIL` env var (default: `admin@fundrbolt.local`)
    - Password: From `SUPERADMIN_PASSWORD` env var (default: `ChangeMe123!`)
    - Auto-verified: `email_verified = true`, `is_active = true`
 2. **Production**: Manual script run by DevOps during initial deployment
@@ -643,7 +643,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def upgrade():
     # Get from environment or use dev defaults
-    email = os.getenv("SUPERADMIN_EMAIL", "admin@augeo.local")
+    email = os.getenv("SUPERADMIN_EMAIL", "admin@fundrbolt.local")
     password = os.getenv("SUPERADMIN_PASSWORD", "ChangeMe123!")
 
     # Get super_admin role ID (created in previous migration)
@@ -693,7 +693,7 @@ def downgrade():
 **Production Deployment**:
 ```bash
 # Set environment variables
-export SUPERADMIN_EMAIL="admin@augeoplatform.com"
+export SUPERADMIN_EMAIL="admin@fundrboltplatform.com"
 export SUPERADMIN_PASSWORD="$(openssl rand -base64 32)"
 
 # Run migrations (includes seed)

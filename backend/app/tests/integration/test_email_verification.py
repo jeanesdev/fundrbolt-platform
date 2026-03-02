@@ -18,6 +18,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
+from app.models.npo import NPO, NPOStatus
+from app.models.npo_member import MemberRole, MemberStatus, NPOMember
 
 
 class TestEmailVerificationIntegration:
@@ -138,8 +140,6 @@ class TestEmailVerificationIntegration:
         3. NPO admin verifies user's email
         4. Verify email_verified is True
         """
-        npo_id = uuid.uuid4()
-
         # Step 1: Create npo_admin
         npo_admin_result = await db_session.execute(
             text("SELECT id FROM roles WHERE name = 'npo_admin'")
@@ -151,9 +151,9 @@ class TestEmailVerificationIntegration:
             text(
                 """
                 INSERT INTO users (id, email, first_name, last_name, password_hash,
-                                 email_verified, is_active, role_id, npo_id)
+                                 email_verified, is_active, role_id)
                 VALUES (:id, :email, :first_name, :last_name, :password_hash,
-                       :email_verified, :is_active, :role_id, :npo_id)
+                       :email_verified, :is_active, :role_id)
             """
             ),
             {
@@ -165,8 +165,27 @@ class TestEmailVerificationIntegration:
                 "email_verified": True,
                 "is_active": True,
                 "role_id": npo_admin_role_id,
-                "npo_id": npo_id,
             },
+        )
+
+        npo = NPO(
+            name="Verification NPO",
+            description="NPO for email verification",
+            mission_statement="Test email verification",
+            email="verify-npo@example.com",
+            phone="+1-555-0700",
+            status=NPOStatus.APPROVED,
+            created_by_user_id=admin_id,
+        )
+        db_session.add(npo)
+        await db_session.flush()
+        db_session.add(
+            NPOMember(
+                npo_id=npo.id,
+                user_id=admin_id,
+                role=MemberRole.ADMIN,
+                status=MemberStatus.ACTIVE,
+            )
         )
         await db_session.commit()
 
@@ -181,9 +200,9 @@ class TestEmailVerificationIntegration:
             text(
                 """
                 INSERT INTO users (id, email, first_name, last_name, password_hash,
-                                 email_verified, is_active, role_id, npo_id)
+                                 email_verified, is_active, role_id)
                 VALUES (:id, :email, :first_name, :last_name, :password_hash,
-                       :email_verified, :is_active, :role_id, :npo_id)
+                       :email_verified, :is_active, :role_id)
             """
             ),
             {
@@ -195,8 +214,15 @@ class TestEmailVerificationIntegration:
                 "email_verified": False,
                 "is_active": False,
                 "role_id": coordinator_role_id,
-                "npo_id": npo_id,
             },
+        )
+        db_session.add(
+            NPOMember(
+                npo_id=npo.id,
+                user_id=coordinator_id,
+                role=MemberRole.STAFF,
+                status=MemberStatus.ACTIVE,
+            )
         )
         await db_session.commit()
 
@@ -209,14 +235,16 @@ class TestEmailVerificationIntegration:
         admin_token = admin_login.json()["access_token"]
 
         async_client.headers["Authorization"] = f"Bearer {admin_token}"
-        verify_response = await async_client.post(f"/api/v1/users/{coordinator_id}/verify-email")
+        verify_response = await async_client.post(
+            f"/api/v1/users/{coordinator_id}/verify-email?npo_id={npo.id}"
+        )
 
         # Step 4: Verify response
         assert verify_response.status_code == 200
         verified_user = verify_response.json()
         assert verified_user["id"] == str(coordinator_id)
         assert verified_user["email_verified"] is True
-        assert verified_user["npo_id"] == str(npo_id)
+        assert verified_user["npo_id"] == str(npo.id)
 
     @pytest.mark.asyncio
     async def test_npo_admin_cannot_verify_users_in_different_npo(
@@ -244,9 +272,9 @@ class TestEmailVerificationIntegration:
             text(
                 """
                 INSERT INTO users (id, email, first_name, last_name, password_hash,
-                                 email_verified, is_active, role_id, npo_id)
+                                 email_verified, is_active, role_id)
                 VALUES (:id, :email, :first_name, :last_name, :password_hash,
-                       :email_verified, :is_active, :role_id, :npo_id)
+                       :email_verified, :is_active, :role_id)
             """
             ),
             {
@@ -258,8 +286,27 @@ class TestEmailVerificationIntegration:
                 "email_verified": True,
                 "is_active": True,
                 "role_id": npo_admin_role_id,
-                "npo_id": npo_id_1,
             },
+        )
+        npo_one = NPO(
+            id=npo_id_1,
+            name=f"Verification NPO One {npo_id_1}",
+            description="First NPO for email verification",
+            mission_statement="Test email verification",
+            email=f"verify-npo1-{npo_id_1}@example.com",
+            phone="+1-555-0701",
+            status=NPOStatus.APPROVED,
+            created_by_user_id=admin_id,
+        )
+        db_session.add(npo_one)
+        await db_session.flush()
+        db_session.add(
+            NPOMember(
+                npo_id=npo_one.id,
+                user_id=admin_id,
+                role=MemberRole.ADMIN,
+                status=MemberStatus.ACTIVE,
+            )
         )
         await db_session.commit()
 
@@ -274,9 +321,9 @@ class TestEmailVerificationIntegration:
             text(
                 """
                 INSERT INTO users (id, email, first_name, last_name, password_hash,
-                                 email_verified, is_active, role_id, npo_id)
+                                 email_verified, is_active, role_id)
                 VALUES (:id, :email, :first_name, :last_name, :password_hash,
-                       :email_verified, :is_active, :role_id, :npo_id)
+                       :email_verified, :is_active, :role_id)
             """
             ),
             {
@@ -288,8 +335,27 @@ class TestEmailVerificationIntegration:
                 "email_verified": False,
                 "is_active": False,
                 "role_id": coordinator_role_id,
-                "npo_id": npo_id_2,
             },
+        )
+        npo_two = NPO(
+            id=npo_id_2,
+            name=f"Verification NPO Two {npo_id_2}",
+            description="Second NPO for email verification",
+            mission_statement="Test email verification",
+            email=f"verify-npo2-{npo_id_2}@example.com",
+            phone="+1-555-0702",
+            status=NPOStatus.APPROVED,
+            created_by_user_id=admin_id,
+        )
+        db_session.add(npo_two)
+        await db_session.flush()
+        db_session.add(
+            NPOMember(
+                npo_id=npo_two.id,
+                user_id=coordinator_id,
+                role=MemberRole.STAFF,
+                status=MemberStatus.ACTIVE,
+            )
         )
         await db_session.commit()
 
@@ -302,14 +368,23 @@ class TestEmailVerificationIntegration:
         admin_token = admin_login.json()["access_token"]
 
         async_client.headers["Authorization"] = f"Bearer {admin_token}"
-        verify_response = await async_client.post(f"/api/v1/users/{coordinator_id}/verify-email")
+        verify_response = await async_client.post(
+            f"/api/v1/users/{coordinator_id}/verify-email?npo_id={npo_two.id}"
+        )
 
         # Step 4: Verify request is rejected
         assert verify_response.status_code == 403
         error_data = verify_response.json()
         # Error format: {"detail": {"code": 403, "message": "...", "type": "HTTPException"}}
-        assert "detail" in error_data
-        error_message = error_data["detail"]["message"].lower()
+        error_message = ""
+        if "detail" in error_data:
+            detail = error_data["detail"]
+            if isinstance(detail, dict) and "message" in detail:
+                error_message = detail["message"].lower()
+            elif isinstance(detail, str):
+                error_message = detail.lower()
+        elif "message" in error_data:
+            error_message = error_data["message"].lower()
         assert "npo" in error_message or "permission" in error_message
 
     @pytest.mark.asyncio
@@ -577,6 +652,18 @@ class TestEmailVerificationIntegration:
         )
         await db_session.commit()
 
+        npo = NPO(
+            name="Complete Flow NPO",
+            description="NPO for complete verification flow",
+            mission_statement="Test verification flow",
+            email="complete-flow-npo@example.com",
+            phone="+1-555-0710",
+            status=NPOStatus.APPROVED,
+            created_by_user_id=admin_id,
+        )
+        db_session.add(npo)
+        await db_session.commit()
+
         # Step 2: Login as super_admin and create new user
         admin_login = await async_client.post(
             "/api/v1/auth/login",
@@ -594,6 +681,7 @@ class TestEmailVerificationIntegration:
                 "last_name": "User",
                 "password": "NewUserPass123",
                 "role": "staff",
+                "npo_id": str(npo.id),
             },
         )
         assert create_response.status_code == 201

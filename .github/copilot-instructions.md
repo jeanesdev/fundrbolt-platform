@@ -1,4 +1,4 @@
-# augeo-platform Development Guidelines
+# fundrbolt-platform Development Guidelines
 
 Auto-generated from all feature plans. Last updated: 2025-10-25
 
@@ -22,6 +22,41 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Azure Database for PostgreSQL (3 new tables: event_registrations, registration_guests, meal_selections) (010-donor-pwa-and)
 - TypeScript 5.x (Frontend), Python 3.11+ (Backend) + React 18, Vite, TanStack Router, Radix UI, Tailwind CSS 4, FastAPI, SQLAlchemy 2.0 (011-donor-pwa-event)
 - Azure Database for PostgreSQL (existing), Azure Blob Storage (images) (011-donor-pwa-event)
+- Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, Alembic (Backend); React 18, Vite, TanStack Router, Zustand, Radix UI (Frontend) (012-seating-assignment)
+- Azure Database for PostgreSQL (existing event_registrations, registration_guests tables; new fields: table_number, bidder_number, table_count, max_guests_per_table) (012-seating-assignment)
+- Embla Carousel with autoplay for sponsor carousels (011-donor-pwa-event)
+- Python 3.11+ (backend), TypeScript 5.x (frontend), Bash/YAML (infrastructure) + FastAPI, React, Vite, SQLAlchemy, Pydantic, Azure CLI, Bicep, GitHub Actions (013-fundrbolt-to-fundrbolt)
+- Azure Database for PostgreSQL, Azure Blob Storage (013-fundrbolt-to-fundrbolt)
+- Azure Database for PostgreSQL (existing tables: events, registration_guests; new table: event_tables) (014-table-details-management)
+- Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (backend); React 18+, Vite, TanStack Router, Zustand, Radix UI (frontend) (015-ticket-management-admin)
+- Azure Database for PostgreSQL (ticket packages, custom options, promo codes, purchases, audit logs), Azure Blob Storage (ticket package images), Azure Cache for Redis (sales count caching, rate limiting) (015-ticket-management-admin)
+- TypeScript 5.x (Frontend), Python 3.11+ (Backend for email templates) + React 18, Vite (build tool), ESLint (linting), Azure Blob Storage SDK (logo hosting) (016-branding)
+- Azure Blob Storage (logo assets for emails), File system (frontend shared package) (016-branding)
+- TypeScript 5.x (Frontend), Python 3.11+ (Backend - minimal changes for event list API optimization if needed) + React 18, Vite, TanStack Router, Zustand (state), Radix UI (sidebar/dropdown components), Tailwind CSS 4 (017-admin-pwa-layout)
+- N/A (UI-only changes; uses existing NPO/event APIs) (017-admin-pwa-layout)
+- Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router, Zustand, Radix UI (018-auction-item-bulk)
+- PostgreSQL (auction items), Azure Blob Storage (images) (018-auction-item-bulk)
+- Python 3.11+ + FastAPI, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (019-auction-bid-backend)
+- PostgreSQL (Azure Database for PostgreSQL) (019-auction-bid-backend)
+- Python 3.11+ + OpenAI Python SDK (Azure OpenAI), standard library (argparse, json, pathlib, logging) (020-image-generator-util)
+- Local filesystem (image output folder) (020-image-generator-util)
+- Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, Zustand, Radix UI (021-ticket-sales-import)
+- PostgreSQL (ticket sales, import batches, audit), Azure Blob Storage (optional staging for uploads) (021-ticket-sales-import)
+- Python 3.11+, TypeScript 5.x + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router, Zustand (022-import-registration-add)
+- PostgreSQL (registrations), Azure Blob Storage (if staging uploads), Redis (rate limiting) (022-import-registration-add)
+- Python 3.11+, TypeScript 5.x + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 18, Vite, TanStack Router, Zustand, Radix UI (023-import-auction-bids)
+- PostgreSQL (auction bids, import batches), Redis (rate limiting/session) (023-import-auction-bids)
+- Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0; React 18, Vite, Zustand, TanStack Router, Radix UI, Tailwind (024-donor-bidding-ui)
+- PostgreSQL (auction items, bids, watch list, item views, promotions), Redis (sessions/cache) (024-donor-bidding-ui)
+- Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 18, Vite, TanStack Router, Zustand, Radix UI (025-event-checkin-page)
+- PostgreSQL (registrations, check-ins, audit logs), Redis (sessions) (025-event-checkin-page)
+- Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, React 19, Vite 7, TanStack Router, Zustand, React Query, Radix UI, Recharts (026-event-dashboard-for)
+- PostgreSQL 15 (event data), Redis 7 (sessions) (026-event-dashboard-for)
+- Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router, Zustand, Radix UI (027-user-import)
+- PostgreSQL (user accounts, memberships, import audit), Redis (sessions) (027-user-import)
+- Python 3.11+ (backend), TypeScript 5.x (existing admin frontend, no mandatory scope expansion) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic, PostgreSQL driver stack already in repo (028-donations-i-need)
+- Python 3.11+ (backend), TypeScript 5.x + React 19 (admin frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React, TanStack Router, Zustand, React Query, Radix UI (029-quick-bid-entry)
+- PostgreSQL 15 (primary), Redis 7 (existing session/cache path where applicable) (029-quick-bid-entry)
 
 ## Project Structure
 ```
@@ -54,10 +89,10 @@ tests/
 - Run any Python command: `cd backend && poetry run <command>`
 
 ### Frontend
-- Install: `make install-frontend` or `cd frontend/augeo-admin && pnpm install`
-- Dev server: `make dev-frontend` or `cd frontend/augeo-admin && pnpm dev`
-- Build: `cd frontend/augeo-admin && pnpm build`
-- Test: `make test-frontend` or `cd frontend/augeo-admin && pnpm test`
+- Install: `make install-frontend` or `cd frontend/fundrbolt-admin && pnpm install`
+- Dev server: `make dev-frontend` or `cd frontend/fundrbolt-admin && pnpm dev`
+- Build: `cd frontend/fundrbolt-admin && pnpm build`
+- Test: `make test-frontend` or `cd frontend/fundrbolt-admin && pnpm test`
 
 ## Development Environment
 
@@ -106,9 +141,27 @@ git commit -m "message"
 ```
 
 ## Recent Changes
-- 011-donor-pwa-event: Added TypeScript 5.x (Frontend), Python 3.11+ (Backend) + React 18, Vite, TanStack Router, Radix UI, Tailwind CSS 4, FastAPI, SQLAlchemy 2.0
-- 010-donor-pwa-and: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router
-- 010-donor-pwa-and: Added TypeScript 5.x (Frontend), Python 3.11+ (Backend)
+- 029-quick-bid-entry: Added Python 3.11+ (backend), TypeScript 5.x + React 19 (admin frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React, TanStack Router, Zustand, React Query, Radix UI
+- 028-donations-i-need: Added Python 3.11+ (backend), TypeScript 5.x (existing admin frontend, no mandatory scope expansion) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic, PostgreSQL driver stack already in repo
+- 027-user-import: Added Python 3.11 (backend), TypeScript 5.x (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React 18, Vite, TanStack Router, Zustand, Radix UI
+  - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields
+  - ✅ Updated registration_guests with is_table_captain boolean field
+  - ✅ US1 - Customize Table Capacity: Event coordinators can set custom capacity per table (1-20), system enforces limits
+  - ✅ US2 - Assign Table Names: Coordinators can assign friendly names to tables (max 50 chars, e.g., "VIP Sponsors")
+  - ✅ US3 - Designate Table Captain: One guest per table can be designated as captain with crown badge
+  - ✅ US4 - Donor View: Donors see table assignment (number, name, captain) on home page after event starts
+  - ✅ Admin UI: TableDetailsPanel component for editing table customization in seating chart
+  - ✅ Admin UI: TableCapacityTooltip shows capacity status with visual indicators
+  - ✅ Admin UI: Edit button on table cards opens customization panel
+  - ✅ Donor PWA: TableAssignmentCard displays table details with captain badge
+  - ✅ Donor PWA: TableCaptainBadge shows "You are the table captain" or captain name
+  - ✅ Real-time updates: Donor PWA polls every 10 seconds for seating changes
+  - ✅ API endpoints: PATCH /admin/events/{event_id}/tables/{table_number}, GET /admin/events/{event_id}/tables
+  - ✅ Capacity validation: 409 Conflict when reducing capacity below current occupancy
+  - ✅ Captain validation: Must be assigned to correct table, auto-cleanup on reassignment
+  - ✅ Comprehensive error logging in SeatingService for all table operations
+  - ✅ OpenAPI documentation: Enhanced with examples, user stories, and detailed error responses
+  - ✅ Styling: Full table indicator changed from red to green (user feedback)
   - ✅ Password change page: `/settings/password` route with PasswordChangeForm component
   - ✅ Settings menu: Added Password menu item with KeyRound icon
   - ✅ User list pagination: Server-side pagination with proper page count from API
@@ -121,7 +174,7 @@ git commit -m "message"
   - ✅ Deployment scripts: deploy-backend.sh, deploy-frontend.sh, run-migrations.sh, rollback.sh
   - ✅ Blue-green deployment for production with automatic rollback
   - ✅ CI/CD documentation and rollback procedures
-  - ✅ DNS Zone module with Azure DNS for custom domain augeo.app
+  - ✅ DNS Zone module with Azure DNS for custom domain fundrbolt.com
   - ✅ Communication Services module for email with SPF/DKIM/DMARC
   - ✅ DNS and email configuration documentation
   - ✅ Secrets management scripts: configure-secrets.sh, update-app-settings.sh
@@ -132,7 +185,7 @@ git commit -m "message"
   - ✅ DR drills: Quarterly procedures with Q1-Q4 schedules
   - ✅ Application Insights: Sampling (10% prod, 100% dev/staging), daily cap (5GB prod, 1GB staging)
   - ✅ Alert rules: High error rate (>5%), high latency (P95 >500ms), availability failures
-  - ✅ Action groups: Email notifications (ops@augeo.app, engineering@augeo.app)
+  - ✅ Action groups: Email notifications (ops@fundrbolt.com, engineering@fundrbolt.com)
   - ✅ Availability tests: Backend /health and frontend homepage (5-min intervals, 3 locations)
   - ✅ Dashboards: System health (10 tiles), infrastructure health (4 sections) with KQL queries
   - ✅ Monitoring guide: 551-line comprehensive guide with alert procedures and troubleshooting
@@ -162,6 +215,16 @@ git commit -m "message"
   - ✅ Middleware-based consent enforcement (409 Conflict on outdated consent)
   - ✅ Hybrid cookie storage: localStorage (anonymous) + PostgreSQL (authenticated) + Redis (cache)
   - ✅ EU Cookie Law compliance (strictest standard for global deployment)
+  - ✅ Event routing: Migrated from `/events/$eventId` to `/events/$eventSlug` for SEO-friendly URLs
+  - ✅ EventSwitcher component: Always-visible dropdown on event homepage (single/multiple events)
+  - ✅ Event list sync: Sidebar EventSelector and homepage EventSwitcher use same `availableEvents` source
+  - ✅ Navigation fixes: All event navigation uses slug-based URLs instead of IDs
+  - ✅ Error handling: Prevents infinite redirect loops by clearing selectedEvent on load failure
+  - ✅ Sponsors carousel: Auto-playing carousel with 3-second transitions, transparent background
+  - ✅ Responsive layout: 1 sponsor (mobile), 3 sponsors (tablet), 4 sponsors (desktop)
+  - ✅ Sponsor logos: Increased sizes (xsmall: 64px, small: 96px, medium: 128px, large: 160px, xlarge: 192px)
+  - ✅ Shield icon: Indicates admin access in event selectors
+  - ✅ API client: `/api/v1/events/{event_id}/sponsors` endpoint integration
 
 ## API Endpoints (001-user-authentication-role)
 
@@ -218,11 +281,11 @@ git commit -m "message"
 ## Monitoring & Observability
 
 ### Metrics (Prometheus)
-- `augeo_http_requests_total` - HTTP requests by method/path/status
-- `augeo_db_failures_total` - Database connection failures
-- `augeo_redis_failures_total` - Redis connection failures
-- `augeo_email_failures_total` - Email send failures
-- `augeo_up` - Application up/down status (1=up, 0=down)
+- `fundrbolt_http_requests_total` - HTTP requests by method/path/status
+- `fundrbolt_db_failures_total` - Database connection failures
+- `fundrbolt_redis_failures_total` - Redis connection failures
+- `fundrbolt_email_failures_total` - Email send failures
+- `fundrbolt_up` - Application up/down status (1=up, 0=down)
 
 ### Structured Logging
 - JSON format with request IDs for distributed tracing
@@ -269,4 +332,76 @@ git commit -m "message"
 - `DELETE /api/v1/cookies/consent` - Revoke cookie consent (default to reject all)
 
 <!-- MANUAL ADDITIONS START -->
+
+---
+applyTo: "**"
+excludeAgent: "code-review"
+---
+
+# fundrbolt-platform Development Guidelines
+
+> Core agent behavior for CI and quality checks
+
+When you (GitHub Copilot coding agent) work in this repository:
+
+- Always respect the existing Makefile commands and CI workflows.
+- Prefer using `make` targets when available rather than re-inventing commands.
+- Never introduce direct `pip` or ad-hoc virtualenv usage; always use `poetry run` for Python commands.
+
+## Backend CI behavior (Python / FastAPI)
+
+When touching any code under `backend/`:
+
+- Treat the following as the **authoritative backend CI checks**:
+  - Lint: `cd backend && poetry run ruff check .`
+  - Format check: `cd backend && poetry run ruff format --check .`
+  - Type check: `cd backend && poetry run mypy app --strict --ignore-missing-imports --exclude 'app/tests'`
+  - Tests: `cd backend && poetry run pytest -v --tb=short`
+- After making code or test changes, run **all four** commands above.
+- If any of these commands fail:
+  - Read the command output carefully.
+  - Identify the root cause (implementation, tests, typing, or formatting).
+  - Make focused changes to fix the underlying issue.
+  - Run **all four** commands again to ensure nothing else broke.
+- Repeat this fix-and-rerun loop until:
+  - All four commands succeed, or
+  - You have completed **5 full cycles** and still have failures.
+- If you cannot get them fully passing within 5 cycles, stop and:
+  - Summarize which commands are still failing.
+  - List the failing files / tests and the most likely root causes.
+  - Propose a concrete plan for the next human developer.
+
+## Frontend CI behavior (React / pnpm)
+
+When touching any code under `frontend/`:
+
+- Treat the following as the **authoritative frontend CI checks**:
+  - Install deps: `cd frontend/fundrbolt-admin && pnpm install --frozen-lockfile`
+  - Lint: `cd frontend/fundrbolt-admin && pnpm lint`
+  - Prettier check: `cd frontend/fundrbolt-admin && pnpm format:check`
+  - Build: `cd frontend/fundrbolt-admin && pnpm build`
+- After making frontend changes, run:
+  - `pnpm lint`
+  - `pnpm format:check`
+  - `pnpm build`
+  from `frontend/fundrbolt-admin`.
+- If any command fails:
+  - Read the output carefully.
+  - Fix the underlying code, types, or formatting issues.
+  - Re-run **all three** commands (`lint`, `format:check`, `build`) to ensure a clean state.
+- As with backend, stop after **5 full cycles** if you still cannot get all three commands passing, and then:
+  - Summarize remaining failures and suspected causes.
+  - Suggest specific follow-up steps.
+
+## General task behavior
+
+For any task (backend, frontend, or both):
+
+- Prefer using these CI-aligned commands instead of inventing new ones.
+- When asked to “make CI green” or “fix failing checks” on a branch:
+  - Run all relevant backend and/or frontend commands that correspond to the failing GitHub Actions jobs.
+  - Iterate in a loop: change → run commands → inspect failures → fix → re-run, up to 5 full iterations.
+- Do not consider the task complete while any of the above CI commands still fail, unless you have hit the iteration limit and clearly documented what remains.
+
+---
 <!-- MANUAL ADDITIONS END -->

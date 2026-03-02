@@ -3,7 +3,7 @@
  * Dropdown selector for NPO context with role-based visibility and auto-selection
  *
  * Business Rules:
- * - SuperAdmin: Can select any NPO or "Augeo Platform" (null)
+ * - SuperAdmin: Can select any NPO or "Fundrbolt Platform" (null)
  * - NPO Admin/Staff: Shows only their NPO (non-clickable, disabled)
  * - Event Coordinator: Shows NPOs they're registered with
  */
@@ -31,7 +31,7 @@ export function NpoSelector() {
     selectedNpoName,
     availableNpos,
     selectNpo,
-    isAugeoPlatformView,
+    isFundrBoltPlatformView,
     isSingleNpoUser,
     canChangeNpo,
   } = useNpoContext()
@@ -99,7 +99,7 @@ export function NpoSelector() {
                   {selectedNpoName}
                 </span>
                 <span className='truncate text-xs'>
-                  {isAugeoPlatformView ? 'All Organizations' : 'Organization'}
+                  {isFundrBoltPlatformView ? 'All Organizations' : 'Organization'}
                 </span>
               </div>
               <ChevronsUpDown className='ms-auto' />

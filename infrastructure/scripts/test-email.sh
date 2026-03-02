@@ -27,9 +27,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-DOMAIN="augeo.app"
-RESOURCE_GROUP="augeo-${ENVIRONMENT}-rg"
-ACS_NAME="augeo-${ENVIRONMENT}-acs"
+DOMAIN="fundrbolt.com"
+RESOURCE_GROUP="fundrbolt-${ENVIRONMENT}-rg"
+ACS_NAME="fundrbolt-${ENVIRONMENT}-acs"
 FROM_ADDRESS="${FROM_ADDRESS_ARG:-noreply@$DOMAIN}"
 
 # Check if recipient email provided
@@ -79,16 +79,16 @@ echo ""
 echo "📧 Sending test email..."
 echo "  From: $FROM_ADDRESS"
 echo "  To: $RECIPIENT"
-echo "  Subject: Test Email from Augeo Platform"
+echo "  Subject: Test Email from Fundrbolt Platform"
 echo ""
 
 # Send test email
 MESSAGE_ID=$(az communication email send \
   --sender "$FROM_ADDRESS" \
-  --subject "Test Email from Augeo Platform" \
+  --subject "Test Email from Fundrbolt Platform" \
   --text "Hello!
 
-This is a test email from the Augeo Platform to verify email configuration.
+This is a test email from the Fundrbolt Platform to verify email configuration.
 
 If you received this email, your email setup is working correctly!
 
@@ -103,10 +103,10 @@ Next steps:
 3. Review email headers to verify SPF, DKIM, DMARC
 
 Best regards,
-The Augeo Platform Team" \
+The Fundrbolt Platform Team" \
   --html "<html><body>
 <h2>Hello!</h2>
-<p>This is a test email from the <strong>Augeo Platform</strong> to verify email configuration.</p>
+<p>This is a test email from the <strong>Fundrbolt Platform</strong> to verify email configuration.</p>
 <p>If you received this email, your email setup is working correctly! ✅</p>
 <h3>Configuration Details:</h3>
 <ul>
@@ -120,7 +120,7 @@ The Augeo Platform Team" \
   <li>Test email authentication score at <a href='https://www.mail-tester.com'>mail-tester.com</a></li>
   <li>Review email headers to verify SPF, DKIM, DMARC</li>
 </ol>
-<p>Best regards,<br>The Augeo Platform Team</p>
+<p>Best regards,<br>The Fundrbolt Platform Team</p>
 </body></html>" \
   --to "$RECIPIENT" \
   --connection-string "$CONNECTION_STRING" \

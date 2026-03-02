@@ -5,6 +5,7 @@ T159: Error handling and retry logic for email service failures
 """
 
 import asyncio
+import os
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -20,6 +21,7 @@ def _create_email_html_template(
     cta_text: str | None = None,
     cta_url: str | None = None,
     footer_text: str | None = None,
+    logo_url: str | None = None,
 ) -> str:
     """
     Create a professional HTML email template.
@@ -30,6 +32,7 @@ def _create_email_html_template(
         cta_text: Optional call-to-action button text
         cta_url: Optional call-to-action button URL
         footer_text: Optional footer text
+        logo_url: Optional CDN URL for Fundrbolt logo
 
     Returns:
         HTML email template string
@@ -80,7 +83,7 @@ def _create_email_html_template(
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Augeo Platform</title>
+    <title>Fundrbolt Platform</title>
     </head>
     <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
       <table role="presentation"
@@ -96,17 +99,23 @@ def _create_email_html_template(
                           border-radius: 8px;
                           box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);">
               <tr>
-                <td style="padding: 40px;">
-                  <!-- Header -->
-                  <div style="text-align: center; margin-bottom: 32px;">
-                    <h1 style="margin: 0;
-                               color: #1f2937;
-                               font-size: 24px;
-                               font-weight: 700;">
-                      Augeo Platform
-                    </h1>
+                <td style="padding: 0;">
+                  <!-- Header with Navy Background and Logo -->
+                  <div style="background-color: #11294c;
+                              padding: 32px;
+                              text-align: center;
+                              border-top-left-radius: 8px;
+                              border-top-right-radius: 8px;">
+                    {
+        f'<img src="{logo_url}" alt="Fundrbolt" style="height: 60px; width: auto; display: inline-block;" />'
+        if logo_url
+        else '<h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">Fundrbolt</h1>'
+    }
                   </div>
-
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 40px;">
                   <!-- Main Content -->
                   <h2 style="margin: 0 0 24px 0;
                              color: #111827;
@@ -121,7 +130,7 @@ def _create_email_html_template(
 
                   <p style="margin: 32px 0 0 0; line-height: 1.6;">
                     Best regards,<br>
-                    <strong>The Augeo Platform Team</strong>
+                    <strong>The Fundrbolt Platform Team</strong>
                   </p>
 
                   {footer_html}
@@ -167,6 +176,27 @@ class EmailService:
                 "Set AZURE_COMMUNICATION_CONNECTION_STRING to enable real email sending."
             )
 
+    def _get_logo_url(self, background: str = "dark") -> str:
+        """
+        Get CDN URL for Fundrbolt logo based on background color.
+
+        Args:
+            background: Background color context ('light' or 'dark')
+
+        Returns:
+            CDN URL for the appropriate logo variant
+
+        Note:
+            - Use 'light' (navy/gold logo) for white/light backgrounds
+            - Use 'dark' (white/gold logo) for navy/dark backgrounds (default for emails)
+        """
+        logo_filename = (
+            "fundrbolt-logo-navy-gold.png"
+            if background == "light"
+            else "fundrbolt-logo-white-gold.png"
+        )
+        return f"{settings.azure_cdn_logo_base_url}/{logo_filename}"
+
     async def send_password_reset_email(
         self, to_email: str, reset_token: str, user_name: str | None = None
     ) -> bool:
@@ -188,12 +218,12 @@ class EmailService:
         reset_url = f"{settings.frontend_admin_url}/reset-password?token={reset_token}"
 
         # Email content
-        subject = "Reset Your Password - Augeo Platform"
+        subject = "Reset Your Password - Fundrbolt Platform"
         greeting = f"Hi {user_name}," if user_name else "Hi,"
         body = f"""
 {greeting}
 
-You requested to reset your password for your Augeo Platform account.
+You requested to reset your password for your Fundrbolt Platform account.
 
 Click the link below to reset your password:
 {reset_url}
@@ -203,11 +233,26 @@ This link will expire in 1 hour.
 If you didn't request this password reset, please ignore this email.
 
 Best regards,
-The Augeo Platform Team
+The Fundrbolt Platform Team
         """.strip()
 
+        # HTML version with logo
+        html_body = _create_email_html_template(
+            heading="Reset Your Password",
+            body_paragraphs=[
+                "You requested to reset your password for your Fundrbolt Platform account.",
+                "Click the button below to reset your password. This link will expire in 1 hour.",
+            ],
+            cta_text="Reset Password",
+            cta_url=reset_url,
+            footer_text="If you didn't request this password reset, please ignore this email and your password will remain unchanged.",
+            logo_url=self._get_logo_url("dark"),  # White/gold logo on navy background
+        )
+
         # Send with retry logic
-        return await self._send_email_with_retry(to_email, subject, body, "password_reset")
+        return await self._send_email_with_retry(
+            to_email, subject, body, "password_reset", html_body
+        )
 
     async def send_verification_email(
         self, to_email: str, verification_token: str, user_name: str | None = None
@@ -230,14 +275,14 @@ The Augeo Platform Team
         verification_url = f"{settings.frontend_donor_url}/verify-email?token={verification_token}"
 
         # Email content
-        subject = "Verify Your Email - Augeo Platform"
+        subject = "Verify Your Email - Fundrbolt Platform"
         greeting = f"Hi {user_name}" if user_name else "Hi"
 
         # Plain text version
         body = f"""
 {greeting},
 
-Welcome to Augeo Platform!
+Welcome to Fundrbolt Platform!
 
 Please verify your email address by clicking the link below:
 {verification_url}
@@ -247,12 +292,12 @@ This link will expire in 24 hours.
 If you didn't create an account, please ignore this email.
 
 Best regards,
-The Augeo Platform Team
+The Fundrbolt Platform Team
         """.strip()
 
-        # HTML version
+        # HTML version with logo
         html_body = _create_email_html_template(
-            heading="Welcome to Augeo Platform!",
+            heading="Welcome to Fundrbolt Platform!",
             body_paragraphs=[
                 f"Thank you for creating an account{' ' + user_name if user_name else ''}! To get started, we need to verify your email address.",
                 "Click the button below to verify your email and activate your account.",
@@ -260,6 +305,7 @@ The Augeo Platform Team
             cta_text="Verify Email Address",
             cta_url=verification_url,
             footer_text="This verification link will expire in 24 hours. If you didn't create an account, please ignore this email.",
+            logo_url=self._get_logo_url("dark"),  # White/gold logo on navy background
         )
 
         # Send with retry logic
@@ -295,7 +341,7 @@ The Augeo Platform Team
         )
 
         # Email content
-        subject = f"Invitation to Join {npo_name} - Augeo Platform"
+        subject = f"Invitation to Join {npo_name} - Fundrbolt Platform"
         inviter = f"{invited_by_name} from" if invited_by_name else "A member of"
         role_display = role.replace("_", " ").title()
 
@@ -303,32 +349,33 @@ The Augeo Platform Team
         body = f"""
 Hi,
 
-{inviter} {npo_name} has invited you to join their organization on Augeo Platform as a {role_display}.
+{inviter} {npo_name} has invited you to join their organization on Fundrbolt Platform as a {role_display}.
 
 Click the link below to accept the invitation:
 {invitation_url}
 
 This invitation will expire in 7 days.
 
-If you don't have an Augeo Platform account yet, you'll be able to create one when you accept the invitation.
+If you don't have a Fundrbolt Platform account yet, you'll be able to create one when you accept the invitation.
 
 Best regards,
-The Augeo Platform Team
+The Fundrbolt Platform Team
         """.strip()
 
-        # HTML version
+        # HTML version with logo
         html_body = _create_email_html_template(
             heading=f"You're Invited to Join {npo_name}!",
             body_paragraphs=[
-                f"{inviter} {npo_name} has invited you to join their organization on Augeo Platform as a <strong>{role_display}</strong>.",
+                f"{inviter} {npo_name} has invited you to join their organization on Fundrbolt Platform as a <strong>{role_display}</strong>.",
                 "Click the button below to accept your invitation and get started.",
             ],
             cta_text="Accept Invitation",
             cta_url=invitation_url,
             footer_text=(
                 "This invitation will expire in 7 days. "
-                "If you don't have an Augeo Platform account yet, you'll be able to create one when you accept the invitation."
+                "If you don't have a Fundrbolt Platform account yet, you'll be able to create one when you accept the invitation."
             ),
+            logo_url=self._get_logo_url("dark"),  # White/gold logo on navy background
         )
 
         return await self._send_email_with_retry(
@@ -372,7 +419,7 @@ You can view your team members and manage permissions in your NPO dashboard:
 {dashboard_url}
 
 Best regards,
-The Augeo Platform Team
+The Fundrbolt Platform Team
         """.strip()
 
         return await self._send_email_with_retry(to_email, subject, body, "npo_invitation_accepted")
@@ -397,7 +444,7 @@ The Augeo Platform Team
         body = f"""
 {greeting}
 
-Thank you for submitting your application for {npo_name} on Augeo Platform.
+Thank you for submitting your application for {npo_name} on Fundrbolt Platform.
 
 Your application is now under review by our team. We'll notify you once a decision has been made.
 
@@ -406,7 +453,7 @@ You can check the status of your application by logging into your account.
 If you have any questions, please don't hesitate to contact us.
 
 Best regards,
-The Augeo Platform Team
+The Fundrbolt Platform Team
         """.strip()
 
         return await self._send_email_with_retry(
@@ -436,7 +483,7 @@ The Augeo Platform Team
 
 Congratulations! Your application for {npo_name} has been approved.
 
-Your organization is now active on Augeo Platform. You can start:
+Your organization is now active on Fundrbolt Platform. You can start:
 - Customizing your NPO branding
 - Inviting team members
 - Creating donation campaigns and events
@@ -444,10 +491,10 @@ Your organization is now active on Augeo Platform. You can start:
 Visit your dashboard to get started:
 {dashboard_url}
 
-Welcome to Augeo Platform!
+Welcome to Fundrbolt Platform!
 
 Best regards,
-The Augeo Platform Team
+The Fundrbolt Platform Team
         """.strip()
 
         return await self._send_email_with_retry(
@@ -481,7 +528,7 @@ The Augeo Platform Team
         body = f"""
 {greeting}
 
-Thank you for your interest in joining Augeo Platform with {npo_name}.
+Thank you for your interest in joining Fundrbolt Platform with {npo_name}.
 
 After careful review, we're unable to approve your application at this time.{reason_text}
 
@@ -490,7 +537,7 @@ You may submit a new application in the future if you'd like to try again.
 If you have any questions or need clarification, please contact us.
 
 Best regards,
-The Augeo Platform Team
+The Fundrbolt Platform Team
         """.strip()
 
         return await self._send_email_with_retry(
@@ -608,7 +655,7 @@ What happens next:
 You can check your application status anytime in your dashboard.
 
 Best regards,
-The Augeo Platform Team
+The Fundrbolt Platform Team
 
 ---
 This is an automated message. Please do not reply to this email.
@@ -646,7 +693,7 @@ This is an automated message. Please do not reply to this email.
 
 Congratulations! Your NPO application for {npo_name} has been approved!
 
-Your organization is now active on the Augeo Platform. You can now:
+Your organization is now active on the Fundrbolt Platform. You can now:
 - Invite co-administrators and staff members
 - Create and manage fundraising events
 - Customize your organization's branding
@@ -656,10 +703,10 @@ Get started by logging into your dashboard and inviting your team members.
 
 If you have any questions, please don't hesitate to reach out to our support team.
 
-Welcome to Augeo!
+Welcome to Fundrbolt!
 
 Best regards,
-The Augeo Platform Team
+The Fundrbolt Platform Team
 
 ---
 This is an automated message. Please do not reply to this email.
@@ -702,7 +749,7 @@ This is an automated message. Please do not reply to this email.
         body = f"""
 {greeting},
 
-Thank you for your interest in joining the Augeo Platform with {npo_name}.
+Thank you for your interest in joining the Fundrbolt Platform with {npo_name}.
 
 After reviewing your application, we are unable to approve it at this time.{reason_text}
 
@@ -711,7 +758,7 @@ If you believe this decision was made in error or if you have additional informa
 You may also submit a new application with updated information in the future.
 
 Best regards,
-The Augeo Platform Team
+The Fundrbolt Platform Team
 
 ---
 This is an automated message. Please do not reply to this email.
@@ -730,7 +777,7 @@ This is an automated message. Please do not reply to this email.
         """
         Send notification to admins when a new NPO application is submitted.
 
-        Sent to: npo_applications@augeo.app
+        Sent to: npo_applications@fundrbolt.com
         Content: Alert that new application needs review
 
         Args:
@@ -741,7 +788,7 @@ This is an automated message. Please do not reply to this email.
         Returns:
             True if email sent successfully, False otherwise
         """
-        admin_email = "npo_applications@augeo.app"
+        admin_email = "npo_applications@fundrbolt.com"
         subject = f"New NPO Application: {npo_name}"
         applicant_info = f" by {applicant_name}" if applicant_name else ""
 
@@ -761,7 +808,7 @@ Please review this application in the admin dashboard.
 Review Link: {__import__("os").getenv("FRONTEND_URL", "http://localhost:5173")}/admin/npo-applications
 
 ---
-This is an automated notification from the Augeo Platform.
+This is an automated notification from the Fundrbolt Platform.
         """.strip()
 
         return await self._send_email_with_retry(
@@ -789,6 +836,16 @@ This is an automated notification from the Augeo Platform.
         import asyncio
         from concurrent.futures import ThreadPoolExecutor
         from typing import Any
+
+        if settings.environment == "test" or "PYTEST_CURRENT_TEST" in os.environ:
+            logger.info(
+                "Email send skipped in test environment",
+                extra={
+                    "to": to_email,
+                    "subject": subject,
+                },
+            )
+            return
 
         def _send_sync() -> Any:
             """Synchronous send operation to run in thread pool."""

@@ -9,10 +9,10 @@ param environment string = 'dev'
 param location string = 'eastus'
 
 @description('Application name prefix')
-param appName string = 'augeo'
+param appName string = 'fundrbolt'
 
 @description('Custom domain name for DNS zone')
-param customDomain string = 'augeo.app'
+param customDomain string = 'fundrbolt.com'
 
 @description('Enable DNS zone deployment')
 param enableDns bool = true
@@ -20,7 +20,7 @@ param enableDns bool = true
 @description('Tags for all resources')
 param tags object = {
   Environment: environment
-  Project: 'augeo-platform'
+  Project: 'fundrbolt-platform'
   ManagedBy: 'Bicep'
   CostCenter: 'development'
   Owner: 'devops-team'
@@ -142,7 +142,8 @@ output dnsZoneId string = enableDns ? dns.outputs.dnsZoneId : ''
 output dnsZoneName string = enableDns ? dns.outputs.dnsZoneName : ''
 output nameServers array = enableDns ? dns.outputs.nameServers : []
 
-output instructions string = enableDns ? '''
+output instructions string = enableDns
+  ? '''
 Minimal Development Resources Deployed (with DNS)!
 
 DNS Nameservers (configure at Namecheap):
@@ -151,7 +152,7 @@ ${join(dns.outputs.nameServers, '\n')}
 Next Steps:
 1. Configure nameservers at Namecheap:
    - Login to Namecheap account
-   - Go to Domain List → Manage augeo.app
+   - Go to Domain List → Manage fundrbolt.com
    - Find NAMESERVERS section → Select Custom DNS
    - Add all 4 Azure nameservers listed above
    - Save (propagation takes 24-48 hours)
@@ -169,10 +170,11 @@ Next Steps:
    make dev-frontend
 
 6. Verify DNS propagation:
-   dig NS augeo.app
+   dig NS fundrbolt.com
 
 Cost: ~$1.50/month (DNS $0.50 + storage $0.10 + Key Vault operations ~$0.03)
-''' : '''
+'''
+  : '''
 Minimal Development Resources Deployed!
 
 Next Steps:

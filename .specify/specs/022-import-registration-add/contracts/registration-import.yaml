@@ -1,0 +1,134 @@
+openapi: 3.0.3
+info:
+  title: Event Registration Import API
+  version: 1.0.0
+paths:
+  /api/v1/admin/events/{event_id}/registrations/import/preflight:
+    post:
+      summary: Preflight registration import
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+                - file
+      responses:
+        "200":
+          description: Preflight result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreflightResult"
+        "400":
+          description: Validation error
+  /api/v1/admin/events/{event_id}/registrations/import/confirm:
+    post:
+      summary: Confirm registration import
+      parameters:
+        - in: path
+          name: event_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportConfirmRequest"
+      responses:
+        "200":
+          description: Import summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportSummary"
+        "409":
+          description: Import not allowed (preflight failed or stale)
+components:
+  schemas:
+    PreflightResult:
+      type: object
+      properties:
+        batch_id:
+          type: string
+        file_name:
+          type: string
+        file_type:
+          type: string
+        totals:
+          $ref: "#/components/schemas/PreflightTotals"
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationIssue"
+      required:
+        - batch_id
+        - totals
+    PreflightTotals:
+      type: object
+      properties:
+        rows_total:
+          type: integer
+        rows_valid:
+          type: integer
+        rows_error:
+          type: integer
+        rows_warning:
+          type: integer
+      required:
+        - rows_total
+        - rows_valid
+        - rows_error
+        - rows_warning
+    ValidationIssue:
+      type: object
+      properties:
+        row_number:
+          type: integer
+        field_name:
+          type: string
+        severity:
+          type: string
+          enum: [error, warning]
+        message:
+          type: string
+      required:
+        - row_number
+        - severity
+        - message
+    ImportConfirmRequest:
+      type: object
+      properties:
+        batch_id:
+          type: string
+      required:
+        - batch_id
+    ImportSummary:
+      type: object
+      properties:
+        batch_id:
+          type: string
+        created_count:
+          type: integer
+        skipped_count:
+          type: integer
+        failed_count:
+          type: integer
+      required:
+        - batch_id
+        - created_count
+        - skipped_count
+        - failed_count

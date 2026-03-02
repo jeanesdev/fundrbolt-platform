@@ -48,7 +48,7 @@
 
 ## Path Conventions
 
-Based on plan.md: Web application structure with `backend/` and `frontend/augeo-admin/` directories.
+Based on plan.md: Web application structure with `backend/` and `frontend/fundrbolt-admin/` directories.
 
 ---
 
@@ -155,35 +155,35 @@ Based on plan.md: Web application structure with `backend/` and `frontend/augeo-
 
 ### TypeScript Types & API Client
 
-- [x] T056 [P] Create Event types in frontend/augeo-admin/src/types/event.ts
-- [x] T057 [P] Create EventMedia types in frontend/augeo-admin/src/types/event.ts
-- [x] T058 [P] Create EventLink types in frontend/augeo-admin/src/types/event.ts
-- [x] T059 [P] Create FoodOption types in frontend/augeo-admin/src/types/event.ts
-- [x] T060 Implement eventService API client in frontend/augeo-admin/src/services/event-service.ts (create, update, publish, list)
-- [x] T061 Implement mediaService API client in frontend/augeo-admin/src/services/event-service.ts (upload, delete - integrated)
+- [x] T056 [P] Create Event types in frontend/fundrbolt-admin/src/types/event.ts
+- [x] T057 [P] Create EventMedia types in frontend/fundrbolt-admin/src/types/event.ts
+- [x] T058 [P] Create EventLink types in frontend/fundrbolt-admin/src/types/event.ts
+- [x] T059 [P] Create FoodOption types in frontend/fundrbolt-admin/src/types/event.ts
+- [x] T060 Implement eventService API client in frontend/fundrbolt-admin/src/services/event-service.ts (create, update, publish, list)
+- [x] T061 Implement mediaService API client in frontend/fundrbolt-admin/src/services/event-service.ts (upload, delete - integrated)
 
 ### State Management
 
-- [x] T062 Create Zustand eventStore in frontend/augeo-admin/src/stores/event-store.ts (events list, current event, loading states)
+- [x] T062 Create Zustand eventStore in frontend/fundrbolt-admin/src/stores/event-store.ts (events list, current event, loading states)
 - [x] T063 Implement eventStore actions: createEvent, updateEvent, publishEvent, closeEvent, loadEvents
 - [x] T064 Implement eventStore selectors: getEventById, getPublishedEvents, getDraftEvents
 
 ### Reusable Components
 
-- [x] T065 [P] Create EventForm component in frontend/augeo-admin/src/features/events/components/EventForm.tsx
-- [x] T066 [P] Create MediaUploader component in frontend/augeo-admin/src/features/events/components/MediaUploader.tsx
-- [x] T067 [P] Create RichTextEditor component in frontend/augeo-admin/src/features/events/components/RichTextEditor.tsx
-- [x] T068 [P] Create ColorPicker component in frontend/augeo-admin/src/features/events/components/ColorPicker.tsx
-- [x] T069 [P] Create EventLinkForm component in frontend/augeo-admin/src/features/events/components/EventLinkForm.tsx
-- [x] T070 [P] Create FoodOptionSelector component in frontend/augeo-admin/src/features/events/components/FoodOptionSelector.tsx
+- [x] T065 [P] Create EventForm component in frontend/fundrbolt-admin/src/features/events/components/EventForm.tsx
+- [x] T066 [P] Create MediaUploader component in frontend/fundrbolt-admin/src/features/events/components/MediaUploader.tsx
+- [x] T067 [P] Create RichTextEditor component in frontend/fundrbolt-admin/src/features/events/components/RichTextEditor.tsx
+- [x] T068 [P] Create ColorPicker component in frontend/fundrbolt-admin/src/features/events/components/ColorPicker.tsx
+- [x] T069 [P] Create EventLinkForm component in frontend/fundrbolt-admin/src/features/events/components/EventLinkForm.tsx
+- [x] T070 [P] Create FoodOptionSelector component in frontend/fundrbolt-admin/src/features/events/components/FoodOptionSelector.tsx
 
 ### Pages & Routing
 
-- [x] T071 Create EventListPage in frontend/augeo-admin/src/features/events/EventListPage.tsx (table with filters)
-- [x] T072 Create EventCreatePage in frontend/augeo-admin/src/features/events/EventCreatePage.tsx (multi-step form)
-- [x] T073 Create EventEditPage in frontend/augeo-admin/src/features/events/EventEditPage.tsx (with optimistic locking UI)
+- [x] T071 Create EventListPage in frontend/fundrbolt-admin/src/features/events/EventListPage.tsx (table with filters)
+- [x] T072 Create EventCreatePage in frontend/fundrbolt-admin/src/features/events/EventCreatePage.tsx (multi-step form)
+- [x] T073 Create EventEditPage in frontend/fundrbolt-admin/src/features/events/EventEditPage.tsx (with optimistic locking UI)
 - [x] T074 ~~Create EventPreviewPage~~ (skipped - not needed for MVP)
-- [x] T075 Add event routes to React Router in frontend/augeo-admin/src/routes/_authenticated/events/
+- [x] T075 Add event routes to React Router in frontend/fundrbolt-admin/src/routes/_authenticated/events/
 - [x] T076 Add Events navigation link to sidebar
 
 ---

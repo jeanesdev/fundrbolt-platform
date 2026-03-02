@@ -13,6 +13,7 @@ from app.models.base import Base, TimestampMixin, UUIDMixin
 if TYPE_CHECKING:
     from app.models.audit_log import AuditLog
     from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
+    from app.models.donation import Donation
     from app.models.event_registration import EventRegistration
     from app.models.registration_guest import RegistrationGuest
     from app.models.role import Role
@@ -23,7 +24,7 @@ class User(Base, UUIDMixin, TimestampMixin):
     """User model representing any person using the platform.
 
     Supports five role types:
-    - super_admin: Augeo platform staff with full access
+    - super_admin: Fundrbolt platform staff with full access
     - npo_admin: Full management within assigned NPO(s)
     - event_coordinator: Event/auction management within NPO
     - staff: Donor registration/check-in within assigned events
@@ -33,8 +34,8 @@ class User(Base, UUIDMixin, TimestampMixin):
     - Email must be unique and lowercase
     - Email verification required before login (email_verified=true AND is_active=true)
     - Password hashed with bcrypt (12+ rounds)
-    - NPO Admin and Event Coordinator roles MUST have npo_id set
-    - Staff and Donor roles MUST NOT have npo_id (staff use event assignments)
+    - NPO Admin and Event Coordinator roles MUST have active memberships
+    - Staff and Donor roles MUST NOT rely on a primary NPO
     - Default role on registration: "donor"
     - Organization name and address fields are optional for users who wish to provide
       business/organization information
@@ -98,10 +99,6 @@ class User(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         index=True,
     )
-    npo_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        nullable=True,  # FK to organizations table (will be added when that table exists)
-    )
 
     # Last login tracking
     last_login_at: Mapped[datetime | None] = mapped_column(
@@ -158,6 +155,10 @@ class User(Base, UUIDMixin, TimestampMixin):
         "RegistrationGuest",
         back_populates="user",
         foreign_keys="RegistrationGuest.user_id",
+    )
+    donations: Mapped[list["Donation"]] = relationship(
+        "Donation",
+        back_populates="donor",
     )
 
     # Check constraints

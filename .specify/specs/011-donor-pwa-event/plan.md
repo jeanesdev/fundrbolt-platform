@@ -5,7 +5,7 @@
 
 ## Summary
 
-Transform the donor PWA event page into an immersive, event-branded homepage that serves as the primary donor experience. The page will feature automatic routing to registered events, an event switcher for multi-event donors, a countdown timer for future events, collapsible event details, and an Amazon-style auction item gallery with infinite scroll and type filtering. The UI will apply dynamic event/NPO branding with zero Augeo branding visible.
+Transform the donor PWA event page into an immersive, event-branded homepage that serves as the primary donor experience. The page will feature automatic routing to registered events, an event switcher for multi-event donors, a countdown timer for future events, collapsible event details, and an Amazon-style auction item gallery with infinite scroll and type filtering. The UI will apply dynamic event/NPO branding with zero Fundrbolt branding visible.
 
 ## Technical Context
 

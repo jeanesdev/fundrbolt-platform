@@ -1,6 +1,6 @@
 # Quick Reference Guide
 
-Fast reference for common operations on the Augeo Platform.
+Fast reference for common operations on the Fundrbolt Platform.
 
 ## Table of Contents
 
@@ -30,8 +30,8 @@ az account set --subscription <subscription-id>
 
 # Set environment variables
 export ENVIRONMENT=production  # or dev, staging
-export RESOURCE_GROUP=augeo-${ENVIRONMENT}-rg
-export APP_NAME=augeo-${ENVIRONMENT}-api
+export RESOURCE_GROUP=fundrbolt-${ENVIRONMENT}-rg
+export APP_NAME=fundrbolt-${ENVIRONMENT}-api
 ```
 
 ## Common Commands
@@ -47,7 +47,7 @@ make deploy-infra ENV=production TAG=v1.0.0
 
 # View deployment status
 az deployment sub show \
-    --name augeo-production-deployment \
+    --name fundrbolt-production-deployment \
     --query properties.provisioningState
 ```
 
@@ -76,7 +76,7 @@ az webapp log tail \
 make dev-frontend  # or make f
 
 # Build frontend
-cd frontend/augeo-admin && pnpm build
+cd frontend/fundrbolt-admin && pnpm build
 
 # Deploy frontend
 make deploy-frontend ENV=production TAG=v1.0.0
@@ -96,10 +96,10 @@ make db-seed
 
 # Connect to database
 az postgres flexible-server connect \
-    --name augeo-production-postgres \
-    --admin-user augeo_admin \
+    --name fundrbolt-production-postgres \
+    --admin-user fundrbolt_admin \
     --admin-password <password> \
-    --database augeo
+    --database fundrbolt
 ```
 
 ## Deployment
@@ -123,8 +123,8 @@ make deploy-backend ENV=production TAG=v1.2.0
 make deploy-frontend ENV=production TAG=v1.2.0
 
 # 6. Verify deployment
-curl https://api.augeo.app/health
-curl https://admin.augeo.app
+curl https://api.fundrbolt.com/health
+curl https://admin.fundrbolt.com
 ```
 
 ### Backend Only Deployment
@@ -170,8 +170,8 @@ az webapp deployment slot swap \
 # Point-in-time restore (last 30 days)
 az postgres flexible-server restore \
     --resource-group ${RESOURCE_GROUP} \
-    --name augeo-production-postgres-restored \
-    --source-server augeo-production-postgres \
+    --name fundrbolt-production-postgres-restored \
+    --source-server fundrbolt-production-postgres \
     --restore-time "2025-10-20T10:00:00Z"
 ```
 
@@ -203,7 +203,7 @@ az webapp log download \
 
 # Frontend logs (Static Web Apps)
 az staticwebapp logs show \
-    --name augeo-production-admin \
+    --name fundrbolt-production-admin \
     --resource-group ${RESOURCE_GROUP}
 ```
 
@@ -219,7 +219,7 @@ az monitor metrics list \
 
 # Database metrics
 az monitor metrics list \
-    --resource augeo-production-postgres \
+    --resource fundrbolt-production-postgres \
     --resource-group ${RESOURCE_GROUP} \
     --resource-type "Microsoft.DBforPostgreSQL/flexibleServers" \
     --metric cpu_percent memory_percent active_connections
@@ -230,13 +230,13 @@ az monitor metrics list \
 ```bash
 # Error rate (last hour)
 az monitor app-insights query \
-    --app augeo-production-insights \
+    --app fundrbolt-production-insights \
     --resource-group ${RESOURCE_GROUP} \
     --analytics-query "requests | where timestamp > ago(1h) | summarize error_rate = countif(success == false) * 100.0 / count()"
 
 # Slow requests (P95 > 500ms)
 az monitor app-insights query \
-    --app augeo-production-insights \
+    --app fundrbolt-production-insights \
     --resource-group ${RESOURCE_GROUP} \
     --analytics-query "requests | summarize p95=percentile(duration, 95) by name | where p95 > 500"
 ```
@@ -245,13 +245,13 @@ az monitor app-insights query \
 
 ```bash
 # Backend health
-curl https://api.augeo.app/health
+curl https://api.fundrbolt.com/health
 
 # Detailed health (includes database, Redis, email)
-curl https://api.augeo.app/health/detailed
+curl https://api.fundrbolt.com/health/detailed
 
 # Frontend health
-curl https://admin.augeo.app
+curl https://admin.fundrbolt.com
 
 # All services health
 make health-check
@@ -264,13 +264,13 @@ make health-check
 ```bash
 # Scale App Service instances
 az appservice plan update \
-    --name augeo-production-asp \
+    --name fundrbolt-production-asp \
     --resource-group ${RESOURCE_GROUP} \
     --number-of-workers 5
 
 # Scale up App Service SKU
 az appservice plan update \
-    --name augeo-production-asp \
+    --name fundrbolt-production-asp \
     --resource-group ${RESOURCE_GROUP} \
     --sku S2
 ```
@@ -280,18 +280,18 @@ az appservice plan update \
 ```bash
 # View auto-scale settings
 az monitor autoscale show \
-    --name augeo-production-asp-autoscale \
+    --name fundrbolt-production-asp-autoscale \
     --resource-group ${RESOURCE_GROUP}
 
 # Disable auto-scaling temporarily
 az monitor autoscale update \
-    --name augeo-production-asp-autoscale \
+    --name fundrbolt-production-asp-autoscale \
     --resource-group ${RESOURCE_GROUP} \
     --enabled false
 
 # Re-enable auto-scaling
 az monitor autoscale update \
-    --name augeo-production-asp-autoscale \
+    --name fundrbolt-production-asp-autoscale \
     --resource-group ${RESOURCE_GROUP} \
     --enabled true
 ```
@@ -301,13 +301,13 @@ az monitor autoscale update \
 ```bash
 # Scale database compute
 az postgres flexible-server update \
-    --name augeo-production-postgres \
+    --name fundrbolt-production-postgres \
     --resource-group ${RESOURCE_GROUP} \
     --sku-name Standard_D4s_v3
 
 # Scale database storage
 az postgres flexible-server update \
-    --name augeo-production-postgres \
+    --name fundrbolt-production-postgres \
     --resource-group ${RESOURCE_GROUP} \
     --storage-size 256
 ```
@@ -319,22 +319,22 @@ az postgres flexible-server update \
 ```bash
 # PostgreSQL backup (automatic)
 az postgres flexible-server backup list \
-    --name augeo-production-postgres \
+    --name fundrbolt-production-postgres \
     --resource-group ${RESOURCE_GROUP}
 
 # Redis export to blob storage
 az redis export \
-    --name augeo-production-redis \
+    --name fundrbolt-production-redis \
     --resource-group ${RESOURCE_GROUP} \
     --container backups \
     --prefix redis-backup-$(date +%Y%m%d-%H%M%S)
 
 # Database pg_dump
 az postgres flexible-server execute \
-    --name augeo-production-postgres \
-    --admin-user augeo_admin \
+    --name fundrbolt-production-postgres \
+    --admin-user fundrbolt_admin \
     --admin-password <password> \
-    --database-name augeo \
+    --database-name fundrbolt \
     --querytext "SELECT 1" \
     > backup.sql
 ```
@@ -345,13 +345,13 @@ az postgres flexible-server execute \
 # PostgreSQL point-in-time restore
 az postgres flexible-server restore \
     --resource-group ${RESOURCE_GROUP} \
-    --name augeo-production-postgres-restored \
-    --source-server augeo-production-postgres \
+    --name fundrbolt-production-postgres-restored \
+    --source-server fundrbolt-production-postgres \
     --restore-time "2025-10-20T10:00:00Z"
 
 # Redis import from blob storage
 az redis import \
-    --name augeo-production-redis \
+    --name fundrbolt-production-redis \
     --resource-group ${RESOURCE_GROUP} \
     --files https://<storage-account>.blob.core.windows.net/backups/redis-backup.rdb
 
@@ -366,11 +366,11 @@ az redis import \
 ```bash
 # List secrets in Key Vault
 az keyvault secret list \
-    --vault-name augeo-production-kv
+    --vault-name fundrbolt-production-kv
 
 # Get secret value
 az keyvault secret show \
-    --vault-name augeo-production-kv \
+    --vault-name fundrbolt-production-kv \
     --name database-url \
     --query value -o tsv
 ```
@@ -380,7 +380,7 @@ az keyvault secret show \
 ```bash
 # Update secret in Key Vault
 az keyvault secret set \
-    --vault-name augeo-production-kv \
+    --vault-name fundrbolt-production-kv \
     --name jwt-secret \
     --value <new-secret-value>
 
@@ -401,7 +401,7 @@ az webapp restart \
 
 # Or manually rotate specific secret
 az keyvault secret set \
-    --vault-name augeo-production-kv \
+    --vault-name fundrbolt-production-kv \
     --name jwt-secret \
     --value $(openssl rand -base64 32)
 ```
@@ -412,7 +412,7 @@ az keyvault secret set \
 
 ```bash
 # 1. Check health endpoint
-curl -I https://api.augeo.app/health
+curl -I https://api.fundrbolt.com/health
 
 # 2. Check App Service status
 az webapp show \
@@ -432,25 +432,25 @@ az webapp restart --name ${APP_NAME} --resource-group ${RESOURCE_GROUP}
 ```bash
 # 1. Check PostgreSQL status
 az postgres flexible-server show \
-    --name augeo-production-postgres \
+    --name fundrbolt-production-postgres \
     --resource-group ${RESOURCE_GROUP} \
     --query state
 
 # 2. Test database connectivity
 az postgres flexible-server connect \
-    --name augeo-production-postgres \
-    --admin-user augeo_admin \
+    --name fundrbolt-production-postgres \
+    --admin-user fundrbolt_admin \
     --admin-password <password> \
-    --database augeo
+    --database fundrbolt
 
 # 3. Check firewall rules
 az postgres flexible-server firewall-rule list \
-    --name augeo-production-postgres \
+    --name fundrbolt-production-postgres \
     --resource-group ${RESOURCE_GROUP}
 
 # 4. View database metrics
 az monitor metrics list \
-    --resource augeo-production-postgres \
+    --resource fundrbolt-production-postgres \
     --resource-group ${RESOURCE_GROUP} \
     --metric active_connections failed_connections
 ```
@@ -460,17 +460,17 @@ az monitor metrics list \
 ```bash
 # 1. Check error rate in Application Insights
 az monitor app-insights query \
-    --app augeo-production-insights \
+    --app fundrbolt-production-insights \
     --analytics-query "requests | where timestamp > ago(1h) | summarize errors=countif(success==false), total=count() | extend error_rate=errors*100.0/total"
 
 # 2. View recent errors
 az monitor app-insights query \
-    --app augeo-production-insights \
+    --app fundrbolt-production-insights \
     --analytics-query "exceptions | where timestamp > ago(1h) | order by timestamp desc | take 20"
 
 # 3. Check dependency failures
 az monitor app-insights query \
-    --app augeo-production-insights \
+    --app fundrbolt-production-insights \
     --analytics-query "dependencies | where success == false | where timestamp > ago(1h) | summarize count() by name, resultCode"
 
 # 4. Review alert history
@@ -484,23 +484,23 @@ az monitor activity-log list \
 ```bash
 # 1. Check Redis status
 az redis show \
-    --name augeo-production-redis \
+    --name fundrbolt-production-redis \
     --resource-group ${RESOURCE_GROUP} \
     --query provisioningState
 
 # 2. View Redis metrics
 az monitor metrics list \
-    --resource augeo-production-redis \
+    --resource fundrbolt-production-redis \
     --resource-group ${RESOURCE_GROUP} \
     --metric connectedclients serverLoad usedmemory
 
 # 3. Test Redis connection
-redis-cli -h augeo-production-redis.redis.cache.windows.net \
+redis-cli -h fundrbolt-production-redis.redis.cache.windows.net \
     -p 6380 -a <redis-key> --tls PING
 
 # 4. Restart Redis (careful - clears cache)
 az redis force-reboot \
-    --name augeo-production-redis \
+    --name fundrbolt-production-redis \
     --resource-group ${RESOURCE_GROUP} \
     --reboot-type AllNodes
 ```
@@ -510,7 +510,7 @@ az redis force-reboot \
 ```bash
 # 1. View deployment logs
 az deployment sub show \
-    --name augeo-production-deployment \
+    --name fundrbolt-production-deployment \
     --query properties.error
 
 # 2. View App Service deployment logs
@@ -550,9 +550,9 @@ make scale-down ENV=staging
 
 ## Emergency Contacts
 
-- **On-call Engineer**: ops@augeo.app
-- **DevOps Team**: devops@augeo.app
-- **Platform Team**: engineering@augeo.app
+- **On-call Engineer**: ops@fundrbolt.com
+- **DevOps Team**: devops@fundrbolt.com
+- **Platform Team**: engineering@fundrbolt.com
 
 ## Related Documentation
 

@@ -33,7 +33,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
   // Check if we're on an event detail page (should use sidebar-free layout)
   const isEventDetailPage = matches.some(
-    match => match.routeId.includes('/events/$eventId')
+    match => match.routeId.includes('/events/$eventSlug')
   )
 
   // Restore user from refresh token on mount if needed

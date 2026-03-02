@@ -5,15 +5,15 @@ export const AboutPage = () => {
   return (
     <>
       <Helmet>
-        <title>About Us - Augeo Platform</title>
+        <title>About Us - Fundrbolt Platform</title>
         <meta
           name="description"
-          content="Learn about Augeo's mission to revolutionize charitable fundraising through innovative silent auction technology."
+          content="Learn about Fundrbolt's mission to revolutionize charitable fundraising through innovative silent auction technology."
         />
-        <meta property="og:title" content="About Us - Augeo Platform" />
+        <meta property="og:title" content="About Us - Fundrbolt Platform" />
         <meta
           property="og:description"
-          content="Learn about Augeo's mission to revolutionize charitable fundraising through innovative silent auction technology."
+          content="Learn about Fundrbolt's mission to revolutionize charitable fundraising through innovative silent auction technology."
         />
         <meta property="og:type" content="website" />
       </Helmet>
@@ -21,7 +21,7 @@ export const AboutPage = () => {
       {/* Hero Section */}
       <section className="about-hero">
         <div className="container">
-          <h1>About Augeo</h1>
+          <h1>About Fundrbolt</h1>
           <p className="hero-subtitle">
             Revolutionizing charitable fundraising through innovative technology
           </p>
@@ -33,7 +33,7 @@ export const AboutPage = () => {
         <div className="container">
           <h2>Our Mission</h2>
           <p className="mission-text">
-            At Augeo, we believe that every nonprofit organization deserves access to
+            At Fundrbolt, we believe that every nonprofit organization deserves access to
             powerful, easy-to-use fundraising tools. Our mission is to empower nonprofits
             to maximize their impact by providing a modern, mobile-first silent auction
             platform that makes fundraising events seamless, engaging, and successful.
@@ -161,7 +161,7 @@ export const AboutPage = () => {
         <div className="container">
           <h2>Ready to Transform Your Fundraising?</h2>
           <p>
-            Join hundreds of nonprofits already using Augeo to raise more money and
+            Join hundreds of nonprofits already using Fundrbolt to raise more money and
             create unforgettable fundraising experiences.
           </p>
           <div className="cta-buttons">

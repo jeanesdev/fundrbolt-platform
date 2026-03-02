@@ -111,7 +111,7 @@ backend/
     └── unit/
         └── test_event_service.py # Event service logic tests
 
-frontend/augeo-admin/
+frontend/fundrbolt-admin/
 ├── src/
 │   ├── pages/
 │   │   ├── EventList.tsx         # Event dashboard with status grouping

@@ -42,7 +42,7 @@ if [ $? -eq 0 ]; then
     echo "  SMTP_PORT=1025"
     echo "  SMTP_USERNAME="
     echo "  SMTP_PASSWORD="
-    echo "  EMAIL_FROM=noreply@augeo.app"
+    echo "  EMAIL_FROM=noreply@fundrbolt.com"
     echo ""
     echo "🧪 To test email sending:"
     echo "  1. Open http://localhost:8025 in your browser"

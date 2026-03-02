@@ -9,9 +9,9 @@ info:
     **Authorization**: Users can only manage their own registration guests; admins can manage all.
 
 servers:
-  - url: https://api.augeo.app/api/v1
+  - url: https://api.fundrbolt.com/api/v1
     description: Production
-  - url: https://staging-api.augeo.app/api/v1
+  - url: https://staging-api.fundrbolt.com/api/v1
     description: Staging
   - url: http://localhost:8000/api/v1
     description: Local development

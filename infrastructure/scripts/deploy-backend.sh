@@ -24,9 +24,9 @@ echo "Deploying backend to $ENVIRONMENT environment..."
 echo "Image tag: $IMAGE_TAG"
 
 # Resource names
-RESOURCE_GROUP="augeo-${ENVIRONMENT}-rg"
-APP_NAME="augeo-${ENVIRONMENT}-api"
-IMAGE_NAME="ghcr.io/augeo-platform/augeo-backend:${IMAGE_TAG}"
+RESOURCE_GROUP="fundrbolt-${ENVIRONMENT}-rg"
+APP_NAME="fundrbolt-${ENVIRONMENT}-api"
+IMAGE_NAME="ghcr.io/fundrbolt-platform/fundrbolt-backend:${IMAGE_TAG}"
 
 # Check if resource group exists
 if ! az group show --name "$RESOURCE_GROUP" &> /dev/null; then

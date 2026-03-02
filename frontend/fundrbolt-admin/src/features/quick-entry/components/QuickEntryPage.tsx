@@ -1,0 +1,420 @@
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useEventContext } from '@/hooks/use-event-context'
+import { cn } from '@/lib/utils'
+import { eventApi } from '@/services/event-service'
+import { useQuery } from '@tanstack/react-query'
+import { useParams } from '@tanstack/react-router'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import { type KeyboardEvent, useEffect, useMemo, useState } from 'react'
+import { getLiveAuctionOverview, getQuickEntryLiveAuctionItems } from '../api/quickEntryApi'
+import { useBuyNowEntry } from '../hooks/useBuyNowEntry'
+import { useLiveAuctionControls } from '../hooks/useLiveAuctionControls'
+import { useLiveBidEntry } from '../hooks/useLiveBidEntry'
+import { usePaddleRaiseEntry } from '../hooks/usePaddleRaiseEntry'
+import { BuyNowEntryForm } from './BuyNowEntryForm'
+import { LiveBidEntryForm } from './LiveBidEntryForm'
+import { LiveBidLogAndMetrics } from './LiveBidLogAndMetrics'
+import { PaddleRaiseEntryForm } from './PaddleRaiseEntryForm'
+
+export function QuickEntryPage() {
+  const { eventId } = useParams({
+    from: '/_authenticated/events/$eventId/quick-entry',
+  })
+  const { selectedEventId, availableEvents } = useEventContext()
+  const [mode, setMode] = useState<'LIVE_AUCTION' | 'PADDLE_RAISE' | 'BUY_NOW'>(
+    'LIVE_AUCTION'
+  )
+  const [itemMenuOpen, setItemMenuOpen] = useState(false)
+  const [itemSearch, setItemSearch] = useState('')
+  const [liveSelection, setLiveSelection] = useState<{
+    eventId: string
+    itemId: string
+  }>({ eventId: '', itemId: '' })
+
+  const isRouteEventUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      eventId
+    )
+
+  const routeEventQuery = useQuery({
+    queryKey: ['quick-entry', 'event-by-slug', eventId],
+    queryFn: () => eventApi.getEventBySlug(eventId),
+    enabled: !isRouteEventUuid,
+  })
+
+  const resolvedEventId = isRouteEventUuid
+    ? eventId
+    : (routeEventQuery.data?.id ??
+      availableEvents.find((event) => event.slug === eventId)?.id ??
+      selectedEventId ??
+      '')
+
+  const auctionItemsQuery = useQuery({
+    queryKey: ['quick-entry', 'live-items', resolvedEventId],
+    queryFn: () => getQuickEntryLiveAuctionItems(resolvedEventId),
+    enabled: mode === 'LIVE_AUCTION' && !!resolvedEventId,
+  })
+
+  const liveAuctionItems = useMemo(
+    () => auctionItemsQuery.data ?? [],
+    [auctionItemsQuery.data]
+  )
+  const selectedItemId =
+    liveSelection.eventId === resolvedEventId ? liveSelection.itemId : ''
+  const selectedItem = useMemo(
+    () => liveAuctionItems.find((item) => item.id === selectedItemId),
+    [liveAuctionItems, selectedItemId]
+  )
+
+  const liveEventTotalRaised = useMemo(
+    () => liveAuctionItems.reduce((sum, item) => sum + (item.current_bid_amount ?? 0), 0),
+    [liveAuctionItems]
+  )
+  const liveEventBidCount = useMemo(
+    () => liveAuctionItems.reduce((sum, item) => sum + (item.bid_count ?? 0), 0),
+    [liveAuctionItems]
+  )
+
+  const overviewQuery = useQuery({
+    queryKey: ['quick-entry', 'live-auction-overview', resolvedEventId],
+    queryFn: () => getLiveAuctionOverview(resolvedEventId!),
+    enabled: !!resolvedEventId,
+    refetchInterval: 10_000,
+  })
+
+  const selectLiveItem = (itemId: string) => {
+    setLiveSelection({ eventId: resolvedEventId, itemId })
+    setItemMenuOpen(false)
+    setItemSearch('')
+  }
+
+  const handleItemSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Tab') {
+      return
+    }
+
+    const search = itemSearch.trim().toLowerCase()
+    if (!search) {
+      return
+    }
+
+    const matching = liveAuctionItems.find(
+      (item) =>
+        item.bid_number.toString().startsWith(search) ||
+        item.title.toLowerCase().includes(search)
+    )
+    if (!matching) {
+      return
+    }
+
+    event.preventDefault()
+    selectLiveItem(matching.id)
+    window.setTimeout(() => {
+      const amountInput = document.getElementById(
+        'quick-entry-amount'
+      ) as HTMLInputElement | null
+      amountInput?.focus()
+      amountInput?.select()
+    }, 0)
+  }
+
+  const {
+    amount,
+    bidderNumber,
+    setAmount,
+    setBidderNumber,
+    submitBid,
+    isSubmitting,
+    submitToken,
+  } = useLiveBidEntry(resolvedEventId, selectedItemId)
+
+  useEffect(() => {
+    if (!selectedItem) {
+      return
+    }
+    if (selectedItem.starting_bid > 0) {
+      setAmount(Math.round(selectedItem.starting_bid).toLocaleString('en-US'))
+    }
+  }, [selectedItem, setAmount])
+
+  const {
+    summary,
+    isLoadingSummary,
+    isSummaryError,
+    isDeleting,
+    isAssigningWinner,
+    isRemovingWinner,
+    deleteBid,
+    assignWinner,
+    removeWinner,
+  } = useLiveAuctionControls(resolvedEventId, selectedItemId)
+
+  const {
+    amount: paddleAmount,
+    bidderNumber: paddleBidderNumber,
+    selectedLabelIds,
+    customLabel,
+    labels,
+    labelsError,
+    isLoadingLabels,
+    summary: paddleSummary,
+    isSubmitting: isSubmittingPaddle,
+    setAmount: setPaddleAmount,
+    setBidderNumber: setPaddleBidderNumber,
+    setCustomLabel,
+    setSelectedLabelIds,
+    submitDonation,
+    submitToken: paddleSubmitToken,
+    recentDonations,
+  } = usePaddleRaiseEntry(resolvedEventId)
+
+  const buyNow = useBuyNowEntry(resolvedEventId)
+
+  return (
+    <div className='space-y-2 p-4'>
+      <h1 className='text-xl font-semibold'>Quick Entry</h1>
+      <div className='space-y-3'>
+        <Tabs
+          value={mode}
+          onValueChange={(value) =>
+            setMode(value as 'LIVE_AUCTION' | 'PADDLE_RAISE' | 'BUY_NOW')
+          }
+        >
+          <TabsList>
+            <TabsTrigger value='LIVE_AUCTION'>Live Auction</TabsTrigger>
+            <TabsTrigger value='PADDLE_RAISE'>Paddle Raise</TabsTrigger>
+            <TabsTrigger value='BUY_NOW'>Buy It Now</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {mode === 'LIVE_AUCTION' ? (
+          <div className='space-y-3'>
+            {liveAuctionItems.length > 0 && (
+              <div className='grid grid-cols-2 gap-3 lg:grid-cols-3'>
+                <div className='rounded-md border bg-muted/20 p-3'>
+                  <p className='text-xs text-muted-foreground'>Total Raised</p>
+                  <p className='text-xl font-semibold'>
+                    ${liveEventTotalRaised.toLocaleString('en-US')}
+                  </p>
+                </div>
+                <div className='rounded-md border bg-muted/20 p-3'>
+                  <p className='text-xs text-muted-foreground'>Number of Bids</p>
+                  <p className='text-xl font-semibold'>{liveEventBidCount}</p>
+                </div>
+                <div className='col-span-2 rounded-md border bg-muted/20 p-3 lg:col-span-1'>
+                  <p className='text-xs text-muted-foreground'>Items Done</p>
+                  <p className='text-xl font-semibold'>
+                    {overviewQuery.data?.items_with_winner ?? 0} /{' '}
+                    {overviewQuery.data?.total_items ?? liveAuctionItems.length}
+                  </p>
+                </div>
+              </div>
+            )}
+            <div className='space-y-1'>
+              <label className='text-sm font-medium' htmlFor='quick-entry-item'>
+                Live Auction Item
+              </label>
+              <Popover open={itemMenuOpen} onOpenChange={setItemMenuOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    id='quick-entry-item'
+                    type='button'
+                    role='combobox'
+                    aria-expanded={itemMenuOpen}
+                    className='border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring/50 flex h-10 w-full items-center justify-between rounded-md border px-3 py-2 text-sm focus-visible:ring-[3px]'
+                  >
+                    <span className='truncate text-left'>
+                      {selectedItem
+                        ? `#${selectedItem.bid_number} · ${selectedItem.title}`
+                        : auctionItemsQuery.isLoading
+                          ? 'Loading live auction items...'
+                          : auctionItemsQuery.isError
+                            ? 'Failed to load live auction items'
+                            : 'Select live auction item'}
+                    </span>
+                    <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className='w-[var(--radix-popover-trigger-width)] p-0'
+                  align='start'
+                >
+                  <Command>
+                    <CommandInput
+                      placeholder='Search item number or name...'
+                      value={itemSearch}
+                      onValueChange={setItemSearch}
+                      onKeyDown={handleItemSearchKeyDown}
+                    />
+                    <CommandList className='max-h-72'>
+                      <CommandEmpty>No live auction items found.</CommandEmpty>
+                      <CommandGroup>
+                        {liveAuctionItems.map((item) => (
+                          <CommandItem
+                            key={item.id}
+                            value={`${item.bid_number} ${item.title}`}
+                            onSelect={() => selectLiveItem(item.id)}
+                            className='flex items-center gap-3 py-2'
+                          >
+                            <div className='h-12 w-12 shrink-0 overflow-hidden rounded'>
+                              {item.primary_image_url ? (
+                                <img
+                                  src={item.primary_image_url}
+                                  alt={item.title}
+                                  className='h-full w-full object-cover'
+                                />
+                              ) : (
+                                <div className='bg-muted text-muted-foreground flex h-full w-full items-center justify-center text-[10px]'>
+                                  No img
+                                </div>
+                              )}
+                            </div>
+                            <div className='min-w-0 flex-1'>
+                              <p className='truncate text-sm font-medium'>
+                                #{item.bid_number} · {item.title}
+                              </p>
+                              <p className='text-muted-foreground text-xs'>
+                                Starting: ${Math.round(item.starting_bid).toLocaleString('en-US')}
+                              </p>
+                              {item.current_bid_amount != null && (
+                                <p className='text-xs font-medium text-green-600 dark:text-green-400'>
+                                  Current: ${Math.round(item.current_bid_amount).toLocaleString('en-US')}
+                                </p>
+                              )}
+                            </div>
+                            <Check
+                              className={cn(
+                                'ml-auto h-4 w-4 shrink-0',
+                                selectedItemId === item.id ? 'opacity-100' : 'opacity-0'
+                              )}
+                            />
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      {mode === 'LIVE_AUCTION' && selectedItem ? (
+        <section className='rounded-md border p-3'>
+          <div className='grid grid-cols-[72px_1fr] items-start gap-2'>
+            {selectedItem.primary_image_url ? (
+              <img
+                src={selectedItem.primary_image_url}
+                alt={selectedItem.title}
+                className='h-16 w-full rounded object-cover'
+              />
+            ) : (
+              <div className='bg-muted text-muted-foreground flex h-16 w-full items-center justify-center rounded text-xs'>
+                No image
+              </div>
+            )}
+            <div className='space-y-1'>
+              <p className='text-sm font-medium'>
+                #{selectedItem.bid_number} · {selectedItem.title}
+              </p>
+              <p className='text-muted-foreground text-sm'>
+                {selectedItem.description || 'No description provided.'}
+              </p>
+              <p className='text-muted-foreground text-sm'>
+                Starting Bid: $
+                {Math.round(selectedItem.starting_bid).toLocaleString('en-US')}
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {mode === 'LIVE_AUCTION' ? (
+        <>
+          {summary?.bids.some((b) => b.status === 'winning') ? (
+            <p className="text-sm text-muted-foreground">
+              Winner assigned — remove winner to continue bidding.
+            </p>
+          ) : null}
+          <LiveBidEntryForm
+            amount={amount}
+            bidderNumber={bidderNumber}
+            onAmountChange={setAmount}
+            onBidderNumberChange={setBidderNumber}
+            onSubmit={submitBid}
+            disabled={isSubmitting || summary?.bids.some((b) => b.status === 'winning')}
+            isSubmitting={isSubmitting}
+            focusAmountToken={submitToken}
+          />
+
+          <LiveBidLogAndMetrics
+            summary={summary}
+            isLoading={isLoadingSummary}
+            isError={isSummaryError}
+            hasSelectedItem={!!selectedItemId}
+            isDeleting={isDeleting}
+            isAssigningWinner={isAssigningWinner}
+            isRemovingWinner={isRemovingWinner}
+            onDeleteBid={deleteBid}
+            onAssignWinner={assignWinner}
+            onRemoveWinner={removeWinner}
+          />
+        </>
+      ) : mode === 'PADDLE_RAISE' ? (
+        <PaddleRaiseEntryForm
+          amount={paddleAmount}
+          bidderNumber={paddleBidderNumber}
+          customLabel={customLabel}
+          selectedLabelIds={selectedLabelIds}
+          labels={labels}
+          labelsError={labelsError}
+          isLoadingLabels={isLoadingLabels}
+          recentDonations={recentDonations}
+          summary={paddleSummary}
+          submitToken={paddleSubmitToken}
+          disabled={isSubmittingPaddle}
+          onAmountChange={setPaddleAmount}
+          onBidderNumberChange={setPaddleBidderNumber}
+          onCustomLabelChange={setCustomLabel}
+          onSelectedLabelIdsChange={setSelectedLabelIds}
+          onSubmit={submitDonation}
+        />
+      ) : (
+        <BuyNowEntryForm
+          items={buyNow.items}
+          isLoadingItems={buyNow.isLoadingItems}
+          isItemsError={buyNow.isItemsError}
+          selectedItemId={buyNow.selectedItemId}
+          selectedItem={buyNow.selectedItem}
+          onSelectItem={buyNow.setSelectedItemId}
+          amount={buyNow.amount}
+          bidderNumber={buyNow.bidderNumber}
+          bidderRef={buyNow.bidderRef}
+          recentBids={buyNow.recentBids}
+          isSubmitting={buyNow.isSubmitting}
+          isDeleting={buyNow.isDeleting}
+          onAmountChange={buyNow.setAmount}
+          onBidderNumberChange={buyNow.setBidderNumber}
+          onBidderKeyDown={buyNow.handleBidderKeyDown}
+          onSubmit={buyNow.submitBid}
+          onDeleteBid={buyNow.deleteBid}
+          summary={buyNow.summary}
+        />
+      )}
+    </div>
+  )
+}

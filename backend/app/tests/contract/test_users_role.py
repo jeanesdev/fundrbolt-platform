@@ -10,6 +10,7 @@ These tests verify:
 """
 
 import uuid
+from typing import Any
 
 import pytest
 from httpx import AsyncClient
@@ -17,6 +18,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
+from app.models.npo import NPO, NPOStatus
+from app.models.npo_member import MemberRole, MemberStatus, NPOMember
 
 
 class TestUsersRoleUpdateContract:
@@ -67,7 +70,10 @@ class TestUsersRoleUpdateContract:
 
     @pytest.mark.asyncio
     async def test_update_role_donor_role_forbidden(
-        self, authenticated_client: AsyncClient, db_session: AsyncSession
+        self,
+        authenticated_client: AsyncClient,
+        db_session: AsyncSession,
+        test_approved_npo: Any,
     ) -> None:
         """Test that donor role cannot update user roles.
 
@@ -102,7 +108,7 @@ class TestUsersRoleUpdateContract:
         await db_session.commit()
 
         # authenticated_client uses test_user which has donor role
-        payload = {"role": "staff"}
+        payload = {"role": "staff", "npo_id": str(test_approved_npo.id)}
         response = await authenticated_client.patch(f"/api/v1/users/{user_id}/role", json=payload)
 
         assert response.status_code == 403
@@ -168,7 +174,7 @@ class TestUsersRoleUpdateContract:
 
     @pytest.mark.asyncio
     async def test_update_role_nonexistent_user_returns_404(
-        self, super_admin_client: AsyncClient
+        self, super_admin_client: AsyncClient, test_approved_npo: Any
     ) -> None:
         """Test that updating nonexistent user returns 404.
 
@@ -176,7 +182,7 @@ class TestUsersRoleUpdateContract:
         Expected: 404 Not Found
         """
         nonexistent_id = uuid.uuid4()
-        payload = {"role": "staff"}
+        payload = {"role": "staff", "npo_id": str(test_approved_npo.id)}
         response = await super_admin_client.patch(
             f"/api/v1/users/{nonexistent_id}/role", json=payload
         )
@@ -279,7 +285,10 @@ class TestUsersRoleUpdateContract:
 
     @pytest.mark.asyncio
     async def test_update_to_npo_admin_with_npo_id_succeeds(
-        self, super_admin_client: AsyncClient, db_session: AsyncSession
+        self,
+        super_admin_client: AsyncClient,
+        db_session: AsyncSession,
+        test_approved_npo: Any,
     ) -> None:
         """Test that updating to npo_admin with npo_id succeeds.
 
@@ -291,8 +300,6 @@ class TestUsersRoleUpdateContract:
         donor_role_id = role_result.scalar_one()
 
         user_id = uuid.uuid4()
-        npo_id = uuid.uuid4()
-
         await db_session.execute(
             text(
                 """
@@ -316,14 +323,14 @@ class TestUsersRoleUpdateContract:
         await db_session.commit()
 
         # Update to npo_admin with npo_id
-        payload = {"role": "npo_admin", "npo_id": str(npo_id)}
+        payload = {"role": "npo_admin", "npo_id": str(test_approved_npo.id)}
         response = await super_admin_client.patch(f"/api/v1/users/{user_id}/role", json=payload)
 
         # This will fail until we implement the endpoint
         assert response.status_code == 200
         data = response.json()
         assert data["role"] == "npo_admin"
-        assert data["npo_id"] == str(npo_id)
+        assert data["npo_id"] == str(test_approved_npo.id)
 
     @pytest.mark.asyncio
     async def test_update_from_npo_admin_to_donor_clears_npo_id(
@@ -334,7 +341,7 @@ class TestUsersRoleUpdateContract:
         Contract: PATCH /api/v1/users/{user_id}/role
         Expected: 200 OK with npo_id cleared
         """
-        # Create an npo_admin user with npo_id
+        # Create an npo_admin user with membership
         role_result = await db_session.execute(
             text("SELECT id FROM roles WHERE name = 'npo_admin'")
         )
@@ -347,9 +354,9 @@ class TestUsersRoleUpdateContract:
             text(
                 """
                 INSERT INTO users (id, email, first_name, last_name, password_hash,
-                                 email_verified, is_active, role_id, npo_id)
+                                 email_verified, is_active, role_id)
                 VALUES (:id, :email, :first_name, :last_name, :password_hash,
-                       :email_verified, :is_active, :role_id, :npo_id)
+                       :email_verified, :is_active, :role_id)
             """
             ),
             {
@@ -361,8 +368,24 @@ class TestUsersRoleUpdateContract:
                 "email_verified": True,
                 "is_active": True,
                 "role_id": npo_admin_role_id,
-                "npo_id": npo_id,
             },
+        )
+        db_session.add(
+            NPO(
+                id=npo_id,
+                name=f"Role Downgrade NPO {npo_id}",
+                email=f"role-downgrade-{npo_id}@example.com",
+                status=NPOStatus.APPROVED,
+                created_by_user_id=user_id,
+            )
+        )
+        db_session.add(
+            NPOMember(
+                npo_id=npo_id,
+                user_id=user_id,
+                role=MemberRole.ADMIN,
+                status=MemberStatus.ACTIVE,
+            )
         )
         await db_session.commit()
 

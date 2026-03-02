@@ -25,20 +25,20 @@ echo "Deploying frontend to $ENVIRONMENT environment..."
 # Set API URL based on environment
 case $ENVIRONMENT in
     dev)
-        API_URL="https://augeo-dev-api.azurewebsites.net"
+        API_URL="https://fundrbolt-dev-api.azurewebsites.net"
         ;;
     staging)
-        API_URL="https://augeo-staging-api.azurewebsites.net"
+        API_URL="https://fundrbolt-staging-api.azurewebsites.net"
         ;;
     production)
-        API_URL="https://api.augeo.app"
+        API_URL="https://api.fundrbolt.com"
         ;;
 esac
 
 echo "Using API URL: $API_URL"
 
 # Navigate to frontend directory
-cd frontend/augeo-admin
+cd frontend/fundrbolt-admin
 
 # Install dependencies
 echo "Installing dependencies..."

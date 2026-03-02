@@ -22,7 +22,7 @@ I've configured VS Code to automatically discover and display your Python tests 
 "python.testing.cwd": "${workspaceFolder}/backend",
 
 // Python Environment - Poetry virtualenv
-"python.defaultInterpreterPath": "/home/jjeanes/.cache/pypoetry/virtualenvs/augeo-backend-koj7Cp7X-py3.12/bin/python",
+"python.defaultInterpreterPath": "/home/jjeanes/.cache/pypoetry/virtualenvs/fundrbolt-backend-koj7Cp7X-py3.12/bin/python",
 
 // Python Formatting
 "python.formatting.provider": "black",
@@ -84,7 +84,7 @@ You should now see a tree structure:
 
 1. **Check Python Interpreter**:
    - Click Python version in bottom-left status bar
-   - Select: `/home/jjeanes/.cache/pypoetry/virtualenvs/augeo-backend-koj7Cp7X-py3.12/bin/python`
+   - Select: `/home/jjeanes/.cache/pypoetry/virtualenvs/fundrbolt-backend-koj7Cp7X-py3.12/bin/python`
 
 2. **Refresh Tests**:
    - Click the refresh icon in Testing sidebar

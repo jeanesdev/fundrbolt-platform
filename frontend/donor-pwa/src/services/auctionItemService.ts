@@ -6,6 +6,7 @@ import type {
   AuctionItemListResponse,
   AuctionItemUpdate,
   AuctionType,
+  BidResponse,
   ItemStatus,
 } from '@/types/auction-item';
 
@@ -42,7 +43,10 @@ class AuctionItemService {
     itemId: string
   ): Promise<AuctionItemDetail> {
     const response = await apiClient.get<AuctionItemDetail>(
-      `/events/${eventId}/auction-items/${itemId}`
+      `/events/${eventId}/auction-items/${itemId}`,
+      {
+        timeout: 15000,
+      }
     );
     return response.data;
   }
@@ -83,6 +87,76 @@ class AuctionItemService {
    */
   async deleteAuctionItem(eventId: string, itemId: string): Promise<void> {
     await apiClient.delete(`/events/${eventId}/auction-items/${itemId}`);
+  }
+
+  /**
+   * Place a bid on an auction item
+   */
+  async placeBid(
+    eventId: string,
+    itemId: string,
+    amount: number
+  ): Promise<BidResponse> {
+    const response = await apiClient.post<BidResponse>(
+      '/auction/bids',
+      {
+        event_id: eventId,
+        auction_item_id: itemId,
+        bid_amount: amount,
+        bid_type: 'regular',
+      }
+    );
+    return response.data;
+  }
+
+  /**
+   * Place a max bid on an auction item
+   */
+  async placeMaxBid(
+    eventId: string,
+    itemId: string,
+    maxAmount: number
+  ): Promise<BidResponse> {
+    const response = await apiClient.post<BidResponse>(
+      '/auction/bids',
+      {
+        event_id: eventId,
+        auction_item_id: itemId,
+        bid_amount: maxAmount,
+        max_bid: maxAmount,
+        bid_type: 'proxy_auto',
+      }
+    );
+    return response.data;
+  }
+
+  /**
+   * Buy now an auction item
+   */
+  async buyNow(
+    eventId: string,
+    itemId: string,
+    quantity: number = 1
+  ): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post(
+      `/events/${eventId}/auction-items/${itemId}/buy-now`,
+      { quantity }
+    );
+    return response.data;
+  }
+
+  /**
+   * Track item view duration
+   */
+  async trackItemView(
+    eventId: string,
+    itemId: string,
+    durationSeconds: number
+  ): Promise<void> {
+    await apiClient.post(
+      `/events/${eventId}/auction-items/${itemId}/views`,
+      { duration_seconds: durationSeconds }
+    );
   }
 }
 

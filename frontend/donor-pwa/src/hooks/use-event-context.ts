@@ -69,8 +69,8 @@ export function useEventContext(): UseEventContextReturn {
       // Invalidate queries to refetch with new event context
       queryClient.invalidateQueries()
 
-      // Navigate to the event page
-      navigate({ to: '/events/$eventId', params: { eventId: event.id } })
+      // Navigate to the event page using slug
+      navigate({ to: '/events/$eventSlug', params: { eventSlug: event.slug } })
     },
     [setSelectedEvent, queryClient, navigate]
   )

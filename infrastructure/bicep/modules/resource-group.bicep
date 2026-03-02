@@ -1,4 +1,4 @@
-// Resource Group module for Augeo Platform
+// Resource Group module for Fundrbolt Platform
 targetScope = 'subscription'
 
 @description('Name of the resource group')

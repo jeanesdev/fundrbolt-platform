@@ -4,7 +4,7 @@
 
 set -e
 
-echo "=== Augeo Testimonials Feature - Manual Testing Commands ==="
+echo "=== Fundrbolt Testimonials Feature - Manual Testing Commands ==="
 echo ""
 
 # Colors
@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 
 # 1. Check services
 echo -e "${BLUE}1. Checking Services...${NC}"
-docker-compose ps | grep -E "augeo_postgres|augeo_redis"
+docker-compose ps | grep -E "fundrbolt_postgres|fundrbolt_redis"
 echo ""
 
 # 2. Get auth token

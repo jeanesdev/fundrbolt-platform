@@ -147,7 +147,7 @@ class ContactService:
             Exception: If email sending fails
         """
         # Email to platform team (fallback to default)
-        recipient_email = "support@augeo.app"
+        recipient_email = "support@fundrbolt.com"
 
         subject = f"New Contact Form Submission: {submission.subject}"
 
@@ -180,7 +180,7 @@ IP Address: {submission.ip_address}
         html_body = _create_email_html_template(
             heading="New Contact Form Submission",
             body_paragraphs=body_paragraphs,
-            footer_text="This is an automated notification from the Augeo Platform.",
+            footer_text="This is an automated notification from the Fundrbolt Platform.",
         )
 
         # Send email using existing EmailService method

@@ -1,7 +1,7 @@
 # Email Setup Quick Reference
 
 ## Prerequisites
-✅ DNS registration for augeo.app is complete
+✅ DNS registration for fundrbolt.com is complete
 ✅ Azure subscription with permissions to deploy resources
 
 ## Step-by-Step Email Setup
@@ -59,7 +59,7 @@ If not verified yet, wait 10 more minutes and re-run.
 ./infrastructure/scripts/test-email.sh your-email@example.com
 
 # Or specify a different sender address
-./infrastructure/scripts/test-email.sh your-email@example.com support@augeo.app
+./infrastructure/scripts/test-email.sh your-email@example.com support@fundrbolt.com
 ```
 
 **Check**: Your inbox (and spam folder) for the test email
@@ -81,13 +81,13 @@ Follow the prompts to:
 ```bash
 # Get ACS connection string
 ACS_CONNECTION_STRING=$(az communication list-key \
-  --name augeo-production-acs \
-  --resource-group augeo-production-rg \
+  --name fundrbolt-production-acs \
+  --resource-group fundrbolt-production-rg \
   --query "primaryConnectionString" -o tsv)
 
 # Store in Key Vault
 az keyvault secret set \
-  --vault-name augeo-production-kv \
+  --vault-name fundrbolt-production-kv \
   --name acs-connection-string \
   --value "$ACS_CONNECTION_STRING"
 ```
@@ -97,28 +97,28 @@ az keyvault secret set \
 ```bash
 # Update App Service configuration
 az webapp config appsettings set \
-  --name augeo-production-api \
-  --resource-group augeo-production-rg \
+  --name fundrbolt-production-api \
+  --resource-group fundrbolt-production-rg \
   --settings \
     EMAIL_PROVIDER="azure_communication_services" \
-    ACS_CONNECTION_STRING="@Microsoft.KeyVault(SecretUri=https://augeo-production-kv.vault.azure.net/secrets/acs-connection-string/)" \
-    EMAIL_FROM="noreply@augeo.app" \
-    EMAIL_SUPPORT="support@augeo.app" \
-    EMAIL_BILLING="billing@augeo.app"
+    ACS_CONNECTION_STRING="@Microsoft.KeyVault(SecretUri=https://fundrbolt-production-kv.vault.azure.net/secrets/acs-connection-string/)" \
+    EMAIL_FROM="noreply@fundrbolt.com" \
+    EMAIL_SUPPORT="support@fundrbolt.com" \
+    EMAIL_BILLING="billing@fundrbolt.com"
 
 # Restart App Service
 az webapp restart \
-  --name augeo-production-api \
-  --resource-group augeo-production-rg
+  --name fundrbolt-production-api \
+  --resource-group fundrbolt-production-rg
 ```
 
 ## Available Sender Addresses
 
 After setup, you can send emails from:
-- `noreply@augeo.app` - System notifications, automated emails
-- `support@augeo.app` - Support inquiries, help tickets
-- `billing@augeo.app` - Invoices, payment receipts
-- `notifications@augeo.app` - User notifications, alerts
+- `noreply@fundrbolt.com` - System notifications, automated emails
+- `support@fundrbolt.com` - Support inquiries, help tickets
+- `billing@fundrbolt.com` - Invoices, payment receipts
+- `notifications@fundrbolt.com` - User notifications, alerts
 
 ## Verification Checklist
 
@@ -137,9 +137,9 @@ After setup, you can send emails from:
 ### Domain not verifying
 ```bash
 # Check DNS propagation
-dig TXT augeo.app +short
-dig TXT _dmarc.augeo.app +short
-dig CNAME selector1-azurecomm-prod-net._domainkey.augeo.app +short
+dig TXT fundrbolt.com +short
+dig TXT _dmarc.fundrbolt.com +short
+dig CNAME selector1-azurecomm-prod-net._domainkey.fundrbolt.com +short
 
 # Wait longer (up to 48 hours for full global propagation)
 # Re-run verification script
@@ -156,13 +156,13 @@ dig CNAME selector1-azurecomm-prod-net._domainkey.augeo.app +short
 ```bash
 # Check ACS service status
 az communication show \
-  --name augeo-production-acs \
-  --resource-group augeo-production-rg
+  --name fundrbolt-production-acs \
+  --resource-group fundrbolt-production-rg
 
 # Verify connection string is valid
 az communication list-key \
-  --name augeo-production-acs \
-  --resource-group augeo-production-rg
+  --name fundrbolt-production-acs \
+  --resource-group fundrbolt-production-rg
 ```
 
 ## Cost
@@ -197,5 +197,5 @@ After email setup:
 | Verify domain | `./infrastructure/scripts/verify-email-domain.sh` |
 | Send test email | `./infrastructure/scripts/test-email.sh <email>` |
 | Test auth score | `./infrastructure/scripts/test-email-score.sh` |
-| Check DNS | `dig TXT augeo.app +short` |
-| Get connection string | `az communication list-key --name augeo-production-acs --resource-group augeo-production-rg` |
+| Check DNS | `dig TXT fundrbolt.com +short` |
+| Get connection string | `az communication list-key --name fundrbolt-production-acs --resource-group fundrbolt-production-rg` |

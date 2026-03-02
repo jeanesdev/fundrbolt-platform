@@ -31,8 +31,8 @@ Based on plan.md: Web application structure with `backend/` and `frontend/` dire
 - [x] T006 [P] Create backend/alembic.ini and backend/alembic/env.py for database migrations
 - [x] T007 [P] Setup pytest configuration in backend/pytest.ini with coverage reporting
 - [x] T008 [P] Create GitHub Actions workflow .github/workflows/backend-ci.yml for lint/test/type-check
-- [x] T009 [P] Initialize frontend/augeo-admin with Vite + React 18 + TypeScript 5
-- [x] T010 [P] Setup frontend dependencies: zustand, react-query, react-router-dom, axios in frontend/augeo-admin/package.json
+- [x] T009 [P] Initialize frontend/fundrbolt-admin with Vite + React 18 + TypeScript 5
+- [x] T010 [P] Setup frontend dependencies: zustand, react-query, react-router-dom, axios in frontend/fundrbolt-admin/package.json
 - [x] T011 [P] Create shared TypeScript types in frontend/shared/types/{user.ts, auth.ts, role.ts}
 
 **Completed**: October 20, 2025 | **PR**: #1 Setup
@@ -98,12 +98,12 @@ Based on plan.md: Web application structure with `backend/` and `frontend/` dire
 - [x] T042 [US1] Add validation: email uniqueness check, password strength (8+ chars, 1 letter, 1 number) in backend/app/schemas/auth.py
 - [x] T043 [US1] Add audit logging for login, logout, failed_login events in backend/app/services/audit_service.py
 - [x] T044 [US1] Implement rate limiting for login endpoint (5 attempts/15min) using Redis sorted sets in backend/app/middleware/rate_limit.py
-- [x] T045 [P] [US1] Create login form component in frontend/augeo-admin/src/features/auth/LoginForm.tsx
-- [x] T046 [P] [US1] Create registration form component in frontend/augeo-admin/src/features/auth/RegisterForm.tsx
-- [x] T047 [US1] Create auth store with Zustand: login(), logout(), getUser() in frontend/augeo-admin/src/stores/auth-store.ts
-- [x] T048 [US1] Create axios interceptor for adding Authorization header in frontend/augeo-admin/src/lib/axios.ts
-- [x] T049 [US1] Create ProtectedRoute component that checks auth state in frontend/augeo-admin/src/components/ProtectedRoute.tsx
-- [x] T050 [US1] Add login/register routes to React Router in frontend/augeo-admin/src/routes/__root.tsx
+- [x] T045 [P] [US1] Create login form component in frontend/fundrbolt-admin/src/features/auth/LoginForm.tsx
+- [x] T046 [P] [US1] Create registration form component in frontend/fundrbolt-admin/src/features/auth/RegisterForm.tsx
+- [x] T047 [US1] Create auth store with Zustand: login(), logout(), getUser() in frontend/fundrbolt-admin/src/stores/auth-store.ts
+- [x] T048 [US1] Create axios interceptor for adding Authorization header in frontend/fundrbolt-admin/src/lib/axios.ts
+- [x] T049 [US1] Create ProtectedRoute component that checks auth state in frontend/fundrbolt-admin/src/components/ProtectedRoute.tsx
+- [x] T050 [US1] Add login/register routes to React Router in frontend/fundrbolt-admin/src/routes/__root.tsx
 - [x] T051 [P] [US2] Create contract test for POST /api/v1/password/reset/request in backend/app/tests/contract/test_password_reset.py
 - [x] T052 [P] [US2] Create contract test for POST /api/v1/password/reset/confirm in backend/app/tests/contract/test_password_reset.py
 - [x] T053 [P] [US2] Create contract test for POST /api/v1/password/change in backend/app/tests/contract/test_password_reset.py
@@ -121,10 +121,10 @@ Based on plan.md: Web application structure with `backend/` and `frontend/` dire
 - [x] T062 [US2] Implement POST /api/v1/auth/password/change endpoint (authenticated) per contracts/auth.yaml in backend/app/api/v1/auth.py
 - [x] T063 [US2] Add session revocation on password change (all sessions except current) in backend/app/services/session_service.py
 - [x] T064 [US2] Add audit logging for password_reset_requested, password_reset_completed, password_changed events in backend/app/services/audit_service.py
-- [x] T065 [P] [US2] Create password reset request form component in frontend/augeo-admin/src/features/auth/password-reset/
-- [x] T066 [P] [US2] Create password reset confirm form component in frontend/augeo-admin/src/features/auth/password-reset-confirm/
-- [x] T067 [P] [US2] Create password change form component in frontend/augeo-admin/src/features/settings/account/components/
-- [x] T068 [US2] Add password reset routes to React Router in frontend/augeo-admin/src/routes/(auth)/
+- [x] T065 [P] [US2] Create password reset request form component in frontend/fundrbolt-admin/src/features/auth/password-reset/
+- [x] T066 [P] [US2] Create password reset confirm form component in frontend/fundrbolt-admin/src/features/auth/password-reset-confirm/
+- [x] T067 [P] [US2] Create password change form component in frontend/fundrbolt-admin/src/features/settings/account/components/
+- [x] T068 [US2] Add password reset routes to React Router in frontend/fundrbolt-admin/src/routes/(auth)/
 
 **Completed**: October 21, 2025 | **Commits**: 6127cb4 (tests), 0b03420 (schemas/services), 13137fa (endpoints)
 
@@ -174,10 +174,10 @@ Based on plan.md: Web application structure with `backend/` and `frontend/` dire
 - [x] T086 [US3] Create authorization middleware with @require_role, @require_permission decorators in backend/app/middleware/auth.py
 - [x] T087 [US3] Implement role-based access control checks for all user management endpoints in backend/app/api/v1/users.py
 - [x] T088 [US3] Add audit logging for role_changed, account_deactivated events in backend/app/services/audit_service.py
-- [x] T089 [P] [US3] Create user list page component with table in frontend/augeo-admin/src/features/users/UserListPage.tsx
-- [x] T090 [P] [US3] Create user create form component in frontend/augeo-admin/src/features/users/UserCreateForm.tsx
-- [x] T091 [P] [US3] Create role assignment dialog component in frontend/augeo-admin/src/features/users/RoleAssignmentDialog.tsx
-- [x] T092 [US3] Add user management routes (admin only) to React Router in frontend/augeo-admin/src/routes/_authenticated/
+- [x] T089 [P] [US3] Create user list page component with table in frontend/fundrbolt-admin/src/features/users/UserListPage.tsx
+- [x] T090 [P] [US3] Create user create form component in frontend/fundrbolt-admin/src/features/users/UserCreateForm.tsx
+- [x] T091 [P] [US3] Create role assignment dialog component in frontend/fundrbolt-admin/src/features/users/RoleAssignmentDialog.tsx
+- [x] T092 [US3] Add user management routes (admin only) to React Router in frontend/fundrbolt-admin/src/routes/_authenticated/
 
 **Completed**: October 22, 2025 | **Commits**: ae14a19 (backend), ad7bcce (frontend T089-T091)
 
@@ -248,8 +248,8 @@ Based on plan.md: Web application structure with `backend/` and `frontend/` dire
 - [x] T100 [US4] Implement refresh token validation and rotation in backend/app/services/auth_service.py
 - [x] T101 [US4] Implement JWT blacklist using Redis for revoked access tokens in backend/app/services/redis_service.py
 - [x] T102 [US4] Add session expiration check to auth middleware (validate session in Redis) in backend/app/middleware/auth.py
-- [x] T103 [US4] Add automatic token refresh logic to axios interceptor (handle 401 responses) in frontend/augeo-admin/src/lib/axios.ts
-- [x] T104 [US4] Add session expiration warning component (show modal 2 minutes before expiry) in frontend/augeo-admin/src/components/SessionExpirationWarning.tsx
+- [x] T103 [US4] Add automatic token refresh logic to axios interceptor (handle 401 responses) in frontend/fundrbolt-admin/src/lib/axios.ts
+- [x] T104 [US4] Add session expiration warning component (show modal 2 minutes before expiry) in frontend/fundrbolt-admin/src/components/SessionExpirationWarning.tsx
 - [x] T105 [US4] Add device tracking: store device info (user agent, IP) with sessions in backend/app/services/session_service.py
 - [x] T106 [US4] Add audit logging for session_revoked events in backend/app/services/audit_service.py
 
@@ -271,7 +271,7 @@ Based on plan.md: Web application structure with `backend/` and `frontend/` dire
   - Reduced polling interval from 1s to 5s (avoid ngrok rate limits)
   - Token expiry set to 15 minutes (production setting)
 - Tests status: 33/36 passing (92%)
-- Ngrok configuration: Dual tunnels for mobile testing (augeo-frontend/backend.ngrok.io)
+- Ngrok configuration: Dual tunnels for mobile testing (fundrbolt-frontend/backend.ngrok.io)
 
 **Checkpoint**: ✅ All user stories complete - full authentication system with session management
 
@@ -300,8 +300,8 @@ Based on plan.md: Web application structure with `backend/` and `frontend/` dire
 - [x] T116 Add email verification check to login endpoint (block unverified users) in backend/app/api/v1/auth.py
 - [x] T117 Add verification email sending to registration endpoint in backend/app/api/v1/auth.py
 - [x] T118 Add audit logging for email_verified events in backend/app/services/audit_service.py
-- [x] T119 [P] Create email verification page component in frontend/augeo-admin/src/features/auth/EmailVerificationPage.tsx
-- [x] T120 Add email verification route to React Router in frontend/augeo-admin/src/routes/(auth)/
+- [x] T119 [P] Create email verification page component in frontend/fundrbolt-admin/src/features/auth/EmailVerificationPage.tsx
+- [x] T120 Add email verification route to React Router in frontend/fundrbolt-admin/src/routes/(auth)/
 
 **Completed**: October 24, 2025 | **Commit**: 9dda30c
 
@@ -350,7 +350,7 @@ Based on plan.md: Web application structure with `backend/` and `frontend/` dire
 - [ ] T130 Implement POST /api/v1/events/{event_id}/staff endpoint (NPO Admin only) per contracts/users.yaml in backend/app/api/v1/users.py
 - [ ] T131 Implement DELETE /api/v1/events/{event_id}/staff/{user_id} endpoint per contracts/users.yaml in backend/app/api/v1/users.py
 - [ ] T132 Add event staff access checks to authorization middleware in backend/app/middleware/auth.py
-- [ ] T133 [P] Create event staff assignment component in frontend/augeo-admin/src/features/events/EventStaffAssignment.tsx
+- [ ] T133 [P] Create event staff assignment component in frontend/fundrbolt-admin/src/features/events/EventStaffAssignment.tsx
 
 **Checkpoint**: Event staff assignment complete - staff users scoped to specific events
 
@@ -407,7 +407,7 @@ Based on plan.md: Web application structure with `backend/` and `frontend/` dire
 - Documentation: quickstart.md already includes super admin setup section
 - Testing successful:
   - ✅ Migration applied: `alembic upgrade head`
-  - ✅ User created in database: <admin@augeo.app> with super_admin role
+  - ✅ User created in database: <admin@fundrbolt.com> with super_admin role
   - ✅ Login successful: POST /auth/login returns valid tokens
   - ✅ User verified and active: email_verified=True, is_active=True
 
@@ -462,7 +462,7 @@ Based on plan.md: Web application structure with `backend/` and `frontend/` dire
 
 - [x] T154 [P] Add API documentation with OpenAPI/Swagger at /docs endpoint in backend/app/main.py
 - [x] T155 [P] Create comprehensive README.md in backend/ with setup instructions
-- [x] T156 [P] Create comprehensive README.md in frontend/augeo-admin/ with setup instructions
+- [x] T156 [P] Create comprehensive README.md in frontend/fundrbolt-admin/ with setup instructions
 - [x] T157 [P] Add error handling for database connection failures in backend/app/core/database.py
 - [x] T158 [P] Add error handling for Redis connection failures in backend/app/core/redis.py
 - [x] T159 [P] Add error handling for email service failures in backend/app/services/email_service.py
@@ -475,7 +475,7 @@ Based on plan.md: Web application structure with `backend/` and `frontend/` dire
 - [x] T165 [P] Security hardening: Add CORS configuration with allowed origins in backend/app/main.py
 - [ ] T166 [P] Security hardening: Add rate limiting to all public endpoints in backend/app/middleware/rate_limit.py
 - [x] T167 [P] Security hardening: Add request ID tracing for debugging in backend/app/middleware/request_id.py
-- [ ] T168 [P] Add E2E tests with Playwright for critical user journeys in frontend/augeo-admin/e2e/
+- [ ] T168 [P] Add E2E tests with Playwright for critical user journeys in frontend/fundrbolt-admin/e2e/
 - [ ] T169 Run quickstart.md validation: Setup Docker Compose, run migrations, test auth flow end-to-end
 - [ ] T170 Update .github/copilot-instructions.md with auth feature completion
 
@@ -495,9 +495,9 @@ Based on plan.md: Web application structure with `backend/` and `frontend/` dire
 - T154-T160, T161, T165, T167: Complete with commits d209165, ffcafc1, and 2febc78
 - T161 (Metrics): Prometheus endpoint with:
   - `/metrics` endpoint in Prometheus text format
-  - HTTP request counter (`augeo_http_requests_total`) with method/path/status labels
-  - Failure counters for DB (`augeo_db_failures_total`), Redis (`augeo_redis_failures_total`), Email (`augeo_email_failures_total`)
-  - Up/down gauge (`augeo_up`) for liveness tracking
+  - HTTP request counter (`fundrbolt_http_requests_total`) with method/path/status labels
+  - Failure counters for DB (`fundrbolt_db_failures_total`), Redis (`fundrbolt_redis_failures_total`), Email (`fundrbolt_email_failures_total`)
+  - Up/down gauge (`fundrbolt_up`) for liveness tracking
   - Metrics middleware for automatic request tracking
   - X-Process-Time header for debugging
   - Tested and verified: all metrics incrementing correctly
@@ -506,7 +506,7 @@ Based on plan.md: Web application structure with `backend/` and `frontend/` dire
 - Error handling: All external services (DB, Redis, email) have retry logic with exponential backoff
 - Request ID middleware: Distributed tracing with X-Request-ID header in all responses
 - Backend README: 400+ lines with complete setup, API docs, troubleshooting
-- Frontend README: Completely rewritten from template to Augeo-specific content
+- Frontend README: Completely rewritten from template to Fundrbolt-specific content
 - Rate limiting (T166): Already implemented for login endpoint, needs expansion to all public endpoints
 - Code cleanup (T162): Ongoing as part of each commit
 - Metrics (T161): Prometheus endpoint TODO
@@ -652,7 +652,7 @@ With multiple developers:
 
 ### Frontend Updates
 
-- [x] T177 [P] Add organization_name and organization_address fields to SignUpForm component with optional validation in frontend/augeo-admin/src/features/auth/sign-up/components/sign-up-form.tsx
+- [x] T177 [P] Add organization_name and organization_address fields to SignUpForm component with optional validation in frontend/fundrbolt-admin/src/features/auth/sign-up/components/sign-up-form.tsx
 - [x] T178 [P] Add organization_name and organization_address fields to user type definitions for profile updates in frontend/shared/types/user.ts
 - [x] T179 [P] Update User type definition to include organization_name?: string | null and organization_address?: string | null in frontend/shared/types/user.ts
 

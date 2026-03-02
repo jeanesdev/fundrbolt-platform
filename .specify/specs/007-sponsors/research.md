@@ -458,13 +458,13 @@ All functionality can be implemented with existing dependencies.
 ```python
 # Add to app/core/metrics.py
 SPONSOR_UPLOADS_TOTAL = Counter(
-    'augeo_sponsor_uploads_total',
+    'fundrbolt_sponsor_uploads_total',
     'Total sponsor logo uploads',
     ['status']  # success, failure
 )
 
 SPONSOR_OPERATIONS_TOTAL = Counter(
-    'augeo_sponsor_operations_total',
+    'fundrbolt_sponsor_operations_total',
     'Total sponsor CRUD operations',
     ['operation', 'status']  # create/update/delete, success/failure
 )
@@ -537,4 +537,4 @@ SPONSOR_OPERATIONS_TOTAL = Counter(
 - Existing Media Upload: `backend/app/services/media_service.py`
 - Existing File Upload: `backend/app/services/file_upload_service.py`
 - Event Media Model: `backend/app/models/event.py` (EventMedia)
-- Frontend Media Upload: `frontend/augeo-admin/src/features/events/components/MediaUploader.tsx`
+- Frontend Media Upload: `frontend/fundrbolt-admin/src/features/events/components/MediaUploader.tsx`

@@ -57,8 +57,8 @@ async def search(
         permission_service = PermissionService()
 
         # T077: Apply role-based NPO filtering
-        filtered_npo_id = permission_service.get_npo_filter_for_user(
-            current_user, search_request.npo_id
+        filtered_npo_id = await permission_service.get_npo_filter_for_user(
+            db, current_user, search_request.npo_id
         )
 
         logger.info(f"Filtered NPO ID: {filtered_npo_id}")
@@ -98,7 +98,12 @@ async def search(
 
             # Apply NPO filtering if specified
             if filtered_npo_id:
-                users_query = users_query.where(User.npo_id == filtered_npo_id)
+                from app.models.npo_member import MemberStatus, NPOMember
+
+                users_query = users_query.join(NPOMember, NPOMember.user_id == User.id).where(
+                    NPOMember.npo_id == filtered_npo_id,
+                    NPOMember.status == MemberStatus.ACTIVE,
+                )
 
             # Limit results
             users_query = users_query.limit(search_request.limit)
@@ -115,7 +120,7 @@ async def search(
                     first_name=user.first_name,
                     last_name=user.last_name,
                     role=user.role.name if user.role else "unknown",
-                    npo_id=user.npo_id,
+                    npo_id=filtered_npo_id,
                     organization_name=user.organization_name,
                     created_at=user.created_at,
                 )

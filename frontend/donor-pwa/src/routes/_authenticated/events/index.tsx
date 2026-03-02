@@ -6,11 +6,11 @@ import { createFileRoute, Navigate } from '@tanstack/react-router'
  * Redirects to the selected event - no event list in donor PWA
  */
 function EventsIndexPage() {
-  const { selectedEventId, hasEvents } = useEventContext()
+  const { selectedEventSlug, hasEvents } = useEventContext()
 
   // Redirect to selected event
-  if (selectedEventId) {
-    return <Navigate to="/events/$eventId" params={{ eventId: selectedEventId }} />
+  if (selectedEventSlug) {
+    return <Navigate to="/events/$eventSlug" params={{ eventSlug: selectedEventSlug }} />
   }
 
   // No events - redirect to home

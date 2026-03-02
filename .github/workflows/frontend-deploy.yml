@@ -15,7 +15,7 @@ on:
     branches:
       - main
     paths:
-      - 'frontend/augeo-admin/**'
+      - 'frontend/fundrbolt-admin/**'
       - '.github/workflows/frontend-deploy.yml'
 
 permissions:
@@ -29,7 +29,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'dev'
     environment:
       name: dev
-      url: https://augeo-dev-admin.azurestaticapps.net
+      url: https://fundrbolt-dev-admin.azurestaticapps.net
 
     steps:
       - name: Checkout code
@@ -46,14 +46,14 @@ jobs:
           version: 8
 
       - name: Install dependencies
-        working-directory: ./frontend/augeo-admin
+        working-directory: ./frontend/fundrbolt-admin
         run: pnpm install
 
       - name: Build application
-        working-directory: ./frontend/augeo-admin
+        working-directory: ./frontend/fundrbolt-admin
         run: pnpm build
         env:
-          VITE_API_URL: https://augeo-dev-api.azurewebsites.net
+          VITE_API_URL: https://fundrbolt-dev-api.azurewebsites.net
           VITE_ENVIRONMENT: dev
 
       - name: Deploy to Azure Static Web Apps
@@ -62,7 +62,7 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_DEV }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: 'upload'
-          app_location: '/frontend/augeo-admin'
+          app_location: '/frontend/fundrbolt-admin'
           output_location: 'dist'
           skip_app_build: true
 
@@ -73,7 +73,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
     environment:
       name: staging
-      url: https://augeo-staging-admin.azurestaticapps.net
+      url: https://fundrbolt-staging-admin.azurestaticapps.net
 
     steps:
       - name: Checkout code
@@ -90,14 +90,14 @@ jobs:
           version: 8
 
       - name: Install dependencies
-        working-directory: ./frontend/augeo-admin
+        working-directory: ./frontend/fundrbolt-admin
         run: pnpm install
 
       - name: Build application
-        working-directory: ./frontend/augeo-admin
+        working-directory: ./frontend/fundrbolt-admin
         run: pnpm build
         env:
-          VITE_API_URL: https://augeo-staging-api.azurewebsites.net
+          VITE_API_URL: https://fundrbolt-staging-api.azurewebsites.net
           VITE_ENVIRONMENT: staging
 
       - name: Deploy to Azure Static Web Apps
@@ -106,7 +106,7 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_STAGING }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: 'upload'
-          app_location: '/frontend/augeo-admin'
+          app_location: '/frontend/fundrbolt-admin'
           output_location: 'dist'
           skip_app_build: true
 
@@ -117,7 +117,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'production'
     environment:
       name: production
-      url: https://admin.augeo.app
+      url: https://admin.fundrbolt.com
 
     steps:
       - name: Checkout code
@@ -134,14 +134,14 @@ jobs:
           version: 8
 
       - name: Install dependencies
-        working-directory: ./frontend/augeo-admin
+        working-directory: ./frontend/fundrbolt-admin
         run: pnpm install
 
       - name: Build application
-        working-directory: ./frontend/augeo-admin
+        working-directory: ./frontend/fundrbolt-admin
         run: pnpm build
         env:
-          VITE_API_URL: https://api.augeo.app
+          VITE_API_URL: https://api.fundrbolt.com
           VITE_ENVIRONMENT: production
 
       - name: Deploy to Azure Static Web Apps
@@ -150,11 +150,11 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PRODUCTION }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: 'upload'
-          app_location: '/frontend/augeo-admin'
+          app_location: '/frontend/fundrbolt-admin'
           output_location: 'dist'
           skip_app_build: true
 
       - name: Verify production deployment
         run: |
           sleep 30
-          curl -f https://admin.augeo.app || exit 1
+          curl -f https://admin.fundrbolt.com || exit 1

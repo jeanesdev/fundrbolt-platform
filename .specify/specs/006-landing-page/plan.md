@@ -124,7 +124,7 @@ backend/
         ├── test_contact_service.py     # Contact service unit tests (NEW)
         └── test_testimonial_service.py # Testimonial service unit tests (NEW)
 
-frontend/augeo-admin/  # NOTE: Will create separate landing-site app in Phase 1
+frontend/fundrbolt-admin/  # NOTE: Will create separate landing-site app in Phase 1
 ├── src/
 │   ├── pages/
 │   │   ├── public/

@@ -34,7 +34,7 @@ function hexToRgb(hex: string): string {
 }
 
 /**
- * Default Augeo branding colors
+ * Default Fundrbolt branding colors
  */
 const DEFAULT_BRANDING = {
   primary: '59, 130, 246', // blue-500: #3B82F6

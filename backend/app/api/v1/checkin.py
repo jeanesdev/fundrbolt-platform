@@ -26,8 +26,8 @@ class RegistrationWithGuestsResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     event_id: uuid.UUID
+    ticket_purchase_id: uuid.UUID | None
     status: str
-    ticket_type: str | None
     number_of_guests: int
     check_in_time: str | None
     created_at: str

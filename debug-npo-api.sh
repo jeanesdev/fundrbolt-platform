@@ -28,7 +28,7 @@ fi
 echo ""
 
 echo "4. NPO Count in Database:"
-cd /home/jjeanes/augeo-platform/backend
+cd /home/jjeanes/fundrbolt-platform/backend
 poetry run python -c "
 import asyncio
 from sqlalchemy import select, text

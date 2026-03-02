@@ -18,7 +18,7 @@ param environment string
 param tags object = {}
 
 @description('GitHub repository URL')
-param repositoryUrl string = 'https://github.com/jeanesdev/augeo-platform'
+param repositoryUrl string = 'https://github.com/jeanesdev/fundrbolt-platform'
 
 @description('GitHub branch')
 param branch string = 'main'

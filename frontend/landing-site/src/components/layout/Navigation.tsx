@@ -2,6 +2,7 @@
  * Navigation component with mobile-first responsive design.
  */
 
+import { LogoNavyGold } from '@fundrbolt/shared/assets';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Navigation.css';
@@ -18,8 +19,13 @@ export const Navigation = () => {
       <div className="container">
         <div className="nav-wrapper">
           {/* Logo */}
-          <Link to="/" className="nav-logo" aria-label="Augeo Home">
-            <span className="logo-text">Augeo</span>
+          <Link to="/" className="nav-logo" aria-label="Fundrbolt Home">
+            <img
+              src={LogoNavyGold}
+              alt="Fundrbolt"
+              className="logo-image"
+              style={{ height: '32px', width: 'auto' }}
+            />
           </Link>
 
           {/* Mobile menu button */}

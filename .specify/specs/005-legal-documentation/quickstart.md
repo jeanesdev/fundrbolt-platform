@@ -47,7 +47,7 @@ cd backend
 poetry install
 
 # Frontend (no new dependencies required)
-cd frontend/augeo-admin
+cd frontend/fundrbolt-admin
 pnpm install
 ```
 
@@ -60,7 +60,7 @@ poetry run pytest app/tests/contract/test_legal_api.py -v
 poetry run pytest app/tests/integration/test_legal_flow.py -v
 
 # Frontend tests
-cd frontend/augeo-admin
+cd frontend/fundrbolt-admin
 pnpm test:unit src/components/legal
 ```
 
@@ -438,7 +438,7 @@ axios.interceptors.response.use(
 **Symptom**: Banner reappears on every page load
 
 **Solution**:
-1. Check localStorage: `localStorage.getItem('augeo_cookie_consent')`
+1. Check localStorage: `localStorage.getItem('fundrbolt_cookie_consent')`
 2. Verify API endpoint returns 200 OK for POST `/cookies/consent`
 3. Check Redis connection for authenticated users
 4. Verify `expires_at` is set to 12 months in future

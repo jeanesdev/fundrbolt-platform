@@ -1,0 +1,603 @@
+openapi: 3.0.3
+info:
+  title: Auction Bid Backend API
+  version: 1.0.0
+  description: Contracts for auction bidding, adjudication, and reporting.
+servers:
+  - url: /api/v1
+paths:
+  /auction/bids:
+    post:
+      summary: Place a bid (regular, buy-now, or proxy for silent)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BidCreateRequest"
+      responses:
+        "201":
+          description: Bid placed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BidResponse"
+        "400":
+          description: Validation error
+  /auction/items/{item_id}/bids:
+    get:
+      summary: Get bid history for an auction item
+      parameters:
+        - in: path
+          name: item_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        "200":
+          description: Bid history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BidHistoryResponse"
+  /auction/bidders/{bidder_number}/bids:
+    get:
+      summary: Get bid history for a bidder
+      parameters:
+        - in: path
+          name: bidder_number
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        "200":
+          description: Bidder bid history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BidHistoryResponse"
+  /auction/bids/{bid_id}/mark-winning:
+    post:
+      summary: Mark a bid as winning (admin)
+      parameters:
+        - in: path
+          name: bid_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkWinningRequest"
+      responses:
+        "200":
+          description: Bid marked as winning
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BidResponse"
+  /auction/bids/{bid_id}/adjust:
+    post:
+      summary: Adjust bid amount (admin)
+      parameters:
+        - in: path
+          name: bid_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustBidRequest"
+      responses:
+        "200":
+          description: Bid adjusted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BidResponse"
+  /auction/bids/{bid_id}/cancel:
+    post:
+      summary: Cancel a bid (admin)
+      parameters:
+        - in: path
+          name: bid_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminActionRequest"
+      responses:
+        "200":
+          description: Bid cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BidResponse"
+  /auction/bids/{bid_id}/transaction-status:
+    post:
+      summary: Override transaction status (admin)
+      parameters:
+        - in: path
+          name: bid_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionStatusRequest"
+      responses:
+        "200":
+          description: Transaction status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BidResponse"
+  /auction/paddle-raise:
+    post:
+      summary: Record a paddle raise contribution
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaddleRaiseRequest"
+      responses:
+        "201":
+          description: Paddle raise recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaddleRaiseResponse"
+  /auction/reports/winning-bids:
+    get:
+      summary: Report of winning bids
+      parameters:
+        - in: query
+          name: transaction_status
+          schema:
+            $ref: "#/components/schemas/TransactionStatus"
+        - in: query
+          name: auction_type
+          schema:
+            type: string
+            enum: [live, silent]
+      responses:
+        "200":
+          description: Winning bids report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WinningBidsReportResponse"
+  /auction/reports/unprocessed-transactions:
+    get:
+      summary: Report of unprocessed transactions
+      responses:
+        "200":
+          description: Unprocessed transactions report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnprocessedTransactionsReportResponse"
+  /auction/reports/bidder-analytics:
+    get:
+      summary: Bidder analytics report
+      parameters:
+        - in: query
+          name: bidder_number
+          schema:
+            type: integer
+        - in: query
+          name: auction_type
+          schema:
+            type: string
+            enum: [live, silent]
+      responses:
+        "200":
+          description: Bidder analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BidderAnalyticsReportResponse"
+  /auction/reports/item-performance:
+    get:
+      summary: Auction item performance report
+      responses:
+        "200":
+          description: Item performance report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemPerformanceReportResponse"
+  /auction/reports/bidding-wars:
+    get:
+      summary: Bidding war detection report
+      responses:
+        "200":
+          description: Bidding wars report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BiddingWarsReportResponse"
+  /auction/reports/high-value-donors:
+    get:
+      summary: High-value donor ranking report
+      responses:
+        "200":
+          description: High-value donors report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HighValueDonorReportResponse"
+components:
+  schemas:
+    BidCreateRequest:
+      type: object
+      required: [event_id, auction_item_id, bid_amount, bid_type]
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        auction_item_id:
+          type: string
+          format: uuid
+        bid_amount:
+          type: number
+          format: decimal
+        max_bid:
+          type: number
+          format: decimal
+          nullable: true
+        bid_type:
+          $ref: "#/components/schemas/BidType"
+    BidResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        auction_item_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        bidder_number:
+          type: integer
+        bid_amount:
+          type: number
+          format: decimal
+        max_bid:
+          type: number
+          format: decimal
+          nullable: true
+        bid_type:
+          $ref: "#/components/schemas/BidType"
+        bid_status:
+          $ref: "#/components/schemas/BidStatus"
+        transaction_status:
+          $ref: "#/components/schemas/TransactionStatus"
+        placed_at:
+          type: string
+          format: date-time
+    BidHistoryResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BidResponse"
+    MarkWinningRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+    AdjustBidRequest:
+      type: object
+      required: [new_amount, reason]
+      properties:
+        new_amount:
+          type: number
+          format: decimal
+        reason:
+          type: string
+    AdminActionRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+    TransactionStatusRequest:
+      type: object
+      required: [transaction_status, reason]
+      properties:
+        transaction_status:
+          $ref: "#/components/schemas/TransactionStatus"
+        reason:
+          type: string
+    PaddleRaiseRequest:
+      type: object
+      required: [event_id, amount, tier_name]
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: decimal
+        tier_name:
+          type: string
+    PaddleRaiseResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        bidder_number:
+          type: integer
+        amount:
+          type: number
+          format: decimal
+        tier_name:
+          type: string
+        placed_at:
+          type: string
+          format: date-time
+    WinningBidsReportResponse:
+      type: object
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WinningBidReportItem"
+    UnprocessedTransactionsReportResponse:
+      type: object
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UnprocessedTransactionReportItem"
+    BidderAnalyticsReportResponse:
+      type: object
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BidderAnalyticsReportItem"
+    ItemPerformanceReportResponse:
+      type: object
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemPerformanceReportItem"
+    BiddingWarsReportResponse:
+      type: object
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BiddingWarReportItem"
+    HighValueDonorReportResponse:
+      type: object
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/HighValueDonorReportItem"
+    WinningBidReportItem:
+      type: object
+      properties:
+        bid_id:
+          type: string
+          format: uuid
+        auction_item_id:
+          type: string
+          format: uuid
+        bidder_number:
+          type: integer
+        bid_amount:
+          type: number
+          format: decimal
+        bid_status:
+          $ref: "#/components/schemas/BidStatus"
+        transaction_status:
+          $ref: "#/components/schemas/TransactionStatus"
+        auction_type:
+          $ref: "#/components/schemas/AuctionType"
+        placed_at:
+          type: string
+          format: date-time
+    UnprocessedTransactionReportItem:
+      type: object
+      properties:
+        bid_id:
+          type: string
+          format: uuid
+        auction_item_id:
+          type: string
+          format: uuid
+        bidder_number:
+          type: integer
+        bid_amount:
+          type: number
+          format: decimal
+        transaction_status:
+          $ref: "#/components/schemas/TransactionStatus"
+        placed_at:
+          type: string
+          format: date-time
+    BidderAnalyticsReportItem:
+      type: object
+      properties:
+        bidder_number:
+          type: integer
+        total_won:
+          type: number
+          format: decimal
+        total_lost:
+          type: number
+          format: decimal
+        total_unprocessed:
+          type: number
+          format: decimal
+        total_max_potential:
+          type: number
+          format: decimal
+        live_total:
+          type: number
+          format: decimal
+        silent_total:
+          type: number
+          format: decimal
+        paddle_raise_total:
+          type: number
+          format: decimal
+        bidding_war_count:
+          type: integer
+        proxy_usage_rate:
+          type: number
+          format: decimal
+    ItemPerformanceReportItem:
+      type: object
+      properties:
+        auction_item_id:
+          type: string
+          format: uuid
+        total_bids:
+          type: integer
+        unique_bidders:
+          type: integer
+        starting_bid:
+          type: number
+          format: decimal
+        final_price:
+          type: number
+          format: decimal
+        revenue_total:
+          type: number
+          format: decimal
+        proxy_used:
+          type: boolean
+    BiddingWarReportItem:
+      type: object
+      properties:
+        auction_item_id:
+          type: string
+          format: uuid
+        participant_count:
+          type: integer
+        bid_frequency:
+          type: number
+          format: decimal
+        escalation_amount:
+          type: number
+          format: decimal
+        intensity_score:
+          type: number
+          format: decimal
+        manual_vs_proxy_ratio:
+          type: number
+          format: decimal
+    HighValueDonorReportItem:
+      type: object
+      properties:
+        bidder_number:
+          type: integer
+        total_giving_potential:
+          type: number
+          format: decimal
+        winning_total:
+          type: number
+          format: decimal
+        paddle_raise_total:
+          type: number
+          format: decimal
+    BidType:
+      type: string
+      enum: [regular, buy_now, proxy_auto]
+    AuctionType:
+      type: string
+      enum: [live, silent]
+    BidStatus:
+      type: string
+      enum: [active, outbid, winning, cancelled, withdrawn]
+    TransactionStatus:
+      type: string
+      enum: [pending, processing, processed, failed, refunded]

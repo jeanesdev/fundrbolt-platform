@@ -1,9 +1,9 @@
-// Development environment parameters for Augeo Platform
-using './main.bicep'
+// Development environment parameters for Fundrbolt Platform
+using '../main.bicep'
 
 param environment = 'dev'
 param location = 'eastus'
-param appName = 'augeo'
+param appName = 'fundrbolt'
 
 // PostgreSQL admin password (retrieve from environment variable or Key Vault)
 // Usage: az deployment sub create --parameters dev.bicepparam --parameters postgresAdminPassword=$POSTGRES_PASSWORD
@@ -11,7 +11,7 @@ param postgresAdminPassword = ''
 
 param tags = {
   Environment: 'dev'
-  Project: 'augeo-platform'
+  Project: 'fundrbolt-platform'
   ManagedBy: 'Bicep'
   CostCenter: 'engineering'
   Owner: 'devops-team'
@@ -20,5 +20,5 @@ param tags = {
 // Cost management
 param monthlyBudget = 100 // $100/month for dev environment
 param alertEmailAddresses = [
-  'devops@augeo.app'
+  'devops@fundrbolt.com'
 ]

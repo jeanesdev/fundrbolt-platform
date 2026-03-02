@@ -1,4 +1,4 @@
-# Augeo API Conventions
+# Fundrbolt API Conventions
 
 ## REST Endpoints
 

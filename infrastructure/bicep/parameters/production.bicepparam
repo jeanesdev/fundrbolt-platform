@@ -1,27 +1,27 @@
-// Production environment parameters for Augeo Platform
-using './main.bicep'
+// Production environment parameters for Fundrbolt Platform
+using '../main.bicep'
 
 param environment = 'production'
 param location = 'eastus'
-param appName = 'augeo'
+param appName = 'fundrbolt'
 
 // PostgreSQL admin password (retrieve from environment variable or Key Vault)
 // Usage: az deployment sub create --parameters production.bicepparam --parameters postgresAdminPassword=$POSTGRES_PASSWORD
 param postgresAdminPassword = ''
 
 // Custom domain configuration (Phase 5)
-param customDomain = 'augeo.app'
+param customDomain = 'fundrbolt.com'
 param enableCustomDomain = true
 
 // Alert notification emails (Phase 8)
 param alertEmailAddresses = [
-  'ops@augeo.app'
-  'engineering@augeo.app'
+  'ops@fundrbolt.com'
+  'engineering@fundrbolt.com'
 ]
 
 param tags = {
   Environment: 'production'
-  Project: 'augeo-platform'
+  Project: 'fundrbolt-platform'
   ManagedBy: 'Bicep'
   CostCenter: 'operations'
   Compliance: 'required'

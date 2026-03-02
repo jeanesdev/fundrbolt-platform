@@ -5,12 +5,14 @@ including listing, creating, updating roles, and deactivating users.
 """
 
 import uuid
+from datetime import datetime
 from math import ceil
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
+from app.models.npo_member import MemberRole, MemberStatus, NPOMember
 from app.models.user import User
 from app.schemas.users import (
     UserCreateRequest,
@@ -19,6 +21,12 @@ from app.schemas.users import (
     UserUpdateRequest,
 )
 from app.services.permission_service import PermissionService
+
+MEMBER_ROLE_BY_USER_ROLE = {
+    "npo_admin": MemberRole.ADMIN,
+    "event_coordinator": MemberRole.STAFF,
+    "staff": MemberRole.STAFF,
+}
 
 
 class UserService:
@@ -72,13 +80,9 @@ class UserService:
         # Apply access control based on user role
         # Note: role_name is added dynamically by auth middleware
         if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
-            if current_user.role_name in {"npo_admin", "event_coordinator"}:  # type: ignore[attr-defined]
-                # Can only see users in their NPO
-                if current_user.npo_id is None:
-                    raise PermissionError("NPO admin/coordinator must have npo_id")
-                stmt = stmt.where(or_(User.npo_id == current_user.npo_id, User.npo_id.is_(None)))
-            else:
-                # Staff and donors cannot list users
+            if npo_id is None:
+                raise PermissionError("npo_id is required to view users")
+            if not await self.permission_service.can_view_user(current_user, npo_id, db=db):
                 raise PermissionError("Insufficient permissions to view users")
 
         # Apply filters
@@ -92,11 +96,8 @@ class UserService:
             )
 
         if npo_id:
-            # Filter by NPO membership (not just npo_id field)
-            from app.models.npo_member import NPOMember
-
             stmt = stmt.join(NPOMember, NPOMember.user_id == User.id).where(
-                and_(NPOMember.npo_id == npo_id, NPOMember.status == "active")
+                and_(NPOMember.npo_id == npo_id, NPOMember.status == MemberStatus.ACTIVE)
             )
 
         if email_verified is not None:
@@ -161,7 +162,7 @@ class UserService:
             member_stmt = (
                 select(NPOMember)
                 .where(NPOMember.user_id == user.id)
-                .where(NPOMember.status == "active")
+                .where(NPOMember.status == MemberStatus.ACTIVE)
             )
             member_result = await db.execute(member_stmt)
             members = member_result.scalars().all()
@@ -191,7 +192,6 @@ class UserService:
                 "last_name": user.last_name,
                 "phone": user.phone,
                 "role": role_name,
-                "npo_id": user.npo_id,
                 "npo_memberships": npo_memberships,
                 "email_verified": user.email_verified,
                 "is_active": user.is_active,
@@ -235,7 +235,7 @@ class UserService:
             PermissionError: If user doesn't have permission to create users
         """
         # Check permissions
-        if not await self.permission_service.can_create_user(current_user, user_data.npo_id):
+        if not await self.permission_service.can_create_user(current_user, user_data.npo_id, db=db):
             raise PermissionError("Insufficient permissions to create users")
 
         if not await self.permission_service.can_assign_role(current_user, user_data.role):
@@ -276,18 +276,39 @@ class UserService:
             country=user_data.country,
             password_hash=hash_password(user_data.password),
             role_id=role_id,
-            npo_id=user_data.npo_id,
             email_verified=False,  # Will need email verification
             is_active=False,  # Activated after email verification
         )
 
         db.add(user)
+        await db.flush()
+
+        if user_data.npo_id is not None:
+            member_role = MEMBER_ROLE_BY_USER_ROLE.get(user_data.role)
+            if not member_role:
+                raise ValueError("Unsupported role for NPO membership")
+            db.add(
+                NPOMember(
+                    npo_id=user_data.npo_id,
+                    user_id=user.id,
+                    role=member_role,
+                    status=MemberStatus.ACTIVE,
+                    joined_at=datetime.utcnow(),
+                )
+            )
+
         await db.commit()
         await db.refresh(user)
 
         return user
 
-    async def get_user(self, db: AsyncSession, current_user: User, user_id: uuid.UUID) -> User:
+    async def get_user(
+        self,
+        db: AsyncSession,
+        current_user: User,
+        user_id: uuid.UUID,
+        npo_id: uuid.UUID | None = None,
+    ) -> User:
         """Get a user by ID.
 
         Args:
@@ -310,8 +331,14 @@ class UserService:
             raise ValueError("User not found")
 
         # Check permissions
-        if not await self.permission_service.can_view_user(current_user, user.npo_id):
-            raise PermissionError("Insufficient permissions to view this user")
+        if current_user.id != user_id:
+            if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
+                if npo_id is None:
+                    raise PermissionError("npo_id is required to view this user")
+                if not await self.permission_service.can_view_user(current_user, npo_id, db=db):
+                    raise PermissionError("Insufficient permissions to view this user")
+                if not await self._user_has_membership(db, user.id, npo_id):
+                    raise PermissionError("User is not a member of this NPO")
 
         # Refresh to ensure all attributes are loaded
         await db.refresh(user)
@@ -324,6 +351,7 @@ class UserService:
         current_user: User,
         user_id: uuid.UUID,
         user_data: UserUpdateRequest,
+        npo_id: uuid.UUID | None = None,
     ) -> User:
         """Update user profile.
 
@@ -340,11 +368,12 @@ class UserService:
             ValueError: If user not found
             PermissionError: If user doesn't have permission to modify this user
         """
-        user = await self.get_user(db, current_user, user_id)
+        user = await self.get_user(db, current_user, user_id, npo_id=npo_id)
 
         # Check permissions
-        if not await self.permission_service.can_modify_user(current_user, user.npo_id):
-            raise PermissionError("Insufficient permissions to modify this user")
+        if current_user.id != user_id:
+            if not await self.permission_service.can_modify_user(current_user, npo_id, db=db):
+                raise PermissionError("Insufficient permissions to modify this user")
 
         # Update fields
         if user_data.first_name is not None:
@@ -401,14 +430,14 @@ class UserService:
             ValueError: If user not found or role/npo_id validation fails
             PermissionError: If user doesn't have permission to assign this role
         """
-        user = await self.get_user(db, current_user, user_id)
+        user = await self.get_user(db, current_user, user_id, npo_id=npo_id)
 
         # Prevent users from changing their own role
         if current_user.id == user_id:
             raise PermissionError("Cannot change your own role")
 
         # Check permissions
-        if not await self.permission_service.can_modify_user(current_user, user.npo_id):
+        if not await self.permission_service.can_modify_user(current_user, npo_id, db=db):
             raise PermissionError("Insufficient permissions to modify this user")
 
         if not await self.permission_service.can_assign_role(current_user, role):
@@ -427,9 +456,16 @@ class UserService:
         if not role_id:
             raise ValueError(f"Invalid role: {role}")
 
-        # Update role and npo_id
+        # Update role and membership
         user.role_id = role_id
-        user.npo_id = npo_id
+
+        member_role = MEMBER_ROLE_BY_USER_ROLE.get(role)
+        if member_role:
+            if npo_id is None:
+                raise ValueError("npo_id is required for NPO membership roles")
+            await self._upsert_membership(db, user.id, npo_id, member_role)
+        else:
+            await self._remove_memberships(db, user.id, npo_id)
 
         await db.commit()
         await db.refresh(user)
@@ -437,7 +473,11 @@ class UserService:
         return user
 
     async def deactivate_user(
-        self, db: AsyncSession, current_user: User, user_id: uuid.UUID
+        self,
+        db: AsyncSession,
+        current_user: User,
+        user_id: uuid.UUID,
+        npo_id: uuid.UUID | None = None,
     ) -> User:
         """Deactivate a user (soft delete).
 
@@ -453,10 +493,10 @@ class UserService:
             ValueError: If user not found
             PermissionError: If user doesn't have permission to modify this user
         """
-        user = await self.get_user(db, current_user, user_id)
+        user = await self.get_user(db, current_user, user_id, npo_id=npo_id)
 
         # Check permissions
-        if not await self.permission_service.can_modify_user(current_user, user.npo_id):
+        if not await self.permission_service.can_modify_user(current_user, npo_id, db=db):
             raise PermissionError("Insufficient permissions to modify this user")
 
         user.is_active = False
@@ -466,7 +506,13 @@ class UserService:
 
         return user
 
-    async def activate_user(self, db: AsyncSession, current_user: User, user_id: uuid.UUID) -> User:
+    async def activate_user(
+        self,
+        db: AsyncSession,
+        current_user: User,
+        user_id: uuid.UUID,
+        npo_id: uuid.UUID | None = None,
+    ) -> User:
         """Activate a user account.
 
         Args:
@@ -481,10 +527,10 @@ class UserService:
             ValueError: If user not found
             PermissionError: If user doesn't have permission to modify this user
         """
-        user = await self.get_user(db, current_user, user_id)
+        user = await self.get_user(db, current_user, user_id, npo_id=npo_id)
 
         # Check permissions
-        if not await self.permission_service.can_modify_user(current_user, user.npo_id):
+        if not await self.permission_service.can_modify_user(current_user, npo_id, db=db):
             raise PermissionError("Insufficient permissions to modify this user")
 
         user.is_active = True
@@ -493,3 +539,52 @@ class UserService:
         await db.refresh(user)
 
         return user
+
+    async def _user_has_membership(
+        self, db: AsyncSession, user_id: uuid.UUID, npo_id: uuid.UUID
+    ) -> bool:
+        stmt = select(NPOMember.id).where(
+            and_(
+                NPOMember.user_id == user_id,
+                NPOMember.npo_id == npo_id,
+                NPOMember.status == MemberStatus.ACTIVE,
+            )
+        )
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none() is not None
+
+    async def _upsert_membership(
+        self,
+        db: AsyncSession,
+        user_id: uuid.UUID,
+        npo_id: uuid.UUID,
+        role: MemberRole,
+    ) -> None:
+        stmt = select(NPOMember).where(
+            and_(NPOMember.user_id == user_id, NPOMember.npo_id == npo_id)
+        )
+        result = await db.execute(stmt)
+        membership = result.scalar_one_or_none()
+        if membership:
+            membership.role = role
+            membership.status = MemberStatus.ACTIVE
+        else:
+            db.add(
+                NPOMember(
+                    npo_id=npo_id,
+                    user_id=user_id,
+                    role=role,
+                    status=MemberStatus.ACTIVE,
+                    joined_at=datetime.utcnow(),
+                )
+            )
+
+    async def _remove_memberships(
+        self, db: AsyncSession, user_id: uuid.UUID, npo_id: uuid.UUID | None
+    ) -> None:
+        stmt = select(NPOMember).where(NPOMember.user_id == user_id)
+        if npo_id is not None:
+            stmt = stmt.where(NPOMember.npo_id == npo_id)
+        result = await db.execute(stmt)
+        for membership in result.scalars().all():
+            await db.delete(membership)

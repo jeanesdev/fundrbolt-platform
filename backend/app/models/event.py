@@ -3,6 +3,7 @@
 import enum
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -11,6 +12,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     Text,
 )
@@ -21,9 +23,14 @@ from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from app.models.auction_item import AuctionItem
+    from app.models.donation import Donation
+    from app.models.donation_label import DonationLabel
     from app.models.event_registration import EventRegistration
+    from app.models.event_table import EventTable
     from app.models.npo import NPO
     from app.models.sponsor import Sponsor
+    from app.models.ticket_management import PromoCode, TicketPurchase
+    from app.models.ticket_package import TicketPackage
 
 
 class EventStatus(str, enum.Enum):
@@ -145,6 +152,11 @@ class Event(Base, UUIDMixin, TimestampMixin):
         nullable=True,
         comment="Dress code or attire (e.g., 'Black Tie', 'Cocktail Attire', 'Business Casual')",
     )
+    fundraising_goal: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 2),
+        nullable=True,
+        comment="Optional fundraising goal for event dashboard totals",
+    )
 
     # Primary Contact Information
     primary_contact_name: Mapped[str | None] = mapped_column(
@@ -195,6 +207,23 @@ class Event(Base, UUIDMixin, TimestampMixin):
         String(7),
         nullable=True,
         comment="Hex color code for accents (e.g., #FF5733)",
+    )
+
+    # Seating Configuration (Feature 012)
+    table_count: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="Total number of tables for seating assignments (NULL = seating not configured)",
+    )
+    max_guests_per_table: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="Maximum seating capacity per table (NULL = seating not configured)",
+    )
+    seating_layout_image_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        comment="Azure Blob URL for event space layout image",
     )
 
     # Optimistic Locking
@@ -254,6 +283,53 @@ class Event(Base, UUIDMixin, TimestampMixin):
         back_populates="event",
         cascade="all, delete-orphan",
     )
+    # Feature 014: Table customization relationship
+    tables: Mapped[list["EventTable"]] = relationship(
+        "EventTable",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        order_by="EventTable.table_number",
+    )
+    # Feature 015: Ticket management relationships
+    ticket_packages: Mapped[list["TicketPackage"]] = relationship(
+        "TicketPackage",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        order_by="TicketPackage.display_order",
+    )
+    promo_codes: Mapped[list["PromoCode"]] = relationship(
+        "PromoCode",
+        back_populates="event",
+        cascade="all, delete-orphan",
+    )
+    ticket_purchases: Mapped[list["TicketPurchase"]] = relationship(
+        "TicketPurchase",
+        back_populates="event",
+        cascade="all, delete-orphan",
+    )
+    donations: Mapped[list["Donation"]] = relationship(
+        "Donation",
+        back_populates="event",
+        cascade="all, delete-orphan",
+    )
+    donation_labels: Mapped[list["DonationLabel"]] = relationship(
+        "DonationLabel",
+        back_populates="event",
+        cascade="all, delete-orphan",
+    )
+
+    # Computed Properties (Feature 012)
+    @property
+    def has_seating_configuration(self) -> bool:
+        """Check if seating configuration is complete."""
+        return self.table_count is not None and self.max_guests_per_table is not None
+
+    @property
+    def total_seating_capacity(self) -> int | None:
+        """Calculate total seating capacity (tables * guests per table)."""
+        if self.has_seating_configuration:
+            return self.table_count * self.max_guests_per_table  # type: ignore
+        return None
 
     # Constraints
     __table_args__ = (

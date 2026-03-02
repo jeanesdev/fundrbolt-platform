@@ -22,21 +22,21 @@
 - [x] T001 Create donor PWA project structure at `frontend/donor-pwa/` - **DONE** (copied from admin PWA template)
 - [x] T002 Initialize Vite + React + TypeScript project with pnpm in `frontend/donor-pwa/` - **DONE** (React 19, Vite 7, TypeScript 5.9)
 - [x] T003 [P] Install dependencies: React 18, TanStack Router, Radix UI, Tailwind CSS 4, Zustand - **DONE** (all correct dependencies installed matching admin PWA)
-- [x] T004 [P] Configure TypeScript path aliases for `@/*` and `@augeo/shared/*` in `frontend/donor-pwa/tsconfig.json` - **DONE** (configured @/*and @augeo/shared/* paths)
+- [x] T004 [P] Configure TypeScript path aliases for `@/*` and `@fundrbolt/shared/*` in `frontend/donor-pwa/tsconfig.json` - **DONE** (configured @/*and @fundrbolt/shared/* paths)
 - [x] T005 [P] Setup Tailwind CSS 4 configuration in `frontend/donor-pwa/tailwind.config.ts` - **DONE** (copied from admin PWA)
-- [x] T006 [P] Configure Vite to optimize `@augeo/shared` dependencies in `frontend/donor-pwa/vite.config.ts` - **DONE** (copied from admin PWA)
+- [x] T006 [P] Configure Vite to optimize `@fundrbolt/shared` dependencies in `frontend/donor-pwa/vite.config.ts` - **DONE** (copied from admin PWA)
 - [x] T007 [P] Create Azure Static Web App Bicep template in `infrastructure/bicep/modules/donor-static-web-app.bicep` - **DONE**
 - [x] T008 [P] Add routing configuration `frontend/donor-pwa/public/staticwebapp.config.json` - **DONE** (moved from .azure/ to public/)
 - [x] T009 [P] Setup GitHub Actions workflow `.github/workflows/donor-pwa-deploy.yml` - **DONE**
 - [x] T010 Update pnpm workspace configuration to include `frontend/donor-pwa` in root `package.json` - **DONE** (created pnpm-workspace.yaml)
-- [x] T011 Create shared components symlink in `frontend/shared/` package for donor PWA consumption - **DONE** (created @augeo/shared package)
+- [x] T011 Create shared components symlink in `frontend/shared/` package for donor PWA consumption - **DONE** (created @fundrbolt/shared package)
 
 **VS Code Configuration (Extra)**:
 
 - [x] Added launch.json configuration "Frontend: Donor PWA (Chrome)" on port 5174
 - [x] Added tasks.json task "start-donor-pwa" with nvm/pnpm dev --port 5174
 
-**Status**: ✅ **PHASE 1 COMPLETE** - All setup tasks finished. Donor PWA fully configured with infrastructure (Bicep, GitHub Actions), workspace integration (pnpm-workspace.yaml), and shared components package (@augeo/shared). Ready for Phase 2 (Foundational work).
+**Status**: ✅ **PHASE 1 COMPLETE** - All setup tasks finished. Donor PWA fully configured with infrastructure (Bicep, GitHub Actions), workspace integration (pnpm-workspace.yaml), and shared components package (@fundrbolt/shared). Ready for Phase 2 (Foundational work).
 
 ---
 
@@ -145,11 +145,11 @@
 - [x] T072 [US2] Create EventDetails component with date/time/venue/description in `frontend/donor-pwa/src/components/EventDetails.tsx` - **DONE**
 - [x] T073 [US2] Apply primary color to page headers using `bg-[rgb(var(--event-primary))]` in EventHeader - **DONE**
 - [x] T074 [US2] Apply primary color to buttons and accents using CSS variables in EventDetails - **DONE**
-- [x] T075 [US2] Add default Augeo branding fallback when event branding null in useEventBranding hook - **DONE**
+- [x] T075 [US2] Add default Fundrbolt branding fallback when event branding null in useEventBranding hook - **DONE**
 - [x] T076 [US2] Create EventBrandingProvider context in `frontend/donor-pwa/src/contexts/EventBrandingContext.tsx` - **DONE**
 - [x] T077 [US2] Wrap event routes with EventBrandingProvider in root layout - **DONE**
 
-**Status**: ✅ **PHASE 4 COMPLETE** - All 11 tasks finished. Event detail route (`/events/$slug`) displays dynamic branding from API (logo, banner, primary/secondary colors). EventHeader and EventDetails components created. EventBrandingContext manages dynamic CSS variables. Default Augeo branding used as fallback when event has no custom branding.
+**Status**: ✅ **PHASE 4 COMPLETE** - All 11 tasks finished. Event detail route (`/events/$slug`) displays dynamic branding from API (logo, banner, primary/secondary colors). EventHeader and EventDetails components created. EventBrandingContext manages dynamic CSS variables. Default Fundrbolt branding used as fallback when event has no custom branding.
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - registration flow + branded event pages
 
@@ -214,9 +214,9 @@
 
 ### Implementation for US5
 
-- [x] T096 [P] [US5] Verify shared component imports from `@augeo/shared` work correctly in donor PWA - **DONE** (shadcn/ui components actively used)
+- [x] T096 [P] [US5] Verify shared component imports from `@fundrbolt/shared` work correctly in donor PWA - **DONE** (shadcn/ui components actively used)
 - [x] T097 [P] [US5] Verify Tailwind design tokens match admin PWA in `frontend/donor-pwa/tailwind.config.ts` - **DONE** (both use Tailwind v4 CSS-first, no config file)
-- [x] T098 [P] [US5] Verify TypeScript configuration matches admin PWA standards in `frontend/donor-pwa/tsconfig.json` - **DONE** (added @augeo/shared paths to admin PWA)
+- [x] T098 [P] [US5] Verify TypeScript configuration matches admin PWA standards in `frontend/donor-pwa/tsconfig.json` - **DONE** (added @fundrbolt/shared paths to admin PWA)
 - [x] T099 [P] [US5] Verify Vite build configuration matches admin PWA in `frontend/donor-pwa/vite.config.ts` - **DONE** (identical configs verified)
 - [x] T100 [US5] Create shared Button component usage example in donor PWA - **DONE** (already in use in events.$slug.register.tsx)
 - [x] T101 [US5] Create shared Input component usage example in donor PWA - **DONE** (already in use in registration forms)
@@ -225,7 +225,7 @@
 - [x] T104 [US5] Verify spacing consistency (p-4, gap-6, etc.) across both PWAs - **DONE** (verified p-4, p-6, gap-4, gap-6, space-y-4, space-y-6 usage)
 - [x] T105 [US5] Document architectural patterns in `frontend/donor-pwa/README.md` - **DONE** (comprehensive architecture section added)
 
-**Status**: ✅ **PHASE 7 COMPLETE** - All 10 tasks finished. Architectural consistency verified between admin and donor PWAs. Both use identical: vite.config.ts (TanStack Router, React SWC, Tailwind v4 plugin), components.json (shadcn/ui New York style, slate base), typography (Inter/Manrope fonts), spacing tokens (p-4/p-6, gap-4/gap-6). Admin PWA tsconfig updated with @augeo/shared paths. Comprehensive architecture documentation created in README.md covering technology stack, configuration consistency, design system, component patterns, session management, routing, state management, and differences from admin PWA.
+**Status**: ✅ **PHASE 7 COMPLETE** - All 10 tasks finished. Architectural consistency verified between admin and donor PWAs. Both use identical: vite.config.ts (TanStack Router, React SWC, Tailwind v4 plugin), components.json (shadcn/ui New York style, slate base), typography (Inter/Manrope fonts), spacing tokens (p-4/p-6, gap-4/gap-6). Admin PWA tsconfig updated with @fundrbolt/shared paths. Comprehensive architecture documentation created in README.md covering technology stack, configuration consistency, design system, component patterns, session management, routing, state management, and differences from admin PWA.
 
 **Checkpoint**: All user stories complete - donor PWA fully functional and architecturally consistent
 
@@ -251,10 +251,10 @@
 
 ### Frontend Implementation for Admin Features
 
-- [x] T115 [P] Create admin attendee list API client in `frontend/augeo-admin/src/lib/api/admin-attendees.ts` - **DONE**
-- [x] T116 [P] Create AttendeeListTable component in `frontend/augeo-admin/src/components/admin/AttendeeListTable.tsx` - **DONE**
-- [x] T117 [P] Create MealSummaryCard component in `frontend/augeo-admin/src/components/admin/MealSummaryCard.tsx` - **DONE**
-- [x] T118 Add "Guest List" tab to event registrations page in `frontend/augeo-admin/src/routes/events.$eventId.registrations.tsx` - **DONE**
+- [x] T115 [P] Create admin attendee list API client in `frontend/fundrbolt-admin/src/lib/api/admin-attendees.ts` - **DONE**
+- [x] T116 [P] Create AttendeeListTable component in `frontend/fundrbolt-admin/src/components/admin/AttendeeListTable.tsx` - **DONE**
+- [x] T117 [P] Create MealSummaryCard component in `frontend/fundrbolt-admin/src/components/admin/MealSummaryCard.tsx` - **DONE**
+- [x] T118 Add "Guest List" tab to event registrations page in `frontend/fundrbolt-admin/src/routes/events.$eventId.registrations.tsx` - **DONE**
 - [x] T119 Add "Export Attendees" button with CSV download in attendee list table - **DONE**
 - [x] T120 Add "Send Invitation" button per guest row in attendee list table - **DONE**
 - [x] T121 Add meal summary dashboard to event registrations page showing counts per meal type - **DONE**

@@ -39,54 +39,54 @@
    - Returns updated user with role information
 
 ### Frontend (React/TypeScript)
-1. **frontend/augeo-admin/src/features/auth/sign-up/components/sign-up-form.tsx**
+1. **frontend/fundrbolt-admin/src/features/auth/sign-up/components/sign-up-form.tsx**
    - Added phone formatting with validation
    - Format: `(XXX)XXX-XXXX` or `+1(XXX)XXX-XXXX`
    - Stores raw digits (10-11 chars)
 
-2. **frontend/augeo-admin/src/features/users/components/users-action-dialog.tsx**
+2. **frontend/fundrbolt-admin/src/features/users/components/users-action-dialog.tsx**
    - Fixed phone formatting in edit form
    - Removed password fields from edit (only in create)
    - Consistent validation with other forms
 
-3. **frontend/augeo-admin/src/features/users/components/users-invite-dialog.tsx**
+3. **frontend/fundrbolt-admin/src/features/users/components/users-invite-dialog.tsx**
    - Added phone formatting to invite/create user form
    - Same validation as sign-up form
 
-4. **frontend/augeo-admin/src/features/users/components/role-assignment-dialog.tsx**
+4. **frontend/fundrbolt-admin/src/features/users/components/role-assignment-dialog.tsx**
    - Added form validation for required `npo_id`
    - Shows field only when role requires it (npo_admin, event_coordinator)
    - Updated label to "NPO ID *" to show required
 
-5. **frontend/augeo-admin/src/features/users/components/users-columns.tsx**
+5. **frontend/fundrbolt-admin/src/features/users/components/users-columns.tsx**
    - Added "Email Verified" column with color-coded badges
    - Updated phone display formatting
    - Shows formatted phone: `(123)456-7890` or `+1(123)456-7890`
 
-6. **frontend/augeo-admin/src/features/users/components/data-table-row-actions.tsx**
+6. **frontend/fundrbolt-admin/src/features/users/components/data-table-row-actions.tsx**
    - Added "Verify Email" action to dropdown menu
    - Conditional: only shows when `email_verified === false`
    - Calls `useVerifyUserEmail` hook
 
-7. **frontend/augeo-admin/src/features/users/hooks/use-users.ts**
+7. **frontend/fundrbolt-admin/src/features/users/hooks/use-users.ts**
    - Added `useVerifyUserEmail` mutation hook
    - Invalidates cache on success
    - Shows success/error toast notifications
 
-8. **frontend/augeo-admin/src/features/users/api/users-api.ts**
+8. **frontend/fundrbolt-admin/src/features/users/api/users-api.ts**
    - Added `verifyUserEmail(userId)` API function
    - POST `/users/{userId}/verify-email`
    - Returns updated User object
 
-9. **frontend/augeo-admin/src/features/users/index.tsx**
+9. **frontend/fundrbolt-admin/src/features/users/index.tsx**
    - Updated default filter to show only active users
    - Maps status search param to `is_active` filter
 
-10. **frontend/augeo-admin/src/routes/_authenticated/route.tsx**
+10. **frontend/fundrbolt-admin/src/routes/_authenticated/route.tsx**
     - Added authentication check with redirect to sign-in
     - Preserves return URL for post-login redirect
 
-11. **frontend/augeo-admin/src/routes/_authenticated/users/index.tsx**
+11. **frontend/fundrbolt-admin/src/routes/_authenticated/users/index.tsx**
     - Added role-based access check (super_admin, npo_admin only)
     - Redirects unauthorized users to home
 

@@ -1,4 +1,4 @@
-// App Service (Backend API) module for Augeo Platform
+// App Service (Backend API) module for Fundrbolt Platform
 
 @description('Name of the App Service')
 param appServiceName string
@@ -27,7 +27,7 @@ param appInsightsConnectionString string
 param tags object = {}
 
 @description('Docker image to deploy')
-param dockerImage string = 'ghcr.io/jeanesdev/augeo-backend:latest'
+param dockerImage string = 'ghcr.io/jeanesdev/fundrbolt-backend:latest'
 
 resource appService 'Microsoft.Web/sites@2022-09-01' = {
   name: appServiceName

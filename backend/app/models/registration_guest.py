@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, String
+from sqlalchemy import Boolean, ForeignKey, Integer, String
 from sqlalchemy import DateTime as SADateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -13,6 +13,7 @@ from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from app.models.event_registration import EventRegistration
+    from app.models.event_table import EventTable
     from app.models.meal_selection import MealSelection
     from app.models.user import User
 
@@ -82,6 +83,61 @@ class RegistrationGuest(Base, UUIDMixin, TimestampMixin):
         default=False,
         comment="Whether the guest has checked in at the event",
     )
+    check_in_time: Mapped[datetime | None] = mapped_column(
+        SADateTime(timezone=True),
+        nullable=True,
+        comment="When the guest checked in at the event",
+    )
+
+    # Cancellation Tracking
+    status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="confirmed",
+        index=True,
+        comment="Guest status (confirmed/cancelled)",
+    )
+    cancellation_reason: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        comment="Reason for cancellation (admin-supplied)",
+    )
+    cancellation_note: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        comment="Optional cancellation note",
+    )
+
+    # Seating and Bidder Number Fields (Feature 012)
+    bidder_number: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="Three-digit bidder number for auction participation (100-999)",
+    )
+    table_number: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="Assigned table number (NULL = unassigned)",
+    )
+    bidder_number_assigned_at: Mapped[datetime | None] = mapped_column(
+        SADateTime(timezone=True),
+        nullable=True,
+        comment="Timestamp of initial bidder number assignment (for audit trail)",
+    )
+
+    # Table Captain Field (Feature 014)
+    is_table_captain: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        comment="Whether this guest is designated as captain of their assigned table",
+    )
+    is_primary: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        comment="Whether this guest is the primary registrant",
+    )
 
     # Relationships
     registration: Mapped["EventRegistration"] = relationship(
@@ -94,6 +150,29 @@ class RegistrationGuest(Base, UUIDMixin, TimestampMixin):
         back_populates="guest",
         cascade="all, delete-orphan",
     )
+    # Feature 014: Relationship to table where this guest is captain
+    captained_table: Mapped["EventTable | None"] = relationship(
+        "EventTable",
+        back_populates="captain",
+        foreign_keys="EventTable.table_captain_id",
+        uselist=False,
+    )
+
+    # Computed Properties (Feature 012)
+    @property
+    def has_bidder_number(self) -> bool:
+        """Check if bidder number is assigned."""
+        return self.bidder_number is not None
+
+    @property
+    def has_table_assignment(self) -> bool:
+        """Check if table assignment exists."""
+        return self.table_number is not None
+
+    @property
+    def is_seated(self) -> bool:
+        """Check if guest has complete seating (table + bidder number)."""
+        return self.has_table_assignment and self.has_bidder_number
 
     # Table Configuration
     __table_args__ = ()

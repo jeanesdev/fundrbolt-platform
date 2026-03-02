@@ -1,4 +1,4 @@
-# Augeo Testing Strategy
+# Fundrbolt Testing Strategy
 
 ## Test Pyramid
 

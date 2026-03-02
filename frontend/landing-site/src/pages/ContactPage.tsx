@@ -10,15 +10,15 @@ export const ContactPage = () => {
   return (
     <>
       <Helmet>
-        <title>Contact Us - Augeo Platform</title>
+        <title>Contact Us - Fundrbolt Platform</title>
         <meta
           name="description"
-          content="Get in touch with the Augeo Platform team. We're here to help with questions about our mobile silent auction platform for nonprofits."
+          content="Get in touch with the Fundrbolt Platform team. We're here to help with questions about our mobile silent auction platform for nonprofits."
         />
-        <meta property="og:title" content="Contact Us - Augeo Platform" />
+        <meta property="og:title" content="Contact Us - Fundrbolt Platform" />
         <meta
           property="og:description"
-          content="Get in touch with the Augeo Platform team. We're here to help with questions about our mobile silent auction platform for nonprofits."
+          content="Get in touch with the Fundrbolt Platform team. We're here to help with questions about our mobile silent auction platform for nonprofits."
         />
         <meta property="og:type" content="website" />
       </Helmet>
@@ -28,7 +28,7 @@ export const ContactPage = () => {
         <div className="container">
           <h1>Get in Touch</h1>
           <p className="hero-subtitle">
-            Have questions about Augeo? We're here to help. Send us a message and we'll get back to
+            Have questions about Fundrbolt? We're here to help. Send us a message and we'll get back to
             you as soon as possible.
           </p>
         </div>
@@ -50,7 +50,7 @@ export const ContactPage = () => {
                   <div className="info-icon">📧</div>
                   <div>
                     <h3>Email</h3>
-                    <p>support@augeo.app</p>
+                    <p>support@fundrbolt.com</p>
                   </div>
                 </div>
 
@@ -78,7 +78,7 @@ export const ContactPage = () => {
           <div className="resource-grid">
             <div className="resource-card">
               <h3>📚 Documentation</h3>
-              <p>Browse our comprehensive guides and tutorials for getting started with Augeo.</p>
+              <p>Browse our comprehensive guides and tutorials for getting started with Fundrbolt.</p>
             </div>
             <div className="resource-card">
               <h3>💡 FAQs</h3>
@@ -86,7 +86,7 @@ export const ContactPage = () => {
             </div>
             <div className="resource-card">
               <h3>🎯 Demo Request</h3>
-              <p>Schedule a personalized demo to see Augeo in action for your organization.</p>
+              <p>Schedule a personalized demo to see Fundrbolt in action for your organization.</p>
             </div>
           </div>
         </div>

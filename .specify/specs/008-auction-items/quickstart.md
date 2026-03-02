@@ -6,7 +6,7 @@
 
 ## Overview
 
-This guide provides step-by-step instructions for implementing the auction items feature in the Augeo platform. The feature enables event coordinators to create and manage auction items with rich media, sponsor attribution, and buy-now functionality.
+This guide provides step-by-step instructions for implementing the auction items feature in the Fundrbolt platform. The feature enables event coordinators to create and manage auction items with rich media, sponsor attribution, and buy-now functionality.
 
 **Estimated Implementation Time**: 3-4 days (backend + frontend + tests)
 

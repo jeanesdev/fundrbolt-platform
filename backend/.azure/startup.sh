@@ -4,7 +4,7 @@
 
 set -e
 
-echo "Starting Augeo backend..."
+echo "Starting Fundrbolt backend..."
 echo "Environment: $ENVIRONMENT"
 echo "Python version: $(python --version)"
 

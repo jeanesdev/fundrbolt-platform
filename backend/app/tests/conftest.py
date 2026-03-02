@@ -12,6 +12,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.pool import NullPool
 
+from app import models as app_models  # noqa: F401
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.main import app
@@ -57,10 +58,10 @@ def test_database_url() -> str:
     if "test" in db_url:
         pass
     # Otherwise, replace database name with test database
-    elif "/augeo_db" in db_url:
-        db_url = db_url.replace("/augeo_db", "/augeo_test_db")
-    elif db_url.endswith("/augeo"):
-        db_url = db_url.replace("/augeo", "/augeo_test")
+    elif "/fundrbolt_db" in db_url:
+        db_url = db_url.replace("/fundrbolt_db", "/fundrbolt_test_db")
+    elif db_url.endswith("/fundrbolt"):
+        db_url = db_url.replace("/fundrbolt", "/fundrbolt_test")
 
     # Ensure we're using postgresql+asyncpg:// not postgresql://
     if db_url.startswith("postgresql://"):
@@ -78,6 +79,12 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
     Uses NullPool to avoid connection pooling in tests
     """
     engine = create_async_engine(test_database_url, poolclass=NullPool, echo=False)
+
+    async with engine.begin() as conn:
+        await conn.execute(text("DROP SCHEMA IF EXISTS public CASCADE"))
+        await conn.execute(text("CREATE SCHEMA public"))
+        await conn.execute(text("GRANT ALL ON SCHEMA public TO public"))
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
 
     # Create all tables including roles
     async with engine.begin() as conn:
@@ -110,7 +117,7 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
                 """
                 INSERT INTO roles (name, description, scope) VALUES
                     ('super_admin',
-                     'Augeo platform staff with full access to all NPOs and events',
+                     'Fundrbolt platform staff with full access to all NPOs and events',
                      'platform'),
                     ('npo_admin',
                      'Full management access within assigned nonprofit organization(s)',
@@ -170,6 +177,94 @@ async def test_engine(test_database_url: str) -> AsyncGenerator[AsyncEngine, Non
     # Create all other tables in a fresh transaction
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(
+            text("ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS ticket_purchase_id UUID")
+        )
+        await conn.execute(
+            text(
+                """
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1
+                        FROM information_schema.columns
+                        WHERE table_name = 'event_registrations'
+                          AND column_name = 'status'
+                    ) THEN
+                        ALTER TABLE event_registrations
+                            ALTER COLUMN status DROP NOT NULL;
+                        ALTER TABLE event_registrations
+                            ALTER COLUMN status SET DEFAULT 'confirmed';
+                    END IF;
+                END $$;
+                """
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS invited_by_admin BOOLEAN DEFAULT FALSE"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS invitation_sent_at TIMESTAMPTZ"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS checked_in BOOLEAN DEFAULT FALSE"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests ADD COLUMN IF NOT EXISTS check_in_time TIMESTAMPTZ"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'confirmed'"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS cancellation_reason VARCHAR(50)"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS cancellation_note VARCHAR(255)"
+            )
+        )
+        await conn.execute(
+            text("ALTER TABLE registration_guests ADD COLUMN IF NOT EXISTS bidder_number INTEGER")
+        )
+        await conn.execute(
+            text("ALTER TABLE registration_guests ADD COLUMN IF NOT EXISTS table_number INTEGER")
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS bidder_number_assigned_at TIMESTAMPTZ"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS is_table_captain BOOLEAN DEFAULT FALSE"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE registration_guests "
+                "ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT FALSE"
+            )
+        )
 
     yield engine
 
@@ -362,11 +457,9 @@ async def test_npo_admin_user(db_session: AsyncSession) -> Any:
     """
     Create a test npo_admin user.
 
-    Returns a User model instance with npo_admin role and npo_id.
+    Returns a User model instance with npo_admin role and NPO membership.
     Password: TestPass123
     """
-    import uuid
-
     from sqlalchemy import text
 
     from app.core.security import hash_password
@@ -375,9 +468,6 @@ async def test_npo_admin_user(db_session: AsyncSession) -> Any:
     # Get npo_admin role_id from database
     role_result = await db_session.execute(text("SELECT id FROM roles WHERE name = 'npo_admin'"))
     npo_admin_role_id = role_result.scalar_one()
-
-    # Create test NPO ID
-    npo_id = uuid.uuid4()
 
     # Create test npo_admin user
     user = User(
@@ -389,7 +479,6 @@ async def test_npo_admin_user(db_session: AsyncSession) -> Any:
         email_verified=True,
         is_active=True,
         role_id=npo_admin_role_id,
-        npo_id=npo_id,
     )
     db_session.add(user)
     await db_session.commit()
@@ -399,11 +488,47 @@ async def test_npo_admin_user(db_session: AsyncSession) -> Any:
 
 
 @pytest_asyncio.fixture
-async def test_npo_id(test_npo_admin_user: Any) -> Any:
+async def test_npo_id(db_session: AsyncSession, test_npo_admin_user: Any) -> Any:
     """
     Get the NPO ID from the test NPO admin user.
     """
-    return test_npo_admin_user.npo_id
+    from sqlalchemy import select
+
+    from app.models.npo_member import NPOMember
+
+    result = await db_session.execute(
+        select(NPOMember.npo_id).where(NPOMember.user_id == test_npo_admin_user.id)
+    )
+    existing_npo_id = result.scalar_one_or_none()
+    if existing_npo_id:
+        return existing_npo_id
+
+    from app.models.npo import NPO, NPOStatus
+    from app.models.npo_member import MemberRole, MemberStatus
+
+    npo = NPO(
+        name="Fixture Admin NPO",
+        description="Fixture NPO for admin user",
+        mission_statement="Test fixture NPO",
+        email="npoadmin-npo@test.com",
+        phone="+1-555-0900",
+        status=NPOStatus.APPROVED,
+        created_by_user_id=test_npo_admin_user.id,
+    )
+    db_session.add(npo)
+    await db_session.flush()
+
+    db_session.add(
+        NPOMember(
+            npo_id=npo.id,
+            user_id=test_npo_admin_user.id,
+            role=MemberRole.ADMIN,
+            status=MemberStatus.ACTIVE,
+        )
+    )
+    await db_session.commit()
+
+    return npo.id
 
 
 @pytest_asyncio.fixture
@@ -411,12 +536,13 @@ async def test_event_coordinator_user(db_session: AsyncSession, test_npo_id: Any
     """
     Create a test event_coordinator user.
 
-    Returns a User model instance with event_coordinator role and npo_id.
+    Returns a User model instance with event_coordinator role and NPO membership.
     Password: TestPass123
     """
     from sqlalchemy import text
 
     from app.core.security import hash_password
+    from app.models.npo_member import MemberRole, MemberStatus, NPOMember
     from app.models.user import User
 
     # Get event_coordinator role_id from database
@@ -435,9 +561,18 @@ async def test_event_coordinator_user(db_session: AsyncSession, test_npo_id: Any
         email_verified=True,
         is_active=True,
         role_id=event_coordinator_role_id,
-        npo_id=test_npo_id,
     )
     db_session.add(user)
+    await db_session.flush()
+
+    db_session.add(
+        NPOMember(
+            npo_id=test_npo_id,
+            user_id=user.id,
+            role=MemberRole.STAFF,
+            status=MemberStatus.ACTIVE,
+        )
+    )
     await db_session.commit()
     await db_session.refresh(user)
 
@@ -449,12 +584,13 @@ async def test_staff_user(db_session: AsyncSession, test_npo_id: Any) -> Any:
     """
     Create a test staff user.
 
-    Returns a User model instance with staff role and npo_id.
+    Returns a User model instance with staff role and NPO membership.
     Password: TestPass123
     """
     from sqlalchemy import text
 
     from app.core.security import hash_password
+    from app.models.npo_member import MemberRole, MemberStatus, NPOMember
     from app.models.user import User
 
     # Get staff role_id from database
@@ -471,9 +607,18 @@ async def test_staff_user(db_session: AsyncSession, test_npo_id: Any) -> Any:
         email_verified=True,
         is_active=True,
         role_id=staff_role_id,
-        npo_id=test_npo_id,
     )
     db_session.add(user)
+    await db_session.flush()
+
+    db_session.add(
+        NPOMember(
+            npo_id=test_npo_id,
+            user_id=user.id,
+            role=MemberRole.STAFF,
+            status=MemberStatus.ACTIVE,
+        )
+    )
     await db_session.commit()
     await db_session.refresh(user)
 
@@ -504,7 +649,7 @@ async def test_donor_user(db_session: AsyncSession) -> Any:
         last_name="Person",
         phone="+1-555-0005",
         password_hash=hash_password("TestPass123"),
-        email_verified=False,
+        email_verified=True,  # Set to True for authentication tests
         is_active=True,
         role_id=donor_role_id,
     )
@@ -707,6 +852,38 @@ async def event_coordinator_client(
         "/api/v1/auth/login",
         json={
             "email": test_event_coordinator_user.email,
+            "password": "TestPass123",
+        },
+    )
+
+    assert response.status_code == 200, f"Login failed: {response.json()}"
+    data = response.json()
+    access_token = data["access_token"]
+
+    # Set authorization header for subsequent requests
+    async_client.headers["Authorization"] = f"Bearer {access_token}"
+
+    return async_client
+
+
+@pytest_asyncio.fixture
+async def donor_client(async_client: AsyncClient, test_donor_user: Any) -> AsyncClient:
+    """
+    Create authenticated async test client with donor access token.
+
+    Returns AsyncClient with Authorization header set to donor token.
+    """
+    # Clear rate limiting from Redis to avoid conflicts from previous test runs
+    from app.core.redis import get_redis
+
+    redis_client = await get_redis()
+    await redis_client.flushdb()
+
+    # Login to get access token
+    response = await async_client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": test_donor_user.email,
             "password": "TestPass123",
         },
     )
@@ -1533,10 +1710,6 @@ async def test_approved_npo(db_session: AsyncSession, test_npo_admin_user: Any) 
     )
     db_session.add(member)
 
-    # IMPORTANT: Update the user's npo_id to match this NPO
-    # This is needed for permission filtering in list_events
-    test_npo_admin_user.npo_id = npo.id
-
     await db_session.commit()
     await db_session.refresh(npo)
     await db_session.refresh(test_npo_admin_user)
@@ -1618,6 +1791,46 @@ async def test_active_event(
     return event
 
 
+@pytest_asyncio.fixture
+async def test_registration(db_session: AsyncSession, test_event: Any, test_donor_user: Any) -> Any:
+    """
+    Create a test EventRegistration for seating and bidder number tests.
+
+    Returns an EventRegistration instance linking test_donor_user to test_event.
+    """
+    from app.models.event_registration import EventRegistration, RegistrationStatus
+    from app.models.registration_guest import RegistrationGuest
+
+    registration = EventRegistration(
+        event_id=test_event.id,
+        user_id=test_donor_user.id,
+        number_of_guests=2,
+    )
+    db_session.add(registration)
+    await db_session.flush()
+
+    primary_guest = RegistrationGuest(
+        registration_id=registration.id,
+        user_id=test_donor_user.id,
+        name=f"{test_donor_user.first_name} {test_donor_user.last_name}",
+        email=test_donor_user.email,
+        phone=test_donor_user.phone,
+        status=RegistrationStatus.CONFIRMED.value,
+        is_primary=True,
+    )
+    db_session.add(primary_guest)
+    await db_session.commit()
+    await db_session.refresh(registration)
+
+    return registration
+
+
+@pytest_asyncio.fixture
+async def test_donor(test_donor_user: Any) -> Any:
+    """Alias for test_donor_user for backward compatibility."""
+    return test_donor_user
+
+
 # ================================
 # Mock Azure Storage Fixture
 # ================================
@@ -1694,3 +1907,41 @@ def mock_azure_storage(monkeypatch):
     )
 
     return mock_blob_service
+
+
+# ================================
+# Ticket Management Fixtures
+# ================================
+
+
+@pytest_asyncio.fixture
+async def test_ticket_package(
+    db_session: AsyncSession, test_event: Any, test_npo_admin_user: Any
+) -> Any:
+    """
+    Create a test ticket package for the test event.
+
+    Returns a TicketPackage instance with sample data.
+    """
+    from decimal import Decimal
+
+    from app.models.ticket_management import TicketPackage
+
+    package = TicketPackage(
+        event_id=test_event.id,
+        created_by=test_npo_admin_user.id,
+        name="General Admission",
+        description="Standard admission ticket",
+        price=Decimal("100.00"),
+        seats_per_package=1,
+        quantity_limit=100,
+        sold_count=0,
+        display_order=1,
+        is_enabled=True,
+        is_sponsorship=False,
+    )
+    db_session.add(package)
+    await db_session.commit()
+    await db_session.refresh(package)
+
+    return package

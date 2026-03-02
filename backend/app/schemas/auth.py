@@ -6,6 +6,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
+from app.schemas.users import NPOMembershipInfo
+
 
 class UserCreate(BaseModel):
     """Schema for user registration request.
@@ -72,6 +74,7 @@ class UserPublic(BaseModel):
     is_active: bool
     role: str  # Role name (e.g., "donor", "npo_admin")
     npo_id: uuid.UUID | None = None
+    npo_memberships: list[NPOMembershipInfo] = []
     created_at: datetime
 
     model_config = {"from_attributes": True}

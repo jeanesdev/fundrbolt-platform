@@ -4,8 +4,8 @@ info:
   description: API endpoints for the donor PWA event homepage feature
   version: 1.0.0
   contact:
-    name: Augeo Platform
-    email: dev@augeo.app
+    name: Fundrbolt Platform
+    email: dev@fundrbolt.com
 
 servers:
   - url: /api/v1

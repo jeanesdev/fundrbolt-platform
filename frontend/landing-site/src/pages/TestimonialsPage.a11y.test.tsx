@@ -24,7 +24,7 @@ const renderWithProviders = (component: React.ReactElement) => {
 const mockTestimonials = [
   {
     id: '1',
-    quote_text: 'Augeo transformed our fundraising events with seamless mobile bidding.',
+    quote_text: 'Fundrbolt transformed our fundraising events with seamless mobile bidding.',
     author_name: 'Sarah Johnson',
     author_role: 'donor' as const,
     organization_name: 'Community Foundation',

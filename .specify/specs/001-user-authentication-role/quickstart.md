@@ -21,8 +21,8 @@
 ### Clone Repository
 
 ```bash
-git clone https://github.com/jeanesdev/augeo-platform.git
-cd augeo-platform
+git clone https://github.com/jeanesdev/fundrbolt-platform.git
+cd fundrbolt-platform
 ```
 
 ### Environment Variables
@@ -35,7 +35,7 @@ ENVIRONMENT=development
 DEBUG=true
 
 # Database (PostgreSQL)
-DATABASE_URL=postgresql://augeo_user:augeo_password@localhost:5432/augeo_db
+DATABASE_URL=postgresql://fundrbolt_user:fundrbolt_password@localhost:5432/fundrbolt_db
 
 # Redis
 REDIS_URL=redis://localhost:6379/0
@@ -48,15 +48,15 @@ REFRESH_TOKEN_EXPIRE_DAYS=7
 
 # Azure Communication Services (Email)
 AZURE_COMMUNICATION_CONNECTION_STRING=your-azure-communication-connection-string
-EMAIL_FROM_ADDRESS=noreply@augeo.app
-EMAIL_FROM_NAME=Augeo Platform
+EMAIL_FROM_ADDRESS=noreply@fundrbolt.com
+EMAIL_FROM_NAME=Fundrbolt Platform
 
 # Frontend URLs (for email links)
 FRONTEND_ADMIN_URL=http://localhost:5173
 FRONTEND_DONOR_URL=http://localhost:5174
 
 # Super Admin Seed (for initial setup)
-SUPER_ADMIN_EMAIL=admin@augeo.app
+SUPER_ADMIN_EMAIL=admin@fundrbolt.com
 SUPER_ADMIN_PASSWORD=ChangeMe123!
 SUPER_ADMIN_FIRST_NAME=Super
 SUPER_ADMIN_LAST_NAME=Admin
@@ -83,24 +83,24 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: augeo_postgres
+    container_name: fundrbolt_postgres
     environment:
-      POSTGRES_USER: augeo_user
-      POSTGRES_PASSWORD: augeo_password
-      POSTGRES_DB: augeo_db
+      POSTGRES_USER: fundrbolt_user
+      POSTGRES_PASSWORD: fundrbolt_password
+      POSTGRES_DB: fundrbolt_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U augeo_user"]
+      test: ["CMD-SHELL", "pg_isready -U fundrbolt_user"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: augeo_redis
+    container_name: fundrbolt_redis
     ports:
       - "6379:6379"
     volumes:
@@ -131,8 +131,8 @@ docker-compose ps
 Expected output:
 ```
 NAME                IMAGE                COMMAND                  SERVICE    STATUS
-augeo_postgres      postgres:15-alpine   "docker-entrypoint.s…"   postgres   Up 10 seconds (healthy)
-augeo_redis         redis:7-alpine       "docker-entrypoint.s…"   redis      Up 10 seconds (healthy)
+fundrbolt_postgres      postgres:15-alpine   "docker-entrypoint.s…"   postgres   Up 10 seconds (healthy)
+fundrbolt_redis         redis:7-alpine       "docker-entrypoint.s…"   redis      Up 10 seconds (healthy)
 ```
 
 ---
@@ -181,7 +181,7 @@ Verify migration:
 
 ```bash
 # Check PostgreSQL tables
-docker exec -it augeo_postgres psql -U augeo_user -d augeo_db -c "\dt"
+docker exec -it fundrbolt_postgres psql -U fundrbolt_user -d fundrbolt_db -c "\dt"
 ```
 
 Expected output:
@@ -189,26 +189,26 @@ Expected output:
               List of relations
  Schema |       Name        | Type  |   Owner
 --------+-------------------+-------+------------
- public | alembic_version   | table | augeo_user
- public | audit_logs        | table | augeo_user
- public | permissions       | table | augeo_user
- public | roles             | table | augeo_user
- public | sessions          | table | augeo_user
- public | users             | table | augeo_user
+ public | alembic_version   | table | fundrbolt_user
+ public | audit_logs        | table | fundrbolt_user
+ public | permissions       | table | fundrbolt_user
+ public | roles             | table | fundrbolt_user
+ public | sessions          | table | fundrbolt_user
+ public | users             | table | fundrbolt_user
 ```
 
 ### Verify Super Admin Created
 
 ```bash
-docker exec -it augeo_postgres psql -U augeo_user -d augeo_db -c \
-  "SELECT id, email, role_id FROM users WHERE email = 'admin@augeo.app';"
+docker exec -it fundrbolt_postgres psql -U fundrbolt_user -d fundrbolt_db -c \
+  "SELECT id, email, role_id FROM users WHERE email = 'admin@fundrbolt.com';"
 ```
 
 Expected output:
 ```
                   id                  |      email       |              role_id
 --------------------------------------+------------------+------------------------------------
- 550e8400-e29b-41d4-a716-446655440000 | admin@augeo.app  | <uuid-of-super-admin-role>
+ 550e8400-e29b-41d4-a716-446655440000 | admin@fundrbolt.com  | <uuid-of-super-admin-role>
 ```
 
 ### Start Backend Server
@@ -229,7 +229,7 @@ API docs available at: `http://localhost:8000/docs` (Swagger UI)
 ### Install Admin Dashboard Dependencies
 
 ```bash
-cd ../frontend/augeo-admin
+cd ../frontend/fundrbolt-admin
 pnpm install
 ```
 
@@ -357,13 +357,13 @@ Expected response:
 In development, check Redis for verification token:
 
 ```bash
-docker exec -it augeo_redis redis-cli KEYS "email_verify:*"
+docker exec -it fundrbolt_redis redis-cli KEYS "email_verify:*"
 ```
 
 Get token details:
 
 ```bash
-docker exec -it augeo_redis redis-cli GET "email_verify:<token-hash>"
+docker exec -it fundrbolt_redis redis-cli GET "email_verify:<token-hash>"
 # Returns: user_id
 ```
 
@@ -491,7 +491,7 @@ Expected response:
 Verify session revoked in PostgreSQL:
 
 ```bash
-docker exec -it augeo_postgres psql -U augeo_user -d augeo_db -c \
+docker exec -it fundrbolt_postgres psql -U fundrbolt_user -d fundrbolt_db -c \
   "SELECT refresh_token_jti, revoked_at FROM sessions ORDER BY created_at DESC LIMIT 1;"
 ```
 
@@ -512,7 +512,7 @@ Expected output:
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "admin@augeo.app",
+    "email": "admin@fundrbolt.com",
     "password": "ChangeMe123!"
   }'
 ```
@@ -658,7 +658,7 @@ Expected response:
 
 ```bash
 # List all session keys
-docker exec -it augeo_redis redis-cli KEYS "session:*"
+docker exec -it fundrbolt_redis redis-cli KEYS "session:*"
 ```
 
 Expected output:
@@ -669,7 +669,7 @@ Expected output:
 ### Get Session Details
 
 ```bash
-docker exec -it augeo_redis redis-cli GET "session:550e8400-e29b-41d4-a716-446655440000:abc-123-xyz"
+docker exec -it fundrbolt_redis redis-cli GET "session:550e8400-e29b-41d4-a716-446655440000:abc-123-xyz"
 ```
 
 Expected output (JSON):
@@ -686,7 +686,7 @@ Expected output (JSON):
 ### Check Token TTL
 
 ```bash
-docker exec -it augeo_redis redis-cli TTL "session:550e8400-e29b-41d4-a716-446655440000:abc-123-xyz"
+docker exec -it fundrbolt_redis redis-cli TTL "session:550e8400-e29b-41d4-a716-446655440000:abc-123-xyz"
 ```
 
 Expected output: `604799` (seconds remaining out of 7 days = 604800 seconds)
@@ -698,7 +698,7 @@ Expected output: `604799` (seconds remaining out of 7 days = 604800 seconds)
 ### Check Login Audit Logs
 
 ```bash
-docker exec -it augeo_postgres psql -U augeo_user -d augeo_db -c \
+docker exec -it fundrbolt_postgres psql -U fundrbolt_user -d fundrbolt_db -c \
   "SELECT user_id, action, ip_address, created_at FROM audit_logs WHERE action = 'login' ORDER BY created_at DESC LIMIT 5;"
 ```
 
@@ -712,7 +712,7 @@ Expected output:
 ### Check Failed Login Attempts
 
 ```bash
-docker exec -it augeo_postgres psql -U augeo_user -d augeo_db -c \
+docker exec -it fundrbolt_postgres psql -U fundrbolt_user -d fundrbolt_db -c \
   "SELECT action, metadata->>'email' as email, ip_address, created_at FROM audit_logs WHERE action = 'failed_login' ORDER BY created_at DESC LIMIT 5;"
 ```
 
@@ -749,7 +749,7 @@ done
 ### Verify Rate Limit in Redis
 
 ```bash
-docker exec -it augeo_redis redis-cli KEYS "ratelimit:login:*"
+docker exec -it fundrbolt_redis redis-cli KEYS "ratelimit:login:*"
 ```
 
 Expected output:
@@ -760,7 +760,7 @@ Expected output:
 Check sorted set:
 
 ```bash
-docker exec -it augeo_redis redis-cli ZRANGE "ratelimit:login:127.0.0.1" 0 -1 WITHSCORES
+docker exec -it fundrbolt_redis redis-cli ZRANGE "ratelimit:login:127.0.0.1" 0 -1 WITHSCORES
 ```
 
 Expected output (5 timestamps within 15-minute window):
@@ -811,7 +811,7 @@ tests/integration/auth/test_email_verification.py::test_verify_email PASSED
 ### Frontend E2E Tests (Playwright)
 
 ```bash
-cd frontend/augeo-admin
+cd frontend/fundrbolt-admin
 pnpm test:e2e
 ```
 
@@ -857,7 +857,7 @@ docker-compose ps
 docker-compose restart redis
 
 # Test Redis connection
-docker exec -it augeo_redis redis-cli ping
+docker exec -it fundrbolt_redis redis-cli ping
 # Should return: PONG
 ```
 
@@ -887,7 +887,7 @@ alembic upgrade head
 **Error**: `{"error": {"code": "INVALID_VERIFICATION_TOKEN", "message": "Verification token is invalid or expired"}}`
 
 **Solution**:
-- Check Redis for token: `docker exec -it augeo_redis redis-cli KEYS "email_verify:*"`
+- Check Redis for token: `docker exec -it fundrbolt_redis redis-cli KEYS "email_verify:*"`
 - Token expires after 24 hours (check TTL: `TTL email_verify:<hash>`)
 - Request new token: `POST /auth/verify-email/resend`
 

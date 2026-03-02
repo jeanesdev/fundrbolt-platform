@@ -6,11 +6,11 @@ import { createFileRoute, Navigate } from '@tanstack/react-router'
  * Redirects to the selected event or shows a message if no events
  */
 function DonorHomePage() {
-  const { selectedEventId, hasEvents } = useEventContext()
+  const { selectedEventSlug, hasEvents } = useEventContext()
 
   // If user has a selected event, redirect to it
-  if (selectedEventId) {
-    return <Navigate to="/events/$eventId" params={{ eventId: selectedEventId }} />
+  if (selectedEventSlug) {
+    return <Navigate to="/events/$eventSlug" params={{ eventSlug: selectedEventSlug }} />
   }
 
   // No events registered - show helpful message
@@ -18,7 +18,7 @@ function DonorHomePage() {
     return (
       <div className="container mx-auto space-y-6 px-4 py-6">
         <div className="text-center py-12">
-          <h1 className="text-3xl font-bold mb-4">Welcome to Augeo</h1>
+          <h1 className="text-3xl font-bold mb-4">Welcome to Fundrbolt</h1>
           <p className="text-muted-foreground mb-8">
             You haven't registered for any events yet.
           </p>

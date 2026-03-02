@@ -3,7 +3,7 @@
  * Manages the currently selected NPO context for filtering data across the admin PWA
  *
  * Business Rules:
- * - SuperAdmin can select any NPO or "Augeo Platform" (null npoId)
+ * - SuperAdmin can select any NPO or "Fundrbolt Platform" (null npoId)
  * - NPO Admin sees only their assigned NPO (non-selectable)
  * - Event Coordinator sees NPOs they're registered with
  * - Staff sees only their assigned NPO (non-selectable)
@@ -15,7 +15,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export interface NPOContextOption {
-  id: string | null // null represents "Augeo Platform" for SuperAdmin
+  id: string | null // null represents "Fundrbolt Platform" for SuperAdmin
   name: string
   logo_url?: string | null
 }
@@ -41,7 +41,7 @@ interface NPOContextState {
 
   // Helper getters
   getSelectedNpoId: () => string | null
-  isAugeoPlatformView: () => boolean
+  isFundrBoltPlatformView: () => boolean
 }
 
 export const useNPOContextStore = create<NPOContextState>()(
@@ -49,7 +49,7 @@ export const useNPOContextStore = create<NPOContextState>()(
     (set, get) => ({
       // Initial state
       selectedNpoId: null,
-      selectedNpoName: 'Augeo Platform',
+      selectedNpoName: 'Fundrbolt Platform',
       availableNpos: [],
       isLoading: false,
       error: null,
@@ -74,7 +74,7 @@ export const useNPOContextStore = create<NPOContextState>()(
       reset: () =>
         set({
           selectedNpoId: null,
-          selectedNpoName: 'Augeo Platform',
+          selectedNpoName: 'Fundrbolt Platform',
           availableNpos: [],
           isLoading: false,
           error: null,
@@ -85,12 +85,12 @@ export const useNPOContextStore = create<NPOContextState>()(
         return get().selectedNpoId
       },
 
-      isAugeoPlatformView: (): boolean => {
+      isFundrBoltPlatformView: (): boolean => {
         return get().selectedNpoId === null
       },
     }),
     {
-      name: 'augeo-npo-context-storage',
+      name: 'fundrbolt-npo-context-storage',
       partialize: (state) => ({
         selectedNpoId: state.selectedNpoId,
         selectedNpoName: state.selectedNpoName,

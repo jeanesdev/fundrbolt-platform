@@ -397,7 +397,7 @@ async def seed_npo_data() -> None:
                     # Get or create SuperAdmin for reviewer
                     superadmin = await get_or_create_user(
                         db,
-                        "superadmin@augeo.app",
+                        "superadmin@fundrbolt.com",
                         "Super",
                         "Admin",
                         "super_admin",
@@ -433,7 +433,7 @@ async def seed_npo_data() -> None:
             for member in npo_data["members"]:
                 print(f"  - {member['email']} ({member['role'].value})")
 
-        print("\n  - superadmin@augeo.app (super_admin)")
+        print("\n  - superadmin@fundrbolt.com (super_admin)")
 
 
 async def main() -> None:

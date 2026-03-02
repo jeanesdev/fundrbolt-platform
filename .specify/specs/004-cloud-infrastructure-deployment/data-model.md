@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document defines the Azure resources required for the Augeo Platform infrastructure, their relationships, configuration specifications, and dependencies. Unlike application data models, this represents infrastructure-as-code entity specifications.
+This document defines the Azure resources required for the Fundrbolt Platform infrastructure, their relationships, configuration specifications, and dependencies. Unlike application data models, this represents infrastructure-as-code entity specifications.
 
 ## Resource Hierarchy
 
@@ -33,11 +33,11 @@ Azure Subscription
 **Purpose**: Logical container for all Azure resources in a specific environment
 
 **Attributes**:
-- `name`: String - `augeo-{environment}-rg` (e.g., `augeo-prod-rg`)
+- `name`: String - `fundrbolt-{environment}-rg` (e.g., `fundrbolt-prod-rg`)
 - `location`: String - Azure region (e.g., `eastus`, `westus2`)
 - `tags`: Object
   - `Environment`: String - `dev`, `staging`, or `production`
-  - `Project`: String - `augeo-platform`
+  - `Project`: String - `fundrbolt-platform`
   - `Owner`: String - `operations`
   - `CostCenter`: String - For billing allocation
 
@@ -57,7 +57,7 @@ Azure Subscription
 **Purpose**: Compute resource pool for backend API hosting
 
 **Attributes**:
-- `name`: String - `augeo-{environment}-asp`
+- `name`: String - `fundrbolt-{environment}-asp`
 - `sku`: Object
   - `tier`: String - Pricing tier
   - `name`: String - SKU size code
@@ -93,12 +93,12 @@ Azure Subscription
 **Purpose**: Hosts FastAPI backend application in Docker container
 
 **Attributes**:
-- `name`: String - `augeo-{environment}-api`
+- `name`: String - `fundrbolt-{environment}-api`
 - `serverFarmId`: String - Reference to App Service Plan
 - `kind`: String - `app,linux,container`
 - `properties`: Object
   - `siteConfig`: Object
-    - `linuxFxVersion`: String - `DOCKER|ghcr.io/jeanesdev/augeo-backend:latest`
+    - `linuxFxVersion`: String - `DOCKER|ghcr.io/jeanesdev/fundrbolt-backend:latest`
     - `alwaysOn`: Boolean - `true` for production/staging
     - `healthCheckPath`: String - `/health`
     - `http20Enabled`: Boolean - `true`
@@ -123,8 +123,8 @@ Azure Subscription
 - Purpose: Access Key Vault secrets without credentials
 
 **Custom Domain**:
-- Production: `api.augeo.app`
-- Staging: `api-staging.augeo.app`
+- Production: `api.fundrbolt.com`
+- Staging: `api-staging.fundrbolt.com`
 - Dev: Use default `*.azurewebsites.net`
 
 **Relationships**:
@@ -139,7 +139,7 @@ Azure Subscription
 **Purpose**: Hosts React PWA frontend with global CDN
 
 **Attributes**:
-- `name`: String - `augeo-{environment}-admin`
+- `name`: String - `fundrbolt-{environment}-admin`
 - `sku`: Object
   - `tier`: String - `Standard` (production), `Free` (dev/staging)
   - `name`: String - Derived from tier
@@ -147,7 +147,7 @@ Azure Subscription
   - `repositoryUrl`: String - GitHub repository URL
   - `branch`: String - `main`
   - `buildProperties`: Object
-    - `appLocation`: String - `/frontend/augeo-admin`
+    - `appLocation`: String - `/frontend/fundrbolt-admin`
     - `apiLocation`: String - (empty - API hosted separately)
     - `outputLocation`: String - `dist`
 
@@ -157,8 +157,8 @@ Azure Subscription
 - CORS: Allow API domain only
 
 **Custom Domain**:
-- Production: `admin.augeo.app`
-- Staging: `admin-staging.augeo.app`
+- Production: `admin.fundrbolt.com`
+- Staging: `admin-staging.fundrbolt.com`
 - Dev: Use default `*.azurestaticapps.net`
 
 **CDN Configuration**:
@@ -176,7 +176,7 @@ Azure Subscription
 **Purpose**: Managed relational database for application data
 
 **Attributes**:
-- `name`: String - `augeo-{environment}-postgres`
+- `name`: String - `fundrbolt-{environment}-postgres`
 - `version`: String - `15` (PostgreSQL version)
 - `sku`: Object
   - `tier`: String - SKU tier
@@ -222,7 +222,7 @@ Azure Subscription
 **Purpose**: In-memory cache for sessions, rate limiting, bid leaderboards
 
 **Attributes**:
-- `name`: String - `augeo-{environment}-redis`
+- `name`: String - `fundrbolt-{environment}-redis`
 - `sku`: Object
   - `family`: String - `C` (Standard) or `P` (Premium)
   - `capacity`: Integer - Cache size
@@ -260,7 +260,7 @@ Azure Subscription
 **Purpose**: Centralized secrets management with audit logging
 
 **Attributes**:
-- `name`: String - `augeo-{env}-kv` (max 24 chars, globally unique)
+- `name`: String - `fundrbolt-{env}-kv` (max 24 chars, globally unique)
 - `sku`: Object
   - `family`: String - `A`
   - `name`: String - `standard`
@@ -301,22 +301,22 @@ Azure Subscription
 **Purpose**: Transactional email sending with custom domain
 
 **Attributes**:
-- `name`: String - `augeo-{environment}-acs`
+- `name`: String - `fundrbolt-{environment}-acs`
 - `dataLocation`: String - `UnitedStates`
 
 **Email Domain Configuration**:
-- Domain: `augeo.app` (production), `staging.augeo.app` (staging)
+- Domain: `fundrbolt.com` (production), `staging.fundrbolt.com` (staging)
 - Sender addresses:
-  - `noreply@augeo.app` - Automated notifications
-  - `support@augeo.app` - Customer support (forwarded)
-  - `billing@augeo.app` - Payment notifications
+  - `noreply@fundrbolt.com` - Automated notifications
+  - `support@fundrbolt.com` - Customer support (forwarded)
+  - `billing@fundrbolt.com` - Payment notifications
 
 **DNS Records Required** (in Azure DNS):
 - TXT: Domain ownership verification
 - TXT: SPF record - `v=spf1 include:spf.azurecomm.net ~all`
 - CNAME: DKIM signing key 1 (auto-generated by ACS)
 - CNAME: DKIM signing key 2 (auto-generated by ACS)
-- TXT: DMARC policy - `v=DMARC1; p=quarantine; rua=mailto:dmarc@augeo.app`
+- TXT: DMARC policy - `v=DMARC1; p=quarantine; rua=mailto:dmarc@fundrbolt.com`
 
 **Sending Limits**:
 - Free tier: 10,000 emails/month
@@ -333,7 +333,7 @@ Azure Subscription
 **Purpose**: Application performance monitoring and logging
 
 **Attributes**:
-- `name`: String - `augeo-{environment}-appinsights`
+- `name`: String - `fundrbolt-{environment}-appinsights`
 - `kind`: String - `web`
 - `applicationType`: String - `web`
 - `workspaceResourceId`: String - Reference to Log Analytics Workspace
@@ -369,7 +369,7 @@ Azure Subscription
 **Purpose**: Centralized log storage and querying
 
 **Attributes**:
-- `name`: String - `augeo-{environment}-logs`
+- `name`: String - `fundrbolt-{environment}-logs`
 - `sku`: Object
   - `name`: String - `PerGB2018`
 - `retentionInDays`: Integer - 30 (dev/staging), 90 (production)
@@ -392,7 +392,7 @@ Azure Subscription
 **Purpose**: Domain name management for custom domains
 
 **Attributes**:
-- `name`: String - `augeo.app`
+- `name`: String - `fundrbolt.com`
 - `recordSets`: Array of DNS records
 
 **DNS Records**:
@@ -400,11 +400,11 @@ Azure Subscription
 | Name | Type | TTL | Value | Purpose |
 |------|------|-----|-------|---------|
 | @ | A | 3600 | `<Static Web App IP>` | Root domain → frontend |
-| www | CNAME | 3600 | `augeo.app` | WWW redirect |
+| www | CNAME | 3600 | `fundrbolt.com` | WWW redirect |
 | admin | CNAME | 3600 | `<Static Web App URL>` | Admin PWA |
 | api | CNAME | 3600 | `<App Service URL>` | Backend API |
 | @ | TXT | 3600 | `v=spf1 include:spf.azurecomm.net ~all` | SPF record |
-| _dmarc | TXT | 3600 | `v=DMARC1; p=quarantine; rua=mailto:dmarc@augeo.app` | DMARC policy |
+| _dmarc | TXT | 3600 | `v=DMARC1; p=quarantine; rua=mailto:dmarc@fundrbolt.com` | DMARC policy |
 | selector1._domainkey | CNAME | 3600 | `<ACS DKIM key>` | DKIM signing key 1 |
 | selector2._domainkey | CNAME | 3600 | `<ACS DKIM key>` | DKIM signing key 2 |
 
@@ -423,7 +423,7 @@ Azure Subscription
 **Purpose**: Backup storage for Redis snapshots and log archives
 
 **Attributes**:
-- `name`: String - `augeo{environment}storage` (no hyphens, lowercase)
+- `name`: String - `fundrbolt{environment}storage` (no hyphens, lowercase)
 - `sku`: Object
   - `name`: String - `Standard_LRS` (locally redundant), `Standard_GRS` (geo-redundant for production)
 - `kind`: String - `StorageV2`

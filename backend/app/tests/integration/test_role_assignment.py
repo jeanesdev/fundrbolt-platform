@@ -18,6 +18,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
+from app.models.npo import NPO, NPOStatus
+from app.models.npo_member import MemberRole, MemberStatus, NPOMember
 
 
 class TestRoleAssignmentIntegration:
@@ -102,6 +104,18 @@ class TestRoleAssignmentIntegration:
         )
         await db_session.commit()
 
+        npo_id = uuid.uuid4()
+        db_session.add(
+            NPO(
+                id=npo_id,
+                name=f"Upgrade Flow NPO {npo_id}",
+                email=f"upgrade-flow-{npo_id}@example.com",
+                status=NPOStatus.APPROVED,
+                created_by_user_id=admin_id,
+            )
+        )
+        await db_session.commit()
+
         # Login as admin
         admin_login_response = await async_client.post(
             "/api/v1/auth/login",
@@ -114,7 +128,7 @@ class TestRoleAssignmentIntegration:
         async_client.headers["Authorization"] = f"Bearer {admin_token}"
         upgrade_response = await async_client.patch(
             f"/api/v1/users/{user_id}/role",
-            json={"role": "staff"},
+            json={"role": "staff", "npo_id": str(npo_id)},
         )
         assert upgrade_response.status_code == 200
         assert upgrade_response.json()["role"] == "staff"
@@ -185,6 +199,16 @@ class TestRoleAssignmentIntegration:
 
         # Step 2: Super_admin creates npo_admin with npo_id
         npo_id = uuid.uuid4()
+        db_session.add(
+            NPO(
+                id=npo_id,
+                name=f"NPO Admin Test {npo_id}",
+                email=f"npo-admin-{npo_id}@example.com",
+                status=NPOStatus.APPROVED,
+                created_by_user_id=admin_id,
+            )
+        )
+        await db_session.commit()
         async_client.headers["Authorization"] = f"Bearer {admin_token}"
         create_response = await async_client.post(
             "/api/v1/users",
@@ -280,13 +304,22 @@ class TestRoleAssignmentIntegration:
 
         npo_id = uuid.uuid4()
         npo_admin_id = uuid.uuid4()
+        db_session.add(
+            NPO(
+                id=npo_id,
+                name=f"Downgrade NPO {npo_id}",
+                email=f"downgrade-{npo_id}@example.com",
+                status=NPOStatus.APPROVED,
+                created_by_user_id=admin_id,
+            )
+        )
         await db_session.execute(
             text(
                 """
                 INSERT INTO users (id, email, first_name, last_name, password_hash,
-                                 email_verified, is_active, role_id, npo_id)
+                                 email_verified, is_active, role_id)
                 VALUES (:id, :email, :first_name, :last_name, :password_hash,
-                       :email_verified, :is_active, :role_id, :npo_id)
+                       :email_verified, :is_active, :role_id)
             """
             ),
             {
@@ -298,8 +331,15 @@ class TestRoleAssignmentIntegration:
                 "email_verified": True,
                 "is_active": True,
                 "role_id": npo_admin_role_id,
-                "npo_id": npo_id,
             },
+        )
+        db_session.add(
+            NPOMember(
+                npo_id=npo_id,
+                user_id=npo_admin_id,
+                role=MemberRole.ADMIN,
+                status=MemberStatus.ACTIVE,
+            )
         )
         await db_session.commit()
 
@@ -384,13 +424,12 @@ class TestRoleAssignmentIntegration:
                 """
                 INSERT INTO users (
                     id, email, password_hash, first_name, last_name, phone,
-                    email_verified, is_active, role_id, npo_id
+                    email_verified, is_active, role_id
                 )
                 VALUES (
                     :id, :email, :password_hash, :first_name, :last_name, :phone,
                     :email_verified, :is_active,
-                    (SELECT id FROM roles WHERE name = 'super_admin'),
-                    :npo_id
+                    (SELECT id FROM roles WHERE name = 'super_admin')
                 )
                 """
             ),
@@ -403,7 +442,6 @@ class TestRoleAssignmentIntegration:
                 "phone": "+1234567890",
                 "email_verified": True,
                 "is_active": True,
-                "npo_id": None,
             },
         )
         await db_session.commit()

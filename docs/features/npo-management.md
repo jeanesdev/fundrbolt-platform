@@ -91,7 +91,7 @@ backend/app/
 ### Frontend Structure
 
 ```
-frontend/augeo-admin/src/
+frontend/fundrbolt-admin/src/
 ├── pages/
 │   ├── npo/
 │   │   ├── create-npo.tsx       # NPO creation page
@@ -822,11 +822,11 @@ CREATE INDEX idx_npo_applications_status ON npo_applications(status);
 ## Monitoring & Observability
 
 ### Metrics (Prometheus)
-- `augeo_http_requests_total` - HTTP requests by method/path/status
-- `augeo_db_failures_total` - Database connection failures
-- `augeo_redis_failures_total` - Redis connection failures
-- `augeo_email_failures_total` - Email send failures
-- `augeo_up` - Application up/down status
+- `fundrbolt_http_requests_total` - HTTP requests by method/path/status
+- `fundrbolt_db_failures_total` - Database connection failures
+- `fundrbolt_redis_failures_total` - Redis connection failures
+- `fundrbolt_email_failures_total` - Email send failures
+- `fundrbolt_up` - Application up/down status
 
 ### Structured Logging
 - JSON format with request IDs
@@ -845,7 +845,7 @@ CREATE INDEX idx_npo_applications_status ON npo_applications(status);
 ### Environment Variables
 ```bash
 # Database
-DATABASE_URL=postgresql+asyncpg://user:pass@localhost/augeo
+DATABASE_URL=postgresql+asyncpg://user:pass@localhost/fundrbolt
 
 # Redis
 REDIS_URL=redis://localhost:6379/0
@@ -857,7 +857,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=15
 REFRESH_TOKEN_EXPIRE_DAYS=7
 
 # Email
-EMAIL_FROM=noreply@augeo.app
+EMAIL_FROM=noreply@fundrbolt.com
 EMAIL_SERVICE=sendgrid  # or smtp
 SENDGRID_API_KEY=your-key-here
 
@@ -875,7 +875,7 @@ services:
   backend:
     build: ./backend
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db/augeo
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db/fundrbolt
       - REDIS_URL=redis://redis:6379/0
     ports:
       - "8000:8000"
@@ -884,7 +884,7 @@ services:
       - redis
 
   frontend:
-    build: ./frontend/augeo-admin
+    build: ./frontend/fundrbolt-admin
     environment:
       - VITE_API_URL=http://localhost:8000/api/v1
     ports:
@@ -893,7 +893,7 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_DB=augeo
+      - POSTGRES_DB=fundrbolt
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     volumes:
@@ -954,9 +954,9 @@ volumes:
 ## Support
 
 For technical support or questions:
-- Email: engineering@augeo.app
+- Email: engineering@fundrbolt.com
 - Slack: #npo-management channel
-- Documentation: https://docs.augeo.app
+- Documentation: https://docs.fundrbolt.com
 
 ## Version History
 

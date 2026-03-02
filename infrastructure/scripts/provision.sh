@@ -1,5 +1,5 @@
 #!/bin/bash
-# Infrastructure provisioning script for Augeo Platform
+# Infrastructure provisioning script for Fundrbolt Platform
 set -e
 
 # Colors for output
@@ -39,7 +39,7 @@ if [ -z "$POSTGRES_PASSWORD" ]; then
   echo ""
 fi
 
-echo -e "${GREEN}=== Augeo Platform Infrastructure Provisioning ===${NC}"
+echo -e "${GREEN}=== Fundrbolt Platform Infrastructure Provisioning ===${NC}"
 echo "Environment: $ENVIRONMENT"
 echo "Location: $LOCATION"
 echo "Subscription: $SUBSCRIPTION_ID"
@@ -74,7 +74,7 @@ fi
 
 # Deploy infrastructure
 echo -e "${GREEN}Deploying infrastructure...${NC}"
-DEPLOYMENT_NAME="augeo-${ENVIRONMENT}-$(date +%Y%m%d-%H%M%S)"
+DEPLOYMENT_NAME="fundrbolt-${ENVIRONMENT}-$(date +%Y%m%d-%H%M%S)"
 
 az deployment sub create \
   --name "$DEPLOYMENT_NAME" \
@@ -93,7 +93,7 @@ az deployment sub show \
 
 echo ""
 echo -e "${GREEN}=== Provisioning Complete ===${NC}"
-echo "Resource Group: augeo-${ENVIRONMENT}-rg"
+echo "Resource Group: fundrbolt-${ENVIRONMENT}-rg"
 echo "Region: $LOCATION"
 echo ""
 echo "Next steps:"

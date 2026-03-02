@@ -76,7 +76,7 @@ jobs:
       - name: Deploy infrastructure
         id: deploy
         run: |
-          DEPLOYMENT_NAME="augeo-${{ steps.env.outputs.environment }}-$(date +%Y%m%d-%H%M%S)"
+          DEPLOYMENT_NAME="fundrbolt-${{ steps.env.outputs.environment }}-$(date +%Y%m%d-%H%M%S)"
 
           # Get password from input or secrets
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
@@ -104,11 +104,11 @@ jobs:
       - name: Verify resources
         run: |
           echo "Verifying resource group exists..."
-          az group show --name augeo-${{ steps.env.outputs.environment }}-rg
+          az group show --name fundrbolt-${{ steps.env.outputs.environment }}-rg
 
           echo "Listing deployed resources..."
           az resource list \
-            --resource-group augeo-${{ steps.env.outputs.environment }}-rg \
+            --resource-group fundrbolt-${{ steps.env.outputs.environment }}-rg \
             --output table
 
       - name: Post-deployment summary

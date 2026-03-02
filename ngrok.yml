@@ -6,10 +6,10 @@ tunnels:
     proto: http
     addr: 5173
     inspect: true
-    subdomain: augeo-frontend
+    subdomain: fundrbolt-frontend
 
   backend:
     proto: http
     addr: 8000
     inspect: true
-    subdomain: augeo-backend
+    subdomain: fundrbolt-backend

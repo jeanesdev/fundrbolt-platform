@@ -1,4 +1,4 @@
-# Augeo Domain Model
+# Fundrbolt Domain Model
 
 ## Core Entities
 

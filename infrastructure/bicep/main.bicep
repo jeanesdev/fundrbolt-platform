@@ -1,4 +1,4 @@
-// Main Bicep orchestration template for Augeo Platform
+// Main Bicep orchestration template for Fundrbolt Platform
 targetScope = 'subscription'
 
 @description('Environment name')
@@ -13,12 +13,12 @@ param environment string
 param location string = 'eastus'
 
 @description('Application name prefix')
-param appName string = 'augeo'
+param appName string = 'fundrbolt'
 
 @description('Tags for all resources')
 param tags object = {
   Environment: environment
-  Project: 'augeo-platform'
+  Project: 'fundrbolt-platform'
   ManagedBy: 'Bicep'
 }
 
@@ -43,7 +43,7 @@ var storageAccountName = replace('${appName}${environment}storage', '-', '')
 param postgresAdminPassword string
 
 // Optional parameters for custom domain (Phase 5)
-@description('Custom domain name (e.g., augeo.app) - only used in production')
+@description('Custom domain name (e.g., fundrbolt.com) - only used in production')
 param customDomain string = ''
 
 @description('Enable custom domain and email services')
@@ -87,8 +87,12 @@ module appInsights './modules/monitoring.bicep' = {
     location: location
     environment: environment
     workspaceId: logAnalytics.outputs.workspaceId
-    backendApiUrl: environment == 'production' ? 'https://api.${customDomain}' : 'https://${appServiceName}.azurewebsites.net'
-    frontendUrl: environment == 'production' ? 'https://admin.${customDomain}' : 'https://${staticWebAppName}.azurestaticapps.net'
+    backendApiUrl: environment == 'production'
+      ? 'https://api.${customDomain}'
+      : 'https://${appServiceName}.azurewebsites.net'
+    frontendUrl: environment == 'production'
+      ? 'https://admin.${customDomain}'
+      : 'https://${staticWebAppName}.azurestaticapps.net'
     alertEmailAddresses: alertEmailAddresses
     tags: tags
   }
@@ -319,14 +323,26 @@ output storageAccountName string = storage.outputs.storageAccountName
 // DNS outputs (Phase 5)
 output dnsZoneName string = enableCustomDomain && customDomain != '' ? dnsZone!.outputs.dnsZoneName : ''
 output nameServers array = enableCustomDomain && customDomain != '' ? dnsZone!.outputs.nameServers : []
-output nameServerInstructions string = enableCustomDomain && customDomain != '' ? dnsZone!.outputs.nameServerInstructions : 'Custom domain not configured'
+output nameServerInstructions string = enableCustomDomain && customDomain != ''
+  ? dnsZone!.outputs.nameServerInstructions
+  : 'Custom domain not configured'
 
 // Communication Services outputs (Phase 5)
-output communicationServiceName string = enableCustomDomain && customDomain != '' ? communicationServices!.outputs.communicationServiceName : ''
-output communicationServiceEndpoint string = enableCustomDomain && customDomain != '' ? communicationServices!.outputs.communicationServiceEndpoint : ''
-output emailDomainStatus string = enableCustomDomain && customDomain != '' ? communicationServices!.outputs.emailDomainStatus : ''
-output dnsRecordsRequired object = enableCustomDomain && customDomain != '' ? communicationServices!.outputs.dnsRecordsRequired : {}
-output emailConfigurationInstructions string = enableCustomDomain && customDomain != '' ? communicationServices!.outputs.configurationInstructions : 'Email services not configured'
+output communicationServiceName string = enableCustomDomain && customDomain != ''
+  ? communicationServices!.outputs.communicationServiceName
+  : ''
+output communicationServiceEndpoint string = enableCustomDomain && customDomain != ''
+  ? communicationServices!.outputs.communicationServiceEndpoint
+  : ''
+output emailDomainStatus string = enableCustomDomain && customDomain != ''
+  ? communicationServices!.outputs.emailDomainStatus
+  : ''
+output dnsRecordsRequired object = enableCustomDomain && customDomain != ''
+  ? communicationServices!.outputs.dnsRecordsRequired
+  : {}
+output emailConfigurationInstructions string = enableCustomDomain && customDomain != ''
+  ? communicationServices!.outputs.configurationInstructions
+  : 'Email services not configured'
 
 // Budget outputs (Phase 9)
 output budgetId string = budget.outputs.budgetId

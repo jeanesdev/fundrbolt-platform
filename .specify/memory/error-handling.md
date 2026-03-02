@@ -1,4 +1,4 @@
-# Augeo Error Handling
+# Fundrbolt Error Handling
 
 ## Error Code Standards
 

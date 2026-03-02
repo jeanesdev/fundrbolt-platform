@@ -9,7 +9,7 @@
 
 ### User Story 1 - First-Time Visitor Landing (Priority: P1)
 
-A potential user visits the Augeo platform for the first time and needs to understand what the platform offers and how to get started based on their role (donor, auctioneer, or NPO).
+A potential user visits the Fundrbolt platform for the first time and needs to understand what the platform offers and how to get started based on their role (donor, auctioneer, or NPO).
 
 **Why this priority**: This is the critical first impression and primary conversion point. Without a clear landing page, users cannot access any other features of the platform.
 
@@ -28,7 +28,7 @@ A potential user visits the Augeo platform for the first time and needs to under
 
 ### User Story 2 - Learning About the Platform (Priority: P2)
 
-A potential user wants to learn more about Augeo's mission, features, and how the platform works before committing to registration.
+A potential user wants to learn more about Fundrbolt's mission, features, and how the platform works before committing to registration.
 
 **Why this priority**: Builds trust and reduces registration friction by providing transparency. Many users need educational content before converting.
 
@@ -37,7 +37,7 @@ A potential user wants to learn more about Augeo's mission, features, and how th
 **Acceptance Scenarios**:
 
 1. **Given** I am on the landing page, **When** I click "About", **Then** I navigate to the about page showing the platform's mission, features, and how it works
-2. **Given** I am on the about page, **When** I read the content, **Then** I understand what Augeo does, who it serves, and the key benefits for donors, auctioneers, and NPOs
+2. **Given** I am on the about page, **When** I read the content, **Then** I understand what Fundrbolt does, who it serves, and the key benefits for donors, auctioneers, and NPOs
 3. **Given** I am on the about page, **When** I want to take action, **Then** I see clear calls-to-action to register or return to the landing page
 4. **Given** I am on the about page, **When** I view it on any device, **Then** the content is readable and properly formatted
 
@@ -62,7 +62,7 @@ A potential user wants to see testimonials and success stories from existing use
 
 ### User Story 4 - Contacting the Platform (Priority: P3)
 
-A potential user or existing user has questions or needs support and wants to contact the Augeo team.
+A potential user or existing user has questions or needs support and wants to contact the Fundrbolt team.
 
 **Why this priority**: Important for support and inquiries, but not critical for initial platform adoption. Most users will self-serve through other pages first.
 

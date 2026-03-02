@@ -3,7 +3,7 @@
 **Feature Branch**: `009-admin-pwa-ui`
 **Created**: 2025-11-17
 **Status**: Draft
-**Input**: User description: "admin-pwa-ui-cleanup: I need to cleanup the ui for the PWA theres a lot of stuff from the template that doesn't need to be there, like Tasks, Chats, Apps, settings, appearance, help center. I don't want the user to be able to select between themes or dark mode/light mode. I need a SuperAdmin dashboard, an NPO dashboard, an Auctioneer Dashboard and an Event Dashboard, but these can be place holders. Right now the profile drop down in the top right corner only shows up on the dashboard page. I want that to be everywhere, but you can get rid of the billing, settings, new team drop downs. I do want the profile page, but I need that to be updated to allow the user to change their profile information according to my models. I don't think the search bar is working right now, but I do think it would be helpful if it actually worked. The hamburger menu can be removed. Make sure when an NPO admin logs in, they only see their NPO, events, and users. When an auctioneer signs in, he should only see the NPOs in read only, the ones he is registered with, and the events he is registered with and the users registered with the events (read only) he is registered with. The staff should only see their NPO in read only and their events. Just make sure whoever is logged in, they can only see what they are supposed to be able to see. Donors shouldn't be logging into the admin PWA. The Teams icon in the top left corner should show which NPO is selected and it should change what's available in the other menus and pages. The SuperAdmin should be able to select any NPO or Augeo Platform which shows all NPOs."
+**Input**: User description: "admin-pwa-ui-cleanup: I need to cleanup the ui for the PWA theres a lot of stuff from the template that doesn't need to be there, like Tasks, Chats, Apps, settings, appearance, help center. I don't want the user to be able to select between themes or dark mode/light mode. I need a SuperAdmin dashboard, an NPO dashboard, an Auctioneer Dashboard and an Event Dashboard, but these can be place holders. Right now the profile drop down in the top right corner only shows up on the dashboard page. I want that to be everywhere, but you can get rid of the billing, settings, new team drop downs. I do want the profile page, but I need that to be updated to allow the user to change their profile information according to my models. I don't think the search bar is working right now, but I do think it would be helpful if it actually worked. The hamburger menu can be removed. Make sure when an NPO admin logs in, they only see their NPO, events, and users. When an auctioneer signs in, he should only see the NPOs in read only, the ones he is registered with, and the events he is registered with and the users registered with the events (read only) he is registered with. The staff should only see their NPO in read only and their events. Just make sure whoever is logged in, they can only see what they are supposed to be able to see. Donors shouldn't be logging into the admin PWA. The Teams icon in the top left corner should show which NPO is selected and it should change what's available in the other menus and pages. The SuperAdmin should be able to select any NPO or Fundrbolt Platform which shows all NPOs."
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -17,7 +17,7 @@ Users with different roles (SuperAdmin, NPO Admin, Event Coordinator, Staff) nee
 
 **Acceptance Scenarios**:
 
-1. **Given** a SuperAdmin logs into the admin PWA, **When** they view the dashboard, **Then** they see the SuperAdmin dashboard and can select any NPO or "Augeo Platform" from the NPO selector
+1. **Given** a SuperAdmin logs into the admin PWA, **When** they view the dashboard, **Then** they see the SuperAdmin dashboard and can select any NPO or "Fundrbolt Platform" from the NPO selector
 2. **Given** an NPO Admin logs into the admin PWA, **When** they view the dashboard, **Then** they see the NPO dashboard with only their assigned NPO, events, and users
 3. **Given** an Event Coordinator logs into the admin PWA, **When** they view the dashboard, **Then** they see the Auctioneer dashboard with read-only access to NPOs they're registered with, and full access to events they're assigned to
 4. **Given** a Staff member logs into the admin PWA, **When** they view the dashboard, **Then** they see the Event dashboard with read-only access to their NPO and full access to their assigned events
@@ -86,8 +86,8 @@ Users need an NPO selector (replacing the Teams icon) in the top left corner tha
 
 **Acceptance Scenarios**:
 
-1. **Given** a SuperAdmin views the NPO selector, **When** they click it, **Then** they see a list of all NPOs plus an "Augeo Platform" option
-2. **Given** a SuperAdmin selects "Augeo Platform", **When** they view NPO, Event, and User pages, **Then** they see data for all NPOs
+1. **Given** a SuperAdmin views the NPO selector, **When** they click it, **Then** they see a list of all NPOs plus an "Fundrbolt Platform" option
+2. **Given** a SuperAdmin selects "Fundrbolt Platform", **When** they view NPO, Event, and User pages, **Then** they see data for all NPOs
 3. **Given** a SuperAdmin selects a specific NPO, **When** they view NPO, Event, and User pages, **Then** they see data filtered to that NPO only
 4. **Given** an NPO Admin views the NPO selector, **When** they click it, **Then** they see only their assigned NPO (non-editable)
 5. **Given** an Event Coordinator views the NPO selector, **When** they click it, **Then** they see only NPOs they are registered with (if multiple)
@@ -116,7 +116,7 @@ Users need a working search bar that helps them quickly find NPOs, events, users
 
 ### Edge Cases
 
-- What happens when a SuperAdmin has "Augeo Platform" selected and tries to edit an NPO-specific resource? System allows editing with inline NPO selection in the edit form, providing a streamlined workflow where the NPO can be selected while editing.
+- What happens when a SuperAdmin has "Fundrbolt Platform" selected and tries to edit an NPO-specific resource? System allows editing with inline NPO selection in the edit form, providing a streamlined workflow where the NPO can be selected while editing.
 - How does the system handle users with multiple role assignments (e.g., both NPO Admin and Event Coordinator)? System displays the highest privilege role and allows role switching if multiple roles exist.
 - What happens when an Event Coordinator is removed from an event while viewing that event's page? System immediately redirects to dashboard with a notification message explaining access was revoked.
 - How does the system handle NPO selection persistence across sessions (should it remember the last selected NPO)? System remembers the last selected NPO across sessions for convenience.
@@ -159,8 +159,8 @@ Users need a working search bar that helps them quickly find NPOs, events, users
 
 - **FR-019**: System MUST display an NPO selector in the top left corner (replacing Teams icon)
 - **FR-020**: NPO selector MUST show the currently selected NPO name
-- **FR-021**: SuperAdmin users MUST be able to select any NPO or "Augeo Platform" from the NPO selector
-- **FR-022**: When "Augeo Platform" is selected, SuperAdmin MUST see data for all NPOs
+- **FR-021**: SuperAdmin users MUST be able to select any NPO or "Fundrbolt Platform" from the NPO selector
+- **FR-022**: When "Fundrbolt Platform" is selected, SuperAdmin MUST see data for all NPOs
 - **FR-023**: When a specific NPO is selected, users MUST see data filtered to that NPO only
 - **FR-024**: NPO Admin users MUST see only their assigned NPO in the selector (non-selectable)
 - **FR-025**: Event Coordinator users MUST see only NPOs they're registered with in the selector

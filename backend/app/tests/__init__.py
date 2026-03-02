@@ -1,1 +1,1 @@
-"""Test suite for Augeo backend."""
+"""Test suite for Fundrbolt backend."""

@@ -1,0 +1,220 @@
+openapi: 3.0.3
+info:
+  title: Admin User Import API
+  version: 1.0.0
+  description: API contracts for admin user import (preflight, commit, error report).
+servers:
+  - url: /api/v1
+paths:
+  /admin/users/import/preflight:
+    post:
+      summary: Preflight user import
+      description: Validate an uploaded JSON or CSV file without creating users.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Preflight results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreflightResult"
+        "400":
+          description: Validation error
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: NPO not found
+
+  /admin/users/import/commit:
+    post:
+      summary: Commit user import
+      description: Create users or memberships after a successful preflight.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - preflight_id
+                - confirm
+                - file
+              properties:
+                preflight_id:
+                  type: string
+                  description: Preflight identifier returned by preflight.
+                confirm:
+                  type: boolean
+                  description: Must be true to proceed.
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Import summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+        "400":
+          description: Validation error
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: NPO not found
+
+  /admin/users/import/error-report:
+    post:
+      summary: Build error report
+      description: Generate a downloadable error report from preflight results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ErrorReportRequest"
+      responses:
+        "200":
+          description: Error report payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorReportResponse"
+
+components:
+  schemas:
+    IssueSeverity:
+      type: string
+      enum: [error, warning]
+    ImportRowStatus:
+      type: string
+      enum: [created, skipped, membership_added, error]
+    PreflightIssue:
+      type: object
+      required: [row_number, severity, message]
+      properties:
+        row_number:
+          type: integer
+          minimum: 1
+        field_name:
+          type: string
+          nullable: true
+        severity:
+          $ref: "#/components/schemas/IssueSeverity"
+        message:
+          type: string
+        raw_value:
+          type: string
+          nullable: true
+    PreflightResult:
+      type: object
+      required: [preflight_id, detected_format, total_rows, valid_rows, error_rows, warning_rows]
+      properties:
+        preflight_id:
+          type: string
+        detected_format:
+          type: string
+          description: json or csv
+        file_checksum:
+          type: string
+        total_rows:
+          type: integer
+          minimum: 0
+        valid_rows:
+          type: integer
+          minimum: 0
+        error_rows:
+          type: integer
+          minimum: 0
+        warning_rows:
+          type: integer
+          minimum: 0
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreflightIssue"
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreflightIssue"
+        error_report_url:
+          type: string
+          nullable: true
+    ImportRowResult:
+      type: object
+      required: [row_number, status, message]
+      properties:
+        row_number:
+          type: integer
+          minimum: 1
+        email:
+          type: string
+          nullable: true
+        full_name:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/ImportRowStatus"
+        message:
+          type: string
+    ImportResult:
+      type: object
+      required: [batch_id, created_rows, skipped_rows, membership_added_rows, failed_rows]
+      properties:
+        batch_id:
+          type: string
+        created_rows:
+          type: integer
+          minimum: 0
+        skipped_rows:
+          type: integer
+          minimum: 0
+        membership_added_rows:
+          type: integer
+          minimum: 0
+        failed_rows:
+          type: integer
+          minimum: 0
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportRowResult"
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreflightIssue"
+    ErrorReportRequest:
+      type: object
+      required: [format, rows]
+      properties:
+        format:
+          type: string
+          enum: [csv, json]
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportRowResult"
+    ErrorReportResponse:
+      type: object
+      required: [format, content_type, filename, content]
+      properties:
+        format:
+          type: string
+          enum: [csv, json]
+        content_type:
+          type: string
+        filename:
+          type: string
+        content:
+          type: string

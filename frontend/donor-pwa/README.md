@@ -1,4 +1,4 @@
-# Augeo Donor PWA
+# Fundrbolt Donor PWA
 
 Progressive Web App (PWA) for donors to browse events, register as guests, manage profiles, and participate in nonprofit auctions.
 
@@ -116,8 +116,8 @@ export default defineConfig({
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/*"],
-      "@augeo/shared": ["../shared/src/index.ts"],
-      "@augeo/shared/*": ["../shared/src/*"]
+      "@fundrbolt/shared": ["../shared/src/index.ts"],
+      "@fundrbolt/shared/*": ["../shared/src/*"]
     }
   }
 }
@@ -269,9 +269,9 @@ frontend/shared/
 **Import Pattern**:
 
 ```typescript
-import { SharedButton } from '@augeo/shared/components'
-import { useSharedHook } from '@augeo/shared/hooks'
-import type { SharedType } from '@augeo/shared/types'
+import { SharedButton } from '@fundrbolt/shared/components'
+import { useSharedHook } from '@fundrbolt/shared/hooks'
+import type { SharedType } from '@fundrbolt/shared/types'
 ```
 
 **Current Status**: Package exists but not yet populated (planned for future use)
@@ -475,7 +475,7 @@ nvm use 22
 ### 2. Install Dependencies
 
 ```bash
-cd frontend/augeo-admin
+cd frontend/fundrbolt-admin
 pnpm install
 ```
 
@@ -546,7 +546,7 @@ pnpm playwright show-report
 ## Project Structure
 
 ```
-frontend/augeo-admin/
+frontend/fundrbolt-admin/
 ├── src/
 │   ├── components/       # Reusable UI components
 │   │   ├── ui/           # Shadcn UI components
@@ -656,7 +656,7 @@ frontend/augeo-admin/
 
 1. **NPO Selector** (top-left corner):
    - Role-based NPO list (SuperAdmin sees all, others see assigned NPOs)
-   - "Augeo Platform" option for SuperAdmin (view all data)
+   - "Fundrbolt Platform" option for SuperAdmin (view all data)
    - Auto-selection for single-NPO users
    - Disabled for users with only one NPO (shows name only)
    - LocalStorage persistence across sessions
@@ -930,7 +930,7 @@ VITE_DEBUG=true
 
 Custom theme in `tailwind.config.js`:
 
-- Primary color: Augeo brand blue
+- Primary color: Fundrbolt brand blue
 - Dark mode support
 - Custom spacing and typography
 - Component utilities
@@ -1032,7 +1032,7 @@ Clone the project
 Go to the project directory
 
 ```bash
-  cd augeo-platform/frontend/augeo-admin
+  cd fundrbolt-platform/frontend/donor-pwa
 ```
 
 Install dependencies
@@ -1055,5 +1055,5 @@ Proprietary
 
 For issues and questions:
 
-- Email: support@augeo.app
+- Email: support@fundrbolt.com
 - Backend API: http://localhost:8000/docs
