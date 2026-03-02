@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { getEffectiveNow } from '@/stores/debug-spoof-store';
 import type { AuctionItemGalleryItem } from '@/types/auction-gallery';
 import { Eye, Flame, Gavel, Heart, Image as ImageIcon, Zap } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 export interface AuctionItemCardProps {
   item: AuctionItemGalleryItem;
@@ -29,6 +29,30 @@ export interface AuctionItemCardProps {
   className?: string;
   /** Show the card in compact mode (no bid button — for watchlist rows) */
   compact?: boolean;
+  /** Eagerly load thumbnail image for above-the-fold cards */
+  eagerLoadImage?: boolean;
+  /** Explicit control from gallery for hot badge visibility */
+  isHotItem?: boolean;
+}
+
+const loadedAuctionCardImageUrls = new Set<string>();
+const loadedAuctionCardImageKeys = new Set<string>();
+const auctionCardImageSrcByKey = new Map<string, string>();
+
+function getAuctionImageWarmCache(): Set<string> {
+  if (typeof window === 'undefined') {
+    return loadedAuctionCardImageUrls;
+  }
+
+  const globalWindow = window as Window & {
+    __auctionImageWarmCache?: Set<string>;
+  };
+
+  if (!globalWindow.__auctionImageWarmCache) {
+    globalWindow.__auctionImageWarmCache = new Set<string>();
+  }
+
+  return globalWindow.__auctionImageWarmCache;
 }
 
 function formatCurrency(amount: number): string {
@@ -38,6 +62,127 @@ function formatCurrency(amount: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+function IncomingAuctionCardImage({
+  src,
+  onPromote,
+}: {
+  src: string;
+  onPromote: (src: string) => void;
+}) {
+  const [isReady, setIsReady] = useState(false);
+
+  return (
+    <img
+      src={src}
+      alt=''
+      aria-hidden='true'
+      className={cn(
+        'pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-150',
+        isReady ? 'opacity-100' : 'opacity-0'
+      )}
+      loading='eager'
+      fetchPriority='high'
+      decoding='async'
+      onLoad={() => {
+        setIsReady(true);
+      }}
+      onError={() => {
+        setIsReady(true);
+      }}
+      onTransitionEnd={() => {
+        if (!isReady) {
+          return;
+        }
+
+        onPromote(src);
+      }}
+    />
+  );
+}
+
+function AuctionCardImage({
+  cacheKey,
+  thumbnailUrl,
+  title,
+  eagerLoadImage,
+}: {
+  cacheKey: string;
+  thumbnailUrl: string;
+  title: string;
+  eagerLoadImage: boolean;
+}) {
+  const cachedSrc = auctionCardImageSrcByKey.get(cacheKey);
+  const warmCache = getAuctionImageWarmCache();
+  const initialSrc = cachedSrc ?? thumbnailUrl;
+  const [primarySrc, setPrimarySrc] = useState(initialSrc);
+  const [isPrimaryImageLoaded, setIsPrimaryImageLoaded] = useState(
+    loadedAuctionCardImageKeys.has(cacheKey) ||
+    !!cachedSrc ||
+    loadedAuctionCardImageUrls.has(initialSrc) ||
+    warmCache.has(initialSrc)
+  );
+  const nextSrc = thumbnailUrl !== primarySrc ? thumbnailUrl : null;
+
+  const promoteIncomingImage = (incomingSource: string) => {
+    loadedAuctionCardImageUrls.add(incomingSource);
+    warmCache.add(incomingSource);
+    loadedAuctionCardImageKeys.add(cacheKey);
+    auctionCardImageSrcByKey.set(cacheKey, incomingSource);
+    setPrimarySrc(incomingSource);
+    setIsPrimaryImageLoaded(true);
+  };
+
+  return (
+    <>
+      {!isPrimaryImageLoaded && (
+        <div
+          className='absolute inset-0 flex items-center justify-center animate-pulse'
+          style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.08)' }}
+        >
+          <ImageIcon className='h-10 w-10 opacity-30' style={{ color: 'var(--event-card-text, #000)' }} />
+        </div>
+      )}
+      <img
+        src={primarySrc}
+        alt={title}
+        className={cn(
+          'h-full w-full object-cover transition-transform duration-500',
+          'group-hover:scale-105'
+        )}
+        loading={eagerLoadImage ? 'eager' : 'lazy'}
+        fetchPriority={eagerLoadImage ? 'high' : 'auto'}
+        decoding='async'
+        sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
+        width={640}
+        height={480}
+        onLoad={(event) => {
+          const resolvedSrc = event.currentTarget.currentSrc || primarySrc;
+          loadedAuctionCardImageKeys.add(cacheKey);
+          auctionCardImageSrcByKey.set(cacheKey, resolvedSrc);
+          loadedAuctionCardImageUrls.add(resolvedSrc);
+          warmCache.add(resolvedSrc);
+          setIsPrimaryImageLoaded(true);
+        }}
+        onError={(event) => {
+          const resolvedSrc = event.currentTarget.currentSrc || primarySrc;
+          loadedAuctionCardImageKeys.add(cacheKey);
+          auctionCardImageSrcByKey.set(cacheKey, resolvedSrc);
+          loadedAuctionCardImageUrls.add(resolvedSrc);
+          warmCache.add(resolvedSrc);
+          setIsPrimaryImageLoaded(true);
+        }}
+      />
+      {nextSrc && (
+        <IncomingAuctionCardImage
+          key={nextSrc}
+          src={nextSrc}
+          onPromote={promoteIncomingImage}
+        />
+      )}
+    </>
+  );
 }
 
 export function AuctionItemCard({
@@ -52,6 +197,8 @@ export function AuctionItemCard({
   eventDateTime,
   className,
   compact = false,
+  eagerLoadImage = false,
+  isHotItem,
 }: AuctionItemCardProps) {
   const btnRef = useRef<HTMLButtonElement>(null);
   const isLiveAuctionItem = item.auction_type === 'live';
@@ -64,8 +211,7 @@ export function AuctionItemCard({
   const isBiddingOpen =
     eventStatus !== 'closed' && (item.bidding_open !== false || isEffectivelyLive);
 
-  // Hot item: bid count ≥ 5
-  const isHot = (item.bid_count ?? 0) >= 5;
+  const isHot = isHotItem ?? false;
 
   const handleBidClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -107,13 +253,17 @@ export function AuctionItemCard({
     >
       {/* Image */}
       <div className='relative overflow-hidden' style={{ paddingTop: '75%' /* 4:3 */ }}>
-        <div className='absolute inset-0'>
+        <div
+          className='absolute inset-0'
+          style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.08)' }}
+        >
           {item.thumbnail_url ? (
-            <img
-              src={item.thumbnail_url}
-              alt={item.title}
-              className='h-full w-full object-cover transition-transform duration-500 group-hover:scale-105'
-              loading='lazy'
+            <AuctionCardImage
+              cacheKey={`auction-item:${item.id}`}
+              key={item.id}
+              thumbnailUrl={item.thumbnail_url}
+              title={item.title}
+              eagerLoadImage={eagerLoadImage}
             />
           ) : (
             <div
@@ -154,7 +304,7 @@ export function AuctionItemCard({
 
         {/* Winning / Outbid overlay badge */}
         {isCurrentUserWinning && hasCurrentBid && (
-          <div className='absolute bottom-2 left-2 z-10 flex items-center gap-1 rounded-full bg-green-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-lg'>
+          <div className='animate-winning-badge-glow absolute bottom-2 left-2 z-10 flex items-center gap-1 rounded-full bg-green-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-lg'>
             🏆 Winning
           </div>
         )}

@@ -43,7 +43,10 @@ class AuctionItemService {
     itemId: string
   ): Promise<AuctionItemDetail> {
     const response = await apiClient.get<AuctionItemDetail>(
-      `/events/${eventId}/auction-items/${itemId}`
+      `/events/${eventId}/auction-items/${itemId}`,
+      {
+        timeout: 15000,
+      }
     );
     return response.data;
   }

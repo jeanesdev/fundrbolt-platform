@@ -7,7 +7,7 @@
  */
 
 import { cn } from '@/lib/utils'
-import { Gavel, Home, MapPin } from 'lucide-react'
+import { Gavel, Home, UserRound } from 'lucide-react'
 
 export type DonorTab = 'home' | 'auction' | 'seat'
 
@@ -20,12 +20,13 @@ interface TabConfig {
 const TABS: TabConfig[] = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'auction', label: 'Bid', icon: Gavel },
-  { id: 'seat', label: 'My Info', icon: MapPin },
+  { id: 'seat', label: 'My Info', icon: UserRound },
 ]
 
 export interface BottomTabNavProps {
   activeTab: DonorTab
   onTabChange: (tab: DonorTab) => void
+  onTabIntent?: (tab: DonorTab) => void
   /** Badge counts keyed by tab id */
   badges?: Partial<Record<DonorTab, number>>
 }
@@ -33,6 +34,7 @@ export interface BottomTabNavProps {
 export function BottomTabNav({
   activeTab,
   onTabChange,
+  onTabIntent,
   badges = {},
 }: BottomTabNavProps) {
   return (
@@ -54,6 +56,9 @@ export function BottomTabNav({
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
+              onMouseEnter={() => onTabIntent?.(tab.id)}
+              onFocus={() => onTabIntent?.(tab.id)}
+              onTouchStart={() => onTabIntent?.(tab.id)}
               className={cn(
                 'flex flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2',
                 'transition-all duration-200 active:scale-95',

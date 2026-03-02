@@ -34,8 +34,8 @@ import watchListService from '@/services/watchlistService'
 import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { useEventContextStore } from '@/stores/event-context-store'
 import { useEventStore } from '@/stores/event-store'
-import type { RegisteredEventWithBranding } from '@/types/event-branding'
 import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
+import type { RegisteredEventWithBranding } from '@/types/event-branding'
 import {
   keepPreviousData,
   useMutation,
@@ -45,8 +45,60 @@ import {
 import { useNavigate, useParams } from '@tanstack/react-router'
 import type { AxiosError } from 'axios'
 import { AlertCircle, Loader2 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function renderMarkdownToSafeHtml(markdown: string): string {
+  if (!markdown.trim()) {
+    return ''
+  }
+
+  let html = escapeHtml(markdown)
+
+  html = html
+    .replace(/^###\s+(.+)$/gim, '<h3 class="mt-4 mb-2 text-base font-semibold">$1</h3>')
+    .replace(/^##\s+(.+)$/gim, '<h2 class="mt-4 mb-2 text-lg font-semibold">$1</h2>')
+    .replace(/^#\s+(.+)$/gim, '<h1 class="mt-4 mb-2 text-xl font-bold">$1</h1>')
+    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(
+      /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline">$1</a>',
+    )
+    .replace(/^(?:- |\* )(.+)$/gim, '<li>$1</li>')
+
+  html = html.replace(/(<li>.*<\/li>)/gims, '<ul class="my-2 list-disc pl-5 space-y-1">$1</ul>')
+
+  const blocks = html
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+
+  return blocks
+    .map((block) => {
+      if (
+        block.startsWith('<h1') ||
+        block.startsWith('<h2') ||
+        block.startsWith('<h3') ||
+        block.startsWith('<ul')
+      ) {
+        return block
+      }
+
+      return `<p class="mb-2 leading-relaxed">${block.replace(/\n/g, '<br />')}</p>`
+    })
+    .join('')
+}
 
 export function EventHomePage() {
   const navigate = useNavigate()
@@ -70,27 +122,63 @@ export function EventHomePage() {
   const [isItemWatching, setIsItemWatching] = useState(false)
   const [winningItemMap, setWinningItemMap] = useState<Record<string, boolean>>({})
   const [maxBidItemMap, setMaxBidItemMap] = useState<Record<string, number>>({})
-  const [showMyItems, setShowMyItems] = useState(false)
+  const [displayedTab, setDisplayedTab] = useState<DonorTab>('home')
+  const prefetchedAuctionImagesRef = useRef<Set<string>>(new Set())
+  const queryClient = useQueryClient()
+  const tabOrder: DonorTab[] = ['home', 'auction', 'seat']
+
+  const resolveEventDateTime = useCallback((event: typeof currentEvent): string | null => {
+    if (!event) return null
+
+    const eventRecord = event as unknown as Record<string, unknown>
+    const candidates = [
+      event.event_datetime,
+      eventRecord.eventDateTime,
+      eventRecord.event_date,
+      eventRecord.eventDate,
+      eventRecord.start_datetime,
+      eventRecord.startDateTime,
+    ]
+
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string' && candidate.trim().length > 0) {
+        return candidate
+      }
+    }
+
+    return null
+  }, [])
   // Restore bid flags from localStorage
   useEffect(() => {
     if (!currentEvent?.id) return
+
+    const applyBidFlags = (
+      winning: Record<string, boolean>,
+      maxBid: Record<string, number>
+    ) => {
+      const timeoutId = window.setTimeout(() => {
+        setWinningItemMap(winning)
+        setMaxBidItemMap(maxBid)
+      }, 0)
+
+      return () => {
+        window.clearTimeout(timeoutId)
+      }
+    }
+
     const storageKey = `fundrbolt-bid-flags:${currentEvent.id}:${watchlistScope}`
     const stored = localStorage.getItem(storageKey)
     if (!stored) {
-      setWinningItemMap({})
-      setMaxBidItemMap({})
-      return
+      return applyBidFlags({}, {})
     }
     try {
       const parsed = JSON.parse(stored) as {
         winning?: Record<string, boolean>
         maxBid?: Record<string, number>
       }
-      setWinningItemMap(parsed.winning ?? {})
-      setMaxBidItemMap(parsed.maxBid ?? {})
+      return applyBidFlags(parsed.winning ?? {}, parsed.maxBid ?? {})
     } catch {
-      setWinningItemMap({})
-      setMaxBidItemMap({})
+      return applyBidFlags({}, {})
     }
   }, [currentEvent?.id, watchlistScope])
 
@@ -108,15 +196,144 @@ export function EventHomePage() {
   const activeTab = useMemo((): DonorTab => {
     if (userSelectedTab !== null) return userSelectedTab
     if (currentEvent?.status === 'active') {
-      const eventDate = currentEvent.event_datetime
-        ? new Date(currentEvent.event_datetime)
+      const resolvedDateTime = resolveEventDateTime(currentEvent)
+      const eventDate = resolvedDateTime
+        ? new Date(resolvedDateTime)
         : null
       if (eventDate && eventDate <= getEffectiveNow()) return 'auction'
     }
     return 'home'
-  }, [userSelectedTab, currentEvent?.status, currentEvent?.event_datetime])
+  }, [userSelectedTab, currentEvent, resolveEventDateTime])
 
-  const setActiveTab = (tab: DonorTab) => setUserSelectedTab(tab)
+  const prefetchAuctionTabData = useCallback(async () => {
+    if (!currentEvent?.id) {
+      return
+    }
+
+    const response = await apiClient.get(`/events/${currentEvent.id}/auction-items`, {
+      params: {
+        page: 1,
+        limit: 24,
+      },
+      timeout: 12000,
+    })
+
+    const payload = response.data as {
+      items?: Array<{
+        id: string
+        title: string
+        description?: string | null
+        auction_type: 'silent' | 'live'
+        bid_number: number
+        primary_image_url?: string | null
+        starting_bid: number | string
+        current_bid_amount?: number | string | null
+        bid_count?: number
+        bidding_open?: boolean
+        watcher_count?: number
+        promotion_badge?: string | null
+        promotion_notice?: string | null
+        min_next_bid_amount?: number | string | null
+        category?: string | null
+        category_name?: string | null
+      }>
+      pagination?: {
+        page: number
+        limit: number
+        total: number
+        total_pages?: number
+        pages?: number
+      }
+    }
+
+    const items = Array.isArray(payload.items) ? payload.items : []
+
+    queryClient.setQueryData(
+      ['auction-items', currentEvent.id, 'all'],
+      {
+        pages: [
+          {
+            items: items.map((item) => {
+              const toNumber = (value: number | string | null | undefined): number | null => {
+                if (value === null || value === undefined) return null
+                const parsed = typeof value === 'string' ? Number(value) : value
+                return Number.isFinite(parsed) ? parsed : null
+              }
+
+              return {
+                id: item.id,
+                title: item.title,
+                description: item.description ?? null,
+                auction_type: item.auction_type,
+                bid_number: item.bid_number,
+                thumbnail_url: item.primary_image_url ?? null,
+                starting_bid: toNumber(item.starting_bid) ?? 0,
+                current_bid: toNumber(item.current_bid_amount),
+                bid_count: item.bid_count ?? 0,
+                bidding_open: item.bidding_open,
+                watcher_count: item.watcher_count,
+                promotion_badge: item.promotion_badge ?? null,
+                promotion_notice: item.promotion_notice ?? null,
+                min_next_bid_amount: toNumber(item.min_next_bid_amount) ?? undefined,
+                category: item.category_name ?? item.category ?? null,
+              }
+            }),
+            pagination: {
+              page: payload.pagination?.page ?? 1,
+              limit: payload.pagination?.limit ?? 24,
+              total: payload.pagination?.total ?? items.length,
+              total_pages: payload.pagination?.total_pages ?? payload.pagination?.pages ?? 1,
+              has_more:
+                (payload.pagination?.page ?? 1) <
+                (payload.pagination?.total_pages ?? payload.pagination?.pages ?? 1),
+            },
+          },
+        ],
+        pageParams: [1],
+      }
+    )
+
+    items
+      .map((item) => item.primary_image_url)
+      .filter((url): url is string => typeof url === 'string' && url.trim().length > 0)
+      .forEach((url) => {
+        if (prefetchedAuctionImagesRef.current.has(url)) {
+          return
+        }
+
+        prefetchedAuctionImagesRef.current.add(url)
+        const image = new Image()
+        image.src = url
+      })
+  }, [currentEvent, queryClient])
+
+  const setActiveTab = (tab: DonorTab) => {
+    const visibleTab = userSelectedTab === null ? activeTab : displayedTab
+
+    if (visibleTab === tab) {
+      setUserSelectedTab(tab)
+      return
+    }
+
+    const performSwitch = () => {
+      setDisplayedTab(tab)
+      setUserSelectedTab(tab)
+    }
+
+    if (tab === 'auction') {
+      void Promise.race([
+        prefetchAuctionTabData().catch(() => undefined),
+        new Promise<void>((resolve) => {
+          window.setTimeout(resolve, 650)
+        }),
+      ]).finally(() => {
+        performSwitch()
+      })
+      return
+    }
+
+    performSwitch()
+  }
 
   // Events for switcher
   const eventsForSwitcher = useMemo((): RegisteredEventWithBranding[] => {
@@ -172,7 +389,8 @@ export function EventHomePage() {
   // Current event for switcher
   const currentEventForSwitcher = useMemo((): RegisteredEventWithBranding | null => {
     if (!currentEvent) return null
-    const eventDate = new Date(currentEvent.event_datetime)
+    const resolvedDateTime = resolveEventDateTime(currentEvent)
+    const eventDate = resolvedDateTime ? new Date(resolvedDateTime) : new Date()
     const now = getEffectiveNow()
     const is_past = eventDate <= now
     const is_upcoming =
@@ -186,7 +404,7 @@ export function EventHomePage() {
       id: currentEvent.id,
       name: currentEvent.name,
       slug: currentEvent.slug,
-      event_datetime: currentEvent.event_datetime,
+      event_datetime: resolvedDateTime ?? '',
       timezone: currentEvent.timezone,
       is_past,
       is_upcoming,
@@ -198,7 +416,7 @@ export function EventHomePage() {
       npo_name: currentEvent.npo_name || 'Organization',
       npo_logo_url: null,
     }
-  }, [currentEvent, timeBaseRealMs, timeBaseSpoofMs])
+  }, [currentEvent, timeBaseRealMs, timeBaseSpoofMs, resolveEventDateTime])
 
   const handleEventSelect = useCallback(
     (event: RegisteredEventWithBranding) => {
@@ -276,7 +494,19 @@ export function EventHomePage() {
     URL.revokeObjectURL(link.href)
   }, [currentEvent])
 
-  const queryClient = useQueryClient()
+  useEffect(() => {
+    if (!currentEvent?.id) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void prefetchAuctionTabData().catch(() => undefined)
+    }, 200)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [currentEvent?.id, prefetchAuctionTabData])
 
   const { data: watchListData } = useQuery({
     queryKey: ['watchlist', currentEvent?.id, watchlistScope],
@@ -458,22 +688,35 @@ export function EventHomePage() {
   }
 
   // ─── Derived values ──────────────────────────────────────────────────────────
-  const getBannerUrl = () => {
-    if ('banner_url' in currentEvent && currentEvent.banner_url) return currentEvent.banner_url as string
+  const getHeroImageUrls = () => {
+    const urls = new Set<string>()
+
     if (currentEvent.media?.length) {
-      // Prefer a non-logo image as banner
-      const banner = currentEvent.media.find(
-        (m) =>
-          m.media_type === 'image' &&
-          !m.file_name.toLowerCase().includes('logo')
-      )
-      // Fall back to any image if all are logos
-      const anyImage = currentEvent.media.find((m) => m.media_type === 'image')
-      return banner?.file_url || anyImage?.file_url || currentEvent.media[0]?.file_url || null
+      const imageMedia = currentEvent.media
+        .filter((media) => media.media_type === 'image' && !!media.file_url)
+        .sort((a, b) => {
+          const aIsLogo = a.file_name?.toLowerCase().includes('logo') ?? false
+          const bIsLogo = b.file_name?.toLowerCase().includes('logo') ?? false
+          if (aIsLogo === bIsLogo) return 0
+          return aIsLogo ? 1 : -1
+        })
+
+      for (const media of imageMedia) {
+        if (media.file_url) {
+          urls.add(media.file_url)
+        }
+      }
     }
-    return null
+
+    return Array.from(urls)
   }
-  const bannerUrl = getBannerUrl()
+  const heroImageUrls = getHeroImageUrls()
+  const bannerUrl = heroImageUrls[0] ?? null
+  const countdownTargetDate =
+    currentEvent.event_datetime ||
+    ('event_date' in currentEvent
+      ? ((currentEvent as { event_date?: string | null }).event_date ?? null)
+      : null)
 
   const getLogoUrl = () => {
     if (!currentEvent.media?.length) return null
@@ -488,22 +731,55 @@ export function EventHomePage() {
     if (!currentEventForSwitcher) return 'upcoming'
     if (currentEventForSwitcher.is_past) return 'past'
     if (currentEvent.status === 'active') {
-      const eventDate = currentEvent.event_datetime ? new Date(currentEvent.event_datetime) : null
+      const resolvedDateTime = resolveEventDateTime(currentEvent)
+      const eventDate = resolvedDateTime ? new Date(resolvedDateTime) : null
       if (eventDate && eventDate <= getEffectiveNow()) return 'live'
     }
     return 'upcoming'
   }
   const eventStatus = getEventStatus()
+  const aboutEventHtml = renderMarkdownToSafeHtml(currentEvent.description ?? '')
 
   // ─── Tab content ─────────────────────────────────────────────────────────────
 
   const sharedAuctionProps = {
-    onItemClick: (item: AuctionItemGalleryItem, isWinning: boolean) => {
-      setSelectedAuctionItemId(item.id)
+    onItemClick: async (item: AuctionItemGalleryItem, isWinning: boolean) => {
       setWinningItemMap((prev) => ({ ...prev, [item.id]: isWinning }))
       const isWatched =
         watchListData?.watch_list?.some((e) => e.auction_item_id === item.id) ?? false
       setIsItemWatching(isWatched)
+
+      try {
+        const detail = await queryClient.fetchQuery({
+          queryKey: ['auction-item-detail', currentEvent.id, item.id],
+          queryFn: () => auctionItemService.getAuctionItem(currentEvent.id, item.id),
+          staleTime: 15000,
+          retry: 1,
+        })
+
+        const primaryImageUrl =
+          detail.primary_image_url ??
+          detail.media?.find((media) => media.media_type === 'image')?.file_path ??
+          null
+
+        if (primaryImageUrl) {
+          await Promise.race([
+            new Promise<void>((resolve) => {
+              const image = new Image()
+              image.onload = () => resolve()
+              image.onerror = () => resolve()
+              image.src = primaryImageUrl
+            }),
+            new Promise<void>((resolve) => {
+              window.setTimeout(resolve, 900)
+            }),
+          ])
+        }
+      } catch {
+        // Modal will still open and display its own fallback state.
+      }
+
+      setSelectedAuctionItemId(item.id)
     },
   }
 
@@ -513,7 +789,8 @@ export function EventHomePage() {
       npoName={currentEvent.npo_name}
       logoUrl={getLogoUrl()}
       bannerUrl={bannerUrl}
-      eventDate={currentEvent.event_datetime}
+      bannerImages={heroImageUrls}
+      eventDate={resolveEventDateTime(currentEvent)}
       venueName={currentEvent.venue_name}
       status={eventStatus}
       onAddToCalendar={generateICSFile}
@@ -537,10 +814,10 @@ export function EventHomePage() {
 
       <div className='px-4 py-4 space-y-5'>
         {/* Countdown — show if event is in the future */}
-        {currentEvent.event_datetime && (
-          <div className='animate-card-enter stagger-1'>
+        {countdownTargetDate && (
+          <div>
             <CountdownTimer
-              targetDate={currentEvent.event_datetime}
+              targetDate={countdownTargetDate}
               eventName={currentEvent.name}
               hideOnExpire={false}
             />
@@ -549,7 +826,7 @@ export function EventHomePage() {
 
         {/* CTA for bidding */}
         {eventStatus !== 'past' && (
-          <div className='animate-card-enter stagger-2'>
+          <div>
             <button
               onClick={() => setActiveTab('auction')}
               className='w-full rounded-2xl p-4 text-left transition-all active:scale-[0.98] hover:shadow-md'
@@ -564,9 +841,9 @@ export function EventHomePage() {
         )}
 
         {/* Event Details */}
-        <div className='animate-card-enter stagger-3'>
+        <div>
           <EventDetails
-            eventDatetime={currentEvent.event_datetime}
+            eventDatetime={resolveEventDateTime(currentEvent) ?? ''}
             timezone={currentEvent.timezone}
             venueName={currentEvent.venue_name}
             venueAddress={currentEvent.venue_address}
@@ -585,7 +862,7 @@ export function EventHomePage() {
         {/* About */}
         {currentEvent.description && (
           <div
-            className='rounded-2xl border p-4 animate-card-enter stagger-4'
+            className='rounded-2xl border p-4'
             style={{
               backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.08)',
               borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
@@ -597,14 +874,16 @@ export function EventHomePage() {
             >
               About This Event
             </h3>
-            <p className='text-sm leading-relaxed' style={{ color: 'var(--event-text-on-background, #374151)' }}>
-              {currentEvent.description}
-            </p>
+            <div
+              className='text-sm leading-relaxed [&_a]:font-medium'
+              style={{ color: 'var(--event-text-on-background, #374151)' }}
+              dangerouslySetInnerHTML={{ __html: aboutEventHtml }}
+            />
           </div>
         )}
 
         {/* Sponsors */}
-        <div className='animate-card-enter stagger-5'>
+        <div>
           <SponsorsCarousel eventId={currentEvent.id} />
         </div>
       </div>
@@ -627,21 +906,8 @@ export function EventHomePage() {
               className='text-base font-bold'
               style={{ color: 'var(--event-text-on-background, #111827)' }}
             >
-              {showMyItems ? 'My Items' : 'Auction Items'}
+              Auction Items
             </h2>
-            <button
-              onClick={() => setShowMyItems(!showMyItems)}
-              className='rounded-full px-3 py-1 text-xs font-semibold transition-all active:scale-95'
-              style={showMyItems ? {
-                background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)), rgb(var(--event-secondary, 147, 51, 234)))`,
-                color: '#FFFFFF',
-              } : {
-                backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.12)',
-                color: 'rgb(var(--event-primary, 59, 130, 246))',
-              }}
-            >
-              {showMyItems ? '← All Items' : '⭐ My Items'}
-            </button>
           </div>
           <div className='flex items-center gap-2'>
             {eventStatus === 'live' && (
@@ -664,9 +930,8 @@ export function EventHomePage() {
           initialFilter='all'
           initialSort='highest_bid'
           eventStatus={currentEvent.status}
-          eventDateTime={currentEvent.event_datetime}
+          eventDateTime={resolveEventDateTime(currentEvent) ?? undefined}
           onItemClick={(item, isWinning) => sharedAuctionProps.onItemClick(item, isWinning)}
-          showOnlyMyItems={showMyItems}
         />
       </div>
     </>
@@ -750,11 +1015,36 @@ export function EventHomePage() {
     </>
   )
 
-  // Tab badge: seat tab gets badge if user hasn't checked in
-  const needsCheckIn =
-    seatingInfo &&
-    !seatingInfo.myInfo?.checkedIn &&
-    !(seatingInfo as { my_info?: { checked_in?: boolean } }).my_info?.checked_in
+  const renderTabContent = (tab: DonorTab) => {
+    if (tab === 'home') return homeTabContent
+    if (tab === 'auction') return auctionTabContent
+    return seatTabContent
+  }
+
+  const renderTabPage = (tab: DonorTab) => {
+    return (
+      <div
+        className='min-h-full pb-20'
+        style={{
+          backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+        }}
+      >
+        {renderTabContent(tab)}
+      </div>
+    )
+  }
+
+  const visibleTab = userSelectedTab === null ? activeTab : displayedTab
+  const displayedTabIndex = tabOrder.indexOf(visibleTab)
+
+  const getTabPanelPositionClass = (tab: DonorTab) => {
+    const tabIndex = tabOrder.indexOf(tab)
+    if (tabIndex === displayedTabIndex) {
+      return 'translate-x-0'
+    }
+
+    return tabIndex < displayedTabIndex ? '-translate-x-full' : 'translate-x-full'
+  }
 
   // ─── Main render ─────────────────────────────────────────────────────────────
   return (
@@ -764,13 +1054,23 @@ export function EventHomePage() {
     >
       {/* Tab content — scrollable, key triggers re-animation on tab switch */}
       <main
-        className='flex-1 overflow-y-auto overflow-x-hidden pb-20'
+        className='relative flex-1 overflow-hidden'
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
-        <div key={`${activeTab}-${showMyItems}`} className='animate-tab-page min-h-full'>
-          {activeTab === 'home' && homeTabContent}
-          {activeTab === 'auction' && auctionTabContent}
-          {activeTab === 'seat' && seatTabContent}
+        <div className='absolute inset-0'>
+          {tabOrder.map((tab) => (
+            <section
+              key={tab}
+              className={`absolute inset-0 overflow-y-auto overflow-x-hidden transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${getTabPanelPositionClass(tab)}`}
+              style={{
+                WebkitOverflowScrolling: 'touch',
+                pointerEvents: tab === visibleTab ? 'auto' : 'none',
+              }}
+              aria-hidden={tab !== visibleTab}
+            >
+              {renderTabPage(tab)}
+            </section>
+          ))}
         </div>
       </main>
 
@@ -778,9 +1078,6 @@ export function EventHomePage() {
       <BottomTabNav
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        badges={{
-          seat: needsCheckIn ? 1 : undefined,
-        }}
       />
 
       {/* Auction Item Detail Modal */}
@@ -788,7 +1085,7 @@ export function EventHomePage() {
         eventId={currentEvent.id}
         itemId={selectedAuctionItemId}
         eventStatus={currentEvent.status}
-        eventDateTime={currentEvent.event_datetime}
+        eventDateTime={resolveEventDateTime(currentEvent) ?? undefined}
         onClose={() => setSelectedAuctionItemId(null)}
         onPlaceBid={handlePlaceBid}
         onSetMaxBid={handleSetMaxBid}

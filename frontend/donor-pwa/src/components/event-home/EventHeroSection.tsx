@@ -10,7 +10,7 @@
  */
 
 import { Calendar, MapPin, Radio } from 'lucide-react'
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 
 export type EventStatus = 'live' | 'upcoming' | 'past'
 
@@ -19,6 +19,7 @@ export interface EventHeroSectionProps {
   npoName?: string | null
   logoUrl?: string | null
   bannerUrl?: string | null
+  bannerImages?: string[]
   eventDate?: string | null
   venueName?: string | null
   status: EventStatus
@@ -73,6 +74,7 @@ export function EventHeroSection({
   npoName,
   logoUrl,
   bannerUrl,
+  bannerImages,
   eventDate,
   venueName,
   status,
@@ -81,9 +83,30 @@ export function EventHeroSection({
   switcherSlot,
   profileSlot,
 }: EventHeroSectionProps) {
-  const gradientBg = `linear-gradient(150deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 60%, rgb(var(--event-primary, 59, 130, 246) / 0.8) 100%)`
-  const [bannerFailed, setBannerFailed] = useState(false)
-  const showBanner = bannerUrl && !bannerFailed
+  const [activeBannerIndex, setActiveBannerIndex] = useState(0)
+  const [failedBannerUrls, setFailedBannerUrls] = useState<Record<string, true>>({})
+
+  const sourceBannerImages =
+    bannerImages?.filter((url) => !!url) ?? (bannerUrl ? [bannerUrl] : [])
+
+  const visibleBannerImages = sourceBannerImages.filter((url) => !failedBannerUrls[url])
+  const showBanner = visibleBannerImages.length > 0
+  const safeActiveBannerIndex =
+    visibleBannerImages.length > 0
+      ? activeBannerIndex % visibleBannerImages.length
+      : 0
+
+  useEffect(() => {
+    if (visibleBannerImages.length <= 1) return
+
+    const intervalId = window.setInterval(() => {
+      setActiveBannerIndex((prev) => (prev + 1) % visibleBannerImages.length)
+    }, 4500)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [visibleBannerImages.length])
 
   return (
     <div
@@ -92,38 +115,40 @@ export function EventHeroSection({
     >
       {/* Background */}
       {showBanner ? (
-        <div
-          className='absolute inset-0 bg-cover bg-center'
-          style={{ backgroundImage: `url(${bannerUrl})` }}
-        >
-          {/* Hidden img to detect load failures */}
-          <img
-            src={bannerUrl}
-            alt=''
-            className='hidden'
-            onError={() => setBannerFailed(true)}
-          />
+        <div className='absolute inset-0 overflow-hidden'>
+          {visibleBannerImages.map((imageUrl, index) => (
+            <div
+              key={imageUrl}
+              className='absolute inset-0 bg-cover bg-center transition-opacity duration-700'
+              style={{
+                backgroundImage: `url(${imageUrl})`,
+                opacity: index === safeActiveBannerIndex ? 1 : 0,
+              }}
+            >
+              <img
+                src={imageUrl}
+                alt=''
+                className='hidden'
+                onError={() => {
+                  setFailedBannerUrls((prev) => ({ ...prev, [imageUrl]: true }))
+                }}
+              />
+            </div>
+          ))}
           <div className='absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/80' />
         </div>
       ) : (
-        <div className='absolute inset-0 overflow-hidden' style={{ background: gradientBg }}>
-          {/* Shimmer overlay */}
-          <div className='absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-black/30' />
-          {/* Decorative glowing circles */}
-          <div
-            className='absolute -top-16 -right-16 h-64 w-64 rounded-full opacity-25 blur-xl'
-            style={{ backgroundColor: 'rgb(var(--event-secondary, 147, 51, 234))' }}
-          />
-          <div
-            className='absolute -bottom-12 -left-12 h-48 w-48 rounded-full opacity-20 blur-lg'
-            style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))' }}
-          />
+        <div
+          className='absolute inset-0 overflow-hidden'
+          style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))' }}
+        >
+          <div className='absolute inset-0 bg-black/25' />
         </div>
       )}
 
-      {/* If there's a logo image, show it as a small badge in top-center */}
+      {/* If there's a logo image, show it as a small badge in top-left */}
       {logoUrl && (
-        <div className='absolute top-12 left-1/2 -translate-x-1/2 z-10'>
+        <div className='absolute top-12 left-3 z-10'>
           <div className='animate-float'>
             <img
               src={logoUrl}
