@@ -125,3 +125,283 @@
     height: 0;
   }
 }
+
+/* ============================================================
+   Donor PWA – Native App Animations
+   ============================================================ */
+
+/* Staggered card entrance: fade-in + slide-up */
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Tab content slide in from right */
+@keyframes tab-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Winning item green glow pulse */
+@keyframes winning-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.35);
+  }
+
+  50% {
+    box-shadow: 0 0 0 10px rgba(22, 163, 74, 0);
+  }
+}
+
+@keyframes winning-badge-glow {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(34, 197, 94, 0.6);
+  }
+
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 14px rgba(34, 197, 94, 0.75);
+  }
+}
+
+/* Outbid item amber pulse */
+@keyframes outbid-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+  }
+}
+
+/* Countdown digit flip */
+@keyframes digit-flip {
+  0% {
+    transform: rotateX(0deg);
+  }
+
+  50% {
+    transform: rotateX(-90deg);
+  }
+
+  51% {
+    transform: rotateX(90deg);
+  }
+
+  100% {
+    transform: rotateX(0deg);
+  }
+}
+
+/* Hero content fade-up entrance */
+@keyframes hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Bid button scale bounce */
+@keyframes bid-bounce {
+  0% {
+    transform: scale(1);
+  }
+
+  30% {
+    transform: scale(0.93);
+  }
+
+  70% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Status badge glow for LIVE events */
+@keyframes live-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+}
+
+/* Floating animation for hero logo */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Utility classes */
+.animate-card-enter {
+  animation: card-enter 0.35s ease-out forwards;
+}
+
+.animate-tab-slide-in {
+  animation: tab-slide-in 0.25s ease-out forwards;
+}
+
+.animate-winning-glow {
+  animation: winning-glow 3.2s ease-in-out infinite;
+}
+
+.animate-winning-badge-glow {
+  animation: winning-badge-glow 3.2s ease-in-out infinite;
+}
+
+.animate-outbid-pulse {
+  animation: outbid-pulse 1.5s ease-in-out infinite;
+}
+
+.animate-hero-enter {
+  animation: hero-enter 0.5s ease-out both;
+}
+
+.animate-bid-bounce {
+  animation: bid-bounce 0.35s ease-out;
+}
+
+.animate-live-glow {
+  animation: live-glow 1.5s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Stagger delays for card grids */
+.stagger-1 {
+  animation-delay: 0.05s;
+}
+
+.stagger-2 {
+  animation-delay: 0.12s;
+}
+
+.stagger-3 {
+  animation-delay: 0.20s;
+}
+
+.stagger-4 {
+  animation-delay: 0.28s;
+}
+
+.stagger-5 {
+  animation-delay: 0.36s;
+}
+
+.stagger-6 {
+  animation-delay: 0.44s;
+}
+
+/* Tab page transition — full page swipe only (no fade) */
+@keyframes tab-page-enter-forward {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes tab-page-enter-backward {
+  from {
+    transform: translateY(-100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-tab-page-forward {
+  animation: tab-page-enter-forward 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-tab-page-backward {
+  animation: tab-page-enter-backward 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes modal-enter-from-bottom {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(calc(50vh + 120%));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-50%);
+  }
+}
+
+@keyframes modal-exit-to-bottom {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-50%);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(calc(50vh + 120%));
+  }
+}
+
+.animate-modal-swipe-in {
+  animation: modal-enter-from-bottom 0.46s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-modal-swipe-out {
+  animation: modal-exit-to-bottom 0.38s ease-in both;
+}
+
+[data-slot='dialog-content'][data-state='open'],
+[data-slot='alert-dialog-content'][data-state='open'] {
+  animation: modal-enter-from-bottom 0.46s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+}
+
+[data-slot='dialog-content'][data-state='closed'],
+[data-slot='alert-dialog-content'][data-state='closed'] {
+  animation: modal-exit-to-bottom 0.38s ease-in both !important;
+}

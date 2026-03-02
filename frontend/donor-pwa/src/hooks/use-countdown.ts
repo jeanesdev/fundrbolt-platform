@@ -99,7 +99,8 @@ export function useCountdown(
   const targetTime = useMemo(() => {
     if (!targetDate) return 0;
     const date = typeof targetDate === 'string' ? new Date(targetDate) : targetDate;
-    return date.getTime();
+    const timestamp = date.getTime();
+    return Number.isNaN(timestamp) ? 0 : timestamp;
   }, [targetDate]);
 
   // Initialize state

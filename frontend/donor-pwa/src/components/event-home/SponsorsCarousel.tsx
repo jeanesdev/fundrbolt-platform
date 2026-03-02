@@ -81,8 +81,6 @@ export function SponsorsCarousel({ eventId, className }: SponsorsCarouselProps) 
 
   return (
     <div className={className}>
-      <h2 className="text-2xl font-semibold mb-6 text-center">Our Sponsors</h2>
-
       <Carousel
         plugins={[plugin.current]}
         className="w-full max-w-5xl mx-auto"
@@ -129,12 +127,6 @@ export function SponsorsCarousel({ eventId, className }: SponsorsCarouselProps) 
         <CarouselPrevious />
         <CarouselNext />
       </Carousel>
-
-      {sponsors.length > 0 && (
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          Thank you to our {sponsors.length} sponsor{sponsors.length !== 1 ? 's' : ''}
-        </p>
-      )}
     </div>
   )
 }

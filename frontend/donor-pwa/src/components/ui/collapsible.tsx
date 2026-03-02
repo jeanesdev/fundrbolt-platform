@@ -1,4 +1,6 @@
+import { cn } from '@/lib/utils'
 import * as CollapsiblePrimitive from '@radix-ui/react-collapsible'
+import * as React from 'react'
 
 function Collapsible({
   ...props
@@ -18,14 +20,16 @@ function CollapsibleTrigger({
 }
 
 function CollapsibleContent({
+  className,
   ...props
 }: React.ComponentProps<typeof CollapsiblePrimitive.CollapsibleContent>) {
   return (
     <CollapsiblePrimitive.CollapsibleContent
       data-slot='collapsible-content'
+      className={cn('CollapsibleContent overflow-hidden', className)}
       {...props}
     />
   )
 }
 
-export { Collapsible, CollapsibleTrigger, CollapsibleContent }
+export { Collapsible, CollapsibleContent, CollapsibleTrigger }

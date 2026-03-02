@@ -3,7 +3,7 @@
  *
  * Features:
  * - CSS Grid layout (responsive: 2 cols mobile, 3 cols tablet, 4 cols desktop)
- * - Auction type filter (All/Silent/Live) using button group
+ * - Auction type filter (All/Silent/Live/My Items) using button group
  * - Infinite scroll pagination using react-query useInfiniteQuery
  * - Watched items section at top
  * - Empty state with Gavel icon
@@ -33,6 +33,13 @@ import type {
   AuctionSortType,
 } from '@/types/auction-gallery';
 import { AuctionItemCard } from './AuctionItemCard';
+
+declare global {
+  interface Window {
+    requestIdleCallback?: (callback: () => void) => number;
+    cancelIdleCallback?: (id: number) => void;
+  }
+}
 
 function normalizeIdentifier(value: unknown): string | null {
   if (typeof value === 'string') {
@@ -77,7 +84,7 @@ async function fetchAuctionItems(
   params: {
     page: number;
     limit: number;
-    auction_type?: string;
+    auction_type?: 'silent' | 'live';
   }
 ): Promise<{
   items: AuctionItemGalleryItem[];
@@ -94,15 +101,13 @@ async function fetchAuctionItems(
     limit: params.limit.toString(),
   });
 
-  if (params.auction_type && params.auction_type !== 'all') {
+  if (params.auction_type) {
     searchParams.set('auction_type', params.auction_type);
-  } else if (params.auction_type === 'all') {
-    // Use "all" to get both types
-    searchParams.set('auction_type', 'all');
   }
 
   const response = await apiClient.get(`/events/${eventId}/auction-items`, {
     params: Object.fromEntries(searchParams.entries()),
+    timeout: 15000,
   });
 
   const data = response.data;
@@ -174,14 +179,39 @@ export interface AuctionGalleryProps {
   eventStatus?: 'draft' | 'active' | 'closed';
   eventDateTime?: string;
   className?: string;
+  /** When true, only shows items in the user's watchlist or that they've bid on */
+  showOnlyMyItems?: boolean;
 }
 
 const ITEMS_PER_PAGE = 12;
+const IMAGE_PRELOAD_COUNT = Number.POSITIVE_INFINITY;
+const HOT_MIN_BID_COUNT = 10;
+const HOT_MAX_ITEMS = 6;
+
+const preloadedAuctionImageUrls = new Set<string>();
+const preconnectedAuctionHosts = new Set<string>();
+
+function getAuctionImageWarmCache(): Set<string> {
+  if (typeof window === 'undefined') {
+    return preloadedAuctionImageUrls;
+  }
+
+  const globalWindow = window as Window & {
+    __auctionImageWarmCache?: Set<string>;
+  };
+
+  if (!globalWindow.__auctionImageWarmCache) {
+    globalWindow.__auctionImageWarmCache = new Set<string>();
+  }
+
+  return globalWindow.__auctionImageWarmCache;
+}
 
 const filterOptions: { value: AuctionFilterType; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'silent', label: 'Silent' },
   { value: 'live', label: 'Live' },
+  { value: 'my', label: 'My Items' },
 ];
 
 const sortOptions: { value: AuctionSortType; label: string }[] = [
@@ -206,6 +236,7 @@ export function AuctionGallery({
   eventStatus,
   eventDateTime,
   className,
+  showOnlyMyItems = false,
 }: AuctionGalleryProps) {
   const authUserId = useAuthStore((state) => state.user?.id);
   const spoofedUserId = useDebugSpoofStore((state) => state.spoofedUser?.id);
@@ -220,13 +251,18 @@ export function AuctionGallery({
 
   // Ref for infinite scroll trigger
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const preloadedImageUrlsRef = useRef<Set<string>>(preloadedAuctionImageUrls);
+  const preconnectedHostsRef = useRef<Set<string>>(preconnectedAuctionHosts);
 
   // Fetch watch list
   const { data: watchListData } = useQuery({
     queryKey: ['watchlist', eventId, watchlistScope],
     queryFn: () => watchListService.getWatchList(eventId),
     enabled: !!eventId,
-    staleTime: 30000, // 30 seconds
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const watchedItemIds = new Set(
@@ -323,8 +359,18 @@ export function AuctionGallery({
       fetchAuctionItems(eventId, {
         page: pageParam,
         limit: ITEMS_PER_PAGE,
-        auction_type: filter,
+        auction_type:
+          filter === 'silent' || filter === 'live'
+            ? filter
+            : undefined,
       }),
+    enabled: !!eventId,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    retry: 1,
+    retryDelay: 1000,
     getNextPageParam: (lastPage) =>
       lastPage.pagination.has_more ? lastPage.pagination.page + 1 : undefined,
     initialPageParam: 1,
@@ -358,8 +404,11 @@ export function AuctionGallery({
     setFilter(newFilter);
   }, []);
 
-  // Flatten items from all pages
-  const allLoadedItems = data?.pages.flatMap((page) => page.items) ?? [];
+  // Flatten items from all pages and de-duplicate by item ID
+  const allLoadedItemsRaw = data?.pages.flatMap((page) => page.items) ?? [];
+  const allLoadedItems = Array.from(
+    new Map(allLoadedItemsRaw.map((item) => [item.id, item])).values()
+  );
   const categories = Array.from(
     new Set(
       allLoadedItems
@@ -405,6 +454,109 @@ export function AuctionGallery({
       }
     });
   const totalCount = items.length;
+
+  useEffect(() => {
+    if (
+      !eventId ||
+      isLoading ||
+      isError ||
+      isFetchingNextPage ||
+      !hasNextPage
+    ) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void fetchNextPage();
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    allLoadedItems.length,
+    eventId,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isLoading,
+  ]);
+
+  useEffect(() => {
+    const warmCache = getAuctionImageWarmCache();
+    const urlsToPreload = allLoadedItems
+      .slice(0, IMAGE_PRELOAD_COUNT)
+      .map((item) => item.thumbnail_url)
+      .filter((url): url is string => typeof url === 'string' && url.trim().length > 0)
+      .filter(
+        (url) =>
+          !preloadedImageUrlsRef.current.has(url) &&
+          !warmCache.has(url)
+      );
+
+    if (urlsToPreload.length === 0) {
+      return;
+    }
+
+    const schedule = window.requestIdleCallback
+      ? window.requestIdleCallback
+      : (callback: () => void) => window.setTimeout(callback, 0);
+
+    const cancelScheduled = window.cancelIdleCallback
+      ? window.cancelIdleCallback
+      : (id: number) => window.clearTimeout(id);
+
+    const scheduledId = schedule(() => {
+      urlsToPreload.forEach((url) => {
+        preloadedImageUrlsRef.current.add(url);
+        const image = new Image();
+        image.decoding = 'async';
+        image.onload = () => {
+          warmCache.add(url);
+        };
+        image.onerror = () => {
+          warmCache.add(url);
+        };
+        image.src = url;
+      });
+    });
+
+    return () => {
+      cancelScheduled(scheduledId);
+    };
+  }, [allLoadedItems, items]);
+
+  useEffect(() => {
+    const hostsToPreconnect = allLoadedItems
+      .slice(0, IMAGE_PRELOAD_COUNT)
+      .map((item) => item.thumbnail_url)
+      .filter((url): url is string => typeof url === 'string' && url.trim().length > 0)
+      .map((url) => {
+        try {
+          return new URL(url).origin;
+        } catch {
+          return null;
+        }
+      })
+      .filter((origin): origin is string => typeof origin === 'string')
+      .filter((origin) => !preconnectedHostsRef.current.has(origin));
+
+    hostsToPreconnect.forEach((origin) => {
+      preconnectedHostsRef.current.add(origin);
+
+      const preconnectLink = document.createElement('link');
+      preconnectLink.rel = 'preconnect';
+      preconnectLink.href = origin;
+      preconnectLink.crossOrigin = 'anonymous';
+      document.head.appendChild(preconnectLink);
+
+      const dnsPrefetchLink = document.createElement('link');
+      dnsPrefetchLink.rel = 'dns-prefetch';
+      dnsPrefetchLink.href = origin;
+      document.head.appendChild(dnsPrefetchLink);
+    });
+  }, [allLoadedItems]);
 
   const winningHistoryQueries = useQueries({
     queries: items.map((item) => ({
@@ -505,6 +657,27 @@ export function AuctionGallery({
     (item) => !watchedItemIds.has(item.id) && !isItemCurrentlyWinning(item.id)
   );
 
+  const isMyItemsMode = filter === 'my' || showOnlyMyItems;
+
+  // My Items: watched + bid on (max bid set)
+  const myItemIds = isMyItemsMode
+    ? new Set([
+      ...Array.from(watchedItemIds),
+      ...Object.keys(winningItemMap),
+      ...Object.keys(maxBidItemMap),
+    ])
+    : null;
+  const myItems = myItemIds ? items.filter((item) => myItemIds.has(item.id)) : [];
+  const displayedCount = isMyItemsMode ? myItems.length : totalCount;
+
+  const hotItemIds = new Set(
+    items
+      .filter((item) => (item.bid_count ?? 0) >= HOT_MIN_BID_COUNT)
+      .sort((a, b) => (b.bid_count ?? 0) - (a.bid_count ?? 0))
+      .slice(0, HOT_MAX_ITEMS)
+      .map((item) => item.id)
+  );
+
   // Handle bid click
   const handleBidClick = (item: AuctionItemGalleryItem) => {
     onItemClick?.(item, isItemCurrentlyWinning(item.id));
@@ -527,6 +700,13 @@ export function AuctionGallery({
       <div className={cn('flex flex-col items-center justify-center py-12', className)}>
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         <p className="mt-2 text-sm text-muted-foreground">Loading auction items...</p>
+        <button
+          onClick={() => refetch()}
+          className="mt-3 text-xs underline"
+          style={{ color: 'var(--event-primary, #3B82F6)' }}
+        >
+          Tap to retry
+        </button>
       </div>
     );
   }
@@ -588,55 +768,118 @@ export function AuctionGallery({
             className="text-sm"
             style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
           >
-            {totalCount} item{totalCount !== 1 ? 's' : ''}
+            {displayedCount} item{displayedCount !== 1 ? 's' : ''}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <Input
-            placeholder="Search auction items"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            aria-label="Search auction items"
-          />
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+          <div className="space-y-1 text-left">
+            <p
+              className="text-xs font-semibold uppercase tracking-wide"
+              style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+            >
+              Search
+            </p>
+            <Input
+              placeholder="Search auction items"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              aria-label="Search auction items"
+              className="text-left"
+              style={{
+                backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.4)',
+                color: 'var(--event-text-on-background, #111827)',
+              }}
+            />
+          </div>
 
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger aria-label="Category filter">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem
-                  key={category.toLowerCase()}
-                  value={category.toLowerCase()}
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:gap-1">
+            <div className="space-y-1 text-left">
+              <p
+                className="text-xs font-semibold uppercase tracking-wide"
+                style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+              >
+                Filter
+              </p>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger
+                  aria-label="Category filter"
+                  className="w-full justify-between text-left md:w-44"
+                  style={{
+                    backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                    borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.4)',
+                    color: 'var(--event-text-on-background, #111827)',
+                  }}
                 >
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent
+                  className="text-left"
+                  style={{
+                    backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                    color: 'var(--event-text-on-background, #111827)',
+                    borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.3)',
+                  }}
+                >
+                  <SelectItem className="text-left" value="all">All Categories</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem
+                      className="text-left"
+                      key={category.toLowerCase()}
+                      value={category.toLowerCase()}
+                    >
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <Select
-            value={sortBy}
-            onValueChange={(value) => setSortBy(value as AuctionSortType)}
-          >
-            <SelectTrigger aria-label="Sort items">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              {sortOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <div className="space-y-1 text-left">
+              <p
+                className="text-xs font-semibold uppercase tracking-wide"
+                style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+              >
+                Sort
+              </p>
+              <Select
+                value={sortBy}
+                onValueChange={(value) => setSortBy(value as AuctionSortType)}
+              >
+                <SelectTrigger
+                  aria-label="Sort items"
+                  className="w-full justify-between text-left md:w-44"
+                  style={{
+                    backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                    borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.4)',
+                    color: 'var(--event-text-on-background, #111827)',
+                  }}
+                >
+                  <SelectValue placeholder="Highest Bid" />
+                </SelectTrigger>
+                <SelectContent
+                  className="text-left"
+                  style={{
+                    backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                    color: 'var(--event-text-on-background, #111827)',
+                    borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.3)',
+                  }}
+                >
+                  {sortOptions.map((option) => (
+                    <SelectItem className="text-left" key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Empty state */}
-      {items.length === 0 && (
+      {items.length === 0 && !isMyItemsMode && (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
           <Gavel className="h-12 w-12 text-muted-foreground/40" aria-hidden="true" />
           <h3
@@ -654,8 +897,49 @@ export function AuctionGallery({
         </div>
       )}
 
-      {/* Watched Items Section */}
-      {watchedItems.length > 0 && (
+      {/* My Items mode: show only items user has interacted with */}
+      {isMyItemsMode && (
+        <>
+          {myItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div
+                className="mb-4 flex h-20 w-20 items-center justify-center rounded-full"
+                style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.1)' }}
+              >
+                <span className="text-4xl">⭐</span>
+              </div>
+              <p className="mb-1 text-base font-bold" style={{ color: 'var(--event-text-on-background, #111827)' }}>
+                No items yet
+              </p>
+              <p className="text-sm" style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}>
+                Watch or bid on items to see them here
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {myItems.map((item) => (
+                <AuctionItemCard
+                  key={item.id}
+                  item={item}
+                  eagerLoadImage={true}
+                  isHotItem={hotItemIds.has(item.id)}
+                  isWatched={watchedItemIds.has(item.id)}
+                  currentUserMaxBid={maxBidItemMap[item.id] ?? null}
+                  isCurrentUserWinning={isItemCurrentlyWinning(item.id)}
+                  onToggleWatch={handleToggleWatch}
+                  onClick={handleBidClick}
+                  onBidClick={handleBidClick}
+                  eventStatus={eventStatus}
+                  eventDateTime={eventDateTime}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Watched Items Section (non-My-Items mode) */}
+      {!isMyItemsMode && watchedItems.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-4">
             <Eye
@@ -680,6 +964,8 @@ export function AuctionGallery({
               <AuctionItemCard
                 key={item.id}
                 item={item}
+                eagerLoadImage={true}
+                isHotItem={hotItemIds.has(item.id)}
                 isWatched={watchedItemIds.has(item.id)}
                 currentUserMaxBid={maxBidItemMap[item.id] ?? null}
                 isCurrentUserWinning={isItemCurrentlyWinning(item.id)}
@@ -694,8 +980,8 @@ export function AuctionGallery({
         </div>
       )}
 
-      {/* All Items Section */}
-      {items.length > 0 && watchedItems.length > 0 && (
+      {/* All Items Section (non-My-Items mode) */}
+      {!isMyItemsMode && items.length > 0 && watchedItems.length > 0 && (
         <h3
           className="text-lg font-semibold mt-8"
           style={{ color: 'var(--event-text-on-background, #000000)' }}
@@ -704,13 +990,15 @@ export function AuctionGallery({
         </h3>
       )}
 
-      {/* Items grid */}
-      {items.length > 0 && (
+      {/* Items grid (non-My-Items mode) */}
+      {!isMyItemsMode && items.length > 0 && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {(watchedItems.length > 0 ? unwatchedItems : items).map((item) => (
+          {(watchedItems.length > 0 ? unwatchedItems : items).map((item, index) => (
             <AuctionItemCard
               key={item.id}
               item={item}
+              eagerLoadImage={index < IMAGE_PRELOAD_COUNT}
+              isHotItem={hotItemIds.has(item.id)}
               isWatched={watchedItemIds.has(item.id)}
               currentUserMaxBid={maxBidItemMap[item.id] ?? null}
               isCurrentUserWinning={isItemCurrentlyWinning(item.id)}
