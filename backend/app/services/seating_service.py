@@ -1,7 +1,7 @@
 """Seating assignment and table management service."""
 
 import logging
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -449,59 +449,47 @@ class SeatingService:
                 }
 
                 # Get table customization details (Feature 014: US4)
-                # Only show after event has started
-                effective_now = reference_now or datetime.now(UTC)
+                # Always include assignment/captain details when available so donor UI can
+                # render table captain and table name consistently.
+                from app.models.event_table import EventTable
+                from app.schemas.seating import TableAssignment
 
-                event_has_started = (
-                    registration.event.event_datetime is not None
-                    and registration.event.event_datetime <= effective_now
+                table_query = select(EventTable).where(
+                    EventTable.event_id == event_id,
+                    EventTable.table_number == my_guest.table_number,
                 )
+                table_result = await db.execute(table_query)
+                event_table = table_result.scalar_one_or_none()
 
-                if event_has_started:
-                    logger.debug(f"Event {event_id} has started, fetching table customization")
-                    from app.models.event_table import EventTable
-                    from app.schemas.seating import TableAssignment
+                if event_table:
+                    # Get captain info if exists
+                    captain_name = None
+                    you_are_captain = False
 
-                    table_query = select(EventTable).where(
-                        EventTable.event_id == event_id,
-                        EventTable.table_number == my_guest.table_number,
-                    )
-                    table_result = await db.execute(table_query)
-                    event_table = table_result.scalar_one_or_none()
-
-                    if event_table:
-                        # Get captain info if exists
-                        captain_name = None
-                        you_are_captain = False
-
-                        if event_table.table_captain_id:
-                            if event_table.table_captain_id == my_guest.id:
-                                you_are_captain = True
-                                captain_name = my_guest.name
+                    if event_table.table_captain_id:
+                        if event_table.table_captain_id == my_guest.id:
+                            you_are_captain = True
+                            captain_name = my_guest.name
+                            logger.debug(
+                                f"User {user_id} is captain of table {my_guest.table_number}"
+                            )
+                        else:
+                            captain_query = select(RegistrationGuest).where(
+                                RegistrationGuest.id == event_table.table_captain_id
+                            )
+                            captain_result = await db.execute(captain_query)
+                            captain = captain_result.scalar_one_or_none()
+                            if captain:
+                                captain_name = captain.name
                                 logger.debug(
-                                    f"User {user_id} is captain of table {my_guest.table_number}"
+                                    f"Table {my_guest.table_number} captain: {captain_name}"
                                 )
-                            else:
-                                captain_query = select(RegistrationGuest).where(
-                                    RegistrationGuest.id == event_table.table_captain_id
-                                )
-                                captain_result = await db.execute(captain_query)
-                                captain = captain_result.scalar_one_or_none()
-                                if captain:
-                                    captain_name = captain.name
-                                    logger.debug(
-                                        f"Table {my_guest.table_number} captain: {captain_name}"
-                                    )
 
-                        table_assignment = TableAssignment(
-                            table_number=my_guest.table_number,
-                            table_name=event_table.table_name,
-                            captain_full_name=captain_name,
-                            you_are_captain=you_are_captain,
-                        )
-                else:
-                    logger.debug(
-                        f"Event {event_id} has not started yet, hiding table customization"
+                    table_assignment = TableAssignment(
+                        table_number=my_guest.table_number,
+                        table_name=event_table.table_name,
+                        captain_full_name=captain_name,
+                        you_are_captain=you_are_captain,
                     )
 
             # Generate message if needed

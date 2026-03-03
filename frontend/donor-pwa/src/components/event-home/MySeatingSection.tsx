@@ -6,10 +6,11 @@
  * - Table name / number with captain badge
  * - Compact tablemates grid
  */
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Crown, Hash, MapPin, Users } from 'lucide-react'
-import { TableAssignmentCard } from './TableAssignmentCard'
-import { TableCaptainBadge } from './TableCaptainBadge'
+import { Button } from '@/components/ui/button'
+import { Dialog } from '@/components/ui/dialog'
+import * as DialogPrimitive from '@radix-ui/react-dialog'
+import { Crown, Hash, Loader2, Map, MapPin, Users, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 
 interface MySeatingInfo {
   guestId: string
@@ -26,6 +27,7 @@ interface TablemateInfo {
   isTableCaptain?: boolean
   company?: string | null
   profileImageUrl?: string | null
+  isCurrentUser?: boolean
 }
 
 interface TableAssignment {
@@ -49,6 +51,25 @@ interface SeatingInfoResponse {
 
 interface MySeatingProps {
   seatingInfo: SeatingInfoResponse
+  venueMapLink?: string | null
+}
+
+const loadedMapImageUrls = new Set<string>()
+
+function getMapImageWarmCache(): Set<string> {
+  if (typeof window === 'undefined') {
+    return loadedMapImageUrls
+  }
+
+  const globalWindow = window as Window & {
+    __mapImageWarmCache?: Set<string>
+  }
+
+  if (!globalWindow.__mapImageWarmCache) {
+    globalWindow.__mapImageWarmCache = new Set<string>()
+  }
+
+  return globalWindow.__mapImageWarmCache
 }
 
 function getInitials(name: string | null): string {
@@ -71,8 +92,111 @@ function normalizeName(value: string | null | undefined): string {
   return (value ?? '').trim().toLowerCase()
 }
 
-export function MySeatingSection({ seatingInfo }: MySeatingProps) {
-  // Normalise snake_case / camelCase from API
+function normalizeNameForMatch(value: string | null | undefined): string {
+  return normalizeName(value).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function namesLikelyMatch(left: string | null | undefined, right: string | null | undefined): boolean {
+  const leftNormalized = normalizeNameForMatch(left)
+  const rightNormalized = normalizeNameForMatch(right)
+
+  if (!leftNormalized || !rightNormalized) return false
+  if (leftNormalized === rightNormalized) return true
+
+  const leftParts = leftNormalized.split(' ').filter(Boolean)
+  const rightParts = rightNormalized.split(' ').filter(Boolean)
+  if (leftParts.length === 0 || rightParts.length === 0) return false
+
+  const leftFirst = leftParts[0]
+  const rightFirst = rightParts[0]
+  const leftLast = leftParts[leftParts.length - 1]
+  const rightLast = rightParts[rightParts.length - 1]
+
+  if (leftFirst === rightFirst && leftLast === rightLast) {
+    return true
+  }
+
+  if (
+    leftFirst === rightFirst &&
+    (leftNormalized.includes(rightNormalized) || rightNormalized.includes(leftNormalized))
+  ) {
+    return true
+  }
+
+  return false
+}
+
+function isImageMapUrl(url: string): boolean {
+  return /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(url)
+}
+
+function isGoogleMapsUrl(url: string): boolean {
+  return /(^https?:\/\/)?(www\.)?(maps\.google\.|google\.com\/maps)/i.test(url)
+}
+
+function getEmbedMapUrl(url: string): string {
+  try {
+    const parsed = new URL(url)
+    const queryParam = parsed.searchParams.get('q')
+    if (queryParam) {
+      return `https://www.google.com/maps?q=${encodeURIComponent(queryParam)}&output=embed`
+    }
+    return `https://www.google.com/maps?q=${encodeURIComponent(url)}&output=embed`
+  } catch {
+    return `https://www.google.com/maps?q=${encodeURIComponent(url)}&output=embed`
+  }
+}
+
+export function MySeatingSection({ seatingInfo, venueMapLink }: MySeatingProps) {
+  const [isMapFullscreenOpen, setIsMapFullscreenOpen] = useState(false)
+  const [mapImageFailed, setMapImageFailed] = useState(false)
+  const [mapImageLoaded, setMapImageLoaded] = useState(false)
+  const mapWarmCache = useMemo(() => getMapImageWarmCache(), [])
+
+  const isPreloadedMapImage = useMemo(() => {
+    if (!venueMapLink || isGoogleMapsUrl(venueMapLink)) {
+      return false
+    }
+
+    return loadedMapImageUrls.has(venueMapLink)
+  }, [mapWarmCache, venueMapLink])
+
+  useEffect(() => {
+    if (!venueMapLink || isGoogleMapsUrl(venueMapLink)) {
+      return
+    }
+
+    if (loadedMapImageUrls.has(venueMapLink)) {
+      setMapImageLoaded(true)
+      return
+    }
+
+    const image = new Image()
+    image.decoding = 'async'
+    image.onload = () => {
+      loadedMapImageUrls.add(venueMapLink)
+      mapWarmCache.add(venueMapLink)
+      setMapImageLoaded(true)
+    }
+    image.onerror = () => {
+      setMapImageFailed(true)
+    }
+    image.src = venueMapLink
+  }, [mapWarmCache, venueMapLink])
+
+  useEffect(() => {
+    if (!isMapFullscreenOpen) return
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMapFullscreenOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [isMapFullscreenOpen])
+
   const seatingInfoRecord = seatingInfo as SeatingInfoResponse & {
     guest_name?: string | null
     full_name?: string | null
@@ -110,8 +234,7 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const myInfoSource: any =
-    seatingInfo.myInfo ?? seatingInfoRecord.my_info ?? seatingInfoRecord
+  const myInfoSource: any = seatingInfo.myInfo ?? seatingInfoRecord.my_info ?? seatingInfoRecord
   const myInfo: MySeatingInfo = {
     guestId: myInfoSource?.guestId ?? myInfoSource?.guest_id ?? '',
     fullName:
@@ -126,8 +249,7 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tablematesSource: any[] =
-    seatingInfo.tablemates ?? seatingInfoRecord.tablemates ?? []
+  const tablematesSource: any[] = seatingInfo.tablemates ?? seatingInfoRecord.tablemates ?? []
   const tablemates: TablemateInfo[] = tablematesSource.map((t) => ({
     guestId: t.guestId ?? t.guest_id ?? '',
     name: t.name ?? null,
@@ -137,67 +259,161 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
     profileImageUrl: t.profileImageUrl ?? t.profile_image_url ?? null,
   }))
 
-  const tableCapacitySource =
-    seatingInfo.tableCapacity ?? seatingInfoRecord.table_capacity
+  const tableCapacitySource = seatingInfo.tableCapacity ?? seatingInfoRecord.table_capacity
   const tableCapacity = {
-    current:
-      tableCapacitySource?.current ??
-      seatingInfoRecord.table_assignment?.current_occupancy ??
-      0,
-    max:
-      tableCapacitySource?.max ??
-      seatingInfoRecord.table_assignment?.effective_capacity ??
-      0,
+    current: tableCapacitySource?.current ?? seatingInfoRecord.table_assignment?.current_occupancy ?? 0,
+    max: tableCapacitySource?.max ?? seatingInfoRecord.table_assignment?.effective_capacity ?? 0,
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tableAssignmentSource: any =
-    seatingInfo.tableAssignment ?? seatingInfoRecord.table_assignment
+  const tableAssignmentSource: any = seatingInfo.tableAssignment ?? seatingInfoRecord.table_assignment
   const tableAssignment: TableAssignment | null = tableAssignmentSource
     ? {
-      tableNumber:
-        tableAssignmentSource.tableNumber ??
-        tableAssignmentSource.table_number ??
-        0,
-      tableName:
-        tableAssignmentSource.tableName ??
-        tableAssignmentSource.table_name ??
-        null,
+      tableNumber: tableAssignmentSource.tableNumber ?? tableAssignmentSource.table_number ?? 0,
+      tableName: tableAssignmentSource.tableName ?? tableAssignmentSource.table_name ?? null,
       captainFullName:
         tableAssignmentSource.captainFullName ??
         tableAssignmentSource.table_captain_name ??
         tableAssignmentSource.captain_full_name ??
         null,
-      youAreCaptain:
-        tableAssignmentSource.youAreCaptain ??
-        tableAssignmentSource.you_are_captain ??
-        false,
+      youAreCaptain: tableAssignmentSource.youAreCaptain ?? tableAssignmentSource.you_are_captain ?? false,
     }
     : null
 
-  const normalizedCaptainName = normalizeName(tableAssignment?.captainFullName)
-  const detectedCaptainFromTablemates = tablemates.find((mate) => mate.isTableCaptain)
-  const captainDisplayName =
-    tableAssignment?.captainFullName ?? detectedCaptainFromTablemates?.name ?? null
-  const captainPillLabel = captainDisplayName ?? 'Table Captain'
+  const isCurrentUserCaptain = Boolean(tableAssignment?.youAreCaptain)
 
-  const resolvedTableNumber =
-    tableAssignment?.tableNumber ?? myInfo.tableNumber
+  const hasCurrentUserInTablemates = tablemates.some(
+    (mate) =>
+      (mate.guestId && myInfo.guestId && mate.guestId === myInfo.guestId) ||
+      (normalizeName(mate.name) && normalizeName(mate.name) === normalizeName(myInfo.fullName))
+  )
+
+  const displayTablemates: TablemateInfo[] = hasCurrentUserInTablemates
+    ? tablemates
+    : [
+      {
+        guestId: myInfo.guestId || '__current-user__',
+        name: myInfo.fullName ?? 'Guest',
+        bidderNumber: myInfo.bidderNumber,
+        isTableCaptain: isCurrentUserCaptain,
+        company: null,
+        profileImageUrl: null,
+        isCurrentUser: true,
+      },
+      ...tablemates,
+    ]
+
+  const detectedCaptainFromTablemates = displayTablemates.find((mate) => mate.isTableCaptain)
+  const captainDisplayName = tableAssignment?.captainFullName ?? detectedCaptainFromTablemates?.name ?? null
+  const matchedCurrentUserMate = displayTablemates.find(
+    (mate) =>
+      (mate.guestId && myInfo.guestId && mate.guestId === myInfo.guestId) ||
+      namesLikelyMatch(mate.name, myInfo.fullName)
+  )
+  const captainByNameMatch = displayTablemates.find((mate) => namesLikelyMatch(mate.name, captainDisplayName))
+  const captainGuestId =
+    detectedCaptainFromTablemates?.guestId ||
+    (isCurrentUserCaptain ? (matchedCurrentUserMate?.guestId || myInfo.guestId || '__current-user__') : null) ||
+    captainByNameMatch?.guestId ||
+    null
+
+  const captainLabelName = isCurrentUserCaptain
+    ? (myInfo.fullName ?? captainDisplayName ?? 'Assigned')
+    : (captainDisplayName ?? 'Assigned')
+  const captainPillLabel = `Table Captain: ${captainLabelName}`
+
+  const resolvedTableNumber = tableAssignment?.tableNumber ?? myInfo.tableNumber
   const hasTable = !!resolvedTableNumber
-  const message =
-    seatingInfo.message ?? seatingInfoRecord.message
+  const message = seatingInfo.message ?? seatingInfoRecord.message
+
+  const mapContent = useMemo(() => {
+    if (!venueMapLink) {
+      return (
+        <div className='flex h-full w-full items-center justify-center'>
+          <p className='text-sm' style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}>
+            Event map is not available for this event yet.
+          </p>
+        </div>
+      )
+    }
+
+    const mapUrl = venueMapLink
+
+    if (isGoogleMapsUrl(mapUrl)) {
+      return (
+        <div className='h-full w-full overflow-hidden'>
+          <iframe
+            title='Event Map'
+            src={getEmbedMapUrl(mapUrl)}
+            className='h-full w-full'
+            loading='lazy'
+            referrerPolicy='no-referrer-when-downgrade'
+            allowFullScreen
+          />
+        </div>
+      )
+    }
+
+    if (!mapImageFailed || isImageMapUrl(mapUrl)) {
+      return (
+        <div className='relative flex h-full w-full items-center justify-center'>
+          {!mapImageLoaded && (
+            <div className='absolute inset-0 flex items-center justify-center bg-black/20'>
+              <Loader2 className='h-8 w-8 animate-spin text-white/90' />
+            </div>
+          )}
+          <img
+            src={mapUrl}
+            alt='Event Map'
+            className='h-auto w-auto max-h-full max-w-full object-contain'
+            loading='eager'
+            fetchPriority='high'
+            decoding='async'
+            onLoad={() => setMapImageLoaded(true)}
+            onError={() => setMapImageFailed(true)}
+          />
+        </div>
+      )
+    }
+
+    return (
+      <div className='flex h-full w-full flex-col'>
+        <div className='min-h-0 flex-1 overflow-hidden'>
+          <iframe
+            title='Event Map'
+            src={mapUrl}
+            className='h-full w-full'
+            loading='lazy'
+            referrerPolicy='no-referrer-when-downgrade'
+            allowFullScreen
+          />
+        </div>
+        <a
+          href={mapUrl}
+          target='_blank'
+          rel='noopener noreferrer'
+          className='mt-3 inline-flex w-fit items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium hover:opacity-90'
+          style={{
+            borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.45)',
+            color: 'rgb(var(--event-primary, 59, 130, 246))',
+          }}
+        >
+          Open map directly
+        </a>
+      </div>
+    )
+  }, [mapImageFailed, mapImageLoaded, venueMapLink])
 
   return (
     <div className='space-y-4'>
-      {/* Bidder Number — hero display */}
       <div
         className='relative overflow-hidden rounded-2xl p-5'
         style={{
-          background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246) / 0.9) 0%, rgb(var(--event-secondary, 147, 51, 234) / 0.9) 100%)`,
+          backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
         }}
       >
-        <div className='pointer-events-none absolute inset-0 bg-black/35' />
-        <div className='pointer-events-none absolute -top-6 -right-6 h-24 w-24 rounded-full bg-white/10 blur-xl' />
+        <div className='pointer-events-none absolute inset-0 bg-black/0' />
+        <div className='pointer-events-none absolute -top-6 -right-6 h-24 w-24 rounded-full bg-white/15 blur-xl' />
         <div className='relative z-10 flex items-center justify-between'>
           <div>
             <p className='mb-1 text-xs font-semibold uppercase tracking-widest text-white/70'>
@@ -206,9 +422,7 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
             {myInfo.bidderNumber ? (
               <div className='flex items-center gap-2'>
                 <Hash className='h-5 w-5 text-white/70' />
-                <span className='text-4xl font-black tabular-nums text-white'>
-                  {myInfo.bidderNumber}
-                </span>
+                <span className='text-4xl font-black tabular-nums text-white'>{myInfo.bidderNumber}</span>
               </div>
             ) : (
               <p className='text-sm text-white/60 italic'>
@@ -227,17 +441,12 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
                   {tableAssignment?.tableName ?? resolvedTableNumber}
                 </span>
               </div>
-              {tableAssignment?.tableName && (
-                <p className='text-xs text-white/60'>
-                  Table {tableAssignment.tableNumber}
-                </p>
-              )}
+              {tableAssignment?.tableName && <p className='text-xs text-white/60'>Table {tableAssignment?.tableNumber}</p>}
             </div>
           )}
         </div>
       </div>
 
-      {/* No table assigned yet */}
       {!hasTable && message && (
         <div
           className='rounded-xl border px-4 py-3'
@@ -246,53 +455,28 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
             borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.25)',
           }}
         >
-          <p
-            className='text-sm'
-            style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
-          >
+          <p className='text-sm' style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}>
             {message}
           </p>
         </div>
       )}
 
-      {/* Table details */}
-      {tableAssignment && (
-        <div className='space-y-3'>
-          <TableAssignmentCard
-            tableNumber={tableAssignment.tableNumber}
-            tableName={tableAssignment.tableName}
-            currentOccupancy={tableCapacity.current}
-            maxCapacity={tableCapacity.max}
-          />
-          <TableCaptainBadge
-            captainFullName={tableAssignment.captainFullName}
-            youAreCaptain={tableAssignment.youAreCaptain}
-          />
-        </div>
-      )}
-
-      {/* Tablemates */}
       {hasTable && (
         <div
-          className='rounded-2xl border p-4'
+          className='relative overflow-hidden rounded-2xl border-2 p-4 shadow-md'
           style={{
-            backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
-            borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
+            backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
+            borderColor: 'rgb(var(--event-primary, 59, 130, 246))',
+            boxShadow: '0 14px 36px rgb(var(--event-primary, 59, 130, 246) / 0.18)',
           }}
         >
-          <div className='mb-3 flex items-center justify-between'>
+          <div className='relative mb-3 flex items-center justify-between'>
             <div className='flex items-center gap-2'>
-              <Users
-                className='h-4 w-4'
-                style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
-              />
-              <h3
-                className='text-sm font-semibold'
-                style={{ color: 'var(--event-text-on-background, #111827)' }}
-              >
+              <Users className='h-4 w-4' style={{ color: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.85)' }} />
+              <h3 className='text-sm font-semibold' style={{ color: 'var(--event-text-on-primary, #FFFFFF)' }}>
                 Tablemates
               </h3>
-              {(captainDisplayName || detectedCaptainFromTablemates) && (
+              {(isCurrentUserCaptain || captainDisplayName || detectedCaptainFromTablemates) && (
                 <span
                   className='inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold'
                   style={{
@@ -308,58 +492,87 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
             <span
               className='rounded-full px-2 py-0.5 text-xs font-medium'
               style={{
-                backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
-                color: 'var(--event-text-on-background, #111827)',
+                backgroundColor: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.2)',
+                color: 'var(--event-text-on-primary, #FFFFFF)',
               }}
             >
               {tableCapacity.current}/{tableCapacity.max}
             </span>
           </div>
 
-          {tablemates.length > 0 ? (
-            <div className='grid grid-cols-3 gap-2 sm:grid-cols-4'>
-              {tablemates.map((mate) => (
-                <div key={mate.guestId} className='flex flex-col items-center gap-1'>
+          <div className='relative mb-3'>
+            <Button
+              type='button'
+              onClick={() => {
+                setMapImageFailed(false)
+                setMapImageLoaded(isPreloadedMapImage)
+                setIsMapFullscreenOpen(true)
+              }}
+              className='inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm transition-opacity hover:opacity-95'
+              style={{
+                borderColor: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.85)',
+                color: 'rgb(var(--event-primary, 59, 130, 246))',
+                backgroundColor: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.96)',
+              }}
+            >
+              <Map className='h-3.5 w-3.5' />
+              Event Layout
+            </Button>
+          </div>
+
+          {displayTablemates.length > 0 ? (
+            <div className='relative grid grid-cols-3 gap-2 sm:grid-cols-4'>
+              {displayTablemates.map((mate) => (
+                <div key={mate.guestId} className='flex flex-col items-center gap-1.5'>
                   <div className='relative'>
-                    <Avatar className='h-10 w-10 border-2 border-white/20'>
-                      <AvatarImage
-                        src={mate.profileImageUrl ?? undefined}
-                        alt={mate.name ?? 'Guest'}
-                      />
-                      <AvatarFallback
-                        className='text-xs font-bold text-white'
-                        style={{
-                          backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.5)',
-                        }}
-                      >
-                        {getInitials(mate.name)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div
+                      className='flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 text-xs font-bold'
+                      style={{
+                        borderColor: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.85)',
+                        backgroundColor: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.92)',
+                        color: 'rgb(var(--event-primary, 59, 130, 246))',
+                      }}
+                      aria-label={mate.name ?? 'Guest'}
+                    >
+                      {mate.profileImageUrl ? (
+                        <img
+                          src={mate.profileImageUrl}
+                          alt={mate.name ?? 'Guest'}
+                          className='h-full w-full object-cover'
+                          loading='lazy'
+                          decoding='async'
+                        />
+                      ) : (
+                        <span>{getInitials(mate.name)}</span>
+                      )}
+                    </div>
                     {(mate.isTableCaptain ||
-                      (normalizedCaptainName && normalizeName(mate.name) === normalizedCaptainName)) && (
+                      (captainGuestId && mate.guestId === captainGuestId) ||
+                      (captainDisplayName && namesLikelyMatch(mate.name, captainDisplayName))) && (
                         <span
-                          className='absolute -right-1 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full'
+                          className='absolute -right-1.5 -top-1.5 z-20 inline-flex h-5 w-5 items-center justify-center rounded-full border shadow-sm'
                           style={{
-                            backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
-                            color: 'var(--event-text-on-primary, #FFFFFF)',
+                            backgroundColor: 'rgb(var(--event-text-on-primary-rgb, 255 255 255))',
+                            borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.45)',
+                            color: 'rgb(var(--event-primary, 59, 130, 246))',
                           }}
                           title='Table Captain'
                           aria-label='Table Captain'
                         >
-                          <Crown className='h-2.5 w-2.5' />
+                          <Crown className='h-3 w-3' />
                         </span>
                       )}
                   </div>
                   <p
                     className='text-center text-[10px] font-medium leading-tight line-clamp-2'
-                    style={{ color: 'var(--event-text-on-background, #111827)' }}
+                    style={{ color: 'var(--event-text-on-primary, #FFFFFF)' }}
                   >
                     {mate.name ?? 'Guest'}
                   </p>
                   {mate.bidderNumber !== null && (
                     <p
                       className='text-[10px] font-medium'
-                      style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+                      style={{ color: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.82)' }}
                     >
                       #{mate.bidderNumber}
                     </p>
@@ -368,14 +581,35 @@ export function MySeatingSection({ seatingInfo }: MySeatingProps) {
               ))}
             </div>
           ) : (
-            <p
-              className='text-center text-sm italic'
-              style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
-            >
+            <p className='text-center text-sm italic' style={{ color: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.82)' }}>
               You're the first at your table.
             </p>
           )}
         </div>
+      )}
+
+      {isMapFullscreenOpen && (
+        <Dialog open={isMapFullscreenOpen} onOpenChange={setIsMapFullscreenOpen}>
+          <DialogPrimitive.Portal>
+            <DialogPrimitive.Overlay className='fixed inset-0 z-[10000] bg-black/95' />
+            <DialogPrimitive.Content className='fixed inset-0 z-[10001] m-0 h-[100dvh] w-screen border-0 bg-transparent p-0 outline-none'>
+              <Button
+                type='button'
+                variant='ghost'
+                size='icon'
+                className='absolute right-2 top-[max(env(safe-area-inset-top),0.5rem)] z-30 text-white hover:bg-white/15 hover:text-white sm:right-3 sm:top-[max(env(safe-area-inset-top),0.75rem)]'
+                onClick={() => setIsMapFullscreenOpen(false)}
+                aria-label='Close map'
+              >
+                <X className='h-5 w-5' />
+              </Button>
+
+              <div className='absolute inset-0 flex items-center justify-center overflow-hidden p-2 pt-14 sm:p-4 sm:pt-16'>
+                {mapContent}
+              </div>
+            </DialogPrimitive.Content>
+          </DialogPrimitive.Portal>
+        </Dialog>
       )}
     </div>
   )

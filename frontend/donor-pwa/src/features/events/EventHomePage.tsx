@@ -125,6 +125,7 @@ export function EventHomePage() {
   const [maxBidItemMap, setMaxBidItemMap] = useState<Record<string, number>>({})
   const [displayedTab, setDisplayedTab] = useState<DonorTab>('home')
   const prefetchedAuctionImagesRef = useRef<Set<string>>(new Set())
+  const prefetchedVenueMapUrlsRef = useRef<Set<string>>(new Set())
   const queryClient = useQueryClient()
   const tabOrder: DonorTab[] = ['home', 'auction', 'seat']
 
@@ -492,6 +493,37 @@ export function EventHomePage() {
     if (currentEvent.venue_zip) parts.push(currentEvent.venue_zip)
     return `https://maps.google.com/?q=${encodeURIComponent(parts.join(', '))}`
   }, [currentEvent, getTaggedImageUrl])
+
+  useEffect(() => {
+    if (!venueMapLink) {
+      return
+    }
+
+    const isGoogleMap = /(^https?:\/\/)?(www\.)?(maps\.google\.|google\.com\/maps)/i.test(venueMapLink)
+    if (isGoogleMap || prefetchedVenueMapUrlsRef.current.has(venueMapLink)) {
+      return
+    }
+
+    prefetchedVenueMapUrlsRef.current.add(venueMapLink)
+
+    const preloadLink = document.createElement('link')
+    preloadLink.rel = 'preload'
+    preloadLink.as = 'image'
+    preloadLink.href = venueMapLink
+    preloadLink.setAttribute('fetchpriority', 'high')
+    document.head.appendChild(preloadLink)
+
+    const prefetchLink = document.createElement('link')
+    prefetchLink.rel = 'prefetch'
+    prefetchLink.as = 'image'
+    prefetchLink.href = venueMapLink
+    document.head.appendChild(prefetchLink)
+
+    const image = new Image()
+    image.decoding = 'async'
+    image.setAttribute('fetchpriority', 'high')
+    image.src = venueMapLink
+  }, [venueMapLink])
 
   // Add to calendar
   const generateICSFile = useCallback(() => {
@@ -1025,7 +1057,7 @@ export function EventHomePage() {
 
         {seatingInfo && !shouldShowSeatingError && !seatingLoading && (
           <div className='animate-card-enter'>
-            <MySeatingSection seatingInfo={seatingInfo} />
+            <MySeatingSection seatingInfo={seatingInfo} venueMapLink={venueMapLink} />
           </div>
         )}
 
