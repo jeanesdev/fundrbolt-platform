@@ -7,7 +7,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 
-from app.models.event import EventLinkType, EventMediaStatus, EventStatus
+from app.models.event import EventLinkType, EventMediaStatus, EventMediaUsageTag, EventStatus
+
+HeroTransitionStyle = str
 
 # ================================
 # Request Schemas
@@ -50,6 +52,10 @@ class EventCreateRequest(BaseModel):
     secondary_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     background_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     accent_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    hero_transition_style: HeroTransitionStyle = Field(
+        default="documentary_style",
+        pattern=r"^(documentary_style|fade|swipe|simple)$",
+    )
 
     @field_validator("name")
     @classmethod
@@ -106,6 +112,10 @@ class EventUpdateRequest(BaseModel):
     secondary_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     background_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
     accent_color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    hero_transition_style: HeroTransitionStyle | None = Field(
+        default=None,
+        pattern=r"^(documentary_style|fade|swipe|simple)$",
+    )
     table_count: int | None = Field(default=None, ge=1, description="Number of tables for seating")
     max_guests_per_table: int | None = Field(
         default=None, ge=1, description="Maximum guests per table"
@@ -155,6 +165,10 @@ class MediaUploadUrlRequest(BaseModel):
         description="Media type: image, video, or flyer",
         pattern="^(image|video|flyer)$",
     )
+    usage_tag: EventMediaUsageTag = Field(
+        default=EventMediaUsageTag.MAIN_EVENT_PAGE_HERO,
+        description="Designates where this media is used in Donor PWA",
+    )
 
     @field_validator("file_type")
     @classmethod
@@ -178,6 +192,10 @@ class MediaUpdateRequest(BaseModel):
     """Request schema for updating media metadata."""
 
     display_order: int | None = Field(default=None, ge=0)
+    usage_tag: EventMediaUsageTag | None = Field(
+        default=None,
+        description="Designates where this media is used in Donor PWA",
+    )
 
 
 # ================================
@@ -267,6 +285,7 @@ class EventMediaResponse(BaseModel):
     id: uuid.UUID
     event_id: uuid.UUID
     media_type: str
+    usage_tag: EventMediaUsageTag
     file_url: str
     file_name: str
     file_type: str
@@ -328,6 +347,7 @@ class EventSummaryResponse(BaseModel):
     venue_state: str | None
     venue_zip: str | None
     logo_url: str | None
+    hero_transition_style: HeroTransitionStyle
     created_at: datetime
     updated_at: datetime
 
@@ -363,6 +383,7 @@ class EventDetailResponse(BaseModel):
     secondary_color: str | None
     background_color: str | None
     accent_color: str | None
+    hero_transition_style: HeroTransitionStyle
     table_count: int | None = None
     max_guests_per_table: int | None = None
     seating_layout_image_url: str | None = None
@@ -420,6 +441,7 @@ class EventPublicResponse(BaseModel):
     secondary_color: str | None
     background_color: str | None
     accent_color: str | None
+    hero_transition_style: HeroTransitionStyle
     media: list[EventMediaResponse]
     links: list[EventLinkResponse]
     food_options: list[FoodOptionResponse]

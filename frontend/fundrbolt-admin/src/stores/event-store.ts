@@ -12,11 +12,12 @@ import type {
   EventLinkCreateRequest,
   EventLinkUpdateRequest,
   EventListParams,
+  EventMediaUsageTag,
   EventUpdateRequest,
   FoodOption,
   FoodOptionCreateRequest,
   FoodOptionUpdateRequest,
-  MediaUploadRequest,
+  MediaUpdateRequest,
 } from '@/types/event'
 import { create } from 'zustand'
 
@@ -80,7 +81,8 @@ interface EventState {
   deleteEvent: (eventId: string) => Promise<void>
 
   // Actions - Media Management
-  uploadMedia: (eventId: string, file: File) => Promise<void>
+  uploadMedia: (eventId: string, file: File, usageTag?: EventMediaUsageTag) => Promise<void>
+  updateMedia: (eventId: string, mediaId: string, data: MediaUpdateRequest) => Promise<void>
   deleteMedia: (eventId: string, mediaId: string) => Promise<void>
   setUploadProgress: (fileId: string, progress: number) => void
 
@@ -305,7 +307,7 @@ export const useEventStore = create<EventState>((set, get) => ({
   },
 
   // Media Management Actions
-  uploadMedia: async (eventId, file) => {
+  uploadMedia: async (eventId, file, usageTag = 'main_event_page_hero') => {
     const fileId = `${file.name}-${Date.now()}`
     set((state) => ({
       uploadingFiles: { ...state.uploadingFiles, [fileId]: true },
@@ -321,38 +323,33 @@ export const useEventStore = create<EventState>((set, get) => ({
         media_type = 'flyer'
       }
 
-      // Step 1: Request upload URL
-      const uploadData: MediaUploadRequest = {
-        file_name: file.name,
-        file_type: file.type,
-        file_size: file.size,
-        media_type,
-      }
-      const { upload_url, media_id } = await eventService.media.requestUploadUrl(
-        eventId,
-        uploadData
-      )
-
-      // Step 2: Upload file to Azure Blob Storage
+      // Step 1: Upload file via backend endpoint
       set((state) => ({
         uploadProgress: { ...state.uploadProgress, [fileId]: 50 },
       }))
-      await eventService.media.uploadFile(upload_url, file)
+      const media = await eventService.media.uploadDirect(eventId, file, media_type, usageTag)
 
-      // Step 3: Confirm upload
       set((state) => ({
         uploadProgress: { ...state.uploadProgress, [fileId]: 90 },
       }))
-      const media = await eventService.media.confirmUpload(eventId, { media_id })
 
-      // Step 4: Update current event with new media
+      // Step 2: Refresh event from API so UI reflects new media immediately
+      let refreshedEvent: EventDetail | null = null
+      try {
+        refreshedEvent = await eventService.getEvent(eventId)
+      } catch {
+        refreshedEvent = null
+      }
+
       set((state) => ({
-        currentEvent: state.currentEvent
-          ? {
-            ...state.currentEvent,
-            media: [...(state.currentEvent.media || []).filter(Boolean), media],
-          }
-          : null,
+        currentEvent: refreshedEvent
+          ? refreshedEvent
+          : state.currentEvent
+            ? {
+              ...state.currentEvent,
+              media: [...(state.currentEvent.media || []).filter(Boolean), media],
+            }
+            : null,
         uploadProgress: { ...state.uploadProgress, [fileId]: 100 },
         uploadingFiles: { ...state.uploadingFiles, [fileId]: false },
       }))
@@ -361,6 +358,26 @@ export const useEventStore = create<EventState>((set, get) => ({
         uploadingFiles: { ...state.uploadingFiles, [fileId]: false },
         eventsError: getErrorMessage(error),
       }))
+      throw error
+    }
+  },
+
+  updateMedia: async (eventId, mediaId, data) => {
+    try {
+      const updatedMedia = await eventService.media.updateMedia(eventId, mediaId, data)
+
+      set((state) => ({
+        currentEvent: state.currentEvent
+          ? {
+            ...state.currentEvent,
+            media: state.currentEvent.media?.map((m) =>
+              m.id === mediaId ? updatedMedia : m
+            ),
+          }
+          : null,
+      }))
+    } catch (error) {
+      set({ eventsError: getErrorMessage(error) })
       throw error
     }
   },

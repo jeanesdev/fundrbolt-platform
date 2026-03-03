@@ -50,8 +50,27 @@ export interface FoodOption {
   updated_at: string
 }
 
+export type EventMediaUsageTag =
+  | 'main_event_page_hero'
+  | 'event_layout_map'
+  | 'npo_logo'
+  | 'event_logo'
+
+export interface EventMedia {
+  id: string
+  event_id: string
+  media_type: 'image' | 'video' | 'flyer'
+  usage_tag: EventMediaUsageTag
+  file_url: string
+  file_name: string
+  file_type: string
+  mime_type: string
+  file_size: number
+}
+
 export interface EventDetailResponse extends EventResponse {
   food_options: FoodOption[]
+  media: EventMedia[]
 }
 
 // ================================

@@ -57,6 +57,15 @@ class EventMediaType(str, enum.Enum):
     FLYER = "flyer"  # PDF flyers/documents
 
 
+class EventMediaUsageTag(str, enum.Enum):
+    """Designates where a media asset should be used in Donor PWA."""
+
+    MAIN_EVENT_PAGE_HERO = "main_event_page_hero"
+    EVENT_LAYOUT_MAP = "event_layout_map"
+    NPO_LOGO = "npo_logo"
+    EVENT_LOGO = "event_logo"
+
+
 class EventLinkType(str, enum.Enum):
     """External link type."""
 
@@ -207,6 +216,13 @@ class Event(Base, UUIDMixin, TimestampMixin):
         String(7),
         nullable=True,
         comment="Hex color code for accents (e.g., #FF5733)",
+    )
+    hero_transition_style: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="documentary_style",
+        server_default="documentary_style",
+        comment="Hero image transition style for Donor PWA (documentary_style, fade, swipe, simple)",
     )
 
     # Seating Configuration (Feature 012)
@@ -378,6 +394,17 @@ class EventMedia(Base, UUIDMixin, TimestampMixin):
         ),
         nullable=False,
         comment="Type of media: image, video, or flyer",
+    )
+    usage_tag: Mapped[EventMediaUsageTag] = mapped_column(
+        Enum(
+            EventMediaUsageTag,
+            name="event_media_usage_tag",
+            values_callable=lambda x: [e.value for e in x],
+        ),
+        nullable=False,
+        default=EventMediaUsageTag.MAIN_EVENT_PAGE_HERO,
+        server_default=EventMediaUsageTag.MAIN_EVENT_PAGE_HERO.value,
+        comment="Designates where media is used in Donor PWA",
     )
     file_url: Mapped[str] = mapped_column(
         String(500),

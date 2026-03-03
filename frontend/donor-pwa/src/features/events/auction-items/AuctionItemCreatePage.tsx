@@ -24,8 +24,8 @@ import { toast } from 'sonner';
 
 export function AuctionItemCreatePage() {
   const navigate = useNavigate();
-  const { eventId } = useParams({
-    from: '/_authenticated/events/$eventId/auction-items/create',
+  const { eventSlug } = useParams({
+    from: '/_authenticated/events/$eventSlug/auction-items/create',
   });
 
   const { createAuctionItem } = useAuctionItemStore();
@@ -37,7 +37,7 @@ export function AuctionItemCreatePage() {
     setIsSubmitting(true);
     try {
       const createdItem = await createAuctionItem(
-        eventId,
+        eventSlug,
         data as AuctionItemCreate
       );
 
@@ -47,8 +47,8 @@ export function AuctionItemCreatePage() {
 
       toast.success('Auction item created successfully!');
       navigate({
-        to: '/events/$eventId/auction-items',
-        params: { eventId },
+        to: '/events/$eventSlug/auction-items',
+        params: { eventSlug },
       });
     } catch (err) {
       const errorMessage =
@@ -60,7 +60,7 @@ export function AuctionItemCreatePage() {
   };
 
   const handleCancel = () => {
-    navigate({ to: '/events/$eventId/auction-items', params: { eventId } });
+    navigate({ to: '/events/$eventSlug/auction-items', params: { eventSlug } });
   };
 
   return (
@@ -94,7 +94,7 @@ export function AuctionItemCreatePage() {
         </CardHeader>
         <CardContent>
           <AuctionItemForm
-            eventId={eventId}
+            eventId={eventSlug}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             isSubmitting={isSubmitting}

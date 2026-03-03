@@ -10,6 +10,12 @@
 export type EventStatus = 'draft' | 'active' | 'closed'
 
 export type EventMediaStatus = 'uploaded' | 'scanning' | 'approved' | 'rejected'
+export type HeroTransitionStyle = 'documentary_style' | 'fade' | 'swipe' | 'simple'
+export type EventMediaUsageTag =
+  | 'main_event_page_hero'
+  | 'event_layout_map'
+  | 'npo_logo'
+  | 'event_logo'
 
 export type EventLinkType = 'video' | 'website' | 'social_media'
 
@@ -40,6 +46,7 @@ export interface Event {
   secondary_color: string | null
   background_color: string | null
   accent_color: string | null
+  hero_transition_style: HeroTransitionStyle
   table_count: number | null
   max_guests_per_table: number | null
   seating_layout_image_url: string | null
@@ -85,6 +92,7 @@ export interface EventCreateRequest {
   secondary_color?: string
   background_color?: string
   accent_color?: string
+  hero_transition_style?: HeroTransitionStyle
   table_count?: number | null
   max_guests_per_table?: number | null
 }
@@ -110,6 +118,7 @@ export interface EventUpdateRequest {
   secondary_color?: string
   background_color?: string
   accent_color?: string
+  hero_transition_style?: HeroTransitionStyle
   table_count?: number | null
   max_guests_per_table?: number | null
   seating_layout_image_url?: string | null
@@ -154,6 +163,7 @@ export interface EventMedia {
   id: string
   event_id: string
   media_type: string
+  usage_tag: EventMediaUsageTag
   file_url: string
   file_name: string
   file_type: string
@@ -170,6 +180,7 @@ export interface MediaUploadRequest {
   file_type: string
   file_size: number
   media_type: 'image' | 'video' | 'flyer'
+  usage_tag?: EventMediaUsageTag
 }
 
 export interface MediaUploadResponse {
@@ -180,6 +191,11 @@ export interface MediaUploadResponse {
 
 export interface MediaConfirmRequest {
   media_id: string
+}
+
+export interface MediaUpdateRequest {
+  usage_tag?: EventMediaUsageTag
+  display_order?: number
 }
 
 // ============================================

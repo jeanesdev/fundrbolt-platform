@@ -95,7 +95,11 @@ export function EventCard({ event, showRegisterButton = true }: EventCardProps) 
       {showRegisterButton && event.status === 'active' && (
         <CardFooter>
           <Button asChild className="w-full" size="lg">
-            <Link to="/events/$slug/register" params={{ slug: event.slug }}>
+            <Link
+              to="/events/$slug/register"
+              params={{ slug: event.slug }}
+              search={{ guest: undefined }}
+            >
               Register Now
             </Link>
           </Button>

@@ -58,8 +58,7 @@ export function SearchResults({ results, isLoading, onClose }: SearchResultsProp
           {results.users.map((user) => (
             <Link
               key={user.id}
-              to='/users'
-              search={{ name: `${user.first_name} ${user.last_name}` }}
+              to='/home'
               onClick={onClose}
               className='hover:bg-accent flex items-center gap-3 rounded p-2 transition-colors'
             >
@@ -116,8 +115,8 @@ export function SearchResults({ results, isLoading, onClose }: SearchResultsProp
           {results.events.map((event) => (
             <Link
               key={event.id}
-              to='/events/$eventId'
-              params={{ eventId: event.id }}
+              to='/events/$eventSlug'
+              params={{ eventSlug: event.id }}
               onClick={onClose}
               className='hover:bg-accent flex items-center gap-3 rounded p-2 transition-colors'
             >
@@ -144,8 +143,8 @@ export function SearchResults({ results, isLoading, onClose }: SearchResultsProp
           {results.auction_items.map((item) => (
             <Link
               key={item.id}
-              to='/events/$eventId/auction-items/$itemId'
-              params={{ eventId: item.event_id, itemId: item.id }}
+              to='/events/$eventSlug/auction-items/$itemId'
+              params={{ eventSlug: item.event_id, itemId: item.id }}
               onClick={onClose}
               className='hover:bg-accent flex items-center gap-3 rounded p-2 transition-colors'
             >

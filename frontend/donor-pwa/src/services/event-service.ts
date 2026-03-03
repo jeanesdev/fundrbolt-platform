@@ -129,6 +129,21 @@ export const mediaApi = {
     await apiClient.delete(`/events/${eventId}/media/${mediaId}`)
   },
 
+  async uploadDirect(
+    eventId: string,
+    file: File,
+    mediaType: 'image' | 'video' | 'flyer',
+    usageTag: string
+  ): Promise<EventMedia> {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('media_type', mediaType)
+    formData.append('usage_tag', usageTag)
+
+    const response = await apiClient.post<EventMedia>(`/events/${eventId}/media/upload`, formData)
+    return response.data
+  },
+
   /**
    * Upload file to Azure Blob Storage using pre-signed URL
    */

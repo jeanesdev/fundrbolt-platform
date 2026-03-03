@@ -27,7 +27,9 @@ import { SponsorsTab } from './components/SponsorsTab'
 
 export function EventEditPage() {
   const navigate = useNavigate()
-  const { eventId } = useParams({ strict: false }) as { eventId: string }
+  const { eventSlug } = useParams({
+    from: '/_authenticated/events/$eventSlug/edit',
+  })
   const {
     currentEvent,
     eventsLoading,
@@ -48,15 +50,16 @@ export function EventEditPage() {
   const { sponsors, fetchSponsors } = useSponsorStore()
   const { items: auctionItems, fetchAuctionItems } = useAuctionItemStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const resolvedEventId = currentEvent?.id ?? eventSlug
 
   const loadEvent = useCallback(() => {
-    if (eventId) {
-      loadEventById(eventId).catch((_err) => {
+    if (eventSlug) {
+      loadEventById(eventSlug).catch((_err) => {
         toast.error('Failed to load event')
         navigate({ to: '/' })
       })
     }
-  }, [eventId, loadEventById, navigate])
+  }, [eventSlug, loadEventById, navigate])
 
   useEffect(() => {
     loadEvent()
@@ -64,21 +67,21 @@ export function EventEditPage() {
 
   // Load sponsors for tab count
   useEffect(() => {
-    if (eventId) {
-      fetchSponsors(eventId).catch(() => {
+    if (eventSlug) {
+      fetchSponsors(eventSlug).catch(() => {
         // Silently fail - SponsorsTab will show error if user navigates there
       })
     }
-  }, [eventId, fetchSponsors])
+  }, [eventSlug, fetchSponsors])
 
   // Load auction items for tab count
   useEffect(() => {
-    if (eventId) {
-      fetchAuctionItems(eventId).catch(() => {
+    if (eventSlug) {
+      fetchAuctionItems(eventSlug).catch(() => {
         // Silently fail - auction items tab will show error if user navigates there
       })
     }
-  }, [eventId, fetchAuctionItems])
+  }, [eventSlug, fetchAuctionItems])
 
   // Load NPO branding when event is loaded
   useEffect(() => {
@@ -90,7 +93,7 @@ export function EventEditPage() {
   const handleSubmit = async (data: EventUpdateRequest) => {
     setIsSubmitting(true)
     try {
-      await updateEvent(eventId, data)
+      await updateEvent(resolvedEventId, data)
       toast.success('Event updated successfully!')
     } catch (err: unknown) {
       const error = err as { response?: { status: number } }
@@ -112,7 +115,7 @@ export function EventEditPage() {
     if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) return
 
     try {
-      await deleteEvent(eventId)
+      await deleteEvent(resolvedEventId)
       toast.success('Event deleted successfully')
       navigate({ to: '/events' })
     } catch (err) {
@@ -122,18 +125,19 @@ export function EventEditPage() {
   }
 
   const handleMediaUpload = async (file: File) => {
-    await uploadMedia(eventId, file)
+    await uploadMedia(resolvedEventId, file)
+    await loadEventById(resolvedEventId)
     // Note: Toast notification is shown by MediaUploader component
   }
 
   const handleMediaDelete = async (mediaId: string) => {
-    await deleteMedia(eventId, mediaId)
+    await deleteMedia(resolvedEventId, mediaId)
     // Note: Toast notification is shown by MediaUploader component
   }
 
   const handleLinkCreate = async (data: EventLinkCreateRequest) => {
     try {
-      await createLink(eventId, data)
+      await createLink(resolvedEventId, data)
       toast.success('Link added successfully!')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to add link'
@@ -143,7 +147,7 @@ export function EventEditPage() {
 
   const handleLinkDelete = async (linkId: string) => {
     try {
-      await deleteLink(eventId, linkId)
+      await deleteLink(resolvedEventId, linkId)
       toast.success('Link deleted successfully!')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete link'
@@ -153,7 +157,7 @@ export function EventEditPage() {
 
   const handleFoodOptionCreate = async (data: FoodOptionCreateRequest) => {
     try {
-      await createFoodOption(eventId, data)
+      await createFoodOption(resolvedEventId, data)
       toast.success('Food option added successfully!')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to add food option'
@@ -163,7 +167,7 @@ export function EventEditPage() {
 
   const handleFoodOptionDelete = async (optionId: string) => {
     try {
-      await deleteFoodOption(eventId, optionId)
+      await deleteFoodOption(resolvedEventId, optionId)
       toast.success('Food option deleted successfully!')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete food option'
@@ -365,7 +369,7 @@ export function EventEditPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <SponsorsTab eventId={eventId} />
+              <SponsorsTab eventId={resolvedEventId} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -383,17 +387,17 @@ export function EventEditPage() {
               <AuctionItemList
                 items={auctionItems}
                 isLoading={false}
-                onAdd={() => navigate({ to: '/events/$eventId/auction-items/create', params: { eventId } })}
-                onEdit={(item) => navigate({ to: '/events/$eventId/auction-items/$itemId/edit', params: { eventId, itemId: item.id } })}
-                onView={(item) => navigate({ to: '/events/$eventId/auction-items/$itemId', params: { eventId, itemId: item.id } })}
+                onAdd={() => navigate({ to: '/events/$eventSlug/auction-items/create', params: { eventSlug } })}
+                onEdit={(item) => navigate({ to: '/events/$eventSlug/auction-items/$itemId/edit', params: { eventSlug, itemId: item.id } })}
+                onView={(item) => navigate({ to: '/events/$eventSlug/auction-items/$itemId', params: { eventSlug, itemId: item.id } })}
                 onDelete={async (item) => {
                   if (!confirm(`Are you sure you want to delete "${item.title}"?`)) return;
                   const { deleteAuctionItem } = useAuctionItemStore.getState();
                   try {
-                    await deleteAuctionItem(eventId, item.id);
+                    await deleteAuctionItem(resolvedEventId, item.id);
                     toast.success('Auction item deleted successfully');
                     // Refresh the list
-                    fetchAuctionItems(eventId);
+                    fetchAuctionItems(resolvedEventId);
                   } catch (err) {
                     const message = err instanceof Error ? err.message : 'Failed to delete auction item';
                     toast.error(message);

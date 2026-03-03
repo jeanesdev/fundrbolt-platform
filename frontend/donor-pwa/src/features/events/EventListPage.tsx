@@ -48,8 +48,8 @@ export function EventListPage() {
     navigate({ to: '/events/create' })
   }
 
-  const handleEditClick = (eventId: string) => {
-    navigate({ to: '/events/$eventId/edit', params: { eventId } })
+  const handleEditClick = (eventSlug: string) => {
+    navigate({ to: '/events/$eventSlug/edit', params: { eventSlug } })
   }
 
   const handlePublish = async (eventId: string) => {
@@ -150,7 +150,7 @@ export function EventListPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleEditClick(event.id)}
+            onClick={() => handleEditClick(event.slug || event.id)}
           >
             Edit
           </Button>

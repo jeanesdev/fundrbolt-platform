@@ -33,11 +33,71 @@ export function MediaUploader({
   uploadProgress = {},
   uploadingFiles = {},
   maxFileSize = 10,
-  acceptedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'],
+  acceptedTypes = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'video/mp4',
+    'video/quicktime',
+    'application/pdf',
+  ],
 }: MediaUploaderProps) {
   const [dragActive, setDragActive] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [viewMedia, setViewMedia] = useState<EventMedia | null>(null)
+  const [imageRetries, setImageRetries] = useState<Record<string, number>>({})
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({})
+
+  const getUploadErrorMessage = (error: unknown): string => {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'response' in error &&
+      typeof (error as { response?: unknown }).response === 'object' &&
+      (error as { response?: unknown }).response !== null &&
+      'data' in ((error as { response: { data?: unknown } }).response)
+    ) {
+      const data = (error as { response: { data?: { detail?: unknown } } }).response.data
+      const detail = data?.detail
+      if (typeof detail === 'string') return detail
+      if (
+        detail &&
+        typeof detail === 'object' &&
+        'message' in detail &&
+        typeof (detail as { message?: unknown }).message === 'string'
+      ) {
+        return (detail as { message: string }).message
+      }
+    }
+
+    if (error instanceof Error) return error.message
+    return 'Unknown upload error'
+  }
+
+  const isImageMedia = (file: EventMedia) => {
+    return (
+      file.media_type === 'image' ||
+      file.mime_type?.startsWith('image/') ||
+      file.file_type?.startsWith('image/')
+    )
+  }
+
+  const getImageSrc = (file: EventMedia) => {
+    const retryCount = imageRetries[file.id] || 0
+    if (!retryCount) return file.file_url
+    const separator = file.file_url.includes('?') ? '&' : '?'
+    return `${file.file_url}${separator}retry=${retryCount}`
+  }
+
+  const handleImageError = (file: EventMedia) => {
+    const retryCount = imageRetries[file.id] || 0
+    if (retryCount < 2) {
+      setImageRetries((prev) => ({ ...prev, [file.id]: retryCount + 1 }))
+      return
+    }
+    setFailedImages((prev) => ({ ...prev, [file.id]: true }))
+  }
 
   const validateFile = useCallback((file: File): string | null => {
     if (file.size > maxFileSize * 1024 * 1024) {
@@ -51,20 +111,36 @@ export function MediaUploader({
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files)
+    let uploadedCount = 0
+    let failedCount = 0
+    const failureReasons: string[] = []
 
     for (const file of fileArray) {
       const error = validateFile(file)
       if (error) {
-        toast.error(error)
+        failedCount += 1
+        failureReasons.push(`${file.name}: ${error}`)
         continue
       }
 
       try {
         await onUpload(file)
-        toast.success(`${file.name} uploaded successfully`)
-      } catch (_err) {
-        toast.error(`Failed to upload ${file.name}`)
+        uploadedCount += 1
+      } catch (err) {
+        failedCount += 1
+        failureReasons.push(`${file.name}: ${getUploadErrorMessage(err)}`)
       }
+    }
+
+    if (uploadedCount > 0) {
+      toast.success(
+        `Uploaded ${uploadedCount} file${uploadedCount === 1 ? '' : 's'} successfully`
+      )
+    }
+
+    if (failedCount > 0) {
+      toast.error(`Failed to upload ${failedCount} file${failedCount === 1 ? '' : 's'}`)
+      failureReasons.slice(0, 3).forEach((reason) => toast.error(reason))
     }
   }, [onUpload, validateFile])
 
@@ -180,7 +256,7 @@ export function MediaUploader({
           </Button>
 
           <p className="text-xs text-muted-foreground mt-4">
-            Max file size: {maxFileSize}MB | Accepted: Images, PDFs
+            Max file size: {maxFileSize}MB | Accepted: Images, Videos, PDFs
           </p>
         </CardContent>
       </Card>
@@ -197,22 +273,17 @@ export function MediaUploader({
                   {/* Thumbnail or File Icon */}
                   <div
                     className="flex-shrink-0 cursor-pointer"
-                    onClick={() => file.mime_type?.startsWith('image/') && setViewMedia(file)}
+                    onClick={() => isImageMedia(file) && setViewMedia(file)}
                   >
-                    {file.mime_type?.startsWith('image/') ? (
+                    {isImageMedia(file) && !failedImages[file.id] ? (
                       <img
-                        src={file.file_url}
+                        src={getImageSrc(file)}
                         alt={file.file_name}
                         className="h-16 w-16 object-cover rounded border hover:opacity-80 transition-opacity"
-                        onError={(e) => {
-                          // Fallback to icon if image fails to load
-                          e.currentTarget.style.display = 'none'
-                          const icon = e.currentTarget.nextElementSibling
-                          if (icon) icon.classList.remove('hidden')
-                        }}
+                        onError={() => handleImageError(file)}
                       />
                     ) : null}
-                    <div className={file.mime_type?.startsWith('image/') ? 'hidden' : ''}>
+                    <div className={isImageMedia(file) && !failedImages[file.id] ? 'hidden' : ''}>
                       {getFileIcon(file.file_type)}
                     </div>
                   </div>
@@ -312,11 +383,12 @@ export function MediaUploader({
               <div className="relative group">
                 {/* Media Display */}
                 <div className="flex items-center justify-center bg-muted min-h-[400px] max-h-[60vh]">
-                  {viewMedia.mime_type?.startsWith('image/') ? (
+                  {isImageMedia(viewMedia) && !failedImages[viewMedia.id] ? (
                     <img
-                      src={viewMedia.file_url}
+                      src={getImageSrc(viewMedia)}
                       alt={viewMedia.file_name}
                       className="max-w-full max-h-[60vh] object-contain"
+                      onError={() => handleImageError(viewMedia)}
                     />
                   ) : (
                     <div className="text-center p-8">

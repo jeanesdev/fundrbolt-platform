@@ -10,8 +10,10 @@ import { useEventStore } from '@/stores/event-store'
 import { useSponsorStore } from '@/stores/sponsorStore'
 import type {
   EventLinkCreateRequest,
+  EventMediaUsageTag,
   EventUpdateRequest,
   FoodOptionCreateRequest,
+  MediaUpdateRequest,
 } from '@/types/event'
 import { Outlet, useLocation, useNavigate, useParams } from '@tanstack/react-router'
 import { Clock } from 'lucide-react'
@@ -38,6 +40,7 @@ export function EventEditPage() {
     updateEvent,
     deleteEvent,
     uploadMedia,
+    updateMedia,
     deleteMedia,
     createLink,
     deleteLink,
@@ -126,9 +129,13 @@ export function EventEditPage() {
     }
   }
 
-  const handleMediaUpload = async (file: File) => {
-    await uploadMedia(apiEventId, file)
+  const handleMediaUpload = async (file: File, usageTag: EventMediaUsageTag) => {
+    await uploadMedia(apiEventId, file, usageTag)
     // Note: Toast notification is shown by MediaUploader component
+  }
+
+  const handleMediaUpdate = async (mediaId: string, data: MediaUpdateRequest) => {
+    await updateMedia(apiEventId, mediaId, data)
   }
 
   const handleMediaDelete = async (mediaId: string) => {
@@ -197,6 +204,7 @@ export function EventEditPage() {
     handleCancel,
     handleDelete,
     handleMediaUpload,
+    handleMediaUpdate,
     handleMediaDelete,
     handleLinkCreate,
     handleLinkDelete,

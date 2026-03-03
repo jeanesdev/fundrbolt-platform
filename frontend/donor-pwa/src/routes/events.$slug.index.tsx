@@ -107,6 +107,16 @@ function RouteComponent() {
   const isUpcoming =
     eventDate && !isPast && eventDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
+  const heroImageFromTag =
+    event.media?.find(
+      (media) => media.media_type === 'image' && media.usage_tag === 'main_event_page_hero' && !!media.file_url
+    )?.file_url ?? null
+  const eventLogoFromTag =
+    event.media?.find(
+      (media) => media.media_type === 'image' && media.usage_tag === 'event_logo' && !!media.file_url
+    )?.file_url ?? null
+  const publicHeroImageUrl = heroImageFromTag || eventLogoFromTag || event.logo_url
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header with back button */}
@@ -128,10 +138,10 @@ function RouteComponent() {
       {/* Main content */}
       <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-8 space-y-6">
         {/* Event image/thumbnail */}
-        {event.logo_url && (
+        {publicHeroImageUrl && (
           <div className="rounded-lg overflow-hidden bg-muted">
             <img
-              src={event.logo_url}
+              src={publicHeroImageUrl}
               alt={event.name}
               className="w-full h-64 object-cover"
             />

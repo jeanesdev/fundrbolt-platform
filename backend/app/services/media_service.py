@@ -4,16 +4,22 @@ import logging
 import mimetypes
 import uuid
 from datetime import datetime, timedelta
+from urllib.parse import quote
 
 import pytz
-from azure.storage.blob import BlobSasPermissions, BlobServiceClient, generate_blob_sas
+from azure.storage.blob import (
+    BlobSasPermissions,
+    BlobServiceClient,
+    ContentSettings,
+    generate_blob_sas,
+)
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.metrics import EVENT_MEDIA_SCAN_RESULTS_TOTAL, EVENT_MEDIA_UPLOADS_TOTAL
-from app.models.event import EventMedia, EventMediaStatus, EventMediaType
+from app.models.event import EventMedia, EventMediaStatus, EventMediaType, EventMediaUsageTag
 from app.models.user import User
 
 settings = get_settings()
@@ -56,6 +62,18 @@ class MediaService:
         return BlobServiceClient.from_connection_string(settings.azure_storage_connection_string)
 
     @staticmethod
+    def _extract_account_key_from_connection_string() -> str | None:
+        """Extract AccountKey from Azure Storage connection string if present."""
+        connection_string = settings.azure_storage_connection_string
+        if not connection_string:
+            return None
+
+        for part in connection_string.split(";"):
+            if part.startswith("AccountKey="):
+                return part.split("=", 1)[1]
+        return None
+
+    @staticmethod
     def generate_read_sas_url(blob_name: str, expiry_hours: int = 24) -> str:
         """
         Generate a SAS URL with read permissions for a blob.
@@ -82,6 +100,9 @@ class MediaService:
             account_key = blob_client.credential.account_key
 
         if not account_key:
+            account_key = MediaService._extract_account_key_from_connection_string()
+
+        if not account_key:
             # Fallback to base URL without SAS
             return f"https://{account_name}.blob.core.windows.net/{container_name}/{blob_name}"
 
@@ -95,8 +116,9 @@ class MediaService:
             expiry=datetime.now(pytz.UTC) + timedelta(hours=expiry_hours),
         )
 
+        encoded_blob_name = quote(blob_name, safe="/~-._")
         base_url = f"https://{account_name}.blob.core.windows.net"
-        return f"{base_url}/{container_name}/{blob_name}?{sas_token}"
+        return f"{base_url}/{container_name}/{encoded_blob_name}?{sas_token}"
 
     @staticmethod
     async def generate_upload_url(
@@ -105,6 +127,7 @@ class MediaService:
         filename: str,
         file_size: int,
         media_type: EventMediaType,
+        usage_tag: EventMediaUsageTag,
         current_user: User,
     ) -> tuple[str, uuid.UUID]:
         """
@@ -190,6 +213,7 @@ class MediaService:
             id=media_id,
             event_id=event_id,
             media_type=media_type,
+            usage_tag=usage_tag,
             file_name=filename,
             file_size=file_size,
             file_type=mime_type,  # Keep for backward compatibility
@@ -279,6 +303,113 @@ class MediaService:
         # scan_uploaded_file.delay(str(media_id))
 
         logger.info(f"Media {media_id} marked for scanning")
+        return media
+
+    @staticmethod
+    async def upload_file_direct(
+        db: AsyncSession,
+        event_id: uuid.UUID,
+        filename: str,
+        file_bytes: bytes,
+        content_type: str,
+        media_type: EventMediaType,
+        usage_tag: EventMediaUsageTag,
+        current_user: User,
+    ) -> EventMedia:
+        """Upload media file via backend and persist EventMedia in one step."""
+        file_size = len(file_bytes)
+
+        if file_size <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Uploaded file is empty",
+            )
+
+        if file_size > MediaService.MAX_FILE_SIZE_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=(
+                    f"File size {file_size / 1024 / 1024:.2f}MB exceeds "
+                    f"limit of {MediaService.MAX_FILE_SIZE_MB}MB"
+                ),
+            )
+
+        total_query = select(func.sum(EventMedia.file_size)).where(EventMedia.event_id == event_id)
+        result = await db.execute(total_query)
+        current_total = result.scalar() or 0
+
+        if current_total + file_size > MediaService.MAX_TOTAL_SIZE_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"Total media size would exceed {MediaService.MAX_TOTAL_SIZE_MB}MB limit",
+            )
+
+        if media_type == EventMediaType.IMAGE:
+            allowed_types = MediaService.ALLOWED_IMAGE_TYPES
+        elif media_type == EventMediaType.VIDEO:
+            allowed_types = MediaService.ALLOWED_VIDEO_TYPES
+        elif media_type == EventMediaType.FLYER:
+            allowed_types = MediaService.ALLOWED_DOCUMENT_TYPES
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid media type: {media_type}",
+            )
+
+        if content_type not in allowed_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File type {content_type} not allowed for {media_type.value}",
+            )
+
+        media_id = uuid.uuid4()
+        blob_name = f"events/{event_id}/{media_id}/{filename}"
+        container_name = settings.azure_storage_container_name or "event-media"
+
+        blob_client = MediaService._get_blob_client()
+
+        try:
+            blob = blob_client.get_blob_client(container=container_name, blob=blob_name)
+            blob.upload_blob(
+                file_bytes,
+                overwrite=True,
+                content_settings=ContentSettings(content_type=content_type),
+            )
+        except Exception as exc:
+            logger.exception("Direct blob upload failed for event %s", event_id)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Failed to upload media to storage",
+            ) from exc
+
+        if blob_client.url:
+            base_url = blob_client.url.rstrip("/")
+            file_url = f"{base_url}/{container_name}/{blob_name}"
+        else:
+            account_name = settings.azure_storage_account_name or "storage"
+            file_url = f"https://{account_name}.blob.core.windows.net/{container_name}/{blob_name}"
+
+        media = EventMedia(
+            id=media_id,
+            event_id=event_id,
+            media_type=media_type,
+            usage_tag=usage_tag,
+            file_name=filename,
+            file_size=file_size,
+            file_type=content_type,
+            mime_type=content_type,
+            blob_name=blob_name,
+            file_url=file_url,
+            status=EventMediaStatus.SCANNED,
+            uploaded_by=current_user.id,
+            display_order=0,
+        )
+
+        db.add(media)
+        await db.commit()
+        await db.refresh(media)
+
+        EVENT_MEDIA_UPLOADS_TOTAL.labels(status="success").inc()
         return media
 
     @staticmethod

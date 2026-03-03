@@ -45,7 +45,10 @@ export function EventCreatePage() {
       }
 
       toast.success('Event created successfully!')
-      navigate({ to: '/events/$eventId/edit', params: { eventId: createdEvent.id } })
+      navigate({
+        to: '/events/$eventSlug/edit',
+        params: { eventSlug: createdEvent.slug ?? createdEvent.id },
+      })
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create event'
       toast.error(errorMessage)

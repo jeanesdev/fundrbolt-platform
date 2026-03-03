@@ -29,35 +29,35 @@ const formatCurrency = (amount: number | null): string => {
 
 export function AuctionItemDetailPage() {
   const navigate = useNavigate();
-  const { eventId, itemId } = useParams({
-    from: '/_authenticated/events/$eventId/auction-items/$itemId/',
+  const { eventSlug, itemId } = useParams({
+    from: '/_authenticated/events/$eventSlug/auction-items/$itemId/',
   });
 
   const { selectedItem, isLoading, getAuctionItem, clearSelectedItem } =
     useAuctionItemStore();
 
   useEffect(() => {
-    getAuctionItem(eventId, itemId).catch((err) => {
+    getAuctionItem(eventSlug, itemId).catch((err) => {
       toast.error(
         err instanceof Error ? err.message : 'Failed to load auction item'
       );
-      navigate({ to: '/events/$eventId/auction-items', params: { eventId } });
+      navigate({ to: '/events/$eventSlug/auction-items', params: { eventSlug } });
     });
 
     return () => {
       clearSelectedItem();
     };
-  }, [eventId, itemId, getAuctionItem, clearSelectedItem, navigate]);
+  }, [eventSlug, itemId, getAuctionItem, clearSelectedItem, navigate]);
 
   const handleEdit = () => {
     navigate({
-      to: '/events/$eventId/auction-items/$itemId/edit',
-      params: { eventId, itemId },
+      to: '/events/$eventSlug/auction-items/$itemId/edit',
+      params: { eventSlug, itemId },
     });
   };
 
   const handleBack = () => {
-    navigate({ to: '/events/$eventId/auction-items', params: { eventId } });
+    navigate({ to: '/events/$eventSlug/auction-items', params: { eventSlug } });
   };
 
   if (isLoading || !selectedItem) {
