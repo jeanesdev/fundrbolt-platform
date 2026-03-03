@@ -7,7 +7,7 @@
  */
 
 import { cn } from '@/lib/utils'
-import { Gavel, Home, UserRound } from 'lucide-react'
+import { Heart, PartyPopper, Ticket } from 'lucide-react'
 
 export type DonorTab = 'home' | 'auction' | 'seat'
 
@@ -18,9 +18,9 @@ interface TabConfig {
 }
 
 const TABS: TabConfig[] = [
-  { id: 'home', label: 'Home', icon: Home },
-  { id: 'auction', label: 'Bid', icon: Gavel },
-  { id: 'seat', label: 'My Info', icon: UserRound },
+  { id: 'home', label: 'Our Cause', icon: Heart },
+  { id: 'auction', label: 'Win it', icon: PartyPopper },
+  { id: 'seat', label: 'My Event', icon: Ticket },
 ]
 
 export interface BottomTabNavProps {
@@ -43,9 +43,17 @@ export function BottomTabNav({
       style={{
         backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
         borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
+        boxShadow: '0 -14px 30px rgb(0 0 0 / 0.26), 0 -3px 10px rgb(0 0 0 / 0.18)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
+      <div
+        aria-hidden='true'
+        className='pointer-events-none absolute -top-6 left-0 right-0 h-6'
+        style={{
+          background: 'linear-gradient(to top, rgb(0 0 0 / 0.16), rgb(0 0 0 / 0))',
+        }}
+      />
       <div className='flex items-stretch h-16'>
         {TABS.map((tab) => {
           const isActive = tab.id === activeTab
