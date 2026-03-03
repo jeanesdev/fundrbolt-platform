@@ -16,7 +16,6 @@ import type {
   FoodOption,
   FoodOptionCreateRequest,
   FoodOptionUpdateRequest,
-  MediaUploadRequest,
 } from '@/types/event'
 import { create } from 'zustand'
 
@@ -328,38 +327,38 @@ export const useEventStore = create<EventState>((set, get) => ({
         media_type = 'flyer'
       }
 
-      // Step 1: Request upload URL
-      const uploadData: MediaUploadRequest = {
-        file_name: file.name,
-        file_type: file.type,
-        file_size: file.size,
-        media_type,
-      }
-      const { upload_url, media_id } = await eventService.media.requestUploadUrl(
-        eventId,
-        uploadData
-      )
-
-      // Step 2: Upload file to Azure Blob Storage
+      // Step 1: Upload file via backend endpoint
       set((state) => ({
         uploadProgress: { ...state.uploadProgress, [fileId]: 50 },
       }))
-      await eventService.media.uploadFile(upload_url, file)
+      const media = await eventService.media.uploadDirect(
+        eventId,
+        file,
+        media_type,
+        'main_event_page_hero'
+      )
 
-      // Step 3: Confirm upload
       set((state) => ({
         uploadProgress: { ...state.uploadProgress, [fileId]: 90 },
       }))
-      const media = await eventService.media.confirmUpload(eventId, { media_id })
 
-      // Step 4: Update current event with new media
+      // Step 2: Refresh event from API so UI reflects new media immediately
+      let refreshedEvent: EventDetail | null = null
+      try {
+        refreshedEvent = await eventService.getEvent(eventId)
+      } catch {
+        refreshedEvent = null
+      }
+
       set((state) => ({
-        currentEvent: state.currentEvent
-          ? {
-            ...state.currentEvent,
-            media: [...(state.currentEvent.media || []).filter(Boolean), media],
-          }
-          : null,
+        currentEvent: refreshedEvent
+          ? refreshedEvent
+          : state.currentEvent
+            ? {
+              ...state.currentEvent,
+              media: [...(state.currentEvent.media || []).filter(Boolean), media],
+            }
+            : null,
         uploadProgress: { ...state.uploadProgress, [fileId]: 100 },
         uploadingFiles: { ...state.uploadingFiles, [fileId]: false },
       }))

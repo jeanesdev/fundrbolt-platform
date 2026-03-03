@@ -30,19 +30,19 @@ import { toast } from 'sonner'
 
 export function EventViewPage() {
   const navigate = useNavigate()
-  const { eventId } = useParams({ strict: false }) as { eventId: string }
+  const { eventSlug } = useParams({ strict: false }) as { eventSlug: string }
   const { currentEvent, eventsLoading, loadEventById } = useEventStore()
   const { sponsors, fetchSponsors } = useSponsorStore()
   const { items: auctionItems, fetchAuctionItems } = useAuctionItemStore()
 
   const loadEvent = useCallback(() => {
-    if (eventId) {
-      loadEventById(eventId).catch(() => {
+    if (eventSlug) {
+      loadEventById(eventSlug).catch(() => {
         toast.error('Failed to load event')
         navigate({ to: '/home' })
       })
     }
-  }, [eventId, loadEventById, navigate])
+  }, [eventSlug, loadEventById, navigate])
 
   useEffect(() => {
     loadEvent()
@@ -50,17 +50,17 @@ export function EventViewPage() {
 
   // Load sponsors
   useEffect(() => {
-    if (eventId) {
-      fetchSponsors(eventId).catch(() => { })
+    if (eventSlug) {
+      fetchSponsors(eventSlug).catch(() => { })
     }
-  }, [eventId, fetchSponsors])
+  }, [eventSlug, fetchSponsors])
 
   // Load auction items
   useEffect(() => {
-    if (eventId) {
-      fetchAuctionItems(eventId).catch(() => { })
+    if (eventSlug) {
+      fetchAuctionItems(eventSlug).catch(() => { })
     }
-  }, [eventId, fetchAuctionItems])
+  }, [eventSlug, fetchAuctionItems])
 
   // Format datetime for display
   const formatDateTime = (dateTimeStr?: string | null) => {

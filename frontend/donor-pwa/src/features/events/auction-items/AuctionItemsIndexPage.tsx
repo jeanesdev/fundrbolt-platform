@@ -21,41 +21,41 @@ import { toast } from 'sonner';
 
 export function AuctionItemsIndexPage() {
   const navigate = useNavigate();
-  const { eventId } = useParams({
-    from: '/_authenticated/events/$eventId/auction-items/',
+  const { eventSlug } = useParams({
+    from: '/_authenticated/events/$eventSlug/auction-items/',
   });
 
   const { items, isLoading, error, fetchAuctionItems, deleteAuctionItem } =
     useAuctionItemStore();
 
   useEffect(() => {
-    if (eventId) {
-      fetchAuctionItems(eventId).catch((err) => {
+    if (eventSlug) {
+      fetchAuctionItems(eventSlug).catch((err) => {
         toast.error(
           err instanceof Error ? err.message : 'Failed to load auction items'
         );
       });
     }
-  }, [eventId, fetchAuctionItems]);
+  }, [eventSlug, fetchAuctionItems]);
 
   const handleAdd = () => {
     navigate({
-      to: '/events/$eventId/auction-items/create',
-      params: { eventId },
+      to: '/events/$eventSlug/auction-items/create',
+      params: { eventSlug },
     });
   };
 
   const handleEdit = (item: AuctionItem) => {
     navigate({
-      to: '/events/$eventId/auction-items/$itemId/edit',
-      params: { eventId, itemId: item.id },
+      to: '/events/$eventSlug/auction-items/$itemId/edit',
+      params: { eventSlug, itemId: item.id },
     });
   };
 
   const handleView = (item: AuctionItem) => {
     navigate({
-      to: '/events/$eventId/auction-items/$itemId',
-      params: { eventId, itemId: item.id },
+      to: '/events/$eventSlug/auction-items/$itemId',
+      params: { eventSlug, itemId: item.id },
     });
   };
 
@@ -69,7 +69,7 @@ export function AuctionItemsIndexPage() {
     }
 
     try {
-      await deleteAuctionItem(eventId, item.id);
+      await deleteAuctionItem(eventSlug, item.id);
       toast.success('Auction item deleted successfully');
     } catch (err) {
       toast.error(
@@ -79,7 +79,7 @@ export function AuctionItemsIndexPage() {
   };
 
   const handleBack = () => {
-    navigate({ to: '/events/$eventId/edit', params: { eventId } });
+    navigate({ to: '/events/$eventSlug/edit', params: { eventSlug } });
   };
 
   return (

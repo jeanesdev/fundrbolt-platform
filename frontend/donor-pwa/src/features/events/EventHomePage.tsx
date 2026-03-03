@@ -35,6 +35,7 @@ import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { useEventContextStore } from '@/stores/event-context-store'
 import { useEventStore } from '@/stores/event-store'
 import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
+import type { EventMediaUsageTag } from '@/types/event'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
 import {
   keepPreviousData,
@@ -126,6 +127,22 @@ export function EventHomePage() {
   const prefetchedAuctionImagesRef = useRef<Set<string>>(new Set())
   const queryClient = useQueryClient()
   const tabOrder: DonorTab[] = ['home', 'auction', 'seat']
+
+  const getTaggedImageUrls = useCallback(
+    (tag: EventMediaUsageTag) => {
+      if (!currentEvent?.media?.length) return []
+
+      return currentEvent.media
+        .filter((media) => media.media_type === 'image' && media.usage_tag === tag && !!media.file_url)
+        .map((media) => media.file_url)
+    },
+    [currentEvent]
+  )
+
+  const getTaggedImageUrl = useCallback(
+    (tag: EventMediaUsageTag) => getTaggedImageUrls(tag)[0] ?? null,
+    [getTaggedImageUrls]
+  )
 
   const resolveEventDateTime = useCallback((event: typeof currentEvent): string | null => {
     if (!event) return null
@@ -396,7 +413,13 @@ export function EventHomePage() {
     const is_upcoming =
       !is_past &&
       eventDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+    const taggedHeroThumbnail = getTaggedImageUrl('main_event_page_hero')
+    const taggedEventLogo = getTaggedImageUrl('event_logo')
+    const taggedNpoLogo = getTaggedImageUrl('npo_logo')
     const thumbnail_url: string | null =
+      taggedHeroThumbnail ||
+      taggedEventLogo ||
+      taggedNpoLogo ||
       ('banner_url' in currentEvent ? (currentEvent as { banner_url?: string | null }).banner_url ?? null : null) ||
       currentEvent.media?.[0]?.file_url ||
       null
@@ -414,9 +437,15 @@ export function EventHomePage() {
       background_color: currentEvent.background_color || '#FFFFFF',
       accent_color: currentEvent.accent_color || '#3B82F6',
       npo_name: currentEvent.npo_name || 'Organization',
-      npo_logo_url: null,
+      npo_logo_url: taggedNpoLogo,
     }
-  }, [currentEvent, timeBaseRealMs, timeBaseSpoofMs, resolveEventDateTime])
+  }, [
+    currentEvent,
+    timeBaseRealMs,
+    timeBaseSpoofMs,
+    resolveEventDateTime,
+    getTaggedImageUrl,
+  ])
 
   const handleEventSelect = useCallback(
     (event: RegisteredEventWithBranding) => {
@@ -454,13 +483,15 @@ export function EventHomePage() {
 
   // Venue map link
   const venueMapLink = useMemo(() => {
+    const taggedLayoutMap = getTaggedImageUrl('event_layout_map')
+    if (taggedLayoutMap) return taggedLayoutMap
     if (!currentEvent?.venue_address) return null
     const parts = [currentEvent.venue_address]
     if (currentEvent.venue_city) parts.push(currentEvent.venue_city)
     if (currentEvent.venue_state) parts.push(currentEvent.venue_state)
     if (currentEvent.venue_zip) parts.push(currentEvent.venue_zip)
     return `https://maps.google.com/?q=${encodeURIComponent(parts.join(', '))}`
-  }, [currentEvent])
+  }, [currentEvent, getTaggedImageUrl])
 
   // Add to calendar
   const generateICSFile = useCallback(() => {
@@ -689,6 +720,11 @@ export function EventHomePage() {
 
   // ─── Derived values ──────────────────────────────────────────────────────────
   const getHeroImageUrls = () => {
+    const taggedHeroImages = getTaggedImageUrls('main_event_page_hero')
+    if (taggedHeroImages.length > 0) {
+      return taggedHeroImages
+    }
+
     const urls = new Set<string>()
 
     if (currentEvent.media?.length) {
@@ -712,6 +748,8 @@ export function EventHomePage() {
   }
   const heroImageUrls = getHeroImageUrls()
   const bannerUrl = heroImageUrls[0] ?? null
+  const taggedEventLogo = getTaggedImageUrl('event_logo')
+  const taggedNpoLogo = getTaggedImageUrl('npo_logo')
   const countdownTargetDate =
     currentEvent.event_datetime ||
     ('event_date' in currentEvent
@@ -719,6 +757,8 @@ export function EventHomePage() {
       : null)
 
   const getLogoUrl = () => {
+    if (taggedEventLogo) return taggedEventLogo
+    if (taggedNpoLogo) return taggedNpoLogo
     if (!currentEvent.media?.length) return null
     // Prefer image with "logo" in name, else first image
     const logo = currentEvent.media.find(
@@ -790,6 +830,7 @@ export function EventHomePage() {
       logoUrl={getLogoUrl()}
       bannerUrl={bannerUrl}
       bannerImages={heroImageUrls}
+      transitionStyle={currentEvent.hero_transition_style}
       eventDate={resolveEventDateTime(currentEvent)}
       venueName={currentEvent.venue_name}
       status={eventStatus}

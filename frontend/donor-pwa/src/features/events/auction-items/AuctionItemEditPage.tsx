@@ -22,8 +22,8 @@ import { toast } from 'sonner';
 
 export function AuctionItemEditPage() {
   const navigate = useNavigate();
-  const { eventId, itemId } = useParams({
-    from: '/_authenticated/events/$eventId/auction-items/$itemId/edit',
+  const { eventSlug, itemId } = useParams({
+    from: '/_authenticated/events/$eventSlug/auction-items/$itemId/edit',
   });
 
   const {
@@ -38,27 +38,27 @@ export function AuctionItemEditPage() {
 
   // Load item on mount
   useEffect(() => {
-    getAuctionItem(eventId, itemId).catch((err) => {
+    getAuctionItem(eventSlug, itemId).catch((err) => {
       toast.error(
         err instanceof Error ? err.message : 'Failed to load auction item'
       );
-      navigate({ to: '/events/$eventId/auction-items', params: { eventId } });
+      navigate({ to: '/events/$eventSlug/auction-items', params: { eventSlug } });
     });
 
     // Cleanup on unmount
     return () => {
       clearSelectedItem();
     };
-  }, [eventId, itemId, getAuctionItem, clearSelectedItem, navigate]);
+  }, [eventSlug, itemId, getAuctionItem, clearSelectedItem, navigate]);
 
   const handleSubmit = async (data: AuctionItemUpdate) => {
     setIsSubmitting(true);
     try {
-      await updateAuctionItem(eventId, itemId, data);
+      await updateAuctionItem(eventSlug, itemId, data);
       toast.success('Auction item updated successfully!');
       navigate({
-        to: '/events/$eventId/auction-items',
-        params: { eventId },
+        to: '/events/$eventSlug/auction-items',
+        params: { eventSlug },
       });
     } catch (err) {
       const errorMessage =
@@ -70,7 +70,7 @@ export function AuctionItemEditPage() {
   };
 
   const handleCancel = () => {
-    navigate({ to: '/events/$eventId/auction-items', params: { eventId } });
+    navigate({ to: '/events/$eventSlug/auction-items', params: { eventSlug } });
   };
 
   if (isLoading || !selectedItem) {
@@ -126,7 +126,7 @@ export function AuctionItemEditPage() {
         <CardContent>
           <AuctionItemForm
             item={selectedItem}
-            eventId={eventId}
+            eventId={eventSlug}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             isSubmitting={isSubmitting}

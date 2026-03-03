@@ -2,7 +2,8 @@
 
 import logging
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
+from urllib.parse import unquote, urlparse
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,6 +24,31 @@ from app.services.event_service import EventService
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/events", tags=["events"])
+
+
+def _add_sas_urls_to_media(response_dict: dict[str, Any]) -> None:
+    """Replace media file URLs with read SAS URLs in-place."""
+    if not response_dict.get("media"):
+        return
+
+    from app.services.media_service import MediaService
+
+    for media_item in response_dict["media"]:
+        file_url = media_item.get("file_url", "")
+        if not file_url:
+            continue
+
+        parsed_url = urlparse(file_url)
+        path = parsed_url.path.lstrip("/")
+        if not path:
+            continue
+
+        path_parts = path.split("/", 1)
+        if len(path_parts) < 2:
+            continue
+
+        blob_name = unquote(path_parts[1])
+        media_item["file_url"] = MediaService.generate_read_sas_url(blob_name)
 
 
 @router.post("", response_model=EventDetailResponse, status_code=status.HTTP_201_CREATED)
@@ -49,10 +75,12 @@ async def create_event(
             detail=f"Event with ID {event.id} not found",
         )
 
-    # Manually construct response to include NPO name
-    event_dict = event_with_npo.__dict__.copy()
-    event_dict["npo_name"] = event_with_npo.npo.name if event_with_npo.npo else None
-    return EventDetailResponse(**event_dict)
+    response_dict = EventDetailResponse.model_validate(
+        event_with_npo, from_attributes=True
+    ).model_dump()
+    response_dict["npo_name"] = event_with_npo.npo.name if event_with_npo.npo else None
+    _add_sas_urls_to_media(response_dict)
+    return EventDetailResponse(**response_dict)
 
 
 @router.get("/{event_id}", response_model=EventDetailResponse)
@@ -73,20 +101,7 @@ async def get_event(
     response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
     response_dict["npo_name"] = event.npo.name if event.npo else None
 
-    # Add SAS tokens to media URLs for read access
-    if response_dict.get("media"):
-        from app.services.media_service import MediaService
-
-        for media_item in response_dict["media"]:
-            # Extract blob_name from the existing file_url
-            # Format: https://account.blob.core.windows.net/container/blob_name
-            file_url = media_item.get("file_url", "")
-            if file_url:
-                # Extract blob_name (everything after container name)
-                parts = file_url.split("/")
-                if len(parts) >= 5:  # https://account.blob.core.windows.net/container/blob/path
-                    blob_name = "/".join(parts[4:])  # Get everything after container
-                    media_item["file_url"] = MediaService.generate_read_sas_url(blob_name)
+    _add_sas_urls_to_media(response_dict)
 
     return EventDetailResponse(**response_dict)
 
@@ -115,10 +130,10 @@ async def update_event(
         )
     event = reloaded_event
 
-    # Manually construct response to include NPO name
-    event_dict = event.__dict__.copy()
-    event_dict["npo_name"] = event.npo.name if event.npo else None
-    return EventDetailResponse(**event_dict)
+    response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
+    response_dict["npo_name"] = event.npo.name if event.npo else None
+    _add_sas_urls_to_media(response_dict)
+    return EventDetailResponse(**response_dict)
 
 
 @router.post("/{event_id}/publish", response_model=EventDetailResponse)
@@ -139,10 +154,10 @@ async def publish_event(
         )
     event = reloaded_event
 
-    # Manually construct response to include NPO name
-    event_dict = event.__dict__.copy()
-    event_dict["npo_name"] = event.npo.name if event.npo else None
-    return EventDetailResponse(**event_dict)
+    response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
+    response_dict["npo_name"] = event.npo.name if event.npo else None
+    _add_sas_urls_to_media(response_dict)
+    return EventDetailResponse(**response_dict)
 
 
 @router.post("/{event_id}/close", response_model=EventDetailResponse)
@@ -163,10 +178,10 @@ async def close_event(
         )
     event = reloaded_event
 
-    # Manually construct response to include NPO name
-    event_dict = event.__dict__.copy()
-    event_dict["npo_name"] = event.npo.name if event.npo else None
-    return EventDetailResponse(**event_dict)
+    response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
+    response_dict["npo_name"] = event.npo.name if event.npo else None
+    _add_sas_urls_to_media(response_dict)
+    return EventDetailResponse(**response_dict)
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -257,6 +272,7 @@ async def list_events(
                 venue_state=event.venue_state,
                 venue_zip=event.venue_zip,
                 logo_url=event.logo_url,
+                hero_transition_style=event.hero_transition_style,
                 created_at=event.created_at,
                 updated_at=event.updated_at,
             )
@@ -317,4 +333,6 @@ async def get_public_event(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Event with slug '{slug}' not found or not active",
         )
-    return EventDetailResponse.model_validate(event)
+    response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
+    _add_sas_urls_to_media(response_dict)
+    return EventDetailResponse(**response_dict)

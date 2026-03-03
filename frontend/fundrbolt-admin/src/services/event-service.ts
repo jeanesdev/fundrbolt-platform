@@ -20,6 +20,7 @@ import type {
   FoodOptionCreateRequest,
   FoodOptionUpdateRequest,
   MediaConfirmRequest,
+  MediaUpdateRequest,
   MediaUploadRequest,
   MediaUploadResponse,
 } from '@/types/event'
@@ -136,6 +137,30 @@ export const mediaApi = {
    */
   async deleteMedia(eventId: string, mediaId: string): Promise<void> {
     await apiClient.delete(`/events/${eventId}/media/${mediaId}`)
+  },
+
+  async updateMedia(
+    eventId: string,
+    mediaId: string,
+    data: MediaUpdateRequest
+  ): Promise<EventMedia> {
+    const response = await apiClient.patch<EventMedia>(`/events/${eventId}/media/${mediaId}`, data)
+    return response.data
+  },
+
+  async uploadDirect(
+    eventId: string,
+    file: File,
+    mediaType: 'image' | 'video' | 'flyer',
+    usageTag: string
+  ): Promise<EventMedia> {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('media_type', mediaType)
+    formData.append('usage_tag', usageTag)
+
+    const response = await apiClient.post<EventMedia>(`/events/${eventId}/media/upload`, formData)
+    return response.data
   },
 
   /**

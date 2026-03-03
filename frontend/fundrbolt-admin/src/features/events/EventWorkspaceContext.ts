@@ -1,12 +1,14 @@
-import { createContext } from 'react'
+import type { NPOBranding } from '@/services/event-service'
+import type { AuctionItem } from '@/types/auction-item'
 import type {
   EventDetail,
   EventLinkCreateRequest,
+  EventMediaUsageTag,
   EventUpdateRequest,
   FoodOptionCreateRequest,
+  MediaUpdateRequest,
 } from '@/types/event'
-import type { NPOBranding } from '@/services/event-service'
-import type { AuctionItem } from '@/types/auction-item'
+import { createContext } from 'react'
 
 export interface EventWorkspaceContextValue {
   eventId: string
@@ -20,7 +22,8 @@ export interface EventWorkspaceContextValue {
   handleSubmit: (data: EventUpdateRequest) => Promise<void>
   handleCancel: () => void
   handleDelete: () => Promise<void>
-  handleMediaUpload: (file: File) => Promise<void>
+  handleMediaUpload: (file: File, usageTag: EventMediaUsageTag) => Promise<void>
+  handleMediaUpdate: (mediaId: string, data: MediaUpdateRequest) => Promise<void>
   handleMediaDelete: (mediaId: string) => Promise<void>
   handleLinkCreate: (data: EventLinkCreateRequest) => Promise<void>
   handleLinkDelete: (linkId: string) => Promise<void>
