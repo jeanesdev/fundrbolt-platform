@@ -3,6 +3,7 @@
  * Displays current NPO members with role management and removal actions
  */
 
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { memberApi } from '@/services/npo-service'
 import type { MemberRole, NPOMember } from '@/types/npo'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -59,6 +61,7 @@ const roleLabels: Record<MemberRole, string> = {
 export function MemberList({ npoId, canManageMembers = false }: MemberListProps) {
   const queryClient = useQueryClient()
   const [memberToRemove, setMemberToRemove] = useState<NPOMember | null>(null)
+  const [viewMode, setViewMode] = useViewPreference('npo-members')
 
   // Fetch members
   const {
@@ -148,87 +151,139 @@ export function MemberList({ npoId, canManageMembers = false }: MemberListProps)
 
   return (
     <>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Joined</TableHead>
-              {canManageMembers && <TableHead className="w-[50px]"></TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {members.map((member) => (
-              <TableRow key={member.id}>
-                <TableCell className="font-medium">
-                  {member.user_full_name ||
-                    (member.user_first_name && member.user_last_name
-                      ? `${member.user_first_name} ${member.user_last_name}`
-                      : member.user_first_name || member.user_last_name || 'N/A')}
-                </TableCell>
-                <TableCell>{member.user_email}</TableCell>
-                <TableCell>
-                  <Badge className={roleColors[member.role]}>
-                    {roleLabels[member.role]}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {member.joined_at
-                    ? new Date(member.joined_at).toLocaleDateString()
-                    : 'N/A'}
-                </TableCell>
-                {canManageMembers && (
-                  <TableCell>
+      <div className='mb-2 flex justify-end'>
+        <DataTableViewToggle value={viewMode} onChange={setViewMode} />
+      </div>
+      {viewMode === 'card' ? (
+        <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+          {members.map((member) => {
+            const memberName = member.user_full_name ||
+              (member.user_first_name && member.user_last_name
+                ? `${member.user_first_name} ${member.user_last_name}`
+                : member.user_first_name || member.user_last_name || 'N/A')
+            return (
+              <div key={member.id} className='rounded-md border p-3 space-y-2'>
+                <div className='flex items-center justify-between'>
+                  <span className='font-medium'>{memberName}</span>
+                  {canManageMembers && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={member.role === 'admin'}
-                        >
-                          <MoreVertical className="h-4 w-4" />
+                        <Button variant='ghost' size='sm' disabled={member.role === 'admin'}>
+                          <MoreVertical className='h-4 w-4' />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => handleRoleUpdate(member, 'admin')}
-                          disabled={member.role === 'admin'}
-                        >
-                          <Shield className="mr-2 h-4 w-4" />
-                          Make Admin
+                      <DropdownMenuContent align='end'>
+                        <DropdownMenuItem onClick={() => handleRoleUpdate(member, 'admin')} disabled={member.role === 'admin'}>
+                          <Shield className='mr-2 h-4 w-4' /> Make Admin
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleRoleUpdate(member, 'co_admin')}
-                          disabled={member.role === 'co_admin'}
-                        >
-                          <UserCog className="mr-2 h-4 w-4" />
-                          Make Co-Admin
+                        <DropdownMenuItem onClick={() => handleRoleUpdate(member, 'co_admin')} disabled={member.role === 'co_admin'}>
+                          <UserCog className='mr-2 h-4 w-4' /> Make Co-Admin
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleRoleUpdate(member, 'staff')}
-                          disabled={member.role === 'staff'}
-                        >
-                          <UserCog className="mr-2 h-4 w-4" />
-                          Make Staff
+                        <DropdownMenuItem onClick={() => handleRoleUpdate(member, 'staff')} disabled={member.role === 'staff'}>
+                          <UserCog className='mr-2 h-4 w-4' /> Make Staff
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleRemoveMember(member)}
-                          className="text-red-600"
-                        >
-                          <UserMinus className="mr-2 h-4 w-4" />
-                          Remove Member
+                        <DropdownMenuItem onClick={() => handleRemoveMember(member)} className='text-red-600'>
+                          <UserMinus className='mr-2 h-4 w-4' /> Remove Member
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </TableCell>
-                )}
+                  )}
+                </div>
+                <dl className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
+                  <dt className='text-muted-foreground'>Email</dt>
+                  <dd className='truncate'>{member.user_email}</dd>
+                  <dt className='text-muted-foreground'>Role</dt>
+                  <dd><Badge className={roleColors[member.role]}>{roleLabels[member.role]}</Badge></dd>
+                  <dt className='text-muted-foreground'>Joined</dt>
+                  <dd>{member.joined_at ? new Date(member.joined_at).toLocaleDateString() : 'N/A'}</dd>
+                </dl>
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Joined</TableHead>
+                {canManageMembers && <TableHead className="w-[50px]"></TableHead>}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {members.map((member) => (
+                <TableRow key={member.id}>
+                  <TableCell className="font-medium">
+                    {member.user_full_name ||
+                      (member.user_first_name && member.user_last_name
+                        ? `${member.user_first_name} ${member.user_last_name}`
+                        : member.user_first_name || member.user_last_name || 'N/A')}
+                  </TableCell>
+                  <TableCell>{member.user_email}</TableCell>
+                  <TableCell>
+                    <Badge className={roleColors[member.role]}>
+                      {roleLabels[member.role]}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {member.joined_at
+                      ? new Date(member.joined_at).toLocaleDateString()
+                      : 'N/A'}
+                  </TableCell>
+                  {canManageMembers && (
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={member.role === 'admin'}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handleRoleUpdate(member, 'admin')}
+                            disabled={member.role === 'admin'}
+                          >
+                            <Shield className="mr-2 h-4 w-4" />
+                            Make Admin
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleRoleUpdate(member, 'co_admin')}
+                            disabled={member.role === 'co_admin'}
+                          >
+                            <UserCog className="mr-2 h-4 w-4" />
+                            Make Co-Admin
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleRoleUpdate(member, 'staff')}
+                            disabled={member.role === 'staff'}
+                          >
+                            <UserCog className="mr-2 h-4 w-4" />
+                            Make Staff
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleRemoveMember(member)}
+                            className="text-red-600"
+                          >
+                            <UserMinus className="mr-2 h-4 w-4" />
+                            Remove Member
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Remove confirmation dialog */}
       <AlertDialog

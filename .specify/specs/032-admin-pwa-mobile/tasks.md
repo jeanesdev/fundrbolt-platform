@@ -22,9 +22,9 @@
 
 **Purpose**: New hooks and shared utilities that multiple user stories depend on
 
-- [ ] T001 Create multi-tier breakpoint hook in `frontend/fundrbolt-admin/src/hooks/use-breakpoint.ts` — export `useBreakpoint()` returning `'phone' | 'tablet-portrait' | 'tablet-landscape' | 'desktop'` using `window.matchMedia` listeners for 768px, 1024px, 1367px thresholds. Also export `useIsTablet()` convenience helper returning `true` for both tablet tiers.
-- [ ] T002 Create per-page view preference hook in `frontend/fundrbolt-admin/src/hooks/use-view-preference.ts` — reads/writes `fundrbolt_view_prefs` JSON in localStorage keyed by current page path (from TanStack Router `useLocation`). Returns `[viewMode, setViewMode]` where default is `'card'` when breakpoint < tablet-landscape, `'table'` otherwise. Accepts a `pageKey` override parameter.
-- [ ] T003 [P] Create view toggle component in `frontend/fundrbolt-admin/src/components/data-table/view-toggle.tsx` — renders a two-button toggle group (LayoutGrid icon for card, Table icon for table) using existing Button component. Receives `value: 'table' | 'card'` and `onChange` callback. Highlights the active mode.
+- [x] T001 Create multi-tier breakpoint hook in `frontend/fundrbolt-admin/src/hooks/use-breakpoint.ts` — export `useBreakpoint()` returning `'phone' | 'tablet-portrait' | 'tablet-landscape' | 'desktop'` using `window.matchMedia` listeners for 768px, 1024px, 1367px thresholds. Also export `useIsTablet()` convenience helper returning `true` for both tablet tiers.
+- [x] T002 Create per-page view preference hook in `frontend/fundrbolt-admin/src/hooks/use-view-preference.ts` — reads/writes `fundrbolt_view_prefs` JSON in localStorage keyed by current page path (from TanStack Router `useLocation`). Returns `[viewMode, setViewMode]` where default is `'card'` when breakpoint < tablet-landscape, `'table'` otherwise. Accepts a `pageKey` override parameter.
+- [x] T003 [P] Create view toggle component in `frontend/fundrbolt-admin/src/components/data-table/view-toggle.tsx` — renders a two-button toggle group (LayoutGrid icon for card, Table icon for table) using existing Button component. Receives `value: 'table' | 'card'` and `onChange` callback. Highlights the active mode.
 
 ---
 
@@ -34,9 +34,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Create generic card view renderer in `frontend/fundrbolt-admin/src/components/data-table/card-view.tsx` — accepts a TanStack Table instance (`Table<TData>`), renders each row as a card. Card layout: 3–5 primary fields shown prominently (determined by column order, excluding `select` and `actions` columns), remaining fields in a collapsible "More details" section (use Radix Collapsible). Actions column renders as a dropdown menu in the card header. Each card has an optional selection checkbox. Uses responsive grid: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` for card layout.
-- [ ] T005 Create `DataTableWrapper` component in `frontend/fundrbolt-admin/src/components/data-table/data-table-wrapper.tsx` — generic wrapper that combines table view and card view with toggle logic. Props: `table` (TanStack Table instance), `viewPreferenceKey` (string for localStorage key), optional `renderCard` (custom card renderer for manual tables), optional `primaryFieldCount` (default 4). Renders: ViewToggle + either the existing table children or CardView based on current mode. Shares the toolbar, pagination, and bulk actions between both views.
-- [ ] T006 Export new components from `frontend/fundrbolt-admin/src/components/data-table/index.ts` — add exports for `DataTableCardView`, `DataTableViewToggle`, `DataTableWrapper`.
+- [x] T004 Create generic card view renderer in `frontend/fundrbolt-admin/src/components/data-table/card-view.tsx` — accepts a TanStack Table instance (`Table<TData>`), renders each row as a card. Card layout: 3–5 primary fields shown prominently (determined by column order, excluding `select` and `actions` columns), remaining fields in a collapsible "More details" section (use Radix Collapsible). Actions column renders as a dropdown menu in the card header. Each card has an optional selection checkbox. Uses responsive grid: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` for card layout.
+- [x] T005 Create `DataTableWrapper` component in `frontend/fundrbolt-admin/src/components/data-table/data-table-wrapper.tsx` — generic wrapper that combines table view and card view with toggle logic. Props: `table` (TanStack Table instance), `viewPreferenceKey` (string for localStorage key), optional `renderCard` (custom card renderer for manual tables), optional `primaryFieldCount` (default 4). Renders: ViewToggle + either the existing table children or CardView based on current mode. Shares the toolbar, pagination, and bulk actions between both views.
+- [x] T006 Export new components from `frontend/fundrbolt-admin/src/components/data-table/index.ts` — add exports for `DataTableCardView`, `DataTableViewToggle`, `DataTableWrapper`.
 
 **Checkpoint**: Foundation ready — user story implementation can now begin
 
@@ -46,11 +46,11 @@
 
 **Purpose**: Satisfy constitution testing gate for new shared infrastructure
 
-- [ ] T046 [P] Write unit tests for `use-breakpoint.ts` — test all 4 breakpoint tiers with mocked `window.matchMedia`. Verify transitions between tiers fire the correct return value. Verify `useIsTablet()` returns `true` for both tablet tiers and `false` for phone/desktop. File: `frontend/fundrbolt-admin/src/hooks/__tests__/use-breakpoint.test.ts`
-- [ ] T047 [P] Write unit tests for `use-view-preference.ts` — test localStorage read/write, default value by breakpoint, explicit preference override, `pageKey` parameter. Mock `useLocation` from TanStack Router. File: `frontend/fundrbolt-admin/src/hooks/__tests__/use-view-preference.test.ts`
-- [ ] T048 [P] Write component tests for `view-toggle.tsx` — render with `value="table"` and `value="card"`, verify active state highlighting, verify `onChange` callback fires on click. File: `frontend/fundrbolt-admin/src/components/data-table/__tests__/view-toggle.test.tsx`
-- [ ] T049 [P] Write component tests for `card-view.tsx` — render with a mock TanStack Table instance, verify primary fields displayed, verify "More details" section toggles, verify action dropdown renders. Test empty state. File: `frontend/fundrbolt-admin/src/components/data-table/__tests__/card-view.test.tsx`
-- [ ] T050 [P] Write component tests for `data-table-wrapper.tsx` — render with both `renderTable` and `renderCards` modes, verify toggle switches between views, verify viewPreferenceKey integration with localStorage. File: `frontend/fundrbolt-admin/src/components/data-table/__tests__/data-table-wrapper.test.tsx`
+- [x] T046 [P] Write unit tests for `use-breakpoint.ts` — test all 4 breakpoint tiers with mocked `window.matchMedia`. Verify transitions between tiers fire the correct return value. Verify `useIsTablet()` returns `true` for both tablet tiers and `false` for phone/desktop. File: `frontend/fundrbolt-admin/src/hooks/__tests__/use-breakpoint.test.ts`
+- [x] T047 [P] Write unit tests for `use-view-preference.ts` — test localStorage read/write, default value by breakpoint, explicit preference override, `pageKey` parameter. Mock `useLocation` from TanStack Router. File: `frontend/fundrbolt-admin/src/hooks/__tests__/use-view-preference.test.ts`
+- [x] T048 [P] Write component tests for `view-toggle.tsx` — render with `value="table"` and `value="card"`, verify active state highlighting, verify `onChange` callback fires on click. File: `frontend/fundrbolt-admin/src/components/data-table/__tests__/view-toggle.test.tsx`
+- [x] T049 [P] Write component tests for `card-view.tsx` — render with a mock TanStack Table instance, verify primary fields displayed, verify "More details" section toggles, verify action dropdown renders. Test empty state. File: `frontend/fundrbolt-admin/src/components/data-table/__tests__/card-view.test.tsx`
+- [x] T050 [P] Write component tests for `data-table-wrapper.tsx` — render with both `renderTable` and `renderCards` modes, verify toggle switches between views, verify viewPreferenceKey integration with localStorage. File: `frontend/fundrbolt-admin/src/components/data-table/__tests__/data-table-wrapper.test.tsx`
 
 ---
 
@@ -62,24 +62,24 @@
 
 ### TanStack Table pages (have column definitions)
 
-- [ ] T007 [US1] Integrate `DataTableWrapper` into `frontend/fundrbolt-admin/src/features/users/components/users-table.tsx` — wrap existing table rendering with `DataTableWrapper`, passing the TanStack table instance and `viewPreferenceKey="users"`. Set primary fields: Name, Email, Role, Status (4 fields). Keep existing toolbar, pagination, and bulk actions.
+- [x] T007 [US1] Integrate `DataTableWrapper` into `frontend/fundrbolt-admin/src/features/users/components/users-table.tsx` — wrap existing table rendering with `DataTableWrapper`, passing the TanStack table instance and `viewPreferenceKey="users"`. Set primary fields: Name, Email, Role, Status (4 fields). Keep existing toolbar, pagination, and bulk actions.
 
 ### Manual table pages (need custom card renderers)
 
-- [ ] T008 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/components/admin/AttendeeListTable.tsx` — add a `renderAttendeeCard` function that renders each attendee as a card with primary fields: Name, Type Badge, Bidder #, Status. "More" section: Email, Phone, Meal, Guest Of. **Nested guests (FR-014)**: if the attendee has associated guests (expandable rows in table view), render a collapsible "Guests (N)" section within the card that lists each guest as a compact sub-card or key-value row with name, meal, and status. Use Radix Collapsible for the expand/collapse interaction. Actions: same dropdown as table row. Use `useViewPreference('attendees')` and `ViewToggle` in the existing toolbar area. Conditionally render card grid or existing table based on view mode.
-- [ ] T009 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/events/sections/EventCheckInSection.tsx` — add card rendering for check-in rows. Primary fields: Check-in checkbox, Name, Party Of, Table #. "More": Email, Phone, Bidder #, Checked In At, Confirmation Code. Use `useViewPreference('check-in')`.
-- [ ] T010 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/events/auction-bids/AuctionBidsDashboard.tsx` — both the top bids table and all-bids table need card alternatives. Primary fields: Bidder, Item, Amount, Status. "More": Time. Use `useViewPreference('auction-bids')`.
-- [ ] T011 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/events/tickets/components/TicketSalesTable.tsx` — primary fields: Purchaser, Package, Amount, Date. "More": Quantity, status details. Use `useViewPreference('ticket-sales')`.
-- [ ] T012 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/npo-management/components/MemberList.tsx` — primary fields: Name, Email, Role, Joined. Actions: same as table. Use `useViewPreference('npo-members')`.
-- [ ] T013 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/npo-management/components/PendingInvitations.tsx` — primary fields: Email, Role, Status, Invited date. Actions: resend/revoke. Use `useViewPreference('pending-invitations')`.
-- [ ] T014 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/pages/admin/npo-applications.tsx` — primary fields: Organization, Email, Status, Submitted. Actions: approve/reject. Use `useViewPreference('npo-applications')`.
-- [ ] T015 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/events/auction-items/components/EngagementPanel.tsx` — watcher list table. Primary fields: Watcher Name, Email, Added Date. Use `useViewPreference('engagement-watchers')`.
+- [x] T008 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/components/admin/AttendeeListTable.tsx` — add a `renderAttendeeCard` function that renders each attendee as a card with primary fields: Name, Type Badge, Bidder #, Status. "More" section: Email, Phone, Meal, Guest Of. **Nested guests (FR-014)**: if the attendee has associated guests (expandable rows in table view), render a collapsible "Guests (N)" section within the card that lists each guest as a compact sub-card or key-value row with name, meal, and status. Use Radix Collapsible for the expand/collapse interaction. Actions: same dropdown as table row. Use `useViewPreference('attendees')` and `ViewToggle` in the existing toolbar area. Conditionally render card grid or existing table based on view mode.
+- [x] T009 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/events/sections/EventCheckInSection.tsx` — add card rendering for check-in rows. Primary fields: Check-in checkbox, Name, Party Of, Table #. "More": Email, Phone, Bidder #, Checked In At, Confirmation Code. Use `useViewPreference('check-in')`.
+- [x] T010 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/events/auction-bids/AuctionBidsDashboard.tsx` — both the top bids table and all-bids table need card alternatives. Primary fields: Bidder, Item, Amount, Status. "More": Time. Use `useViewPreference('auction-bids')`.
+- [x] T011 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/events/tickets/components/TicketSalesTable.tsx` — primary fields: Purchaser, Package, Amount, Date. "More": Quantity, status details. Use `useViewPreference('ticket-sales')`.
+- [x] T012 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/npo-management/components/MemberList.tsx` — primary fields: Name, Email, Role, Joined. Actions: same as table. Use `useViewPreference('npo-members')`.
+- [x] T013 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/npo-management/components/PendingInvitations.tsx` — primary fields: Email, Role, Status, Invited date. Actions: resend/revoke. Use `useViewPreference('pending-invitations')`.
+- [x] T014 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/pages/admin/npo-applications.tsx` — primary fields: Organization, Email, Status, Submitted. Actions: approve/reject. Use `useViewPreference('npo-applications')`.
+- [x] T015 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/events/auction-items/components/EngagementPanel.tsx` — watcher list table. Primary fields: Watcher Name, Email, Added Date. Use `useViewPreference('engagement-watchers')`.
 
 ### Quick-entry tables (raw HTML tables)
 
-- [ ] T016 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/quick-entry/components/PaddleRaiseEntryForm.tsx` — replace `min-w-[640px]` table with conditional card rendering below 1024px. Card: Amount (prominent), Bidder #, Donor name, Labels as badges, Time. Use `useViewPreference('paddle-raise-log')`.
-- [ ] T017 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/quick-entry/components/BuyNowEntryForm.tsx` — replace min-width table with conditional card rendering. Card: Buyer, Item, Amount, Time. Use `useViewPreference('buy-now-log')`.
-- [ ] T018 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/quick-entry/components/LiveBidLogAndMetrics.tsx` — bid log table. Card: compact horizontal format showing bid details. Use `useViewPreference('live-bid-log')`.
+- [x] T016 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/quick-entry/components/PaddleRaiseEntryForm.tsx` — replace `min-w-[640px]` table with conditional card rendering below 1024px. Card: Amount (prominent), Bidder #, Donor name, Labels as badges, Time. Use `useViewPreference('paddle-raise-log')`.
+- [x] T017 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/quick-entry/components/BuyNowEntryForm.tsx` — replace min-width table with conditional card rendering. Card: Buyer, Item, Amount, Time. Use `useViewPreference('buy-now-log')`.
+- [x] T018 [P] [US1] Add card view to `frontend/fundrbolt-admin/src/features/quick-entry/components/LiveBidLogAndMetrics.tsx` — bid log table. Card: compact horizontal format showing bid details. Use `useViewPreference('live-bid-log')`.
 
 **Checkpoint**: All 12 table views have card/table toggle. This is the MVP — validate independently.
 
@@ -91,11 +91,11 @@
 
 **Independent Test**: At 1024–1366px width, sidebar shows icon-rail only. Clicking a nav icon or toggle expands the sidebar as an overlay. At 768–1023px, sidebar is hidden; hamburger opens it as a Sheet.
 
-- [ ] T019 [US2] Modify `frontend/fundrbolt-admin/src/components/ui/sidebar.tsx` — update the mobile detection to treat tablet-portrait (768–1023px) the same as phone (Sheet mode). Change the inline sidebar CSS from `hidden md:block` / `hidden md:flex` to `hidden lg:block` / `hidden lg:flex` (1024px threshold). Import and use `useBreakpoint()` alongside `useIsMobile()`.
-- [ ] T020 [US2] Add tablet-landscape auto-collapse in `frontend/fundrbolt-admin/src/components/ui/sidebar.tsx` — in `SidebarProvider`, add an effect: when breakpoint is `'tablet-landscape'` and there's no stored sidebar_state cookie, default `open` to `false` (icon-rail). Preserve user's explicit toggle choice.
-- [ ] T021 [US2] Add overlay behavior for sidebar expansion on tablet landscape in `frontend/fundrbolt-admin/src/components/ui/sidebar.tsx` — when breakpoint is `'tablet-landscape'` and `open` transitions to `true`, render the sidebar with `position: fixed`, `z-50`, and a semi-transparent backdrop div. Clicking the backdrop or navigating collapses the sidebar back to icon-rail.
-- [ ] T022 [US2] Update `frontend/fundrbolt-admin/src/components/layout/authenticated-layout.tsx` — pass breakpoint-aware default to `SidebarProvider`'s `defaultOpen` prop: `false` for tablet-landscape, `true` for desktop, irrelevant for phone/tablet-portrait (Sheet mode).
-- [ ] T023 [US2] Update popover positioning in sidebar nav components — in `frontend/fundrbolt-admin/src/components/layout/nav-group.tsx`, `frontend/fundrbolt-admin/src/components/layout/NpoSelector.tsx`, and `frontend/fundrbolt-admin/src/components/layout/EventSelector.tsx`: change `isMobile` checks for popover `side` to also include tablet-portrait (use `useBreakpoint()` or updated `useSidebar().isMobile`).
+- [x] T019 [US2] Modify `frontend/fundrbolt-admin/src/components/ui/sidebar.tsx` — update the mobile detection to treat tablet-portrait (768–1023px) the same as phone (Sheet mode). Change the inline sidebar CSS from `hidden md:block` / `hidden md:flex` to `hidden lg:block` / `hidden lg:flex` (1024px threshold). Import and use `useBreakpoint()` alongside `useIsMobile()`.
+- [x] T020 [US2] Add tablet-landscape auto-collapse in `frontend/fundrbolt-admin/src/components/ui/sidebar.tsx` — in `SidebarProvider`, add an effect: when breakpoint is `'tablet-landscape'` and there's no stored sidebar_state cookie, default `open` to `false` (icon-rail). Preserve user's explicit toggle choice.
+- [x] T021 [US2] Add overlay behavior for sidebar expansion on tablet landscape in `frontend/fundrbolt-admin/src/components/ui/sidebar.tsx` — when breakpoint is `'tablet-landscape'` and `open` transitions to `true`, render the sidebar with `position: fixed`, `z-50`, and a semi-transparent backdrop div. Clicking the backdrop or navigating collapses the sidebar back to icon-rail.
+- [x] T022 [US2] Update `frontend/fundrbolt-admin/src/components/layout/authenticated-layout.tsx` — pass breakpoint-aware default to `SidebarProvider`'s `defaultOpen` prop: `false` for tablet-landscape, `true` for desktop, irrelevant for phone/tablet-portrait (Sheet mode).
+- [x] T023 [US2] Update popover positioning in sidebar nav components — in `frontend/fundrbolt-admin/src/components/layout/nav-group.tsx`, `frontend/fundrbolt-admin/src/components/layout/NpoSelector.tsx`, and `frontend/fundrbolt-admin/src/components/layout/EventSelector.tsx`: change `isMobile` checks for popover `side` to also include tablet-portrait (use `useBreakpoint()` or updated `useSidebar().isMobile`).
 
 **Checkpoint**: Sidebar works correctly across all 4 breakpoint tiers.
 
@@ -107,10 +107,10 @@
 
 **Independent Test**: In Chrome DevTools at 1024px width with touch simulation, all buttons, menu items, pagination controls, and card actions are comfortably tappable.
 
-- [ ] T024 [US3] Add touch target size utilities in `frontend/fundrbolt-admin/src/styles/index.css` — add a `@media (max-width: 1365px)` block that increases minimum sizes on: `button` (min-h-11 min-w-11), `[role="menuitem"]` (min-h-11), `[role="option"]` (min-h-11), `.pagination-link` or pagination control selectors (min-h-11 min-w-11, gap spacing). Use Tailwind `@apply` or raw CSS as appropriate.
-- [ ] T025 [P] [US3] Increase touch target sizes in pagination component at `frontend/fundrbolt-admin/src/components/data-table/pagination.tsx` — ensure page number buttons and prev/next buttons have `min-h-11 min-w-11` (44px) and adequate spacing (`gap-1` → `gap-2`) on screens < 1366px. Use responsive classes or the breakpoint hook.
-- [ ] T026 [P] [US3] Increase dropdown menu item sizes in card view actions — ensure action dropdown items in card view (`frontend/fundrbolt-admin/src/components/data-table/card-view.tsx`) have `min-h-11` and adequate padding for touch targets.
-- [ ] T027 [P] [US3] Audit and fix toolbar button sizes — ensure filter, sort, search, and bulk action buttons in `frontend/fundrbolt-admin/src/components/data-table/toolbar.tsx` and `frontend/fundrbolt-admin/src/components/data-table/bulk-actions.tsx` meet 44×44px minimum on tablet viewports.
+- [x] T024 [US3] Add touch target size utilities in `frontend/fundrbolt-admin/src/styles/index.css` — add a `@media (max-width: 1365px)` block that increases minimum sizes on: `button` (min-h-11 min-w-11), `[role="menuitem"]` (min-h-11), `[role="option"]` (min-h-11), `.pagination-link` or pagination control selectors (min-h-11 min-w-11, gap spacing). Use Tailwind `@apply` or raw CSS as appropriate.
+- [x] T025 [P] [US3] Increase touch target sizes in pagination component at `frontend/fundrbolt-admin/src/components/data-table/pagination.tsx` — ensure page number buttons and prev/next buttons have `min-h-11 min-w-11` (44px) and adequate spacing (`gap-1` → `gap-2`) on screens < 1366px. Use responsive classes or the breakpoint hook.
+- [x] T026 [P] [US3] Increase dropdown menu item sizes in card view actions — ensure action dropdown items in card view (`frontend/fundrbolt-admin/src/components/data-table/card-view.tsx`) have `min-h-11` and adequate padding for touch targets.
+- [x] T027 [P] [US3] Audit and fix toolbar button sizes — ensure filter, sort, search, and bulk action buttons in `frontend/fundrbolt-admin/src/components/data-table/toolbar.tsx` and `frontend/fundrbolt-admin/src/components/data-table/bulk-actions.tsx` meet 44×44px minimum on tablet viewports.
 
 **Checkpoint**: All interactive elements pass 44×44px target size on tablet viewports.
 
@@ -122,11 +122,11 @@
 
 **Independent Test**: Open event creation form at 800px width → two-column layout. At 600px → single-column. All fields are full-width within their column.
 
-- [ ] T028 [P] [US4] Audit and fix event creation/edit form layouts — search for multi-column grid/flex layouts in `frontend/fundrbolt-admin/src/features/events/` form components. Replace hardcoded `grid-cols-2` with responsive `grid-cols-1 md:grid-cols-2` where columns would be too narrow on tablet portrait. Ensure text inputs maintain 16px font size on narrow screens.
-- [ ] T029 [P] [US4] Audit and fix auction item form layouts — in `frontend/fundrbolt-admin/src/features/events/auction-items/` form components, ensure multi-column layouts reflow to single-column below 768px and two-column between 768–1024px.
-- [ ] T030 [P] [US4] Audit and fix ticket package form layouts — in `frontend/fundrbolt-admin/src/features/events/tickets/` form components, ensure responsive column reflow.
-- [ ] T031 [P] [US4] Audit and fix NPO creation/settings forms — in `frontend/fundrbolt-admin/src/pages/npo/` and `frontend/fundrbolt-admin/src/features/npo-management/` form components, ensure responsive column reflow.
-- [ ] T032 [US4] Verify 16px minimum font size rule in `frontend/fundrbolt-admin/src/styles/index.css` — confirm the existing `@media screen and (max-width: 767px)` rule with `font-size: 16px !important` on inputs covers all form elements (input, select, textarea). Extend to cover any missing selectors.
+- [x] T028 [P] [US4] Audit and fix event creation/edit form layouts — search for multi-column grid/flex layouts in `frontend/fundrbolt-admin/src/features/events/` form components. Replace hardcoded `grid-cols-2` with responsive `grid-cols-1 md:grid-cols-2` where columns would be too narrow on tablet portrait. Ensure text inputs maintain 16px font size on narrow screens.
+- [x] T029 [P] [US4] Audit and fix auction item form layouts — in `frontend/fundrbolt-admin/src/features/events/auction-items/` form components, ensure multi-column layouts reflow to single-column below 768px and two-column between 768–1024px.
+- [x] T030 [P] [US4] Audit and fix ticket package form layouts — in `frontend/fundrbolt-admin/src/features/events/tickets/` form components, ensure responsive column reflow.
+- [x] T031 [P] [US4] Audit and fix NPO creation/settings forms — in `frontend/fundrbolt-admin/src/pages/npo/` and `frontend/fundrbolt-admin/src/features/npo-management/` form components, ensure responsive column reflow.
+- [x] T032 [US4] Verify 16px minimum font size rule in `frontend/fundrbolt-admin/src/styles/index.css` — confirm the existing `@media screen and (max-width: 767px)` rule with `font-size: 16px !important` on inputs covers all form elements (input, select, textarea). Extend to cover any missing selectors.
 
 **Checkpoint**: All forms reflow correctly at tablet widths without cramped columns.
 
@@ -138,9 +138,9 @@
 
 **Independent Test**: Load event dashboard at 800px width → stat cards in 2-column grid, charts resize proportionally without horizontal scroll.
 
-- [ ] T033 [P] [US5] Update dashboard stat card grid in `frontend/fundrbolt-admin/src/features/event-dashboard/` — find the stat card grid container and change from fixed `grid-cols-4` (or similar) to responsive `grid-cols-2 md:grid-cols-3 lg:grid-cols-4`. Ensure cards don't clip content at narrow widths.
-- [ ] T034 [P] [US5] Ensure chart containers are responsive in `frontend/fundrbolt-admin/src/features/event-dashboard/` — verify Recharts components use `ResponsiveContainer` with `width="100%"` and percentage heights. Remove any fixed pixel widths that would cause overflow on tablets. Ensure chart parent containers don't have `overflow: hidden` that clips labels.
-- [ ] T035 [US5] Verify no horizontal scroll on dashboard at tablet widths — test the full dashboard page at 768px and 1024px widths. Fix any remaining overflow issues (padding, margins, absolute-positioned elements).
+- [x] T033 [P] [US5] Update dashboard stat card grid in `frontend/fundrbolt-admin/src/features/event-dashboard/` — find the stat card grid container and change from fixed `grid-cols-4` (or similar) to responsive `grid-cols-2 md:grid-cols-3 lg:grid-cols-4`. Ensure cards don't clip content at narrow widths.
+- [x] T034 [P] [US5] Ensure chart containers are responsive in `frontend/fundrbolt-admin/src/features/event-dashboard/` — verify Recharts components use `ResponsiveContainer` with `width="100%"` and percentage heights. Remove any fixed pixel widths that would cause overflow on tablets. Ensure chart parent containers don't have `overflow: hidden` that clips labels.
+- [x] T035 [US5] Verify no horizontal scroll on dashboard at tablet widths — test the full dashboard page at 768px and 1024px widths. Fix any remaining overflow issues (padding, margins, absolute-positioned elements).
 
 **Checkpoint**: Dashboard displays correctly at all tablet widths.
 
@@ -152,10 +152,10 @@
 
 **Independent Test**: Open live bid entry at 1024px width → inputs and submit button are prominently sized, recent entries list is scannable without horizontal scroll.
 
-- [ ] T036 [P] [US6] Optimize bid entry form layout in `frontend/fundrbolt-admin/src/features/quick-entry/components/PaddleRaiseEntryForm.tsx` — increase input field sizes on tablet (larger font-size, taller min-height), ensure submit button is prominent (`h-14` or larger, full-width on portrait). Summary stats grid: change `md:grid-cols-4` to `sm:grid-cols-4` to take advantage of tablet width. Donation labels grid: `grid-cols-2 lg:grid-cols-3`.
-- [ ] T037 [P] [US6] Optimize buy-now entry form in `frontend/fundrbolt-admin/src/features/quick-entry/components/BuyNowEntryForm.tsx` — same touch-optimization pattern: larger inputs, prominent submit, responsive recent-entries list.
-- [ ] T038 [P] [US6] Optimize live bid entry form in `frontend/fundrbolt-admin/src/features/quick-entry/components/LiveBidLogAndMetrics.tsx` — ensure bid log metrics and entry form are touch-optimized with larger targets and responsive layout.
-- [ ] T039 [US6] Verify quick-entry parent layout is responsive — check the parent page/tab layout that wraps the quick-entry forms. Ensure entry type tabs and the form panel stack vertically on tablet portrait rather than side-by-side if space is insufficient.
+- [x] T036 [P] [US6] Optimize bid entry form layout in `frontend/fundrbolt-admin/src/features/quick-entry/components/PaddleRaiseEntryForm.tsx` — increase input field sizes on tablet (larger font-size, taller min-height), ensure submit button is prominent (`h-14` or larger, full-width on portrait). Summary stats grid: change `md:grid-cols-4` to `sm:grid-cols-4` to take advantage of tablet width. Donation labels grid: `grid-cols-2 lg:grid-cols-3`.
+- [x] T037 [P] [US6] Optimize buy-now entry form in `frontend/fundrbolt-admin/src/features/quick-entry/components/BuyNowEntryForm.tsx` — same touch-optimization pattern: larger inputs, prominent submit, responsive recent-entries list.
+- [x] T038 [P] [US6] Optimize live bid entry form in `frontend/fundrbolt-admin/src/features/quick-entry/components/LiveBidLogAndMetrics.tsx` — ensure bid log metrics and entry form are touch-optimized with larger targets and responsive layout.
+- [x] T039 [US6] Verify quick-entry parent layout is responsive — check the parent page/tab layout that wraps the quick-entry forms. Ensure entry type tabs and the form panel stack vertically on tablet portrait rather than side-by-side if space is insufficient.
 
 **Checkpoint**: Quick-entry workflows are comfortable on tablets with rapid input capability.
 
@@ -165,12 +165,12 @@
 
 **Purpose**: Edge cases, orientation handling, and final validation
 
-- [ ] T040 Handle orientation change edge case — verify that rotating a tablet mid-session (portrait ↔ landscape) triggers layout reflow via the `useBreakpoint` hook's `matchMedia` listeners without losing form data, scroll position, or sidebar state. Fix any components that don't reflow smoothly.
-- [ ] T041 Handle empty state in card view — ensure `DataTableCardView` and all custom card renderers display the same empty-state message as the table view when there are zero rows. Use the existing empty state patterns.
-- [ ] T042 Handle bulk selection in card view — ensure card view renders selection checkboxes on each card and that the `DataTableBulkActions` toolbar displays correctly above the card grid when items are selected.
-- [ ] T043 [P] Verify sidebar transition on orientation change — test that the sidebar correctly transitions from icon-rail (landscape) to Sheet overlay (portrait) and back without content jumps or stale state.
-- [ ] T044 Run quickstart.md validation — follow all test scenarios in `quickstart.md` at 768px, 1024px, and 1366px widths. Document any failures and fix.
-- [ ] T045 Run frontend CI checks — execute `pnpm lint`, `pnpm format:check`, and `pnpm build` from `frontend/fundrbolt-admin/`. Fix any type errors, lint warnings, or build failures introduced by this feature.
+- [x] T040 Handle orientation change edge case — verify that rotating a tablet mid-session (portrait ↔ landscape) triggers layout reflow via the `useBreakpoint` hook's `matchMedia` listeners without losing form data, scroll position, or sidebar state. Fix any components that don't reflow smoothly.
+- [x] T041 Handle empty state in card view — ensure `DataTableCardView` and all custom card renderers display the same empty-state message as the table view when there are zero rows. Use the existing empty state patterns.
+- [x] T042 Handle bulk selection in card view — ensure card view renders selection checkboxes on each card and that the `DataTableBulkActions` toolbar displays correctly above the card grid when items are selected.
+- [x] T043 [P] Verify sidebar transition on orientation change — test that the sidebar correctly transitions from icon-rail (landscape) to Sheet overlay (portrait) and back without content jumps or stale state.
+- [x] T044 Run quickstart.md validation — follow all test scenarios in `quickstart.md` at 768px, 1024px, and 1366px widths. Document any failures and fix.
+- [x] T045 Run frontend CI checks — execute `pnpm lint`, `pnpm format:check`, and `pnpm build` from `frontend/fundrbolt-admin/`. Fix any type errors, lint warnings, or build failures introduced by this feature.
 
 ---
 

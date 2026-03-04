@@ -3,6 +3,7 @@
  * Displays auction item engagement data with tabs for Watchers, Views, and Bids
  */
 
+import { DataTableViewToggle } from '@/components/data-table/view-toggle';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,6 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useViewPreference } from '@/hooks/use-view-preference';
 import { auctionEngagementService } from '@/services/auctionEngagementService';
 import type { AdminEngagementResponse } from '@/types/auction-engagement';
 import { useQuery } from '@tanstack/react-query';
@@ -70,6 +72,7 @@ type SortOrder = 'asc' | 'desc';
 export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [viewMode, setViewMode] = useViewPreference('engagement-watchers');
 
   const { data, isLoading, error } = useQuery<AdminEngagementResponse>({
     queryKey: ['auction-engagement', eventId, itemId],
@@ -147,7 +150,7 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i}>
               <CardHeader className="pb-2">
@@ -181,7 +184,7 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
   return (
     <div className="space-y-6">
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -239,6 +242,9 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
       {/* Tabbed Interface */}
       <Card>
         <CardContent className="pt-6">
+          <div className='mb-4 flex justify-end'>
+            <DataTableViewToggle value={viewMode} onChange={setViewMode} />
+          </div>
           <Tabs defaultValue="watchers" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="watchers">
@@ -258,6 +264,16 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
                 <div className="text-center py-8 text-muted-foreground">
                   <Heart className="h-12 w-12 mx-auto mb-2 opacity-20" />
                   <p>No watchers yet</p>
+                </div>
+              ) : viewMode === 'card' ? (
+                <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+                  {sortedWatchers.map((watcher) => (
+                    <div key={watcher.user.id} className='rounded-md border p-3 space-y-1'>
+                      <p className='font-medium'>{watcher.user.name}</p>
+                      <p className='text-sm text-muted-foreground truncate'>{watcher.user.email}</p>
+                      <p className='text-xs text-muted-foreground'>Since {formatDate(watcher.watching_since)}</p>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="rounded-md border">
@@ -320,6 +336,20 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
                 <div className="text-center py-8 text-muted-foreground">
                   <Eye className="h-12 w-12 mx-auto mb-2 opacity-20" />
                   <p>No views yet</p>
+                </div>
+              ) : viewMode === 'card' ? (
+                <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+                  {sortedViews.map((view) => (
+                    <div key={view.user.id} className='rounded-md border p-3 space-y-1'>
+                      <p className='font-medium'>{view.user.name}</p>
+                      <dl className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
+                        <dt className='text-muted-foreground'>Duration</dt>
+                        <dd>{formatDuration(view.total_duration_seconds)}</dd>
+                        <dt className='text-muted-foreground'>Last Viewed</dt>
+                        <dd>{formatDateTime(view.last_viewed_at)}</dd>
+                      </dl>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="rounded-md border">
@@ -395,6 +425,23 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
                 <div className="text-center py-8 text-muted-foreground">
                   <DollarSign className="h-12 w-12 mx-auto mb-2 opacity-20" />
                   <p>No bids yet</p>
+                </div>
+              ) : viewMode === 'card' ? (
+                <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+                  {sortedBids.map((bid) => (
+                    <div key={bid.id} className='rounded-md border p-3 space-y-1'>
+                      <div className='flex items-center justify-between'>
+                        <span className='font-medium'>{bid.user.name}</span>
+                        <span className='font-semibold'>{formatCurrency(bid.amount)}</span>
+                      </div>
+                      <div className='flex items-center gap-2'>
+                        <Badge variant={bid.bid_type === 'max_bid' ? 'default' : 'secondary'}>
+                          {bid.bid_type === 'max_bid' ? 'Max Bid' : 'Regular'}
+                        </Badge>
+                        <span className='text-xs text-muted-foreground'>{formatDateTime(bid.placed_at)}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="rounded-md border">

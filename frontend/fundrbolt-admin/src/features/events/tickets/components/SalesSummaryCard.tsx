@@ -97,7 +97,7 @@ export function SalesSummaryCard({ eventId }: SalesSummaryCardProps) {
         </div>
 
         {/* Package Statistics */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex items-center gap-2 p-3 border rounded-lg">
             <Package className="h-4 w-4 text-muted-foreground" />
             <div>

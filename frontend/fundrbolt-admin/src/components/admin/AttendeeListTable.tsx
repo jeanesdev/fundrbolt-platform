@@ -5,6 +5,7 @@
  * CSV export, and guest invitation features.
  */
 
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +19,11 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +43,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import {
   type Attendee,
   deleteGuest,
@@ -125,6 +132,7 @@ export function AttendeeListTable({
   const [autoAssignDialogOpen, setAutoAssignDialogOpen] = useState(false)
   const [autoAssignPending, setAutoAssignPending] = useState(false)
   const [autoAssignStartNumber, setAutoAssignStartNumber] = useState('100')
+  const [viewMode, setViewMode] = useViewPreference('attendees')
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [registrantToCancel, setRegistrantToCancel] = useState<{
     registration_id: string
@@ -615,13 +623,16 @@ export function AttendeeListTable({
     <div className='space-y-4'>
       {/* Toolbar */}
       <div className='flex items-center justify-between'>
-        <div className='text-sm text-muted-foreground'>
-          Showing {displayedAttendees.length} of {totalAttendees} attendees • {activeAttendees} active
-          {selectedAttendees.size > 0 && (
-            <span className='ml-2'>
-              ({selectedAttendees.size} selected)
-            </span>
-          )}
+        <div className='flex items-center gap-3'>
+          <div className='text-sm text-muted-foreground'>
+            Showing {displayedAttendees.length} of {totalAttendees} attendees • {activeAttendees} active
+            {selectedAttendees.size > 0 && (
+              <span className='ml-2'>
+                ({selectedAttendees.size} selected)
+              </span>
+            )}
+          </div>
+          <DataTableViewToggle value={viewMode} onChange={setViewMode} />
         </div>
         <div className='flex items-center gap-2'>
           <Button
@@ -663,186 +674,331 @@ export function AttendeeListTable({
         </div>
       </div>
 
-      {/* Table */}
-      <div className='overflow-hidden rounded-md border'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className='w-12'>
-                <Checkbox
-                  checked={allVisibleSelected}
-                  onCheckedChange={toggleAllSelection}
-                />
-              </TableHead>
-              {renderTextHeader('Name', 'name', 'name', 'Filter name')}
-              {renderOptionHeader('Type', 'type', 'type', [
-                { value: 'all', label: 'All types' },
-                { value: 'registrant', label: 'Registrant' },
-                { value: 'guest', label: 'Guest' },
-              ])}
-              {renderTextHeader('Bidder #', 'bidder', 'bidder', 'Filter bidder #')}
-              {renderTextHeader('Email', 'email', 'email', 'Filter email')}
-              {renderTextHeader('Phone', 'phone', 'phone', 'Filter phone')}
-              {includeMealSelections &&
-                renderTextHeader('Meal Selection', 'meal', 'meal', 'Filter meal')}
-              {renderTextHeader('Guest Of', 'guestOf', 'guestOf', 'Filter guest of')}
-              {renderOptionHeader(
-                'Status',
-                'status',
-                'status',
-                [{ value: 'all', label: 'All statuses' }].concat(
-                  statusOptions.map((status) => ({ value: status, label: status }))
-                )
-              )}
-              <TableHead className='text-right'>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {displayedAttendees.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={includeMealSelections ? 10 : 9}
-                  className='text-center'
+      {/* Table or Card View */}
+      {viewMode === 'card' ? (
+        <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+          {displayedAttendees.length === 0 ? (
+            <div className='col-span-full flex h-24 items-center justify-center rounded-md border text-muted-foreground'>
+              {attendees.length === 0
+                ? 'No attendees registered yet'
+                : 'No attendees match the current filters'}
+            </div>
+          ) : (
+            displayedAttendees.map((attendee) => {
+              const isCancelled =
+                attendee.status === 'cancelled' || attendee.status === 'canceled'
+              // Find guests belonging to this registrant
+              const guests =
+                attendee.attendee_type === 'registrant'
+                  ? displayedAttendees.filter(
+                    (a) => a.attendee_type === 'guest' && a.guest_of === attendee.name
+                  )
+                  : []
+              return (
+                <div
+                  key={attendee.id}
+                  className={`rounded-lg border bg-card p-4 shadow-sm ${selectedAttendees.has(attendee.id) ? 'ring-2 ring-primary' : ''}`}
                 >
-                  <p className='py-8 text-muted-foreground'>
-                    {attendees.length === 0
-                      ? 'No attendees registered yet'
-                      : 'No attendees match the current filters'}
-                  </p>
-                </TableCell>
-              </TableRow>
-            ) : (
-              displayedAttendees.map((attendee) => {
-                const isCancelled =
-                  attendee.status === 'cancelled' || attendee.status === 'canceled'
-                return (
-                  <TableRow key={attendee.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedAttendees.has(attendee.id)}
-                        onCheckedChange={() => toggleSelection(attendee.id)}
-                      />
-                    </TableCell>
-                    <TableCell className='font-medium'>
-                      {attendee.name}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          attendee.attendee_type === 'registrant'
-                            ? 'default'
-                            : 'secondary'
-                        }
-                      >
-                        {attendee.attendee_type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className='flex items-center gap-2'>
-                        {attendee.bidder_number ? (
-                          <Badge
-                            variant='outline'
-                            className='bg-amber-50 text-amber-700 border-amber-200 font-mono font-semibold'
-                          >
-                            <Hash className='mr-1 h-3 w-3' />
-                            {attendee.bidder_number}
-                          </Badge>
-                        ) : (
-                          <span className='text-muted-foreground'>—</span>
-                        )}
+                  {/* Card header */}
+                  <div className='mb-3 flex items-center justify-between'>
+                    <Checkbox
+                      checked={selectedAttendees.has(attendee.id)}
+                      onCheckedChange={() => toggleSelection(attendee.id)}
+                    />
+                    <div className='flex items-center gap-1'>
+                      {attendee.attendee_type === 'guest' && attendee.email && (
                         <Button
                           variant='ghost'
                           size='sm'
-                          className='h-6 w-6 p-0'
-                          onClick={() =>
-                            handleAssignBidderNumber(
-                              attendee.id,
-                              attendee.name,
-                              attendee.bidder_number
-                            )
-                          }
-                          title={
-                            attendee.bidder_number
-                              ? 'Reassign bidder number'
-                              : 'Assign bidder number'
-                          }
+                          onClick={() => handleSendInvitation(attendee.id)}
+                          disabled={sendInvitationMutation.isPending}
                         >
-                          <PenLine className='h-3 w-3' />
+                          <Mail className='h-4 w-4' />
                         </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell className='max-w-[200px] truncate'>
-                      {attendee.email || '—'}
-                    </TableCell>
-                    <TableCell>{attendee.phone || '—'}</TableCell>
-                    {includeMealSelections && (
-                      <TableCell className='max-w-[150px] truncate'>
-                        {attendee.meal_selection || '—'}
-                      </TableCell>
-                    )}
-                    <TableCell>{attendee.guest_of || '—'}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          attendee.status === 'confirmed' ? 'default' : 'outline'
-                        }
-                      >
+                      )}
+                      {attendee.attendee_type === 'guest' && (
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          onClick={() => handleDeleteClick(attendee.id, attendee.name)}
+                          disabled={deleteGuestMutation.isPending || isCancelled}
+                        >
+                          <Trash2 className='h-4 w-4 text-destructive' />
+                        </Button>
+                      )}
+                      {attendee.attendee_type === 'registrant' && (
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          onClick={() => handleCancelRegistrationClick(attendee.registration_id, attendee.name)}
+                          disabled={isCancelled}
+                        >
+                          <Trash2 className='h-4 w-4 text-destructive' />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  {/* Primary fields */}
+                  <div className='space-y-1.5'>
+                    <div className='font-medium'>{attendee.name}</div>
+                    <div className='flex items-center gap-2'>
+                      <Badge variant={attendee.attendee_type === 'registrant' ? 'default' : 'secondary'}>
+                        {attendee.attendee_type}
+                      </Badge>
+                      {attendee.bidder_number && (
+                        <Badge variant='outline' className='bg-amber-50 text-amber-700 border-amber-200 font-mono font-semibold'>
+                          <Hash className='mr-1 h-3 w-3' />
+                          {attendee.bidder_number}
+                        </Badge>
+                      )}
+                      <Badge variant={attendee.status === 'confirmed' ? 'default' : 'outline'}>
                         {attendee.status}
                       </Badge>
-                    </TableCell>
-                    <TableCell className='text-right'>
-                      <div className='flex items-center justify-end gap-2'>
-                        {attendee.attendee_type === 'guest' && attendee.email && (
+                    </div>
+                  </div>
+                  {/* More details (collapsible) */}
+                  <Collapsible>
+                    <CollapsibleTrigger className='mt-3 flex w-full items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground'>
+                      More details
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <dl className='mt-2 space-y-1 border-t pt-2 text-sm'>
+                        {attendee.email && (
+                          <div className='flex gap-2'>
+                            <dt className='text-xs text-muted-foreground'>Email</dt>
+                            <dd className='truncate'>{attendee.email}</dd>
+                          </div>
+                        )}
+                        {attendee.phone && (
+                          <div className='flex gap-2'>
+                            <dt className='text-xs text-muted-foreground'>Phone</dt>
+                            <dd>{attendee.phone}</dd>
+                          </div>
+                        )}
+                        {includeMealSelections && (attendee.meal_selection || attendee.meal_description) && (
+                          <div className='flex gap-2'>
+                            <dt className='text-xs text-muted-foreground'>Meal</dt>
+                            <dd className='truncate'>{attendee.meal_selection || attendee.meal_description}</dd>
+                          </div>
+                        )}
+                        {attendee.guest_of && (
+                          <div className='flex gap-2'>
+                            <dt className='text-xs text-muted-foreground'>Guest Of</dt>
+                            <dd>{attendee.guest_of}</dd>
+                          </div>
+                        )}
+                      </dl>
+                    </CollapsibleContent>
+                  </Collapsible>
+                  {/* Nested guests (FR-014) */}
+                  {guests.length > 0 && (
+                    <Collapsible>
+                      <CollapsibleTrigger className='mt-2 flex w-full items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground'>
+                        Guests ({guests.length})
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className='mt-2 space-y-2 border-t pt-2'>
+                          {guests.map((guest) => (
+                            <div key={guest.id} className='rounded border bg-muted/50 p-2 text-sm'>
+                              <div className='font-medium'>{guest.name}</div>
+                              {guest.meal_selection && (
+                                <div className='text-xs text-muted-foreground'>Meal: {guest.meal_selection}</div>
+                              )}
+                              <Badge variant={guest.status === 'confirmed' ? 'default' : 'outline'} className='mt-1'>
+                                {guest.status}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+                </div>
+              )
+            })
+          )}
+        </div>
+      ) : (
+        <div className='overflow-hidden rounded-md border'>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className='w-12'>
+                  <Checkbox
+                    checked={allVisibleSelected}
+                    onCheckedChange={toggleAllSelection}
+                  />
+                </TableHead>
+                {renderTextHeader('Name', 'name', 'name', 'Filter name')}
+                {renderOptionHeader('Type', 'type', 'type', [
+                  { value: 'all', label: 'All types' },
+                  { value: 'registrant', label: 'Registrant' },
+                  { value: 'guest', label: 'Guest' },
+                ])}
+                {renderTextHeader('Bidder #', 'bidder', 'bidder', 'Filter bidder #')}
+                {renderTextHeader('Email', 'email', 'email', 'Filter email')}
+                {renderTextHeader('Phone', 'phone', 'phone', 'Filter phone')}
+                {includeMealSelections &&
+                  renderTextHeader('Meal Selection', 'meal', 'meal', 'Filter meal')}
+                {renderTextHeader('Guest Of', 'guestOf', 'guestOf', 'Filter guest of')}
+                {renderOptionHeader(
+                  'Status',
+                  'status',
+                  'status',
+                  [{ value: 'all', label: 'All statuses' }].concat(
+                    statusOptions.map((status) => ({ value: status, label: status }))
+                  )
+                )}
+                <TableHead className='text-right'>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {displayedAttendees.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={includeMealSelections ? 10 : 9}
+                    className='text-center'
+                  >
+                    <p className='py-8 text-muted-foreground'>
+                      {attendees.length === 0
+                        ? 'No attendees registered yet'
+                        : 'No attendees match the current filters'}
+                    </p>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                displayedAttendees.map((attendee) => {
+                  const isCancelled =
+                    attendee.status === 'cancelled' || attendee.status === 'canceled'
+                  return (
+                    <TableRow key={attendee.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedAttendees.has(attendee.id)}
+                          onCheckedChange={() => toggleSelection(attendee.id)}
+                        />
+                      </TableCell>
+                      <TableCell className='font-medium'>
+                        {attendee.name}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            attendee.attendee_type === 'registrant'
+                              ? 'default'
+                              : 'secondary'
+                          }
+                        >
+                          {attendee.attendee_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className='flex items-center gap-2'>
+                          {attendee.bidder_number ? (
+                            <Badge
+                              variant='outline'
+                              className='bg-amber-50 text-amber-700 border-amber-200 font-mono font-semibold'
+                            >
+                              <Hash className='mr-1 h-3 w-3' />
+                              {attendee.bidder_number}
+                            </Badge>
+                          ) : (
+                            <span className='text-muted-foreground'>—</span>
+                          )}
                           <Button
                             variant='ghost'
                             size='sm'
-                            onClick={() => handleSendInvitation(attendee.id)}
-                            disabled={sendInvitationMutation.isPending}
+                            className='h-6 w-6 p-0'
+                            onClick={() =>
+                              handleAssignBidderNumber(
+                                attendee.id,
+                                attendee.name,
+                                attendee.bidder_number
+                              )
+                            }
+                            title={
+                              attendee.bidder_number
+                                ? 'Reassign bidder number'
+                                : 'Assign bidder number'
+                            }
                           >
-                            {sendInvitationMutation.isPending &&
-                              sendInvitationMutation.variables === attendee.id ? (
-                              <Loader2 className='h-4 w-4 animate-spin' />
-                            ) : (
-                              <>
-                                <Mail className='mr-2 h-4 w-4' />
-                                Send Invite
-                              </>
-                            )}
+                            <PenLine className='h-3 w-3' />
                           </Button>
-                        )}
-                        {attendee.attendee_type === 'guest' && (
-                          <Button
-                            variant='ghost'
-                            size='sm'
-                            onClick={() => handleDeleteClick(attendee.id, attendee.name)}
-                            disabled={deleteGuestMutation.isPending || isCancelled}
-                            aria-label={isCancelled ? 'Guest cancelled' : 'Cancel guest'}
-                          >
-                            <Trash2 className='mr-2 h-4 w-4 text-destructive' />
-                            {isCancelled ? 'Cancelled' : 'Cancel'}
-                          </Button>
-                        )}
-                        {attendee.attendee_type === 'registrant' && (
-                          <Button
-                            variant='ghost'
-                            size='sm'
-                            onClick={() => handleCancelRegistrationClick(attendee.registration_id, attendee.name)}
-                            disabled={isCancelled}
-                            aria-label={isCancelled ? 'Registration cancelled' : 'Cancel registration'}
-                          >
-                            <Trash2 className='mr-2 h-4 w-4 text-destructive' />
-                            {isCancelled ? 'Cancelled' : 'Cancel'}
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className='max-w-[200px] truncate'>
+                        {attendee.email || '—'}
+                      </TableCell>
+                      <TableCell>{attendee.phone || '—'}</TableCell>
+                      {includeMealSelections && (
+                        <TableCell className='max-w-[150px] truncate'>
+                          {attendee.meal_selection || '—'}
+                        </TableCell>
+                      )}
+                      <TableCell>{attendee.guest_of || '—'}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            attendee.status === 'confirmed' ? 'default' : 'outline'
+                          }
+                        >
+                          {attendee.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className='text-right'>
+                        <div className='flex items-center justify-end gap-2'>
+                          {attendee.attendee_type === 'guest' && attendee.email && (
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              onClick={() => handleSendInvitation(attendee.id)}
+                              disabled={sendInvitationMutation.isPending}
+                            >
+                              {sendInvitationMutation.isPending &&
+                                sendInvitationMutation.variables === attendee.id ? (
+                                <Loader2 className='h-4 w-4 animate-spin' />
+                              ) : (
+                                <>
+                                  <Mail className='mr-2 h-4 w-4' />
+                                  Send Invite
+                                </>
+                              )}
+                            </Button>
+                          )}
+                          {attendee.attendee_type === 'guest' && (
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              onClick={() => handleDeleteClick(attendee.id, attendee.name)}
+                              disabled={deleteGuestMutation.isPending || isCancelled}
+                              aria-label={isCancelled ? 'Guest cancelled' : 'Cancel guest'}
+                            >
+                              <Trash2 className='mr-2 h-4 w-4 text-destructive' />
+                              {isCancelled ? 'Cancelled' : 'Cancel'}
+                            </Button>
+                          )}
+                          {attendee.attendee_type === 'registrant' && (
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              onClick={() => handleCancelRegistrationClick(attendee.registration_id, attendee.name)}
+                              disabled={isCancelled}
+                              aria-label={isCancelled ? 'Registration cancelled' : 'Cancel registration'}
+                            >
+                              <Trash2 className='mr-2 h-4 w-4 text-destructive' />
+                              {isCancelled ? 'Cancelled' : 'Cancel'}
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Cancel Guest Dialog */}
       {guestToDelete && (
