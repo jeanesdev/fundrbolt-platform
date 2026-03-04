@@ -4,9 +4,11 @@
  */
 
 import { salesTrackingApi, type EventSalesList } from '@/api/salesTracking';
+import { DataTableViewToggle } from '@/components/data-table/view-toggle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,8 +35,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useViewPreference } from '@/hooks/use-view-preference';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowDown, ArrowUp, ArrowUpDown, Filter, Search } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, Filter, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 interface TicketSalesTableProps {
@@ -101,6 +104,7 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
   const [perPage, setPerPage] = useState(DEFAULT_PER_PAGE);
   const [sortBy, setSortBy] = useState<SortableColumn>('purchased_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [viewMode, setViewMode] = useViewPreference('ticket-sales');
   const [filters, setFilters] = useState<FilterState>({
     purchaser_name: '',
     purchaser_email: '',
@@ -348,6 +352,7 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
           <p className="text-sm text-muted-foreground">Search and sort every ticket purchase</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <DataTableViewToggle value={viewMode} onChange={setViewMode} />
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -405,62 +410,101 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
             <div className="text-sm text-muted-foreground">
               Showing {filteredSales.length} of {sales.length} sales on this page
             </div>
-            <div className="w-full overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {renderTextHeader('Purchaser', 'purchaser_name', 'purchaser_name', 'Filter purchaser')}
-                    {renderTextHeader('Email', 'purchaser_email', 'purchaser_email', 'Filter email')}
-                    {renderTextHeader('Package', 'package_name', 'package_name', 'Filter package')}
-                    {renderTextHeader('Qty', 'quantity', 'quantity', 'Filter quantity')}
-                    {renderTextHeader('Total', 'total_price', 'total_price', 'Filter total')}
-                    {renderOptionHeader(
-                      'Status',
-                      'payment_status',
-                      'payment_status',
-                      [{ value: 'all', label: 'All statuses' }].concat(
-                        paymentStatuses.map((status) => ({ value: status, label: status }))
-                      )
-                    )}
-                    {renderTextHeader('Purchased', 'purchased_at', 'purchased_at', 'Filter date')}
-                    {renderTextHeader('Promo', 'promo_code', 'promo_code', 'Filter promo')}
-                    {renderTextHeader('External ID', 'external_sale_id', 'external_sale_id', 'Filter external ID')}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredSales.map((sale) => (
-                    <TableRow key={sale.purchase_id}>
-                      <TableCell className="font-medium">{sale.purchaser_name || '—'}</TableCell>
-                      <TableCell>{sale.purchaser_email || '—'}</TableCell>
-                      <TableCell>{sale.package_name}</TableCell>
-                      <TableCell className="text-right">{sale.quantity}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(Number(sale.total_price))}</TableCell>
-                      <TableCell>
-                        <Badge variant={statusVariant(sale.payment_status)}>
-                          {sale.payment_status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{formatDate(sale.purchased_at)}</TableCell>
-                      <TableCell>
-                        {sale.promo_code ? (
-                          <div className="flex flex-col">
-                            <span className="font-medium">{sale.promo_code}</span>
-                            {sale.discount_amount !== null && (
-                              <span className="text-xs text-muted-foreground">
-                                {formatCurrency(Number(sale.discount_amount))} off
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          '—'
-                        )}
-                      </TableCell>
-                      <TableCell>{sale.external_sale_id || '—'}</TableCell>
+            {viewMode === 'card' ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredSales.map((sale) => (
+                  <div key={sale.purchase_id} className="rounded-md border p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{sale.purchaser_name || '—'}</span>
+                      <span className="font-semibold">{formatCurrency(Number(sale.total_price))}</span>
+                    </div>
+                    <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                      <dt className="text-muted-foreground">Package</dt>
+                      <dd>{sale.package_name}</dd>
+                      <dt className="text-muted-foreground">Date</dt>
+                      <dd>{formatDate(sale.purchased_at)}</dd>
+                    </dl>
+                    <Collapsible>
+                      <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                        <ChevronDown className="h-3 w-3" />
+                        More details
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                          <dt className="text-muted-foreground">Email</dt>
+                          <dd className="truncate">{sale.purchaser_email || '—'}</dd>
+                          <dt className="text-muted-foreground">Qty</dt>
+                          <dd>{sale.quantity}</dd>
+                          <dt className="text-muted-foreground">Status</dt>
+                          <dd><Badge variant={statusVariant(sale.payment_status)}>{sale.payment_status}</Badge></dd>
+                          <dt className="text-muted-foreground">Promo</dt>
+                          <dd>{sale.promo_code || '—'}</dd>
+                          <dt className="text-muted-foreground">External ID</dt>
+                          <dd>{sale.external_sale_id || '—'}</dd>
+                        </dl>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="w-full overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {renderTextHeader('Purchaser', 'purchaser_name', 'purchaser_name', 'Filter purchaser')}
+                      {renderTextHeader('Email', 'purchaser_email', 'purchaser_email', 'Filter email')}
+                      {renderTextHeader('Package', 'package_name', 'package_name', 'Filter package')}
+                      {renderTextHeader('Qty', 'quantity', 'quantity', 'Filter quantity')}
+                      {renderTextHeader('Total', 'total_price', 'total_price', 'Filter total')}
+                      {renderOptionHeader(
+                        'Status',
+                        'payment_status',
+                        'payment_status',
+                        [{ value: 'all', label: 'All statuses' }].concat(
+                          paymentStatuses.map((status) => ({ value: status, label: status }))
+                        )
+                      )}
+                      {renderTextHeader('Purchased', 'purchased_at', 'purchased_at', 'Filter date')}
+                      {renderTextHeader('Promo', 'promo_code', 'promo_code', 'Filter promo')}
+                      {renderTextHeader('External ID', 'external_sale_id', 'external_sale_id', 'Filter external ID')}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSales.map((sale) => (
+                      <TableRow key={sale.purchase_id}>
+                        <TableCell className="font-medium">{sale.purchaser_name || '—'}</TableCell>
+                        <TableCell>{sale.purchaser_email || '—'}</TableCell>
+                        <TableCell>{sale.package_name}</TableCell>
+                        <TableCell className="text-right">{sale.quantity}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(Number(sale.total_price))}</TableCell>
+                        <TableCell>
+                          <Badge variant={statusVariant(sale.payment_status)}>
+                            {sale.payment_status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{formatDate(sale.purchased_at)}</TableCell>
+                        <TableCell>
+                          {sale.promo_code ? (
+                            <div className="flex flex-col">
+                              <span className="font-medium">{sale.promo_code}</span>
+                              {sale.discount_amount !== null && (
+                                <span className="text-xs text-muted-foreground">
+                                  {formatCurrency(Number(sale.discount_amount))} off
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            '—'
+                          )}
+                        </TableCell>
+                        <TableCell>{sale.external_sale_id || '—'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-muted-foreground">{paginationText}</div>

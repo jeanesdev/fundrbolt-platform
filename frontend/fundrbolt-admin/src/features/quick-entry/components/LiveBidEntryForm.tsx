@@ -71,7 +71,7 @@ export function LiveBidEntryForm({
         <input
           id="quick-entry-amount"
           ref={amountRef}
-          className="w-full rounded-md border px-3 py-2"
+          className="w-full rounded-md border px-3 py-2 h-12 text-lg"
           inputMode="numeric"
           value={amount}
           onChange={(event) => onAmountChange(parseToWholeDollar(event.target.value))}
@@ -88,7 +88,7 @@ export function LiveBidEntryForm({
         <input
           id="quick-entry-bidder"
           ref={bidderRef}
-          className="w-full rounded-md border px-3 py-2"
+          className="w-full rounded-md border px-3 py-2 h-12 text-lg"
           inputMode="numeric"
           value={bidderNumber}
           onChange={(event) => onBidderNumberChange(event.target.value.replace(/[^\d]/g, ''))}
@@ -101,7 +101,7 @@ export function LiveBidEntryForm({
       <div className="col-span-2">
         <button
           type="submit"
-          className="bg-primary text-primary-foreground w-full rounded-md px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
+          className="bg-primary text-primary-foreground w-full rounded-md px-4 py-3 text-base font-medium disabled:cursor-not-allowed disabled:opacity-60 h-12"
           disabled={disabled}
         >
           {isSubmitting ? 'Submitting…' : 'Submit Bid'}

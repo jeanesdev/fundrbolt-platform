@@ -4,6 +4,7 @@
  */
 
 import { ApplicationReviewDialog } from '@/components/admin/application-review-dialog'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,6 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import npoService from '@/services/npo-service'
 import type { ApplicationStatus, NPOApplication } from '@/types/npo'
 import { useQuery } from '@tanstack/react-query'
@@ -51,6 +53,7 @@ export default function NPOApplicationsPage() {
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | 'all'>('submitted')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedApplication, setSelectedApplication] = useState<NPOApplication | null>(null)
+  const [viewMode, setViewMode] = useViewPreference('npo-applications')
 
   // Fetch applications
   const { data, isLoading, error, refetch } = useQuery({
@@ -150,14 +153,17 @@ export default function NPOApplicationsPage() {
       {/* Applications Table */}
       <Card>
         <CardHeader>
-          <CardTitle>
-            Applications
-            {filteredApplications && (
-              <span className="ml-2 text-sm font-normal text-muted-foreground">
-                ({filteredApplications.length} {filteredApplications.length === 1 ? 'result' : 'results'})
-              </span>
-            )}
-          </CardTitle>
+          <div className='flex items-center justify-between'>
+            <CardTitle>
+              Applications
+              {filteredApplications && (
+                <span className="ml-2 text-sm font-normal text-muted-foreground">
+                  ({filteredApplications.length} {filteredApplications.length === 1 ? 'result' : 'results'})
+                </span>
+              )}
+            </CardTitle>
+            <DataTableViewToggle value={viewMode} onChange={setViewMode} />
+          </div>
         </CardHeader>
         <CardContent>
           {!filteredApplications || filteredApplications.length === 0 ? (
@@ -169,6 +175,37 @@ export default function NPOApplicationsPage() {
                   ? 'Try adjusting your search criteria'
                   : 'There are no applications to review at this time'}
               </p>
+            </div>
+          ) : viewMode === 'card' ? (
+            <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+              {filteredApplications.map((application) => (
+                <div key={application.id} className='rounded-md border p-3 space-y-2'>
+                  <div className='flex items-center justify-between'>
+                    <span className='font-medium'>{application.npo_name || 'Unknown'}</span>
+                    <Badge variant='secondary' className={`${statusColors[application.status]} text-white`}>
+                      {statusLabels[application.status]}
+                    </Badge>
+                  </div>
+                  <dl className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
+                    <dt className='text-muted-foreground'>Email</dt>
+                    <dd className='truncate'>{application.npo_email || 'N/A'}</dd>
+                    <dt className='text-muted-foreground'>Submitted</dt>
+                    <dd>{new Date(application.submitted_at).toLocaleDateString()}</dd>
+                  </dl>
+                  <div className='flex justify-end gap-2'>
+                    <Link to='/npos/$npoId' params={{ npoId: application.npo_id }}>
+                      <Button size='sm' variant='outline'>
+                        <ExternalLink className='mr-2 h-4 w-4' /> View Details
+                      </Button>
+                    </Link>
+                    {application.status === 'submitted' || application.status === 'under_review' ? (
+                      <Button size='sm' onClick={() => setSelectedApplication(application)}>Review</Button>
+                    ) : (
+                      <Button size='sm' variant='outline' onClick={() => setSelectedApplication(application)}>View</Button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="overflow-x-auto">

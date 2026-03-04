@@ -61,6 +61,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - PostgreSQL 15 (users, social identity links, audit events), Redis 7 (session/token flows) (030-social-login-i)
 - Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18, Vite, TanStack Router, Zustand, Radix UI (Frontend) (031-duplicate-event)
 - Azure Database for PostgreSQL (existing tables: events, food_options, ticket_packages, event_tables, sponsors, event_media, event_links, donation_labels); Azure Blob Storage (media file deep-copy) (031-duplicate-event)
+- TypeScript 5.9, React 19, Node 22 + Vite 7, TanStack Router, TanStack React Table 8, TanStack React Query 5, Radix UI primitives, Tailwind CSS 4, Zustand 5, shadcn/ui sidebar component, Lucide icons (032-admin-pwa-mobile)
+- Browser localStorage (view preference persistence only — no backend storage) (032-admin-pwa-mobile)
 
 ## Project Structure
 ```
@@ -145,6 +147,7 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 032-admin-pwa-mobile: Added TypeScript 5.9, React 19, Node 22 + Vite 7, TanStack Router, TanStack React Table 8, TanStack React Query 5, Radix UI primitives, Tailwind CSS 4, Zustand 5, shadcn/ui sidebar component, Lucide icons
 - 031-duplicate-event: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18, Vite, TanStack Router, Zustand, Radix UI (Frontend)
 - 030-social-login-i: Added Python 3.11+ (backend), TypeScript 5.x + React 18/19 PWAs (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, existing auth/session stack (OAuth2/JWT), React, TanStack Router, Zustand
 - 029-quick-bid-entry: Added Python 3.11+ (backend), TypeScript 5.x + React 19 (admin frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React, TanStack Router, Zustand, React Query, Radix UI

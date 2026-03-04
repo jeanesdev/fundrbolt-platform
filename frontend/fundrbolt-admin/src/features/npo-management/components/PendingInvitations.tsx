@@ -3,6 +3,7 @@
  * Displays list of pending member invitations with status and actions
  */
 
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { getErrorMessage } from '@/lib/error-utils'
 import { memberApi } from '@/services/npo-service'
 import type { MemberRole, PendingInvitation } from '@/types/npo'
@@ -56,6 +58,7 @@ export function PendingInvitations({ npoId }: PendingInvitationsProps) {
   const [invitationToRevoke, setInvitationToRevoke] = useState<PendingInvitation | null>(
     null
   )
+  const [viewMode, setViewMode] = useViewPreference('pending-invitations')
 
   // Fetch pending invitations
   const {
@@ -154,96 +157,150 @@ export function PendingInvitations({ npoId }: PendingInvitationsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Mail className="h-5 w-5" />
-          Pending Invitations
-        </CardTitle>
-        <CardDescription>
-          Invitations sent but not yet accepted ({invitations.length})
-        </CardDescription>
+        <div className='flex items-center justify-between'>
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Pending Invitations
+            </CardTitle>
+            <CardDescription>
+              Invitations sent but not yet accepted ({invitations.length})
+            </CardDescription>
+          </div>
+          <DataTableViewToggle value={viewMode} onChange={setViewMode} />
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Sent</TableHead>
-                <TableHead>Expires</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {invitations.map((invitation) => {
-                const expiresAt = new Date(invitation.expires_at)
-                const now = new Date()
-                const hoursUntilExpiry = Math.floor(
-                  (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60)
-                )
-                const isExpiringSoon = hoursUntilExpiry < 24 && hoursUntilExpiry > 0
+        {viewMode === 'card' ? (
+          <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+            {invitations.map((invitation) => {
+              const expiresAt = new Date(invitation.expires_at)
+              const now = new Date()
+              const hoursUntilExpiry = Math.floor(
+                (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60)
+              )
+              const isExpiringSoon = hoursUntilExpiry < 24 && hoursUntilExpiry > 0
+              return (
+                <div key={invitation.id} className='rounded-md border p-3 space-y-2'>
+                  <div className='flex items-center justify-between'>
+                    <div className='flex items-center gap-2'>
+                      <UserPlus className='h-4 w-4 text-muted-foreground' />
+                      <span className='font-medium truncate'>{invitation.email}</span>
+                    </div>
+                    <div className='flex items-center gap-1'>
+                      <Button variant='ghost' size='sm' onClick={() => handleResend(invitation.id)}
+                        disabled={resendMutation.isPending || revokeMutation.isPending}
+                        className='text-blue-600 hover:text-blue-700 hover:bg-blue-50' title='Resend'>
+                        <MailPlus className='h-4 w-4' />
+                      </Button>
+                      <Button variant='ghost' size='sm' onClick={() => handleRevoke(invitation)}
+                        disabled={resendMutation.isPending || revokeMutation.isPending}
+                        className='text-red-600 hover:text-red-700 hover:bg-red-50' title='Revoke'>
+                        <Trash2 className='h-4 w-4' />
+                      </Button>
+                    </div>
+                  </div>
+                  <dl className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
+                    <dt className='text-muted-foreground'>Role</dt>
+                    <dd><Badge className={roleColors[invitation.role as MemberRole]}>{roleLabels[invitation.role as MemberRole]}</Badge></dd>
+                    <dt className='text-muted-foreground'>Sent</dt>
+                    <dd>{new Date(invitation.created_at).toLocaleDateString()}</dd>
+                    <dt className='text-muted-foreground'>Expires</dt>
+                    <dd className='flex items-center gap-1'>
+                      <Clock className='h-3 w-3 text-muted-foreground' />
+                      <span className={isExpiringSoon ? 'text-orange-600 font-medium' : ''}>
+                        {expiresAt.toLocaleDateString()}
+                        {isExpiringSoon && <span className='text-xs ml-1'>({hoursUntilExpiry}h left)</span>}
+                      </span>
+                    </dd>
+                  </dl>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Sent</TableHead>
+                  <TableHead>Expires</TableHead>
+                  <TableHead className="w-[100px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invitations.map((invitation) => {
+                  const expiresAt = new Date(invitation.expires_at)
+                  const now = new Date()
+                  const hoursUntilExpiry = Math.floor(
+                    (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60)
+                  )
+                  const isExpiringSoon = hoursUntilExpiry < 24 && hoursUntilExpiry > 0
 
-                return (
-                  <TableRow key={invitation.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <UserPlus className="h-4 w-4 text-muted-foreground" />
-                        {invitation.email}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={roleColors[invitation.role as MemberRole]}>
-                        {roleLabels[invitation.role as MemberRole]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(invitation.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span
-                          className={isExpiringSoon ? 'text-orange-600 font-medium' : ''}
-                        >
-                          {expiresAt.toLocaleDateString()}
-                          {isExpiringSoon && (
-                            <span className="text-xs ml-1">
-                              ({hoursUntilExpiry}h left)
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleResend(invitation.id)}
-                          disabled={resendMutation.isPending || revokeMutation.isPending}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          title="Resend invitation"
-                        >
-                          <MailPlus className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRevoke(invitation)}
-                          disabled={resendMutation.isPending || revokeMutation.isPending}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          title="Revoke invitation"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                  return (
+                    <TableRow key={invitation.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <UserPlus className="h-4 w-4 text-muted-foreground" />
+                          {invitation.email}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={roleColors[invitation.role as MemberRole]}>
+                          {roleLabels[invitation.role as MemberRole]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(invitation.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span
+                            className={isExpiringSoon ? 'text-orange-600 font-medium' : ''}
+                          >
+                            {expiresAt.toLocaleDateString()}
+                            {isExpiringSoon && (
+                              <span className="text-xs ml-1">
+                                ({hoursUntilExpiry}h left)
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleResend(invitation.id)}
+                            disabled={resendMutation.isPending || revokeMutation.isPending}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            title="Resend invitation"
+                          >
+                            <MailPlus className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRevoke(invitation)}
+                            disabled={resendMutation.isPending || revokeMutation.isPending}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            title="Revoke invitation"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
 
       {/* Revoke confirmation dialog */}

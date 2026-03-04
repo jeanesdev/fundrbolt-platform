@@ -1,3 +1,4 @@
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -23,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import type { AuctionBidDashboardResponse } from '@/types/auctionBidImport'
 import { Link } from '@tanstack/react-router'
 import { ArrowUpDown, Filter, Loader2 } from 'lucide-react'
@@ -91,6 +93,7 @@ export function AuctionBidsDashboard({
     amount: '',
     time: '',
   })
+  const [viewMode, setViewMode] = useViewPreference('auction-bids')
 
   const handleHighestSortChange = (key: HighestSortKey) => {
     if (highestSortKey === key) {
@@ -309,9 +312,12 @@ export function AuctionBidsDashboard({
             Review bid totals, highest bids, and recent activity for this event.
           </p>
         </div>
-        <Button onClick={onImportClick} variant='outline'>
-          Import Bids
-        </Button>
+        <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+          <Button onClick={onImportClick} variant='outline'>
+            Import Bids
+          </Button>
+          <DataTableViewToggle value={viewMode} onChange={setViewMode} />
+        </div>
       </div>
 
       <div className='grid gap-4 md:grid-cols-2'>
@@ -344,97 +350,124 @@ export function AuctionBidsDashboard({
         </CardHeader>
         <CardContent>
           {highestBids.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {renderHeader(
-                    'Item #',
-                    'itemNumber',
-                    highestSortKey,
-                    highestSortDirection,
-                    (key) => handleHighestSortChange(key as HighestSortKey),
-                    highestFilters.itemNumber,
-                    (value) =>
-                      setHighestFilters((prev) => ({
-                        ...prev,
-                        itemNumber: value,
-                      })),
-                    'Search item #'
-                  )}
-                  {renderHeader(
-                    'Item Name',
-                    'itemName',
-                    highestSortKey,
-                    highestSortDirection,
-                    (key) => handleHighestSortChange(key as HighestSortKey),
-                    highestFilters.itemName,
-                    (value) =>
-                      setHighestFilters((prev) => ({
-                        ...prev,
-                        itemName: value,
-                      })),
-                    'Search item name'
-                  )}
-                  {renderHeader(
-                    'Bidder',
-                    'bidderName',
-                    highestSortKey,
-                    highestSortDirection,
-                    (key) => handleHighestSortChange(key as HighestSortKey),
-                    highestFilters.bidderName,
-                    (value) =>
-                      setHighestFilters((prev) => ({
-                        ...prev,
-                        bidderName: value,
-                      })),
-                    'Search bidder'
-                  )}
-                  {renderHeader(
-                    'Bid Amount',
-                    'amount',
-                    highestSortKey,
-                    highestSortDirection,
-                    (key) => handleHighestSortChange(key as HighestSortKey),
-                    highestFilters.amount,
-                    (value) =>
-                      setHighestFilters((prev) => ({
-                        ...prev,
-                        amount: value,
-                      })),
-                    'Search amount',
-                    'text-right'
-                  )}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            viewMode === 'card' ? (
+              <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
                 {sortedHighestBids.length ? (
                   sortedHighestBids.map((bid) => (
-                    <TableRow key={`${bid.auction_item_id}-${bid.bidder_email}`}>
-                      <TableCell className='font-medium'>
+                    <div key={`${bid.auction_item_id}-${bid.bidder_email}`} className='rounded-md border p-3 space-y-1'>
+                      <div className='flex items-center justify-between'>
                         <Link
                           to='/events/$eventId/auction-items/$itemId'
                           params={{ eventId, itemId: bid.auction_item_id }}
-                          className='text-primary underline-offset-4 hover:underline'
+                          className='text-primary font-medium underline-offset-4 hover:underline'
                         >
-                          {bid.auction_item_number}
+                          Item #{bid.auction_item_number}
                         </Link>
-                      </TableCell>
-                      <TableCell>{bid.auction_item_title}</TableCell>
-                      <TableCell>{bid.bidder_name || bid.bidder_email}</TableCell>
-                      <TableCell className='text-right'>
-                        {formatCurrency(bid.bid_amount)}
-                      </TableCell>
-                    </TableRow>
+                        <span className='font-semibold'>{formatCurrency(bid.bid_amount)}</span>
+                      </div>
+                      <p className='text-sm'>{bid.auction_item_title}</p>
+                      <p className='text-sm text-muted-foreground'>{bid.bidder_name || bid.bidder_email}</p>
+                    </div>
                   ))
                 ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className='text-muted-foreground text-sm'>
-                      No bids match the current filters.
-                    </TableCell>
-                  </TableRow>
+                  <div className='col-span-full text-sm text-muted-foreground'>
+                    No bids match the current filters.
+                  </div>
                 )}
-              </TableBody>
-            </Table>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {renderHeader(
+                      'Item #',
+                      'itemNumber',
+                      highestSortKey,
+                      highestSortDirection,
+                      (key) => handleHighestSortChange(key as HighestSortKey),
+                      highestFilters.itemNumber,
+                      (value) =>
+                        setHighestFilters((prev) => ({
+                          ...prev,
+                          itemNumber: value,
+                        })),
+                      'Search item #'
+                    )}
+                    {renderHeader(
+                      'Item Name',
+                      'itemName',
+                      highestSortKey,
+                      highestSortDirection,
+                      (key) => handleHighestSortChange(key as HighestSortKey),
+                      highestFilters.itemName,
+                      (value) =>
+                        setHighestFilters((prev) => ({
+                          ...prev,
+                          itemName: value,
+                        })),
+                      'Search item name'
+                    )}
+                    {renderHeader(
+                      'Bidder',
+                      'bidderName',
+                      highestSortKey,
+                      highestSortDirection,
+                      (key) => handleHighestSortChange(key as HighestSortKey),
+                      highestFilters.bidderName,
+                      (value) =>
+                        setHighestFilters((prev) => ({
+                          ...prev,
+                          bidderName: value,
+                        })),
+                      'Search bidder'
+                    )}
+                    {renderHeader(
+                      'Bid Amount',
+                      'amount',
+                      highestSortKey,
+                      highestSortDirection,
+                      (key) => handleHighestSortChange(key as HighestSortKey),
+                      highestFilters.amount,
+                      (value) =>
+                        setHighestFilters((prev) => ({
+                          ...prev,
+                          amount: value,
+                        })),
+                      'Search amount',
+                      'text-right'
+                    )}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedHighestBids.length ? (
+                    sortedHighestBids.map((bid) => (
+                      <TableRow key={`${bid.auction_item_id}-${bid.bidder_email}`}>
+                        <TableCell className='font-medium'>
+                          <Link
+                            to='/events/$eventId/auction-items/$itemId'
+                            params={{ eventId, itemId: bid.auction_item_id }}
+                            className='text-primary underline-offset-4 hover:underline'
+                          >
+                            {bid.auction_item_number}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{bid.auction_item_title}</TableCell>
+                        <TableCell>{bid.bidder_name || bid.bidder_email}</TableCell>
+                        <TableCell className='text-right'>
+                          {formatCurrency(bid.bid_amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className='text-muted-foreground text-sm'>
+                        No bids match the current filters.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )
           ) : (
             <p className='text-muted-foreground text-sm'>No bids yet.</p>
           )}
@@ -448,114 +481,142 @@ export function AuctionBidsDashboard({
         </CardHeader>
         <CardContent>
           {recentBids.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {renderHeader(
-                    'Item #',
-                    'itemNumber',
-                    recentSortKey,
-                    recentSortDirection,
-                    (key) => handleRecentSortChange(key as RecentSortKey),
-                    recentFilters.itemNumber,
-                    (value) =>
-                      setRecentFilters((prev) => ({
-                        ...prev,
-                        itemNumber: value,
-                      })),
-                    'Search item #'
-                  )}
-                  {renderHeader(
-                    'Item Name',
-                    'itemName',
-                    recentSortKey,
-                    recentSortDirection,
-                    (key) => handleRecentSortChange(key as RecentSortKey),
-                    recentFilters.itemName,
-                    (value) =>
-                      setRecentFilters((prev) => ({
-                        ...prev,
-                        itemName: value,
-                      })),
-                    'Search item name'
-                  )}
-                  {renderHeader(
-                    'Bidder',
-                    'bidderName',
-                    recentSortKey,
-                    recentSortDirection,
-                    (key) => handleRecentSortChange(key as RecentSortKey),
-                    recentFilters.bidderName,
-                    (value) =>
-                      setRecentFilters((prev) => ({
-                        ...prev,
-                        bidderName: value,
-                      })),
-                    'Search bidder'
-                  )}
-                  {renderHeader(
-                    'Bid Time',
-                    'time',
-                    recentSortKey,
-                    recentSortDirection,
-                    (key) => handleRecentSortChange(key as RecentSortKey),
-                    recentFilters.time,
-                    (value) =>
-                      setRecentFilters((prev) => ({
-                        ...prev,
-                        time: value,
-                      })),
-                    'Search time'
-                  )}
-                  {renderHeader(
-                    'Bid Amount',
-                    'amount',
-                    recentSortKey,
-                    recentSortDirection,
-                    (key) => handleRecentSortChange(key as RecentSortKey),
-                    recentFilters.amount,
-                    (value) =>
-                      setRecentFilters((prev) => ({
-                        ...prev,
-                        amount: value,
-                      })),
-                    'Search amount',
-                    'text-right'
-                  )}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            viewMode === 'card' ? (
+              <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
                 {sortedRecentBids.length ? (
                   sortedRecentBids.map((bid) => (
-                    <TableRow
-                      key={`${bid.auction_item_id}-${bid.bidder_email}-${bid.bid_time}`}
-                    >
-                      <TableCell className='font-medium'>
+                    <div key={`${bid.auction_item_id}-${bid.bidder_email}-${bid.bid_time}`} className='rounded-md border p-3 space-y-1'>
+                      <div className='flex items-center justify-between'>
                         <Link
                           to='/events/$eventId/auction-items/$itemId'
                           params={{ eventId, itemId: bid.auction_item_id }}
-                          className='text-primary underline-offset-4 hover:underline'
+                          className='text-primary font-medium underline-offset-4 hover:underline'
                         >
-                          {bid.auction_item_number}
+                          Item #{bid.auction_item_number}
                         </Link>
-                      </TableCell>
-                      <TableCell>{bid.auction_item_title}</TableCell>
-                      <TableCell>{bid.bidder_name || bid.bidder_email}</TableCell>
-                      <TableCell>{formatDateTime(bid.bid_time)}</TableCell>
-                      <TableCell className='text-right'>
-                        {formatCurrency(bid.bid_amount)}
-                      </TableCell>
-                    </TableRow>
+                        <span className='font-semibold'>{formatCurrency(bid.bid_amount)}</span>
+                      </div>
+                      <p className='text-sm'>{bid.auction_item_title}</p>
+                      <p className='text-sm text-muted-foreground'>{bid.bidder_name || bid.bidder_email}</p>
+                      <p className='text-xs text-muted-foreground'>{formatDateTime(bid.bid_time)}</p>
+                    </div>
                   ))
                 ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className='text-muted-foreground text-sm'>
-                      No bids match the current filters.
-                    </TableCell>
-                  </TableRow>
+                  <div className='col-span-full text-sm text-muted-foreground'>
+                    No bids match the current filters.
+                  </div>
                 )}
-              </TableBody>
-            </Table>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {renderHeader(
+                      'Item #',
+                      'itemNumber',
+                      recentSortKey,
+                      recentSortDirection,
+                      (key) => handleRecentSortChange(key as RecentSortKey),
+                      recentFilters.itemNumber,
+                      (value) =>
+                        setRecentFilters((prev) => ({
+                          ...prev,
+                          itemNumber: value,
+                        })),
+                      'Search item #'
+                    )}
+                    {renderHeader(
+                      'Item Name',
+                      'itemName',
+                      recentSortKey,
+                      recentSortDirection,
+                      (key) => handleRecentSortChange(key as RecentSortKey),
+                      recentFilters.itemName,
+                      (value) =>
+                        setRecentFilters((prev) => ({
+                          ...prev,
+                          itemName: value,
+                        })),
+                      'Search item name'
+                    )}
+                    {renderHeader(
+                      'Bidder',
+                      'bidderName',
+                      recentSortKey,
+                      recentSortDirection,
+                      (key) => handleRecentSortChange(key as RecentSortKey),
+                      recentFilters.bidderName,
+                      (value) =>
+                        setRecentFilters((prev) => ({
+                          ...prev,
+                          bidderName: value,
+                        })),
+                      'Search bidder'
+                    )}
+                    {renderHeader(
+                      'Bid Time',
+                      'time',
+                      recentSortKey,
+                      recentSortDirection,
+                      (key) => handleRecentSortChange(key as RecentSortKey),
+                      recentFilters.time,
+                      (value) =>
+                        setRecentFilters((prev) => ({
+                          ...prev,
+                          time: value,
+                        })),
+                      'Search time'
+                    )}
+                    {renderHeader(
+                      'Bid Amount',
+                      'amount',
+                      recentSortKey,
+                      recentSortDirection,
+                      (key) => handleRecentSortChange(key as RecentSortKey),
+                      recentFilters.amount,
+                      (value) =>
+                        setRecentFilters((prev) => ({
+                          ...prev,
+                          amount: value,
+                        })),
+                      'Search amount',
+                      'text-right'
+                    )}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedRecentBids.length ? (
+                    sortedRecentBids.map((bid) => (
+                      <TableRow
+                        key={`${bid.auction_item_id}-${bid.bidder_email}-${bid.bid_time}`}
+                      >
+                        <TableCell className='font-medium'>
+                          <Link
+                            to='/events/$eventId/auction-items/$itemId'
+                            params={{ eventId, itemId: bid.auction_item_id }}
+                            className='text-primary underline-offset-4 hover:underline'
+                          >
+                            {bid.auction_item_number}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{bid.auction_item_title}</TableCell>
+                        <TableCell>{bid.bidder_name || bid.bidder_email}</TableCell>
+                        <TableCell>{formatDateTime(bid.bid_time)}</TableCell>
+                        <TableCell className='text-right'>
+                          {formatCurrency(bid.bid_amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className='text-muted-foreground text-sm'>
+                        No bids match the current filters.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )
           ) : (
             <p className='text-muted-foreground text-sm'>
               No bids recorded yet.

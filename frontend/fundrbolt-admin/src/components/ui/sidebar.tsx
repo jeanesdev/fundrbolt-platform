@@ -1,9 +1,3 @@
-import * as React from 'react'
-import { Slot } from '@radix-ui/react-slot'
-import { VariantProps, cva } from 'class-variance-authority'
-import { PanelLeftIcon } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useIsMobile } from '@/hooks/use-mobile'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -21,6 +15,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { useBreakpoint } from '@/hooks/use-breakpoint'
+import { cn } from '@/lib/utils'
+import { Slot } from '@radix-ui/react-slot'
+import { VariantProps, cva } from 'class-variance-authority'
+import { PanelLeftIcon } from 'lucide-react'
+import * as React from 'react'
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state'
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -37,6 +37,8 @@ type SidebarContextProps = {
   setOpenMobile: (open: boolean) => void
   isMobile: boolean
   toggleSidebar: () => void
+  isTabletLandscape: boolean
+  closeSidebar: () => void
 }
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null)
@@ -63,7 +65,9 @@ function SidebarProvider({
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }) {
-  const isMobile = useIsMobile()
+  const breakpoint = useBreakpoint()
+  const isMobile = breakpoint === 'phone' || breakpoint === 'tablet-portrait'
+  const isTabletLandscape = breakpoint === 'tablet-landscape'
   const [openMobile, setOpenMobile] = React.useState(false)
 
   // This is the internal state of the sidebar.
@@ -89,6 +93,25 @@ function SidebarProvider({
   const toggleSidebar = React.useCallback(() => {
     return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
   }, [isMobile, setOpen, setOpenMobile])
+
+  // Close sidebar overlay (Sheet on mobile/tablet-portrait, collapse on tablet-landscape).
+  const closeSidebar = React.useCallback(() => {
+    if (isMobile) {
+      setOpenMobile(false)
+    } else if (isTabletLandscape) {
+      setOpen(false)
+    }
+  }, [isMobile, isTabletLandscape, setOpen, setOpenMobile])
+
+  // T020: Auto-collapse to icon-rail when entering tablet-landscape without explicit preference.
+  React.useEffect(() => {
+    if (isTabletLandscape) {
+      const hasCookie = document.cookie.includes(SIDEBAR_COOKIE_NAME)
+      if (!hasCookie) {
+        _setOpen(false)
+      }
+    }
+  }, [isTabletLandscape])
 
   // Adds a keyboard shortcut to toggle the sidebar.
   React.useEffect(() => {
@@ -119,8 +142,20 @@ function SidebarProvider({
       openMobile,
       setOpenMobile,
       toggleSidebar,
+      isTabletLandscape,
+      closeSidebar,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+    [
+      state,
+      open,
+      setOpen,
+      isMobile,
+      openMobile,
+      setOpenMobile,
+      toggleSidebar,
+      isTabletLandscape,
+      closeSidebar,
+    ]
   )
 
   return (
@@ -160,7 +195,14 @@ function Sidebar({
   variant?: 'sidebar' | 'floating' | 'inset'
   collapsible?: 'offcanvas' | 'icon' | 'none'
 }) {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const {
+    isMobile,
+    state,
+    openMobile,
+    setOpenMobile,
+    isTabletLandscape,
+    setOpen,
+  } = useSidebar()
 
   if (collapsible === 'none') {
     return (
@@ -204,7 +246,7 @@ function Sidebar({
 
   return (
     <div
-      className='group peer text-sidebar-foreground hidden md:block'
+      className='group peer text-sidebar-foreground hidden lg:block'
       data-state={state}
       data-collapsible={state === 'collapsed' ? collapsible : ''}
       data-variant={variant}
@@ -220,13 +262,27 @@ function Sidebar({
           'group-data-[side=right]:rotate-180',
           variant === 'floating' || variant === 'inset'
             ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]'
-            : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)'
+            : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)',
+          // T021: Keep gap at icon-rail width when tablet-landscape overlay is expanded
+          isTabletLandscape &&
+          state === 'expanded' &&
+          'w-(--sidebar-width-icon)!'
         )}
       />
+      {/* T021: Backdrop for tablet-landscape overlay */}
+      {isTabletLandscape && state === 'expanded' && (
+        <div
+          className='fixed inset-0 z-40 bg-black/50'
+          onClick={() => setOpen(false)}
+          aria-hidden='true'
+        />
+      )}
       <div
         data-slot='sidebar-container'
         className={cn(
-          'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[inset-inline,width] duration-200 ease-linear md:flex',
+          'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[inset-inline,width] duration-200 ease-linear lg:flex',
+          // T021: Higher z-index for tablet-landscape overlay
+          isTabletLandscape && state === 'expanded' && 'z-50',
           side === 'left'
             ? 'start-0 group-data-[collapsible=offcanvas]:-start-[calc(var(--sidebar-width))]'
             : 'end-0 group-data-[collapsible=offcanvas]:-end-[calc(var(--sidebar-width))]',
@@ -312,7 +368,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<'div'>) {
       data-slot='sidebar-inset'
       className={cn(
         'bg-background relative flex w-full flex-1 flex-col',
-        'md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ms-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ms-2',
+        'lg:peer-data-[variant=inset]:m-2 lg:peer-data-[variant=inset]:ms-0 lg:peer-data-[variant=inset]:rounded-xl lg:peer-data-[variant=inset]:shadow-sm lg:peer-data-[variant=inset]:peer-data-[state=collapsed]:ms-2',
         className
       )}
       {...props}
@@ -571,7 +627,7 @@ function SidebarMenuAction({
         'peer-data-[size=lg]/menu-button:top-2.5',
         'group-data-[collapsible=icon]:hidden',
         showOnHover &&
-          'peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0',
+        'peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0',
         className
       )}
       {...props}
@@ -724,5 +780,5 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
-  useSidebar,
+  useSidebar
 }

@@ -41,6 +41,34 @@
       font-size: 16px !important;
     }
   }
+
+  /* T024-T027: Touch-friendly targets on tablet/phone viewports (< 1367px desktop threshold) */
+  @media screen and (max-width: 1365px) {
+
+    /* Dropdown menu items, select options, combobox options */
+    [role='menuitem'],
+    [role='option'],
+    [role='menuitemradio'],
+    [role='menuitemcheckbox'] {
+      min-height: 2.75rem;
+      /* 44px */
+    }
+
+    /* T025: Pagination controls */
+    [data-pagination] button {
+      min-height: 2.75rem;
+      min-width: 2.75rem;
+    }
+
+    [data-pagination] {
+      gap: 0.5rem;
+    }
+
+    /* T027: Toolbar buttons */
+    [data-toolbar] button {
+      min-height: 2.75rem;
+    }
+  }
 }
 
 @utility container {

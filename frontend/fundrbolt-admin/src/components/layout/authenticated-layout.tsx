@@ -8,6 +8,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { LayoutProvider } from '@/context/layout-provider'
 import { SearchProvider } from '@/context/search-provider'
 import { useAuth } from '@/hooks/use-auth'
+import { useBreakpoint } from '@/hooks/use-breakpoint'
 import { useNpoContext } from '@/hooks/use-npo-context'
 import apiClient from '@/lib/axios'
 import { getCookie } from '@/lib/cookies'
@@ -22,7 +23,13 @@ type AuthenticatedLayoutProps = {
 }
 
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
-  const defaultOpen = getCookie('sidebar_state') !== 'false'
+  const breakpoint = useBreakpoint()
+  const cookieValue = getCookie('sidebar_state')
+  // T022: Breakpoint-aware default — collapsed on tablet-landscape, expanded on desktop
+  const defaultOpen =
+    cookieValue !== null
+      ? cookieValue !== 'false'
+      : breakpoint !== 'tablet-landscape'
   const { isSuperAdmin, user } = useAuth()
   const { setAvailableNpos } = useNpoContext()
 
@@ -51,13 +58,15 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       }
 
       // Add all NPOs user has access to
-      nposData.items.forEach((npo: { id: string; name: string; logo_url?: string }) => {
-        npoOptions.push({
-          id: npo.id,
-          name: npo.name,
-          logo_url: npo.logo_url,
-        })
-      })
+      nposData.items.forEach(
+        (npo: { id: string; name: string; logo_url?: string }) => {
+          npoOptions.push({
+            id: npo.id,
+            name: npo.name,
+            logo_url: npo.logo_url,
+          })
+        }
+      )
 
       setAvailableNpos(npoOptions)
     }
