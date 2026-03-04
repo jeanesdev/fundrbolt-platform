@@ -46,7 +46,7 @@ An admin is reviewing a past event's detail page. They want to reuse this event'
 
 ### User Story 3 - Optionally Include Media When Duplicating (Priority: P2)
 
-When duplicating an event, the admin is presented with an option to also copy media files (banner images, flyers, event logos) from the original event. By default, media is NOT copied since images often change between event editions. If the admin opts in, the media files are referenced (or copied) into the new event.
+When duplicating an event, the admin is presented with an option to also copy media files (banner images, flyers, event logos) from the original event. By default, media is NOT copied since images often change between event editions. If the admin opts in, the media files are deep-copied to new storage paths and associated with the new event as fully independent files.
 
 **Why this priority**: Media cloning is secondary because images typically change year-to-year (new date on the flyer, updated branding). However, some admins may want to start with last year's images as a baseline. Offering the choice respects both workflows.
 

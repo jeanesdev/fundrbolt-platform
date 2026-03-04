@@ -16,7 +16,7 @@
 
 **Purpose**: No new project structure or dependencies needed. This feature builds on existing infrastructure. Setup is limited to the Pydantic request schema and TypeScript type.
 
-- [ ] T001 [P] Add `DuplicateEventRequest` Pydantic schema to `backend/app/schemas/event.py` with fields: `include_media: bool = False`, `include_links: bool = False`, `include_donation_labels: bool = False`
+- [ ] T001 [P] Add `DuplicateEventRequest` Pydantic schema to `backend/app/schemas/event.py` with fields: `include_media: bool = False`, `include_links: bool = True`, `include_donation_labels: bool = True`
 - [ ] T002 [P] Add `DuplicateEventOptions` TypeScript interface to `frontend/fundrbolt-admin/src/types/event.ts` with fields: `include_media?: boolean`, `include_links?: boolean`, `include_donation_labels?: boolean`
 
 ---
@@ -42,10 +42,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Add `POST /{event_id}/duplicate` endpoint to `backend/app/api/v1/events.py` — accept `DuplicateEventRequest` body (defaults to empty/all-false); authenticate via `get_current_active_user`; verify NPO access via `PermissionService`; call `EventService.duplicate_event()`; log duplication action to audit trail referencing both source and new event IDs (FR-019); return 201 with `EventDetailResponse` including SAS URLs for media; handle 404 (event not found) and 403 (no permission)
+- [ ] T005 [US1] Add `POST /{event_id}/duplicate` endpoint to `backend/app/api/v1/events.py` — accept `DuplicateEventRequest` body (defaults: include_media=false, include_links=true, include_donation_labels=true per FR-014/FR-015); authenticate via `get_current_active_user`; verify NPO access via `PermissionService`; call `EventService.duplicate_event()`; log duplication action to audit trail referencing both source and new event IDs (FR-019); return 201 with `EventDetailResponse` including SAS URLs for media; handle 404 (event not found) and 403 (no permission)
 - [ ] T006 [US1] Add `duplicateEvent(eventId: string, options?: DuplicateEventOptions): Promise<EventDetail>` method to `frontend/fundrbolt-admin/src/services/event-service.ts` — POST to `/events/${eventId}/duplicate` with options body
 - [ ] T007 [US1] Add `duplicateEvent` async action to Zustand store in `frontend/fundrbolt-admin/src/stores/event-store.ts` — call `eventService.duplicateEvent()`, set loading/error state, return new event data
-- [ ] T008 [US1] Create `DuplicateEventDialog` component at `frontend/fundrbolt-admin/src/features/events/components/DuplicateEventDialog.tsx` — Radix UI AlertDialog with: source event name display, three checkboxes (Include media files — unchecked default, Include external links — checked default, Include donation labels — checked default), Confirm/Cancel buttons, loading spinner during duplication, calls store action on confirm, shows success toast with new event name, triggers navigation to new event edit page on success
+- [ ] T008 [US1] Create `DuplicateEventDialog` component at `frontend/fundrbolt-admin/src/features/events/components/DuplicateEventDialog.tsx` — Radix UI AlertDialog with: display of both the source event name and the proposed new event name (e.g. "{name} (Copy)" truncated to 255 chars, matching the backend naming in T004 / FR-012), three checkboxes (Include media files — unchecked default, Include external links — checked default, Include donation labels — checked default), Confirm/Cancel buttons, loading spinner during duplication, calls store action on confirm, shows success toast with new event name, triggers navigation to new event edit page on success
 - [ ] T009 [US1] Add "Duplicate" button to `EventCard` in `frontend/fundrbolt-admin/src/features/events/EventListPage.tsx` — add Copy icon button in the action row alongside existing Edit/Publish/Delete/Close buttons; clicking opens `DuplicateEventDialog` with the event's ID and name passed as props
 
 **Checkpoint**: US1 complete — admin can duplicate events from the event list page with full dialog flow.

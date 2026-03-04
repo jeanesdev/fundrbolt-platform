@@ -75,7 +75,7 @@ make dev-frontend   # http://localhost:5173
 
 ### Phase 4: Testing
 
-9. **Backend tests** (`backend/app/tests/test_event_duplication.py`)
+9. **Backend tests** (`backend/app/tests/test_event_duplicate.py`)
    - Test field mapping for all cloned entities
    - Test optional inclusions (media, links, labels)
    - Test permission enforcement
@@ -103,13 +103,13 @@ make dev-frontend   # http://localhost:5173
 | File | Purpose |
 |---|---|
 | `frontend/.../features/events/components/DuplicateEventDialog.tsx` | Duplication dialog with options |
-| `backend/app/tests/test_event_duplication.py` | Backend test suite |
+| `backend/app/tests/test_event_duplicate.py` | Backend test suite |
 
 ## Verification
 
 ```bash
 # Run backend tests
-cd backend && poetry run pytest app/tests/test_event_duplication.py -v
+cd backend && poetry run pytest app/tests/test_event_duplicate.py -v
 
 # Run all backend CI checks
 cd backend && poetry run ruff check .
@@ -126,13 +126,13 @@ cd frontend/fundrbolt-admin && pnpm build
 ## API Testing (Manual)
 
 ```bash
-# Duplicate event (default — no media/links/labels)
+# Duplicate event (default — includes links + donation labels, excludes media)
 curl -X POST http://localhost:8000/api/v1/events/{event_id}/duplicate \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{}'
 
-# Duplicate with all options
+# Duplicate with all options explicitly enabled (media, links, donation labels)
 curl -X POST http://localhost:8000/api/v1/events/{event_id}/duplicate \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \

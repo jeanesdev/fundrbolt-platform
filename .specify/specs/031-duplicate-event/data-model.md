@@ -41,7 +41,7 @@ Event duplication creates a new `Event` record plus associated child records. No
 | `hero_transition_style` | Copy | Same value |
 | `table_count` | Copy | Same value |
 | `max_guests_per_table` | Copy | Same value |
-| `seating_layout_image_url` | Copy | Same value (shared ref) |
+| `seating_layout_image_url` | Conditional | `NULL` by default; deep-copied media asset URL when `include_media=true` |
 | `version` | Reset | `1` |
 | `created_by` | Set | Current user ID |
 | `updated_by` | Set | Current user ID |

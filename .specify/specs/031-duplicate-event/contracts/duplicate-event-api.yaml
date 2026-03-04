@@ -46,18 +46,18 @@ paths:
               $ref: '#/components/schemas/DuplicateEventRequest'
             examples:
               defaults:
-                summary: Default (no optional inclusions)
+                summary: Default (links + donation labels included, media excluded)
                 value: {}
               withMedia:
-                summary: Include media files
+                summary: Include media files too
                 value:
                   include_media: true
-              allOptions:
-                summary: Include everything
+              mediaOnly:
+                summary: Media only (exclude links and donation labels)
                 value:
                   include_media: true
-                  include_links: true
-                  include_donation_labels: true
+                  include_links: false
+                  include_donation_labels: false
       responses:
         '201':
           description: Event duplicated successfully
@@ -119,16 +119,16 @@ components:
             When false (default), media files are not included.
         include_links:
           type: boolean
-          default: false
+          default: true
           description: |
-            When true, clones all EventLink records (videos, websites, social media)
-            to the duplicated event. When false (default), links are not included.
+            When true (default), clones all EventLink records (videos, websites, social media)
+            to the duplicated event. When false, links are not included.
         include_donation_labels:
           type: boolean
-          default: false
+          default: true
           description: |
-            When true, clones all DonationLabel records to the duplicated event.
-            When false (default), donation labels are not included.
+            When true (default), clones all DonationLabel records to the duplicated event.
+            When false, donation labels are not included.
 
     EventDetailResponse:
       type: object
