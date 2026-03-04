@@ -12,6 +12,7 @@ from app.core.database import get_db
 from app.middleware.auth import get_current_active_user
 from app.models.user import User
 from app.schemas.event import (
+    DuplicateEventRequest,
     EventCreateRequest,
     EventDetailResponse,
     EventListResponse,
@@ -180,6 +181,61 @@ async def close_event(
 
     response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
     response_dict["npo_name"] = event.npo.name if event.npo else None
+    _add_sas_urls_to_media(response_dict)
+    return EventDetailResponse(**response_dict)
+
+
+@router.post(
+    "/{event_id}/duplicate",
+    response_model=EventDetailResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def duplicate_event(
+    event_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    options: DuplicateEventRequest | None = None,
+) -> EventDetailResponse:
+    """
+    Duplicate an existing event into a new DRAFT event.
+
+    Clones event details, food options, ticket packages (with custom options),
+    table configuration, and sponsors. Optional toggles control whether media
+    (deep-copied), links, and donation labels are included.
+
+    Returns **201 Created** with the full detail of the new event.
+    """
+    from app.services.permission_service import PermissionService
+
+    # Verify source event exists
+    source_event = await EventService.get_event_by_id(db, event_id)
+    if not source_event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found",
+        )
+
+    # Permission check — same pattern as get_event_stats
+    permission_service = PermissionService()
+    can_view = await permission_service.can_view_event(current_user, source_event.npo_id, db=db)
+    if not can_view:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to manage events for this NPO",
+        )
+
+    new_event = await EventService.duplicate_event(db, event_id, current_user, options)
+
+    # Build response with SAS URLs
+    reloaded = await EventService.get_event_by_id(db, new_event.id)
+    if not reloaded:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with ID {new_event.id} not found",
+        )
+
+    response_dict = EventDetailResponse.model_validate(reloaded, from_attributes=True).model_dump()
+    response_dict["npo_name"] = reloaded.npo.name if reloaded.npo else None
     _add_sas_urls_to_media(response_dict)
     return EventDetailResponse(**response_dict)
 

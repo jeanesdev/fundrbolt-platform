@@ -10,7 +10,11 @@
 export type EventStatus = 'draft' | 'active' | 'closed'
 
 export type EventMediaStatus = 'uploaded' | 'scanning' | 'approved' | 'rejected'
-export type HeroTransitionStyle = 'documentary_style' | 'fade' | 'swipe' | 'simple'
+export type HeroTransitionStyle =
+  | 'documentary_style'
+  | 'fade'
+  | 'swipe'
+  | 'simple'
 export type EventMediaUsageTag =
   | 'main_event_page_hero'
   | 'event_layout_map'
@@ -123,6 +127,19 @@ export interface EventUpdateRequest {
   max_guests_per_table?: number | null
   seating_layout_image_url?: string | null
   version?: number
+}
+
+/**
+ * Options for duplicating an event.
+ * All boolean fields control which optional entities are cloned.
+ */
+export interface DuplicateEventOptions {
+  /** Deep-copy media files to new blob paths (default: false) */
+  include_media?: boolean
+  /** Clone EventLink records (default: true) */
+  include_links?: boolean
+  /** Clone DonationLabel records (default: true) */
+  include_donation_labels?: boolean
 }
 
 export interface EventListParams {

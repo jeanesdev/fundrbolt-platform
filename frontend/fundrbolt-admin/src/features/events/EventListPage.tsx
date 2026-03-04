@@ -2,7 +2,13 @@
  * EventListPage
  * Displays list of events with filters and status grouping
  */
-
+import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import type { EventStatus } from '@/types/event'
+import { Building2, Calendar, Clock, Copy, MapPin, Plus } from 'lucide-react'
+import { toast } from 'sonner'
+import { useEventStore } from '@/stores/event-store'
+import { useNpoContext } from '@/hooks/use-npo-context'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -19,19 +25,24 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useNpoContext } from '@/hooks/use-npo-context'
-import { useEventStore } from '@/stores/event-store'
-import type { EventStatus } from '@/types/event'
-import { useNavigate } from '@tanstack/react-router'
-import { Building2, Calendar, Clock, MapPin, Plus } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { DuplicateEventDialog } from './components/DuplicateEventDialog'
 
 export function EventListPage() {
   const navigate = useNavigate()
-  const { events, eventsLoading, loadEvents, publishEvent, closeEvent, deleteEvent } = useEventStore()
+  const {
+    events,
+    eventsLoading,
+    loadEvents,
+    publishEvent,
+    closeEvent,
+    deleteEvent,
+  } = useEventStore()
   const { selectedNpoId } = useNpoContext()
   const [statusFilter, setStatusFilter] = useState<EventStatus | 'all'>('all')
+  const [duplicateTarget, setDuplicateTarget] = useState<{
+    id: string
+    name: string
+  } | null>(null)
 
   const loadEventsCallback = useCallback(() => {
     const params = selectedNpoId ? { npo_id: selectedNpoId } : undefined
@@ -73,14 +84,20 @@ export function EventListPage() {
   }
 
   const handleDelete = async (eventId: string) => {
-    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) return
+    if (
+      !confirm(
+        'Are you sure you want to delete this event? This action cannot be undone.'
+      )
+    )
+      return
 
     try {
       await deleteEvent(eventId)
       toast.success('Event deleted successfully')
       loadEventsCallback()
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete event'
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to delete event'
       toast.error(errorMessage)
     }
   }
@@ -106,16 +123,16 @@ export function EventListPage() {
       closed: 'bg-red-100 text-red-800',
     }
     return (
-      <span className={`text-xs px-2 py-1 rounded ${styles[status]}`}>
+      <span className={`rounded px-2 py-1 text-xs ${styles[status]}`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     )
   }
 
-  const EventCard = ({ event }: { event: typeof events[0] }) => (
+  const EventCard = ({ event }: { event: (typeof events)[0] }) => (
     <Card key={event.id}>
       <CardHeader>
-        <div className="flex items-start justify-between">
+        <div className='flex items-start justify-between'>
           <div>
             <CardTitle>{event.name}</CardTitle>
             {event.tagline && (
@@ -126,47 +143,62 @@ export function EventListPage() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2 text-sm text-muted-foreground">
+        <div className='text-muted-foreground space-y-2 text-sm'>
           {event.npo_name && (
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              <span className="font-medium">{event.npo_name}</span>
+            <div className='flex items-center gap-2'>
+              <Building2 className='h-4 w-4' />
+              <span className='font-medium'>{event.npo_name}</span>
             </div>
           )}
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
+          <div className='flex items-center gap-2'>
+            <Calendar className='h-4 w-4' />
             <span>{formatEventDate(event.event_datetime, event.timezone)}</span>
           </div>
           {event.venue_name && (
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
+            <div className='flex items-center gap-2'>
+              <MapPin className='h-4 w-4' />
               <span>{event.venue_name}</span>
-              {event.venue_city && <span>• {event.venue_city}, {event.venue_state}</span>}
+              {event.venue_city && (
+                <span>
+                  • {event.venue_city}, {event.venue_state}
+                </span>
+              )}
             </div>
           )}
         </div>
 
-        <div className="flex gap-2 mt-4">
+        <div className='mt-4 flex gap-2'>
           <Button
-            variant="outline"
-            size="sm"
+            variant='outline'
+            size='sm'
             onClick={() => handleEditClick(event.id)}
           >
             Edit
           </Button>
 
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() =>
+              setDuplicateTarget({ id: event.id, name: event.name })
+            }
+          >
+            <Copy className='mr-1 h-4 w-4' />
+            Duplicate
+          </Button>
+
           {event.status === 'draft' && (
             <>
               <Button
-                variant="default"
-                size="sm"
+                variant='default'
+                size='sm'
                 onClick={() => handlePublish(event.id)}
               >
                 Publish
               </Button>
               <Button
-                variant="destructive"
-                size="sm"
+                variant='destructive'
+                size='sm'
                 onClick={() => handleDelete(event.id)}
               >
                 Delete
@@ -176,8 +208,8 @@ export function EventListPage() {
 
           {event.status === 'active' && (
             <Button
-              variant="destructive"
-              size="sm"
+              variant='destructive'
+              size='sm'
               onClick={() => handleClose(event.id)}
             >
               Close
@@ -186,8 +218,8 @@ export function EventListPage() {
 
           {event.status === 'closed' && (
             <Button
-              variant="destructive"
-              size="sm"
+              variant='destructive'
+              size='sm'
               onClick={() => handleDelete(event.id)}
             >
               Delete
@@ -200,90 +232,105 @@ export function EventListPage() {
 
   if (eventsLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Clock className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className='flex h-96 items-center justify-center'>
+        <Clock className='text-muted-foreground h-8 w-8 animate-spin' />
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto space-y-4 px-2 py-3 sm:space-y-6 sm:px-6 sm:py-8">
+    <div className='container mx-auto space-y-4 px-2 py-3 sm:space-y-6 sm:px-6 sm:py-8'>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className='flex items-center justify-between'>
         <div>
-          <h1 className="text-3xl font-bold">Events</h1>
-          <p className="text-muted-foreground">
+          <h1 className='text-3xl font-bold'>Events</h1>
+          <p className='text-muted-foreground'>
             Manage your fundraising events
           </p>
         </div>
         <Button onClick={handleCreateClick}>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className='mr-2 h-4 w-4' />
           Create Event
         </Button>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4">
+      <div className='flex gap-4'>
         <Select
           value={statusFilter}
           onValueChange={(v) => setStatusFilter(v as EventStatus | 'all')}
         >
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Filter by status" />
+          <SelectTrigger className='w-[200px]'>
+            <SelectValue placeholder='Filter by status' />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Events</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
+            <SelectItem value='all'>All Events</SelectItem>
+            <SelectItem value='draft'>Draft</SelectItem>
+            <SelectItem value='active'>Active</SelectItem>
+            <SelectItem value='closed'>Closed</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {/* Tabs View */}
-      <Tabs defaultValue="all" className="space-y-4">
+      <Tabs defaultValue='all' className='space-y-4'>
         <TabsList>
-          <TabsTrigger value="all">
-            All ({events.length})
-          </TabsTrigger>
-          <TabsTrigger value="draft">
-            Draft ({draftEvents.length})
-          </TabsTrigger>
-          <TabsTrigger value="active">
+          <TabsTrigger value='all'>All ({events.length})</TabsTrigger>
+          <TabsTrigger value='draft'>Draft ({draftEvents.length})</TabsTrigger>
+          <TabsTrigger value='active'>
             Active ({activeEvents.length})
           </TabsTrigger>
-          <TabsTrigger value="closed">
+          <TabsTrigger value='closed'>
             Closed ({closedEvents.length})
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-4">
+        <TabsContent value='all' className='space-y-4'>
           {filteredEvents.length === 0 ? (
             <Card>
-              <CardContent className="p-8 text-center">
-                <p className="text-muted-foreground">No events found</p>
-                <Button className="mt-4" onClick={handleCreateClick}>
+              <CardContent className='p-8 text-center'>
+                <p className='text-muted-foreground'>No events found</p>
+                <Button className='mt-4' onClick={handleCreateClick}>
                   Create Your First Event
                 </Button>
               </CardContent>
             </Card>
           ) : (
-            filteredEvents.map((event) => <EventCard key={event.id} event={event} />)
+            filteredEvents.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))
           )}
         </TabsContent>
 
-        <TabsContent value="draft" className="space-y-4">
-          {draftEvents.map((event) => <EventCard key={event.id} event={event} />)}
+        <TabsContent value='draft' className='space-y-4'>
+          {draftEvents.map((event) => (
+            <EventCard key={event.id} event={event} />
+          ))}
         </TabsContent>
 
-        <TabsContent value="active" className="space-y-4">
-          {activeEvents.map((event) => <EventCard key={event.id} event={event} />)}
+        <TabsContent value='active' className='space-y-4'>
+          {activeEvents.map((event) => (
+            <EventCard key={event.id} event={event} />
+          ))}
         </TabsContent>
 
-        <TabsContent value="closed" className="space-y-4">
-          {closedEvents.map((event) => <EventCard key={event.id} event={event} />)}
+        <TabsContent value='closed' className='space-y-4'>
+          {closedEvents.map((event) => (
+            <EventCard key={event.id} event={event} />
+          ))}
         </TabsContent>
       </Tabs>
+
+      {duplicateTarget && (
+        <DuplicateEventDialog
+          open={!!duplicateTarget}
+          onOpenChange={(open) => {
+            if (!open) setDuplicateTarget(null)
+          }}
+          eventId={duplicateTarget.id}
+          eventName={duplicateTarget.name}
+        />
+      )}
     </div>
   )
 }

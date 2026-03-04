@@ -2,9 +2,8 @@
  * Event API service
  * Handles all event-related API calls including CRUD, media, links, and food options
  */
-
-import apiClient from '@/lib/axios'
 import type {
+  DuplicateEventOptions,
   Event,
   EventCreateRequest,
   EventDetail,
@@ -24,6 +23,7 @@ import type {
   MediaUploadRequest,
   MediaUploadResponse,
 } from '@/types/event'
+import apiClient from '@/lib/axios'
 
 // ============================================
 // Event Management
@@ -34,7 +34,9 @@ export const eventApi = {
    * Fetch list of events with optional filters
    */
   async listEvents(params?: EventListParams): Promise<EventListResponse> {
-    const response = await apiClient.get<EventListResponse>('/events', { params })
+    const response = await apiClient.get<EventListResponse>('/events', {
+      params,
+    })
     return response.data
   },
 
@@ -100,6 +102,20 @@ export const eventApi = {
   async deleteEvent(eventId: string): Promise<void> {
     await apiClient.delete(`/events/${eventId}`)
   },
+
+  /**
+   * Duplicate an event into a new DRAFT event
+   */
+  async duplicateEvent(
+    eventId: string,
+    options?: DuplicateEventOptions
+  ): Promise<EventDetail> {
+    const response = await apiClient.post<EventDetail>(
+      `/events/${eventId}/duplicate`,
+      options ?? {}
+    )
+    return response.data
+  },
 }
 
 // ============================================
@@ -124,7 +140,10 @@ export const mediaApi = {
   /**
    * Confirm media upload completion
    */
-  async confirmUpload(eventId: string, data: MediaConfirmRequest): Promise<EventMedia> {
+  async confirmUpload(
+    eventId: string,
+    data: MediaConfirmRequest
+  ): Promise<EventMedia> {
     const response = await apiClient.post<EventMedia>(
       `/events/${eventId}/media/${data.media_id}/confirm`,
       data
@@ -144,7 +163,10 @@ export const mediaApi = {
     mediaId: string,
     data: MediaUpdateRequest
   ): Promise<EventMedia> {
-    const response = await apiClient.patch<EventMedia>(`/events/${eventId}/media/${mediaId}`, data)
+    const response = await apiClient.patch<EventMedia>(
+      `/events/${eventId}/media/${mediaId}`,
+      data
+    )
     return response.data
   },
 
@@ -159,7 +181,10 @@ export const mediaApi = {
     formData.append('media_type', mediaType)
     formData.append('usage_tag', usageTag)
 
-    const response = await apiClient.post<EventMedia>(`/events/${eventId}/media/upload`, formData)
+    const response = await apiClient.post<EventMedia>(
+      `/events/${eventId}/media/upload`,
+      formData
+    )
     return response.data
   },
 
