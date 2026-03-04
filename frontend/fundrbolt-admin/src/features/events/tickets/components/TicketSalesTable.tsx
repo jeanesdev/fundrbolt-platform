@@ -509,8 +509,9 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                   <div className='bg-muted/30 rounded-md border p-3'>
                     <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'>
                       <div className='space-y-1'>
-                        <Label className='text-xs'>Purchaser</Label>
+                        <Label htmlFor='ticket-filter-purchaser' className='text-xs'>Purchaser</Label>
                         <Input
+                          id='ticket-filter-purchaser'
                           placeholder='Filter purchaser…'
                           value={filters.purchaser_name}
                           onChange={(e) =>
@@ -519,8 +520,9 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         />
                       </div>
                       <div className='space-y-1'>
-                        <Label className='text-xs'>Email</Label>
+                        <Label htmlFor='ticket-filter-email' className='text-xs'>Email</Label>
                         <Input
+                          id='ticket-filter-email'
                           placeholder='Filter email…'
                           value={filters.purchaser_email}
                           onChange={(e) =>
@@ -529,8 +531,9 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         />
                       </div>
                       <div className='space-y-1'>
-                        <Label className='text-xs'>Package</Label>
+                        <Label htmlFor='ticket-filter-package' className='text-xs'>Package</Label>
                         <Input
+                          id='ticket-filter-package'
                           placeholder='Filter package…'
                           value={filters.package_name}
                           onChange={(e) =>
@@ -539,8 +542,9 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         />
                       </div>
                       <div className='space-y-1'>
-                        <Label className='text-xs'>Quantity</Label>
+                        <Label htmlFor='ticket-filter-quantity' className='text-xs'>Quantity</Label>
                         <Input
+                          id='ticket-filter-quantity'
                           placeholder='Filter quantity…'
                           value={filters.quantity}
                           onChange={(e) =>
@@ -549,8 +553,9 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         />
                       </div>
                       <div className='space-y-1'>
-                        <Label className='text-xs'>Total</Label>
+                        <Label htmlFor='ticket-filter-total' className='text-xs'>Total</Label>
                         <Input
+                          id='ticket-filter-total'
                           placeholder='Filter total…'
                           value={filters.total_price}
                           onChange={(e) =>
@@ -559,14 +564,14 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         />
                       </div>
                       <div className='space-y-1'>
-                        <Label className='text-xs'>Status</Label>
+                        <Label htmlFor='ticket-filter-status' className='text-xs'>Status</Label>
                         <Select
                           value={filters.payment_status}
                           onValueChange={(v) =>
                             updateFilter('payment_status', v)
                           }
                         >
-                          <SelectTrigger>
+                          <SelectTrigger id='ticket-filter-status'>
                             <SelectValue placeholder='All statuses' />
                           </SelectTrigger>
                           <SelectContent>
@@ -580,8 +585,9 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         </Select>
                       </div>
                       <div className='space-y-1'>
-                        <Label className='text-xs'>Purchased</Label>
+                        <Label htmlFor='ticket-filter-purchased' className='text-xs'>Purchased</Label>
                         <Input
+                          id='ticket-filter-purchased'
                           placeholder='Filter date…'
                           value={filters.purchased_at}
                           onChange={(e) =>
@@ -590,8 +596,9 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         />
                       </div>
                       <div className='space-y-1'>
-                        <Label className='text-xs'>Promo</Label>
+                        <Label htmlFor='ticket-filter-promo' className='text-xs'>Promo</Label>
                         <Input
+                          id='ticket-filter-promo'
                           placeholder='Filter promo…'
                           value={filters.promo_code}
                           onChange={(e) =>
@@ -600,8 +607,9 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         />
                       </div>
                       <div className='space-y-1'>
-                        <Label className='text-xs'>External ID</Label>
+                        <Label htmlFor='ticket-filter-external' className='text-xs'>External ID</Label>
                         <Input
+                          id='ticket-filter-external'
                           placeholder='Filter external ID…'
                           value={filters.external_sale_id}
                           onChange={(e) =>

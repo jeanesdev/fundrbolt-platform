@@ -1,4 +1,24 @@
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { checkinService } from '@/services/checkin-service'
+import {
+  Check,
+  ChevronDown,
+  Crown,
+  Filter,
+  Loader2,
+  RotateCcw,
+  Settings2,
+  X,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
+import {
+  assignBidderNumber,
+  assignRegistrationBidderNumber,
+} from '@/lib/api/admin-seating'
+import { getErrorMessage } from '@/lib/error-utils'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -31,27 +51,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
-import {
-  assignBidderNumber,
-  assignRegistrationBidderNumber,
-} from '@/lib/api/admin-seating'
-import { getErrorMessage } from '@/lib/error-utils'
-import { checkinService } from '@/services/checkin-service'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  Check,
-  ChevronDown,
-  Crown,
-  Filter,
-  Loader2,
-  RotateCcw,
-  Settings2,
-  X,
-} from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
-import { toast } from 'sonner'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 function StatusBadge({ checkedIn }: { checkedIn: boolean }) {
@@ -155,9 +155,9 @@ export function EventCheckInSection() {
     return count
   }, [filters])
 
-  const clearAllFilters = useCallback(() => {
+  const clearAllFilters = () => {
     setFilters(defaultFilters)
-  }, [])
+  }
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['event-attendees', currentEvent.id],
@@ -509,10 +509,14 @@ export function EventCheckInSection() {
                 <div className='bg-muted/30 rounded-md border p-3'>
                   <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
                     <div className='space-y-1'>
-                      <Label className='text-muted-foreground text-xs'>
+                      <Label
+                        htmlFor='checkin-filter-name'
+                        className='text-muted-foreground text-xs'
+                      >
                         Name
                       </Label>
                       <Input
+                        id='checkin-filter-name'
                         placeholder='Filter name…'
                         value={filters.name}
                         onChange={(e) =>
@@ -524,10 +528,14 @@ export function EventCheckInSection() {
                       />
                     </div>
                     <div className='space-y-1'>
-                      <Label className='text-muted-foreground text-xs'>
+                      <Label
+                        htmlFor='checkin-filter-email'
+                        className='text-muted-foreground text-xs'
+                      >
                         Email
                       </Label>
                       <Input
+                        id='checkin-filter-email'
                         placeholder='Filter email…'
                         value={filters.email}
                         onChange={(e) =>
@@ -539,10 +547,14 @@ export function EventCheckInSection() {
                       />
                     </div>
                     <div className='space-y-1'>
-                      <Label className='text-muted-foreground text-xs'>
+                      <Label
+                        htmlFor='checkin-filter-phone'
+                        className='text-muted-foreground text-xs'
+                      >
                         Phone
                       </Label>
                       <Input
+                        id='checkin-filter-phone'
                         placeholder='Filter phone…'
                         value={filters.phone}
                         onChange={(e) =>
@@ -554,10 +566,14 @@ export function EventCheckInSection() {
                       />
                     </div>
                     <div className='space-y-1'>
-                      <Label className='text-muted-foreground text-xs'>
+                      <Label
+                        htmlFor='checkin-filter-guestof'
+                        className='text-muted-foreground text-xs'
+                      >
                         Party Of
                       </Label>
                       <Input
+                        id='checkin-filter-guestof'
                         placeholder='Filter party of…'
                         value={filters.guestOf}
                         onChange={(e) =>
@@ -569,10 +585,14 @@ export function EventCheckInSection() {
                       />
                     </div>
                     <div className='space-y-1'>
-                      <Label className='text-muted-foreground text-xs'>
+                      <Label
+                        htmlFor='checkin-filter-status'
+                        className='text-muted-foreground text-xs'
+                      >
                         Status
                       </Label>
                       <select
+                        id='checkin-filter-status'
                         className='border-input bg-background h-9 w-full rounded-md border px-3 py-1 text-sm'
                         value={filters.checkedIn}
                         onChange={(e) =>
@@ -588,10 +608,14 @@ export function EventCheckInSection() {
                       </select>
                     </div>
                     <div className='space-y-1'>
-                      <Label className='text-muted-foreground text-xs'>
+                      <Label
+                        htmlFor='checkin-filter-table'
+                        className='text-muted-foreground text-xs'
+                      >
                         Table #
                       </Label>
                       <Input
+                        id='checkin-filter-table'
                         placeholder='Filter table…'
                         value={filters.tableNumber}
                         onChange={(e) =>
@@ -603,10 +627,14 @@ export function EventCheckInSection() {
                       />
                     </div>
                     <div className='space-y-1'>
-                      <Label className='text-muted-foreground text-xs'>
+                      <Label
+                        htmlFor='checkin-filter-bidder'
+                        className='text-muted-foreground text-xs'
+                      >
                         Bidder #
                       </Label>
                       <Input
+                        id='checkin-filter-bidder'
                         placeholder='Filter bidder…'
                         value={filters.bidderNumber}
                         onChange={(e) =>
@@ -618,10 +646,14 @@ export function EventCheckInSection() {
                       />
                     </div>
                     <div className='space-y-1'>
-                      <Label className='text-muted-foreground text-xs'>
+                      <Label
+                        htmlFor='checkin-filter-checkintime'
+                        className='text-muted-foreground text-xs'
+                      >
                         Checked In At
                       </Label>
                       <Input
+                        id='checkin-filter-checkintime'
                         placeholder='Filter time…'
                         value={filters.checkInTime}
                         onChange={(e) =>
@@ -633,10 +665,14 @@ export function EventCheckInSection() {
                       />
                     </div>
                     <div className='space-y-1'>
-                      <Label className='text-muted-foreground text-xs'>
+                      <Label
+                        htmlFor='checkin-filter-confirmation'
+                        className='text-muted-foreground text-xs'
+                      >
                         Confirmation Code
                       </Label>
                       <Input
+                        id='checkin-filter-confirmation'
                         placeholder='Filter code…'
                         value={filters.confirmationCode}
                         onChange={(e) =>
