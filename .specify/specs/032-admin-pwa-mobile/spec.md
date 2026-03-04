@@ -13,13 +13,13 @@ An event coordinator managing their event from an iPad (or similar tablet) navig
 
 **Why this priority**: Tables are the most data-heavy parts of the app and currently have zero responsive adaptation. Every table overflows horizontally on tablets and phones, making the most critical admin workflows (check-in, attendee management, bid tracking) nearly unusable on smaller screens.
 
-**Independent Test**: Can be tested by loading any table view on a tablet-width viewport and verifying the toggle appears, switches to a card layout, and persists the choice on navigation.
+**Independent Test**: Can be tested by loading any table view on a tablet-width viewport and verifying the toggle appears, switches to a card layout, and persists the choice on navigation and after closing/reopening the browser (via localStorage, per FR-003).
 
 **Acceptance Scenarios**:
 
 1. **Given** a user is viewing a data table page on a screen narrower than 1024px, **When** the page loads, **Then** a view toggle (table icon / card icon) is visible near the table toolbar, and the default view is "card" on narrow screens.
 2. **Given** a user is in card view, **When** they tap an individual card, **Then** they can access the same actions (edit, delete, view details) available in the table row.
-3. **Given** a user switches from card view to table view on a tablet, **When** they navigate to another table page and return, **Then** their view preference is remembered for that session.
+3. **Given** a user switches from card view to table view on a tablet, **When** they navigate to another table page and return—or close and later reopen the app on the same device—**Then** their view preference is persisted across pages and browser sessions (stored in localStorage).
 4. **Given** a user is on a desktop-width screen (≥ 1024px), **When** they view a table page, **Then** the table renders as it does today and the toggle is still available but defaults to table view.
 5. **Given** a user is in card view, **When** they use existing filters, search, sorting, or pagination, **Then** those controls continue to work identically.
 
@@ -140,7 +140,7 @@ During a live event, staff use tablets at check-in stations or bid-entry station
 
 ### Key Entities
 
-- **View Preference**: Stores the user's choice of table vs. card view per session, scoped per page (each table page remembers its own preference independently). Persisted in browser local storage keyed by page path.
+- **View Preference**: Stores the user's choice of table vs. card view across browser sessions, scoped per page (each table page remembers its own preference independently). Persisted in browser local storage keyed by page path.
 - **Breakpoint Configuration**: Defines the screen width thresholds that trigger layout changes — phone (< 768px), tablet portrait (768–1023px), tablet landscape (1024–1366px), desktop (≥ 1367px).
 - **Card Layout Definition**: Per-table configuration specifying which 3–5 fields are shown as primary on the card, which fields appear in the expandable "More details" section, their display order, and how actions are presented. Derived from the existing table column definitions.
 
@@ -152,7 +152,7 @@ During a live event, staff use tablets at check-in stations or bid-entry station
 - **SC-002**: Users can complete common tablet workflows (event check-in, attendee lookup, bid entry) without needing to scroll horizontally at any point.
 - **SC-003**: The sidebar can be collapsed and expanded on tablets in under 0.5 seconds with a smooth animation.
 - **SC-004**: All interactive elements pass WCAG 2.5.8 target size requirements (≥ 44×44 CSS pixels) on tablet viewports.
-- **SC-005**: View toggle preference persists correctly across 10+ consecutive page navigations within a session.
+- **SC-005**: View toggle preference persists correctly across 10+ consecutive page navigations and survives browser close/reopen (localStorage persistence).
 - **SC-006**: Orientation changes on tablets complete layout reflow within 0.3 seconds without any visible content jump or data loss.
 - **SC-007**: The app achieves a "Mobile Friendly" pass when tested at 1024px and 768px screen widths in browser dev tools or on actual tablet devices.
 - **SC-008**: Form completion time on a tablet does not exceed 1.5x the completion time on desktop for the same form.

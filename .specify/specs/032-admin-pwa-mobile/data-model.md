@@ -60,7 +60,7 @@ A new hook `useBreakpoint()` provides the current tier. These are the canonical 
 | phone | 0 | 767px | (default / `max-sm:`) |
 | tablet-portrait | 768px | 1023px | `md:` |
 | tablet-landscape | 1024px | 1366px | `lg:` |
-| desktop | 1367px | ∞ | `xl:` / `2xl:` |
+| desktop | 1367px | ∞ | primarily `xl:` / `2xl:` (note: Tailwind `xl` starts at 1280px; the `useBreakpoint()` desktop tier starts at 1367px) |
 
 ## Entities Not Affected
 

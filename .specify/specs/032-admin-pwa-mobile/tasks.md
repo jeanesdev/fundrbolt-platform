@@ -50,7 +50,7 @@
 - [x] T047 [P] Write unit tests for `use-view-preference.ts` — test localStorage read/write, default value by breakpoint, explicit preference override, `pageKey` parameter. Mock `useLocation` from TanStack Router. File: `frontend/fundrbolt-admin/src/hooks/__tests__/use-view-preference.test.ts`
 - [x] T048 [P] Write component tests for `view-toggle.tsx` — render with `value="table"` and `value="card"`, verify active state highlighting, verify `onChange` callback fires on click. File: `frontend/fundrbolt-admin/src/components/data-table/__tests__/view-toggle.test.tsx`
 - [x] T049 [P] Write component tests for `card-view.tsx` — render with a mock TanStack Table instance, verify primary fields displayed, verify "More details" section toggles, verify action dropdown renders. Test empty state. File: `frontend/fundrbolt-admin/src/components/data-table/__tests__/card-view.test.tsx`
-- [x] T050 [P] Write component tests for `data-table-wrapper.tsx` — render with both `renderTable` and `renderCards` modes, verify toggle switches between views, verify viewPreferenceKey integration with localStorage. File: `frontend/fundrbolt-admin/src/components/data-table/__tests__/data-table-wrapper.test.tsx`
+- [x] T050 [P] Write component tests for `data-table-wrapper.tsx` — render with children (table view) and `renderCards` callback, verify toggle switches between views, verify viewPreferenceKey integration with localStorage. File: `frontend/fundrbolt-admin/src/components/data-table/__tests__/data-table-wrapper.test.tsx`
 
 ---
 
