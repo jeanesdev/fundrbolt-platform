@@ -68,6 +68,15 @@ class AuditEventType(str, Enum):
     REGISTRATION_IMPORT = "registration_import"
     # User import events (Feature 027)
     USER_IMPORT = "user_import"
+    # Social auth events (Feature 030)
+    SOCIAL_AUTH_START = "social_auth_start"
+    SOCIAL_AUTH_SUCCESS = "social_auth_success"
+    SOCIAL_AUTH_FAILED = "social_auth_failed"
+    SOCIAL_AUTH_LINK_CREATED = "social_auth_link_created"
+    SOCIAL_AUTH_LINK_CONFIRMED = "social_auth_link_confirmed"
+    SOCIAL_AUTH_PROVISIONED = "social_auth_provisioned"
+    SOCIAL_AUTH_ADMIN_STEP_UP = "social_auth_admin_step_up"
+    SOCIAL_AUTH_ADMIN_DENIED = "social_auth_admin_denied"
 
 
 class AuditService:

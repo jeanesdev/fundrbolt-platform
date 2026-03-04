@@ -20,6 +20,7 @@ import { Route as errors403RouteImport } from './routes/(errors)/403'
 import { Route as errors401RouteImport } from './routes/(errors)/401'
 import { Route as authVerifyEmailRouteImport } from './routes/(auth)/verify-email'
 import { Route as authTermsOfServiceRouteImport } from './routes/(auth)/terms-of-service'
+import { Route as authSocialCallbackRouteImport } from './routes/(auth)/social-callback'
 import { Route as authSignUpRouteImport } from './routes/(auth)/sign-up'
 import { Route as authSignIn2RouteImport } from './routes/(auth)/sign-in-2'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
@@ -124,6 +125,11 @@ const authVerifyEmailRoute = authVerifyEmailRouteImport.update({
 const authTermsOfServiceRoute = authTermsOfServiceRouteImport.update({
   id: '/(auth)/terms-of-service',
   path: '/terms-of-service',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authSocialCallbackRoute = authSocialCallbackRouteImport.update({
+  id: '/(auth)/social-callback',
+  path: '/social-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const authSignUpRoute = authSignUpRouteImport.update({
@@ -430,6 +436,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof authSignInRoute
   '/sign-in-2': typeof authSignIn2Route
   '/sign-up': typeof authSignUpRoute
+  '/social-callback': typeof authSocialCallbackRoute
   '/terms-of-service': typeof authTermsOfServiceRoute
   '/verify-email': typeof authVerifyEmailRoute
   '/401': typeof errors401Route
@@ -488,6 +495,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof authSignInRoute
   '/sign-in-2': typeof authSignIn2Route
   '/sign-up': typeof authSignUpRoute
+  '/social-callback': typeof authSocialCallbackRoute
   '/terms-of-service': typeof authTermsOfServiceRoute
   '/verify-email': typeof authVerifyEmailRoute
   '/401': typeof errors401Route
@@ -550,6 +558,7 @@ export interface FileRoutesById {
   '/(auth)/sign-in': typeof authSignInRoute
   '/(auth)/sign-in-2': typeof authSignIn2Route
   '/(auth)/sign-up': typeof authSignUpRoute
+  '/(auth)/social-callback': typeof authSocialCallbackRoute
   '/(auth)/terms-of-service': typeof authTermsOfServiceRoute
   '/(auth)/verify-email': typeof authVerifyEmailRoute
   '/(errors)/401': typeof errors401Route
@@ -614,6 +623,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-in-2'
     | '/sign-up'
+    | '/social-callback'
     | '/terms-of-service'
     | '/verify-email'
     | '/401'
@@ -672,6 +682,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-in-2'
     | '/sign-up'
+    | '/social-callback'
     | '/terms-of-service'
     | '/verify-email'
     | '/401'
@@ -733,6 +744,7 @@ export interface FileRouteTypes {
     | '/(auth)/sign-in'
     | '/(auth)/sign-in-2'
     | '/(auth)/sign-up'
+    | '/(auth)/social-callback'
     | '/(auth)/terms-of-service'
     | '/(auth)/verify-email'
     | '/(errors)/401'
@@ -794,6 +806,7 @@ export interface RootRouteChildren {
   authSignInRoute: typeof authSignInRoute
   authSignIn2Route: typeof authSignIn2Route
   authSignUpRoute: typeof authSignUpRoute
+  authSocialCallbackRoute: typeof authSocialCallbackRoute
   authTermsOfServiceRoute: typeof authTermsOfServiceRoute
   authVerifyEmailRoute: typeof authVerifyEmailRoute
   errors401Route: typeof errors401Route
@@ -881,6 +894,13 @@ declare module '@tanstack/react-router' {
       path: '/terms-of-service'
       fullPath: '/terms-of-service'
       preLoaderRoute: typeof authTermsOfServiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/social-callback': {
+      id: '/(auth)/social-callback'
+      path: '/social-callback'
+      fullPath: '/social-callback'
+      preLoaderRoute: typeof authSocialCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(auth)/sign-up': {
@@ -1463,6 +1483,7 @@ const rootRouteChildren: RootRouteChildren = {
   authSignInRoute: authSignInRoute,
   authSignIn2Route: authSignIn2Route,
   authSignUpRoute: authSignUpRoute,
+  authSocialCallbackRoute: authSocialCallbackRoute,
   authTermsOfServiceRoute: authTermsOfServiceRoute,
   authVerifyEmailRoute: authVerifyEmailRoute,
   errors401Route: errors401Route,

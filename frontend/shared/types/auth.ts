@@ -73,6 +73,52 @@ export interface EmailResendRequest {
   email: string;
 }
 
+export type SocialAuthProvider = 'apple' | 'google' | 'facebook' | 'microsoft';
+
+export interface SocialAuthProviderItem {
+  provider: SocialAuthProvider;
+  enabled: boolean;
+  display_name: string;
+}
+
+export interface SocialAuthProvidersResponse {
+  providers: SocialAuthProviderItem[];
+}
+
+export interface SocialAuthStartRequest {
+  app_context: 'donor_pwa' | 'admin_pwa';
+  redirect_uri: string;
+}
+
+export interface SocialAuthStartResponse {
+  attempt_id: string;
+  authorization_url: string;
+  state: string;
+}
+
+export interface SocialAuthCallbackRequest {
+  code: string;
+  state: string;
+  attempt_id?: string;
+}
+
+export interface SocialAuthPendingResponse {
+  status: 'pending_verification';
+  reason: 'link_confirmation_required' | 'email_verification_required' | 'admin_step_up_required';
+  attempt_id: string;
+  message?: string;
+}
+
+export interface SocialAuthSuccessResponse {
+  status: 'authenticated';
+  app_context: 'donor_pwa' | 'admin_pwa';
+  user_id: string;
+  access_token: string;
+  refresh_token: string;
+}
+
+export type SocialAuthCallbackResponse = SocialAuthPendingResponse | SocialAuthSuccessResponse;
+
 export interface AuthError {
   detail: string;
   error_code?: string;

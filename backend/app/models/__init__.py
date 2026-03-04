@@ -41,6 +41,13 @@ from app.models.registration_import import (
 )
 from app.models.role import Role
 from app.models.session import Session
+from app.models.social_auth_attempt import SocialAuthAttempt
+from app.models.social_auth_challenge import (
+    AdminStepUpChallenge,
+    EmailVerificationChallenge,
+    SocialPendingLinkConfirmation,
+)
+from app.models.social_identity_link import SocialIdentityLink
 from app.models.sponsor import Sponsor
 from app.models.ticket_management import (
     AssignedTicket,
@@ -129,6 +136,11 @@ __all__ = [
     "ValidationSeverity",
     "Role",
     "Session",
+    "SocialAuthAttempt",
+    "SocialIdentityLink",
+    "SocialPendingLinkConfirmation",
+    "EmailVerificationChallenge",
+    "AdminStepUpChallenge",
     "Sponsor",
     "TicketAuditLog",
     "TicketPackage",

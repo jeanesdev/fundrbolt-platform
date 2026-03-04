@@ -69,3 +69,49 @@ Validate social sign-in behavior end-to-end for donor and admin PWAs, including 
 - Scope remains login-only (no provider-management UI/actions).
 - No provider secrets are persisted in logs or storage.
 - Social-auth retention/deletion and privacy notice checks pass.
+
+## Release Validation Queries (SC-001 – SC-005)
+
+### SC-001: All social auth tests pass
+```bash
+cd backend && poetry run pytest app/tests/ -k "social_auth" -v --tb=short
+```
+Expected: All tests pass (≥45 tests, 0 failures).
+
+### SC-002: No provider secrets in logs
+```bash
+cd backend && poetry run pytest app/tests/unit/test_social_auth_redaction.py -v
+```
+Expected: 4/4 pass — simulated claims contain no tokens, subs are opaque.
+
+### SC-003: Scope guard — no provider management endpoints
+```bash
+cd backend && poetry run pytest app/tests/contract/test_social_auth_scope_guard.py -v
+```
+Expected: 6/6 paths return 404/405 for all HTTP methods.
+
+### SC-004: Data minimization — only whitelisted claims persisted
+```bash
+cd backend && poetry run pytest app/tests/unit/test_social_auth_minimization.py -v
+```
+Expected: 3/3 pass — only `sub`, `email`, `email_verified`, `name` persisted.
+
+### SC-005: GDPR retention hooks active
+```sql
+-- After account deletion, verify social_identity_links are removed
+SELECT COUNT(*) FROM social_identity_links WHERE user_id = '<deleted_user_id>';
+-- Expected: 0
+```
+Automated coverage: `consent_service.request_data_deletion` calls `SocialAuthService.delete_social_links_for_user`.
+
+## Release Go/No-Go
+
+| Criterion | Status |
+|-----------|--------|
+| SC-001: Test suite | ✅ All social auth tests pass |
+| SC-002: Secret redaction | ✅ Log redaction guardrails + unit tests |
+| SC-003: Scope guard | ✅ No provider management endpoints |
+| SC-004: Data minimization | ✅ Whitelist-only claim persistence |
+| SC-005: GDPR hooks | ✅ Deletion cascades to social links |
+
+**Decision**: GO — all success criteria met.

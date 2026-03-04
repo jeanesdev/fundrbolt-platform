@@ -53,6 +53,19 @@ class Settings(BaseSettings):
     frontend_admin_url: str = "http://localhost:5173"
     frontend_donor_url: str = "http://localhost:5174"
 
+    # Social Authentication
+    social_auth_enabled: bool = False
+    social_auth_enabled_providers: str = "apple,google,facebook,microsoft"
+    social_auth_callback_base_url: str = "http://localhost:8000/api/v1"
+    social_auth_apple_client_id: str | None = None
+    social_auth_apple_client_secret: str | None = None
+    social_auth_google_client_id: str | None = None
+    social_auth_google_client_secret: str | None = None
+    social_auth_facebook_client_id: str | None = None
+    social_auth_facebook_client_secret: str | None = None
+    social_auth_microsoft_client_id: str | None = None
+    social_auth_microsoft_client_secret: str | None = None
+
     # Super Admin Seed (for initial setup)
     super_admin_email: EmailStr
     super_admin_password: str
@@ -90,6 +103,28 @@ class Settings(BaseSettings):
         if len(v) < 32:
             raise ValueError("JWT_SECRET_KEY must be at least 32 characters")
         return v
+
+    @field_validator("social_auth_enabled_providers")
+    @classmethod
+    def validate_social_auth_enabled_providers(cls, v: str) -> str:
+        """Ensure configured social auth providers are supported."""
+        allowed_providers = {"apple", "google", "facebook", "microsoft"}
+        configured_providers = {
+            provider.strip().lower() for provider in v.split(",") if provider.strip()
+        }
+        invalid_providers = configured_providers - allowed_providers
+        if invalid_providers:
+            invalid_list = ", ".join(sorted(invalid_providers))
+            raise ValueError(f"Invalid SOCIAL_AUTH_ENABLED_PROVIDERS values: {invalid_list}")
+        return ",".join(sorted(configured_providers))
+
+    def get_social_auth_enabled_providers(self) -> list[str]:
+        """Get normalized social auth enabled providers list."""
+        return [
+            provider.strip().lower()
+            for provider in self.social_auth_enabled_providers.split(",")
+            if provider.strip()
+        ]
 
 
 @lru_cache

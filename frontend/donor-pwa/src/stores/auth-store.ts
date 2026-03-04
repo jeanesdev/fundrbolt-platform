@@ -78,6 +78,12 @@ interface AuthState {
   getProfilePictureUrl: () => string | null
   initializeFromStorage: () => void
   restoreUserFromRefreshToken: () => Promise<boolean>
+  handleSocialAuthSuccess: (data: {
+    access_token: string
+    refresh_token: string
+    user_id: string
+    app_context: string
+  }) => void
 }
 
 // 7 days in milliseconds (refresh token expiry)
@@ -283,5 +289,21 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       set({ isLoading: false })
       return false
     }
+  },
+
+  handleSocialAuthSuccess: (data: {
+    access_token: string
+    refresh_token: string
+    user_id: string
+    app_context: string
+  }): void => {
+    get().setRefreshToken(data.refresh_token)
+    set({
+      accessToken: data.access_token,
+      isAuthenticated: true,
+      isLoading: false,
+    })
+    // Restore full user data via refresh
+    get().restoreUserFromRefreshToken()
   },
 }))

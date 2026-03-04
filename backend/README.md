@@ -181,6 +181,14 @@ Interactive API documentation is automatically generated:
 - `POST /api/v1/auth/password/reset/confirm` - Confirm password reset
 - `POST /api/v1/auth/password/change` - Change password (authenticated)
 
+**Social Authentication** (Apple, Google, Facebook, Microsoft):
+- `GET /api/v1/auth/social/providers` - List enabled social providers
+- `POST /api/v1/auth/social/start` - Initiate social sign-in flow
+- `POST /api/v1/auth/social/callback` - Handle OAuth2 callback
+- `POST /api/v1/auth/social/confirm-link` - Confirm account linking
+- `POST /api/v1/auth/social/verify-email` - Verify email for social account
+- `POST /api/v1/auth/social/admin-step-up` - Admin step-up verification
+
 **User Management** (Admin only):
 - `GET /api/v1/users` - List users
 - `POST /api/v1/users` - Create user
