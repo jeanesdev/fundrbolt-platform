@@ -2,13 +2,11 @@
  * EventEditPage
  * Page for editing an existing event with media, links, and food options
  */
-import { useCallback, useEffect, useState } from 'react'
-import {
-  Outlet,
-  useLocation,
-  useNavigate,
-  useParams,
-} from '@tanstack/react-router'
+import { Button } from '@/components/ui/button'
+import { getErrorMessage } from '@/lib/error-utils'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import { useEventStore } from '@/stores/event-store'
+import { useSponsorStore } from '@/stores/sponsorStore'
 import type {
   EventLinkCreateRequest,
   EventMediaUsageTag,
@@ -16,15 +14,16 @@ import type {
   FoodOptionCreateRequest,
   MediaUpdateRequest,
 } from '@/types/event'
-import { Clock, Copy } from 'lucide-react'
+import {
+  Outlet,
+  useLocation,
+  useNavigate,
+  useParams,
+} from '@tanstack/react-router'
+import { Clock } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { useAuctionItemStore } from '@/stores/auctionItemStore'
-import { useEventStore } from '@/stores/event-store'
-import { useSponsorStore } from '@/stores/sponsorStore'
-import { getErrorMessage } from '@/lib/error-utils'
-import { Button } from '@/components/ui/button'
 import { EventWorkspaceProvider } from './EventWorkspaceProvider'
-import { DuplicateEventDialog } from './components/DuplicateEventDialog'
 
 export function EventEditPage() {
   const navigate = useNavigate()
@@ -57,7 +56,6 @@ export function EventEditPage() {
   const { sponsors, fetchSponsors } = useSponsorStore()
   const { items: auctionItems, fetchAuctionItems } = useAuctionItemStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
   const apiEventId = currentEvent?.id ?? eventId
 
   const loadEvent = useCallback(() => {
@@ -274,38 +272,28 @@ export function EventEditPage() {
               <div className='flex items-center gap-2'>
                 <span className='text-muted-foreground text-sm'>Status:</span>
                 <span
-                  className={`rounded px-2 py-1 text-xs whitespace-nowrap ${
-                    currentEvent.status === 'draft'
+                  className={`rounded px-2 py-1 text-xs whitespace-nowrap ${currentEvent.status === 'draft'
                       ? 'bg-gray-100 text-gray-800'
                       : currentEvent.status === 'active'
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
-                  }`}
+                    }`}
                 >
                   {currentEvent.status.charAt(0).toUpperCase() +
                     currentEvent.status.slice(1)}
                 </span>
               </div>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => setShowDuplicateDialog(true)}
-                className='w-full sm:w-auto'
-              >
-                <Copy className='mr-1 h-4 w-4' />
-                Duplicate Event
-              </Button>
               {(currentEvent.status === 'draft' ||
                 currentEvent.status === 'closed') && (
-                <Button
-                  variant='destructive'
-                  size='sm'
-                  onClick={handleDelete}
-                  className='w-full sm:w-auto'
-                >
-                  Delete Event
-                </Button>
-              )}
+                  <Button
+                    variant='destructive'
+                    size='sm'
+                    onClick={handleDelete}
+                    className='w-full sm:w-auto'
+                  >
+                    Delete Event
+                  </Button>
+                )}
             </div>
           </div>
         </div>
@@ -315,12 +303,6 @@ export function EventEditPage() {
         </div>
       </div>
 
-      <DuplicateEventDialog
-        open={showDuplicateDialog}
-        onOpenChange={setShowDuplicateDialog}
-        eventId={apiEventId}
-        eventName={currentEvent.name}
-      />
     </EventWorkspaceProvider>
   )
 }

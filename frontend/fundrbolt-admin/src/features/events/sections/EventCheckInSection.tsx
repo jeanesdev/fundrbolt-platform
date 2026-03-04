@@ -1,24 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { checkinService } from '@/services/checkin-service'
-import {
-  Check,
-  ChevronDown,
-  Crown,
-  Filter,
-  Loader2,
-  RotateCcw,
-  Settings2,
-  X,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
-import {
-  assignBidderNumber,
-  assignRegistrationBidderNumber,
-} from '@/lib/api/admin-seating'
-import { getErrorMessage } from '@/lib/error-utils'
-import { useViewPreference } from '@/hooks/use-view-preference'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -51,7 +31,27 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
+import {
+  assignBidderNumber,
+  assignRegistrationBidderNumber,
+} from '@/lib/api/admin-seating'
+import { getErrorMessage } from '@/lib/error-utils'
+import { checkinService } from '@/services/checkin-service'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  Check,
+  ChevronDown,
+  Crown,
+  Filter,
+  Loader2,
+  RotateCcw,
+  Settings2,
+  X,
+} from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 function StatusBadge({ checkedIn }: { checkedIn: boolean }) {
