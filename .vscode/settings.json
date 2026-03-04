@@ -117,5 +117,15 @@
         "titleBar.inactiveBackground": "#226f5499",
         "titleBar.inactiveForeground": "#e7e7e799"
     },
-    "peacock.remoteColor": "#226f54"
+    "peacock.remoteColor": "#226f54",
+    "mcp": {
+        "servers": {
+            "playwright": {
+                "command": "npx",
+                "args": [
+                    "@playwright/mcp@latest"
+                ]
+            }
+        }
+    }
 }

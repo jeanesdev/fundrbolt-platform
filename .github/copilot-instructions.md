@@ -405,5 +405,16 @@ For any task (backend, frontend, or both):
   - Iterate in a loop: change → run commands → inspect failures → fix → re-run, up to 5 full iterations.
 - Do not consider the task complete while any of the above CI commands still fail, unless you have hit the iteration limit and clearly documented what remains.
 
+## UI Validation (Playwright MCP)
+
+A Playwright MCP server is available for browser automation. Use it to:
+- Navigate to local dev servers (admin: http://localhost:5173, donor PWA: http://localhost:5174, backend API: http://localhost:8000) to visually verify UI changes
+- Take screenshots to confirm layout, styling, and component rendering
+- Click through user flows to validate interactions work correctly
+- Fill and submit forms to test end-to-end behavior
+- Check for console errors or broken elements after making frontend changes
+
+When making frontend changes, prefer using Playwright to verify the result visually rather than only relying on build/lint checks.
+
 ---
 <!-- MANUAL ADDITIONS END -->
