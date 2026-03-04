@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from app.models.registration_guest import RegistrationGuest
     from app.models.role import Role
     from app.models.session import Session
+    from app.models.social_identity_link import SocialIdentityLink
 
 
 class User(Base, UUIDMixin, TimestampMixin):
@@ -159,6 +160,10 @@ class User(Base, UUIDMixin, TimestampMixin):
     donations: Mapped[list["Donation"]] = relationship(
         "Donation",
         back_populates="donor",
+    )
+    social_identity_links: Mapped[list["SocialIdentityLink"]] = relationship(
+        "SocialIdentityLink",
+        back_populates="user",
     )
 
     # Check constraints

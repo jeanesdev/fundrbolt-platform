@@ -349,6 +349,11 @@ class ConsentService:
         user.is_active = False
         user.updated_at = datetime.now(UTC)
 
+        # Delete social identity links (GDPR: remove provider associations)
+        from app.services.social_auth_service import SocialAuthService
+
+        await SocialAuthService.delete_social_links_for_user(db, user.id)
+
         await db.commit()
 
         # TODO: Schedule deletion job for 30 days from now

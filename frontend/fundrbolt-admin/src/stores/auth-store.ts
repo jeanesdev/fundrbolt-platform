@@ -77,6 +77,12 @@ interface AuthState {
   getUser: () => AuthUser | null
   updateUser: (userData: Partial<AuthUser>) => void
   getProfilePictureUrl: () => string | null
+  handleSocialAuthSuccess: (data: {
+    access_token: string
+    refresh_token: string
+    user_id: string
+    app_context: string
+  }) => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -224,6 +230,29 @@ export const useAuthStore = create<AuthState>()(
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
         const baseUrl = apiUrl.replace(/\/api\/v1$/, '')
         return `${baseUrl}${pictureUrl}`
+      },
+
+      handleSocialAuthSuccess: (data: {
+        access_token: string
+        refresh_token: string
+        user_id: string
+        app_context: string
+      }): void => {
+        set({
+          accessToken: data.access_token,
+          refreshToken: data.refresh_token,
+          isAuthenticated: true,
+          isLoading: false,
+        })
+        // Fetch full user profile via an API call
+        apiClient
+          .get('/auth/me')
+          .then((response) => {
+            set({ user: response.data })
+          })
+          .catch(() => {
+            // User data will be populated on next page load
+          })
       },
     }),
     {

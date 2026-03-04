@@ -1,0 +1,299 @@
+openapi: 3.0.3
+info:
+  title: Social Authentication API
+  version: 0.1.0
+  description: Contract for donor/admin social sign-in flows with secure linking and admin step-up.
+servers:
+  - url: /api/v1
+paths:
+  /auth/social/providers:
+    get:
+      summary: List social providers available for login
+      operationId: listSocialProviders
+      tags: [Auth]
+      parameters:
+        - in: query
+          name: app_context
+          required: true
+          schema:
+            $ref: '#/components/schemas/AppContext'
+      responses:
+        '200':
+          description: Enabled provider list for app context
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialProviderListResponse'
+
+  /auth/social/{provider}/start:
+    post:
+      summary: Start social sign-in flow
+      operationId: startSocialSignIn
+      tags: [Auth]
+      parameters:
+        - $ref: '#/components/parameters/Provider'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SocialStartRequest'
+      responses:
+        '200':
+          description: Start payload with redirect URL and attempt context
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialStartResponse'
+        '400':
+          description: Invalid app context or redirect target
+        '404':
+          description: Provider not enabled
+
+  /auth/social/{provider}/callback:
+    post:
+      summary: Complete social sign-in after provider callback
+      operationId: completeSocialSignIn
+      tags: [Auth]
+      parameters:
+        - $ref: '#/components/parameters/Provider'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SocialCallbackRequest'
+      responses:
+        '200':
+          description: Authentication succeeded and session issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialAuthSuccessResponse'
+        '202':
+          description: Additional verification required before account access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialAuthPendingResponse'
+        '400':
+          description: Invalid callback payload or expired attempt
+        '403':
+          description: Access denied by policy (for example admin pre-provisioning required)
+        '409':
+          description: Linking conflict (provider identity linked to another account)
+
+  /auth/social/link-confirmation:
+    post:
+      summary: Confirm first-time link to existing account via email login confirmation
+      operationId: confirmSocialLink
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkConfirmationRequest'
+      responses:
+        '200':
+          description: Link confirmation succeeded and social identity linked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialAuthSuccessResponse'
+        '400':
+          description: Invalid or expired confirmation token
+        '401':
+          description: Email-login confirmation failed
+        '409':
+          description: Link conflict
+
+  /auth/social/email-verification:
+    post:
+      summary: Verify email for social sign-in when provider email is missing/unverified
+      operationId: verifySocialEmail
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailVerificationRequest'
+      responses:
+        '200':
+          description: Email verified and auth can continue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialAuthSuccessResponse'
+        '400':
+          description: Invalid email or verification token
+        '410':
+          description: Verification challenge expired
+
+  /auth/social/admin-step-up:
+    post:
+      summary: Complete required admin step-up verification for social sign-in
+      operationId: completeAdminSocialStepUp
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminStepUpRequest'
+      responses:
+        '200':
+          description: Step-up satisfied and admin session issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialAuthSuccessResponse'
+        '401':
+          description: Step-up verification failed
+        '410':
+          description: Step-up challenge expired
+
+components:
+  parameters:
+    Provider:
+      in: path
+      name: provider
+      required: true
+      schema:
+        $ref: '#/components/schemas/ProviderKey'
+
+  schemas:
+    ProviderKey:
+      type: string
+      enum: [apple, google, facebook, microsoft]
+
+    AppContext:
+      type: string
+      enum: [donor_pwa, admin_pwa]
+
+    SocialProviderItem:
+      type: object
+      required: [provider, display_name, enabled]
+      properties:
+        provider:
+          $ref: '#/components/schemas/ProviderKey'
+        display_name:
+          type: string
+        enabled:
+          type: boolean
+
+    SocialProviderListResponse:
+      type: object
+      required: [app_context, providers]
+      properties:
+        app_context:
+          $ref: '#/components/schemas/AppContext'
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/SocialProviderItem'
+
+    SocialStartRequest:
+      type: object
+      required: [app_context, redirect_uri]
+      properties:
+        app_context:
+          $ref: '#/components/schemas/AppContext'
+        redirect_uri:
+          type: string
+          format: uri
+
+    SocialStartResponse:
+      type: object
+      required: [attempt_id, authorization_url, state]
+      properties:
+        attempt_id:
+          type: string
+          format: uuid
+        authorization_url:
+          type: string
+          format: uri
+        state:
+          type: string
+
+    SocialCallbackRequest:
+      type: object
+      required: [attempt_id, code, state]
+      properties:
+        attempt_id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        state:
+          type: string
+
+    SocialAuthSuccessResponse:
+      type: object
+      required: [status, app_context, user_id, access_token, refresh_token]
+      properties:
+        status:
+          type: string
+          enum: [authenticated]
+        app_context:
+          $ref: '#/components/schemas/AppContext'
+        user_id:
+          type: string
+          format: uuid
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+
+    PendingReason:
+      type: string
+      enum: [needs_link_confirmation, needs_email_verification, needs_admin_step_up]
+
+    SocialAuthPendingResponse:
+      type: object
+      required: [status, reason, attempt_id]
+      properties:
+        status:
+          type: string
+          enum: [pending_verification]
+        reason:
+          $ref: '#/components/schemas/PendingReason'
+        attempt_id:
+          type: string
+          format: uuid
+        message:
+          type: string
+
+    LinkConfirmationRequest:
+      type: object
+      required: [attempt_id, email_login_confirmation_token]
+      properties:
+        attempt_id:
+          type: string
+          format: uuid
+        email_login_confirmation_token:
+          type: string
+
+    EmailVerificationRequest:
+      type: object
+      required: [attempt_id, email, verification_token]
+      properties:
+        attempt_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        verification_token:
+          type: string
+
+    AdminStepUpRequest:
+      type: object
+      required: [attempt_id, step_up_token]
+      properties:
+        attempt_id:
+          type: string
+          format: uuid
+        step_up_token:
+          type: string

@@ -29,10 +29,24 @@ from app.schemas.password import (
     PasswordResetConfirm,
     PasswordResetRequest,
 )
+from app.schemas.social_auth import (
+    AdminStepUpRequest,
+    AppContext,
+    EmailVerificationRequest,
+    LinkConfirmationRequest,
+    ProviderKey,
+    SocialAuthPendingResponse,
+    SocialAuthSuccessResponse,
+    SocialCallbackRequest,
+    SocialProviderListResponse,
+    SocialStartRequest,
+    SocialStartResponse,
+)
 from app.services.audit_service import AuditService
 from app.services.auth_service import AuthService
 from app.services.password_service import PasswordService
 from app.services.redis_service import RedisService
+from app.services.social_auth_service import SocialAuthService
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -798,4 +812,210 @@ async def change_password(
                 "code": "INVALID_TOKEN",
                 "message": "Invalid or expired token",
             },
+        ) from e
+
+
+# --- Social Authentication Endpoints ---
+
+
+@router.get(
+    "/social/providers",
+    status_code=status.HTTP_200_OK,
+    response_model=SocialProviderListResponse,
+)
+async def list_social_providers(
+    app_context: AppContext,
+) -> SocialProviderListResponse:
+    """List social providers available for the given app context."""
+    return SocialAuthService.list_providers(app_context)
+
+
+@router.post(
+    "/social/{provider}/start",
+    status_code=status.HTTP_200_OK,
+    response_model=SocialStartResponse,
+)
+@api_rate_limit()
+async def start_social_auth(
+    provider: ProviderKey,
+    start_data: SocialStartRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> SocialStartResponse:
+    """Start social sign-in flow for a provider."""
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("User-Agent")
+    try:
+        return await SocialAuthService.start_auth(
+            db=db,
+            provider=provider,
+            app_context=start_data.app_context,
+            redirect_uri=start_data.redirect_uri,
+            client_ip=ip_address,
+            user_agent=user_agent,
+        )
+    except ValueError as e:
+        error_msg = str(e)
+        if "not enabled" in error_msg or "not configured" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "PROVIDER_NOT_AVAILABLE", "message": error_msg},
+            ) from e
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "SOCIAL_AUTH_START_FAILED", "message": error_msg},
+        ) from e
+
+
+@router.post(
+    "/social/{provider}/callback",
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"model": SocialAuthSuccessResponse},
+        202: {"model": SocialAuthPendingResponse},
+    },
+)
+async def social_auth_callback(
+    provider: ProviderKey,
+    callback_data: SocialCallbackRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> SocialAuthSuccessResponse | SocialAuthPendingResponse:
+    """Complete social sign-in after provider callback."""
+    try:
+        result = await SocialAuthService.handle_callback(
+            db=db,
+            provider=provider,
+            attempt_id=callback_data.attempt_id,
+            code=callback_data.code,
+            state=callback_data.state,
+        )
+        await db.commit()
+        return result
+    except ValueError as e:
+        await db.rollback()
+        error_msg = str(e)
+        if "not found" in error_msg.lower() or "not provisioned" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"code": "ACCESS_DENIED", "message": error_msg},
+            ) from e
+        if "inactive" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"code": "ACCOUNT_INACTIVE", "message": error_msg},
+            ) from e
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "SOCIAL_AUTH_CALLBACK_FAILED", "message": error_msg},
+        ) from e
+
+
+@router.post(
+    "/social/link-confirmation",
+    status_code=status.HTTP_200_OK,
+    response_model=SocialAuthSuccessResponse | SocialAuthPendingResponse,
+)
+async def confirm_social_link(
+    link_data: LinkConfirmationRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> SocialAuthSuccessResponse | SocialAuthPendingResponse:
+    """Confirm first-time link to existing account via email-login confirmation."""
+    try:
+        result = await SocialAuthService.confirm_link(
+            db=db,
+            attempt_id=link_data.attempt_id,
+            password=link_data.email_login_confirmation_token,
+        )
+        await db.commit()
+        return result
+    except ValueError as e:
+        await db.rollback()
+        error_msg = str(e)
+        if "expired" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"code": "CONFIRMATION_EXPIRED", "message": error_msg},
+            ) from e
+        if "invalid password" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={"code": "INVALID_CREDENTIALS", "message": error_msg},
+            ) from e
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "LINK_CONFIRMATION_FAILED", "message": error_msg},
+        ) from e
+
+
+@router.post(
+    "/social/email-verification",
+    status_code=status.HTTP_200_OK,
+    response_model=SocialAuthSuccessResponse | SocialAuthPendingResponse,
+)
+async def verify_social_email(
+    verify_data: EmailVerificationRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> SocialAuthSuccessResponse | SocialAuthPendingResponse:
+    """Verify email for social sign-in when provider email is missing/unverified."""
+    try:
+        result = await SocialAuthService.verify_email(
+            db=db,
+            attempt_id=verify_data.attempt_id,
+            email=verify_data.email,
+            verification_token=verify_data.verification_token,
+        )
+        await db.commit()
+        return result
+    except ValueError as e:
+        await db.rollback()
+        error_msg = str(e)
+        if "expired" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_410_GONE,
+                detail={"code": "VERIFICATION_EXPIRED", "message": error_msg},
+            ) from e
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "EMAIL_VERIFICATION_FAILED", "message": error_msg},
+        ) from e
+
+
+@router.post(
+    "/social/admin-step-up",
+    status_code=status.HTTP_200_OK,
+    response_model=SocialAuthSuccessResponse,
+)
+async def complete_admin_step_up(
+    step_up_data: AdminStepUpRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> SocialAuthSuccessResponse:
+    """Complete required admin step-up verification for social sign-in."""
+    try:
+        result = await SocialAuthService.complete_admin_step_up(
+            db=db,
+            attempt_id=step_up_data.attempt_id,
+            step_up_token=step_up_data.step_up_token,
+        )
+        await db.commit()
+        return result
+    except ValueError as e:
+        await db.rollback()
+        error_msg = str(e)
+        if "expired" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_410_GONE,
+                detail={"code": "STEP_UP_EXPIRED", "message": error_msg},
+            ) from e
+        if "invalid" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={"code": "STEP_UP_FAILED", "message": error_msg},
+            ) from e
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "ADMIN_STEP_UP_FAILED", "message": error_msg},
         ) from e

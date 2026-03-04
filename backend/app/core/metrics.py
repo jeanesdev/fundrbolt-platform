@@ -56,6 +56,25 @@ EVENT_MEDIA_SCAN_RESULTS_TOTAL = Counter(
     ["result"],  # clean or infected
 )
 
+# Social auth metrics
+SOCIAL_AUTH_STARTS_TOTAL = Counter(
+    "fundrbolt_social_auth_starts_total",
+    "Total social auth flow initiations",
+    ["provider", "app_context"],
+)
+
+SOCIAL_AUTH_SUCCESS_TOTAL = Counter(
+    "fundrbolt_social_auth_success_total",
+    "Total successful social auth completions",
+    ["provider", "app_context"],
+)
+
+SOCIAL_AUTH_FAILURES_TOTAL = Counter(
+    "fundrbolt_social_auth_failures_total",
+    "Total social auth failures",
+    ["provider", "failure_code"],
+)
+
 # Simple gauges for introspection
 UP = Gauge("fundrbolt_up", "Application up (1 = up, 0 = down)")
 
@@ -77,6 +96,9 @@ __all__ = [
     "EVENTS_CLOSED_TOTAL",
     "EVENT_MEDIA_UPLOADS_TOTAL",
     "EVENT_MEDIA_SCAN_RESULTS_TOTAL",
+    "SOCIAL_AUTH_STARTS_TOTAL",
+    "SOCIAL_AUTH_SUCCESS_TOTAL",
+    "SOCIAL_AUTH_FAILURES_TOTAL",
     "UP",
     "set_up",
 ]

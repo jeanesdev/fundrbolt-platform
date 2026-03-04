@@ -3,6 +3,14 @@
  * Handles authentication tokens and token refresh automatically.
  */
 
+import type {
+  SocialAuthCallbackRequest,
+  SocialAuthCallbackResponse,
+  SocialAuthProvider,
+  SocialAuthProvidersResponse,
+  SocialAuthStartRequest,
+  SocialAuthStartResponse,
+} from '@fundrbolt/shared/types';
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 import { useAuthStore } from '@/stores/auth-store';
@@ -157,5 +165,32 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+export const donorSocialAuthApi = {
+  getProviders: async (): Promise<SocialAuthProvidersResponse> => {
+    const response = await apiClient.get<SocialAuthProvidersResponse>('/auth/social/providers');
+    return response.data;
+  },
+  start: async (
+    provider: SocialAuthProvider,
+    payload: SocialAuthStartRequest,
+  ): Promise<SocialAuthStartResponse> => {
+    const response = await apiClient.post<SocialAuthStartResponse>(
+      `/auth/social/${provider}/start`,
+      payload,
+    );
+    return response.data;
+  },
+  callback: async (
+    provider: SocialAuthProvider,
+    payload: SocialAuthCallbackRequest,
+  ): Promise<SocialAuthCallbackResponse> => {
+    const response = await apiClient.post<SocialAuthCallbackResponse>(
+      `/auth/social/${provider}/callback`,
+      payload,
+    );
+    return response.data;
+  },
+};
 
 export default apiClient;

@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 import sys
 from datetime import datetime
 from typing import Any
@@ -9,6 +10,22 @@ from typing import Any
 from app.core.config import get_settings
 
 settings = get_settings()
+
+# Patterns to redact from log messages (social auth tokens, secrets)
+_REDACT_PATTERNS = [
+    re.compile(
+        r"(access_token|refresh_token|id_token|code|state|pkce_verifier|step_up_token|verification_token|confirmation_token)=([^\s&]+)",
+        re.IGNORECASE,
+    ),
+    re.compile(r"(Bearer\s+)[A-Za-z0-9\-._~+/]+=*", re.IGNORECASE),
+]
+
+
+def redact_sensitive(text: str) -> str:
+    """Replace sensitive tokens/secrets in text with [REDACTED]."""
+    for pattern in _REDACT_PATTERNS:
+        text = pattern.sub(lambda m: f"{m.group(1)}[REDACTED]", text)
+    return text
 
 
 class JSONFormatter(logging.Formatter):
@@ -27,7 +44,7 @@ class JSONFormatter(logging.Formatter):
             "timestamp": datetime.utcnow().isoformat(),
             "level": record.levelname,
             "logger": record.name,
-            "message": record.getMessage(),
+            "message": redact_sensitive(record.getMessage()),
             "module": record.module,
             "function": record.funcName,
             "line": record.lineno,
