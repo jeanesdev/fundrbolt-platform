@@ -2,6 +2,7 @@
 
 import logging
 import mimetypes
+import time
 import uuid
 from datetime import datetime, timedelta
 from urllib.parse import quote
@@ -148,10 +149,33 @@ class MediaService:
         )
         target_client.start_copy_from_url(source_url)
 
+        # Poll until the server-side copy completes (or times out)
+        max_wait_seconds = 30
+        poll_interval = 0.5
+        elapsed = 0.0
+        while elapsed < max_wait_seconds:
+            props = target_client.get_blob_properties()
+            copy_status = props.copy.status if props.copy else None
+            if copy_status == "success":
+                break
+            if copy_status in ("failed", "aborted"):
+                raise RuntimeError(
+                    f"Blob copy {source_blob_name} -> {target_blob_name} "
+                    f"ended with status '{copy_status}'"
+                )
+            time.sleep(poll_interval)
+            elapsed += poll_interval
+        else:
+            logger.warning(
+                "Blob copy %s -> %s did not complete within %ss; the copy may still be in progress",
+                source_blob_name,
+                target_blob_name,
+                max_wait_seconds,
+            )
+
         account_name = blob_service.account_name or "storage"
-        new_url = (
-            f"https://{account_name}.blob.core.windows.net/{container_name}/{target_blob_name}"
-        )
+        encoded_target = quote(target_blob_name, safe="/")
+        new_url = f"https://{account_name}.blob.core.windows.net/{container_name}/{encoded_target}"
         logger.info("Blob copied: %s -> %s", source_blob_name, target_blob_name)
         return new_url
 

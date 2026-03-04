@@ -205,7 +205,6 @@ async def duplicate_event(
 
     Returns **201 Created** with the full detail of the new event.
     """
-    from app.models.audit_log import AuditLog
     from app.services.permission_service import PermissionService
 
     # Verify source event exists
@@ -226,25 +225,6 @@ async def duplicate_event(
         )
 
     new_event = await EventService.duplicate_event(db, event_id, current_user, options)
-
-    # Audit log
-    audit_log = AuditLog(
-        user_id=current_user.id,
-        action="event_duplicated",
-        resource_type="event",
-        resource_id=new_event.id,
-        ip_address="unknown",
-        user_agent=None,
-        event_metadata={
-            "source_event_id": str(event_id),
-            "new_event_id": str(new_event.id),
-            "include_media": (options.include_media if options else False),
-            "include_links": (options.include_links if options else True),
-            "include_donation_labels": (options.include_donation_labels if options else True),
-        },
-    )
-    db.add(audit_log)
-    await db.commit()
 
     # Build response with SAS URLs
     reloaded = await EventService.get_event_by_id(db, new_event.id)

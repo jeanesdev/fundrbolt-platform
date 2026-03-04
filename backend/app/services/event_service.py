@@ -15,6 +15,7 @@ from sqlalchemy.orm import selectinload
 from app.core.metrics import EVENTS_CLOSED_TOTAL, EVENTS_CREATED_TOTAL, EVENTS_PUBLISHED_TOTAL
 from app.models.auction_bid import AuctionBid
 from app.models.auction_item import AuctionItem
+from app.models.audit_log import AuditLog
 from app.models.donation_label import DonationLabel
 from app.models.event import Event, EventLink, EventMedia, EventStatus, FoodOption
 from app.models.event_registration import EventRegistration
@@ -445,8 +446,10 @@ class EventService:
                     new_url = await MediaService.copy_blob(em.blob_name, target_blob)
                 except Exception:
                     logger.warning(
-                        "Failed to copy blob %s for event duplication; skipping",
+                        "Failed to copy blob %s -> %s for event duplication; skipping",
                         em.blob_name,
+                        target_blob,
+                        exc_info=True,
                     )
                     continue
 
@@ -469,13 +472,31 @@ class EventService:
 
             # Also deep-copy seating layout image if present
             if source_event.seating_layout_image_url:
-                layout_blob = f"events/{source_event.id}/layout"
-                target_layout_blob = f"events/{new_event.id}/layout"
+                # Parse the blob name from the stored URL rather than hard-coding
+                # a path. The URL format is:
+                # https://<account>.blob.core.windows.net/<container>/<blob_path>
+                from urllib.parse import urlparse
+
+                parsed = urlparse(source_event.seating_layout_image_url)
+                # path is "/<container>/<blob_path>" – strip container prefix
+                path_parts = parsed.path.lstrip("/").split("/", 1)
+                if len(path_parts) == 2:
+                    layout_blob = path_parts[1]
+                else:
+                    # Fallback: use the full path minus leading slash
+                    layout_blob = parsed.path.lstrip("/")
+
+                target_layout_blob = f"events/{new_event.id}/seating-layout/{uuid.uuid4()}"
                 try:
                     layout_url = await MediaService.copy_blob(layout_blob, target_layout_blob)
                     new_event.seating_layout_image_url = layout_url
                 except Exception:
-                    logger.warning("Failed to copy seating layout image for event duplication")
+                    logger.warning(
+                        "Failed to copy seating layout image %s -> %s for event duplication",
+                        layout_blob,
+                        target_layout_blob,
+                        exc_info=True,
+                    )
 
         # EventLink
         if options.include_links:
@@ -503,6 +524,25 @@ class EventService:
                         retired_at=None,
                     )
                 )
+
+        # Write audit log in the same transaction for atomicity
+        db.add(
+            AuditLog(
+                user_id=current_user.id,
+                action="event_duplicated",
+                resource_type="event",
+                resource_id=new_event.id,
+                ip_address="unknown",
+                user_agent=None,
+                event_metadata={
+                    "source_event_id": str(event_id),
+                    "new_event_id": str(new_event.id),
+                    "include_media": options.include_media,
+                    "include_links": options.include_links,
+                    "include_donation_labels": options.include_donation_labels,
+                },
+            )
+        )
 
         await db.commit()
 
