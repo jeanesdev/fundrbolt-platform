@@ -2,8 +2,15 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { adminSocialAuthApi } from '@/lib/axios'
 import { Loader2 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-import type { SocialAuthProvider, SocialAuthProviderItem } from '@fundrbolt/shared/types'
+import { useCallback, useState } from 'react'
+import type { SocialAuthProvider } from '@fundrbolt/shared/types'
+
+const DEFAULT_PROVIDERS: { provider: SocialAuthProvider; display_name: string }[] = [
+  { provider: 'google', display_name: 'Google' },
+  { provider: 'apple', display_name: 'Apple' },
+  { provider: 'facebook', display_name: 'Facebook' },
+  { provider: 'microsoft', display_name: 'Microsoft' },
+]
 
 const providerIcons: Record<SocialAuthProvider, string> = {
   google: '🔵',
@@ -13,22 +20,8 @@ const providerIcons: Record<SocialAuthProvider, string> = {
 }
 
 export function SocialLoginButtons({ redirectTo: _redirectTo }: { redirectTo?: string }) {
-  const [providers, setProviders] = useState<SocialAuthProviderItem[]>([])
-  const [loading, setLoading] = useState(true)
   const [activeProvider, setActiveProvider] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    adminSocialAuthApi
-      .getProviders()
-      .then((data) => {
-        setProviders(data.providers.filter((p) => p.enabled))
-        setLoading(false)
-      })
-      .catch(() => {
-        setLoading(false)
-      })
-  }, [])
 
   const handleSocialLogin = useCallback(
     async (provider: SocialAuthProvider) => {
@@ -46,21 +39,13 @@ export function SocialLoginButtons({ redirectTo: _redirectTo }: { redirectTo?: s
       } catch (err: unknown) {
         const message =
           (err as { response?: { data?: { detail?: { message?: string } } } })
-            ?.response?.data?.detail?.message || 'Social sign-in failed'
+            ?.response?.data?.detail?.message || 'Social sign-in is not available right now'
         setError(message)
         setActiveProvider(null)
       }
     },
     []
   )
-
-  if (loading) {
-    return null
-  }
-
-  if (providers.length === 0) {
-    return null
-  }
 
   return (
     <div className='space-y-3'>
@@ -75,8 +60,8 @@ export function SocialLoginButtons({ redirectTo: _redirectTo }: { redirectTo?: s
         </div>
       </div>
 
-      <div className='grid gap-2'>
-        {providers.map((provider) => (
+      <div className='grid grid-cols-2 gap-2'>
+        {DEFAULT_PROVIDERS.map((provider) => (
           <Button
             key={provider.provider}
             variant='outline'
