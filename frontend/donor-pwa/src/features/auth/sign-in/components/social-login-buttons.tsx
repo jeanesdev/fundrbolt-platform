@@ -1,8 +1,10 @@
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { donorSocialAuthApi } from '@/lib/axios'
+import { GoogleIcon, AppleIcon, FacebookIcon, MicrosoftIcon } from '@fundrbolt/shared'
 import { Loader2 } from 'lucide-react'
 import { useCallback, useState } from 'react'
+import type { ComponentType, SVGProps } from 'react'
 import type { SocialAuthProvider } from '@fundrbolt/shared/types'
 
 const DEFAULT_PROVIDERS: { provider: SocialAuthProvider; display_name: string }[] = [
@@ -12,11 +14,11 @@ const DEFAULT_PROVIDERS: { provider: SocialAuthProvider; display_name: string }[
   { provider: 'microsoft', display_name: 'Microsoft' },
 ]
 
-const providerIcons: Record<SocialAuthProvider, string> = {
-  google: '🔵',
-  apple: '🍎',
-  facebook: '📘',
-  microsoft: '🟦',
+const providerIcons: Record<SocialAuthProvider, ComponentType<SVGProps<SVGSVGElement>>> = {
+  google: GoogleIcon,
+  apple: AppleIcon,
+  facebook: FacebookIcon,
+  microsoft: MicrosoftIcon,
 }
 
 export function SocialLoginButtons({ redirectTo: _redirectTo }: { redirectTo?: string }) {
@@ -61,25 +63,26 @@ export function SocialLoginButtons({ redirectTo: _redirectTo }: { redirectTo?: s
       </div>
 
       <div className='grid grid-cols-2 gap-2'>
-        {DEFAULT_PROVIDERS.map((provider) => (
-          <Button
-            key={provider.provider}
-            variant='outline'
-            type='button'
-            disabled={activeProvider !== null}
-            onClick={() => handleSocialLogin(provider.provider)}
-            className='w-full'
-          >
-            {activeProvider === provider.provider ? (
-              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-            ) : (
-              <span className='mr-2'>
-                {providerIcons[provider.provider]}
-              </span>
-            )}
-            {provider.display_name}
-          </Button>
-        ))}
+        {DEFAULT_PROVIDERS.map((provider) => {
+          const Icon = providerIcons[provider.provider]
+          return (
+            <Button
+              key={provider.provider}
+              variant='outline'
+              type='button'
+              disabled={activeProvider !== null}
+              onClick={() => handleSocialLogin(provider.provider)}
+              className='w-full'
+            >
+              {activeProvider === provider.provider ? (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              ) : (
+                <Icon className='mr-2' />
+              )}
+              {provider.display_name}
+            </Button>
+          )
+        })}
       </div>
 
       {error && (
