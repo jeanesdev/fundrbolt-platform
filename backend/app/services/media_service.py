@@ -121,6 +121,41 @@ class MediaService:
         return f"{base_url}/{container_name}/{encoded_blob_name}?{sas_token}"
 
     @staticmethod
+    async def copy_blob(source_blob_name: str, target_blob_name: str) -> str:
+        """
+        Server-side copy a blob to a new path within the same container.
+
+        Uses Azure Blob Storage ``start_copy_from_url()`` so no data flows
+        through the application server.
+
+        Args:
+            source_blob_name: Blob path of the source (e.g. events/<id>/media/<file>)
+            target_blob_name: Blob path for the copy
+
+        Returns:
+            The full URL of the newly created blob.
+        """
+        blob_service = MediaService._get_blob_client()
+        container_name = settings.azure_storage_container_name or "event-media"
+
+        # Build a SAS URL for reading the source blob
+        source_url = MediaService.generate_read_sas_url(source_blob_name, expiry_hours=1)
+
+        # Get a client for the target blob and start the server-side copy
+        target_client = blob_service.get_blob_client(
+            container=container_name,
+            blob=target_blob_name,
+        )
+        target_client.start_copy_from_url(source_url)
+
+        account_name = blob_service.account_name or "storage"
+        new_url = (
+            f"https://{account_name}.blob.core.windows.net/{container_name}/{target_blob_name}"
+        )
+        logger.info("Blob copied: %s -> %s", source_blob_name, target_blob_name)
+        return new_url
+
+    @staticmethod
     async def generate_upload_url(
         db: AsyncSession,
         event_id: uuid.UUID,

@@ -15,13 +15,16 @@ from sqlalchemy.orm import selectinload
 from app.core.metrics import EVENTS_CLOSED_TOTAL, EVENTS_CREATED_TOTAL, EVENTS_PUBLISHED_TOTAL
 from app.models.auction_bid import AuctionBid
 from app.models.auction_item import AuctionItem
+from app.models.donation_label import DonationLabel
 from app.models.event import Event, EventLink, EventMedia, EventStatus, FoodOption
 from app.models.event_registration import EventRegistration
+from app.models.event_table import EventTable
 from app.models.npo import NPO, NPOStatus
 from app.models.registration_guest import RegistrationGuest
 from app.models.sponsor import Sponsor
+from app.models.ticket_management import CustomTicketOption, TicketPackage
 from app.models.user import User
-from app.schemas.event import EventCreateRequest, EventUpdateRequest
+from app.schemas.event import DuplicateEventRequest, EventCreateRequest, EventUpdateRequest
 
 logger = logging.getLogger(__name__)
 
@@ -246,6 +249,285 @@ class EventService:
 
         logger.info(f"Event manually closed: {event.name} (ID: {event.id})")
         return event
+
+    @staticmethod
+    async def duplicate_event(
+        db: AsyncSession,
+        event_id: uuid.UUID,
+        current_user: User,
+        options: DuplicateEventRequest | None = None,
+    ) -> Event:
+        """
+        Duplicate an existing event into a new DRAFT event.
+
+        Clones event details, food options, ticket packages (with custom
+        options), table configuration, and sponsors. Optionally includes
+        media files (deep-copied), event links, and donation labels based
+        on ``options``.
+
+        Args:
+            db: Database session
+            event_id: UUID of the source event to duplicate
+            current_user: User performing the duplication
+            options: Optional inclusion toggles (media, links, labels)
+
+        Returns:
+            The newly created Event (with relationships loaded)
+
+        Raises:
+            HTTPException 404: Source event not found
+        """
+        if options is None:
+            options = DuplicateEventRequest()
+
+        # Load source event with all relationships we need to clone
+        source = await db.execute(
+            select(Event)
+            .where(Event.id == event_id)
+            .options(
+                selectinload(Event.food_options),
+                selectinload(Event.ticket_packages).selectinload(TicketPackage.custom_options),
+                selectinload(Event.tables),
+                selectinload(Event.sponsors),
+                selectinload(Event.media),
+                selectinload(Event.links),
+                selectinload(Event.donation_labels),
+                selectinload(Event.npo),
+            )
+        )
+        source_event = source.scalar_one_or_none()
+        if not source_event:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Event not found",
+            )
+
+        # Build the cloned name (truncated to 255 chars)
+        clone_name = f"{source_event.name} (Copy)"[:255]
+
+        # Generate a unique slug for the clone
+        new_slug = await EventService._generate_unique_slug(db, clone_name)
+
+        # ---- Create the new Event ----
+        new_event = Event(
+            npo_id=source_event.npo_id,
+            name=clone_name,
+            slug=new_slug,
+            custom_slug=None,
+            tagline=source_event.tagline,
+            status=EventStatus.DRAFT,
+            event_datetime=source_event.event_datetime,
+            timezone=source_event.timezone,
+            venue_name=source_event.venue_name,
+            venue_address=source_event.venue_address,
+            venue_city=source_event.venue_city,
+            venue_state=source_event.venue_state,
+            venue_zip=source_event.venue_zip,
+            attire=source_event.attire,
+            fundraising_goal=source_event.fundraising_goal,
+            primary_contact_name=source_event.primary_contact_name,
+            primary_contact_email=source_event.primary_contact_email,
+            primary_contact_phone=source_event.primary_contact_phone,
+            description=source_event.description,
+            logo_url=source_event.logo_url,
+            primary_color=source_event.primary_color,
+            secondary_color=source_event.secondary_color,
+            background_color=source_event.background_color,
+            accent_color=source_event.accent_color,
+            hero_transition_style=source_event.hero_transition_style,
+            table_count=source_event.table_count,
+            max_guests_per_table=source_event.max_guests_per_table,
+            seating_layout_image_url=None,
+            version=1,
+            created_by=current_user.id,
+            updated_by=current_user.id,
+        )
+        db.add(new_event)
+        # Flush to obtain the new event's ID for child records
+        await db.flush()
+
+        # ---- Always-cloned children ----
+
+        # FoodOption
+        for fo in source_event.food_options:
+            db.add(
+                FoodOption(
+                    event_id=new_event.id,
+                    name=fo.name,
+                    description=fo.description,
+                    display_order=fo.display_order,
+                )
+            )
+
+        # TicketPackage + CustomTicketOption
+        for tp in source_event.ticket_packages:
+            new_tp = TicketPackage(
+                event_id=new_event.id,
+                created_by=current_user.id,
+                name=tp.name,
+                description=tp.description,
+                price=tp.price,
+                seats_per_package=tp.seats_per_package,
+                quantity_limit=tp.quantity_limit,
+                sold_count=0,
+                display_order=tp.display_order,
+                image_url=tp.image_url,
+                is_enabled=tp.is_enabled,
+                is_sponsorship=tp.is_sponsorship,
+                version=1,
+            )
+            db.add(new_tp)
+            await db.flush()  # need new_tp.id for children
+
+            for cto in tp.custom_options:
+                db.add(
+                    CustomTicketOption(
+                        ticket_package_id=new_tp.id,
+                        option_label=cto.option_label,
+                        option_type=cto.option_type,
+                        choices=cto.choices,
+                        is_required=cto.is_required,
+                        display_order=cto.display_order,
+                    )
+                )
+
+        # EventTable (captain cleared)
+        for et in source_event.tables:
+            db.add(
+                EventTable(
+                    event_id=new_event.id,
+                    table_number=et.table_number,
+                    custom_capacity=et.custom_capacity,
+                    table_name=et.table_name,
+                    table_captain_id=None,
+                )
+            )
+
+        # Sponsor (logo refs shared)
+        for sp in source_event.sponsors:
+            db.add(
+                Sponsor(
+                    event_id=new_event.id,
+                    created_by=current_user.id,
+                    name=sp.name,
+                    logo_url=sp.logo_url,
+                    logo_blob_name=sp.logo_blob_name,
+                    thumbnail_url=sp.thumbnail_url,
+                    thumbnail_blob_name=sp.thumbnail_blob_name,
+                    logo_size=sp.logo_size,
+                    display_order=sp.display_order,
+                    website_url=sp.website_url,
+                    sponsor_level=sp.sponsor_level,
+                    contact_name=sp.contact_name,
+                    contact_email=sp.contact_email,
+                    contact_phone=sp.contact_phone,
+                    address_line1=sp.address_line1,
+                    address_line2=sp.address_line2,
+                    city=sp.city,
+                    state=sp.state,
+                    postal_code=sp.postal_code,
+                    country=sp.country,
+                    donation_amount=sp.donation_amount,
+                    notes=sp.notes,
+                )
+            )
+
+        # ---- Conditionally-cloned children ----
+
+        # EventMedia (deep-copy blobs)
+        if options.include_media:
+            from app.services.media_service import MediaService
+
+            for em in source_event.media:
+                new_media_id = uuid.uuid4()
+                target_blob = f"events/{new_event.id}/{new_media_id}/{em.file_name}"
+                try:
+                    new_url = await MediaService.copy_blob(em.blob_name, target_blob)
+                except Exception:
+                    logger.warning(
+                        "Failed to copy blob %s for event duplication; skipping",
+                        em.blob_name,
+                    )
+                    continue
+
+                db.add(
+                    EventMedia(
+                        event_id=new_event.id,
+                        media_type=em.media_type,
+                        usage_tag=em.usage_tag,
+                        file_url=new_url,
+                        file_name=em.file_name,
+                        file_type=em.file_type,
+                        mime_type=em.mime_type,
+                        blob_name=target_blob,
+                        file_size=em.file_size,
+                        display_order=em.display_order,
+                        status=em.status,
+                        uploaded_by=current_user.id,
+                    )
+                )
+
+            # Also deep-copy seating layout image if present
+            if source_event.seating_layout_image_url:
+                layout_blob = f"events/{source_event.id}/layout"
+                target_layout_blob = f"events/{new_event.id}/layout"
+                try:
+                    layout_url = await MediaService.copy_blob(layout_blob, target_layout_blob)
+                    new_event.seating_layout_image_url = layout_url
+                except Exception:
+                    logger.warning("Failed to copy seating layout image for event duplication")
+
+        # EventLink
+        if options.include_links:
+            for el in source_event.links:
+                db.add(
+                    EventLink(
+                        event_id=new_event.id,
+                        link_type=el.link_type,
+                        url=el.url,
+                        label=el.label,
+                        platform=el.platform,
+                        display_order=el.display_order,
+                        created_by=current_user.id,
+                    )
+                )
+
+        # DonationLabel
+        if options.include_donation_labels:
+            for dl in source_event.donation_labels:
+                db.add(
+                    DonationLabel(
+                        event_id=new_event.id,
+                        name=dl.name,
+                        is_active=dl.is_active,
+                        retired_at=None,
+                    )
+                )
+
+        await db.commit()
+
+        # Reload the new event with relationships for the response
+        result = await db.execute(
+            select(Event)
+            .where(Event.id == new_event.id)
+            .options(
+                selectinload(Event.npo),
+                selectinload(Event.media),
+                selectinload(Event.links),
+                selectinload(Event.food_options),
+            )
+        )
+        new_event = result.scalar_one()
+
+        logger.info(
+            "Event duplicated: '%s' (ID: %s) -> '%s' (ID: %s) by user %s",
+            source_event.name,
+            source_event.id,
+            new_event.name,
+            new_event.id,
+            current_user.id,
+        )
+        return new_event
 
     @staticmethod
     async def delete_event(

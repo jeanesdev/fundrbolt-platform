@@ -2,12 +2,13 @@
  * EventEditPage
  * Page for editing an existing event with media, links, and food options
  */
-
-import { Button } from '@/components/ui/button'
-import { getErrorMessage } from '@/lib/error-utils'
-import { useAuctionItemStore } from '@/stores/auctionItemStore'
-import { useEventStore } from '@/stores/event-store'
-import { useSponsorStore } from '@/stores/sponsorStore'
+import { useCallback, useEffect, useState } from 'react'
+import {
+  Outlet,
+  useLocation,
+  useNavigate,
+  useParams,
+} from '@tanstack/react-router'
 import type {
   EventLinkCreateRequest,
   EventMediaUsageTag,
@@ -15,11 +16,15 @@ import type {
   FoodOptionCreateRequest,
   MediaUpdateRequest,
 } from '@/types/event'
-import { Outlet, useLocation, useNavigate, useParams } from '@tanstack/react-router'
-import { Clock } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Clock, Copy } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import { useEventStore } from '@/stores/event-store'
+import { useSponsorStore } from '@/stores/sponsorStore'
+import { getErrorMessage } from '@/lib/error-utils'
+import { Button } from '@/components/ui/button'
 import { EventWorkspaceProvider } from './EventWorkspaceProvider'
+import { DuplicateEventDialog } from './components/DuplicateEventDialog'
 
 export function EventEditPage() {
   const navigate = useNavigate()
@@ -52,6 +57,7 @@ export function EventEditPage() {
   const { sponsors, fetchSponsors } = useSponsorStore()
   const { items: auctionItems, fetchAuctionItems } = useAuctionItemStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
   const apiEventId = currentEvent?.id ?? eventId
 
   const loadEvent = useCallback(() => {
@@ -103,7 +109,9 @@ export function EventEditPage() {
     } catch (err: unknown) {
       const error = err as { response?: { status: number } }
       if (error?.response?.status === 409) {
-        toast.error('Event was modified by another user. Please refresh and try again.')
+        toast.error(
+          'Event was modified by another user. Please refresh and try again.'
+        )
       } else {
         toast.error(getErrorMessage(err, 'Failed to update event'))
       }
@@ -117,24 +125,36 @@ export function EventEditPage() {
   }
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) return
+    if (
+      !confirm(
+        'Are you sure you want to delete this event? This action cannot be undone.'
+      )
+    )
+      return
 
     try {
       await deleteEvent(apiEventId)
       toast.success('Event deleted successfully')
       navigate({ to: '/events' })
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete event'
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to delete event'
       toast.error(errorMessage)
     }
   }
 
-  const handleMediaUpload = async (file: File, usageTag: EventMediaUsageTag) => {
+  const handleMediaUpload = async (
+    file: File,
+    usageTag: EventMediaUsageTag
+  ) => {
     await uploadMedia(apiEventId, file, usageTag)
     // Note: Toast notification is shown by MediaUploader component
   }
 
-  const handleMediaUpdate = async (mediaId: string, data: MediaUpdateRequest) => {
+  const handleMediaUpdate = async (
+    mediaId: string,
+    data: MediaUpdateRequest
+  ) => {
     await updateMedia(apiEventId, mediaId, data)
   }
 
@@ -158,7 +178,8 @@ export function EventEditPage() {
       await deleteLink(apiEventId, linkId)
       toast.success('Link deleted successfully!')
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete link'
+      const message =
+        err instanceof Error ? err.message : 'Failed to delete link'
       toast.error(message)
     }
   }
@@ -168,7 +189,8 @@ export function EventEditPage() {
       await createFoodOption(apiEventId, data)
       toast.success('Food option added successfully!')
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to add food option'
+      const message =
+        err instanceof Error ? err.message : 'Failed to add food option'
       toast.error(message)
     }
   }
@@ -178,15 +200,16 @@ export function EventEditPage() {
       await deleteFoodOption(apiEventId, optionId)
       toast.success('Food option deleted successfully!')
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete food option'
+      const message =
+        err instanceof Error ? err.message : 'Failed to delete food option'
       toast.error(message)
     }
   }
 
   if (eventsLoading || !currentEvent) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Clock className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className='flex h-96 items-center justify-center'>
+        <Clock className='text-muted-foreground h-8 w-8 animate-spin' />
       </div>
     )
   }
@@ -218,9 +241,9 @@ export function EventEditPage() {
   // Show loading state while event is being loaded
   if (eventsLoading || !currentEvent) {
     return (
-      <div className="container mx-auto px-2 py-3 sm:px-6 sm:py-4 md:py-8 max-w-6xl">
-        <div className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground">Loading event...</p>
+      <div className='container mx-auto max-w-6xl px-2 py-3 sm:px-6 sm:py-4 md:py-8'>
+        <div className='flex items-center justify-center py-12'>
+          <p className='text-muted-foreground'>Loading event...</p>
         </div>
       </div>
     )
@@ -228,40 +251,57 @@ export function EventEditPage() {
 
   return (
     <EventWorkspaceProvider value={contextValue}>
-      <div className="container mx-auto px-2 py-3 sm:px-6 sm:py-4 md:py-8 max-w-6xl">
-        <div className="mb-4 md:mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl md:text-3xl font-bold truncate">{currentEvent.name}</h1>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
+      <div className='container mx-auto max-w-6xl px-2 py-3 sm:px-6 sm:py-4 md:py-8'>
+        <div className='mb-4 md:mb-6'>
+          <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
+            <div className='min-w-0 flex-1'>
+              <h1 className='truncate text-2xl font-bold md:text-3xl'>
+                {currentEvent.name}
+              </h1>
+              <div className='mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4'>
                 {currentEvent.npo_name && (
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium">Organization:</span> {currentEvent.npo_name}
+                  <p className='text-muted-foreground text-sm'>
+                    <span className='font-medium'>Organization:</span>{' '}
+                    {currentEvent.npo_name}
                   </p>
                 )}
-                <p className="text-sm text-muted-foreground hidden sm:block">Edit event details and content</p>
+                <p className='text-muted-foreground hidden text-sm sm:block'>
+                  Edit event details and content
+                </p>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Status:</span>
+            <div className='flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4'>
+              <div className='flex items-center gap-2'>
+                <span className='text-muted-foreground text-sm'>Status:</span>
                 <span
-                  className={`text-xs px-2 py-1 rounded whitespace-nowrap ${currentEvent.status === 'draft'
-                    ? 'bg-gray-100 text-gray-800'
-                    : currentEvent.status === 'active'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
-                    }`}
+                  className={`rounded px-2 py-1 text-xs whitespace-nowrap ${
+                    currentEvent.status === 'draft'
+                      ? 'bg-gray-100 text-gray-800'
+                      : currentEvent.status === 'active'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                  }`}
                 >
-                  {currentEvent.status.charAt(0).toUpperCase() + currentEvent.status.slice(1)}
+                  {currentEvent.status.charAt(0).toUpperCase() +
+                    currentEvent.status.slice(1)}
                 </span>
               </div>
-              {(currentEvent.status === 'draft' || currentEvent.status === 'closed') && (
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setShowDuplicateDialog(true)}
+                className='w-full sm:w-auto'
+              >
+                <Copy className='mr-1 h-4 w-4' />
+                Duplicate Event
+              </Button>
+              {(currentEvent.status === 'draft' ||
+                currentEvent.status === 'closed') && (
                 <Button
-                  variant="destructive"
-                  size="sm"
+                  variant='destructive'
+                  size='sm'
                   onClick={handleDelete}
-                  className="w-full sm:w-auto"
+                  className='w-full sm:w-auto'
                 >
                   Delete Event
                 </Button>
@@ -270,10 +310,17 @@ export function EventEditPage() {
           </div>
         </div>
 
-        <div className="mt-6 space-y-6">
+        <div className='mt-6 space-y-6'>
           <Outlet />
         </div>
       </div>
+
+      <DuplicateEventDialog
+        open={showDuplicateDialog}
+        onOpenChange={setShowDuplicateDialog}
+        eventId={apiEventId}
+        eventName={currentEvent.name}
+      />
     </EventWorkspaceProvider>
   )
 }

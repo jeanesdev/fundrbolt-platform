@@ -416,6 +416,23 @@ class EventStatsResponse(BaseModel):
     active_guest_count: int
 
 
+class DuplicateEventRequest(BaseModel):
+    """Request schema for duplicating an event."""
+
+    include_media: bool = Field(
+        default=False,
+        description="Deep-copy media files to new blob paths when true",
+    )
+    include_links: bool = Field(
+        default=True,
+        description="Clone EventLink records when true (default)",
+    )
+    include_donation_labels: bool = Field(
+        default=True,
+        description="Clone DonationLabel records when true (default)",
+    )
+
+
 class EventPublicResponse(BaseModel):
     """Public event response (no internal fields)."""
 
