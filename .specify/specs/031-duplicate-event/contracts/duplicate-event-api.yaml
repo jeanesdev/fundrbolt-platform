@@ -1,0 +1,151 @@
+openapi: 3.1.0
+info:
+  title: Duplicate Event API
+  version: 1.0.0
+  description: API contract for the event duplication endpoint (Feature 031)
+
+paths:
+  /api/v1/events/{event_id}/duplicate:
+    post:
+      operationId: duplicateEvent
+      summary: Duplicate an existing event
+      description: |
+        Creates a new DRAFT event by cloning the source event's configuration,
+        food options, ticket packages (with custom options), table configuration,
+        and sponsor associations. Optionally includes media files (deep-copied),
+        event links, and donation labels.
+
+        The duplicated event:
+        - Has name "{Original Name} (Copy)"
+        - Status is always DRAFT
+        - event_datetime is cleared (NULL) — admin must set a new date
+        - custom_slug is cleared
+        - Ticket package sold_count reset to 0
+        - Table captain assignments cleared
+        - All records get new UUIDs
+
+        Requires NPO Admin or Event Coordinator role for the source event's NPO.
+      tags:
+        - Events
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          description: UUID of the source event to duplicate
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DuplicateEventRequest'
+            examples:
+              defaults:
+                summary: Default (no optional inclusions)
+                value: {}
+              withMedia:
+                summary: Include media files
+                value:
+                  include_media: true
+              allOptions:
+                summary: Include everything
+                value:
+                  include_media: true
+                  include_links: true
+                  include_donation_labels: true
+      responses:
+        '201':
+          description: Event duplicated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetailResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Not authenticated"
+        '403':
+          description: Insufficient permissions for this event's NPO
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "You do not have permission to manage events for this NPO"
+        '404':
+          description: Source event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Event not found"
+        '500':
+          description: Internal server error (e.g., blob copy failure)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Failed to duplicate event media"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    DuplicateEventRequest:
+      type: object
+      description: Options controlling which optional entities are included in the duplicate
+      properties:
+        include_media:
+          type: boolean
+          default: false
+          description: |
+            When true, deep-copies all EventMedia blobs to new storage paths
+            and creates new EventMedia records for the duplicated event.
+            When false (default), media files are not included.
+        include_links:
+          type: boolean
+          default: false
+          description: |
+            When true, clones all EventLink records (videos, websites, social media)
+            to the duplicated event. When false (default), links are not included.
+        include_donation_labels:
+          type: boolean
+          default: false
+          description: |
+            When true, clones all DonationLabel records to the duplicated event.
+            When false (default), donation labels are not included.
+
+    EventDetailResponse:
+      type: object
+      description: |
+        Full event detail response. Uses the existing EventDetailResponse schema
+        already defined in the codebase (backend/app/schemas/event.py).
+        The duplicated event will have:
+        - status: "draft"
+        - event_datetime: null
+        - name: "{Original Name} (Copy)"
+        - All cloned child entities included in response
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message
