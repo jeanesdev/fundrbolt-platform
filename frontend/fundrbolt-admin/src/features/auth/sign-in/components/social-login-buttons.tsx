@@ -3,8 +3,7 @@ import { Separator } from '@/components/ui/separator'
 import { adminSocialAuthApi } from '@/lib/axios'
 import { GoogleIcon, AppleIcon, FacebookIcon, MicrosoftIcon } from '@fundrbolt/shared'
 import { Loader2 } from 'lucide-react'
-import { useCallback, useState } from 'react'
-import type { ComponentType, SVGProps } from 'react'
+import { useCallback, useState, type ComponentType, type SVGProps } from 'react'
 import type { SocialAuthProvider } from '@fundrbolt/shared/types'
 
 const DEFAULT_PROVIDERS: { provider: SocialAuthProvider; display_name: string }[] = [
