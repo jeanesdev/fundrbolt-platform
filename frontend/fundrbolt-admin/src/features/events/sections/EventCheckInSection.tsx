@@ -1,4 +1,24 @@
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { checkinService } from '@/services/checkin-service'
+import {
+  Check,
+  ChevronDown,
+  Crown,
+  Filter,
+  Loader2,
+  RotateCcw,
+  Settings2,
+  X,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
+import {
+  assignBidderNumber,
+  assignRegistrationBidderNumber,
+} from '@/lib/api/admin-seating'
+import { getErrorMessage } from '@/lib/error-utils'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -8,7 +28,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import {
   Dialog,
   DialogContent,
@@ -27,18 +51,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
-import {
-  assignBidderNumber,
-  assignRegistrationBidderNumber,
-} from '@/lib/api/admin-seating'
-import { getErrorMessage } from '@/lib/error-utils'
-import { checkinService } from '@/services/checkin-service'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, ChevronDown, Crown, Loader2, RotateCcw, Settings2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { toast } from 'sonner'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 function StatusBadge({ checkedIn }: { checkedIn: boolean }) {
@@ -126,6 +139,25 @@ export function EventCheckInSection() {
   const [editingAttendee, setEditingAttendee] = useState<Attendee | null>(null)
   const [editForm, setEditForm] = useState<EditFormState>(defaultEditForm)
   const [viewMode, setViewMode] = useViewPreference('check-in')
+  const [cardFiltersOpen, setCardFiltersOpen] = useState(false)
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (filters.name) count++
+    if (filters.email) count++
+    if (filters.phone) count++
+    if (filters.guestOf) count++
+    if (filters.checkedIn !== 'all') count++
+    if (filters.tableNumber) count++
+    if (filters.bidderNumber) count++
+    if (filters.checkInTime) count++
+    if (filters.confirmationCode) count++
+    return count
+  }, [filters])
+
+  const clearAllFilters = () => {
+    setFilters(defaultFilters)
+  }
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['event-attendees', currentEvent.id],
@@ -210,7 +242,11 @@ export function EventCheckInSection() {
       }
 
       const bidderNumber = Number.parseInt(nextBidderValue, 10)
-      if (Number.isNaN(bidderNumber) || bidderNumber < 100 || bidderNumber > 999) {
+      if (
+        Number.isNaN(bidderNumber) ||
+        bidderNumber < 100 ||
+        bidderNumber > 999
+      ) {
         throw new Error('Bidder number must be between 100 and 999')
       }
 
@@ -434,84 +470,333 @@ export function EventCheckInSection() {
         </CardHeader>
         <CardContent>
           {viewMode === 'card' ? (
-            <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
-              {filteredAttendees.length === 0 ? (
-                <div className='col-span-full rounded-md border py-8 text-center text-muted-foreground'>
-                  No attendees match the current filters.
+            <div className='space-y-3'>
+              {/* Card-mode filter bar */}
+              <div className='flex items-center gap-2'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setCardFiltersOpen((prev) => !prev)}
+                  className='gap-1.5'
+                >
+                  <Filter className='h-4 w-4' />
+                  Filters
+                  {activeFilterCount > 0 && (
+                    <Badge
+                      variant='secondary'
+                      className='ml-0.5 h-5 min-w-5 justify-center rounded-full px-1.5 text-xs'
+                    >
+                      {activeFilterCount}
+                    </Badge>
+                  )}
+                </Button>
+                {activeFilterCount > 0 && (
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={clearAllFilters}
+                    className='text-muted-foreground gap-1'
+                  >
+                    <X className='h-3.5 w-3.5' />
+                    Clear all
+                  </Button>
+                )}
+                <span className='text-muted-foreground ml-auto text-sm'>
+                  {filteredAttendees.length} of {attendees.length} attendees
+                </span>
+              </div>
+              {cardFiltersOpen && (
+                <div className='bg-muted/30 rounded-md border p-3'>
+                  <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='checkin-filter-name'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Name
+                      </Label>
+                      <Input
+                        id='checkin-filter-name'
+                        placeholder='Filter name…'
+                        value={filters.name}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            name: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='checkin-filter-email'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Email
+                      </Label>
+                      <Input
+                        id='checkin-filter-email'
+                        placeholder='Filter email…'
+                        value={filters.email}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            email: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='checkin-filter-phone'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Phone
+                      </Label>
+                      <Input
+                        id='checkin-filter-phone'
+                        placeholder='Filter phone…'
+                        value={filters.phone}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            phone: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='checkin-filter-guestof'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Party Of
+                      </Label>
+                      <Input
+                        id='checkin-filter-guestof'
+                        placeholder='Filter party of…'
+                        value={filters.guestOf}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            guestOf: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='checkin-filter-status'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Status
+                      </Label>
+                      <select
+                        id='checkin-filter-status'
+                        className='border-input bg-background h-9 w-full rounded-md border px-3 py-1 text-sm'
+                        value={filters.checkedIn}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            checkedIn: e.target.value as Filters['checkedIn'],
+                          }))
+                        }
+                      >
+                        <option value='all'>All</option>
+                        <option value='checked'>Checked in</option>
+                        <option value='not_checked'>Not checked in</option>
+                      </select>
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='checkin-filter-table'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Table #
+                      </Label>
+                      <Input
+                        id='checkin-filter-table'
+                        placeholder='Filter table…'
+                        value={filters.tableNumber}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            tableNumber: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='checkin-filter-bidder'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Bidder #
+                      </Label>
+                      <Input
+                        id='checkin-filter-bidder'
+                        placeholder='Filter bidder…'
+                        value={filters.bidderNumber}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            bidderNumber: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='checkin-filter-checkintime'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Checked In At
+                      </Label>
+                      <Input
+                        id='checkin-filter-checkintime'
+                        placeholder='Filter time…'
+                        value={filters.checkInTime}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            checkInTime: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='checkin-filter-confirmation'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Confirmation Code
+                      </Label>
+                      <Input
+                        id='checkin-filter-confirmation'
+                        placeholder='Filter code…'
+                        value={filters.confirmationCode}
+                        onChange={(e) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            confirmationCode: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                filteredAttendees.map((attendee) => {
-                  const checkedIn = Boolean(attendee.checked_in || attendee.check_in_time)
-                  const partyOf = attendee.attendee_type === 'registrant' ? attendee.name : attendee.guest_of
-                  return (
-                    <div key={attendee.id} className='rounded-md border p-3 space-y-2'>
-                      <div className='flex items-center justify-between'>
-                        <div className='flex items-center gap-2'>
+              )}
+              <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+                {filteredAttendees.length === 0 ? (
+                  <div className='text-muted-foreground col-span-full rounded-md border py-8 text-center'>
+                    No attendees match the current filters.
+                  </div>
+                ) : (
+                  filteredAttendees.map((attendee) => {
+                    const checkedIn = Boolean(
+                      attendee.checked_in || attendee.check_in_time
+                    )
+                    const partyOf =
+                      attendee.attendee_type === 'registrant'
+                        ? attendee.name
+                        : attendee.guest_of
+                    return (
+                      <div
+                        key={attendee.id}
+                        className='space-y-2 rounded-md border p-3'
+                      >
+                        <div className='flex items-center justify-between'>
+                          <div className='flex items-center gap-2'>
+                            <Button
+                              size='sm'
+                              variant={checkedIn ? 'outline' : 'default'}
+                              className='h-8 w-8 p-0'
+                              onClick={() =>
+                                handleToggleCheckIn(attendee, checkedIn)
+                              }
+                              disabled={updateCheckinMutation.isPending}
+                              aria-label={
+                                checkedIn
+                                  ? 'Undo check-in'
+                                  : 'Check in attendee'
+                              }
+                            >
+                              {updateCheckinMutation.isPending ? (
+                                <Loader2 className='h-4 w-4 animate-spin' />
+                              ) : checkedIn ? (
+                                <RotateCcw className='h-4 w-4' />
+                              ) : (
+                                <Check className='h-4 w-4' />
+                              )}
+                            </Button>
+                            <span className='font-medium'>
+                              {attendee.name || '—'}
+                            </span>
+                            {attendee.is_table_captain && (
+                              <Badge
+                                variant='outline'
+                                className='h-5 w-5 justify-center p-0'
+                                title='Table Captain'
+                              >
+                                <Crown className='h-3 w-3' />
+                              </Badge>
+                            )}
+                          </div>
                           <Button
                             size='sm'
-                            variant={checkedIn ? 'outline' : 'default'}
+                            variant='outline'
                             className='h-8 w-8 p-0'
-                            onClick={() => handleToggleCheckIn(attendee, checkedIn)}
-                            disabled={updateCheckinMutation.isPending}
-                            aria-label={checkedIn ? 'Undo check-in' : 'Check in attendee'}
+                            onClick={() => openManageDialog(attendee)}
+                            aria-label='Manage attendee'
                           >
-                            {updateCheckinMutation.isPending ? (
-                              <Loader2 className='h-4 w-4 animate-spin' />
-                            ) : checkedIn ? (
-                              <RotateCcw className='h-4 w-4' />
-                            ) : (
-                              <Check className='h-4 w-4' />
-                            )}
+                            <Settings2 className='h-4 w-4' />
                           </Button>
-                          <span className='font-medium'>{attendee.name || '—'}</span>
-                          {attendee.is_table_captain && (
-                            <Badge variant='outline' className='h-5 w-5 justify-center p-0' title='Table Captain'>
-                              <Crown className='h-3 w-3' />
-                            </Badge>
-                          )}
                         </div>
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          className='h-8 w-8 p-0'
-                          onClick={() => openManageDialog(attendee)}
-                          aria-label='Manage attendee'
-                        >
-                          <Settings2 className='h-4 w-4' />
-                        </Button>
+                        <dl className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
+                          <dt className='text-muted-foreground'>Status</dt>
+                          <dd>
+                            <StatusBadge checkedIn={checkedIn} />
+                          </dd>
+                          <dt className='text-muted-foreground'>Party Of</dt>
+                          <dd>{partyOf || '—'}</dd>
+                          <dt className='text-muted-foreground'>Table #</dt>
+                          <dd>{attendee.table_number ?? '—'}</dd>
+                        </dl>
+                        <Collapsible>
+                          <CollapsibleTrigger className='text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs'>
+                            <ChevronDown className='h-3 w-3' />
+                            More details
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <dl className='mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
+                              <dt className='text-muted-foreground'>Email</dt>
+                              <dd className='truncate'>
+                                {attendee.email || '—'}
+                              </dd>
+                              <dt className='text-muted-foreground'>Phone</dt>
+                              <dd>{formatPhoneForDisplay(attendee.phone)}</dd>
+                              <dt className='text-muted-foreground'>
+                                Bidder #
+                              </dt>
+                              <dd>{attendee.bidder_number ?? '—'}</dd>
+                              <dt className='text-muted-foreground'>
+                                Checked In At
+                              </dt>
+                              <dd>{formatDateTime(attendee.check_in_time)}</dd>
+                              <dt className='text-muted-foreground'>
+                                Confirmation
+                              </dt>
+                              <dd className='font-mono text-xs'>
+                                {attendee.registration_id}
+                              </dd>
+                            </dl>
+                          </CollapsibleContent>
+                        </Collapsible>
                       </div>
-                      <dl className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
-                        <dt className='text-muted-foreground'>Status</dt>
-                        <dd><StatusBadge checkedIn={checkedIn} /></dd>
-                        <dt className='text-muted-foreground'>Party Of</dt>
-                        <dd>{partyOf || '—'}</dd>
-                        <dt className='text-muted-foreground'>Table #</dt>
-                        <dd>{attendee.table_number ?? '—'}</dd>
-                      </dl>
-                      <Collapsible>
-                        <CollapsibleTrigger className='flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground'>
-                          <ChevronDown className='h-3 w-3' />
-                          More details
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <dl className='mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
-                            <dt className='text-muted-foreground'>Email</dt>
-                            <dd className='truncate'>{attendee.email || '—'}</dd>
-                            <dt className='text-muted-foreground'>Phone</dt>
-                            <dd>{formatPhoneForDisplay(attendee.phone)}</dd>
-                            <dt className='text-muted-foreground'>Bidder #</dt>
-                            <dd>{attendee.bidder_number ?? '—'}</dd>
-                            <dt className='text-muted-foreground'>Checked In At</dt>
-                            <dd>{formatDateTime(attendee.check_in_time)}</dd>
-                            <dt className='text-muted-foreground'>Confirmation</dt>
-                            <dd className='font-mono text-xs'>{attendee.registration_id}</dd>
-                          </dl>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </div>
-                  )
-                })
-              )}
+                    )
+                  })
+                )}
+              </div>
             </div>
           ) : (
             <div className='overflow-x-auto rounded-md border'>
@@ -590,7 +875,8 @@ export function EventCheckInSection() {
                         onChange={(event) =>
                           setFilters((prev) => ({
                             ...prev,
-                            checkedIn: event.target.value as Filters['checkedIn'],
+                            checkedIn: event.target
+                              .value as Filters['checkedIn'],
                           }))
                         }
                       >
@@ -727,7 +1013,9 @@ export function EventCheckInSection() {
                             </div>
                           </TableCell>
                           <TableCell>{attendee.email || '—'}</TableCell>
-                          <TableCell>{formatPhoneForDisplay(attendee.phone)}</TableCell>
+                          <TableCell>
+                            {formatPhoneForDisplay(attendee.phone)}
+                          </TableCell>
                           <TableCell>{partyOf || '—'}</TableCell>
                           <TableCell>
                             <StatusBadge checkedIn={checkedIn} />
@@ -873,7 +1161,10 @@ export function EventCheckInSection() {
             {editingAttendee && (
               <Button
                 type='button'
-                disabled={saveAttendeeMutation.isPending || replaceGuestMutation.isPending}
+                disabled={
+                  saveAttendeeMutation.isPending ||
+                  replaceGuestMutation.isPending
+                }
                 onClick={() => saveAttendeeMutation.mutate(editingAttendee)}
               >
                 {saveAttendeeMutation.isPending && (

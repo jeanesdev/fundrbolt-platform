@@ -16,7 +16,7 @@ import type {
   FoodOptionCreateRequest,
   MediaUpdateRequest,
 } from '@/types/event'
-import { Clock, Copy } from 'lucide-react'
+import { Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuctionItemStore } from '@/stores/auctionItemStore'
 import { useEventStore } from '@/stores/event-store'
@@ -24,7 +24,6 @@ import { useSponsorStore } from '@/stores/sponsorStore'
 import { getErrorMessage } from '@/lib/error-utils'
 import { Button } from '@/components/ui/button'
 import { EventWorkspaceProvider } from './EventWorkspaceProvider'
-import { DuplicateEventDialog } from './components/DuplicateEventDialog'
 
 export function EventEditPage() {
   const navigate = useNavigate()
@@ -57,7 +56,6 @@ export function EventEditPage() {
   const { sponsors, fetchSponsors } = useSponsorStore()
   const { items: auctionItems, fetchAuctionItems } = useAuctionItemStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
   const apiEventId = currentEvent?.id ?? eventId
 
   const loadEvent = useCallback(() => {
@@ -286,15 +284,6 @@ export function EventEditPage() {
                     currentEvent.status.slice(1)}
                 </span>
               </div>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => setShowDuplicateDialog(true)}
-                className='w-full sm:w-auto'
-              >
-                <Copy className='mr-1 h-4 w-4' />
-                Duplicate Event
-              </Button>
               {(currentEvent.status === 'draft' ||
                 currentEvent.status === 'closed') && (
                 <Button
@@ -314,13 +303,6 @@ export function EventEditPage() {
           <Outlet />
         </div>
       </div>
-
-      <DuplicateEventDialog
-        open={showDuplicateDialog}
-        onOpenChange={setShowDuplicateDialog}
-        eventId={apiEventId}
-        eventName={currentEvent.name}
-      />
     </EventWorkspaceProvider>
   )
 }
