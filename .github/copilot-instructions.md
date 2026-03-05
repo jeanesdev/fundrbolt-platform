@@ -61,6 +61,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - PostgreSQL 15 (users, social identity links, audit events), Redis 7 (session/token flows) (030-social-login-i)
 - Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18, Vite, TanStack Router, Zustand, Radix UI (Frontend) (031-duplicate-event)
 - Azure Database for PostgreSQL (existing tables: events, food_options, ticket_packages, event_tables, sponsors, event_media, event_links, donation_labels); Azure Blob Storage (media file deep-copy) (031-duplicate-event)
+- TypeScript 5.x, React 18+ + `vite-plugin-pwa` (Workbox-based SW generation), `virtual:pwa-register/react` (React hooks for SW lifecycle) (032-pwa-capabilities)
+- N/A (client-side CacheStorage managed by Workbox; `localStorage` for install prompt dismissal tracking) (032-pwa-capabilities)
 
 ## Project Structure
 ```
@@ -145,9 +147,9 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 032-pwa-capabilities: Added TypeScript 5.x, React 18+ + `vite-plugin-pwa` (Workbox-based SW generation), `virtual:pwa-register/react` (React hooks for SW lifecycle)
 - 031-duplicate-event: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18, Vite, TanStack Router, Zustand, Radix UI (Frontend)
 - 030-social-login-i: Added Python 3.11+ (backend), TypeScript 5.x + React 18/19 PWAs (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, existing auth/session stack (OAuth2/JWT), React, TanStack Router, Zustand
-- 029-quick-bid-entry: Added Python 3.11+ (backend), TypeScript 5.x + React 19 (admin frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React, TanStack Router, Zustand, React Query, Radix UI
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields
   - ✅ Updated registration_guests with is_table_captain boolean field
   - ✅ US1 - Customize Table Capacity: Event coordinators can set custom capacity per table (1-20), system enforces limits
