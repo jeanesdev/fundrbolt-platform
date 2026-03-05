@@ -622,7 +622,7 @@ export function AttendeeListTable({
   return (
     <div className='space-y-4'>
       {/* Toolbar */}
-      <div className='flex items-center justify-between'>
+      <div className='flex flex-wrap items-center justify-between gap-2'>
         <div className='flex items-center gap-3'>
           <div className='text-sm text-muted-foreground'>
             Showing {displayedAttendees.length} of {totalAttendees} attendees • {activeAttendees} active
@@ -634,7 +634,7 @@ export function AttendeeListTable({
           </div>
           <DataTableViewToggle value={viewMode} onChange={setViewMode} />
         </div>
-        <div className='flex items-center gap-2'>
+        <div className='flex flex-wrap items-center gap-2'>
           <Button
             variant='ghost'
             size='sm'
