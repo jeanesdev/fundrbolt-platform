@@ -58,7 +58,7 @@ export function EventCreatePage() {
   }
 
   return (
-    <div className="container mx-auto py-4 md:py-8 max-w-4xl">
+    <div className="space-y-4 md:space-y-6">
       <div className="mb-4 md:mb-6 space-y-4">
         <Button variant="ghost" onClick={handleCancel} className="px-0 hover:bg-transparent">
           <ArrowLeft className="h-4 w-4 mr-2" />

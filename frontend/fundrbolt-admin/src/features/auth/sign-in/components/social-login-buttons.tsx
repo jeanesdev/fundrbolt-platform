@@ -49,7 +49,7 @@ export function SocialLoginButtons({ redirectTo: _redirectTo }: { redirectTo?: s
   )
 
   return (
-    <div className='space-y-3'>
+    <div className='mt-4 space-y-3'>
       <div className='relative'>
         <div className='absolute inset-0 flex items-center'>
           <Separator />

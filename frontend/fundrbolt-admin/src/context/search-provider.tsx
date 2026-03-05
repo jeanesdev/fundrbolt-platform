@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { SearchBar } from '@/components/search/SearchBar'
 
 type SearchContextType = {
   open: boolean
@@ -29,7 +28,6 @@ export function SearchProvider({ children }: SearchProviderProps) {
   return (
     <SearchContext value={{ open, setOpen }}>
       {children}
-      <SearchBar open={open} onOpenChange={setOpen} />
     </SearchContext>
   )
 }

@@ -7,53 +7,24 @@ import {
 import { useLayout } from '@/context/layout-provider'
 import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
 import { LogoWhiteGold } from '@fundrbolt/shared/assets'
-import {
-  Award,
-  BarChart3,
-  Building2,
-  Calendar,
-  ClipboardCheck,
-  FileText,
-  Gavel,
-  Image as ImageIcon,
-  LayoutDashboard,
-  LayoutGrid,
-  Link2,
-  Ticket,
-  Users,
-  Utensils,
-} from 'lucide-react'
 import { EventSelector } from './EventSelector'
-import { NavGroup } from './nav-group'
 import { NpoSelector } from './NpoSelector'
+import { iconMap } from './icon-map'
+import { NavGroup } from './nav-group'
+import { SidebarSearch } from './sidebar-search'
 import type { NavGroup as NavGroupType } from './types'
-
-// Map icon string names to lucide-react icon components
-const iconMap = {
-  LayoutDashboard,
-  Building2,
-  Calendar,
-  FileText,
-  Image: ImageIcon,
-  Link2,
-  Utensils,
-  Users,
-  ClipboardCheck,
-  LayoutGrid,
-  Ticket,
-  Award,
-  Gavel,
-  BarChart3,
-}
 
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
-  const { navItems, eventNavItems, eventNavTitle } = useRoleBasedNav()
+  const { navItems, eventNavGroups } = useRoleBasedNav()
+
+  const hasEventGroups = eventNavGroups.length > 0
 
   // Convert useRoleBasedNav items to sidebar structure
   const adminNavGroup: NavGroupType = {
     title: 'Admin',
-    defaultCollapsed: true,
+    // Only collapse Admin when event groups are visible
+    defaultCollapsed: hasEventGroups,
     items: navItems.map((item) => ({
       title: item.title,
       url: item.href,
@@ -64,16 +35,22 @@ export function AppSidebar() {
 
   const orderedNavGroups: NavGroupType[] = []
 
-  if (eventNavItems.length && eventNavTitle) {
-    orderedNavGroups.push({
-      title: eventNavTitle,
-      items: eventNavItems.map((item) => ({
-        title: item.title,
-        url: item.href,
-        badge: typeof item.badge === 'number' ? String(item.badge) : item.badge,
-        icon: item.icon ? iconMap[item.icon as keyof typeof iconMap] : undefined,
-      })),
-    })
+  // Add event nav groups (Event, Guests, Auctions)
+  if (hasEventGroups) {
+    for (const group of eventNavGroups) {
+      orderedNavGroups.push({
+        title: group.title,
+        items: group.items.map((item) => ({
+          title: item.title,
+          url: item.href,
+          badge:
+            typeof item.badge === 'number' ? String(item.badge) : item.badge,
+          icon: item.icon
+            ? iconMap[item.icon as keyof typeof iconMap]
+            : undefined,
+        })),
+      })
+    }
   }
 
   orderedNavGroups.push(adminNavGroup)
@@ -83,15 +60,12 @@ export function AppSidebar() {
       <SidebarHeader>
         {/* Fundrbolt Logo */}
         <div className='flex items-center justify-center px-4 py-2'>
-          <img
-            src={LogoWhiteGold}
-            alt='Fundrbolt'
-            className='h-8 w-auto'
-          />
+          <img src={LogoWhiteGold} alt='Fundrbolt' className='h-8 w-auto' />
         </div>
 
         <NpoSelector />
         <EventSelector />
+        <SidebarSearch navGroups={orderedNavGroups} />
       </SidebarHeader>
       <SidebarContent>
         {orderedNavGroups.map((props) => (

@@ -17,6 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { useEventWorkspace } from '@/features/events/useEventWorkspace';
 import { useToast } from '@/hooks/use-toast';
 import apiClient from '@/lib/axios';
 import { getErrorMessage } from '@/lib/error-utils';
@@ -52,7 +53,10 @@ const packageSchema = z.object({
 type PackageFormData = z.infer<typeof packageSchema>;
 
 export function TicketPackageCreatePage() {
-  const { eventId } = useParams({ from: '/_authenticated/events/$eventId/tickets/create' });
+  const { currentEvent } = useEventWorkspace();
+  const { eventId: routeEventId } = useParams({ from: '/_authenticated/events/$eventId/tickets/create' });
+  // Use real UUID for API calls, keep route param for navigation
+  const eventId = currentEvent.id;
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -99,7 +103,7 @@ export function TicketPackageCreatePage() {
         });
         navigate({
           to: '/events/$eventId/tickets/$packageId/edit',
-          params: { eventId, packageId: pkg.id },
+          params: { eventId: routeEventId, packageId: pkg.id },
         });
       }
     },
@@ -136,14 +140,14 @@ export function TicketPackageCreatePage() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-2xl">
+    <div className="space-y-4 md:space-y-6">
       <Button
         variant="ghost"
         className="mb-4"
         onClick={() =>
           navigate({
             to: '/events/$eventId/tickets',
-            params: { eventId },
+            params: { eventId: routeEventId },
           })
         }
       >
@@ -374,7 +378,7 @@ export function TicketPackageCreatePage() {
                   onClick={() =>
                     navigate({
                       to: '/events/$eventId/tickets',
-                      params: { eventId },
+                      params: { eventId: routeEventId },
                     })
                   }
                 >

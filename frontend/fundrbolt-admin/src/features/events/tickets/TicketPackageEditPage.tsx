@@ -19,6 +19,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { useEventWorkspace } from '@/features/events/useEventWorkspace';
 import { useToast } from '@/hooks/use-toast';
 import apiClient from '@/lib/axios';
 import { getErrorMessage } from '@/lib/error-utils';
@@ -75,9 +76,12 @@ interface TicketPackage {
 }
 
 export function TicketPackageEditPage() {
-  const { eventId, packageId } = useParams({
+  const { currentEvent } = useEventWorkspace();
+  const { eventId: routeEventId, packageId } = useParams({
     from: '/_authenticated/events/$eventId/tickets/$packageId/edit',
   });
+  // Use real UUID for API calls, keep route param for navigation
+  const eventId = currentEvent.id;
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -151,7 +155,7 @@ export function TicketPackageEditPage() {
       });
       navigate({
         to: '/events/$eventId/tickets',
-        params: { eventId },
+        params: { eventId: routeEventId },
       });
     },
     onError: (error) => {
@@ -255,7 +259,7 @@ export function TicketPackageEditPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="space-y-4">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="h-96 bg-gray-200 rounded"></div>
@@ -266,7 +270,7 @@ export function TicketPackageEditPage() {
 
   if (!pkg) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="space-y-4">
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">Package not found</p>
@@ -275,7 +279,7 @@ export function TicketPackageEditPage() {
               onClick={() =>
                 navigate({
                   to: '/events/$eventId/tickets',
-                  params: { eventId },
+                  params: { eventId: routeEventId },
                 })
               }
             >
@@ -288,14 +292,14 @@ export function TicketPackageEditPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-2xl">
+    <div className="space-y-4 md:space-y-6">
       <Button
         variant="ghost"
         className="mb-4"
         onClick={() =>
           navigate({
             to: '/events/$eventId/tickets',
-            params: { eventId },
+            params: { eventId: routeEventId },
           })
         }
       >
@@ -476,7 +480,7 @@ export function TicketPackageEditPage() {
                   onClick={() =>
                     navigate({
                       to: '/events/$eventId/tickets',
-                      params: { eventId },
+                      params: { eventId: routeEventId },
                     })
                   }
                 >
@@ -504,7 +508,7 @@ export function TicketPackageEditPage() {
           setShowConflictDialog(false);
           navigate({
             to: '/events/$eventId/tickets',
-            params: { eventId },
+            params: { eventId: routeEventId },
           });
         }}
       />

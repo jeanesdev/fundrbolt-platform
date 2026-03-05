@@ -1,8 +1,4 @@
-import { useCallback, useMemo, type ReactNode, useState } from 'react'
-import { Link } from '@tanstack/react-router'
-import type { AuctionBidDashboardResponse } from '@/types/auctionBidImport'
-import { ArrowUpDown, Filter, Loader2, X } from 'lucide-react'
-import { useViewPreference } from '@/hooks/use-view-preference'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -30,7 +26,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import type { AuctionBidDashboardResponse } from '@/types/auctionBidImport'
+import { Link } from '@tanstack/react-router'
+import { ArrowUpDown, Filter, Loader2, X } from 'lucide-react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 
 interface AuctionBidsDashboardProps {
   data: AuctionBidDashboardResponse | undefined

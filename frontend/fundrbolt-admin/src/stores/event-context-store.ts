@@ -9,7 +9,6 @@
  * - Persists selected event in localStorage
  * - Loads available events filtered by current NPO
  */
-
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -60,7 +59,9 @@ interface EventContextState {
  * Priority 2: Upcoming events (start_date > now, sorted ASC)
  * Priority 3: Past events (start_date < now, sorted DESC - most recent)
  */
-function selectSmartDefault(events: EventContextOption[]): EventContextOption | null {
+function selectSmartDefault(
+  events: EventContextOption[]
+): EventContextOption | null {
   if (events.length === 0) return null
 
   const now = new Date()
@@ -69,8 +70,10 @@ function selectSmartDefault(events: EventContextOption[]): EventContextOption | 
   const activeEvents = events.filter((e) => e.status === 'active')
   if (activeEvents.length > 0) {
     // Return the next chronologically active event
-    return activeEvents.sort((a, b) =>
-      new Date(a.event_datetime).getTime() - new Date(b.event_datetime).getTime()
+    return activeEvents.sort(
+      (a, b) =>
+        new Date(a.event_datetime).getTime() -
+        new Date(b.event_datetime).getTime()
     )[0]
   }
 
@@ -78,16 +81,20 @@ function selectSmartDefault(events: EventContextOption[]): EventContextOption | 
   const upcomingEvents = events.filter((e) => new Date(e.event_datetime) > now)
   if (upcomingEvents.length > 0) {
     // Return the next chronologically upcoming event
-    return upcomingEvents.sort((a, b) =>
-      new Date(a.event_datetime).getTime() - new Date(b.event_datetime).getTime()
+    return upcomingEvents.sort(
+      (a, b) =>
+        new Date(a.event_datetime).getTime() -
+        new Date(b.event_datetime).getTime()
     )[0]
   }
 
   // Priority 3: Past events (most recent first)
   const pastEvents = events.filter((e) => new Date(e.event_datetime) <= now)
   if (pastEvents.length > 0) {
-    return pastEvents.sort((a, b) =>
-      new Date(b.event_datetime).getTime() - new Date(a.event_datetime).getTime()
+    return pastEvents.sort(
+      (a, b) =>
+        new Date(b.event_datetime).getTime() -
+        new Date(a.event_datetime).getTime()
     )[0]
   }
 
@@ -193,6 +200,7 @@ export const useEventContextStore = create<EventContextState>()(
         selectedEventName: state.selectedEventName,
         selectedEventSlug: state.selectedEventSlug,
         isManualSelection: state.isManualSelection,
+        availableEvents: state.availableEvents,
       }),
     }
   )

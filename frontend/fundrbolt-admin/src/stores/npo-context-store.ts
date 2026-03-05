@@ -10,7 +10,6 @@
  * - Selection persists across sessions via localStorage
  * - Cleared on logout
  */
-
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -59,17 +58,14 @@ export const useNPOContextStore = create<NPOContextState>()(
         set({
           selectedNpoId: npoId,
           selectedNpoName: npoName,
-          error: null
+          error: null,
         }),
 
-      setAvailableNpos: (npos) =>
-        set({ availableNpos: npos }),
+      setAvailableNpos: (npos) => set({ availableNpos: npos }),
 
-      setLoading: (loading) =>
-        set({ isLoading: loading }),
+      setLoading: (loading) => set({ isLoading: loading }),
 
-      setError: (error) =>
-        set({ error }),
+      setError: (error) => set({ error }),
 
       reset: () =>
         set({
@@ -94,6 +90,7 @@ export const useNPOContextStore = create<NPOContextState>()(
       partialize: (state) => ({
         selectedNpoId: state.selectedNpoId,
         selectedNpoName: state.selectedNpoName,
+        availableNpos: state.availableNpos,
       }),
     }
   )

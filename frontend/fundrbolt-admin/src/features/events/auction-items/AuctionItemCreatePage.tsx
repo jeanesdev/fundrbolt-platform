@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { AuctionItemForm } from '@/features/events/components/AuctionItemForm';
+import { useEventWorkspace } from '@/features/events/useEventWorkspace';
 import { useAuctionItemStore } from '@/stores/auctionItemStore';
 import type {
   AuctionItemCreate,
@@ -24,9 +25,12 @@ import { toast } from 'sonner';
 
 export function AuctionItemCreatePage() {
   const navigate = useNavigate();
-  const { eventId } = useParams({
+  const { currentEvent } = useEventWorkspace();
+  const { eventId: routeEventId } = useParams({
     from: '/_authenticated/events/$eventId/auction-items/create',
   });
+  // Use real UUID for API calls, keep route param for navigation
+  const eventId = currentEvent.id;
 
   const { createAuctionItem } = useAuctionItemStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,7 +52,7 @@ export function AuctionItemCreatePage() {
       toast.success('Auction item created successfully!');
       navigate({
         to: '/events/$eventId',
-        params: { eventId },
+        params: { eventId: routeEventId },
         search: { tab: 'auction-items' },
       });
     } catch (err) {
@@ -61,11 +65,11 @@ export function AuctionItemCreatePage() {
   };
 
   const handleCancel = () => {
-    navigate({ to: '/events/$eventId', params: { eventId }, search: { tab: 'auction-items' } });
+    navigate({ to: '/events/$eventId', params: { eventId: routeEventId }, search: { tab: 'auction-items' } });
   };
 
   return (
-    <div className="container mx-auto py-4 md:py-8 max-w-4xl">
+    <div className="space-y-4 md:space-y-6">
       <div className="mb-4 md:mb-6 space-y-4">
         <Button
           variant="ghost"

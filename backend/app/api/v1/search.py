@@ -6,7 +6,7 @@ Cross-resource search across Users, NPOs, Events, and Auction Items with role-ba
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, or_, select
+from sqlalchemy import String, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -16,11 +16,13 @@ from app.middleware.auth import get_current_active_user
 from app.models.auction_item import AuctionItem
 from app.models.event import Event
 from app.models.npo import NPO
+from app.models.registration_guest import RegistrationGuest
 from app.models.user import User
 from app.schemas.search import (
     AuctionItemSearchResult,
     EventSearchResult,
     NPOSearchResult,
+    RegistrantSearchResult,
     SearchRequest,
     SearchResponse,
     UserSearchResult,
@@ -68,6 +70,7 @@ async def search(
         npos_results = []
         events_results = []
         auction_items_results = []
+        registrants_results = []
 
         # Prepare search pattern for ILIKE (fallback if tsvector not available)
         search_pattern = f"%{search_request.query}%"
@@ -78,6 +81,7 @@ async def search(
             "npos",
             "events",
             "auction_items",
+            "registrants",
         ]
 
         logger.info(f"Searching resource types: {resource_types}")
@@ -250,16 +254,88 @@ async def search(
                     created_at=item.created_at,
                 )
                 for item in auction_items
-            ]  # Calculate total results
+            ]
+
+        # Search Registrants (guests)
+        if "registrants" in resource_types:
+            logger.info("Starting registrants search")
+            from app.models.event_registration import EventRegistration
+
+            registrants_query = (
+                select(RegistrationGuest)
+                .join(
+                    EventRegistration,
+                    EventRegistration.id == RegistrationGuest.registration_id,
+                )
+                .join(Event, Event.id == EventRegistration.event_id)
+                .options(
+                    selectinload(RegistrationGuest.registration).selectinload(
+                        EventRegistration.event
+                    )
+                )
+            )
+
+            # Apply text search on guest name, email, or bidder number
+            registrants_query = registrants_query.where(
+                or_(
+                    func.lower(RegistrationGuest.name).like(func.lower(search_pattern)),
+                    func.lower(RegistrationGuest.email).like(func.lower(search_pattern)),
+                    func.cast(RegistrationGuest.bidder_number, String).like(search_pattern),
+                )
+            )
+
+            # Apply NPO filtering if specified
+            if filtered_npo_id:
+                registrants_query = registrants_query.where(Event.npo_id == filtered_npo_id)
+
+            # Only active guests
+            registrants_query = registrants_query.where(RegistrationGuest.status == "confirmed")
+
+            # Limit results
+            registrants_query = registrants_query.limit(search_request.limit)
+
+            logger.info("Executing registrants query")
+            registrants_result = await db.execute(registrants_query)
+            registrants = registrants_result.scalars().all()
+            logger.info(f"Found {len(registrants)} registrants")
+
+            registrants_results = [
+                RegistrantSearchResult(
+                    id=guest.id,
+                    name=guest.name,
+                    email=guest.email,
+                    event_id=guest.registration.event_id,
+                    event_name=(
+                        guest.registration.event.name
+                        if guest.registration and guest.registration.event
+                        else "Unknown"
+                    ),
+                    event_slug=(
+                        guest.registration.event.slug
+                        if guest.registration
+                        and guest.registration.event
+                        and hasattr(guest.registration.event, "slug")
+                        else None
+                    ),
+                    table_number=guest.table_number,
+                    bidder_number=guest.bidder_number,
+                    checked_in=guest.checked_in,
+                    status=guest.status,
+                )
+                for guest in registrants
+            ]
+
+        # Calculate total results
         total_results = (
             len(users_results)
             + len(npos_results)
             + len(events_results)
             + len(auction_items_results)
+            + len(registrants_results)
         )
 
         logger.info(
-            f"Search results: users={len(users_results)}, npos={len(npos_results)}, events={len(events_results)}, auction_items={len(auction_items_results)}, total={total_results}"
+            f"Search results: users={len(users_results)}, npos={len(npos_results)}, events={len(events_results)}, auction_items={len(auction_items_results)}, registrants={len(registrants_results)}, total={total_results}"
         )
 
         return SearchResponse(
@@ -268,6 +344,7 @@ async def search(
             npos=npos_results,
             events=events_results,
             auction_items=auction_items_results,
+            registrants=registrants_results,
             total_results=total_results,
         )
     except Exception as e:
