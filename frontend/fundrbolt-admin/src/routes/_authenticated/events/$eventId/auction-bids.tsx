@@ -1,8 +1,8 @@
-import { EventAuctionItemsSection } from '@/features/events/sections/EventAuctionItemsSection'
+import { EventAuctionBidsSection } from '@/features/events/sections/EventAuctionBidsSection'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute(
   '/_authenticated/events/$eventId/auction-bids'
 )({
-  component: () => <EventAuctionItemsSection initialTab="bids" />,
+  component: EventAuctionBidsSection,
 })

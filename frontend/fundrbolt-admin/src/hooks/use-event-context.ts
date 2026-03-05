@@ -9,11 +9,13 @@
  * - Changes to event selection invalidate TanStack Query cache for event-specific data
  * - Loads available events filtered by current NPO
  */
-
 import { eventApi } from '@/services/event-service'
-import { useEventContextStore, type EventContextOption } from '@/stores/event-context-store'
+import {
+  useEventContextStore,
+  type EventContextOption,
+} from '@/stores/event-context-store'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useNpoContext } from './use-npo-context'
 
 export interface UseEventContextReturn {
@@ -59,7 +61,11 @@ export function useEventContext(): UseEventContextReturn {
   const shouldShowSearch = availableEvents.length >= 10
 
   // Fetch events for current NPO
-  const { data, isLoading: queryLoading, error: queryError } = useQuery({
+  const {
+    data,
+    isLoading: queryLoading,
+    error: queryError,
+  } = useQuery({
     queryKey: ['events', 'list', { npoId: selectedNpoId }],
     queryFn: async () => {
       const response = await eventApi.listEvents({
@@ -69,7 +75,7 @@ export function useEventContext(): UseEventContextReturn {
       })
       return response
     },
-    enabled: !!selectedNpoId, // Only fetch when NPO is selected
+    enabled: true, // Always fetch; API filters by user permissions. npo_id=undefined returns all accessible events.
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
@@ -93,18 +99,8 @@ export function useEventContext(): UseEventContextReturn {
     }
   }, [data, isManualSelection, setAvailableEvents, applySmartDefault])
 
-  // Clear event selection when NPO changes, but not on initial mount
-  const prevNpoIdRef = useRef<string | null | undefined>(undefined)
-  useEffect(() => {
-    if (prevNpoIdRef.current === undefined) {
-      prevNpoIdRef.current = selectedNpoId
-      return
-    }
-    if (prevNpoIdRef.current !== selectedNpoId) {
-      prevNpoIdRef.current = selectedNpoId
-      storeClearEvent()
-    }
-  }, [selectedNpoId, storeClearEvent])
+  // NOTE: Event clearing on NPO change is handled by selectNpo() in use-npo-context.ts
+  // (not via effect-based detection, which breaks with Zustand's async hydration)
 
   // Select event with manual flag and invalidate queries
   const selectEvent = useCallback(

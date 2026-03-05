@@ -28,7 +28,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { PromotionEditor } from '@/features/events/auction-items/components/PromotionEditor';
 import { AuctionType, ItemStatus, type AuctionItem } from '@/types/auction-item';
-import { useParams } from '@tanstack/react-router';
 import { DollarSign, Eye, MoreVertical, Pencil, Sparkles, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -72,7 +71,6 @@ export function AuctionItemCard({
   onView,
   readOnly = false,
 }: AuctionItemCardProps) {
-  const { eventId } = useParams({ from: '/_authenticated/events/$eventId/auction-items/' });
   const [promotionDialogOpen, setPromotionDialogOpen] = useState(false);
 
   // Cast item to include promotion fields (they might not be in base type yet)
@@ -219,7 +217,7 @@ export function AuctionItemCard({
             </DialogDescription>
           </DialogHeader>
           <PromotionEditor
-            eventId={eventId}
+            eventId={item.event_id}
             item={item}
             onCancel={() => setPromotionDialogOpen(false)}
             onSuccess={() => setPromotionDialogOpen(false)}
