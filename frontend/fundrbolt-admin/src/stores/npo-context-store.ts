@@ -90,7 +90,6 @@ export const useNPOContextStore = create<NPOContextState>()(
       partialize: (state) => ({
         selectedNpoId: state.selectedNpoId,
         selectedNpoName: state.selectedNpoName,
-        availableNpos: state.availableNpos,
       }),
     }
   )

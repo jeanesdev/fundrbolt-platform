@@ -200,7 +200,6 @@ export const useEventContextStore = create<EventContextState>()(
         selectedEventName: state.selectedEventName,
         selectedEventSlug: state.selectedEventSlug,
         isManualSelection: state.isManualSelection,
-        availableEvents: state.availableEvents,
       }),
     }
   )

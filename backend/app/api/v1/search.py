@@ -288,8 +288,10 @@ async def search(
             if filtered_npo_id:
                 registrants_query = registrants_query.where(Event.npo_id == filtered_npo_id)
 
-            # Only active guests
-            registrants_query = registrants_query.where(RegistrationGuest.status == "confirmed")
+            # Only active guests (confirmed or already checked in)
+            registrants_query = registrants_query.where(
+                RegistrationGuest.status.in_(["confirmed", "checked_in"])
+            )
 
             # Limit results
             registrants_query = registrants_query.limit(search_request.limit)
@@ -312,9 +314,7 @@ async def search(
                     ),
                     event_slug=(
                         guest.registration.event.slug
-                        if guest.registration
-                        and guest.registration.event
-                        and hasattr(guest.registration.event, "slug")
+                        if guest.registration and guest.registration.event
                         else None
                     ),
                     table_number=guest.table_number,

@@ -305,6 +305,13 @@ const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
   },
 ]
 
+/** Helper to look up a section by its path. Throws at startup if a path is missing. */
+function sectionByPath(path: string): EventSectionConfig {
+  const section = EVENT_SECTION_CONFIG.find((s) => s.path === path)
+  if (!section) throw new Error(`EVENT_SECTION_CONFIG missing path: ${path}`)
+  return section
+}
+
 /**
  * Narrative-driven event nav groups:
  * - Event: What is this event? Setup & configuration
@@ -318,36 +325,36 @@ const EVENT_NAV_GROUPS: Array<{
     {
       title: 'Event',
       sections: [
-        EVENT_SECTION_CONFIG[1], // Details
-        EVENT_SECTION_CONFIG[2], // Media
-        EVENT_SECTION_CONFIG[3], // Links
-        EVENT_SECTION_CONFIG[4], // Food Options
-        EVENT_SECTION_CONFIG[8], // Tickets
-        EVENT_SECTION_CONFIG[9], // Ticket Sales
-        EVENT_SECTION_CONFIG[10], // Promo Codes
-        EVENT_SECTION_CONFIG[11], // Sponsors
+        sectionByPath('details'),
+        sectionByPath('media'),
+        sectionByPath('links'),
+        sectionByPath('food'),
+        sectionByPath('tickets'),
+        sectionByPath('tickets/sales'),
+        sectionByPath('tickets/promos'),
+        sectionByPath('sponsors'),
       ],
     },
     {
       title: 'Guests',
       sections: [
-        EVENT_SECTION_CONFIG[5], // Registrations
-        EVENT_SECTION_CONFIG[6], // Check-in
-        EVENT_SECTION_CONFIG[7], // Seating
+        sectionByPath('registrations'),
+        sectionByPath('checkin'),
+        sectionByPath('seating'),
       ],
     },
     {
       title: 'Auctions',
       sections: [
-        EVENT_SECTION_CONFIG[12], // Auction Items
-        EVENT_SECTION_CONFIG[13], // Auction Bids
-        EVENT_SECTION_CONFIG[14], // Quick Entry
+        sectionByPath('auction-items'),
+        sectionByPath('auction-bids'),
+        sectionByPath('quick-entry'),
       ],
     },
     {
       title: 'Data',
       sections: [
-        EVENT_SECTION_CONFIG[0], // Event Dashboard
+        sectionByPath('dashboard'),
       ],
     },
   ]

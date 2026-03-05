@@ -413,6 +413,8 @@ function DesktopNav() {
 /* ─── Mobile Sheet Nav ─── */
 function MobileNav() {
   const { navItems, eventNavGroups } = useRoleBasedNav()
+  const { selectedNpoName } = useNpoContext()
+  const { selectedEventName } = useEventContext()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const href = useLocation({ select: (l) => l.href })
@@ -454,9 +456,29 @@ function MobileNav() {
         </SheetHeader>
 
         {/* Context selectors */}
-        <div className='space-y-2 border-b px-4 py-3'>
-          <NpoDropdown />
-          <EventDropdown />
+        <div className='space-y-3 border-b px-4 py-3'>
+          <div className='flex items-center gap-3'>
+            <NpoDropdown />
+            <div className='flex flex-col'>
+              <span className='text-muted-foreground text-xs font-medium uppercase'>
+                Organization
+              </span>
+              <span className='max-w-40 truncate text-sm'>
+                {selectedNpoName || 'Select NPO'}
+              </span>
+            </div>
+          </div>
+          <div className='flex items-center gap-3'>
+            <EventDropdown />
+            <div className='flex flex-col'>
+              <span className='text-muted-foreground text-xs font-medium uppercase'>
+                Event
+              </span>
+              <span className='max-w-40 truncate text-sm'>
+                {selectedEventName || 'Select Event'}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Navigation groups */}
