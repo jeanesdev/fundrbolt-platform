@@ -59,3 +59,4 @@ node_modules/
 
 # Ignore Directory for Uploaded Files
 ignore/
+.playwright-mcp/

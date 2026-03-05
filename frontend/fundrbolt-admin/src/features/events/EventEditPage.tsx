@@ -56,19 +56,27 @@ export function EventEditPage() {
   const { sponsors, fetchSponsors } = useSponsorStore()
   const { items: auctionItems, fetchAuctionItems } = useAuctionItemStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const apiEventId = currentEvent?.id ?? eventId
 
   const loadEvent = useCallback(() => {
     if (eventId) {
+      // Skip loading if we already have this event loaded
+      if (
+        currentEvent &&
+        (currentEvent.id === eventId || currentEvent.slug === eventId)
+      ) {
+        return
+      }
       // Check if eventId is a numeric ID or a slug
       const isNumericId = /^\d+$/.test(eventId)
       const loadFn = isNumericId ? loadEventById : loadEventBySlug
       loadFn(eventId).catch((_err) => {
+        setLoadError('Failed to load event')
         toast.error('Failed to load event')
-        navigate({ to: '/' })
       })
     }
-  }, [eventId, loadEventById, loadEventBySlug, navigate])
+  }, [eventId, currentEvent, loadEventById, loadEventBySlug])
 
   useEffect(() => {
     loadEvent()
@@ -202,6 +210,28 @@ export function EventEditPage() {
         err instanceof Error ? err.message : 'Failed to delete food option'
       toast.error(message)
     }
+  }
+
+  if (loadError && !currentEvent) {
+    return (
+      <div className='flex h-96 flex-col items-center justify-center gap-4'>
+        <p className='text-muted-foreground'>{loadError}</p>
+        <div className='flex gap-2'>
+          <Button
+            variant='outline'
+            onClick={() => {
+              setLoadError(null)
+              loadEvent()
+            }}
+          >
+            Retry
+          </Button>
+          <Button variant='ghost' onClick={() => navigate({ to: '/' })}>
+            Go to Dashboard
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   if (eventsLoading || !currentEvent) {

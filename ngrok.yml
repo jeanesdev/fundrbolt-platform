@@ -13,3 +13,9 @@ tunnels:
     addr: 8000
     inspect: true
     subdomain: fundrbolt-backend
+
+  donor-pwa:
+    proto: http
+    addr: 5174
+    inspect: true
+    subdomain: fundrbolt-donor

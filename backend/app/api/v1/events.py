@@ -29,27 +29,39 @@ router = APIRouter(prefix="/events", tags=["events"])
 
 def _add_sas_urls_to_media(response_dict: dict[str, Any]) -> None:
     """Replace media file URLs with read SAS URLs in-place."""
-    if not response_dict.get("media"):
-        return
-
     from app.services.media_service import MediaService
 
-    for media_item in response_dict["media"]:
-        file_url = media_item.get("file_url", "")
-        if not file_url:
-            continue
+    # Refresh SAS URLs for event media
+    if response_dict.get("media"):
+        for media_item in response_dict["media"]:
+            file_url = media_item.get("file_url", "")
+            if not file_url:
+                continue
 
-        parsed_url = urlparse(file_url)
+            parsed_url = urlparse(file_url)
+            path = parsed_url.path.lstrip("/")
+            if not path:
+                continue
+
+            path_parts = path.split("/", 1)
+            if len(path_parts) < 2:
+                continue
+
+            blob_name = unquote(path_parts[1])
+            media_item["file_url"] = MediaService.generate_read_sas_url(blob_name)
+
+    # Refresh SAS URL for seating layout image
+    layout_url = response_dict.get("seating_layout_image_url")
+    if layout_url and "blob.core.windows.net" in layout_url:
+        parsed_url = urlparse(layout_url)
         path = parsed_url.path.lstrip("/")
-        if not path:
-            continue
-
-        path_parts = path.split("/", 1)
-        if len(path_parts) < 2:
-            continue
-
-        blob_name = unquote(path_parts[1])
-        media_item["file_url"] = MediaService.generate_read_sas_url(blob_name)
+        if path:
+            path_parts = path.split("/", 1)
+            if len(path_parts) >= 2:
+                blob_name = unquote(path_parts[1])
+                response_dict["seating_layout_image_url"] = MediaService.generate_read_sas_url(
+                    blob_name
+                )
 
 
 @router.post("", response_model=EventDetailResponse, status_code=status.HTTP_201_CREATED)

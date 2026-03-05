@@ -1,3 +1,4 @@
+import { ConnectionStatus } from '@/components/ConnectionStatus'
 import { CookieConsentWrapper } from '@/components/legal/cookie-consent-wrapper'
 import { NavigationProgress } from '@/components/navigation-progress'
 import { SessionExpirationWarning } from '@/components/session-expiration-warning'
@@ -19,12 +20,12 @@ export const Route = createRootRouteWithContext<{
 })
 
 function RootComponent() {
-  const { needRefresh, updateServiceWorker, dismissUpdate } =
-    useServiceWorker()
+  const { needRefresh, updateServiceWorker, dismissUpdate } = useServiceWorker()
 
   return (
     <>
       <NavigationProgress />
+      <ConnectionStatus />
       <SessionExpirationWarning />
       <CookieConsentWrapper />
       <UpdateNotification
@@ -34,7 +35,7 @@ function RootComponent() {
       />
       <Outlet />
       <Toaster duration={5000} />
-      <InstallPromptBanner appId="admin" />
+      <InstallPromptBanner appId='admin' />
     </>
   )
 }

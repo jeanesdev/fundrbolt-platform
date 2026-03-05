@@ -251,7 +251,7 @@ type EventSectionConfig = {
 }
 
 const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
-  { title: 'Event Dashboard', path: 'dashboard', icon: 'BarChart3' },
+  { title: 'NPO Dashboard', path: 'dashboard', icon: 'BarChart3' },
   { title: 'Details', path: 'details', icon: 'FileText' },
   { title: 'Media', path: 'media', icon: 'Image', statKey: 'media_count' },
   { title: 'Links', path: 'links', icon: 'Link2', statKey: 'links_count' },
@@ -353,8 +353,6 @@ const EVENT_NAV_GROUPS: Array<{
     },
     {
       title: 'Data',
-      sections: [
-        sectionByPath('dashboard'),
-      ],
+      sections: [sectionByPath('dashboard')],
     },
   ]

@@ -40,7 +40,7 @@ export function InstallPromptBanner({
       className="fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom duration-300"
       role="alert"
     >
-      <div className="mx-auto max-w-lg border-t border-slate-200 bg-white p-4 shadow-lg sm:mx-4 sm:mb-4 sm:rounded-xl sm:border">
+      <div className="mx-auto max-w-lg border-t border-slate-700 bg-slate-900 p-4 shadow-lg sm:mx-4 sm:mb-4 sm:rounded-xl sm:border sm:border-slate-700">
         <div className="flex items-start gap-3">
           <img
             src="/images/pwa-192x192.png"
@@ -50,10 +50,10 @@ export function InstallPromptBanner({
           <div className="min-w-0 flex-1">
             {isIOS ? (
               <>
-                <p className="text-sm font-semibold text-slate-900">
+                <p className="text-sm font-semibold text-white">
                   Add FundrBolt to your home screen
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-slate-300">
                   Tap the{' '}
                   <span className="inline-flex items-center">
                     <svg
@@ -75,10 +75,10 @@ export function InstallPromptBanner({
               </>
             ) : (
               <>
-                <p className="text-sm font-semibold text-slate-900">
+                <p className="text-sm font-semibold text-white">
                   Add FundrBolt to your home screen
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-slate-300">
                   For the best experience, install the app
                 </p>
               </>
@@ -88,13 +88,13 @@ export function InstallPromptBanner({
               <div className="mt-3 flex gap-2">
                 <button
                   onClick={() => void promptInstall()}
-                  className="rounded-lg bg-slate-900 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-slate-800"
+                  className="rounded-lg bg-white px-4 py-1.5 text-xs font-medium text-slate-900 transition-colors hover:bg-slate-100"
                 >
                   Install
                 </button>
                 <button
                   onClick={dismiss}
-                  className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-slate-700"
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-400 transition-colors hover:text-slate-200"
                 >
                   Not now
                 </button>
@@ -104,7 +104,7 @@ export function InstallPromptBanner({
 
           <button
             onClick={dismiss}
-            className="flex-shrink-0 rounded-full p-1 text-slate-400 transition-colors hover:text-slate-600"
+            className="flex-shrink-0 rounded-full p-1 text-slate-400 transition-colors hover:text-slate-200"
             aria-label="Dismiss install prompt"
           >
             <svg
