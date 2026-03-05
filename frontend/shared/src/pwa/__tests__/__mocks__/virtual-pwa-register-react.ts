@@ -2,8 +2,8 @@
 // The actual mock implementation is provided by vi.mock() in each test file.
 export function useRegisterSW() {
   return {
-    offlineReady: [false, () => {}] as const,
-    needRefresh: [false, () => {}] as const,
-    updateServiceWorker: async () => {},
+    offlineReady: [false, () => { }] as const,
+    needRefresh: [false, () => { }] as const,
+    updateServiceWorker: async () => { },
   }
 }

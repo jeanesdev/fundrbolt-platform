@@ -428,12 +428,12 @@ export function AuctionItemCard({
               {!isOnline
                 ? 'Offline'
                 : isEventInFuture
-                ? 'Not Started'
-                : eventStatus === 'active' && isBiddingOpen
-                  ? 'Place Bid'
-                  : eventStatus === 'closed' || !isBiddingOpen
-                    ? 'Bidding Closed'
-                    : 'Not Active'}
+                  ? 'Not Started'
+                  : eventStatus === 'active' && isBiddingOpen
+                    ? 'Place Bid'
+                    : eventStatus === 'closed' || !isBiddingOpen
+                      ? 'Bidding Closed'
+                      : 'Not Active'}
             </button>
           )
         )}

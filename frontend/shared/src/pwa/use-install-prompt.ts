@@ -53,7 +53,7 @@ export function useInstallPrompt(appId: string): UseInstallPromptReturn {
     typeof window !== 'undefined' &&
     (window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as unknown as { standalone?: boolean }).standalone ===
-        true)
+      true)
 
   // Check cooldown
   const isDismissedRecently = useCallback((): boolean => {

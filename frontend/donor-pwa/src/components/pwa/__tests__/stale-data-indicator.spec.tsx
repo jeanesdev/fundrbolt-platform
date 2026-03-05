@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi, afterEach } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { StaleDataIndicator } from '../stale-data-indicator'
 
 describe('StaleDataIndicator', () => {
