@@ -1,6 +1,4 @@
-import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
-import { Check, ChevronsUpDown } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import {
   Command,
   CommandEmpty,
@@ -14,7 +12,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import type { QuickEntryBuyNowItem, QuickEntryBuyNowBidResponse, QuickEntryBuyNowSummary } from '../api/quickEntryApi'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import { cn } from '@/lib/utils'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
+import type { QuickEntryBuyNowBidResponse, QuickEntryBuyNowItem, QuickEntryBuyNowSummary } from '../api/quickEntryApi'
 
 function parseToWholeDollar(value: string): string {
   const digits = value.replace(/[^\d]/g, '')
@@ -66,6 +68,7 @@ export function BuyNowEntryForm({
   const [itemMenuOpen, setItemMenuOpen] = useState(false)
   const [itemSearch, setItemSearch] = useState('')
   const amountRef = useRef<HTMLInputElement>(null)
+  const [viewMode, setViewMode] = useViewPreference('buy-now-log')
 
   const handleItemSelect = (id: string) => {
     onSelectItem(id)
@@ -241,7 +244,7 @@ export function BuyNowEntryForm({
             <input
               id='buy-now-amount'
               ref={amountRef}
-              className='w-full rounded-md border px-3 py-2'
+              className='w-full rounded-md border px-3 py-2 h-12 text-lg'
               inputMode='numeric'
               value={amount}
               onChange={(e) => onAmountChange(parseToWholeDollar(e.target.value))}
@@ -258,7 +261,7 @@ export function BuyNowEntryForm({
             <input
               id='buy-now-bidder'
               ref={bidderRef}
-              className='w-full rounded-md border px-3 py-2'
+              className='w-full rounded-md border px-3 py-2 h-12 text-lg'
               inputMode='numeric'
               value={bidderNumber}
               onChange={(e) => onBidderNumberChange(e.target.value.replace(/[^\d]/g, ''))}
@@ -271,7 +274,7 @@ export function BuyNowEntryForm({
           <div className='col-span-2'>
             <button
               type='submit'
-              className='bg-primary text-primary-foreground w-full rounded-md px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60'
+              className='bg-primary text-primary-foreground w-full rounded-md px-4 py-3 text-base font-medium disabled:cursor-not-allowed disabled:opacity-60 h-12'
               disabled={isSubmitting || !amount || !bidderNumber}
             >
               {isSubmitting ? 'Recording…' : 'Record Buy It Now'}
@@ -282,25 +285,21 @@ export function BuyNowEntryForm({
 
       {/* Recent bids log */}
       {selectedItem && recentBids.length > 0 ? (
-        <div className='overflow-x-auto rounded-md border'>
-          <table className='w-full min-w-[480px] text-sm'>
-            <thead>
-              <tr className='bg-muted/20 text-left'>
-                <th className='px-3 py-2'>Bidder</th>
-                <th className='px-3 py-2'>Donor</th>
-                <th className='px-3 py-2'>Amount</th>
-                <th className='px-3 py-2'>Time</th>
-                <th className='px-3 py-2'>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+        <>
+          <div className='flex justify-end'>
+            <DataTableViewToggle value={viewMode} onChange={setViewMode} />
+          </div>
+          {viewMode === 'card' ? (
+            <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
               {recentBids.map((bid) => (
-                <tr key={bid.id} className='border-t'>
-                  <td className='px-3 py-2'>{bid.bidder_number}</td>
-                  <td className='px-3 py-2'>{bid.donor_name ?? '—'}</td>
-                  <td className='px-3 py-2'>${bid.amount.toLocaleString('en-US')}</td>
-                  <td className='px-3 py-2'>{new Date(bid.entered_at).toLocaleTimeString()}</td>
-                  <td className='px-3 py-2'>
+                <div key={bid.id} className='rounded-md border p-3 space-y-1'>
+                  <div className='flex items-center justify-between'>
+                    <span className='font-medium'>#{bid.bidder_number}</span>
+                    <span className='font-semibold'>${bid.amount.toLocaleString('en-US')}</span>
+                  </div>
+                  <p className='text-sm'>{bid.donor_name ?? '—'}</p>
+                  <div className='flex items-center justify-between'>
+                    <span className='text-xs text-muted-foreground'>{new Date(bid.entered_at).toLocaleTimeString()}</span>
                     <button
                       type='button'
                       className='rounded border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60'
@@ -309,12 +308,46 @@ export function BuyNowEntryForm({
                     >
                       Delete
                     </button>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          ) : (
+            <div className='overflow-x-auto rounded-md border'>
+              <table className='w-full min-w-[480px] text-sm'>
+                <thead>
+                  <tr className='bg-muted/20 text-left'>
+                    <th className='px-3 py-2'>Bidder</th>
+                    <th className='px-3 py-2'>Donor</th>
+                    <th className='px-3 py-2'>Amount</th>
+                    <th className='px-3 py-2'>Time</th>
+                    <th className='px-3 py-2'>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentBids.map((bid) => (
+                    <tr key={bid.id} className='border-t'>
+                      <td className='px-3 py-2'>{bid.bidder_number}</td>
+                      <td className='px-3 py-2'>{bid.donor_name ?? '—'}</td>
+                      <td className='px-3 py-2'>${bid.amount.toLocaleString('en-US')}</td>
+                      <td className='px-3 py-2'>{new Date(bid.entered_at).toLocaleTimeString()}</td>
+                      <td className='px-3 py-2'>
+                        <button
+                          type='button'
+                          className='rounded border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60'
+                          onClick={() => onDeleteBid(bid.id)}
+                          disabled={isDeleting}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       ) : selectedItem ? (
         <p className='text-muted-foreground text-sm'>No buy-it-now bids recorded for this item yet.</p>
       ) : null}

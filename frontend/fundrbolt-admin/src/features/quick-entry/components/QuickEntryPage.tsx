@@ -193,10 +193,10 @@ export function QuickEntryPage() {
             setMode(value as 'LIVE_AUCTION' | 'PADDLE_RAISE' | 'BUY_NOW')
           }
         >
-          <TabsList>
-            <TabsTrigger value='LIVE_AUCTION'>Live Auction</TabsTrigger>
-            <TabsTrigger value='PADDLE_RAISE'>Paddle Raise</TabsTrigger>
-            <TabsTrigger value='BUY_NOW'>Buy It Now</TabsTrigger>
+          <TabsList className='h-11'>
+            <TabsTrigger value='LIVE_AUCTION' className='min-h-9 px-4'>Live Auction</TabsTrigger>
+            <TabsTrigger value='PADDLE_RAISE' className='min-h-9 px-4'>Paddle Raise</TabsTrigger>
+            <TabsTrigger value='BUY_NOW' className='min-h-9 px-4'>Buy It Now</TabsTrigger>
           </TabsList>
         </Tabs>
 

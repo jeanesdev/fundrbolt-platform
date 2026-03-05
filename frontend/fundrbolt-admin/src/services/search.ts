@@ -10,7 +10,7 @@ import apiClient from '@/lib/axios'
 // Search request
 export interface SearchRequest {
   query: string
-  resource_types?: ('users' | 'npos' | 'events' | 'auction_items')[]
+  resource_types?: ('users' | 'npos' | 'events' | 'auction_items' | 'registrants')[]
   npo_id?: string | null
   limit?: number
 }
@@ -60,6 +60,19 @@ export interface AuctionItemSearchResult {
   created_at: string
 }
 
+export interface RegistrantSearchResult {
+  id: string
+  name: string | null
+  email: string | null
+  event_id: string
+  event_name: string
+  event_slug: string | null
+  table_number: number | null
+  bidder_number: number | null
+  checked_in: boolean
+  status: string
+}
+
 // Search response
 export interface SearchResponse {
   query: string
@@ -67,6 +80,7 @@ export interface SearchResponse {
   npos: NPOSearchResult[]
   events: EventSearchResult[]
   auction_items: AuctionItemSearchResult[]
+  registrants: RegistrantSearchResult[]
   total_results: number
 }
 

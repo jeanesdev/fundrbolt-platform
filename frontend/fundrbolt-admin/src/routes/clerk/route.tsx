@@ -1,11 +1,10 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router'
-import { ClerkProvider } from '@clerk/clerk-react'
-import { ExternalLink, Key } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Separator } from '@/components/ui/separator'
-import { SidebarTrigger } from '@/components/ui/sidebar'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
 import { Main } from '@/components/layout/main'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Separator } from '@/components/ui/separator'
+import { ClerkProvider } from '@clerk/clerk-react'
+import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { ExternalLink, Key } from 'lucide-react'
 
 export const Route = createFileRoute('/clerk')({
   component: RouteComponent,
@@ -38,12 +37,6 @@ function MissingClerkPubKey() {
     'bg-foreground/10 rounded-sm py-0.5 px-1 text-xs text-foreground font-bold'
   return (
     <AuthenticatedLayout>
-      <div className='bg-background flex h-16 justify-between p-4'>
-        <SidebarTrigger variant='outline' className='scale-125 sm:scale-100' />
-        <div className='space-x-4'>
-
-        </div>
-      </div>
       <Main className='flex flex-col items-center justify-start'>
         <div className='max-w-2xl'>
           <Alert>

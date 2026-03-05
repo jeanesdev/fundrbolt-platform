@@ -134,7 +134,7 @@ export function PurchasersList({ eventId, packageId }: PurchasersListProps) {
                 {/* Expanded Details */}
                 {isExpanded && (
                   <div className="mt-4 pt-4 border-t space-y-3">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-muted-foreground mb-1">Purchase Date</p>
                         <div className="flex items-center gap-1">

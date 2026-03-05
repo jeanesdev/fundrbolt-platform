@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AuctionItemForm } from '@/features/events/components/AuctionItemForm';
+import { useEventWorkspace } from '@/features/events/useEventWorkspace';
 import { useAuctionItemStore } from '@/stores/auctionItemStore';
 import type { AuctionItemUpdate } from '@/types/auction-item';
 import { useNavigate, useParams } from '@tanstack/react-router';
@@ -22,9 +23,12 @@ import { toast } from 'sonner';
 
 export function AuctionItemEditPage() {
   const navigate = useNavigate();
-  const { eventId, itemId } = useParams({
+  const { currentEvent } = useEventWorkspace();
+  const { eventId: routeEventId, itemId } = useParams({
     from: '/_authenticated/events/$eventId/auction-items/$itemId/edit',
   });
+  // Use real UUID for API calls, keep route param for navigation
+  const eventId = currentEvent.id;
 
   const {
     selectedItem,
@@ -42,14 +46,14 @@ export function AuctionItemEditPage() {
       toast.error(
         err instanceof Error ? err.message : 'Failed to load auction item'
       );
-      navigate({ to: '/events/$eventId', params: { eventId }, search: { tab: 'auction-items' } });
+      navigate({ to: '/events/$eventId', params: { eventId: routeEventId }, search: { tab: 'auction-items' } });
     });
 
     // Cleanup on unmount
     return () => {
       clearSelectedItem();
     };
-  }, [eventId, itemId, getAuctionItem, clearSelectedItem, navigate]);
+  }, [eventId, itemId, getAuctionItem, clearSelectedItem, navigate, routeEventId]);
 
   const handleSubmit = async (data: AuctionItemUpdate) => {
     setIsSubmitting(true);
@@ -58,7 +62,7 @@ export function AuctionItemEditPage() {
       toast.success('Auction item updated successfully!');
       navigate({
         to: '/events/$eventId',
-        params: { eventId },
+        params: { eventId: routeEventId },
         search: { tab: 'auction-items' },
       });
     } catch (err) {
@@ -71,12 +75,12 @@ export function AuctionItemEditPage() {
   };
 
   const handleCancel = () => {
-    navigate({ to: '/events/$eventId', params: { eventId }, search: { tab: 'auction-items' } });
+    navigate({ to: '/events/$eventId', params: { eventId: routeEventId }, search: { tab: 'auction-items' } });
   };
 
   if (isLoading || !selectedItem) {
     return (
-      <div className="container mx-auto py-4 md:py-8 max-w-4xl">
+      <div className="space-y-4 md:space-y-6">
         <div className="mb-4 md:mb-6 space-y-4">
           <Skeleton className="h-10 w-40" />
           <Skeleton className="h-8 w-64" />
@@ -98,7 +102,7 @@ export function AuctionItemEditPage() {
   }
 
   return (
-    <div className="container mx-auto py-4 md:py-8 max-w-4xl">
+    <div className="space-y-4 md:space-y-6">
       <div className="mb-4 md:mb-6 space-y-4">
         <Button
           variant="ghost"

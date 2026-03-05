@@ -33,9 +33,15 @@ export interface EventNavItem {
   badge?: string | number
 }
 
+export interface EventNavGroup {
+  title: string
+  items: EventNavItem[]
+}
+
 export interface UseRoleBasedNavReturn {
   navItems: NavItem[]
   eventNavItems: EventNavItem[]
+  eventNavGroups: EventNavGroup[]
   eventNavTitle: string | null
   canAccessNpos: boolean
   canAccessEvents: boolean
@@ -185,22 +191,35 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const canModifyEvents = isSuperAdmin || isNpoAdmin || isEventCoordinator
   const canModifyUsers = isSuperAdmin || isNpoAdmin
 
-  const eventNavItems: EventNavItem[] = selectedEventId
-    ? EVENT_SECTION_CONFIG.map((section) => {
-      const badgeValue = (() => {
-        if (!eventStats) return undefined
-        if (section.getBadgeValue) return section.getBadgeValue(eventStats)
-        if (section.statKey) return eventStats[section.statKey]
-        return undefined
-      })()
+  const buildEventNavItem = (
+    section: (typeof EVENT_SECTION_CONFIG)[number]
+  ): EventNavItem => {
+    const badgeValue = (() => {
+      if (!eventStats) return undefined
+      if (section.getBadgeValue) return section.getBadgeValue(eventStats)
+      if (section.statKey) return eventStats[section.statKey]
+      return undefined
+    })()
 
-      return {
-        title: section.title,
-        href: `/events/${selectedEventSlug || selectedEventId}/${section.path}`,
-        icon: section.icon,
-        badge: typeof badgeValue === 'number' ? badgeValue : undefined,
-      }
-    })
+    return {
+      title: section.title,
+      href: `/events/${selectedEventSlug || selectedEventId}/${section.path}`,
+      icon: section.icon,
+      badge: typeof badgeValue === 'number' ? badgeValue : undefined,
+    }
+  }
+
+  // Flat list (backward compat)
+  const eventNavItems: EventNavItem[] = selectedEventId
+    ? EVENT_SECTION_CONFIG.map(buildEventNavItem)
+    : []
+
+  // Grouped nav: Event, Guests, Auctions
+  const eventNavGroups: EventNavGroup[] = selectedEventId
+    ? EVENT_NAV_GROUPS.map((group) => ({
+      title: group.title,
+      items: group.sections.map(buildEventNavItem),
+    }))
     : []
 
   const eventNavTitle = selectedEventId
@@ -210,6 +229,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   return {
     navItems,
     eventNavItems,
+    eventNavGroups,
     eventNavTitle,
     canAccessNpos,
     canAccessEvents,
@@ -222,48 +242,119 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
 
 type EventStatKey = Exclude<keyof EventStats, 'event_id'>
 
-const EVENT_SECTION_CONFIG: Array<{
+type EventSectionConfig = {
   title: string
   path: string
   icon: EventNavItem['icon']
   statKey?: EventStatKey
   getBadgeValue?: (stats: EventStats) => number
+}
+
+const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
+  { title: 'Event Dashboard', path: 'dashboard', icon: 'BarChart3' },
+  { title: 'Details', path: 'details', icon: 'FileText' },
+  { title: 'Media', path: 'media', icon: 'Image', statKey: 'media_count' },
+  { title: 'Links', path: 'links', icon: 'Link2', statKey: 'links_count' },
+  {
+    title: 'Food Options',
+    path: 'food',
+    icon: 'Utensils',
+    statKey: 'food_options_count',
+  },
+  {
+    title: 'Registrations',
+    path: 'registrations',
+    icon: 'Users',
+    getBadgeValue: (stats) =>
+      stats.active_registrations_count + stats.active_guest_count,
+  },
+  { title: 'Check-in', path: 'checkin', icon: 'ClipboardCheck' },
+  { title: 'Seating', path: 'seating', icon: 'LayoutGrid' },
+  { title: 'Tickets', path: 'tickets', icon: 'Ticket' },
+  {
+    title: 'Ticket Sales',
+    path: 'tickets/sales',
+    icon: 'Receipt',
+  },
+  {
+    title: 'Promo Codes',
+    path: 'tickets/promos',
+    icon: 'Tag',
+  },
+  {
+    title: 'Sponsors',
+    path: 'sponsors',
+    icon: 'Award',
+    statKey: 'sponsors_count',
+  },
+  {
+    title: 'Auction Items',
+    path: 'auction-items',
+    icon: 'Gavel',
+    statKey: 'auction_items_count',
+  },
+  {
+    title: 'Auction Bids',
+    path: 'auction-bids',
+    icon: 'HandCoins',
+  },
+  {
+    title: 'Quick Entry',
+    path: 'quick-entry',
+    icon: 'Zap',
+  },
+]
+
+/** Helper to look up a section by its path. Throws at startup if a path is missing. */
+function sectionByPath(path: string): EventSectionConfig {
+  const section = EVENT_SECTION_CONFIG.find((s) => s.path === path)
+  if (!section) throw new Error(`EVENT_SECTION_CONFIG missing path: ${path}`)
+  return section
+}
+
+/**
+ * Narrative-driven event nav groups:
+ * - Event: What is this event? Setup & configuration
+ * - Guests: Who's coming? People management
+ * - Auctions: The main fundraising event
+ */
+const EVENT_NAV_GROUPS: Array<{
+  title: string
+  sections: EventSectionConfig[]
 }> = [
-    { title: 'Dashboard', path: 'dashboard', icon: 'BarChart3' },
-    { title: 'Details', path: 'details', icon: 'FileText' },
-    { title: 'Media', path: 'media', icon: 'Image', statKey: 'media_count' },
-    { title: 'Links', path: 'links', icon: 'Link2', statKey: 'links_count' },
     {
-      title: 'Food Options',
-      path: 'food',
-      icon: 'Utensils',
-      statKey: 'food_options_count',
+      title: 'Event',
+      sections: [
+        sectionByPath('details'),
+        sectionByPath('media'),
+        sectionByPath('links'),
+        sectionByPath('food'),
+        sectionByPath('tickets'),
+        sectionByPath('tickets/sales'),
+        sectionByPath('tickets/promos'),
+        sectionByPath('sponsors'),
+      ],
     },
     {
-      title: 'Registrations',
-      path: 'registrations',
-      icon: 'Users',
-      getBadgeValue: (stats) =>
-        stats.active_registrations_count + stats.active_guest_count,
-    },
-    { title: 'Check-in', path: 'checkin', icon: 'ClipboardCheck' },
-    { title: 'Seating', path: 'seating', icon: 'LayoutGrid' },
-    { title: 'Tickets', path: 'tickets', icon: 'Ticket' },
-    {
-      title: 'Sponsors',
-      path: 'sponsors',
-      icon: 'Award',
-      statKey: 'sponsors_count',
+      title: 'Guests',
+      sections: [
+        sectionByPath('registrations'),
+        sectionByPath('checkin'),
+        sectionByPath('seating'),
+      ],
     },
     {
-      title: 'Auction Items',
-      path: 'auction-items',
-      icon: 'Gavel',
-      statKey: 'auction_items_count',
+      title: 'Auctions',
+      sections: [
+        sectionByPath('auction-items'),
+        sectionByPath('auction-bids'),
+        sectionByPath('quick-entry'),
+      ],
     },
     {
-      title: 'Quick Entry',
-      path: 'quick-entry',
-      icon: 'Gavel',
+      title: 'Data',
+      sections: [
+        sectionByPath('dashboard'),
+      ],
     },
   ]

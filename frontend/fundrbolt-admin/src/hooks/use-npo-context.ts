@@ -9,8 +9,11 @@
  * - Staff: Auto-select their assigned NPO, disable selector
  * - Changes to NPO selection invalidate TanStack Query cache
  */
-
-import { useNPOContextStore, type NPOContextOption } from '@/stores/npo-context-store'
+import { useEventContextStore } from '@/stores/event-context-store'
+import {
+  useNPOContextStore,
+  type NPOContextOption,
+} from '@/stores/npo-context-store'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect } from 'react'
 import { useAuth } from './use-auth'
@@ -81,27 +84,35 @@ export function useNpoContext(): UseNpoContextReturn {
     // Update store
     setSelectedNpo(npoId, npoName)
 
+    // Clear event selection when NPO changes (explicit user action only,
+    // not during hydration — this replaces the old effect-based detection
+    // which broke with Zustand 5's async hydration)
+    useEventContextStore.getState().clearEvent()
+
     // Invalidate all queries to refetch with new NPO context
     // This ensures all data is filtered by the newly selected NPO
     queryClient.invalidateQueries()
   }
 
-  const setAvailableNpos = useCallback((npos: NPOContextOption[]) => {
-    storeSetAvailableNpos(npos)
+  const setAvailableNpos = useCallback(
+    (npos: NPOContextOption[]) => {
+      storeSetAvailableNpos(npos)
 
-    // For single-NPO users, auto-select their NPO
-    if (isSingleNpoUser && userNpoId) {
-      const fallbackName = npoMemberships[0]?.npo_name || 'My NPO'
-      const matched = npos.find((npo) => npo.id === userNpoId)
-      setSelectedNpo(userNpoId, matched?.name || fallbackName)
-    }
-  }, [
-    isSingleNpoUser,
-    npoMemberships,
-    setSelectedNpo,
-    storeSetAvailableNpos,
-    userNpoId,
-  ])
+      // For single-NPO users, auto-select their NPO
+      if (isSingleNpoUser && userNpoId) {
+        const fallbackName = npoMemberships[0]?.npo_name || 'My NPO'
+        const matched = npos.find((npo) => npo.id === userNpoId)
+        setSelectedNpo(userNpoId, matched?.name || fallbackName)
+      }
+    },
+    [
+      isSingleNpoUser,
+      npoMemberships,
+      setSelectedNpo,
+      storeSetAvailableNpos,
+      userNpoId,
+    ]
+  )
 
   return {
     selectedNpoId,

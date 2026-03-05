@@ -1,11 +1,11 @@
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { donorSocialAuthApi } from '@/lib/axios'
-import { GoogleIcon, AppleIcon, FacebookIcon, MicrosoftIcon } from '@fundrbolt/shared'
-import { Loader2 } from 'lucide-react'
-import { useCallback, useState } from 'react'
-import type { ComponentType, SVGProps } from 'react'
+import { AppleIcon, FacebookIcon, GoogleIcon, MicrosoftIcon } from '@fundrbolt/shared'
 import type { SocialAuthProvider } from '@fundrbolt/shared/types'
+import { Loader2 } from 'lucide-react'
+import type { ComponentType, SVGProps } from 'react'
+import { useCallback, useState } from 'react'
 
 const DEFAULT_PROVIDERS: { provider: SocialAuthProvider; display_name: string }[] = [
   { provider: 'google', display_name: 'Google' },
@@ -50,7 +50,7 @@ export function SocialLoginButtons({ redirectTo: _redirectTo }: { redirectTo?: s
   )
 
   return (
-    <div className='space-y-3'>
+    <div className='mt-4 space-y-3'>
       <div className='relative'>
         <div className='absolute inset-0 flex items-center'>
           <Separator />

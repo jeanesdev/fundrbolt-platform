@@ -23,7 +23,9 @@ class SearchRequest(BaseModel):
     """
 
     query: str = Field(min_length=2, max_length=255, description="Search query (min 2 characters)")
-    resource_types: list[Literal["users", "npos", "events", "auction_items"]] | None = Field(
+    resource_types: (
+        list[Literal["users", "npos", "events", "auction_items", "registrants"]] | None
+    ) = Field(
         None,
         description="Limit search to specific resource types (default: all)",
     )
@@ -104,6 +106,23 @@ class AuctionItemSearchResult(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class RegistrantSearchResult(BaseModel):
+    """Search result for a registrant (guest)."""
+
+    id: uuid.UUID
+    name: str | None = None
+    email: str | None = None
+    event_id: uuid.UUID
+    event_name: str  # Denormalized for display
+    event_slug: str | None = None
+    table_number: int | None = None
+    bidder_number: int | None = None
+    checked_in: bool = False
+    status: str
+
+    model_config = {"from_attributes": True}
+
+
 class SearchResponse(BaseModel):
     """Response schema for search results.
 
@@ -117,6 +136,9 @@ class SearchResponse(BaseModel):
     auction_items: list[AuctionItemSearchResult] = Field(
         default_factory=list, description="Matching auction items"
     )
+    registrants: list[RegistrantSearchResult] = Field(
+        default_factory=list, description="Matching registrants (guests)"
+    )
     total_results: int = Field(description="Total number of results across all types")
 
     @property
@@ -127,4 +149,5 @@ class SearchResponse(BaseModel):
             or len(self.npos) > 0
             or len(self.events) > 0
             or len(self.auction_items) > 0
+            or len(self.registrants) > 0
         )

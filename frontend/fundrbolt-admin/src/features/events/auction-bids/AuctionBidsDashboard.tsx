@@ -1,3 +1,5 @@
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -15,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Table,
   TableBody,
@@ -23,10 +26,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import type { AuctionBidDashboardResponse } from '@/types/auctionBidImport'
 import { Link } from '@tanstack/react-router'
-import { ArrowUpDown, Filter, Loader2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { ArrowUpDown, Filter, Loader2, X } from 'lucide-react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 
 interface AuctionBidsDashboardProps {
   data: AuctionBidDashboardResponse | undefined
@@ -37,7 +41,12 @@ interface AuctionBidsDashboardProps {
 
 type SortDirection = 'asc' | 'desc'
 type HighestSortKey = 'itemNumber' | 'itemName' | 'bidderName' | 'amount'
-type RecentSortKey = 'itemNumber' | 'itemName' | 'bidderName' | 'amount' | 'time'
+type RecentSortKey =
+  | 'itemNumber'
+  | 'itemName'
+  | 'bidderName'
+  | 'amount'
+  | 'time'
 
 type HighestFilters = {
   itemNumber: string
@@ -66,7 +75,70 @@ const formatCurrency = (amount: number) =>
 
 const formatDateTime = (value: string) => new Date(value).toLocaleString()
 
-const normalizeText = (value: string | undefined | null) => value?.toLowerCase() ?? ''
+const normalizeText = (value: string | undefined | null) =>
+  value?.toLowerCase() ?? ''
+
+/** Shared toolbar for card-view filter panels */
+function CardFilterToolbar({
+  isOpen,
+  onToggle,
+  activeCount,
+  onClear,
+  filteredCount,
+  totalCount,
+  label,
+  children,
+}: {
+  isOpen: boolean
+  onToggle: () => void
+  activeCount: number
+  onClear: () => void
+  filteredCount: number
+  totalCount: number
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <>
+      <div className='flex items-center gap-2'>
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={onToggle}
+          className='gap-1.5'
+        >
+          <Filter className='h-4 w-4' />
+          Filters
+          {activeCount > 0 && (
+            <Badge
+              variant='secondary'
+              className='ml-0.5 h-5 min-w-5 justify-center rounded-full px-1.5 text-xs'
+            >
+              {activeCount}
+            </Badge>
+          )}
+        </Button>
+        {activeCount > 0 && (
+          <Button
+            variant='ghost'
+            size='sm'
+            onClick={onClear}
+            className='text-muted-foreground gap-1'
+          >
+            <X className='h-3.5 w-3.5' />
+            Clear all
+          </Button>
+        )}
+        <span className='text-muted-foreground ml-auto text-sm'>
+          {filteredCount} of {totalCount} {label}
+        </span>
+      </div>
+      {isOpen && (
+        <div className='bg-muted/30 rounded-md border p-3'>{children}</div>
+      )}
+    </>
+  )
+}
 
 export function AuctionBidsDashboard({
   data,
@@ -75,7 +147,8 @@ export function AuctionBidsDashboard({
   eventId,
 }: AuctionBidsDashboardProps) {
   const [highestSortKey, setHighestSortKey] = useState<HighestSortKey>('amount')
-  const [highestSortDirection, setHighestSortDirection] = useState<SortDirection>('desc')
+  const [highestSortDirection, setHighestSortDirection] =
+    useState<SortDirection>('desc')
   const [highestFilters, setHighestFilters] = useState<HighestFilters>({
     itemNumber: '',
     itemName: '',
@@ -83,7 +156,8 @@ export function AuctionBidsDashboard({
     amount: '',
   })
   const [recentSortKey, setRecentSortKey] = useState<RecentSortKey>('time')
-  const [recentSortDirection, setRecentSortDirection] = useState<SortDirection>('desc')
+  const [recentSortDirection, setRecentSortDirection] =
+    useState<SortDirection>('desc')
   const [recentFilters, setRecentFilters] = useState<RecentFilters>({
     itemNumber: '',
     itemName: '',
@@ -91,6 +165,47 @@ export function AuctionBidsDashboard({
     amount: '',
     time: '',
   })
+  const [viewMode, setViewMode] = useViewPreference('auction-bids')
+  const [highestCardFiltersOpen, setHighestCardFiltersOpen] = useState(false)
+  const [recentCardFiltersOpen, setRecentCardFiltersOpen] = useState(false)
+
+  const highestActiveFilterCount = useMemo(() => {
+    let count = 0
+    if (highestFilters.itemNumber) count++
+    if (highestFilters.itemName) count++
+    if (highestFilters.bidderName) count++
+    if (highestFilters.amount) count++
+    return count
+  }, [highestFilters])
+
+  const recentActiveFilterCount = useMemo(() => {
+    let count = 0
+    if (recentFilters.itemNumber) count++
+    if (recentFilters.itemName) count++
+    if (recentFilters.bidderName) count++
+    if (recentFilters.amount) count++
+    if (recentFilters.time) count++
+    return count
+  }, [recentFilters])
+
+  const clearHighestFilters = useCallback(() => {
+    setHighestFilters({
+      itemNumber: '',
+      itemName: '',
+      bidderName: '',
+      amount: '',
+    })
+  }, [])
+
+  const clearRecentFilters = useCallback(() => {
+    setRecentFilters({
+      itemNumber: '',
+      itemName: '',
+      bidderName: '',
+      amount: '',
+      time: '',
+    })
+  }, [])
 
   const handleHighestSortChange = (key: HighestSortKey) => {
     if (highestSortKey === key) {
@@ -129,9 +244,9 @@ export function AuctionBidsDashboard({
           type='button'
         >
           {label}
-          <ArrowUpDown className='h-3 w-3 text-muted-foreground' />
+          <ArrowUpDown className='text-muted-foreground h-3 w-3' />
           {activeSortKey === sortKey && (
-            <span className='text-xs text-muted-foreground'>
+            <span className='text-muted-foreground text-xs'>
               {sortDirection === 'asc' ? '^' : 'v'}
             </span>
           )}
@@ -139,7 +254,7 @@ export function AuctionBidsDashboard({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className='rounded-sm p-1 text-muted-foreground hover:text-foreground'
+              className='text-muted-foreground hover:text-foreground rounded-sm p-1'
               type='button'
               aria-label={`Filter ${label}`}
             >
@@ -176,24 +291,37 @@ export function AuctionBidsDashboard({
     </TableHead>
   )
 
-  const highestBids = useMemo(() => data?.highest_bids ?? [], [data?.highest_bids])
+  const highestBids = useMemo(
+    () => data?.highest_bids ?? [],
+    [data?.highest_bids]
+  )
   const recentBids = useMemo(() => data?.recent_bids ?? [], [data?.recent_bids])
 
   const filteredHighestBids = useMemo(() => {
     return highestBids.filter((bid) => {
       const bidderName = bid.bidder_name || bid.bidder_email
       if (highestFilters.itemNumber) {
-        if (!String(bid.auction_item_number).includes(highestFilters.itemNumber)) {
+        if (
+          !String(bid.auction_item_number).includes(highestFilters.itemNumber)
+        ) {
           return false
         }
       }
       if (highestFilters.itemName) {
-        if (!normalizeText(bid.auction_item_title).includes(normalizeText(highestFilters.itemName))) {
+        if (
+          !normalizeText(bid.auction_item_title).includes(
+            normalizeText(highestFilters.itemName)
+          )
+        ) {
           return false
         }
       }
       if (highestFilters.bidderName) {
-        if (!normalizeText(bidderName).includes(normalizeText(highestFilters.bidderName))) {
+        if (
+          !normalizeText(bidderName).includes(
+            normalizeText(highestFilters.bidderName)
+          )
+        ) {
           return false
         }
       }
@@ -215,14 +343,21 @@ export function AuctionBidsDashboard({
           return (a.auction_item_number - b.auction_item_number) * direction
         case 'itemName':
           return (
-            a.auction_item_title.localeCompare(b.auction_item_title, undefined, {
-              sensitivity: 'base',
-            }) * direction
+            a.auction_item_title.localeCompare(
+              b.auction_item_title,
+              undefined,
+              {
+                sensitivity: 'base',
+              }
+            ) * direction
           )
         case 'bidderName': {
           const bidderA = a.bidder_name || a.bidder_email
           const bidderB = b.bidder_name || b.bidder_email
-          return bidderA.localeCompare(bidderB, undefined, { sensitivity: 'base' }) * direction
+          return (
+            bidderA.localeCompare(bidderB, undefined, { sensitivity: 'base' }) *
+            direction
+          )
         }
         case 'amount':
         default:
@@ -236,17 +371,27 @@ export function AuctionBidsDashboard({
     return recentBids.filter((bid) => {
       const bidderName = bid.bidder_name || bid.bidder_email
       if (recentFilters.itemNumber) {
-        if (!String(bid.auction_item_number).includes(recentFilters.itemNumber)) {
+        if (
+          !String(bid.auction_item_number).includes(recentFilters.itemNumber)
+        ) {
           return false
         }
       }
       if (recentFilters.itemName) {
-        if (!normalizeText(bid.auction_item_title).includes(normalizeText(recentFilters.itemName))) {
+        if (
+          !normalizeText(bid.auction_item_title).includes(
+            normalizeText(recentFilters.itemName)
+          )
+        ) {
           return false
         }
       }
       if (recentFilters.bidderName) {
-        if (!normalizeText(bidderName).includes(normalizeText(recentFilters.bidderName))) {
+        if (
+          !normalizeText(bidderName).includes(
+            normalizeText(recentFilters.bidderName)
+          )
+        ) {
           return false
         }
       }
@@ -273,20 +418,30 @@ export function AuctionBidsDashboard({
           return (a.auction_item_number - b.auction_item_number) * direction
         case 'itemName':
           return (
-            a.auction_item_title.localeCompare(b.auction_item_title, undefined, {
-              sensitivity: 'base',
-            }) * direction
+            a.auction_item_title.localeCompare(
+              b.auction_item_title,
+              undefined,
+              {
+                sensitivity: 'base',
+              }
+            ) * direction
           )
         case 'bidderName': {
           const bidderA = a.bidder_name || a.bidder_email
           const bidderB = b.bidder_name || b.bidder_email
-          return bidderA.localeCompare(bidderB, undefined, { sensitivity: 'base' }) * direction
+          return (
+            bidderA.localeCompare(bidderB, undefined, { sensitivity: 'base' }) *
+            direction
+          )
         }
         case 'amount':
           return (a.bid_amount - b.bid_amount) * direction
         case 'time':
         default:
-          return (new Date(a.bid_time).valueOf() - new Date(b.bid_time).valueOf()) * direction
+          return (
+            (new Date(a.bid_time).valueOf() - new Date(b.bid_time).valueOf()) *
+            direction
+          )
       }
     })
     return bids
@@ -309,9 +464,12 @@ export function AuctionBidsDashboard({
             Review bid totals, highest bids, and recent activity for this event.
           </p>
         </div>
-        <Button onClick={onImportClick} variant='outline'>
-          Import Bids
-        </Button>
+        <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+          <Button onClick={onImportClick} variant='outline'>
+            Import Bids
+          </Button>
+          <DataTableViewToggle value={viewMode} onChange={setViewMode} />
+        </div>
       </div>
 
       <div className='grid gap-4 md:grid-cols-2'>
@@ -344,97 +502,228 @@ export function AuctionBidsDashboard({
         </CardHeader>
         <CardContent>
           {highestBids.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {renderHeader(
-                    'Item #',
-                    'itemNumber',
-                    highestSortKey,
-                    highestSortDirection,
-                    (key) => handleHighestSortChange(key as HighestSortKey),
-                    highestFilters.itemNumber,
-                    (value) =>
-                      setHighestFilters((prev) => ({
-                        ...prev,
-                        itemNumber: value,
-                      })),
-                    'Search item #'
+            viewMode === 'card' ? (
+              <div className='space-y-3'>
+                <CardFilterToolbar
+                  isOpen={highestCardFiltersOpen}
+                  onToggle={() => setHighestCardFiltersOpen((prev) => !prev)}
+                  activeCount={highestActiveFilterCount}
+                  onClear={clearHighestFilters}
+                  filteredCount={sortedHighestBids.length}
+                  totalCount={highestBids.length}
+                  label='bids'
+                >
+                  <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='highest-item-number-filter'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Item #
+                      </Label>
+                      <Input
+                        id='highest-item-number-filter'
+                        placeholder='Filter item #…'
+                        value={highestFilters.itemNumber}
+                        onChange={(e) =>
+                          setHighestFilters((prev) => ({
+                            ...prev,
+                            itemNumber: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='highest-item-name-filter'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Item Name
+                      </Label>
+                      <Input
+                        id='highest-item-name-filter'
+                        placeholder='Filter item name…'
+                        value={highestFilters.itemName}
+                        onChange={(e) =>
+                          setHighestFilters((prev) => ({
+                            ...prev,
+                            itemName: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='highest-bidder-filter'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Bidder
+                      </Label>
+                      <Input
+                        id='highest-bidder-filter'
+                        placeholder='Filter bidder…'
+                        value={highestFilters.bidderName}
+                        onChange={(e) =>
+                          setHighestFilters((prev) => ({
+                            ...prev,
+                            bidderName: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='highest-amount-filter'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Amount
+                      </Label>
+                      <Input
+                        id='highest-amount-filter'
+                        placeholder='Filter amount…'
+                        value={highestFilters.amount}
+                        onChange={(e) =>
+                          setHighestFilters((prev) => ({
+                            ...prev,
+                            amount: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                </CardFilterToolbar>
+                <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+                  {sortedHighestBids.length ? (
+                    sortedHighestBids.map((bid) => (
+                      <div
+                        key={`${bid.auction_item_id}-${bid.bidder_email}`}
+                        className='space-y-1 rounded-md border p-3'
+                      >
+                        <div className='flex items-center justify-between'>
+                          <Link
+                            to='/events/$eventId/auction-items/$itemId'
+                            params={{ eventId, itemId: bid.auction_item_id }}
+                            className='text-primary font-medium underline-offset-4 hover:underline'
+                          >
+                            Item #{bid.auction_item_number}
+                          </Link>
+                          <span className='font-semibold'>
+                            {formatCurrency(bid.bid_amount)}
+                          </span>
+                        </div>
+                        <p className='text-sm'>{bid.auction_item_title}</p>
+                        <p className='text-muted-foreground text-sm'>
+                          {bid.bidder_name || bid.bidder_email}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className='text-muted-foreground col-span-full text-sm'>
+                      No bids match the current filters.
+                    </div>
                   )}
-                  {renderHeader(
-                    'Item Name',
-                    'itemName',
-                    highestSortKey,
-                    highestSortDirection,
-                    (key) => handleHighestSortChange(key as HighestSortKey),
-                    highestFilters.itemName,
-                    (value) =>
-                      setHighestFilters((prev) => ({
-                        ...prev,
-                        itemName: value,
-                      })),
-                    'Search item name'
-                  )}
-                  {renderHeader(
-                    'Bidder',
-                    'bidderName',
-                    highestSortKey,
-                    highestSortDirection,
-                    (key) => handleHighestSortChange(key as HighestSortKey),
-                    highestFilters.bidderName,
-                    (value) =>
-                      setHighestFilters((prev) => ({
-                        ...prev,
-                        bidderName: value,
-                      })),
-                    'Search bidder'
-                  )}
-                  {renderHeader(
-                    'Bid Amount',
-                    'amount',
-                    highestSortKey,
-                    highestSortDirection,
-                    (key) => handleHighestSortChange(key as HighestSortKey),
-                    highestFilters.amount,
-                    (value) =>
-                      setHighestFilters((prev) => ({
-                        ...prev,
-                        amount: value,
-                      })),
-                    'Search amount',
-                    'text-right'
-                  )}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedHighestBids.length ? (
-                  sortedHighestBids.map((bid) => (
-                    <TableRow key={`${bid.auction_item_id}-${bid.bidder_email}`}>
-                      <TableCell className='font-medium'>
-                        <Link
-                          to='/events/$eventId/auction-items/$itemId'
-                          params={{ eventId, itemId: bid.auction_item_id }}
-                          className='text-primary underline-offset-4 hover:underline'
-                        >
-                          {bid.auction_item_number}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{bid.auction_item_title}</TableCell>
-                      <TableCell>{bid.bidder_name || bid.bidder_email}</TableCell>
-                      <TableCell className='text-right'>
-                        {formatCurrency(bid.bid_amount)}
+                </div>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {renderHeader(
+                      'Item #',
+                      'itemNumber',
+                      highestSortKey,
+                      highestSortDirection,
+                      (key) => handleHighestSortChange(key as HighestSortKey),
+                      highestFilters.itemNumber,
+                      (value) =>
+                        setHighestFilters((prev) => ({
+                          ...prev,
+                          itemNumber: value,
+                        })),
+                      'Search item #'
+                    )}
+                    {renderHeader(
+                      'Item Name',
+                      'itemName',
+                      highestSortKey,
+                      highestSortDirection,
+                      (key) => handleHighestSortChange(key as HighestSortKey),
+                      highestFilters.itemName,
+                      (value) =>
+                        setHighestFilters((prev) => ({
+                          ...prev,
+                          itemName: value,
+                        })),
+                      'Search item name'
+                    )}
+                    {renderHeader(
+                      'Bidder',
+                      'bidderName',
+                      highestSortKey,
+                      highestSortDirection,
+                      (key) => handleHighestSortChange(key as HighestSortKey),
+                      highestFilters.bidderName,
+                      (value) =>
+                        setHighestFilters((prev) => ({
+                          ...prev,
+                          bidderName: value,
+                        })),
+                      'Search bidder'
+                    )}
+                    {renderHeader(
+                      'Bid Amount',
+                      'amount',
+                      highestSortKey,
+                      highestSortDirection,
+                      (key) => handleHighestSortChange(key as HighestSortKey),
+                      highestFilters.amount,
+                      (value) =>
+                        setHighestFilters((prev) => ({
+                          ...prev,
+                          amount: value,
+                        })),
+                      'Search amount',
+                      'text-right'
+                    )}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedHighestBids.length ? (
+                    sortedHighestBids.map((bid) => (
+                      <TableRow
+                        key={`${bid.auction_item_id}-${bid.bidder_email}`}
+                      >
+                        <TableCell className='font-medium'>
+                          <Link
+                            to='/events/$eventId/auction-items/$itemId'
+                            params={{ eventId, itemId: bid.auction_item_id }}
+                            className='text-primary underline-offset-4 hover:underline'
+                          >
+                            {bid.auction_item_number}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{bid.auction_item_title}</TableCell>
+                        <TableCell>
+                          {bid.bidder_name || bid.bidder_email}
+                        </TableCell>
+                        <TableCell className='text-right'>
+                          {formatCurrency(bid.bid_amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={4}
+                        className='text-muted-foreground text-sm'
+                      >
+                        No bids match the current filters.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className='text-muted-foreground text-sm'>
-                      No bids match the current filters.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+            )
           ) : (
             <p className='text-muted-foreground text-sm'>No bids yet.</p>
           )}
@@ -448,114 +737,265 @@ export function AuctionBidsDashboard({
         </CardHeader>
         <CardContent>
           {recentBids.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {renderHeader(
-                    'Item #',
-                    'itemNumber',
-                    recentSortKey,
-                    recentSortDirection,
-                    (key) => handleRecentSortChange(key as RecentSortKey),
-                    recentFilters.itemNumber,
-                    (value) =>
-                      setRecentFilters((prev) => ({
-                        ...prev,
-                        itemNumber: value,
-                      })),
-                    'Search item #'
+            viewMode === 'card' ? (
+              <div className='space-y-3'>
+                <CardFilterToolbar
+                  isOpen={recentCardFiltersOpen}
+                  onToggle={() => setRecentCardFiltersOpen((prev) => !prev)}
+                  activeCount={recentActiveFilterCount}
+                  onClear={clearRecentFilters}
+                  filteredCount={sortedRecentBids.length}
+                  totalCount={recentBids.length}
+                  label='bids'
+                >
+                  <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5'>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='recent-item-number-filter'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Item #
+                      </Label>
+                      <Input
+                        id='recent-item-number-filter'
+                        placeholder='Filter item #…'
+                        value={recentFilters.itemNumber}
+                        onChange={(e) =>
+                          setRecentFilters((prev) => ({
+                            ...prev,
+                            itemNumber: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='recent-item-name-filter'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Item Name
+                      </Label>
+                      <Input
+                        id='recent-item-name-filter'
+                        placeholder='Filter item name…'
+                        value={recentFilters.itemName}
+                        onChange={(e) =>
+                          setRecentFilters((prev) => ({
+                            ...prev,
+                            itemName: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='recent-bidder-filter'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Bidder
+                      </Label>
+                      <Input
+                        id='recent-bidder-filter'
+                        placeholder='Filter bidder…'
+                        value={recentFilters.bidderName}
+                        onChange={(e) =>
+                          setRecentFilters((prev) => ({
+                            ...prev,
+                            bidderName: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='recent-time-filter'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Bid Time
+                      </Label>
+                      <Input
+                        id='recent-time-filter'
+                        placeholder='Filter time…'
+                        value={recentFilters.time}
+                        onChange={(e) =>
+                          setRecentFilters((prev) => ({
+                            ...prev,
+                            time: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='recent-amount-filter'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Amount
+                      </Label>
+                      <Input
+                        id='recent-amount-filter'
+                        placeholder='Filter amount…'
+                        value={recentFilters.amount}
+                        onChange={(e) =>
+                          setRecentFilters((prev) => ({
+                            ...prev,
+                            amount: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                </CardFilterToolbar>
+                <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+                  {sortedRecentBids.length ? (
+                    sortedRecentBids.map((bid) => (
+                      <div
+                        key={`${bid.auction_item_id}-${bid.bidder_email}-${bid.bid_time}`}
+                        className='space-y-1 rounded-md border p-3'
+                      >
+                        <div className='flex items-center justify-between'>
+                          <Link
+                            to='/events/$eventId/auction-items/$itemId'
+                            params={{ eventId, itemId: bid.auction_item_id }}
+                            className='text-primary font-medium underline-offset-4 hover:underline'
+                          >
+                            Item #{bid.auction_item_number}
+                          </Link>
+                          <span className='font-semibold'>
+                            {formatCurrency(bid.bid_amount)}
+                          </span>
+                        </div>
+                        <p className='text-sm'>{bid.auction_item_title}</p>
+                        <p className='text-muted-foreground text-sm'>
+                          {bid.bidder_name || bid.bidder_email}
+                        </p>
+                        <p className='text-muted-foreground text-xs'>
+                          {formatDateTime(bid.bid_time)}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className='text-muted-foreground col-span-full text-sm'>
+                      No bids match the current filters.
+                    </div>
                   )}
-                  {renderHeader(
-                    'Item Name',
-                    'itemName',
-                    recentSortKey,
-                    recentSortDirection,
-                    (key) => handleRecentSortChange(key as RecentSortKey),
-                    recentFilters.itemName,
-                    (value) =>
-                      setRecentFilters((prev) => ({
-                        ...prev,
-                        itemName: value,
-                      })),
-                    'Search item name'
-                  )}
-                  {renderHeader(
-                    'Bidder',
-                    'bidderName',
-                    recentSortKey,
-                    recentSortDirection,
-                    (key) => handleRecentSortChange(key as RecentSortKey),
-                    recentFilters.bidderName,
-                    (value) =>
-                      setRecentFilters((prev) => ({
-                        ...prev,
-                        bidderName: value,
-                      })),
-                    'Search bidder'
-                  )}
-                  {renderHeader(
-                    'Bid Time',
-                    'time',
-                    recentSortKey,
-                    recentSortDirection,
-                    (key) => handleRecentSortChange(key as RecentSortKey),
-                    recentFilters.time,
-                    (value) =>
-                      setRecentFilters((prev) => ({
-                        ...prev,
-                        time: value,
-                      })),
-                    'Search time'
-                  )}
-                  {renderHeader(
-                    'Bid Amount',
-                    'amount',
-                    recentSortKey,
-                    recentSortDirection,
-                    (key) => handleRecentSortChange(key as RecentSortKey),
-                    recentFilters.amount,
-                    (value) =>
-                      setRecentFilters((prev) => ({
-                        ...prev,
-                        amount: value,
-                      })),
-                    'Search amount',
-                    'text-right'
-                  )}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedRecentBids.length ? (
-                  sortedRecentBids.map((bid) => (
-                    <TableRow
-                      key={`${bid.auction_item_id}-${bid.bidder_email}-${bid.bid_time}`}
-                    >
-                      <TableCell className='font-medium'>
-                        <Link
-                          to='/events/$eventId/auction-items/$itemId'
-                          params={{ eventId, itemId: bid.auction_item_id }}
-                          className='text-primary underline-offset-4 hover:underline'
-                        >
-                          {bid.auction_item_number}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{bid.auction_item_title}</TableCell>
-                      <TableCell>{bid.bidder_name || bid.bidder_email}</TableCell>
-                      <TableCell>{formatDateTime(bid.bid_time)}</TableCell>
-                      <TableCell className='text-right'>
-                        {formatCurrency(bid.bid_amount)}
+                </div>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {renderHeader(
+                      'Item #',
+                      'itemNumber',
+                      recentSortKey,
+                      recentSortDirection,
+                      (key) => handleRecentSortChange(key as RecentSortKey),
+                      recentFilters.itemNumber,
+                      (value) =>
+                        setRecentFilters((prev) => ({
+                          ...prev,
+                          itemNumber: value,
+                        })),
+                      'Search item #'
+                    )}
+                    {renderHeader(
+                      'Item Name',
+                      'itemName',
+                      recentSortKey,
+                      recentSortDirection,
+                      (key) => handleRecentSortChange(key as RecentSortKey),
+                      recentFilters.itemName,
+                      (value) =>
+                        setRecentFilters((prev) => ({
+                          ...prev,
+                          itemName: value,
+                        })),
+                      'Search item name'
+                    )}
+                    {renderHeader(
+                      'Bidder',
+                      'bidderName',
+                      recentSortKey,
+                      recentSortDirection,
+                      (key) => handleRecentSortChange(key as RecentSortKey),
+                      recentFilters.bidderName,
+                      (value) =>
+                        setRecentFilters((prev) => ({
+                          ...prev,
+                          bidderName: value,
+                        })),
+                      'Search bidder'
+                    )}
+                    {renderHeader(
+                      'Bid Time',
+                      'time',
+                      recentSortKey,
+                      recentSortDirection,
+                      (key) => handleRecentSortChange(key as RecentSortKey),
+                      recentFilters.time,
+                      (value) =>
+                        setRecentFilters((prev) => ({
+                          ...prev,
+                          time: value,
+                        })),
+                      'Search time'
+                    )}
+                    {renderHeader(
+                      'Bid Amount',
+                      'amount',
+                      recentSortKey,
+                      recentSortDirection,
+                      (key) => handleRecentSortChange(key as RecentSortKey),
+                      recentFilters.amount,
+                      (value) =>
+                        setRecentFilters((prev) => ({
+                          ...prev,
+                          amount: value,
+                        })),
+                      'Search amount',
+                      'text-right'
+                    )}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedRecentBids.length ? (
+                    sortedRecentBids.map((bid) => (
+                      <TableRow
+                        key={`${bid.auction_item_id}-${bid.bidder_email}-${bid.bid_time}`}
+                      >
+                        <TableCell className='font-medium'>
+                          <Link
+                            to='/events/$eventId/auction-items/$itemId'
+                            params={{ eventId, itemId: bid.auction_item_id }}
+                            className='text-primary underline-offset-4 hover:underline'
+                          >
+                            {bid.auction_item_number}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{bid.auction_item_title}</TableCell>
+                        <TableCell>
+                          {bid.bidder_name || bid.bidder_email}
+                        </TableCell>
+                        <TableCell>{formatDateTime(bid.bid_time)}</TableCell>
+                        <TableCell className='text-right'>
+                          {formatCurrency(bid.bid_amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className='text-muted-foreground text-sm'
+                      >
+                        No bids match the current filters.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className='text-muted-foreground text-sm'>
-                      No bids match the current filters.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+            )
           ) : (
             <p className='text-muted-foreground text-sm'>
               No bids recorded yet.

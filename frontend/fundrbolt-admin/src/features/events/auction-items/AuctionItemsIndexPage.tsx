@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { AuctionItemList } from '@/features/events/components/AuctionItemList';
+import { useEventWorkspace } from '@/features/events/useEventWorkspace';
 import { useAuctionItemStore } from '@/stores/auctionItemStore';
 import type { AuctionItem } from '@/types/auction-item';
 import { useNavigate, useParams } from '@tanstack/react-router';
@@ -21,9 +22,13 @@ import { toast } from 'sonner';
 
 export function AuctionItemsIndexPage() {
   const navigate = useNavigate();
-  const { eventId } = useParams({
+  const { currentEvent } = useEventWorkspace();
+  const { eventId: routeEventId } = useParams({
     from: '/_authenticated/events/$eventId/auction-items/',
   });
+  // Use the real UUID for API calls, keep route param for navigation
+  const eventId = currentEvent.id;
+  const eventSlugOrId = routeEventId;
 
   const { items, isLoading, error, fetchAuctionItems, deleteAuctionItem } =
     useAuctionItemStore();
@@ -41,21 +46,21 @@ export function AuctionItemsIndexPage() {
   const handleAdd = () => {
     navigate({
       to: '/events/$eventId/auction-items/create',
-      params: { eventId },
+      params: { eventId: eventSlugOrId },
     });
   };
 
   const handleEdit = (item: AuctionItem) => {
     navigate({
       to: '/events/$eventId/auction-items/$itemId/edit',
-      params: { eventId, itemId: item.id },
+      params: { eventId: eventSlugOrId, itemId: item.id },
     });
   };
 
   const handleView = (item: AuctionItem) => {
     navigate({
       to: '/events/$eventId/auction-items/$itemId',
-      params: { eventId, itemId: item.id },
+      params: { eventId: eventSlugOrId, itemId: item.id },
     });
   };
 
@@ -79,11 +84,11 @@ export function AuctionItemsIndexPage() {
   };
 
   const handleBack = () => {
-    navigate({ to: '/events/$eventId/edit', params: { eventId } });
+    navigate({ to: '/events/$eventId/edit', params: { eventId: eventSlugOrId } });
   };
 
   return (
-    <div className="container mx-auto py-4 md:py-8 max-w-6xl">
+    <div className="space-y-4 md:space-y-6">
       <div className="mb-4 md:mb-6 space-y-4">
         <Button
           variant="ghost"
