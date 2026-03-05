@@ -37,6 +37,7 @@ import { useEventStore } from '@/stores/event-store'
 import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
 import type { EventMediaUsageTag } from '@/types/event'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
 import {
   keepPreviousData,
   useMutation,
@@ -128,6 +129,17 @@ export function EventHomePage() {
   const prefetchedVenueMapUrlsRef = useRef<Set<string>>(new Set())
   const queryClient = useQueryClient()
   const tabOrder: DonorTab[] = ['home', 'auction', 'seat']
+  const isOnline = useOnlineStatus()
+  const prevOnlineRef = useRef(isOnline)
+
+  // Refetch auction data when connectivity is restored (FR-017)
+  useEffect(() => {
+    if (isOnline && !prevOnlineRef.current) {
+      void queryClient.refetchQueries({ queryKey: ['auction-items'] })
+      void queryClient.refetchQueries({ queryKey: ['watchlist'] })
+    }
+    prevOnlineRef.current = isOnline
+  }, [isOnline, queryClient])
 
   const getTaggedImageUrls = useCallback(
     (tag: EventMediaUsageTag) => {

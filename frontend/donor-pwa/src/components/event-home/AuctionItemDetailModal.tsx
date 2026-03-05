@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils'
 import auctionItemService from '@/services/auctionItemService'
 import { useAuthStore } from '@/stores/auth-store'
 import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
 import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
 import '@ncdai/react-wheel-picker/style.css'
 import { useQuery } from '@tanstack/react-query'
@@ -121,6 +122,7 @@ export function AuctionItemDetailModal({
   const [buyNowSlideValue, setBuyNowSlideValue] = useState<number[]>([0])
   const authUserId = useAuthStore((state) => state.user?.id)
   const spoofedUserId = useDebugSpoofStore((state) => state.spoofedUser?.id)
+  const isOnline = useOnlineStatus()
 
   // Check if event is in the future
   const isEventInFuture = eventDateTime
@@ -467,6 +469,7 @@ export function AuctionItemDetailModal({
   }
 
   const slideActionsDisabled =
+    !isOnline ||
     isSubmittingBid ||
     eventStatus !== 'active' ||
     isEventInFuture ||
@@ -817,6 +820,11 @@ export function AuctionItemDetailModal({
                       </div>
 
                       <div className='space-y-2'>
+                        {!isOnline && (
+                          <p className='text-center text-xs font-medium text-amber-600'>
+                            You must be online to place bids
+                          </p>
+                        )}
                         <div
                           className='relative h-14 overflow-hidden rounded-[28px]'
                           style={{

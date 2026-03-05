@@ -10,9 +10,12 @@
  * - Loading spinner for scroll trigger
  */
 
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status';
 import { useInfiniteQuery, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Eye, Gavel, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { StaleDataIndicator } from '@/components/pwa/stale-data-indicator';
 
 import { Input } from '@/components/ui/input';
 import {
@@ -344,9 +347,12 @@ export function AuctionGallery({
     };
   }, [searchQuery]);
 
+  const isOnline = useOnlineStatus();
+
   // Infinite query for auction items
   const {
     data,
+    dataUpdatedAt,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -729,6 +735,11 @@ export function AuctionGallery({
 
   return (
     <div className={cn('space-y-6', className)}>
+      {/* Stale data warning when offline */}
+      <StaleDataIndicator
+        isStale={!isOnline}
+        lastFetchedAt={dataUpdatedAt ? new Date(dataUpdatedAt) : null}
+      />
       {/* Filter controls */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
