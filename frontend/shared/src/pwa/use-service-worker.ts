@@ -35,7 +35,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
-    onRegisteredSW(_swUrl, registration) {
+    onRegisteredSW(_swUrl: string, registration: ServiceWorkerRegistration | undefined) {
       // Set up periodic update checks
       if (registration) {
         setInterval(() => {
@@ -43,7 +43,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
         }, UPDATE_CHECK_INTERVAL_MS)
       }
     },
-    onRegisterError(error) {
+    onRegisterError(error: Error) {
       console.error('SW registration error:', error)
     },
   })
