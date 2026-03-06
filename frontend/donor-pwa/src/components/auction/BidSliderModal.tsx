@@ -223,7 +223,7 @@ export function BidSliderModal({
                 Bid Amount
               </div>
               <div
-                className="rounded-xl border px-2 py-2"
+                className="overflow-hidden rounded-xl border px-2 py-2"
                 style={{
                   borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.45)',
                   backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
@@ -241,7 +241,7 @@ export function BidSliderModal({
                     classNames={{
                       optionItem: 'text-sm text-center text-[var(--event-text-muted-on-background,#6B7280)]',
                       highlightWrapper:
-                        'border-y border-[rgb(var(--event-primary,59,130,246)/0.45)]',
+                        'border-y border-[rgb(var(--event-primary,59,130,246)/0.45)] wheel-picker-highlight-bg',
                       highlightItem:
                         'text-lg font-semibold text-[var(--event-text-on-background,#000000)]',
                     }}

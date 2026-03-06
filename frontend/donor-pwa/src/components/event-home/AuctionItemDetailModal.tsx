@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
+import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
 import { useItemViewTracking } from '@/hooks/useItemViewTracking'
 import { cn } from '@/lib/utils'
 import auctionItemService from '@/services/auctionItemService'
@@ -41,7 +42,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 export interface AuctionItemDetailModalProps {
   eventId: string
@@ -152,6 +153,30 @@ export function AuctionItemDetailModal({
   })
 
   const isOpen = !!itemId
+
+  // Swipe-down-to-close for the main dialog
+  const { onTouchStart: mainSwipeTouchStart, onTouchEnd: mainSwipeTouchEnd } =
+    useSwipeDownToClose(onClose)
+
+  // Swipe-down-to-close for the fullscreen image
+  const closeFullscreenImage = useCallback(() => {
+    setIsFullscreenImageOpen(false)
+    setFullscreenImageSrc(null)
+  }, [])
+  const {
+    onTouchStart: imgSwipeTouchStart,
+    onTouchEnd: imgSwipeTouchEnd,
+  } = useSwipeDownToClose(closeFullscreenImage)
+
+  // Double-tap to close fullscreen image
+  const lastTapRef = useRef(0)
+  const handleFullscreenImageTap = useCallback(() => {
+    const now = Date.now()
+    if (now - lastTapRef.current < 400) {
+      closeFullscreenImage()
+    }
+    lastTapRef.current = now
+  }, [closeFullscreenImage])
 
   const displayBid = isLiveAuctionItem
     ? (item?.current_bid_amount ?? null)
@@ -501,6 +526,8 @@ export function AuctionItemDetailModal({
           style={{
             backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
           }}
+          onTouchStart={mainSwipeTouchStart}
+          onTouchEnd={mainSwipeTouchEnd}
         >
           {!isOpen ? null : isLoading ? (
             <div className='space-y-4 p-6'>
@@ -757,7 +784,7 @@ export function AuctionItemDetailModal({
                   {!isLiveAuctionItem ? (
                     <div className='space-y-3'>
                       <div
-                        className='relative h-[60px] rounded-xl border px-2 py-0'
+                        className='relative h-[60px] overflow-hidden rounded-xl border px-2 py-0'
                         style={{
                           borderColor:
                             'rgb(var(--event-primary, 59, 130, 246) / 0.45)',
@@ -797,7 +824,7 @@ export function AuctionItemDetailModal({
                               optionItem:
                                 'text-sm text-center text-[var(--event-text-muted-on-background,#6B7280)] opacity-65',
                               highlightWrapper:
-                                'relative z-10 bg-[rgb(var(--event-background,255,255,255))] border-y border-[rgb(var(--event-primary,59,130,246)/0.45)]',
+                                'z-10 border-y border-[rgb(var(--event-primary,59,130,246)/0.45)] wheel-picker-highlight-bg',
                               highlightItem:
                                 'text-lg font-semibold text-[var(--event-text-on-background,#000000)]',
                             }}
@@ -1094,13 +1121,26 @@ export function AuctionItemDetailModal({
       >
         <DialogContent
           className='h-[100vh] max-h-[100vh] w-[100vw] max-w-[100vw] border-0 bg-black/95 p-0'
+          onTouchStart={imgSwipeTouchStart}
+          onTouchEnd={imgSwipeTouchEnd}
         >
           {fullscreenImageSrc && (
-            <div className='flex h-full w-full items-center justify-center p-4'>
+            <div
+              className='flex h-full w-full items-center justify-center p-4'
+              onClick={handleFullscreenImageTap}
+              onDoubleClick={closeFullscreenImage}
+              role='button'
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') closeFullscreenImage()
+              }}
+              aria-label='Double-tap or swipe down to close'
+            >
               <img
                 src={fullscreenImageSrc}
                 alt={fullscreenImageAlt}
-                className='max-h-full max-w-full object-contain'
+                className='max-h-full max-w-full object-contain select-none'
+                draggable={false}
               />
             </div>
           )}

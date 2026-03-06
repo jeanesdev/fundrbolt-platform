@@ -24,6 +24,7 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEventBranding } from '@/hooks/use-event-branding'
 import { useEventContext } from '@/hooks/use-event-context'
+import { useTabSwipe } from '@/hooks/use-tab-swipe'
 import apiClient from '@/lib/axios'
 import auctionItemService from '@/services/auctionItemService'
 import {
@@ -128,7 +129,7 @@ export function EventHomePage() {
   const prefetchedAuctionImagesRef = useRef<Set<string>>(new Set())
   const prefetchedVenueMapUrlsRef = useRef<Set<string>>(new Set())
   const queryClient = useQueryClient()
-  const tabOrder: DonorTab[] = ['home', 'auction', 'seat']
+  const tabOrder = useMemo<DonorTab[]>(() => ['home', 'auction', 'seat'], [])
   const isOnline = useOnlineStatus()
   const prevOnlineRef = useRef(isOnline)
 
@@ -337,10 +338,10 @@ export function EventHomePage() {
       })
   }, [currentEvent, queryClient])
 
-  const setActiveTab = (tab: DonorTab) => {
-    const visibleTab = userSelectedTab === null ? activeTab : displayedTab
+  const setActiveTab = useCallback((tab: DonorTab) => {
+    const currentVisibleTab = userSelectedTab === null ? activeTab : displayedTab
 
-    if (visibleTab === tab) {
+    if (currentVisibleTab === tab) {
       setUserSelectedTab(tab)
       return
     }
@@ -363,7 +364,7 @@ export function EventHomePage() {
     }
 
     performSwitch()
-  }
+  }, [userSelectedTab, activeTab, displayedTab, prefetchAuctionTabData])
 
   // Events for switcher
   const eventsForSwitcher = useMemo((): RegisteredEventWithBranding[] => {
@@ -708,6 +709,34 @@ export function EventHomePage() {
     (itemId: string) => { mutateBuyNow({ itemId }) },
     [mutateBuyNow]
   )
+
+  // Compute visible tab state (needed by swipe hooks — must be before early returns)
+  const visibleTab = userSelectedTab === null ? activeTab : displayedTab
+  const displayedTabIndex = tabOrder.indexOf(visibleTab)
+
+  // ─── Tab swipe navigation ───────────────────────────────────────────────────
+  const swipeToNextTab = useCallback(() => {
+    const nextIndex = displayedTabIndex + 1
+    if (nextIndex < tabOrder.length) {
+      setActiveTab(tabOrder[nextIndex])
+    }
+  }, [displayedTabIndex, tabOrder, setActiveTab])
+
+  const swipeToPrevTab = useCallback(() => {
+    const prevIndex = displayedTabIndex - 1
+    if (prevIndex >= 0) {
+      setActiveTab(tabOrder[prevIndex])
+    }
+  }, [displayedTabIndex, tabOrder, setActiveTab])
+
+  const {
+    onTouchStart: tabSwipeTouchStart,
+    onTouchMove: tabSwipeTouchMove,
+    onTouchEnd: tabSwipeTouchEnd,
+  } = useTabSwipe({
+    onSwipeLeft: swipeToNextTab,
+    onSwipeRight: swipeToPrevTab,
+  })
 
   // ─── Loading state ───────────────────────────────────────────────────────────
   if (eventsLoading) {
@@ -1119,9 +1148,6 @@ export function EventHomePage() {
     )
   }
 
-  const visibleTab = userSelectedTab === null ? activeTab : displayedTab
-  const displayedTabIndex = tabOrder.indexOf(visibleTab)
-
   const getTabPanelPositionClass = (tab: DonorTab) => {
     const tabIndex = tabOrder.indexOf(tab)
     if (tabIndex === displayedTabIndex) {
@@ -1141,6 +1167,9 @@ export function EventHomePage() {
       <main
         className='relative flex-1 overflow-hidden'
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+        onTouchStart={tabSwipeTouchStart}
+        onTouchMove={tabSwipeTouchMove}
+        onTouchEnd={tabSwipeTouchEnd}
       >
         <div className='absolute inset-0'>
           {tabOrder.map((tab) => (

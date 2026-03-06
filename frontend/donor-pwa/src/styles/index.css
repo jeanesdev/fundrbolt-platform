@@ -2,6 +2,39 @@
 @import 'tw-animate-css';
 @import './theme.css';
 
+/* Ensure Tailwind scans the shared package for class names */
+@source "../../../shared/src";
+
+/*
+ * Wheel-picker highlight wrapper: ensure an opaque background so the
+ * highlighted (selected) item fully covers the 3D-rotated option behind it.
+ * Using plain CSS instead of Tailwind arbitrary values because the nested
+ * var() fallback commas break Tailwind v4 class parsing.
+ *
+ * The library uses transform-style: preserve-3d on [data-rwp-options],
+ * which can cause 3D-rendered items to paint through the highlight wrapper.
+ * We force the highlight into its own stacking context and ensure its
+ * background is definitely opaque.
+ */
+[data-rwp-highlight-wrapper],
+.wheel-picker-highlight-bg {
+  background-color: rgb(var(--event-background, 255, 255, 255)) !important;
+  isolation: isolate;
+}
+
+/* Force a flat stacking context on the 3D options list so
+   the highlight wrapper (z-10) reliably paints on top. */
+[data-rwp-options] {
+  z-index: 1;
+}
+
+/* Ensure the picker container itself clips overflow from the
+   3D-transformed children that may escape normal bounds. */
+[data-rwp] {
+  overflow: hidden;
+  contain: paint;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @layer base {

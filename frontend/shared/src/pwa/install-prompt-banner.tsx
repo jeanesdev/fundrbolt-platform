@@ -23,24 +23,40 @@ export function InstallPromptBanner({
   const { canShow, isIOS, promptInstall, dismiss } = useInstallPrompt(appId)
   const [visible, setVisible] = useState(false)
 
+  const handleDismiss = () => {
+    setVisible(false)
+    dismiss()
+  }
+
   useEffect(() => {
     if (!canShow) return
 
-    const timer = setTimeout(() => {
+    const showTimer = setTimeout(() => {
       setVisible(true)
     }, showDelay)
 
-    return () => clearTimeout(timer)
+    return () => clearTimeout(showTimer)
   }, [canShow, showDelay])
+
+  // Auto-dismiss after 5 seconds of being visible
+  useEffect(() => {
+    if (!visible) return
+
+    const autoDismissTimer = setTimeout(() => {
+      setVisible(false)
+    }, 5000)
+
+    return () => clearTimeout(autoDismissTimer)
+  }, [visible])
 
   if (!visible || !canShow) return null
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom duration-300"
+      className="fixed bottom-4 right-4 left-4 z-50 animate-in slide-in-from-bottom duration-300 sm:left-auto sm:w-80"
       role="alert"
     >
-      <div className="mx-auto max-w-lg border-t border-slate-700 bg-slate-900 p-4 shadow-lg sm:mx-4 sm:mb-4 sm:rounded-xl sm:border sm:border-slate-700">
+      <div className="rounded-xl border border-slate-700 bg-slate-900 p-4 shadow-lg">
         <div className="flex items-start gap-3">
           <img
             src="/images/pwa-192x192.png"
@@ -93,7 +109,7 @@ export function InstallPromptBanner({
                   Install
                 </button>
                 <button
-                  onClick={dismiss}
+                  onClick={handleDismiss}
                   className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-400 transition-colors hover:text-slate-200"
                 >
                   Not now
@@ -103,7 +119,7 @@ export function InstallPromptBanner({
           </div>
 
           <button
-            onClick={dismiss}
+            onClick={handleDismiss}
             className="flex-shrink-0 rounded-full p-1 text-slate-400 transition-colors hover:text-slate-200"
             aria-label="Dismiss install prompt"
           >
