@@ -11,8 +11,8 @@ import { hasValidRefreshToken } from '@/lib/storage/tokens'
 import { useAuthStore } from '@/stores/auth-store'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Loader2 } from 'lucide-react'
-import { useEffect } from 'react'
+import { ArrowLeft, CalendarPlus, Loader2 } from 'lucide-react'
+import { useCallback, useEffect } from 'react'
 
 export const Route = createFileRoute('/events/$slug/')({
   component: RouteComponent,
@@ -175,6 +175,46 @@ function RouteComponent() {
 
   const aboutEventHtml = renderMarkdownToSafeHtml(event.description ?? '')
 
+  const handleAddToCalendar = useCallback(() => {
+    if (!event.event_datetime) return
+    const start = new Date(event.event_datetime)
+    // Default to 3-hour event duration
+    const end = new Date(start.getTime() + 3 * 60 * 60 * 1000)
+    const fmt = (d: Date) =>
+      d
+        .toISOString()
+        .replace(/[-:]/g, '')
+        .replace(/\.\d{3}/, '')
+    const locationParts = [event.venue_name, event.venue_address, event.venue_city, event.venue_state, event.venue_zip].filter(Boolean)
+    const location = locationParts.join(', ')
+    const description = (event.description ?? '').replace(/[#*_~`>\-|]/g, '').slice(0, 500)
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Fundrbolt//Event//EN',
+      'BEGIN:VEVENT',
+      `DTSTART:${fmt(start)}`,
+      `DTEND:${fmt(end)}`,
+      `SUMMARY:${event.name}`,
+      location ? `LOCATION:${location}` : '',
+      description ? `DESCRIPTION:${description}` : '',
+      `URL:${window.location.href}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]
+      .filter(Boolean)
+      .join('\r\n')
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${event.name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-')}.ics`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }, [event])
+
   return (
     <div className='min-h-screen' style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}>
       <EventHeroSection
@@ -193,12 +233,19 @@ function RouteComponent() {
       <div className='px-4 py-4 space-y-5'>
         {/* Countdown — show if event is in the future */}
         {countdownTargetDate && !isPast && (
-          <div>
+          <div className='space-y-3'>
             <CountdownTimer
               targetDate={countdownTargetDate}
               eventName={event.name}
               hideOnExpire={false}
             />
+            <button
+              onClick={handleAddToCalendar}
+              className='flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white/80 px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm backdrop-blur-sm transition-all active:scale-[0.98] hover:bg-white hover:shadow-md'
+            >
+              <CalendarPlus className='h-4 w-4' />
+              Add to Calendar
+            </button>
           </div>
         )}
 
@@ -233,22 +280,12 @@ function RouteComponent() {
             </Link>
             <Link to='/sign-up'>
               <button
-                className='w-full rounded-2xl border-2 p-4 text-left transition-all active:scale-[0.98] hover:shadow-md'
-                style={{
-                  borderColor: 'rgb(var(--event-primary, 59, 130, 246))',
-                  backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.08)',
-                }}
+                className='w-full rounded-2xl border-2 border-gray-300 bg-white p-4 text-left transition-all active:scale-[0.98] hover:shadow-md'
               >
-                <p
-                  className='text-lg font-black'
-                  style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
-                >
+                <p className='text-lg font-black text-gray-900'>
                   Create Account
                 </p>
-                <p
-                  className='text-sm'
-                  style={{ color: 'rgb(var(--event-primary, 59, 130, 246) / 0.7)' }}
-                >
+                <p className='text-sm text-gray-500'>
                   New here? Create a free account to register →
                 </p>
               </button>
