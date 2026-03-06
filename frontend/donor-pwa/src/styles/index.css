@@ -20,19 +20,62 @@
 .wheel-picker-highlight-bg {
   background-color: rgb(var(--event-background, 255, 255, 255)) !important;
   isolation: isolate;
+  z-index: 10 !important;
+  position: relative !important;
 }
 
-/* Force a flat stacking context on the 3D options list so
-   the highlight wrapper (z-10) reliably paints on top. */
+/* Keep options beneath highlight wrapper while preserving
+   library 3D layout behavior for adjacent items. */
 [data-rwp-options] {
   z-index: 1;
 }
 
-/* Ensure the picker container itself clips overflow from the
-   3D-transformed children that may escape normal bounds. */
+/* Keep wheel container layout stable while allowing adjacent
+   options to render naturally in the 3D stack. */
 [data-rwp] {
+  overflow: visible;
+  isolation: isolate;
+}
+
+/* iOS-style wheel presentation used in donor auction bid picker */
+.wheel-picker-ios {
+  position: relative;
+}
+
+.wheel-picker-ios [data-rwp] {
+  perspective: 1200px;
+}
+
+.wheel-picker-ios [data-rwp-options] {
+  transform-style: preserve-3d;
+}
+
+.wheel-picker-ios [data-rwp-option] {
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.wheel-picker-ios [data-rwp-options] [data-rwp-option] {
+  opacity: 0.4;
+}
+
+.wheel-picker-ios [data-rwp-highlight-list] [data-rwp-option] {
+  opacity: 1;
+}
+
+.wheel-picker-ios-highlight {
+  position: relative;
   overflow: hidden;
-  contain: paint;
+  border-radius: 0.75rem;
+  background-color: rgb(var(--event-background, 255, 255, 255)) !important;
+  border: 1px solid rgb(var(--event-primary, 59, 130, 246) / 0.18);
+}
+
+.wheel-picker-ios [data-rwp-highlight-list] {
+  z-index: 30;
+}
+
+.wheel-picker-ios [data-rwp-highlight-wrapper] {
+  z-index: 30 !important;
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -341,6 +384,24 @@
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+@keyframes auction-flash {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(1.02);
+  }
+}
+
+.animate-auction-flash {
+  animation: auction-flash 1s ease-in-out infinite;
 }
 
 /* Stagger delays for card grids */
