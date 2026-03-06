@@ -390,16 +390,6 @@ export function AuctionItemDetailModal({
     })
   }, [item, isLiveAuctionItem, minimumNextBid, optionCount, bidStep])
 
-  const openManualBidEntryDialog = () => {
-    if (!item || isLiveAuctionItem) {
-      return
-    }
-
-    setManualBidInputValue(String(effectiveSelectedBidAmount))
-    setManualBidInputError(null)
-    setIsManualBidDialogOpen(true)
-  }
-
   const handleManualBidEntrySubmit = () => {
     if (!item || isLiveAuctionItem) {
       return
@@ -790,7 +780,7 @@ export function AuctionItemDetailModal({
                   {!isLiveAuctionItem && isBiddingOpen && eventStatus === 'active' && !isEventInFuture ? (
                     <div className='space-y-3'>
                       <div
-                        className='wheel-picker-ios relative h-[196px] overflow-hidden rounded-2xl border px-3 py-2'
+                        className='relative h-[140px] overflow-hidden rounded-2xl border px-3 py-2'
                         style={{
                           borderColor:
                             'rgb(var(--event-primary, 59, 130, 246) / 0.45)',
@@ -815,34 +805,17 @@ export function AuctionItemDetailModal({
                               }
                             }}
                             options={wheelOptions}
-                            visibleCount={7}
-                            dragSensitivity={1.1}
+                            visibleCount={13}
+                            dragSensitivity={1.0}
                             scrollSensitivity={1.0}
-                            optionItemHeight={46}
+                            optionItemHeight={28}
                             classNames={{
-                              optionItem:
-                                'text-base text-center text-[var(--event-text-muted-on-background,#6B7280)]/80 select-none',
-                              highlightWrapper:
-                                'wheel-picker-ios-highlight z-20',
-                              highlightItem:
-                                'text-lg font-semibold text-[var(--event-text-on-background,#000000)]',
+                              optionItem: 'text-sm font-medium text-foreground/35',
+                              highlightWrapper: 'bg-muted/85 border-y border-border/70',
+                              highlightItem: 'text-base font-semibold text-foreground',
                             }}
                           />
                         </WheelPickerWrapper>
-                        <div
-                          className='pointer-events-none absolute top-0 right-0 left-0 h-12 rounded-t-2xl'
-                          style={{
-                            background:
-                              'linear-gradient(to bottom, rgb(var(--event-background, 255, 255, 255)) 0%, rgb(var(--event-background, 255, 255, 255) / 0) 100%)',
-                          }}
-                        />
-                        <div
-                          className='pointer-events-none absolute right-0 bottom-0 left-0 h-12 rounded-b-2xl'
-                          style={{
-                            background:
-                              'linear-gradient(to top, rgb(var(--event-background, 255, 255, 255)) 0%, rgb(var(--event-background, 255, 255, 255) / 0) 100%)',
-                          }}
-                        />
                       </div>
 
                       <div
