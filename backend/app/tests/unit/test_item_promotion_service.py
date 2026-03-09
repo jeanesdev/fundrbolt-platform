@@ -55,6 +55,7 @@ class TestItemPromotionService:
             event_id=test_event.id,
             updated_by_user_id=test_user.id,
             badge_label="Hot Item",
+            badge_color=None,
             notice_message="Limited time offer!",
         )
 
@@ -80,12 +81,12 @@ class TestItemPromotionService:
 
         # Create initial promotion
         await service.update_promotion(
-            item.id, test_event.id, test_user.id, "Hot Item", "Limited time!"
+            item.id, test_event.id, test_user.id, "Hot Item", None, "Limited time!"
         )
 
         # Update promotion
         updated = await service.update_promotion(
-            item.id, test_event.id, test_user.id, "Super Deal", "Amazing value!"
+            item.id, test_event.id, test_user.id, "Super Deal", None, "Amazing value!"
         )
 
         assert updated.badge_label == "Super Deal"
@@ -111,6 +112,7 @@ class TestItemPromotionService:
                 event_id=test_event.id,
                 updated_by_user_id=test_user.id,
                 badge_label="Test",
+                badge_color=None,
                 notice_message="Test",
             )
 
@@ -131,7 +133,7 @@ class TestItemPromotionService:
 
         # Create promotion
         await service.update_promotion(
-            item.id, test_event.id, test_user.id, "Hot Item", "Limited time!"
+            item.id, test_event.id, test_user.id, "Hot Item", None, "Limited time!"
         )
 
         # Get promotion
@@ -152,7 +154,7 @@ class TestItemPromotionService:
 
         # Create promotion
         await service.update_promotion(
-            item.id, test_event.id, test_user.id, "Hot Item", "Limited time!"
+            item.id, test_event.id, test_user.id, "Hot Item", None, "Limited time!"
         )
 
         await db_session.refresh(item)
