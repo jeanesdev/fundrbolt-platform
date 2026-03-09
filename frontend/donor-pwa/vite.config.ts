@@ -35,6 +35,7 @@ export default defineConfig({
               expiration: {
                 maxEntries: 200,
                 maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+                purgeOnQuotaError: true,
               },
             },
           },
@@ -47,6 +48,7 @@ export default defineConfig({
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 24 * 60 * 60, // 24 hours
+                purgeOnQuotaError: true,
               },
             },
           },

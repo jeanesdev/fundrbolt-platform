@@ -29,6 +29,7 @@ export interface UseServiceWorkerReturn {
  */
 export function useServiceWorker(): UseServiceWorkerReturn {
   const autoUpdateTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const updateCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const {
     offlineReady: [offlineReady, setOfflineReady],
@@ -38,7 +39,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
     onRegisteredSW(_swUrl: string, registration: ServiceWorkerRegistration | undefined) {
       // Set up periodic update checks
       if (registration) {
-        setInterval(() => {
+        updateCheckIntervalRef.current = setInterval(() => {
           void registration.update()
         }, UPDATE_CHECK_INTERVAL_MS)
       }
@@ -101,6 +102,16 @@ export function useServiceWorker(): UseServiceWorkerReturn {
       }
     }
   }, [needRefresh])
+
+  // Clean up the periodic update-check interval on unmount
+  useEffect(() => {
+    return () => {
+      if (updateCheckIntervalRef.current) {
+        clearInterval(updateCheckIntervalRef.current)
+        updateCheckIntervalRef.current = null
+      }
+    }
+  }, [])
 
   const dismissOfflineReady = useCallback(() => {
     setOfflineReady(false)

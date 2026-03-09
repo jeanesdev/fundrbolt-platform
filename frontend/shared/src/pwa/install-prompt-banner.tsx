@@ -60,14 +60,14 @@ export function InstallPromptBanner({
         <div className="flex items-start gap-3">
           <img
             src="/images/pwa-192x192.png"
-            alt="FundrBolt"
+            alt="Fundrbolt"
             className="h-12 w-12 flex-shrink-0 rounded-xl"
           />
           <div className="min-w-0 flex-1">
             {isIOS ? (
               <>
                 <p className="text-sm font-semibold text-white">
-                  Add FundrBolt to your home screen
+                  Add Fundrbolt to your home screen
                 </p>
                 <p className="mt-1 text-xs text-slate-300">
                   Tap the{' '}
@@ -92,7 +92,7 @@ export function InstallPromptBanner({
             ) : (
               <>
                 <p className="text-sm font-semibold text-white">
-                  Add FundrBolt to your home screen
+                  Add Fundrbolt to your home screen
                 </p>
                 <p className="mt-1 text-xs text-slate-300">
                   For the best experience, install the app

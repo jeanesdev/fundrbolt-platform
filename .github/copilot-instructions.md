@@ -153,6 +153,7 @@ git commit -m "message"
 - 032-admin-pwa-mobile: Added TypeScript 5.9, React 19, Node 22 + Vite 7, TanStack Router, TanStack React Table 8, TanStack React Query 5, Radix UI primitives, Tailwind CSS 4, Zustand 5, shadcn/ui sidebar component, Lucide icons
 - 031-duplicate-event: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18, Vite, TanStack Router, Zustand, Radix UI (Frontend)
 - 030-social-login-i: Added Python 3.11+ (backend), TypeScript 5.x + React 18/19 PWAs (frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, existing auth/session stack (OAuth2/JWT), React, TanStack Router, Zustand
+- 029-quick-bid-entry: Added Python 3.11+ (backend), TypeScript 5.x + React 19 (admin frontend) + FastAPI, SQLAlchemy 2.0, Pydantic 2.0, React, TanStack Router, Zustand, React Query, Radix UI
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields
   - ✅ Updated registration_guests with is_table_captain boolean field
   - ✅ US1 - Customize Table Capacity: Event coordinators can set custom capacity per table (1-20), system enforces limits
