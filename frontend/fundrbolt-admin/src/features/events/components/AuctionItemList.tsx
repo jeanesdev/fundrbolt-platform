@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AuctionType, type AuctionItem } from '@/types/auction-item';
-import { AlertCircle, Gavel, Plus } from 'lucide-react';
+import { AlertCircle, Plus } from 'lucide-react';
 import { AuctionItemCard } from './AuctionItemCard';
 
 interface AuctionItemListProps {
@@ -76,7 +76,6 @@ export function AuctionItemList({
   if (items.length === 0) {
     return (
       <div className="text-center py-12">
-        <Gavel className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold mb-2">No auction items yet</h3>
         <p className="text-muted-foreground mb-6">
           Add auction items to start fundraising

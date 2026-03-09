@@ -42,6 +42,7 @@ class ItemPromotion(Base, UUIDMixin, TimestampMixin):
 
     # Promotion content
     badge_label: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    badge_color: Mapped[str | None] = mapped_column(String(20), nullable=True)
     notice_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # SQLAlchemy relationships

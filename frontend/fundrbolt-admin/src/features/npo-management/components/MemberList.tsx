@@ -20,8 +20,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
@@ -35,7 +40,7 @@ import { useViewPreference } from '@/hooks/use-view-preference'
 import { memberApi } from '@/services/npo-service'
 import type { MemberRole, NPOMember } from '@/types/npo'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { MoreVertical, Shield, UserCog, UserMinus } from 'lucide-react'
+import { ArrowUpDown, Filter, MoreVertical, Shield, UserCog, UserMinus } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -58,10 +63,111 @@ const roleLabels: Record<MemberRole, string> = {
   staff: 'Staff',
 }
 
+type SortKey = 'name' | 'email' | 'role' | 'joined'
+type SortDirection = 'asc' | 'desc'
+
+type FilterState = {
+  name: string
+  email: string
+  role: string
+}
+
+const roleOptions = [
+  { value: 'admin', label: 'Admin' },
+  { value: 'co_admin', label: 'Co-Admin' },
+  { value: 'staff', label: 'Staff' },
+]
+
+function getMemberName(member: NPOMember): string {
+  return (
+    member.user_full_name ||
+    (member.user_first_name && member.user_last_name
+      ? `${member.user_first_name} ${member.user_last_name}`
+      : member.user_first_name || member.user_last_name || 'N/A')
+  )
+}
+
 export function MemberList({ npoId, canManageMembers = false }: MemberListProps) {
   const queryClient = useQueryClient()
   const [memberToRemove, setMemberToRemove] = useState<NPOMember | null>(null)
   const [viewMode, setViewMode] = useViewPreference('npo-members')
+  const [sortKey, setSortKey] = useState<SortKey | null>(null)
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+  const [filters, setFilters] = useState<FilterState>({ name: '', email: '', role: '' })
+
+  const handleSortChange = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortKey(key)
+      setSortDirection('asc')
+    }
+  }
+
+  const updateFilter = (key: keyof FilterState, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const renderTextHeader = (label: string, key: SortKey, filterKey: keyof FilterState, placeholder: string) => (
+    <TableHead>
+      <div className='flex items-center gap-2'>
+        <button className='flex items-center gap-2' onClick={() => handleSortChange(key)} type='button'>
+          {label}
+          <ArrowUpDown className='h-3 w-3 text-muted-foreground' />
+          {sortKey === key && <span className='text-xs text-muted-foreground'>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className={`rounded-sm p-1 hover:text-foreground ${filters[filterKey] ? 'text-primary' : 'text-muted-foreground'}`} type='button' aria-label={`Filter ${label}`}>
+              <Filter className='h-3 w-3' />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='start' className='w-56'>
+            <DropdownMenuLabel>{label}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <div className='px-2 py-2' onClick={(e) => e.stopPropagation()}>
+              <Input placeholder={placeholder} value={filters[filterKey]} onChange={(e) => updateFilter(filterKey, e.target.value)} onKeyDown={(e) => e.stopPropagation()} />
+            </div>
+            <DropdownMenuItem disabled={!filters[filterKey]} onSelect={() => updateFilter(filterKey, '')}>
+              Clear filter
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </TableHead>
+  )
+
+  const renderOptionHeader = (label: string, key: SortKey, filterKey: keyof FilterState, options: Array<{ value: string; label: string }>) => (
+    <TableHead>
+      <div className='flex items-center gap-2'>
+        <button className='flex items-center gap-2' onClick={() => handleSortChange(key)} type='button'>
+          {label}
+          <ArrowUpDown className='h-3 w-3 text-muted-foreground' />
+          {sortKey === key && <span className='text-xs text-muted-foreground'>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className={`rounded-sm p-1 hover:text-foreground ${filters[filterKey] ? 'text-primary' : 'text-muted-foreground'}`} type='button' aria-label={`Filter ${label}`}>
+              <Filter className='h-3 w-3' />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='start' className='w-56'>
+            <DropdownMenuLabel>{label}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup value={filters[filterKey]} onValueChange={(v) => updateFilter(filterKey, v)}>
+              {options.map((opt) => (
+                <DropdownMenuRadioItem key={opt.value} value={opt.value}>{opt.label}</DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled={!filters[filterKey]} onSelect={() => updateFilter(filterKey, '')}>
+              Clear filter
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </TableHead>
+  )
 
   // Fetch members
   const {
@@ -139,9 +245,33 @@ export function MemberList({ npoId, canManageMembers = false }: MemberListProps)
     )
   }
 
-  const members = membersResponse?.items || []
+  const rawMembers = membersResponse?.items || []
 
-  if (members.length === 0) {
+  // Client-side filter
+  const filteredMembers = rawMembers.filter((m) => {
+    const name = getMemberName(m).toLowerCase()
+    const email = (m.user_email || '').toLowerCase()
+    if (filters.name && !name.includes(filters.name.toLowerCase())) return false
+    if (filters.email && !email.includes(filters.email.toLowerCase())) return false
+    if (filters.role && m.role !== filters.role) return false
+    return true
+  })
+
+  // Client-side sort
+  const members = sortKey
+    ? [...filteredMembers].sort((a, b) => {
+      let aVal = ''
+      let bVal = ''
+      if (sortKey === 'name') { aVal = getMemberName(a); bVal = getMemberName(b) }
+      else if (sortKey === 'email') { aVal = a.user_email || ''; bVal = b.user_email || '' }
+      else if (sortKey === 'role') { aVal = a.role; bVal = b.role }
+      else if (sortKey === 'joined') { aVal = a.joined_at || ''; bVal = b.joined_at || '' }
+      const cmp = aVal.localeCompare(bVal)
+      return sortDirection === 'asc' ? cmp : -cmp
+    })
+    : filteredMembers
+
+  if (rawMembers.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         No members found. Invite your first team member above.
@@ -154,13 +284,15 @@ export function MemberList({ npoId, canManageMembers = false }: MemberListProps)
       <div className='mb-2 flex justify-end'>
         <DataTableViewToggle value={viewMode} onChange={setViewMode} />
       </div>
+      {members.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground text-sm">
+          No members match your filters.
+        </div>
+      )}
       {viewMode === 'card' ? (
         <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
           {members.map((member) => {
-            const memberName = member.user_full_name ||
-              (member.user_first_name && member.user_last_name
-                ? `${member.user_first_name} ${member.user_last_name}`
-                : member.user_first_name || member.user_last_name || 'N/A')
+            const memberName = getMemberName(member)
             return (
               <div key={member.id} className='rounded-md border p-3 space-y-2'>
                 <div className='flex items-center justify-between'>
@@ -206,9 +338,9 @@ export function MemberList({ npoId, canManageMembers = false }: MemberListProps)
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
+                {renderTextHeader('Name', 'name', 'name', 'Search name...')}
+                {renderTextHeader('Email', 'email', 'email', 'Search email...')}
+                {renderOptionHeader('Role', 'role', 'role', roleOptions)}
                 <TableHead>Joined</TableHead>
                 {canManageMembers && <TableHead className="w-[50px]"></TableHead>}
               </TableRow>
@@ -217,10 +349,7 @@ export function MemberList({ npoId, canManageMembers = false }: MemberListProps)
               {members.map((member) => (
                 <TableRow key={member.id}>
                   <TableCell className="font-medium">
-                    {member.user_full_name ||
-                      (member.user_first_name && member.user_last_name
-                        ? `${member.user_first_name} ${member.user_last_name}`
-                        : member.user_first_name || member.user_last_name || 'N/A')}
+                    {getMemberName(member)}
                   </TableCell>
                   <TableCell>{member.user_email}</TableCell>
                   <TableCell>

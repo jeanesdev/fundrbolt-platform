@@ -1,4 +1,3 @@
-import { Logo } from '@/assets/logo'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAuth } from '@/hooks/use-auth'
 import { createFileRoute } from '@tanstack/react-router'
@@ -42,9 +41,6 @@ function DashboardPage() {
 
   return (
     <div className='space-y-8'>
-      <div className='flex justify-center'>
-        <Logo className='text-primary h-48 w-auto md:h-64' />
-      </div>
       <Suspense fallback={loadingFallback}>
         {role === 'super_admin' && <SuperAdminDashboard />}
         {role === 'npo_admin' && <NpoAdminDashboard />}

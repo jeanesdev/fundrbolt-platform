@@ -5,6 +5,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import type { LegalDocumentPublic } from '@/types/legal'
+import ReactMarkdown from 'react-markdown'
 
 interface LegalDocumentViewerProps {
   document: LegalDocumentPublic
@@ -33,10 +34,7 @@ export function LegalDocumentViewer({ document, className }: LegalDocumentViewer
       </CardHeader>
       <CardContent>
         <div className="prose prose-sm max-w-none dark:prose-invert">
-          <div
-            className="whitespace-pre-wrap"
-            dangerouslySetInnerHTML={{ __html: document.content }}
-          />
+          <ReactMarkdown>{document.content}</ReactMarkdown>
         </div>
       </CardContent>
     </Card>

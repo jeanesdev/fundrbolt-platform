@@ -56,6 +56,7 @@ export function DataTableWrapper({
  * Hook-based approach for pages that need more control over toggle placement.
  * Returns the current view mode, setter, and a pre-built toggle component.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useDataTableView(viewPreferenceKey: string): {
   viewMode: ViewMode
   setViewMode: (mode: ViewMode) => void

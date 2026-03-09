@@ -62,6 +62,7 @@ function CardViewHarness({
   data?: TestRow[]
   primaryFieldCount?: number
 }) {
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,
@@ -152,6 +153,7 @@ describe('DataTableCardView', () => {
 
   it('applies custom className to the grid container', () => {
     function HarnessWithClass() {
+      // eslint-disable-next-line react-hooks/incompatible-library
       const table = useReactTable({
         data: testData,
         columns,

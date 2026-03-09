@@ -27,8 +27,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4 MiB
-        navigateFallback: '/offline.html',
-        navigateFallbackDenylist: [/^\/api/],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/, /^\/offline\.html/],
         runtimeCaching: [
           {
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
@@ -69,8 +69,8 @@ export default defineConfig({
         name: 'Fundrbolt Admin',
         short_name: 'Fundrbolt Admin',
         description: 'Manage events, auctions, and nonprofit fundraising',
-        theme_color: '#0f172a',
-        background_color: '#ffffff',
+        theme_color: '#0f172a', // eslint-disable-line no-restricted-syntax
+        background_color: '#ffffff', // eslint-disable-line no-restricted-syntax
         display: 'standalone',
         orientation: 'any',
         start_url: '/',

@@ -146,6 +146,7 @@ class AuctionItem(Base, UUIDMixin, TimestampMixin):
 
     # Promotion fields
     promotion_badge: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    promotion_badge_color: Mapped[str | None] = mapped_column(String(20), nullable=True)
     promotion_notice: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Soft delete

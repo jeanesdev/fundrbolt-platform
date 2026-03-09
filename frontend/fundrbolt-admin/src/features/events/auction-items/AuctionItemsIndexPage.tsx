@@ -16,7 +16,7 @@ import { useEventWorkspace } from '@/features/events/useEventWorkspace';
 import { useAuctionItemStore } from '@/stores/auctionItemStore';
 import type { AuctionItem } from '@/types/auction-item';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -83,22 +83,9 @@ export function AuctionItemsIndexPage() {
     }
   };
 
-  const handleBack = () => {
-    navigate({ to: '/events/$eventId/edit', params: { eventId: eventSlugOrId } });
-  };
-
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="mb-4 md:mb-6 space-y-4">
-        <Button
-          variant="ghost"
-          onClick={handleBack}
-          className="px-0 hover:bg-transparent"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Event
-        </Button>
-
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">Auction Items</h1>

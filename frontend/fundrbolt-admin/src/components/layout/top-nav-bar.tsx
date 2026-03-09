@@ -329,6 +329,14 @@ function EventRow({
 function DesktopNav() {
   const { navItems, eventNavGroups } = useRoleBasedNav()
   const href = useLocation({ select: (l) => l.href })
+  const [openNav, setOpenNav] = useState('')
+  const [prevHref, setPrevHref] = useState(href)
+
+  // Reset dropdown when the route changes (derived state during render)
+  if (prevHref !== href) {
+    setPrevHref(href)
+    setOpenNav('')
+  }
 
   // Combine admin items as a flat group
   const adminGroup = {
@@ -356,10 +364,10 @@ function DesktopNav() {
   ]
 
   return (
-    <NavigationMenu viewport={false}>
+    <NavigationMenu viewport={false} value={openNav} onValueChange={(v) => { if (v) setOpenNav(v) }}>
       <NavigationMenuList>
         {allGroups.map((group) => (
-          <NavigationMenuItem key={group.title}>
+          <NavigationMenuItem key={group.title} value={group.title}>
             <NavigationMenuTrigger className='h-8 gap-1.5 px-3 text-sm'>
               {groupIconMap[group.title] &&
                 (() => {

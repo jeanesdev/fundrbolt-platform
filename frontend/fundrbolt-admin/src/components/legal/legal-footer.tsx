@@ -4,6 +4,8 @@
  * Displayed on all pages for easy access to legal information
  */
 
+import { Link } from '@tanstack/react-router'
+
 export function LegalFooter() {
   const currentYear = new Date().getFullYear()
 
@@ -17,19 +19,19 @@ export function LegalFooter() {
 
         {/* Legal Links */}
         <nav className='flex gap-4 text-sm'>
-          <a
-            href='/terms-of-service'
+          <Link
+            to='/terms-of-service'
             className='text-muted-foreground hover:text-primary transition-colors underline-offset-4 hover:underline'
           >
             Terms of Service
-          </a>
+          </Link>
           <span className='text-muted-foreground'>•</span>
-          <a
-            href='/privacy-policy'
+          <Link
+            to='/privacy-policy'
             className='text-muted-foreground hover:text-primary transition-colors underline-offset-4 hover:underline'
           >
             Privacy Policy
-          </a>
+          </Link>
         </nav>
       </div>
     </footer>

@@ -42,8 +42,9 @@ export interface AdminEngagementResponse {
 }
 
 export interface ItemPromotionUpdate {
-  promotion_badge?: string | null;
-  promotion_notice?: string | null;
+  badge_label?: string | null;
+  badge_color?: string | null;
+  notice_message?: string | null;
 }
 
 export interface BuyNowAvailabilityUpdate {

@@ -38,6 +38,7 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedNposIndexRouteImport } from './routes/_authenticated/npos/index'
 import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events/index'
 import { Route as EventsSlugRegisterRouteImport } from './routes/events.$slug.register'
+import { Route as AuthenticatedSettingsPaymentRouteImport } from './routes/_authenticated/settings/payment'
 import { Route as AuthenticatedSettingsPasswordRouteImport } from './routes/_authenticated/settings/password'
 import { Route as AuthenticatedSettingsConsentRouteImport } from './routes/_authenticated/settings/consent'
 import { Route as AuthenticatedNposCreateRouteImport } from './routes/_authenticated/npos/create'
@@ -202,6 +203,12 @@ const EventsSlugRegisterRoute = EventsSlugRegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => EventsSlugRoute,
 } as any)
+const AuthenticatedSettingsPaymentRoute =
+  AuthenticatedSettingsPaymentRouteImport.update({
+    id: '/payment',
+    path: '/payment',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 const AuthenticatedSettingsPasswordRoute =
   AuthenticatedSettingsPasswordRouteImport.update({
     id: '/password',
@@ -316,6 +323,7 @@ export interface FileRoutesByFullPath {
   '/npos/create': typeof AuthenticatedNposCreateRoute
   '/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/settings/password': typeof AuthenticatedSettingsPasswordRoute
+  '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
   '/events/': typeof AuthenticatedEventsIndexRoute
   '/npos/': typeof AuthenticatedNposIndexRoute
@@ -357,6 +365,7 @@ export interface FileRoutesByTo {
   '/npos/create': typeof AuthenticatedNposCreateRoute
   '/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/settings/password': typeof AuthenticatedSettingsPasswordRoute
+  '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/npos': typeof AuthenticatedNposIndexRoute
@@ -403,6 +412,7 @@ export interface FileRoutesById {
   '/_authenticated/npos/create': typeof AuthenticatedNposCreateRoute
   '/_authenticated/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/_authenticated/settings/password': typeof AuthenticatedSettingsPasswordRoute
+  '/_authenticated/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
   '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
   '/_authenticated/npos/': typeof AuthenticatedNposIndexRoute
@@ -449,6 +459,7 @@ export interface FileRouteTypes {
     | '/npos/create'
     | '/settings/consent'
     | '/settings/password'
+    | '/settings/payment'
     | '/events/$slug/register'
     | '/events/'
     | '/npos/'
@@ -490,6 +501,7 @@ export interface FileRouteTypes {
     | '/npos/create'
     | '/settings/consent'
     | '/settings/password'
+    | '/settings/payment'
     | '/events/$slug/register'
     | '/events'
     | '/npos'
@@ -535,6 +547,7 @@ export interface FileRouteTypes {
     | '/_authenticated/npos/create'
     | '/_authenticated/settings/consent'
     | '/_authenticated/settings/password'
+    | '/_authenticated/settings/payment'
     | '/events/$slug/register'
     | '/_authenticated/events/'
     | '/_authenticated/npos/'
@@ -779,6 +792,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsSlugRegisterRouteImport
       parentRoute: typeof EventsSlugRoute
     }
+    '/_authenticated/settings/payment': {
+      id: '/_authenticated/settings/payment'
+      path: '/payment'
+      fullPath: '/settings/payment'
+      preLoaderRoute: typeof AuthenticatedSettingsPaymentRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
     '/_authenticated/settings/password': {
       id: '/_authenticated/settings/password'
       path: '/password'
@@ -883,6 +903,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsConsentRoute: typeof AuthenticatedSettingsConsentRoute
   AuthenticatedSettingsPasswordRoute: typeof AuthenticatedSettingsPasswordRoute
+  AuthenticatedSettingsPaymentRoute: typeof AuthenticatedSettingsPaymentRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
 
@@ -890,6 +911,7 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
   {
     AuthenticatedSettingsConsentRoute: AuthenticatedSettingsConsentRoute,
     AuthenticatedSettingsPasswordRoute: AuthenticatedSettingsPasswordRoute,
+    AuthenticatedSettingsPaymentRoute: AuthenticatedSettingsPaymentRoute,
     AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   }
 
