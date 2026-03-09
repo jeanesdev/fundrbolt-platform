@@ -293,21 +293,20 @@ kill-all: kill-backend kill-frontend
 ngrok-start:
 	@echo "Starting ngrok tunnels..."
 	@pkill ngrok 2>/dev/null || true
+	@sleep 1
 	@nohup ngrok start --all --config ngrok.yml > /tmp/ngrok.log 2>&1 & echo $$! > /tmp/ngrok.pid
 	@sleep 3
 	@echo "Configuring frontend to use ngrok backend..."
-	@sed -i 's|VITE_API_URL=http://localhost:8000/api/v1|VITE_API_URL=https://fundrbolt-backend.ngrok.io/api/v1|g' frontend/fundrbolt-admin/.env
-	@echo "Restarting frontend..."
-	@pkill -f 'vite/bin/vite.js' || true
-	@sleep 1
-	@(bash -c "cd frontend/fundrbolt-admin && source ~/.nvm/nvm.sh && nvm use 22 && nohup pnpm dev > /tmp/frontend-ngrok.log 2>&1 &") || true
-	@sleep 3
+	@if [ -f frontend/fundrbolt-admin/.env ]; then \
+		sed -i 's|VITE_API_URL=http://localhost:8000/api/v1|VITE_API_URL=https://fundrbolt-backend.ngrok.io/api/v1|g' frontend/fundrbolt-admin/.env; \
+	fi
 	@echo ""
 	@echo "✅ Ngrok tunnels started!"
 	@echo ""
-	@curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[] | "  \(.public_url) -> \(.config.addr)"' || echo "  Frontend: https://fundrbolt-frontend.ngrok.io\n  Backend: https://fundrbolt-backend.ngrok.io"
+	@curl -s http://localhost:4040/api/tunnels | python3 -c "import sys,json; tunnels=json.load(sys.stdin)['tunnels']; [print(f'  {t[\"public_url\"]} -> {t[\"config\"][\"addr\"]}') for t in tunnels]" 2>/dev/null || echo "  Frontend: https://fundrbolt-frontend.ngrok.io\n  Backend: https://fundrbolt-backend.ngrok.io\n  Donor: https://fundrbolt-donor.ngrok.io"
 	@echo ""
 	@echo "📱 Open https://fundrbolt-frontend.ngrok.io on your phone"
+	@echo "   Note: Restart your frontend dev server(s) if the API URL changed."
 	@echo ""
 
 ngrok-stop:

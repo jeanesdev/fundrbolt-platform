@@ -22,11 +22,13 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
+import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
 import { useItemViewTracking } from '@/hooks/useItemViewTracking'
 import { cn } from '@/lib/utils'
 import auctionItemService from '@/services/auctionItemService'
 import { useAuthStore } from '@/stores/auth-store'
 import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
 import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
 import '@ncdai/react-wheel-picker/style.css'
 import { useQuery } from '@tanstack/react-query'
@@ -40,7 +42,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 export interface AuctionItemDetailModalProps {
   eventId: string
@@ -121,6 +123,7 @@ export function AuctionItemDetailModal({
   const [buyNowSlideValue, setBuyNowSlideValue] = useState<number[]>([0])
   const authUserId = useAuthStore((state) => state.user?.id)
   const spoofedUserId = useDebugSpoofStore((state) => state.spoofedUser?.id)
+  const isOnline = useOnlineStatus()
 
   // Check if event is in the future
   const isEventInFuture = eventDateTime
@@ -150,6 +153,30 @@ export function AuctionItemDetailModal({
   })
 
   const isOpen = !!itemId
+
+  // Swipe-down-to-close for the main dialog
+  const { onTouchStart: mainSwipeTouchStart, onTouchEnd: mainSwipeTouchEnd } =
+    useSwipeDownToClose(onClose)
+
+  // Swipe-down-to-close for the fullscreen image
+  const closeFullscreenImage = useCallback(() => {
+    setIsFullscreenImageOpen(false)
+    setFullscreenImageSrc(null)
+  }, [])
+  const {
+    onTouchStart: imgSwipeTouchStart,
+    onTouchEnd: imgSwipeTouchEnd,
+  } = useSwipeDownToClose(closeFullscreenImage)
+
+  // Double-tap to close fullscreen image
+  const lastTapRef = useRef(0)
+  const handleFullscreenImageTap = useCallback(() => {
+    const now = Date.now()
+    if (now - lastTapRef.current < 400) {
+      closeFullscreenImage()
+    }
+    lastTapRef.current = now
+  }, [closeFullscreenImage])
 
   const displayBid = isLiveAuctionItem
     ? (item?.current_bid_amount ?? null)
@@ -335,15 +362,17 @@ export function AuctionItemDetailModal({
     setSelectedImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0))
   }
 
-  const numericCurrentBid = item?.current_bid_amount ?? 0
-  const numericStartingBid = item?.starting_bid ?? 0
+  const numericCurrentBid = Number(item?.current_bid_amount) || 0
+  const numericStartingBid = Number(item?.starting_bid) || 0
+  const rawIncrement = Number(item?.bid_increment)
+  const bidStep = rawIncrement > 0 ? rawIncrement : 10
   const minimumNextBidBase = Math.max(
-    item?.min_next_bid_amount ?? 0,
+    Number(item?.min_next_bid_amount) || 0,
     numericCurrentBid,
     numericStartingBid
   )
-  const minimumNextBid = Math.ceil((minimumNextBidBase + 10) / 10) * 10
-  const defaultWheelBidAmount = minimumNextBid + 10
+  const minimumNextBid = Math.ceil((minimumNextBidBase + bidStep) / bidStep) * bidStep
+  const defaultWheelBidAmount = minimumNextBid
   const effectiveSelectedBidAmount =
     selectedBidAmount > 0 ? selectedBidAmount : defaultWheelBidAmount
 
@@ -353,23 +382,13 @@ export function AuctionItemDetailModal({
     }
 
     return Array.from({ length: optionCount }, (_, index) => {
-      const amount = minimumNextBid + index * 10
+      const amount = minimumNextBid + index * bidStep
       return {
         value: amount,
         label: formatCurrency(amount),
       }
     })
-  }, [item, isLiveAuctionItem, minimumNextBid, optionCount])
-
-  const openManualBidEntryDialog = () => {
-    if (!item || isLiveAuctionItem) {
-      return
-    }
-
-    setManualBidInputValue(String(effectiveSelectedBidAmount))
-    setManualBidInputError(null)
-    setIsManualBidDialogOpen(true)
-  }
+  }, [item, isLiveAuctionItem, minimumNextBid, optionCount, bidStep])
 
   const handleManualBidEntrySubmit = () => {
     if (!item || isLiveAuctionItem) {
@@ -391,13 +410,13 @@ export function AuctionItemDetailModal({
       return
     }
 
-    if (normalizedAmount % 10 !== 0) {
-      setManualBidInputError('Bid amount must be in $10 increments.')
+    if (normalizedAmount % bidStep !== 0) {
+      setManualBidInputError(`Bid amount must be in ${formatCurrency(bidStep)} increments.`)
       return
     }
 
     const requiredOptionCount =
-      Math.floor((normalizedAmount - minimumNextBid) / 10) + 1
+      Math.floor((normalizedAmount - minimumNextBid) / bidStep) + 1
     if (requiredOptionCount > optionCount) {
       setOptionCount(requiredOptionCount + 40)
     }
@@ -467,6 +486,7 @@ export function AuctionItemDetailModal({
   }
 
   const slideActionsDisabled =
+    !isOnline ||
     isSubmittingBid ||
     eventStatus !== 'active' ||
     isEventInFuture ||
@@ -487,6 +507,10 @@ export function AuctionItemDetailModal({
 
   const getSliderFillWidth = (percent: number) => getSliderCenterX(percent)
 
+  const stopSwipeClosePropagation = (event: React.TouchEvent<HTMLElement>) => {
+    event.stopPropagation()
+  }
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -498,6 +522,8 @@ export function AuctionItemDetailModal({
           style={{
             backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
           }}
+          onTouchStart={mainSwipeTouchStart}
+          onTouchEnd={mainSwipeTouchEnd}
         >
           {!isOpen ? null : isLoading ? (
             <div className='space-y-4 p-6'>
@@ -750,73 +776,62 @@ export function AuctionItemDetailModal({
                     </div>
                   )}
 
-                  {/* Bidding Controls */}
-                  {!isLiveAuctionItem ? (
+                  {/* Bidding Controls — only show when auction is open */}
+                  {!isLiveAuctionItem && isBiddingOpen && eventStatus === 'active' && !isEventInFuture ? (
                     <div className='space-y-3'>
                       <div
-                        className='relative h-[60px] rounded-xl border px-2 py-0'
+                        className='relative h-[140px] overflow-hidden rounded-2xl border px-3 py-2'
                         style={{
                           borderColor:
                             'rgb(var(--event-primary, 59, 130, 246) / 0.45)',
                           backgroundColor:
                             'rgb(var(--event-background, 255, 255, 255))',
                         }}
-                        role='button'
-                        tabIndex={0}
-                        onClick={openManualBidEntryDialog}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault()
-                            openManualBidEntryDialog()
-                          }
-                        }}
-                        aria-label='Bid amount wheel. Tap to type bid amount.'
+                        onTouchStart={stopSwipeClosePropagation}
+                        onTouchMove={stopSwipeClosePropagation}
+                        onTouchEnd={stopSwipeClosePropagation}
                       >
-                        <WheelPickerWrapper className='flex h-[112px] items-center justify-center'>
+                        <WheelPickerWrapper className='flex h-full items-center justify-center'>
                           <WheelPicker
                             value={effectiveSelectedBidAmount}
                             onValueChange={(value) => {
                               const nextValue = Number(value)
                               setSelectedBidAmount(nextValue)
                               const selectedIndex = Math.floor(
-                                (nextValue - minimumNextBid) / 10
+                                (nextValue - minimumNextBid) / bidStep
                               )
                               if (optionCount - selectedIndex <= 5) {
                                 setOptionCount((prev) => prev + 40)
                               }
                             }}
                             options={wheelOptions}
-                            visibleCount={7}
-                            dragSensitivity={1.1}
+                            visibleCount={13}
+                            dragSensitivity={1.0}
                             scrollSensitivity={1.0}
-                            optionItemHeight={36}
+                            optionItemHeight={28}
                             classNames={{
-                              optionItem:
-                                'text-sm text-center text-[var(--event-text-muted-on-background,#6B7280)] opacity-65',
-                              highlightWrapper:
-                                'relative z-10 bg-[rgb(var(--event-background,255,255,255))] border-y border-[rgb(var(--event-primary,59,130,246)/0.45)]',
-                              highlightItem:
-                                'text-lg font-semibold text-[var(--event-text-on-background,#000000)]',
+                              optionItem: 'text-sm font-medium text-foreground/35',
+                              highlightWrapper: 'bg-muted/85 border-y border-border/70',
+                              highlightItem: 'text-base font-semibold text-foreground',
                             }}
                           />
                         </WheelPickerWrapper>
-                        <div
-                          className='pointer-events-none absolute top-0 right-0 left-0 h-2 rounded-t-xl'
-                          style={{
-                            background:
-                              'linear-gradient(to bottom, rgb(var(--event-background, 255, 255, 255)) 0%, rgb(var(--event-background, 255, 255, 255) / 0) 100%)',
-                          }}
-                        />
-                        <div
-                          className='pointer-events-none absolute right-0 bottom-0 left-0 h-2 rounded-b-xl'
-                          style={{
-                            background:
-                              'linear-gradient(to top, rgb(var(--event-background, 255, 255, 255)) 0%, rgb(var(--event-background, 255, 255, 255) / 0) 100%)',
-                          }}
-                        />
+                      </div>
+
+                      <div
+                        data-testid='wheel-current-control'
+                        className='text-center text-base font-semibold'
+                        style={{ color: 'var(--event-text-on-background, #000000)' }}
+                      >
+                        Selected bid: {formatCurrency(effectiveSelectedBidAmount)}
                       </div>
 
                       <div className='space-y-2'>
+                        {!isOnline && (
+                          <p className='text-center text-xs font-medium text-amber-600'>
+                            You must be online to place bids
+                          </p>
+                        )}
                         <div
                           className='relative h-14 overflow-hidden rounded-[28px]'
                           style={{
@@ -831,9 +846,10 @@ export function AuctionItemDetailModal({
                             className='pointer-events-none absolute top-0 bottom-0 left-0 z-[1] rounded-l-[28px] bg-[rgb(34_197_94)]'
                             style={{ width: getSliderFillWidth(placeBidPercent) }}
                           />
-                          <div className='pointer-events-none absolute inset-0 z-[2] flex items-center justify-center text-base font-semibold text-[var(--event-text-on-background,#000000)]'>
-                            Slide to Place Bid ·
-                            <span className='ml-2'>
+                          <div className='pointer-events-none absolute inset-y-0 left-14 right-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)] sm:text-base'>
+                            <span className='sm:hidden'>Slide to Bid ·</span>
+                            <span className='hidden sm:inline'>Slide to Place Bid ·</span>
+                            <span className='ml-1 sm:ml-2'>
                               {formatCurrency(effectiveSelectedBidAmount)}
                             </span>
                           </div>
@@ -872,9 +888,10 @@ export function AuctionItemDetailModal({
                             className='pointer-events-none absolute top-0 bottom-0 left-0 z-[1] rounded-l-[28px] bg-[rgb(34_197_94)]'
                             style={{ width: getSliderFillWidth(maxBidPercent) }}
                           />
-                          <div className='pointer-events-none absolute inset-0 z-[2] flex items-center justify-center text-base font-semibold text-[var(--event-text-on-background,#000000)]'>
-                            Slide to Set Max Bid ·
-                            <span className='ml-2'>
+                          <div className='pointer-events-none absolute inset-y-0 left-14 right-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)] sm:text-base'>
+                            <span className='sm:hidden'>Slide to Max ·</span>
+                            <span className='hidden sm:inline'>Slide to Set Max Bid ·</span>
+                            <span className='ml-1 sm:ml-2'>
                               {formatCurrency(effectiveSelectedBidAmount)}
                             </span>
                           </div>
@@ -914,9 +931,10 @@ export function AuctionItemDetailModal({
                               className='pointer-events-none absolute top-0 bottom-0 left-0 z-[1] rounded-l-[28px] bg-[rgb(34_197_94)]'
                               style={{ width: getSliderFillWidth(buyNowPercent) }}
                             />
-                            <div className='pointer-events-none absolute inset-0 z-[2] flex items-center justify-center text-base font-semibold text-[var(--event-text-on-background,#000000)]'>
-                              Slide to Buy Now ·
-                              <span className='ml-2'>
+                            <div className='pointer-events-none absolute inset-y-0 left-14 right-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)] sm:text-base'>
+                              <span className='sm:hidden'>Slide to Buy ·</span>
+                              <span className='hidden sm:inline'>Slide to Buy Now ·</span>
+                              <span className='ml-1 sm:ml-2'>
                                 {formatCurrency(item.buy_now_price)}
                               </span>
                             </div>
@@ -942,30 +960,19 @@ export function AuctionItemDetailModal({
                           </div>
                         )}
                       </div>
-
-                      {(eventStatus !== 'active' ||
-                        isEventInFuture ||
-                        !isBiddingOpen) && (
-                          <p
-                            className='text-center text-sm font-medium'
-                            style={{
-                              color: 'var(--event-card-text-muted, #6B7280)',
-                            }}
-                          >
-                            {isEventInFuture
-                              ? 'Event Not Started'
-                              : eventStatus === 'closed' || !isBiddingOpen
-                                ? 'Bidding Closed'
-                                : 'Event Not Active'}
-                          </p>
-                        )}
                     </div>
                   ) : (
                     <p
                       className='text-center text-sm font-medium'
                       style={{ color: 'var(--event-card-text-muted, #6B7280)' }}
                     >
-                      Live auction coming up!
+                      {isLiveAuctionItem
+                        ? 'Live auction coming up!'
+                        : isEventInFuture
+                          ? 'Event Not Started'
+                          : eventStatus === 'closed' || !isBiddingOpen
+                            ? 'Bidding Closed'
+                            : 'Event Not Active'}
                     </p>
                   )}
                 </div>
@@ -1086,13 +1093,26 @@ export function AuctionItemDetailModal({
       >
         <DialogContent
           className='h-[100vh] max-h-[100vh] w-[100vw] max-w-[100vw] border-0 bg-black/95 p-0'
+          onTouchStart={imgSwipeTouchStart}
+          onTouchEnd={imgSwipeTouchEnd}
         >
           {fullscreenImageSrc && (
-            <div className='flex h-full w-full items-center justify-center p-4'>
+            <div
+              className='flex h-full w-full items-center justify-center p-4'
+              onClick={handleFullscreenImageTap}
+              onDoubleClick={closeFullscreenImage}
+              role='button'
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') closeFullscreenImage()
+              }}
+              aria-label='Double-tap or swipe down to close'
+            >
               <img
                 src={fullscreenImageSrc}
                 alt={fullscreenImageAlt}
-                className='max-h-full max-w-full object-contain'
+                className='max-h-full max-w-full object-contain select-none'
+                draggable={false}
               />
             </div>
           )}
@@ -1125,7 +1145,8 @@ export function AuctionItemDetailModal({
               className='text-sm'
               style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
             >
-              Minimum {formatCurrency(minimumNextBid)} · increments of $10
+              Minimum {formatCurrency(minimumNextBid)} · increments of{' '}
+              {formatCurrency(bidStep)}
             </DialogDescription>
           </DialogHeader>
 

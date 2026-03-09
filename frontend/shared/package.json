@@ -11,7 +11,13 @@
     "./components": "./src/components/index.ts",
     "./hooks": "./src/hooks/index.ts",
     "./utils": "./src/utils/index.ts",
-    "./assets": "./src/assets/index.ts"
+    "./assets": "./src/assets/index.ts",
+    "./pwa/constants": "./src/pwa/constants.ts",
+    "./pwa/use-install-prompt": "./src/pwa/use-install-prompt.ts",
+    "./pwa/use-service-worker": "./src/pwa/use-service-worker.ts",
+    "./pwa/use-online-status": "./src/pwa/use-online-status.ts",
+    "./pwa/install-prompt-banner": "./src/pwa/install-prompt-banner.tsx",
+    "./pwa/update-notification": "./src/pwa/update-notification.tsx"
   },
   "scripts": {
     "type-check": "tsc --noEmit",
@@ -22,8 +28,12 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "typescript": "~5.9.3"
+    "jsdom": "^28.1.0",
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.18"
   }
 }

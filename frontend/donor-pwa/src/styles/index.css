@@ -2,6 +2,9 @@
 @import 'tw-animate-css';
 @import './theme.css';
 
+/* Ensure Tailwind scans the shared package for class names */
+@source "../../../shared/src";
+
 @custom-variant dark (&:is(.dark *));
 
 @layer base {
@@ -308,6 +311,24 @@
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+@keyframes auction-flash {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(1.02);
+  }
+}
+
+.animate-auction-flash {
+  animation: auction-flash 1s ease-in-out infinite;
 }
 
 /* Stagger delays for card grids */

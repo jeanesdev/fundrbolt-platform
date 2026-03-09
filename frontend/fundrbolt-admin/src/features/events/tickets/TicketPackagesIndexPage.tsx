@@ -238,7 +238,7 @@ export function TicketPackagesIndexPage({
         </p>
       </div>
 
-      <div className='flex items-center justify-between'>
+      <div className='flex flex-wrap items-center justify-between gap-2'>
         <div className='flex gap-2'>
           <Button
             variant='outline'
@@ -252,7 +252,7 @@ export function TicketPackagesIndexPage({
             {showDisabled ? 'Hide Disabled' : 'Show Disabled'}
           </Button>
         </div>
-        <div className='flex gap-2'>
+        <div className='flex flex-wrap gap-2'>
           <SalesExportButton eventId={eventId} eventName='Event' />
           <Button variant='outline' onClick={() => setImportDialogOpen(true)}>
             <Upload className='mr-2 h-4 w-4' />

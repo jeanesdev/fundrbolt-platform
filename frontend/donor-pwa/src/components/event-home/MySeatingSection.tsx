@@ -8,9 +8,10 @@
  */
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
+import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { Crown, Hash, Loader2, Map, MapPin, Users, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 interface MySeatingInfo {
   guestId: string
@@ -152,6 +153,23 @@ export function MySeatingSection({ seatingInfo, venueMapLink }: MySeatingProps) 
   const [mapImageFailed, setMapImageFailed] = useState(false)
   const [mapImageLoaded, setMapImageLoaded] = useState(false)
   const mapWarmCache = useMemo(() => getMapImageWarmCache(), [])
+
+  // Double-tap to close fullscreen map
+  const closeFullscreenMap = useCallback(() => setIsMapFullscreenOpen(false), [])
+  const lastMapTapRef = useRef(0)
+  const handleMapDoubleTap = useCallback(() => {
+    const now = Date.now()
+    if (now - lastMapTapRef.current < 400) {
+      closeFullscreenMap()
+    }
+    lastMapTapRef.current = now
+  }, [closeFullscreenMap])
+
+  // Swipe-down to close fullscreen map
+  const {
+    onTouchStart: mapSwipeTouchStart,
+    onTouchEnd: mapSwipeTouchEnd,
+  } = useSwipeDownToClose(closeFullscreenMap)
 
   const isPreloadedMapImage = useMemo(() => {
     if (!venueMapLink || isGoogleMapsUrl(venueMapLink)) {
@@ -592,7 +610,11 @@ export function MySeatingSection({ seatingInfo, venueMapLink }: MySeatingProps) 
         <Dialog open={isMapFullscreenOpen} onOpenChange={setIsMapFullscreenOpen}>
           <DialogPrimitive.Portal>
             <DialogPrimitive.Overlay className='fixed inset-0 z-[10000] bg-black/95' />
-            <DialogPrimitive.Content className='fixed inset-0 z-[10001] m-0 h-[100dvh] w-screen border-0 bg-transparent p-0 outline-none'>
+            <DialogPrimitive.Content
+              className='fixed inset-0 z-[10001] m-0 h-[100dvh] w-screen border-0 bg-transparent p-0 outline-none'
+              onTouchStart={mapSwipeTouchStart}
+              onTouchEnd={mapSwipeTouchEnd}
+            >
               <Button
                 type='button'
                 variant='ghost'
@@ -604,7 +626,17 @@ export function MySeatingSection({ seatingInfo, venueMapLink }: MySeatingProps) 
                 <X className='h-5 w-5' />
               </Button>
 
-              <div className='absolute inset-0 flex items-center justify-center overflow-hidden p-2 pt-14 sm:p-4 sm:pt-16'>
+              <div
+                className='absolute inset-0 flex items-center justify-center overflow-hidden p-2 pt-14 sm:p-4 sm:pt-16'
+                onClick={handleMapDoubleTap}
+                onDoubleClick={closeFullscreenMap}
+                role='button'
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') closeFullscreenMap()
+                }}
+                aria-label='Double-tap or swipe down to close'
+              >
                 {mapContent}
               </div>
             </DialogPrimitive.Content>

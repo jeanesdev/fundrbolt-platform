@@ -9,6 +9,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/tests/setup.ts',
     css: true,
+    // Exclude Playwright smoke tests — they must run via `pnpm test:checkin:smoke`
+    exclude: ['node_modules/**', 'tests/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

@@ -3,53 +3,98 @@
  *
  * Displayed to users with super_admin role.
  * Provides platform-wide overview and management capabilities.
- *
- * Features (placeholder):
- * - Platform-wide statistics
- * - All NPOs overview
- * - System health metrics
- * - Recent activity across all NPOs
  */
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { listUsers } from '@/features/users/api/users-api'
 import { useAuth } from '@/hooks/use-auth'
+import { eventApi } from '@/services/event-service'
+import { npoApi } from '@/services/npo-service'
+import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 
 export function SuperAdminDashboard() {
   const { user } = useAuth()
 
+  const orgsQuery = useQuery({
+    queryKey: ['npos', 'total'],
+    queryFn: () => npoApi.listNPOs({ page: 1, page_size: 1 }),
+  })
+
+  const eventsQuery = useQuery({
+    queryKey: ['events', 'total', null],
+    queryFn: () => eventApi.listEvents({ page: 1, page_size: 1 }),
+  })
+
+  const usersQuery = useQuery({
+    queryKey: ['users', 'total'],
+    queryFn: () => listUsers({ page: 1, page_size: 1 }),
+  })
+
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       <div>
-        <h1 className="text-3xl font-bold">SuperAdmin Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className='text-3xl font-bold'>SuperAdmin Dashboard</h1>
+        <p className='text-muted-foreground mt-2'>
           Welcome back, {user?.first_name}! You have full platform access.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
         <Card>
           <CardHeader>
-            <CardTitle>Total NPOs</CardTitle>
+            <CardTitle>Organizations</CardTitle>
             <CardDescription>Active nonprofit organizations</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground mt-2">
+            {orgsQuery.isLoading ? (
+              <Skeleton className='h-10 w-16' />
+            ) : (
+              <div className='text-4xl font-bold'>
+                {orgsQuery.data?.total ?? '--'}
+              </div>
+            )}
+            <p className='text-muted-foreground mt-2 text-xs'>
               Platform-wide statistics
             </p>
+            <Link
+              to='/npos'
+              className='text-primary mt-3 block text-sm font-medium hover:underline'
+            >
+              Go to Organizations →
+            </Link>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Total Events</CardTitle>
-            <CardDescription>Across all NPOs</CardDescription>
+            <CardDescription>Across all organizations</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground mt-2">
+            {eventsQuery.isLoading ? (
+              <Skeleton className='h-10 w-16' />
+            ) : (
+              <div className='text-4xl font-bold'>
+                {eventsQuery.data?.total ?? '--'}
+              </div>
+            )}
+            <p className='text-muted-foreground mt-2 text-xs'>
               All fundraising events
             </p>
+            <Link
+              to='/events'
+              className='text-primary mt-3 block text-sm font-medium hover:underline'
+            >
+              Go to Events →
+            </Link>
           </CardContent>
         </Card>
 
@@ -59,28 +104,25 @@ export function SuperAdminDashboard() {
             <CardDescription>Platform users</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground mt-2">
+            {usersQuery.isLoading ? (
+              <Skeleton className='h-10 w-16' />
+            ) : (
+              <div className='text-4xl font-bold'>
+                {usersQuery.data?.total ?? '--'}
+              </div>
+            )}
+            <p className='text-muted-foreground mt-2 text-xs'>
               Administrators and donors
             </p>
+            <Link
+              to='/users'
+              className='text-primary mt-3 block text-sm font-medium hover:underline'
+            >
+              Go to Users →
+            </Link>
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common administrative tasks</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-2 md:grid-cols-2">
-            <p className="text-sm text-muted-foreground">• Manage all NPOs</p>
-            <p className="text-sm text-muted-foreground">• View all events</p>
-            <p className="text-sm text-muted-foreground">• Manage all users</p>
-            <p className="text-sm text-muted-foreground">• System configuration</p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

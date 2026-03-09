@@ -20,7 +20,10 @@ from app.schemas.event import (
     EventSummaryResponse,
     EventUpdateRequest,
 )
+from app.schemas.sponsor import SponsorResponse
 from app.services.event_service import EventService
+from app.services.sponsor_logo_service import SponsorLogoService
+from app.services.sponsor_service import SponsorService
 
 logger = logging.getLogger(__name__)
 
@@ -29,27 +32,39 @@ router = APIRouter(prefix="/events", tags=["events"])
 
 def _add_sas_urls_to_media(response_dict: dict[str, Any]) -> None:
     """Replace media file URLs with read SAS URLs in-place."""
-    if not response_dict.get("media"):
-        return
-
     from app.services.media_service import MediaService
 
-    for media_item in response_dict["media"]:
-        file_url = media_item.get("file_url", "")
-        if not file_url:
-            continue
+    # Refresh SAS URLs for event media
+    if response_dict.get("media"):
+        for media_item in response_dict["media"]:
+            file_url = media_item.get("file_url", "")
+            if not file_url:
+                continue
 
-        parsed_url = urlparse(file_url)
+            parsed_url = urlparse(file_url)
+            path = parsed_url.path.lstrip("/")
+            if not path:
+                continue
+
+            path_parts = path.split("/", 1)
+            if len(path_parts) < 2:
+                continue
+
+            blob_name = unquote(path_parts[1])
+            media_item["file_url"] = MediaService.generate_read_sas_url(blob_name)
+
+    # Refresh SAS URL for seating layout image
+    layout_url = response_dict.get("seating_layout_image_url")
+    if layout_url and "blob.core.windows.net" in layout_url:
+        parsed_url = urlparse(layout_url)
         path = parsed_url.path.lstrip("/")
-        if not path:
-            continue
-
-        path_parts = path.split("/", 1)
-        if len(path_parts) < 2:
-            continue
-
-        blob_name = unquote(path_parts[1])
-        media_item["file_url"] = MediaService.generate_read_sas_url(blob_name)
+        if path:
+            path_parts = path.split("/", 1)
+            if len(path_parts) >= 2:
+                blob_name = unquote(path_parts[1])
+                response_dict["seating_layout_image_url"] = MediaService.generate_read_sas_url(
+                    blob_name
+                )
 
 
 @router.post("", response_model=EventDetailResponse, status_code=status.HTTP_201_CREATED)
@@ -392,3 +407,83 @@ async def get_public_event(
     response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
     _add_sas_urls_to_media(response_dict)
     return EventDetailResponse(**response_dict)
+
+
+@router.get(
+    "/public/{slug}/sponsors",
+    response_model=list[SponsorResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def list_public_event_sponsors(
+    slug: str,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> list[SponsorResponse]:
+    """
+    Public endpoint: List all sponsors for an active event by slug.
+
+    No authentication required.
+    Only returns sponsors for events with status=ACTIVE.
+    """
+    event = await EventService.get_event_by_slug(db, slug)
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with slug '{slug}' not found or not active",
+        )
+
+    sponsors = await SponsorService.get_sponsors_for_event(db, event.id)
+
+    sponsor_responses: list[SponsorResponse] = []
+    for sponsor in sponsors:
+        logo_url = sponsor.logo_url
+        thumbnail_url = sponsor.thumbnail_url
+
+        if sponsor.logo_blob_name and sponsor.logo_url:
+            try:
+                logo_url = SponsorLogoService.generate_blob_sas_url(
+                    sponsor.logo_blob_name, expiry_hours=24
+                )
+            except Exception as e:
+                logger.warning(f"Failed to generate logo SAS URL for sponsor {sponsor.id}: {e}")
+
+        if sponsor.thumbnail_blob_name and sponsor.thumbnail_url:
+            try:
+                thumbnail_url = SponsorLogoService.generate_blob_sas_url(
+                    sponsor.thumbnail_blob_name, expiry_hours=24
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to generate thumbnail SAS URL for sponsor {sponsor.id}: {e}"
+                )
+
+        sponsor_responses.append(
+            SponsorResponse(
+                id=sponsor.id,
+                event_id=sponsor.event_id,
+                name=sponsor.name,
+                logo_url=logo_url,
+                logo_blob_name=sponsor.logo_blob_name,
+                thumbnail_url=thumbnail_url,
+                thumbnail_blob_name=sponsor.thumbnail_blob_name,
+                website_url=sponsor.website_url,
+                logo_size=sponsor.logo_size,
+                sponsor_level=sponsor.sponsor_level,
+                contact_name=sponsor.contact_name,
+                contact_email=sponsor.contact_email,
+                contact_phone=sponsor.contact_phone,
+                address_line1=sponsor.address_line1,
+                address_line2=sponsor.address_line2,
+                city=sponsor.city,
+                state=sponsor.state,
+                postal_code=sponsor.postal_code,
+                country=sponsor.country,
+                donation_amount=sponsor.donation_amount,
+                notes=sponsor.notes,
+                display_order=sponsor.display_order,
+                created_at=sponsor.created_at.isoformat(),
+                updated_at=sponsor.updated_at.isoformat(),
+                created_by=sponsor.created_by,
+            )
+        )
+
+    return sponsor_responses

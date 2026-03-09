@@ -12,19 +12,26 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel'
-import { getEventSponsors, type Sponsor } from '@/lib/api/sponsors'
+import { getEventSponsors, getPublicEventSponsors, type Sponsor } from '@/lib/api/sponsors'
 import { useQuery } from '@tanstack/react-query'
 import Autoplay from 'embla-carousel-autoplay'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { useRef } from 'react'
 
 interface SponsorsCarouselProps {
-  eventId: string
+  eventId?: string
+  /** When provided, fetches sponsors via the public (no-auth) endpoint using event slug */
+  publicSlug?: string
   className?: string
 }
 
-export function SponsorsCarousel({ eventId, className }: SponsorsCarouselProps) {
+export function SponsorsCarousel({ eventId, publicSlug, className }: SponsorsCarouselProps) {
   const plugin = useRef(Autoplay({ delay: 3000, stopOnInteraction: true }))
+
+  const queryKey = publicSlug ? ['sponsors', 'public', publicSlug] : ['sponsors', eventId]
+  const queryFn = publicSlug
+    ? () => getPublicEventSponsors(publicSlug)
+    : () => getEventSponsors(eventId!)
 
   // Fetch sponsors
   const {
@@ -32,9 +39,10 @@ export function SponsorsCarousel({ eventId, className }: SponsorsCarouselProps) 
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['sponsors', eventId],
-    queryFn: () => getEventSponsors(eventId),
+    queryKey,
+    queryFn,
     staleTime: 10 * 60 * 1000, // 10 minutes
+    enabled: !!(eventId || publicSlug),
   })
 
   // Loading state

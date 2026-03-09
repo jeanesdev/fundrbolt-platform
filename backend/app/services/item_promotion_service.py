@@ -30,6 +30,7 @@ class ItemPromotionService:
         event_id: UUID,
         updated_by_user_id: UUID,
         badge_label: str | None,
+        badge_color: str | None,
         notice_message: str | None,
     ) -> ItemPromotion:
         """Update or create item promotion.
@@ -39,6 +40,7 @@ class ItemPromotionService:
             event_id: Event ID
             updated_by_user_id: User making the update
             badge_label: Promotional badge label
+            badge_color: CSS color or Tailwind color class for the badge
             notice_message: Promotional notice message
 
         Returns:
@@ -63,6 +65,7 @@ class ItemPromotionService:
         if promotion:
             # Update existing
             promotion.badge_label = badge_label
+            promotion.badge_color = badge_color
             promotion.notice_message = notice_message
             promotion.updated_by_user_id = updated_by_user_id
         else:
@@ -73,12 +76,14 @@ class ItemPromotionService:
                 event_id=event_id,
                 updated_by_user_id=updated_by_user_id,
                 badge_label=badge_label,
+                badge_color=badge_color,
                 notice_message=notice_message,
             )
             self.db.add(promotion)
 
         # Also update the denormalized fields on the item
         item.promotion_badge = badge_label
+        item.promotion_badge_color = badge_color
         item.promotion_notice = notice_message
 
         await self.db.commit()

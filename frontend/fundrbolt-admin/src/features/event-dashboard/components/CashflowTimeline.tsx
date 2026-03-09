@@ -42,7 +42,7 @@ export function CashflowTimeline({ points }: CashflowTimelineProps) {
               content={({ label, payload }) => (
                 <ChartTooltipContent
                   label={String(label ?? '')}
-                  payload={payload as Array<{ name?: string; value?: number }>}
+                  payload={payload as unknown as Array<{ name?: string; value?: number }>}
                   seriesLabels={{
                     actual: 'Actual',
                     projected: 'Projected',

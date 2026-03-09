@@ -92,7 +92,7 @@ export function SocialLoginButtons({ redirectTo: _redirectTo }: { redirectTo?: s
         By using social sign-in, you agree to our processing of your identity
         information as described in our{' '}
         <a
-          href='/privacy'
+          href='/privacy-policy'
           className='hover:text-primary underline underline-offset-4'
         >
           Privacy Policy

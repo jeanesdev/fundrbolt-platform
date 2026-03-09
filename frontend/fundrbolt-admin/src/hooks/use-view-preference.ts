@@ -42,7 +42,8 @@ export function useViewPreference(
 
   const defaultMode: ViewMode =
     tier === 'phone' ||
-      tier === 'tablet-portrait'
+      tier === 'tablet-portrait' ||
+      tier === 'tablet-landscape'
       ? 'card'
       : 'table'
 

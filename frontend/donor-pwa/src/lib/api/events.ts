@@ -68,9 +68,33 @@ export interface EventMedia {
   file_size: number
 }
 
+export interface EventLink {
+  id: string
+  event_id: string
+  link_type: 'video' | 'website' | 'social_media'
+  url: string
+  label: string | null
+  platform: string | null
+  display_order: number
+}
+
 export interface EventDetailResponse extends EventResponse {
+  npo_name: string | null
+  timezone: string
+  venue_address: string | null
+  venue_city: string | null
+  venue_state: string | null
+  venue_zip: string | null
+  attire: string | null
+  primary_contact_name: string | null
+  primary_contact_email: string | null
+  primary_contact_phone: string | null
+  background_color: string | null
+  accent_color: string | null
+  hero_transition_style: string
   food_options: FoodOption[]
   media: EventMedia[]
+  links: EventLink[]
 }
 
 // ================================

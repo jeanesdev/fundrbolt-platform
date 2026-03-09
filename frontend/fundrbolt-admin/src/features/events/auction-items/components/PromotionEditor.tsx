@@ -1,6 +1,6 @@
 /**
  * PromotionEditor Component
- * Allows editing promotion badge and notice for auction items
+ * Allows editing promotion badge (with emoji + color) and notice for auction items
  */
 
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 import { auctionEngagementService } from '@/services/auctionEngagementService';
+import { BADGE_TEXT_ON_COLOR, PROMOTION_BADGE_COLORS } from '@/themes/colors';
 import type { ItemPromotionUpdate } from '@/types/auction-engagement';
 import type { AuctionItem } from '@/types/auction-item';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -24,6 +26,10 @@ interface PromotionEditorProps {
   onSuccess?: () => void;
 }
 
+const PRESET_EMOJIS = ['🔥', '⭐', '💎', '🏆', '✨', '🎁', '💰', '🎉', '🌟', '❤️', '🎯', '🚀'];
+
+const PRESET_COLORS = PROMOTION_BADGE_COLORS;
+
 export function PromotionEditor({
   eventId,
   item,
@@ -32,13 +38,14 @@ export function PromotionEditor({
 }: PromotionEditorProps) {
   const queryClient = useQueryClient();
 
-  // Check if item has promotion fields (they might not be in the base type yet)
   const itemWithPromotion = item as AuctionItem & {
     promotion_badge?: string | null;
+    promotion_badge_color?: string | null;
     promotion_notice?: string | null;
   };
 
   const [badge, setBadge] = useState<string>(itemWithPromotion.promotion_badge || '');
+  const [badgeColor, setBadgeColor] = useState<string>(itemWithPromotion.promotion_badge_color || '');
   const [notice, setNotice] = useState<string>(itemWithPromotion.promotion_notice || '');
 
   const updatePromotionMutation = useMutation({
@@ -46,7 +53,6 @@ export function PromotionEditor({
       auctionEngagementService.updatePromotion(eventId, item.id, data),
     onSuccess: () => {
       toast.success('Promotion updated successfully');
-      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['auction-item', eventId, item.id] });
       queryClient.invalidateQueries({ queryKey: ['auction-items', eventId] });
       onSuccess?.();
@@ -60,15 +66,26 @@ export function PromotionEditor({
 
   const handleSave = () => {
     const data: ItemPromotionUpdate = {
-      promotion_badge: badge.trim() || null,
-      promotion_notice: notice.trim() || null,
+      badge_label: badge.trim() || null,
+      badge_color: badgeColor || null,
+      notice_message: notice.trim() || null,
     };
     updatePromotionMutation.mutate(data);
   };
 
   const handleClear = () => {
     setBadge('');
+    setBadgeColor('');
     setNotice('');
+  };
+
+  const handleEmojiClick = (emoji: string) => {
+    const hasEmoji = /^\p{Emoji}/u.test(badge.trim());
+    if (hasEmoji) {
+      setBadge(emoji + badge.replace(/^[\p{Emoji}\s]+/u, ''));
+    } else {
+      setBadge(emoji + (badge ? ' ' + badge : ''));
+    }
   };
 
   const badgeLength = badge.length;
@@ -77,10 +94,14 @@ export function PromotionEditor({
   const isNoticeTooLong = noticeLength > 1000;
   const isValid = !isBadgeTooLong && !isNoticeTooLong;
 
+  const badgeStyle = badgeColor
+    ? { backgroundColor: badgeColor, color: BADGE_TEXT_ON_COLOR, borderColor: badgeColor }
+    : undefined;
+
   return (
     <div className="space-y-4">
-      {/* Form */}
       <div className="space-y-4">
+        {/* Badge text */}
         <div className="space-y-2">
           <Label htmlFor="badge">
             Promotion Badge <span className="text-muted-foreground">(optional)</span>
@@ -94,11 +115,7 @@ export function PromotionEditor({
             className={isBadgeTooLong ? 'border-destructive' : ''}
           />
           <div className="flex justify-between items-center text-xs">
-            <span
-              className={
-                isBadgeTooLong ? 'text-destructive' : 'text-muted-foreground'
-              }
-            >
+            <span className={isBadgeTooLong ? 'text-destructive' : 'text-muted-foreground'}>
               {badgeLength}/50 characters
             </span>
             {isBadgeTooLong && (
@@ -110,6 +127,53 @@ export function PromotionEditor({
           </div>
         </div>
 
+        {/* Emoji picker */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Quick Emoji</Label>
+          <div className="flex flex-wrap gap-1">
+            {PRESET_EMOJIS.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                onClick={() => handleEmojiClick(emoji)}
+                className="text-xl hover:scale-125 transition-transform cursor-pointer rounded px-1 hover:bg-accent"
+                title={`Use ${emoji}`}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Color picker */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Badge Color</Label>
+          <div className="flex flex-wrap gap-2 items-center">
+            {PRESET_COLORS.map((color) => (
+              <button
+                key={color.label}
+                type="button"
+                title={color.label}
+                onClick={() => setBadgeColor(color.value)}
+                className={cn(
+                  'h-7 w-7 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center',
+                  badgeColor === color.value ? 'border-foreground scale-110 ring-2 ring-offset-1 ring-foreground' : 'border-border',
+                  !color.value && 'bg-muted'
+                )}
+                style={color.value ? { backgroundColor: color.value } : undefined}
+              >
+                {!color.value && <span className="text-muted-foreground text-xs">∅</span>}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {badgeColor
+              ? `Color: ${PRESET_COLORS.find(c => c.value === badgeColor)?.label ?? badgeColor}`
+              : 'Default color'}
+          </p>
+        </div>
+
+        {/* Notice */}
         <div className="space-y-2">
           <Label htmlFor="notice">
             Promotion Notice <span className="text-muted-foreground">(optional)</span>
@@ -124,11 +188,7 @@ export function PromotionEditor({
             className={isNoticeTooLong ? 'border-destructive' : ''}
           />
           <div className="flex justify-between items-center text-xs">
-            <span
-              className={
-                isNoticeTooLong ? 'text-destructive' : 'text-muted-foreground'
-              }
-            >
+            <span className={isNoticeTooLong ? 'text-destructive' : 'text-muted-foreground'}>
               {noticeLength}/1000 characters
             </span>
             {isNoticeTooLong && (
@@ -153,7 +213,7 @@ export function PromotionEditor({
           <div className="space-y-2">
             {badge && (
               <div>
-                <Badge variant="default" className="font-semibold">
+                <Badge variant="default" style={badgeStyle} className="font-semibold">
                   {badge}
                 </Badge>
               </div>
@@ -177,7 +237,7 @@ export function PromotionEditor({
         <Button
           variant="outline"
           onClick={handleClear}
-          disabled={!badge && !notice}
+          disabled={!badge && !notice && !badgeColor}
         >
           Clear All
         </Button>

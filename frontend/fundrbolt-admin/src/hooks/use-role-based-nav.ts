@@ -62,7 +62,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   // Determine NPO link based on selected NPO
   const npoHref = selectedNpoId ? `/npos/${selectedNpoId}` : '/npos'
   // Change title based on whether specific NPO is selected
-  const npoTitle = selectedNpoId ? 'NPO' : 'NPOs'
+  const npoTitle = selectedNpoId ? 'Organization' : 'Organizations'
 
   // Base navigation items available to all authenticated users
   const baseNavItems: NavItem[] = [
@@ -101,7 +101,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const npoAdminNavItems: NavItem[] = [
     ...baseNavItems,
     {
-      title: 'My NPO',
+      title: 'My Organization',
       href: npoHref,
       icon: 'Building2',
       description: 'Manage your organization',
@@ -124,7 +124,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const eventCoordinatorNavItems: NavItem[] = [
     ...baseNavItems,
     {
-      title: 'NPOs',
+      title: 'Organizations',
       href: npoHref,
       icon: 'Building2',
       description: 'View organizations (read-only)',
@@ -149,7 +149,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const staffNavItems: NavItem[] = [
     ...baseNavItems,
     {
-      title: 'My NPO',
+      title: 'My Organization',
       href: npoHref,
       icon: 'Building2',
       description: 'View your organization (read-only)',
@@ -251,7 +251,7 @@ type EventSectionConfig = {
 }
 
 const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
-  { title: 'Event Dashboard', path: 'dashboard', icon: 'BarChart3' },
+  { title: 'NPO Dashboard', path: 'dashboard', icon: 'BarChart3' },
   { title: 'Details', path: 'details', icon: 'FileText' },
   { title: 'Media', path: 'media', icon: 'Image', statKey: 'media_count' },
   { title: 'Links', path: 'links', icon: 'Link2', statKey: 'links_count' },
@@ -353,8 +353,6 @@ const EVENT_NAV_GROUPS: Array<{
     },
     {
       title: 'Data',
-      sections: [
-        sectionByPath('dashboard'),
-      ],
+      sections: [sectionByPath('dashboard')],
     },
   ]

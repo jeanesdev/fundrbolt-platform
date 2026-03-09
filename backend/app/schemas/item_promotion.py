@@ -10,6 +10,7 @@ class ItemPromotionUpdate(BaseModel):
     """Schema for updating item promotion."""
 
     badge_label: str | None = Field(None, max_length=50)
+    badge_color: str | None = Field(None, max_length=20)
     notice_message: str | None = Field(None, max_length=1000)
 
 
@@ -20,6 +21,7 @@ class ItemPromotionResponse(BaseModel):
     item_id: UUID
     event_id: UUID
     badge_label: str | None
+    badge_color: str | None
     notice_message: str | None
     updated_by_user_id: UUID
     created_at: datetime

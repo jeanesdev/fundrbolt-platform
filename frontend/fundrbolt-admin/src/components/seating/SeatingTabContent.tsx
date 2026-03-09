@@ -226,12 +226,12 @@ export function SeatingTabContent({
     >
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-3">
             <LayoutGrid className="h-6 w-6 text-primary" />
             <h2 className="text-xl font-bold">Seating Assignments</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="sm"

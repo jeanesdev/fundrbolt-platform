@@ -31,29 +31,33 @@ function DashboardPage() {
   // Loading fallback
   const loadingFallback = (
     <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-center justify-center p-8">
-          <p className="text-muted-foreground">Loading dashboard...</p>
+      <CardContent className='pt-6'>
+        <div className='flex items-center justify-center p-8'>
+          <p className='text-muted-foreground'>Loading dashboard...</p>
         </div>
       </CardContent>
     </Card>
   )
 
   return (
-    <Suspense fallback={loadingFallback}>
-      {role === 'super_admin' && <SuperAdminDashboard />}
-      {role === 'npo_admin' && <NpoAdminDashboard />}
-      {role === 'event_coordinator' && <AuctioneerDashboard />}
-      {role === 'staff' && <EventDashboard />}
-      {/* Donor role is blocked at route level in _authenticated/route.tsx */}
-      {!role && (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-muted-foreground">Unable to determine your role. Please contact support.</p>
-          </CardContent>
-        </Card>
-      )}
-    </Suspense>
+    <div className='space-y-8'>
+      <Suspense fallback={loadingFallback}>
+        {role === 'super_admin' && <SuperAdminDashboard />}
+        {role === 'npo_admin' && <NpoAdminDashboard />}
+        {role === 'event_coordinator' && <AuctioneerDashboard />}
+        {role === 'staff' && <EventDashboard />}
+        {/* Donor role is blocked at route level in _authenticated/route.tsx */}
+        {!role && (
+          <Card>
+            <CardContent className='pt-6'>
+              <p className='text-muted-foreground'>
+                Unable to determine your role. Please contact support.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </Suspense>
+    </div>
   )
 }
 

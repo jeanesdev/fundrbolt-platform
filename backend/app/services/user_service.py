@@ -120,7 +120,6 @@ class UserService:
 
             # Search in NPO memberships (npo name)
             from app.models.npo import NPO
-            from app.models.npo_member import NPOMember
 
             npo_subquery = (
                 select(NPOMember.user_id)
@@ -150,7 +149,6 @@ class UserService:
         for user in users:
             # Fetch role name
             from app.models.base import Base
-            from app.models.npo_member import NPOMember
 
             roles_table = Base.metadata.tables["roles"]
             role_stmt = select(roles_table.c.name).where(roles_table.c.id == user.role_id)

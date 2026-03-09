@@ -13,6 +13,7 @@
 import { cn } from '@/lib/utils';
 import { getEffectiveNow } from '@/stores/debug-spoof-store';
 import type { AuctionItemGalleryItem } from '@/types/auction-gallery';
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status';
 import { Eye, Flame, Gavel, Heart, Image as ImageIcon, Zap } from 'lucide-react';
 import { useRef, useState } from 'react';
 
@@ -201,6 +202,7 @@ export function AuctionItemCard({
   isHotItem,
 }: AuctionItemCardProps) {
   const btnRef = useRef<HTMLButtonElement>(null);
+  const isOnline = useOnlineStatus();
   const isLiveAuctionItem = item.auction_type === 'live';
   const displayBid = isLiveAuctionItem
     ? (item.current_bid ?? null)
@@ -408,7 +410,8 @@ export function AuctionItemCard({
             <button
               ref={btnRef}
               onClick={handleBidClick}
-              disabled={eventStatus !== 'active' || isEventInFuture || !isBiddingOpen}
+              disabled={!isOnline || eventStatus !== 'active' || isEventInFuture || !isBiddingOpen}
+              title={!isOnline ? 'Reconnect to place bids' : undefined}
               className={cn(
                 'mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold',
                 'transition-all duration-150 active:scale-95',
@@ -422,13 +425,15 @@ export function AuctionItemCard({
               }}
             >
               <Gavel className='h-4 w-4' />
-              {isEventInFuture
-                ? 'Not Started'
-                : eventStatus === 'active' && isBiddingOpen
-                  ? 'Place Bid'
-                  : eventStatus === 'closed' || !isBiddingOpen
-                    ? 'Bidding Closed'
-                    : 'Not Active'}
+              {!isOnline
+                ? 'Offline'
+                : isEventInFuture
+                  ? 'Not Started'
+                  : eventStatus === 'active' && isBiddingOpen
+                    ? 'Place Bid'
+                    : eventStatus === 'closed' || !isBiddingOpen
+                      ? 'Bidding Closed'
+                      : 'Not Active'}
             </button>
           )
         )}

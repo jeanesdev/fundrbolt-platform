@@ -234,6 +234,7 @@ async def update_item_promotion(
             event_id=item.event_id,
             updated_by_user_id=current_user.id,
             badge_label=promotion_data.badge_label,
+            badge_color=promotion_data.badge_color,
             notice_message=promotion_data.notice_message,
         )
 

@@ -1,15 +1,18 @@
-import { Badge } from '@/components/ui/badge'
+import { CountdownTimer } from '@/components/event-home/CountdownTimer'
+import { EventDetails } from '@/components/event-home/EventDetails'
+import { EventHeroSection, type EventStatus, type HeroTransitionStyle } from '@/components/event-home/EventHeroSection'
+import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EventHomePage } from '@/features/events/EventHomePage'
 import { useEventBranding } from '@/hooks/use-event-branding'
-import { getEventBySlug } from '@/lib/api/events'
+import { getEventBySlug, type EventMediaUsageTag } from '@/lib/api/events'
 import { hasValidRefreshToken } from '@/lib/storage/tokens'
 import { useAuthStore } from '@/stores/auth-store'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Calendar, Loader2, MapPin } from 'lucide-react'
-import { useEffect } from 'react'
+import { ArrowLeft, CalendarPlus, Loader2 } from 'lucide-react'
+import { useCallback, useEffect } from 'react'
 
 export const Route = createFileRoute('/events/$slug/')({
   component: RouteComponent,
@@ -101,147 +104,287 @@ function RouteComponent() {
     )
   }
 
+  // ─── Derived values for public page ──────────────────────────────────────────
+  const getTaggedImageUrls = (tag: EventMediaUsageTag) => {
+    if (!event.media?.length) return []
+    return event.media
+      .filter((m) => m.media_type === 'image' && m.usage_tag === tag && !!m.file_url)
+      .map((m) => m.file_url)
+  }
+
+  const getTaggedImageUrl = (tag: EventMediaUsageTag) => getTaggedImageUrls(tag)[0] ?? null
+
+  const getHeroImageUrls = () => {
+    const tagged = getTaggedImageUrls('main_event_page_hero')
+    if (tagged.length > 0) return tagged
+    const urls = new Set<string>()
+    if (event.media?.length) {
+      const imageMedia = event.media
+        .filter((m) => m.media_type === 'image' && !!m.file_url)
+        .sort((a, b) => {
+          const aIsLogo = a.file_name?.toLowerCase().includes('logo') ?? false
+          const bIsLogo = b.file_name?.toLowerCase().includes('logo') ?? false
+          if (aIsLogo === bIsLogo) return 0
+          return aIsLogo ? 1 : -1
+        })
+      for (const m of imageMedia) {
+        if (m.file_url) urls.add(m.file_url)
+      }
+    }
+    return Array.from(urls)
+  }
+
+  const heroImageUrls = getHeroImageUrls()
+  const bannerUrl = heroImageUrls[0] ?? null
+
+  const getLogoUrl = () => {
+    const taggedEvent = getTaggedImageUrl('event_logo')
+    if (taggedEvent) return taggedEvent
+    const taggedNpo = getTaggedImageUrl('npo_logo')
+    if (taggedNpo) return taggedNpo
+    if (!event.media?.length) return null
+    const logo = event.media.find(
+      (m) => m.media_type === 'image' && m.file_name.toLowerCase().includes('logo')
+    )
+    return logo?.file_url || null
+  }
+
   const eventDate = event.event_datetime ? new Date(event.event_datetime) : null
   const now = new Date()
-  const isPast = eventDate && eventDate < now
-  const isUpcoming =
-    eventDate && !isPast && eventDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+  const isPast = eventDate ? eventDate < now : false
 
-  const heroImageFromTag =
-    event.media?.find(
-      (media) => media.media_type === 'image' && media.usage_tag === 'main_event_page_hero' && !!media.file_url
-    )?.file_url ?? null
-  const eventLogoFromTag =
-    event.media?.find(
-      (media) => media.media_type === 'image' && media.usage_tag === 'event_logo' && !!media.file_url
-    )?.file_url ?? null
-  const publicHeroImageUrl = heroImageFromTag || eventLogoFromTag || event.logo_url
+  const getEventStatus = (): EventStatus => {
+    if (isPast) return 'past'
+    if (event.status === 'active' && eventDate && eventDate <= now) return 'live'
+    return 'upcoming'
+  }
+  const eventStatus = getEventStatus()
+
+  const countdownTargetDate = event.event_datetime || null
+
+  const venueMapLink = (() => {
+    const layoutMap = getTaggedImageUrl('event_layout_map')
+    if (layoutMap) return layoutMap
+    if (!event.venue_address) return null
+    const parts = [event.venue_address]
+    if (event.venue_city) parts.push(event.venue_city)
+    if (event.venue_state) parts.push(event.venue_state)
+    if (event.venue_zip) parts.push(event.venue_zip)
+    return `https://maps.google.com/?q=${encodeURIComponent(parts.join(', '))}`
+  })()
+
+  const aboutEventHtml = renderMarkdownToSafeHtml(event.description ?? '')
+
+  const handleAddToCalendar = useCallback(() => {
+    if (!event.event_datetime) return
+    const start = new Date(event.event_datetime)
+    // Default to 3-hour event duration
+    const end = new Date(start.getTime() + 3 * 60 * 60 * 1000)
+    const fmt = (d: Date) =>
+      d
+        .toISOString()
+        .replace(/[-:]/g, '')
+        .replace(/\.\d{3}/, '')
+    const locationParts = [event.venue_name, event.venue_address, event.venue_city, event.venue_state, event.venue_zip].filter(Boolean)
+    const location = locationParts.join(', ')
+    const description = (event.description ?? '').replace(/[#*_~`>\-|]/g, '').slice(0, 500)
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Fundrbolt//Event//EN',
+      'BEGIN:VEVENT',
+      `DTSTART:${fmt(start)}`,
+      `DTEND:${fmt(end)}`,
+      `SUMMARY:${event.name}`,
+      location ? `LOCATION:${location}` : '',
+      description ? `DESCRIPTION:${description}` : '',
+      `URL:${window.location.href}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]
+      .filter(Boolean)
+      .join('\r\n')
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${event.name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-')}.ics`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }, [event])
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header with back button */}
-      <div className="sticky top-0 z-40 border-b bg-card/50 backdrop-blur-sm">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate({ to: '/' })}
-            className="gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </Button>
-          <h1 className="text-lg font-semibold flex-1 ml-4 truncate">{event.name}</h1>
-        </div>
-      </div>
+    <div className='min-h-screen' style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}>
+      <EventHeroSection
+        eventName={event.name}
+        npoName={event.npo_name}
+        logoUrl={getLogoUrl()}
+        bannerUrl={bannerUrl}
+        bannerImages={heroImageUrls}
+        transitionStyle={event.hero_transition_style as HeroTransitionStyle}
+        eventDate={event.event_datetime}
+        venueName={event.venue_name}
+        status={eventStatus}
+        venueMapLink={venueMapLink}
+      />
 
-      {/* Main content */}
-      <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-8 space-y-6">
-        {/* Event image/thumbnail */}
-        {publicHeroImageUrl && (
-          <div className="rounded-lg overflow-hidden bg-muted">
-            <img
-              src={publicHeroImageUrl}
-              alt={event.name}
-              className="w-full h-64 object-cover"
+      <div className='px-4 py-4 space-y-5'>
+        {/* Countdown — show if event is in the future */}
+        {countdownTargetDate && !isPast && (
+          <div className='space-y-3'>
+            <CountdownTimer
+              targetDate={countdownTargetDate}
+              eventName={event.name}
+              hideOnExpire={false}
+            />
+            <button
+              onClick={handleAddToCalendar}
+              className='flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white/80 px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm backdrop-blur-sm transition-all active:scale-[0.98] hover:bg-white hover:shadow-md'
+            >
+              <CalendarPlus className='h-4 w-4' />
+              Add to Calendar
+            </button>
+          </div>
+        )}
+
+        {/* CTA — Login / Register buttons */}
+        {isPast ? (
+          <div
+            className='rounded-2xl border p-5 text-center'
+            style={{
+              backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.06)',
+              borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
+            }}
+          >
+            <p
+              className='text-sm'
+              style={{ color: 'var(--event-text-on-background, #374151)' }}
+            >
+              This event has already taken place. Thank you for your interest!
+            </p>
+          </div>
+        ) : (
+          <div className='space-y-3'>
+            <Link to='/sign-in'>
+              <button
+                className='w-full rounded-2xl p-4 text-left transition-all active:scale-[0.98] hover:shadow-md'
+                style={{
+                  background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
+                }}
+              >
+                <p className='text-lg font-black text-white'>Login to Register</p>
+                <p className='text-sm text-white/80'>Already have an account? Sign in to register →</p>
+              </button>
+            </Link>
+            <Link to='/sign-up'>
+              <button
+                className='w-full rounded-2xl border-2 border-gray-300 bg-white p-4 text-left transition-all active:scale-[0.98] hover:shadow-md'
+              >
+                <p className='text-lg font-black text-gray-900'>
+                  Create Account
+                </p>
+                <p className='text-sm text-gray-500'>
+                  New here? Create a free account to register →
+                </p>
+              </button>
+            </Link>
+          </div>
+        )}
+
+        {/* Event Details */}
+        <div>
+          <EventDetails
+            eventDatetime={event.event_datetime ?? ''}
+            timezone={event.timezone}
+            venueName={event.venue_name}
+            venueAddress={event.venue_address}
+            venueCity={event.venue_city}
+            venueState={event.venue_state}
+            venueZip={event.venue_zip}
+            attire={event.attire}
+            contactEmail={event.primary_contact_email}
+            contactPhone={event.primary_contact_phone}
+            eventWebsite={event.links?.find((l) => l.link_type === 'website')?.url}
+            isPast={isPast}
+            isUpcoming={!isPast}
+          />
+        </div>
+
+        {/* About */}
+        {event.description && (
+          <div
+            className='rounded-2xl border p-4'
+            style={{
+              backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.08)',
+              borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
+            }}
+          >
+            <h3
+              className='mb-2 text-xs font-bold uppercase tracking-widest'
+              style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+            >
+              About This Event
+            </h3>
+            <div
+              className='text-sm leading-relaxed [&_a]:font-medium'
+              style={{ color: 'var(--event-text-on-background, #374151)' }}
+              dangerouslySetInnerHTML={{ __html: aboutEventHtml }}
             />
           </div>
         )}
 
-        {/* Event header card */}
-        <Card>
-          <CardHeader>
-            <div className="space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <CardTitle className="text-2xl">{event.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-2">{event.description}</p>
-                </div>
-                <div className="flex gap-2">
-                  {isPast && <Badge variant="secondary">Past Event</Badge>}
-                  {isUpcoming && (
-                    <Badge variant="default" className="bg-amber-600">
-                      Coming Soon
-                    </Badge>
-                  )}
-                  {!isPast && !isUpcoming && (
-                    <Badge variant="default">On Now</Badge>
-                  )}
-                </div>
-              </div>
-
-              {/* Event details */}
-              <div className="space-y-2 text-sm">
-                {eventDate && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    {eventDate.toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </div>
-                )}
-                {event.venue_name && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="w-4 h-4" />
-                    {event.venue_name}
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
-
-        {/* Call to action */}
-        <div className="space-y-4">
-          {isPast ? (
-            <Card className="bg-muted">
-              <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground text-center">
-                  This event has already taken place. Thank you for your attendance!
-                </p>
-              </CardContent>
-            </Card>
-          ) : isAuthenticated ? (
-            <Link to="/events/$slug/register" params={{ slug }} search={{ guest: undefined }}>
-              <Button size="lg" className="w-full">
-                Register for Event
-              </Button>
-            </Link>
-          ) : (
-            <div className="space-y-3">
-              <Link to="/sign-in">
-                <Button size="lg" className="w-full">
-                  Login to Register
-                </Button>
-              </Link>
-              <Link to="/sign-up">
-                <Button size="lg" variant="outline" className="w-full">
-                  Create Account
-                </Button>
-              </Link>
-            </div>
-          )}
+        {/* Sponsors */}
+        <div>
+          <SponsorsCarousel publicSlug={slug} />
         </div>
-
-        {/* Event description section */}
-        {event.description && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">About This Event</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {event.description}
-              </p>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   )
+}
+
+// ─── Markdown utilities (shared with EventHomePage) ──────────────────────────
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function renderMarkdownToSafeHtml(markdown: string): string {
+  if (!markdown.trim()) return ''
+  let html = escapeHtml(markdown)
+  html = html
+    .replace(/^###\s+(.+)$/gim, '<h3 class="mt-4 mb-2 text-base font-semibold">$1</h3>')
+    .replace(/^##\s+(.+)$/gim, '<h2 class="mt-4 mb-2 text-lg font-semibold">$1</h2>')
+    .replace(/^#\s+(.+)$/gim, '<h1 class="mt-4 mb-2 text-xl font-bold">$1</h1>')
+    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(
+      /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline">$1</a>',
+    )
+    .replace(/^(?:- |\* )(.+)$/gim, '<li>$1</li>')
+  html = html.replace(/(<li>.*<\/li>)/gims, '<ul class="my-2 list-disc pl-5 space-y-1">$1</ul>')
+  const blocks = html
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+  return blocks
+    .map((block) => {
+      if (
+        block.startsWith('<h1') ||
+        block.startsWith('<h2') ||
+        block.startsWith('<h3') ||
+        block.startsWith('<ul')
+      )
+        return block
+      return `<p>${block}</p>`
+    })
+    .join('\n')
 }
