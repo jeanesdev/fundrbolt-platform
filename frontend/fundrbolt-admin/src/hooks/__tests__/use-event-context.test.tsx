@@ -100,8 +100,12 @@ describe('useEventContext', () => {
         wrapper: createWrapper(),
       })
 
+      // Hook always fetches (npo_id=undefined returns all accessible events);
+      // when no NPO is selected the call is made without a npo_id filter.
       await waitFor(() => {
-        expect(eventApi.listEvents).not.toHaveBeenCalled()
+        expect(eventApi.listEvents).toHaveBeenCalledWith(
+          expect.not.objectContaining({ npo_id: expect.any(String) })
+        )
       })
     })
   })

@@ -78,7 +78,7 @@ describe('useRoleBasedNav', () => {
 
     const { result } = renderHook(() => useRoleBasedNav())
 
-    expect(result.current.eventNavItems).toHaveLength(12)
+    expect(result.current.eventNavItems).toHaveLength(15)
     expect(
       result.current.eventNavItems.some(
         (item) => item.href === '/events/gala-night/quick-entry'
@@ -116,7 +116,7 @@ describe('useRoleBasedNav', () => {
     const { result } = renderHook(() => useRoleBasedNav())
 
     const myNpoLink = result.current.navItems.find(
-      (item) => item.title === 'My NPO'
+      (item) => item.title === 'My Organization'
     )
     expect(myNpoLink).toMatchObject({ href: '/npos/npo-123' })
     expect(result.current.canModifyNpos).toBe(true)
