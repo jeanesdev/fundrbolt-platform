@@ -175,7 +175,7 @@ components:
           type: string
           enum: [user_signup, npo_onboarding]
           description: >
-            user_signup: 2-step flow (account + verify). 
+            user_signup: 2-step flow (account + verify).
             npo_onboarding: 5-step flow (account + verify + NPO + event + confirm).
 
     UpdateStepRequest:
