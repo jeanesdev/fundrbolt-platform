@@ -83,6 +83,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 - What if the NPO name entered closely matches an existing registered NPO? The system warns the applicant so they can confirm the name is intentional or correct it before submitting.
 - What if the admin notification email fails to send? The pending NPO still appears in the admin review queue so no application is silently dropped.
 - What if a user attempts to submit multiple NPO applications in a short window? The system warns them of a potential duplicate before allowing resubmission.
+- What happens when the NPO submission or sign-up rate limit is exceeded? The user sees a friendly, plain-language message explaining they have made too many attempts and should try again later. No sensitive information about the limit threshold is exposed.
 - What happens after an NPO application is rejected? The admin may re-open the application, which triggers an email notifying the applicant that their application has been re-opened for revision. The applicant can then update their details and resubmit. The application history (original submission, rejection reason, revision) is preserved.
 
 ---
@@ -104,6 +105,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 - **FR-008**: The wizard MUST preserve in-progress state server-side for at least 24 hours, identified by an opaque session token stored in a browser cookie. No personally identifiable data entered during the wizard MUST be stored in browser-side storage (localStorage or sessionStorage).
 - **FR-009**: The first event creation step MUST be clearly optional — users may skip it and create events later from within the admin interface.
 - **FR-010**: Upon successful submission, the wizard MUST display a confirmation screen that sets clear expectations about the review process and next steps.
+- **FR-010a**: The NPO application submission endpoint MUST be rate limited per IP, consistent with existing platform rate limiting patterns, to prevent automated spam submissions.
 
 **Email Verification**
 
@@ -133,6 +135,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 **User Sign-Up Flow (Standalone)**
 
 - **FR-025**: A standalone user account sign-up flow MUST be accessible from a public URL suitable for landing page linking.
+- **FR-025a**: The sign-up endpoint MUST be rate limited per IP, consistent with existing platform rate limiting patterns, to prevent automated account creation abuse.
 - **FR-026**: The sign-up flow MUST be presented as a sequence of simple, friendly steps rather than a single form.
 - **FR-027**: The sign-up flow MUST include email verification before granting full account access.
 - **FR-028**: If an entered email address already has an account, the system MUST display a friendly prompt to sign in or reset the password instead of a generic error.
@@ -173,6 +176,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 - Q: What is the reapplication policy for rejected NPO applications? → A: Admin can re-open a rejected application; the applicant is notified and can revise and resubmit. The rejected record is updated rather than replaced.
 - Q: What approval timeline should be communicated to applicants? → A: 3–5 business days.
 - Q: How is unauthenticated wizard session state stored for 24-hour resume? → A: Server-side session; the browser holds only an opaque session token (cookie). Sensitive data never persists in browser storage.
+- Q: Should the public sign-up and NPO submission endpoints be rate limited? → A: Yes — both sign-up and NPO submission are rate limited per IP, consistent with existing platform patterns.
 
 ---
 
