@@ -1,0 +1,212 @@
+openapi: "3.1.0"
+info:
+  title: FundrBolt NPO Application Admin API — Reopen Extension
+  version: "1.0"
+  description: >
+    Admin-only extension to the existing NPO application workflow, adding the
+    ability to reopen a rejected application so the applicant can revise and
+    resubmit. Restricted to SuperAdmin role.
+
+servers:
+  - url: /api/v1
+
+paths:
+
+  /npos/{npo_id}/applications/{application_id}/reopen:
+    post:
+      summary: Reopen a rejected NPO application
+      description: >
+        Transitions a rejected NPO application to REOPENED status and the parent
+        NPO to UNDER_REVISION status. Appends a reopen entry to the application's
+        review_notes history. Sends a professionally formatted email to the
+        applicant notifying them the application is open for revision.
+        Restricted to SuperAdmin role.
+      operationId: reopenNpoApplication
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: application_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReopenApplicationRequest"
+      responses:
+        "200":
+          description: Application reopened; applicant notified by email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReopenApplicationResponse"
+        "400":
+          description: Application is not in REJECTED status (cannot reopen)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Caller does not have SuperAdmin role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: NPO or application not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /npos/{npo_id}/applications/{application_id}:
+    get:
+      summary: Get NPO application details including full revision history
+      description: >
+        Returns application details, current status, and the full review_notes
+        history (all submitted / rejected / reopened / resubmitted events).
+        Restricted to SuperAdmin role or the NPO's creator.
+      operationId: getNpoApplication
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: application_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Application details with full history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationDetailResponse"
+        "403":
+          description: Caller lacks permission to view this application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ReopenApplicationRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 1000
+          description: >
+            Admin's message to the applicant explaining why the application was
+            reopened and what changes are needed. Included verbatim in the
+            notification email to the applicant.
+          example: "Please correct the EIN — the format should be XX-XXXXXXX."
+
+    ReopenApplicationResponse:
+      type: object
+      properties:
+        application_id:
+          type: string
+          format: uuid
+        npo_id:
+          type: string
+          format: uuid
+        application_status:
+          type: string
+          enum: [reopened]
+        npo_status:
+          type: string
+          enum: [under_revision]
+        email_sent:
+          type: boolean
+          description: Whether the applicant notification email was sent successfully
+        message:
+          type: string
+          example: "Application reopened. Applicant has been notified by email."
+
+    ApplicationDetailResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        npo_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [submitted, under_review, approved, rejected, reopened]
+        submitted_at:
+          type: string
+          format: date-time
+          nullable: true
+        reviewed_at:
+          type: string
+          format: date-time
+          nullable: true
+        reviewed_by_user_id:
+          type: string
+          format: uuid
+          nullable: true
+        review_notes:
+          type: array
+          description: Full chronological history of all actions on this application
+          items:
+            $ref: "#/components/schemas/ReviewNoteEntry"
+
+    ReviewNoteEntry:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [submitted, under_review, approved, rejected, reopened, resubmitted]
+        actor_user_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        notes:
+          type: string
+          nullable: true
+          description: Admin's reason/message for this action (null for applicant actions)
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+        code:
+          type: string

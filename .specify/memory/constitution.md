@@ -68,7 +68,7 @@ Build exactly what is specified, nothing more. Resist the temptation to add "hel
 - **Infrastructure as Code:** Terraform or Azure Bicep for reproducible environments
 
 **Third-Party Services:**
-- **Payments:** Stripe (PCI-compliant, tokenized payments, no card storage)
+- **Payments:** First American / Deluxe Merchant Services (PCI SAQ-A scope via Hosted Payment Form, per-NPO merchant accounts, funds settle directly to NPO — see [ADR: Deluxe over Stripe] when created)
 - **SMS:** Twilio for notifications (outbid alerts, event reminders)
 - **Email:** SendGrid or Azure Communication Services for transactional emails
 - **Alerting:** PagerDuty + Prometheus Alertmanager for incident response
@@ -125,7 +125,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/) specificatio
 **Examples:**
 ```
 feat(auction): add real-time bid validation
-fix(payment): resolve Stripe webhook timeout issue
+fix(payment): resolve Deluxe webhook timeout issue
 docs(api): update OpenAPI spec for bid endpoints
 refactor(auth): extract JWT validation to middleware
 test(websocket): add connection drop recovery tests
@@ -177,7 +177,7 @@ test(websocket): add connection drop recovery tests
 - **Encryption in Transit:** TLS 1.3 everywhere, HTTPS only, HSTS headers
 - **Encryption at Rest:** Azure-managed encryption for Postgres, Redis, Blob Storage
 - **PII Handling:** Never log passwords, emails, phone numbers in plain text
-- **Payment Security:** Stripe handles all card data, only store transaction IDs and tokens
+- **Payment Security:** Payment processor (Deluxe HPF) handles all card capture; Fundrbolt stores only opaque vault tokens and masked display metadata (brand, last 4 digits, expiry month/year) — never raw card numbers, never full PANs
 - **Secrets:** Never commit secrets, use Azure Key Vault, rotate keys quarterly
 
 ### Privacy & Compliance
