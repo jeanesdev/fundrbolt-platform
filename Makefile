@@ -286,7 +286,7 @@ kill-backend:
 kill-frontend:
 	@echo "Stopping frontend server..."
 	@pids=$$(ps -eo pid=,ppid=,cmd= | awk -v self=$$$$ -v parent=$$PPID ' \
-		$$1 != self && $$1 != parent && $$2 != self && $$2 != parent && ($$0 ~ /vite\/bin\/vite\.js/ || $$0 ~ /\/bin\/pnpm dev( --port 5174)?$$/) { print $$1 }' ); \
+		$$1 != self && $$1 != parent && $$2 != self && $$2 != parent && ($$0 ~ /frontend\/fundrbolt-admin/ || $$0 ~ /\/bin\/pnpm dev$$/) { print $$1 }' ); \
 	if [ -n "$$pids" ]; then \
 		kill $$pids 2>/dev/null || true; \
 	else \

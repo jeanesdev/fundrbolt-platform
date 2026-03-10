@@ -168,7 +168,7 @@ class SocialAuthService:
         cls,
         db: AsyncSession,
         provider: ProviderKey,
-        attempt_id: uuid.UUID,
+        attempt_id: uuid.UUID | None,
         code: str,
         state: str,
     ) -> SocialAuthSuccessResponse | SocialAuthPendingResponse:
@@ -407,17 +407,19 @@ class SocialAuthService:
     @staticmethod
     async def _get_valid_attempt(
         db: AsyncSession,
-        attempt_id: uuid.UUID,
+        attempt_id: uuid.UUID | None,
         state: str,
         provider_key: str,
     ) -> SocialAuthAttempt:
         """Retrieve and validate an auth attempt."""
         stmt = select(SocialAuthAttempt).where(
-            SocialAuthAttempt.id == attempt_id,
             SocialAuthAttempt.state_token == state,
             SocialAuthAttempt.provider_key == provider_key,
             SocialAuthAttempt.result == "started",
         )
+        if attempt_id is not None:
+            stmt = stmt.where(SocialAuthAttempt.id == attempt_id)
+
         result = await db.execute(stmt)
         attempt = result.scalar_one_or_none()
         if not attempt:

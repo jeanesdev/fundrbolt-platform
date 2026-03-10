@@ -11,28 +11,13 @@
  * - Donated by / item webpage
  * - View tracking
  */
-import { WatchListButton } from '@/components/auction/WatchListButton'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Slider } from '@/components/ui/slider'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { usePreviewMode } from '@/contexts/PreviewContext'
-import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
-import { useItemViewTracking } from '@/hooks/useItemViewTracking'
-import { cn } from '@/lib/utils'
 import auctionItemService from '@/services/auctionItemService'
-import { useAuthStore } from '@/stores/auth-store'
-import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
 import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
 import '@ncdai/react-wheel-picker/style.css'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowRight,
   ChevronLeft,
@@ -43,7 +28,22 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useAuthStore } from '@/stores/auth-store'
+import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { cn } from '@/lib/utils'
+import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
+import { useItemViewTracking } from '@/hooks/useItemViewTracking'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Slider } from '@/components/ui/slider'
+import { WatchListButton } from '@/components/auction/WatchListButton'
 
 export interface AuctionItemDetailModalProps {
   eventId: string
@@ -113,7 +113,8 @@ export function AuctionItemDetailModal({
   const [fullscreenImageSrc, setFullscreenImageSrc] = useState<string | null>(
     null
   )
-  const [fullscreenImageAlt, setFullscreenImageAlt] = useState('Auction item image')
+  const [fullscreenImageAlt, setFullscreenImageAlt] =
+    useState('Auction item image')
   const [selectedBidAmount, setSelectedBidAmount] = useState(0)
   const [optionCount, setOptionCount] = useState(50)
   const [isManualBidDialogOpen, setIsManualBidDialogOpen] = useState(false)
@@ -121,8 +122,12 @@ export function AuctionItemDetailModal({
   const [manualBidInputError, setManualBidInputError] = useState<string | null>(
     null
   )
-  const [loadedImageSources, setLoadedImageSources] = useState<Record<string, true>>({})
-  const [preloadedImageSources, setPreloadedImageSources] = useState<Record<string, true>>({})
+  const [loadedImageSources, setLoadedImageSources] = useState<
+    Record<string, true>
+  >({})
+  const [preloadedImageSources, setPreloadedImageSources] = useState<
+    Record<string, true>
+  >({})
   const [placeBidSlideValue, setPlaceBidSlideValue] = useState<number[]>([0])
   const [maxBidSlideValue, setMaxBidSlideValue] = useState<number[]>([0])
   const [buyNowSlideValue, setBuyNowSlideValue] = useState<number[]>([0])
@@ -140,7 +145,7 @@ export function AuctionItemDetailModal({
     data: item,
     isLoading,
     isError,
-  } = useQuery({
+  } = useQuery<AuctionItemDetail | undefined>({
     queryKey: ['auction-item-detail', eventId, itemId],
     queryFn: () => auctionItemService.getAuctionItem(eventId, itemId!),
     enabled: !!itemId && !!eventId && !isPreviewMode,
@@ -149,7 +154,11 @@ export function AuctionItemDetailModal({
         return undefined
       }
 
-      const cachedItem = queryClient.getQueryData(['auction-item-detail', eventId, itemId])
+      const cachedItem = queryClient.getQueryData<AuctionItemDetail>([
+        'auction-item-detail',
+        eventId,
+        itemId,
+      ])
       if (cachedItem) {
         return cachedItem
       }
@@ -158,7 +167,9 @@ export function AuctionItemDetailModal({
         return undefined
       }
 
-      return previewData?.auctionItems.find((auctionItem) => auctionItem.id === itemId)
+      return previewData?.auctionItems.find(
+        (auctionItem) => auctionItem.id === itemId
+      )
     },
     staleTime: 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -184,10 +195,8 @@ export function AuctionItemDetailModal({
     setIsFullscreenImageOpen(false)
     setFullscreenImageSrc(null)
   }, [])
-  const {
-    onTouchStart: imgSwipeTouchStart,
-    onTouchEnd: imgSwipeTouchEnd,
-  } = useSwipeDownToClose(closeFullscreenImage)
+  const { onTouchStart: imgSwipeTouchStart, onTouchEnd: imgSwipeTouchEnd } =
+    useSwipeDownToClose(closeFullscreenImage)
 
   // Double-tap to close fullscreen image
   const lastTapRef = useRef(0)
@@ -293,7 +302,8 @@ export function AuctionItemDetailModal({
   const selectedImage =
     images[Math.min(selectedImageIndex, Math.max(images.length - 1, 0))]
   const selectedImageThumbnailSrc = selectedImage?.thumbnail_path || ''
-  const activeImageSrc = selectedImage?.file_path || item?.primary_image_url || ''
+  const activeImageSrc =
+    selectedImage?.file_path || item?.primary_image_url || ''
   const activeImageDisplaySrc = selectedImageThumbnailSrc || activeImageSrc
   const activeImageSrcSet =
     selectedImageThumbnailSrc && selectedImageThumbnailSrc !== activeImageSrc
@@ -307,7 +317,12 @@ export function AuctionItemDetailModal({
     !preloadedImageSources[activeImageSrc]
 
   useEffect(() => {
-    if (!isOpen || !item || !activeImageSrc || loadedImageSources[activeImageSrc]) {
+    if (
+      !isOpen ||
+      !item ||
+      !activeImageSrc ||
+      loadedImageSources[activeImageSrc]
+    ) {
       return
     }
 
@@ -339,7 +354,10 @@ export function AuctionItemDetailModal({
       item.primary_image_url,
       ...images.map((image) => image.thumbnail_path),
       ...images.map((image) => image.file_path),
-    ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    ].filter(
+      (value): value is string =>
+        typeof value === 'string' && value.trim().length > 0
+    )
 
     const uniqueUrls = Array.from(new Set(urls)).slice(0, 10)
 
@@ -392,7 +410,8 @@ export function AuctionItemDetailModal({
     numericCurrentBid,
     numericStartingBid
   )
-  const minimumNextBid = Math.ceil((minimumNextBidBase + bidStep) / bidStep) * bidStep
+  const minimumNextBid =
+    Math.ceil((minimumNextBidBase + bidStep) / bidStep) * bidStep
   const defaultWheelBidAmount = minimumNextBid
   const effectiveSelectedBidAmount =
     selectedBidAmount > 0 ? selectedBidAmount : defaultWheelBidAmount
@@ -432,7 +451,9 @@ export function AuctionItemDetailModal({
     }
 
     if (normalizedAmount % bidStep !== 0) {
-      setManualBidInputError(`Bid amount must be in ${formatCurrency(bidStep)} increments.`)
+      setManualBidInputError(
+        `Bid amount must be in ${formatCurrency(bidStep)} increments.`
+      )
       return
     }
 
@@ -551,7 +572,8 @@ export function AuctionItemDetailModal({
               <div
                 className='relative aspect-video overflow-hidden rounded-lg'
                 style={{
-                  backgroundColor: 'rgb(var(--event-card-bg, 147, 51, 234) / 0.18)',
+                  backgroundColor:
+                    'rgb(var(--event-card-bg, 147, 51, 234) / 0.18)',
                 }}
               >
                 <div className='absolute inset-0 animate-pulse' />
@@ -560,12 +582,18 @@ export function AuctionItemDetailModal({
                 </div>
               </div>
               <div
-                className='h-6 w-3/4 rounded animate-pulse'
-                style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.18)' }}
+                className='h-6 w-3/4 animate-pulse rounded'
+                style={{
+                  backgroundColor:
+                    'rgb(var(--event-primary, 59, 130, 246) / 0.18)',
+                }}
               />
               <div
-                className='h-4 w-1/2 rounded animate-pulse'
-                style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.14)' }}
+                className='h-4 w-1/2 animate-pulse rounded'
+                style={{
+                  backgroundColor:
+                    'rgb(var(--event-primary, 59, 130, 246) / 0.14)',
+                }}
               />
             </div>
           ) : item ? (
@@ -582,9 +610,10 @@ export function AuctionItemDetailModal({
                   <div className='relative aspect-video overflow-hidden'>
                     {isPrimaryImageLoading && (
                       <div
-                        className='absolute inset-0 z-10 flex items-center justify-center animate-pulse'
+                        className='absolute inset-0 z-10 flex animate-pulse items-center justify-center'
                         style={{
-                          backgroundColor: 'rgb(var(--event-card-bg, 147, 51, 234) / 0.28)',
+                          backgroundColor:
+                            'rgb(var(--event-card-bg, 147, 51, 234) / 0.28)',
                         }}
                       >
                         <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
@@ -723,7 +752,8 @@ export function AuctionItemDetailModal({
                       <DialogDescription
                         className='text-base'
                         style={{
-                          color: 'var(--event-text-muted-on-background, #6B7280)',
+                          color:
+                            'var(--event-text-muted-on-background, #6B7280)',
                         }}
                       >
                         Item #{item.bid_number}
@@ -800,7 +830,10 @@ export function AuctionItemDetailModal({
                   )}
 
                   {/* Bidding Controls — only show when auction is open */}
-                  {!isLiveAuctionItem && isBiddingOpen && eventStatus === 'active' && !isEventInFuture ? (
+                  {!isLiveAuctionItem &&
+                  isBiddingOpen &&
+                  eventStatus === 'active' &&
+                  !isEventInFuture ? (
                     <div className='space-y-3'>
                       <div
                         className='relative h-[140px] overflow-hidden rounded-2xl border px-3 py-2'
@@ -833,9 +866,12 @@ export function AuctionItemDetailModal({
                             scrollSensitivity={1.0}
                             optionItemHeight={28}
                             classNames={{
-                              optionItem: 'text-sm font-medium text-foreground/35',
-                              highlightWrapper: 'bg-muted/85 border-y border-border/70',
-                              highlightItem: 'text-base font-semibold text-foreground',
+                              optionItem:
+                                'text-sm font-medium text-foreground/35',
+                              highlightWrapper:
+                                'bg-muted/85 border-y border-border/70',
+                              highlightItem:
+                                'text-base font-semibold text-foreground',
                             }}
                           />
                         </WheelPickerWrapper>
@@ -844,9 +880,12 @@ export function AuctionItemDetailModal({
                       <div
                         data-testid='wheel-current-control'
                         className='text-center text-base font-semibold'
-                        style={{ color: 'var(--event-text-on-background, #000000)' }}
+                        style={{
+                          color: 'var(--event-text-on-background, #000000)',
+                        }}
                       >
-                        Selected bid: {formatCurrency(effectiveSelectedBidAmount)}
+                        Selected bid:{' '}
+                        {formatCurrency(effectiveSelectedBidAmount)}
                       </div>
 
                       <div className='space-y-2'>
@@ -867,11 +906,15 @@ export function AuctionItemDetailModal({
                           <div className='pointer-events-none absolute inset-0 z-0 bg-white' />
                           <div
                             className='pointer-events-none absolute top-0 bottom-0 left-0 z-[1] rounded-l-[28px] bg-[rgb(34_197_94)]'
-                            style={{ width: getSliderFillWidth(placeBidPercent) }}
+                            style={{
+                              width: getSliderFillWidth(placeBidPercent),
+                            }}
                           />
-                          <div className='pointer-events-none absolute inset-y-0 left-14 right-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)] sm:text-base'>
+                          <div className='pointer-events-none absolute inset-y-0 right-14 left-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)] sm:text-base'>
                             <span className='sm:hidden'>Slide to Bid ·</span>
-                            <span className='hidden sm:inline'>Slide to Place Bid ·</span>
+                            <span className='hidden sm:inline'>
+                              Slide to Place Bid ·
+                            </span>
                             <span className='ml-1 sm:ml-2'>
                               {formatCurrency(effectiveSelectedBidAmount)}
                             </span>
@@ -911,9 +954,11 @@ export function AuctionItemDetailModal({
                             className='pointer-events-none absolute top-0 bottom-0 left-0 z-[1] rounded-l-[28px] bg-[rgb(34_197_94)]'
                             style={{ width: getSliderFillWidth(maxBidPercent) }}
                           />
-                          <div className='pointer-events-none absolute inset-y-0 left-14 right-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)] sm:text-base'>
+                          <div className='pointer-events-none absolute inset-y-0 right-14 left-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)] sm:text-base'>
                             <span className='sm:hidden'>Slide to Max ·</span>
-                            <span className='hidden sm:inline'>Slide to Set Max Bid ·</span>
+                            <span className='hidden sm:inline'>
+                              Slide to Set Max Bid ·
+                            </span>
                             <span className='ml-1 sm:ml-2'>
                               {formatCurrency(effectiveSelectedBidAmount)}
                             </span>
@@ -952,11 +997,15 @@ export function AuctionItemDetailModal({
                             <div className='pointer-events-none absolute inset-0 z-0 bg-white' />
                             <div
                               className='pointer-events-none absolute top-0 bottom-0 left-0 z-[1] rounded-l-[28px] bg-[rgb(34_197_94)]'
-                              style={{ width: getSliderFillWidth(buyNowPercent) }}
+                              style={{
+                                width: getSliderFillWidth(buyNowPercent),
+                              }}
                             />
-                            <div className='pointer-events-none absolute inset-y-0 left-14 right-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)] sm:text-base'>
+                            <div className='pointer-events-none absolute inset-y-0 right-14 left-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)] sm:text-base'>
                               <span className='sm:hidden'>Slide to Buy ·</span>
-                              <span className='hidden sm:inline'>Slide to Buy Now ·</span>
+                              <span className='hidden sm:inline'>
+                                Slide to Buy Now ·
+                              </span>
                               <span className='ml-1 sm:ml-2'>
                                 {formatCurrency(item.buy_now_price)}
                               </span>
@@ -1036,7 +1085,8 @@ export function AuctionItemDetailModal({
                       </p>
                       <p
                         style={{
-                          color: 'var(--event-text-muted-on-background, #6B7280)',
+                          color:
+                            'var(--event-text-muted-on-background, #6B7280)',
                         }}
                       >
                         {item.donated_by}
@@ -1056,7 +1106,8 @@ export function AuctionItemDetailModal({
                       </p>
                       <p
                         style={{
-                          color: 'var(--event-text-muted-on-background, #6B7280)',
+                          color:
+                            'var(--event-text-muted-on-background, #6B7280)',
                         }}
                       >
                         {item.quantity_available}
@@ -1166,7 +1217,9 @@ export function AuctionItemDetailModal({
             </DialogTitle>
             <DialogDescription
               className='text-sm'
-              style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+              style={{
+                color: 'var(--event-text-muted-on-background, #6B7280)',
+              }}
             >
               Minimum {formatCurrency(minimumNextBid)} · increments of{' '}
               {formatCurrency(bidStep)}
@@ -1216,7 +1269,8 @@ export function AuctionItemDetailModal({
                 onClick={() => setIsManualBidDialogOpen(false)}
                 style={{
                   color: 'var(--event-text-on-background, #000000)',
-                  backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                  backgroundColor:
+                    'rgb(var(--event-background, 255, 255, 255))',
                   borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.55)',
                 }}
               >

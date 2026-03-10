@@ -1,16 +1,22 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PreviewProvider, type PreviewEventData } from '@/contexts/PreviewContext'
-import { EventHomePage } from '@/features/events/EventHomePage'
-import type { Sponsor } from '@/lib/api/sponsors'
-import apiClient from '@/lib/axios'
-import { useEventContextStore } from '@/stores/event-context-store'
-import { useEventStore } from '@/stores/event-store'
-import { useQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query'
-import { AlertCircle, Loader2 } from 'lucide-react'
-
+import {
+  useQuery,
+  useQueryClient,
+  type InfiniteData,
+} from '@tanstack/react-query'
+import {
+  PreviewProvider,
+  type PreviewEventData,
+} from '@/contexts/PreviewContext'
 import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
 import type { AuctionItemDetail } from '@/types/auction-item'
 import type { EventDetail } from '@/types/event'
+import { AlertCircle, Loader2 } from 'lucide-react'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { useEventStore } from '@/stores/event-store'
+import type { Sponsor } from '@/lib/api/sponsors'
+import apiClient from '@/lib/axios'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { EventHomePage } from '@/features/events/EventHomePage'
 
 interface PreviewPageProps {
   eventId?: string
@@ -19,7 +25,9 @@ interface PreviewPageProps {
 
 interface PreviewApiResponse {
   event: EventDetail
-  auction_items: Array<Omit<AuctionItemDetail, 'media'> & { media?: AuctionItemDetail['media'] }>
+  auction_items: Array<
+    Omit<AuctionItemDetail, 'media'> & { media?: AuctionItemDetail['media'] }
+  >
   sponsors: Sponsor[]
 }
 
@@ -43,8 +51,12 @@ function toNumber(value: number | string | null | undefined): number | null {
   return Number.isFinite(parsed) ? parsed : null
 }
 
-function toGalleryItem(item: AuctionItemDetail, fallbackBidNumber: number): AuctionItemGalleryItem {
-  const itemCategory = (item as unknown as { category?: string | null }).category ?? null
+function toGalleryItem(
+  item: AuctionItemDetail,
+  fallbackBidNumber: number
+): AuctionItemGalleryItem {
+  const itemCategory =
+    (item as unknown as { category?: string | null }).category ?? null
 
   return {
     id: item.id,
@@ -91,14 +103,18 @@ function getPreviewLogoUrl(event: EventDetail): string | null {
   }
 
   const taggedLogo = event.media.find(
-    (media) => media.media_type === 'image' && (media.usage_tag === 'event_logo' || media.usage_tag === 'npo_logo')
+    (media) =>
+      media.media_type === 'image' &&
+      (media.usage_tag === 'event_logo' || media.usage_tag === 'npo_logo')
   )
   if (taggedLogo?.file_url) {
     return taggedLogo.file_url
   }
 
   const namedLogo = event.media.find(
-    (media) => media.media_type === 'image' && media.file_name.toLowerCase().includes('logo')
+    (media) =>
+      media.media_type === 'image' &&
+      media.file_name.toLowerCase().includes('logo')
   )
   return namedLogo?.file_url ?? null
 }
@@ -117,7 +133,11 @@ function PreviewStateCard({
       <Card className='w-full max-w-lg'>
         <CardHeader>
           <CardTitle className='flex items-center gap-2'>
-            {isLoading ? <Loader2 className='h-5 w-5 animate-spin' /> : <AlertCircle className='h-5 w-5 text-destructive' />}
+            {isLoading ? (
+              <Loader2 className='h-5 w-5 animate-spin' />
+            ) : (
+              <AlertCircle className='text-destructive h-5 w-5' />
+            )}
             {title}
           </CardTitle>
         </CardHeader>
@@ -132,34 +152,50 @@ function PreviewStateCard({
 export function PreviewEventPage({ eventId, token }: PreviewPageProps) {
   const queryClient = useQueryClient()
   const setCurrentEvent = useEventStore((state) => state.setCurrentEvent)
-  const setSelectedEvent = useEventContextStore((state) => state.setSelectedEvent)
-  const setAvailableEvents = useEventContextStore((state) => state.setAvailableEvents)
+  const setSelectedEvent = useEventContextStore(
+    (state) => state.setSelectedEvent
+  )
+  const setAvailableEvents = useEventContextStore(
+    (state) => state.setAvailableEvents
+  )
 
   const isMissingParams = !eventId || !token
 
-  const { data: previewData, error, isLoading, isError } = useQuery<PreviewEventData>({
+  const {
+    data: previewData,
+    error,
+    isLoading,
+    isError,
+  } = useQuery<PreviewEventData>({
     queryKey: ['preview-event', eventId, token],
     enabled: !isMissingParams,
     retry: false,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      const response = await apiClient.get<PreviewApiResponse>(`/events/preview/${eventId}`, {
-        params: { token },
-      })
+      const response = await apiClient.get<PreviewApiResponse>(
+        `/events/preview/${eventId}`,
+        {
+          params: { token },
+        }
+      )
       const payload: PreviewEventData = {
         event: response.data.event,
         auctionItems: response.data.auction_items.map((item) => ({
-        ...item,
-        media: item.media ?? [],
-      })),
+          ...item,
+          media: item.media ?? [],
+        })),
         sponsors: response.data.sponsors,
       }
 
       const galleryItems = payload.auctionItems.map((item, index) =>
-      toGalleryItem(item, index + 100)
+        toGalleryItem(item, index + 100)
       )
-      const silentItems = galleryItems.filter((item) => item.auction_type === 'silent')
-      const liveItems = galleryItems.filter((item) => item.auction_type === 'live')
+      const silentItems = galleryItems.filter(
+        (item) => item.auction_type === 'silent'
+      )
+      const liveItems = galleryItems.filter(
+        (item) => item.auction_type === 'live'
+      )
 
       setCurrentEvent(payload.event)
       setSelectedEvent(payload.event.id, payload.event.name, payload.event.slug)
@@ -175,7 +211,10 @@ export function PreviewEventPage({ eventId, token }: PreviewPageProps) {
         },
       ])
 
-      queryClient.setQueryData(['watchlist', payload.event.id], { watch_list: [], total: 0 })
+      queryClient.setQueryData(['watchlist', payload.event.id], {
+        watch_list: [],
+        total: 0,
+      })
       queryClient.setQueryData(['watchlist', payload.event.id, 'self'], {
         watch_list: [],
         total: 0,
@@ -195,7 +234,10 @@ export function PreviewEventPage({ eventId, token }: PreviewPageProps) {
       )
 
       payload.auctionItems.forEach((item) => {
-        queryClient.setQueryData(['auction-item-detail', payload.event.id, item.id], item)
+        queryClient.setQueryData(
+          ['auction-item-detail', payload.event.id, item.id],
+          item
+        )
       })
 
       return payload
@@ -222,8 +264,14 @@ export function PreviewEventPage({ eventId, token }: PreviewPageProps) {
   }
 
   if (isError) {
-    const message = error instanceof Error ? error.message : 'Failed to load preview data.'
-    return <PreviewStateCard title='Unable to load donor preview' message={message} />
+    const message =
+      error instanceof Error ? error.message : 'Failed to load preview data.'
+    return (
+      <PreviewStateCard
+        title='Unable to load donor preview'
+        message={message}
+      />
+    )
   }
 
   return (

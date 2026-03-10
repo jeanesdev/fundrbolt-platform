@@ -33,6 +33,7 @@ from app.schemas.sponsor import SponsorResponse
 from app.services.auction_item_media_service import AuctionItemMediaService
 from app.services.auction_item_service import AuctionItemService
 from app.services.event_service import EventService
+from app.services.permission_service import PermissionService
 from app.services.sponsor_logo_service import SponsorLogoService
 from app.services.sponsor_service import SponsorService
 
@@ -241,6 +242,14 @@ async def create_event_preview_token(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to preview this event",
         )
+
+    if current_user.role_name != "super_admin":  # type: ignore[attr-defined]
+        permission_service = PermissionService()
+        if not await permission_service.can_view_event(current_user, event.npo_id, db=db):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to preview this event",
+            )
 
     expires_delta = timedelta(minutes=30)
     token = create_preview_token(

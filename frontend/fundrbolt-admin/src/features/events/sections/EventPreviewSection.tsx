@@ -1,3 +1,8 @@
+import { useState } from 'react'
+import { ExternalLink, Eye, Loader2, Smartphone } from 'lucide-react'
+import { toast } from 'sonner'
+import apiClient from '@/lib/axios'
+import { getErrorMessage } from '@/lib/error-utils'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -6,11 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import apiClient from '@/lib/axios'
-import { getErrorMessage } from '@/lib/error-utils'
-import { ExternalLink, Eye, Loader2, Smartphone } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventPreviewSection() {
@@ -23,7 +23,9 @@ export function EventPreviewSection() {
     ).matches
     const isIosStandalone =
       'standalone' in window.navigator &&
-      Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone)
+      Boolean(
+        (window.navigator as Navigator & { standalone?: boolean }).standalone
+      )
     const isMobileViewport = window.innerWidth < 768
 
     if (isStandaloneDisplay || isIosStandalone || isMobileViewport) {
@@ -57,7 +59,11 @@ export function EventPreviewSection() {
       const { token } = response.data
       const donorPwaUrl =
         import.meta.env.VITE_DONOR_PWA_URL || 'http://localhost:5174'
-      const previewUrl = `${donorPwaUrl}/preview?eventId=${encodeURIComponent(currentEvent.id)}&token=${encodeURIComponent(token)}`
+      const searchParams = new URLSearchParams({
+        eventId: currentEvent.id,
+        token,
+      })
+      const previewUrl = `${donorPwaUrl}/preview?${searchParams.toString()}`
       const openMode = openPreview(previewUrl)
 
       if (openMode === 'popup') {

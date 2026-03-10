@@ -9,37 +9,8 @@
  * Branding CSS variables (injected by useEventBranding):
  *   --event-primary, --event-secondary, --event-background, --event-accent
  */
-import {
-  AuctionGallery,
-  EventDetails,
-  EventSwitcher,
-  MySeatingSection,
-} from '@/components/event-home'
-import { AuctionItemDetailModal } from '@/components/event-home/AuctionItemDetailModal'
-import { BottomTabNav, type DonorTab } from '@/components/event-home/BottomTabNav'
-import { CountdownTimer } from '@/components/event-home/CountdownTimer'
-import { EventHeroSection, type EventStatus } from '@/components/event-home/EventHeroSection'
-import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { usePreviewMode } from '@/contexts/PreviewContext'
-import { useEventBranding } from '@/hooks/use-event-branding'
-import { useEventContext } from '@/hooks/use-event-context'
-import { useTabSwipe } from '@/hooks/use-tab-swipe'
-import apiClient from '@/lib/axios'
-import auctionItemService from '@/services/auctionItemService'
-import {
-  getMySeatingInfo,
-  type SeatingInfoResponse,
-} from '@/services/seating-service'
-import watchListService from '@/services/watchlistService'
-import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { useEventContextStore } from '@/stores/event-context-store'
-import { useEventStore } from '@/stores/event-store'
-import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
-import type { EventMediaUsageTag } from '@/types/event'
-import type { RegisteredEventWithBranding } from '@/types/event-branding'
-import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { AxiosError } from 'axios'
 import {
   keepPreviousData,
   useMutation,
@@ -47,10 +18,45 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import type { AxiosError } from 'axios'
+import { usePreviewMode } from '@/contexts/PreviewContext'
+import auctionItemService from '@/services/auctionItemService'
+import {
+  getMySeatingInfo,
+  type SeatingInfoResponse,
+} from '@/services/seating-service'
+import watchListService from '@/services/watchlistService'
+import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
+import type { EventMediaUsageTag } from '@/types/event'
+import type { RegisteredEventWithBranding } from '@/types/event-branding'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
 import { AlertCircle, Loader2 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { useEventStore } from '@/stores/event-store'
+import apiClient from '@/lib/axios'
+import { useEventBranding } from '@/hooks/use-event-branding'
+import { useEventContext } from '@/hooks/use-event-context'
+import { useTabSwipe } from '@/hooks/use-tab-swipe'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  AuctionGallery,
+  EventDetails,
+  EventSwitcher,
+  MySeatingSection,
+} from '@/components/event-home'
+import { AuctionItemDetailModal } from '@/components/event-home/AuctionItemDetailModal'
+import {
+  BottomTabNav,
+  type DonorTab,
+} from '@/components/event-home/BottomTabNav'
+import { CountdownTimer } from '@/components/event-home/CountdownTimer'
+import {
+  EventHeroSection,
+  type EventStatus,
+} from '@/components/event-home/EventHeroSection'
+import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
+import { ProfileDropdown } from '@/components/profile-dropdown'
 
 function escapeHtml(value: string): string {
   return value
@@ -69,19 +75,28 @@ function renderMarkdownToSafeHtml(markdown: string): string {
   let html = escapeHtml(markdown)
 
   html = html
-    .replace(/^###\s+(.+)$/gim, '<h3 class="mt-4 mb-2 text-base font-semibold">$1</h3>')
-    .replace(/^##\s+(.+)$/gim, '<h2 class="mt-4 mb-2 text-lg font-semibold">$1</h2>')
+    .replace(
+      /^###\s+(.+)$/gim,
+      '<h3 class="mt-4 mb-2 text-base font-semibold">$1</h3>'
+    )
+    .replace(
+      /^##\s+(.+)$/gim,
+      '<h2 class="mt-4 mb-2 text-lg font-semibold">$1</h2>'
+    )
     .replace(/^#\s+(.+)$/gim, '<h1 class="mt-4 mb-2 text-xl font-bold">$1</h1>')
     .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(
       /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline">$1</a>',
+      '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline">$1</a>'
     )
     .replace(/^(?:- |\* )(.+)$/gim, '<li>$1</li>')
 
-  html = html.replace(/(<li>.*<\/li>)/gims, '<ul class="my-2 list-disc pl-5 space-y-1">$1</ul>')
+  html = html.replace(
+    /(<li>.*<\/li>)/gims,
+    '<ul class="my-2 list-disc pl-5 space-y-1">$1</ul>'
+  )
 
   const blocks = html
     .split(/\n{2,}/)
@@ -123,9 +138,13 @@ export function EventHomePage() {
   const timeBaseSpoofMs = useDebugSpoofStore((state) => state.timeBaseSpoofMs)
 
   const [userSelectedTab, setUserSelectedTab] = useState<DonorTab | null>(null)
-  const [selectedAuctionItemId, setSelectedAuctionItemId] = useState<string | null>(null)
+  const [selectedAuctionItemId, setSelectedAuctionItemId] = useState<
+    string | null
+  >(null)
   const [isItemWatching, setIsItemWatching] = useState(false)
-  const [winningItemMap, setWinningItemMap] = useState<Record<string, boolean>>({})
+  const [winningItemMap, setWinningItemMap] = useState<Record<string, boolean>>(
+    {}
+  )
   const [maxBidItemMap, setMaxBidItemMap] = useState<Record<string, number>>({})
   const [displayedTab, setDisplayedTab] = useState<DonorTab>('home')
   const prefetchedAuctionImagesRef = useRef<Set<string>>(new Set())
@@ -149,7 +168,12 @@ export function EventHomePage() {
       if (!currentEvent?.media?.length) return []
 
       return currentEvent.media
-        .filter((media) => media.media_type === 'image' && media.usage_tag === tag && !!media.file_url)
+        .filter(
+          (media) =>
+            media.media_type === 'image' &&
+            media.usage_tag === tag &&
+            !!media.file_url
+        )
         .map((media) => media.file_url)
     },
     [currentEvent]
@@ -160,27 +184,30 @@ export function EventHomePage() {
     [getTaggedImageUrls]
   )
 
-  const resolveEventDateTime = useCallback((event: typeof currentEvent): string | null => {
-    if (!event) return null
+  const resolveEventDateTime = useCallback(
+    (event: typeof currentEvent): string | null => {
+      if (!event) return null
 
-    const eventRecord = event as unknown as Record<string, unknown>
-    const candidates = [
-      event.event_datetime,
-      eventRecord.eventDateTime,
-      eventRecord.event_date,
-      eventRecord.eventDate,
-      eventRecord.start_datetime,
-      eventRecord.startDateTime,
-    ]
+      const eventRecord = event as unknown as Record<string, unknown>
+      const candidates = [
+        event.event_datetime,
+        eventRecord.eventDateTime,
+        eventRecord.event_date,
+        eventRecord.eventDate,
+        eventRecord.start_datetime,
+        eventRecord.startDateTime,
+      ]
 
-    for (const candidate of candidates) {
-      if (typeof candidate === 'string' && candidate.trim().length > 0) {
-        return candidate
+      for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.trim().length > 0) {
+          return candidate
+        }
       }
-    }
 
-    return null
-  }, [])
+      return null
+    },
+    []
+  )
   // Restore bid flags from localStorage
   useEffect(() => {
     if (!currentEvent?.id) return
@@ -230,9 +257,7 @@ export function EventHomePage() {
     if (userSelectedTab !== null) return userSelectedTab
     if (currentEvent?.status === 'active') {
       const resolvedDateTime = resolveEventDateTime(currentEvent)
-      const eventDate = resolvedDateTime
-        ? new Date(resolvedDateTime)
-        : null
+      const eventDate = resolvedDateTime ? new Date(resolvedDateTime) : null
       if (eventDate && eventDate <= getEffectiveNow()) return 'auction'
     }
     return 'home'
@@ -247,13 +272,16 @@ export function EventHomePage() {
       return
     }
 
-    const response = await apiClient.get(`/events/${currentEvent.id}/auction-items`, {
-      params: {
-        page: 1,
-        limit: 24,
-      },
-      timeout: 12000,
-    })
+    const response = await apiClient.get(
+      `/events/${currentEvent.id}/auction-items`,
+      {
+        params: {
+          page: 1,
+          limit: 24,
+        },
+        timeout: 12000,
+      }
+    )
 
     const payload = response.data as {
       items?: Array<{
@@ -285,54 +313,59 @@ export function EventHomePage() {
 
     const items = Array.isArray(payload.items) ? payload.items : []
 
-    queryClient.setQueryData(
-      ['auction-items', currentEvent.id, 'all'],
-      {
-        pages: [
-          {
-            items: items.map((item) => {
-              const toNumber = (value: number | string | null | undefined): number | null => {
-                if (value === null || value === undefined) return null
-                const parsed = typeof value === 'string' ? Number(value) : value
-                return Number.isFinite(parsed) ? parsed : null
-              }
+    queryClient.setQueryData(['auction-items', currentEvent.id, 'all'], {
+      pages: [
+        {
+          items: items.map((item) => {
+            const toNumber = (
+              value: number | string | null | undefined
+            ): number | null => {
+              if (value === null || value === undefined) return null
+              const parsed = typeof value === 'string' ? Number(value) : value
+              return Number.isFinite(parsed) ? parsed : null
+            }
 
-              return {
-                id: item.id,
-                title: item.title,
-                description: item.description ?? null,
-                auction_type: item.auction_type,
-                bid_number: item.bid_number,
-                thumbnail_url: item.primary_image_url ?? null,
-                starting_bid: toNumber(item.starting_bid) ?? 0,
-                current_bid: toNumber(item.current_bid_amount),
-                bid_count: item.bid_count ?? 0,
-                bidding_open: item.bidding_open,
-                watcher_count: item.watcher_count,
-                promotion_badge: item.promotion_badge ?? null,
-                promotion_notice: item.promotion_notice ?? null,
-                min_next_bid_amount: toNumber(item.min_next_bid_amount) ?? undefined,
-                category: item.category_name ?? item.category ?? null,
-              }
-            }),
-            pagination: {
-              page: payload.pagination?.page ?? 1,
-              limit: payload.pagination?.limit ?? 24,
-              total: payload.pagination?.total ?? items.length,
-              total_pages: payload.pagination?.total_pages ?? payload.pagination?.pages ?? 1,
-              has_more:
-                (payload.pagination?.page ?? 1) <
-                (payload.pagination?.total_pages ?? payload.pagination?.pages ?? 1),
-            },
+            return {
+              id: item.id,
+              title: item.title,
+              description: item.description ?? null,
+              auction_type: item.auction_type,
+              bid_number: item.bid_number,
+              thumbnail_url: item.primary_image_url ?? null,
+              starting_bid: toNumber(item.starting_bid) ?? 0,
+              current_bid: toNumber(item.current_bid_amount),
+              bid_count: item.bid_count ?? 0,
+              bidding_open: item.bidding_open,
+              watcher_count: item.watcher_count,
+              promotion_badge: item.promotion_badge ?? null,
+              promotion_notice: item.promotion_notice ?? null,
+              min_next_bid_amount:
+                toNumber(item.min_next_bid_amount) ?? undefined,
+              category: item.category_name ?? item.category ?? null,
+            }
+          }),
+          pagination: {
+            page: payload.pagination?.page ?? 1,
+            limit: payload.pagination?.limit ?? 24,
+            total: payload.pagination?.total ?? items.length,
+            total_pages:
+              payload.pagination?.total_pages ?? payload.pagination?.pages ?? 1,
+            has_more:
+              (payload.pagination?.page ?? 1) <
+              (payload.pagination?.total_pages ??
+                payload.pagination?.pages ??
+                1),
           },
-        ],
-        pageParams: [1],
-      }
-    )
+        },
+      ],
+      pageParams: [1],
+    })
 
     items
       .map((item) => item.primary_image_url)
-      .filter((url): url is string => typeof url === 'string' && url.trim().length > 0)
+      .filter(
+        (url): url is string => typeof url === 'string' && url.trim().length > 0
+      )
       .forEach((url) => {
         if (prefetchedAuctionImagesRef.current.has(url)) {
           return
@@ -344,33 +377,37 @@ export function EventHomePage() {
       })
   }, [currentEvent, isPreviewMode, queryClient])
 
-  const setActiveTab = useCallback((tab: DonorTab) => {
-    const currentVisibleTab = userSelectedTab === null ? activeTab : displayedTab
+  const setActiveTab = useCallback(
+    (tab: DonorTab) => {
+      const currentVisibleTab =
+        userSelectedTab === null ? activeTab : displayedTab
 
-    if (currentVisibleTab === tab) {
-      setUserSelectedTab(tab)
-      return
-    }
+      if (currentVisibleTab === tab) {
+        setUserSelectedTab(tab)
+        return
+      }
 
-    const performSwitch = () => {
-      setDisplayedTab(tab)
-      setUserSelectedTab(tab)
-    }
+      const performSwitch = () => {
+        setDisplayedTab(tab)
+        setUserSelectedTab(tab)
+      }
 
-    if (tab === 'auction') {
-      void Promise.race([
-        prefetchAuctionTabData().catch(() => undefined),
-        new Promise<void>((resolve) => {
-          window.setTimeout(resolve, 650)
-        }),
-      ]).finally(() => {
-        performSwitch()
-      })
-      return
-    }
+      if (tab === 'auction') {
+        void Promise.race([
+          prefetchAuctionTabData().catch(() => undefined),
+          new Promise<void>((resolve) => {
+            window.setTimeout(resolve, 650)
+          }),
+        ]).finally(() => {
+          performSwitch()
+        })
+        return
+      }
 
-    performSwitch()
-  }, [userSelectedTab, activeTab, displayedTab, prefetchAuctionTabData])
+      performSwitch()
+    },
+    [userSelectedTab, activeTab, displayedTab, prefetchAuctionTabData]
+  )
 
   // Events for switcher
   const eventsForSwitcher = useMemo((): RegisteredEventWithBranding[] => {
@@ -420,52 +457,59 @@ export function EventHomePage() {
     },
   })
 
-  const seatingStatusCode = (seatingError as AxiosError | null)?.response?.status
+  const seatingStatusCode = (seatingError as AxiosError | null)?.response
+    ?.status
   const shouldShowSeatingError = !!seatingError && seatingStatusCode !== 404
 
   // Current event for switcher
-  const currentEventForSwitcher = useMemo((): RegisteredEventWithBranding | null => {
-    if (!currentEvent) return null
-    const resolvedDateTime = resolveEventDateTime(currentEvent)
-    const eventDate = resolvedDateTime ? new Date(resolvedDateTime) : new Date()
-    const now = getEffectiveNow()
-    const is_past = eventDate <= now
-    const is_upcoming =
-      !is_past &&
-      eventDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-    const taggedHeroThumbnail = getTaggedImageUrl('main_event_page_hero')
-    const taggedEventLogo = getTaggedImageUrl('event_logo')
-    const taggedNpoLogo = getTaggedImageUrl('npo_logo')
-    const thumbnail_url: string | null =
-      taggedHeroThumbnail ||
-      taggedEventLogo ||
-      taggedNpoLogo ||
-      ('banner_url' in currentEvent ? (currentEvent as { banner_url?: string | null }).banner_url ?? null : null) ||
-      currentEvent.media?.[0]?.file_url ||
-      null
-    return {
-      id: currentEvent.id,
-      name: currentEvent.name,
-      slug: currentEvent.slug,
-      event_datetime: resolvedDateTime ?? '',
-      timezone: currentEvent.timezone,
-      is_past,
-      is_upcoming,
-      thumbnail_url,
-      primary_color: currentEvent.primary_color || '#3B82F6',
-      secondary_color: currentEvent.secondary_color || '#9333EA',
-      background_color: currentEvent.background_color || '#FFFFFF',
-      accent_color: currentEvent.accent_color || '#3B82F6',
-      npo_name: currentEvent.npo_name || 'Organization',
-      npo_logo_url: taggedNpoLogo,
-    }
-  }, [
-    currentEvent,
-    timeBaseRealMs,
-    timeBaseSpoofMs,
-    resolveEventDateTime,
-    getTaggedImageUrl,
-  ])
+  const currentEventForSwitcher =
+    useMemo((): RegisteredEventWithBranding | null => {
+      if (!currentEvent) return null
+      const resolvedDateTime = resolveEventDateTime(currentEvent)
+      const eventDate = resolvedDateTime
+        ? new Date(resolvedDateTime)
+        : new Date()
+      const now = getEffectiveNow()
+      const is_past = eventDate <= now
+      const is_upcoming =
+        !is_past &&
+        eventDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+      const taggedHeroThumbnail = getTaggedImageUrl('main_event_page_hero')
+      const taggedEventLogo = getTaggedImageUrl('event_logo')
+      const taggedNpoLogo = getTaggedImageUrl('npo_logo')
+      const thumbnail_url: string | null =
+        taggedHeroThumbnail ||
+        taggedEventLogo ||
+        taggedNpoLogo ||
+        ('banner_url' in currentEvent
+          ? ((currentEvent as { banner_url?: string | null }).banner_url ??
+            null)
+          : null) ||
+        currentEvent.media?.[0]?.file_url ||
+        null
+      return {
+        id: currentEvent.id,
+        name: currentEvent.name,
+        slug: currentEvent.slug,
+        event_datetime: resolvedDateTime ?? '',
+        timezone: currentEvent.timezone,
+        is_past,
+        is_upcoming,
+        thumbnail_url,
+        primary_color: currentEvent.primary_color || '#3B82F6',
+        secondary_color: currentEvent.secondary_color || '#9333EA',
+        background_color: currentEvent.background_color || '#FFFFFF',
+        accent_color: currentEvent.accent_color || '#3B82F6',
+        npo_name: currentEvent.npo_name || 'Organization',
+        npo_logo_url: taggedNpoLogo,
+      }
+    }, [
+      currentEvent,
+      timeBaseRealMs,
+      timeBaseSpoofMs,
+      resolveEventDateTime,
+      getTaggedImageUrl,
+    ])
 
   const handleEventSelect = useCallback(
     (event: RegisteredEventWithBranding) => {
@@ -500,7 +544,9 @@ export function EventHomePage() {
         accent_color: currentEvent.accent_color,
       })
     }
-    return () => { clearBranding() }
+    return () => {
+      clearBranding()
+    }
   }, [currentEvent, applyBranding, clearBranding])
 
   // Venue map link
@@ -520,7 +566,10 @@ export function EventHomePage() {
       return
     }
 
-    const isGoogleMap = /(^https?:\/\/)?(www\.)?(maps\.google\.|google\.com\/maps)/i.test(venueMapLink)
+    const isGoogleMap =
+      /(^https?:\/\/)?(www\.)?(maps\.google\.|google\.com\/maps)/i.test(
+        venueMapLink
+      )
     if (isGoogleMap || prefetchedVenueMapUrlsRef.current.has(venueMapLink)) {
       return
     }
@@ -550,14 +599,17 @@ export function EventHomePage() {
   const generateICSFile = useCallback(() => {
     if (!currentEvent?.event_datetime) return
     const eventDate = new Date(currentEvent.event_datetime)
-    const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+    const fmt = (d: Date) =>
+      d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
     const parts: string[] = []
     if (currentEvent.venue_name) parts.push(currentEvent.venue_name)
     if (currentEvent.venue_address) parts.push(currentEvent.venue_address)
     if (currentEvent.venue_city) parts.push(currentEvent.venue_city)
     if (currentEvent.venue_state) parts.push(currentEvent.venue_state)
     const icsContent = [
-      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Fundrbolt//EN',
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Fundrbolt//EN',
       'BEGIN:VEVENT',
       `DTSTART:${fmt(eventDate)}`,
       `DTEND:${fmt(new Date(eventDate.getTime() + 3 * 3600000))}`,
@@ -566,7 +618,9 @@ export function EventHomePage() {
       `DESCRIPTION:${(currentEvent.description || '').replace(/\n/g, '\\n')}`,
       `LOCATION:${parts.join(', ')}`,
       `UID:${currentEvent.id}@fundrbolt.com`,
-      'STATUS:CONFIRMED', 'END:VEVENT', 'END:VCALENDAR',
+      'STATUS:CONFIRMED',
+      'END:VEVENT',
+      'END:VCALENDAR',
     ].join('\r\n')
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' })
     const link = document.createElement('a')
@@ -599,7 +653,8 @@ export function EventHomePage() {
   const { data: watchListData } = useQuery({
     queryKey: ['watchlist', currentEvent?.id, watchlistScope],
     queryFn: () => {
-      if (!currentEvent?.id) return Promise.resolve({ watch_list: [], total: 0 })
+      if (!currentEvent?.id)
+        return Promise.resolve({ watch_list: [], total: 0 })
       return watchListService.getWatchList(currentEvent.id)
     },
     enabled: !!currentEvent?.id,
@@ -612,120 +667,249 @@ export function EventHomePage() {
       auctionItemService.placeBid(currentEvent!.id, itemId, amount),
     onSuccess: async (bid, variables) => {
       const spoofSuffix = spoofedUserId ? ' for spoofed user' : ''
-      toast.success(`Bid placed at $${variables.amount.toLocaleString()}${spoofSuffix}`, {
-        style: { backgroundColor: 'rgb(22, 163, 74)', color: '#FFFFFF', border: '1px solid rgb(21, 128, 61)' },
-      })
+      toast.success(
+        `Bid placed at $${variables.amount.toLocaleString()}${spoofSuffix}`,
+        {
+          style: {
+            backgroundColor: 'rgb(22, 163, 74)',
+            color: '#FFFFFF',
+            border: '1px solid rgb(21, 128, 61)',
+          },
+        }
+      )
       if (typeof bid?.is_winning === 'boolean') {
-        setWinningItemMap((prev) => ({ ...prev, [variables.itemId]: bid.is_winning }))
+        setWinningItemMap((prev) => ({
+          ...prev,
+          [variables.itemId]: bid.is_winning,
+        }))
       }
       if (currentEvent?.id) {
         try {
-          await watchListService.addToWatchList(currentEvent.id, variables.itemId)
+          await watchListService.addToWatchList(
+            currentEvent.id,
+            variables.itemId
+          )
         } catch (error: unknown) {
           const status = (error as AxiosError | undefined)?.response?.status
-          if (status !== 409) toast.error('Bid placed, but failed to add item to watch list')
+          if (status !== 409)
+            toast.error('Bid placed, but failed to add item to watch list')
         }
         queryClient.setQueryData(
           ['watchlist', currentEvent.id, watchlistScope],
-          (previous: { watch_list?: Array<{ id: string; user_id: string; auction_item_id: string; added_at: string }>; total?: number } | undefined) => {
+          (
+            previous:
+              | {
+                  watch_list?: Array<{
+                    id: string
+                    user_id: string
+                    auction_item_id: string
+                    added_at: string
+                  }>
+                  total?: number
+                }
+              | undefined
+          ) => {
             const existing = previous?.watch_list ?? []
-            if (existing.some((entry) => entry.auction_item_id === variables.itemId)) return previous
+            if (
+              existing.some(
+                (entry) => entry.auction_item_id === variables.itemId
+              )
+            )
+              return previous
             return {
-              watch_list: [...existing, { id: variables.itemId, user_id: '', auction_item_id: variables.itemId, added_at: new Date().toISOString() }],
+              watch_list: [
+                ...existing,
+                {
+                  id: variables.itemId,
+                  user_id: '',
+                  auction_item_id: variables.itemId,
+                  added_at: new Date().toISOString(),
+                },
+              ],
               total: (previous?.total ?? existing.length) + 1,
             }
           }
         )
       }
       if (selectedAuctionItemId === variables.itemId) setIsItemWatching(true)
-      queryClient.invalidateQueries({ queryKey: ['auction-items', currentEvent?.id] })
-      queryClient.invalidateQueries({ queryKey: ['auction-item-detail', currentEvent?.id] })
-      queryClient.invalidateQueries({ queryKey: ['auction-item-bids', variables.itemId] })
-      queryClient.invalidateQueries({ queryKey: ['watchlist', currentEvent?.id, watchlistScope] })
+      queryClient.invalidateQueries({
+        queryKey: ['auction-items', currentEvent?.id],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['auction-item-detail', currentEvent?.id],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['auction-item-bids', variables.itemId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['watchlist', currentEvent?.id, watchlistScope],
+      })
     },
     onError: (error: unknown) => {
-      const message = (error as AxiosError<{ detail?: string }> | undefined)?.response?.data?.detail || 'Failed to place bid'
+      const message =
+        (error as AxiosError<{ detail?: string }> | undefined)?.response?.data
+          ?.detail || 'Failed to place bid'
       toast.error(message)
     },
   })
 
   // Max bid mutation
-  const { mutate: mutatePlaceMaxBid, isPending: isSettingMaxBid } = useMutation({
-    mutationFn: ({ itemId, maxAmount }: { itemId: string; maxAmount: number }) =>
-      auctionItemService.placeMaxBid(currentEvent!.id, itemId, maxAmount),
-    onSuccess: async (bid, variables) => {
-      const spoofSuffix = spoofedUserId ? ' for spoofed user' : ''
-      toast.success(`Max bid set at $${variables.maxAmount.toLocaleString()}${spoofSuffix}`, {
-        style: { backgroundColor: 'rgb(22, 163, 74)', color: '#FFFFFF', border: '1px solid rgb(21, 128, 61)' },
-      })
-      if (typeof bid?.is_winning === 'boolean') {
-        setWinningItemMap((prev) => ({ ...prev, [variables.itemId]: bid.is_winning }))
-      }
-      setMaxBidItemMap((prev) => ({ ...prev, [variables.itemId]: variables.maxAmount }))
-      if (currentEvent?.id) {
-        try {
-          await watchListService.addToWatchList(currentEvent.id, variables.itemId)
-        } catch (error: unknown) {
-          const status = (error as AxiosError | undefined)?.response?.status
-          if (status !== 409) toast.error('Max bid set, but failed to add item to watch list')
-        }
-        queryClient.setQueryData(
-          ['watchlist', currentEvent.id, watchlistScope],
-          (previous: { watch_list?: Array<{ id: string; user_id: string; auction_item_id: string; added_at: string }>; total?: number } | undefined) => {
-            const existing = previous?.watch_list ?? []
-            if (existing.some((entry) => entry.auction_item_id === variables.itemId)) return previous
-            return {
-              watch_list: [...existing, { id: variables.itemId, user_id: '', auction_item_id: variables.itemId, added_at: new Date().toISOString() }],
-              total: (previous?.total ?? existing.length) + 1,
-            }
+  const { mutate: mutatePlaceMaxBid, isPending: isSettingMaxBid } = useMutation(
+    {
+      mutationFn: ({
+        itemId,
+        maxAmount,
+      }: {
+        itemId: string
+        maxAmount: number
+      }) => auctionItemService.placeMaxBid(currentEvent!.id, itemId, maxAmount),
+      onSuccess: async (bid, variables) => {
+        const spoofSuffix = spoofedUserId ? ' for spoofed user' : ''
+        toast.success(
+          `Max bid set at $${variables.maxAmount.toLocaleString()}${spoofSuffix}`,
+          {
+            style: {
+              backgroundColor: 'rgb(22, 163, 74)',
+              color: '#FFFFFF',
+              border: '1px solid rgb(21, 128, 61)',
+            },
           }
         )
-      }
-      if (selectedAuctionItemId === variables.itemId) setIsItemWatching(true)
-      queryClient.invalidateQueries({ queryKey: ['auction-items', currentEvent?.id] })
-      queryClient.invalidateQueries({ queryKey: ['auction-item-detail', currentEvent?.id] })
-      queryClient.invalidateQueries({ queryKey: ['auction-item-bids', variables.itemId] })
-      queryClient.invalidateQueries({ queryKey: ['watchlist', currentEvent?.id, watchlistScope] })
-    },
-    onError: (error: unknown) => {
-      const message = (error as AxiosError<{ detail?: string }> | undefined)?.response?.data?.detail || 'Failed to set max bid'
-      toast.error(message)
-    },
-  })
+        if (typeof bid?.is_winning === 'boolean') {
+          setWinningItemMap((prev) => ({
+            ...prev,
+            [variables.itemId]: bid.is_winning,
+          }))
+        }
+        setMaxBidItemMap((prev) => ({
+          ...prev,
+          [variables.itemId]: variables.maxAmount,
+        }))
+        if (currentEvent?.id) {
+          try {
+            await watchListService.addToWatchList(
+              currentEvent.id,
+              variables.itemId
+            )
+          } catch (error: unknown) {
+            const status = (error as AxiosError | undefined)?.response?.status
+            if (status !== 409)
+              toast.error('Max bid set, but failed to add item to watch list')
+          }
+          queryClient.setQueryData(
+            ['watchlist', currentEvent.id, watchlistScope],
+            (
+              previous:
+                | {
+                    watch_list?: Array<{
+                      id: string
+                      user_id: string
+                      auction_item_id: string
+                      added_at: string
+                    }>
+                    total?: number
+                  }
+                | undefined
+            ) => {
+              const existing = previous?.watch_list ?? []
+              if (
+                existing.some(
+                  (entry) => entry.auction_item_id === variables.itemId
+                )
+              )
+                return previous
+              return {
+                watch_list: [
+                  ...existing,
+                  {
+                    id: variables.itemId,
+                    user_id: '',
+                    auction_item_id: variables.itemId,
+                    added_at: new Date().toISOString(),
+                  },
+                ],
+                total: (previous?.total ?? existing.length) + 1,
+              }
+            }
+          )
+        }
+        if (selectedAuctionItemId === variables.itemId) setIsItemWatching(true)
+        queryClient.invalidateQueries({
+          queryKey: ['auction-items', currentEvent?.id],
+        })
+        queryClient.invalidateQueries({
+          queryKey: ['auction-item-detail', currentEvent?.id],
+        })
+        queryClient.invalidateQueries({
+          queryKey: ['auction-item-bids', variables.itemId],
+        })
+        queryClient.invalidateQueries({
+          queryKey: ['watchlist', currentEvent?.id, watchlistScope],
+        })
+      },
+      onError: (error: unknown) => {
+        const message =
+          (error as AxiosError<{ detail?: string }> | undefined)?.response?.data
+            ?.detail || 'Failed to set max bid'
+        toast.error(message)
+      },
+    }
+  )
 
   const { mutate: mutateBuyNow, isPending: isBuyingNow } = useMutation({
     mutationFn: ({ itemId }: { itemId: string }) =>
       auctionItemService.buyNow(currentEvent!.id, itemId, 1),
     onSuccess: (_response, variables) => {
       toast.success('Successfully completed Buy Now')
-      queryClient.invalidateQueries({ queryKey: ['auction-items', currentEvent?.id] })
-      queryClient.invalidateQueries({ queryKey: ['auction-item-detail', currentEvent?.id] })
-      queryClient.invalidateQueries({ queryKey: ['watchlist', currentEvent?.id, watchlistScope] })
-      if (selectedAuctionItemId === variables.itemId) setSelectedAuctionItemId(null)
+      queryClient.invalidateQueries({
+        queryKey: ['auction-items', currentEvent?.id],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['auction-item-detail', currentEvent?.id],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['watchlist', currentEvent?.id, watchlistScope],
+      })
+      if (selectedAuctionItemId === variables.itemId)
+        setSelectedAuctionItemId(null)
     },
     onError: (error: unknown) => {
-      const message = (error as AxiosError<{ detail?: string }> | undefined)?.response?.data?.detail || 'Failed to complete Buy Now'
+      const message =
+        (error as AxiosError<{ detail?: string }> | undefined)?.response?.data
+          ?.detail || 'Failed to complete Buy Now'
       toast.error(message)
     },
   })
 
   const handlePlaceBid = useCallback(
     (itemId: string, amount: number) => {
-      if (isPreviewMode) { toast.info('Bidding is disabled in preview mode'); return }
+      if (isPreviewMode) {
+        toast.info('Bidding is disabled in preview mode')
+        return
+      }
+
       mutatePlaceBid({ itemId, amount })
     },
     [mutatePlaceBid, isPreviewMode]
   )
   const handleSetMaxBid = useCallback(
     (itemId: string, amount: number) => {
-      if (isPreviewMode) { toast.info('Bidding is disabled in preview mode'); return }
+      if (isPreviewMode) {
+        toast.info('Bidding is disabled in preview mode')
+        return
+      }
+
       mutatePlaceMaxBid({ itemId, maxAmount: amount })
     },
     [mutatePlaceMaxBid, isPreviewMode]
   )
   const handleBuyNow = useCallback(
     (itemId: string) => {
-      if (isPreviewMode) { toast.info('Bidding is disabled in preview mode'); return }
+      if (isPreviewMode) {
+        toast.info('Bidding is disabled in preview mode')
+        return
+      }
+
       mutateBuyNow({ itemId })
     },
     [mutateBuyNow, isPreviewMode]
@@ -764,19 +948,26 @@ export function EventHomePage() {
     return (
       <div
         className='flex min-h-screen items-center justify-center'
-        style={{ background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246) / 0.15) 0%, rgb(var(--event-secondary, 147, 51, 234) / 0.15) 100%)` }}
+        style={{
+          background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246) / 0.15) 0%, rgb(var(--event-secondary, 147, 51, 234) / 0.15) 100%)`,
+        }}
       >
         <div className='text-center'>
           <div
             className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full'
-            style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)' }}
+            style={{
+              backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
+            }}
           >
             <Loader2
               className='h-8 w-8 animate-spin'
               style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
             />
           </div>
-          <p className='text-sm font-medium' style={{ color: 'var(--event-text-on-background, #6B7280)' }}>
+          <p
+            className='text-sm font-medium'
+            style={{ color: 'var(--event-text-on-background, #6B7280)' }}
+          >
             Loading event…
           </p>
         </div>
@@ -797,12 +988,15 @@ export function EventHomePage() {
           </CardHeader>
           <CardContent>
             <p className='text-muted-foreground mb-4'>
-              We couldn't find this event. It may have been removed or you may not have access.
+              We couldn't find this event. It may have been removed or you may
+              not have access.
             </p>
             <button
               onClick={() => navigate({ to: '/home' })}
               className='w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white'
-              style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))' }}
+              style={{
+                backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
+              }}
             >
               Return to Home
             </button>
@@ -856,7 +1050,8 @@ export function EventHomePage() {
     if (!currentEvent.media?.length) return null
     // Prefer image with "logo" in name, else first image
     const logo = currentEvent.media.find(
-      (m) => m.media_type === 'image' && m.file_name.toLowerCase().includes('logo')
+      (m) =>
+        m.media_type === 'image' && m.file_name.toLowerCase().includes('logo')
     )
     return logo?.file_url || null
   }
@@ -872,7 +1067,9 @@ export function EventHomePage() {
     return 'upcoming'
   }
   const eventStatus = getEventStatus()
-  const aboutEventHtml = renderMarkdownToSafeHtml(currentEvent.description ?? '')
+  const aboutEventHtml = renderMarkdownToSafeHtml(
+    currentEvent.description ?? ''
+  )
 
   // ─── Tab content ─────────────────────────────────────────────────────────────
 
@@ -880,7 +1077,8 @@ export function EventHomePage() {
     onItemClick: async (item: AuctionItemGalleryItem, isWinning: boolean) => {
       setWinningItemMap((prev) => ({ ...prev, [item.id]: isWinning }))
       const isWatched =
-        watchListData?.watch_list?.some((e) => e.auction_item_id === item.id) ?? false
+        watchListData?.watch_list?.some((e) => e.auction_item_id === item.id) ??
+        false
       setIsItemWatching(isWatched)
 
       if (isPreviewMode) {
@@ -891,14 +1089,16 @@ export function EventHomePage() {
       try {
         const detail = await queryClient.fetchQuery({
           queryKey: ['auction-item-detail', currentEvent.id, item.id],
-          queryFn: () => auctionItemService.getAuctionItem(currentEvent.id, item.id),
+          queryFn: () =>
+            auctionItemService.getAuctionItem(currentEvent.id, item.id),
           staleTime: 15000,
           retry: 1,
         })
 
         const primaryImageUrl =
           detail.primary_image_url ??
-          detail.media?.find((media) => media.media_type === 'image')?.file_path ??
+          detail.media?.find((media) => media.media_type === 'image')
+            ?.file_path ??
           null
 
         if (primaryImageUrl) {
@@ -936,7 +1136,9 @@ export function EventHomePage() {
       onAddToCalendar={generateICSFile}
       venueMapLink={venueMapLink}
       switcherSlot={
-        !isPreviewMode && currentEventForSwitcher && eventsForSwitcher.length > 0 ? (
+        !isPreviewMode &&
+        currentEventForSwitcher &&
+        eventsForSwitcher.length > 0 ? (
           <EventSwitcher
             currentEvent={currentEventForSwitcher}
             events={eventsForSwitcher}
@@ -952,7 +1154,7 @@ export function EventHomePage() {
     <>
       {heroAndNav}
 
-      <div className='px-4 py-4 space-y-5'>
+      <div className='space-y-5 px-4 py-4'>
         {/* Countdown — show if event is in the future */}
         {countdownTargetDate && (
           <div>
@@ -969,13 +1171,17 @@ export function EventHomePage() {
           <div>
             <button
               onClick={() => setActiveTab('auction')}
-              className='w-full rounded-2xl p-4 text-left transition-all active:scale-[0.98] hover:shadow-md'
+              className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'
               style={{
                 background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
               }}
             >
-              <p className='text-lg font-black text-white'>Browse Auction Items</p>
-              <p className='text-sm text-white/80'>Place bids and win amazing items →</p>
+              <p className='text-lg font-black text-white'>
+                Browse Auction Items
+              </p>
+              <p className='text-sm text-white/80'>
+                Place bids and win amazing items →
+              </p>
             </button>
           </div>
         )}
@@ -993,7 +1199,9 @@ export function EventHomePage() {
             attire={currentEvent.attire}
             contactEmail={currentEvent.primary_contact_email}
             contactPhone={currentEvent.primary_contact_phone}
-            eventWebsite={currentEvent.links?.find((l) => l.link_type === 'website')?.url}
+            eventWebsite={
+              currentEvent.links?.find((l) => l.link_type === 'website')?.url
+            }
             isPast={currentEventForSwitcher?.is_past}
             isUpcoming={currentEventForSwitcher?.is_upcoming}
           />
@@ -1009,7 +1217,7 @@ export function EventHomePage() {
             }}
           >
             <h3
-              className='mb-2 text-xs font-bold uppercase tracking-widest'
+              className='mb-2 text-xs font-bold tracking-widest uppercase'
               style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
             >
               About This Event
@@ -1034,7 +1242,7 @@ export function EventHomePage() {
     <>
       {/* Sticky header */}
       <div
-        className='sticky top-0 z-20 px-4 py-3 border-b backdrop-blur-md'
+        className='sticky top-0 z-20 border-b px-4 py-3 backdrop-blur-md'
         style={{
           backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.92)',
           borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
@@ -1051,8 +1259,8 @@ export function EventHomePage() {
           </div>
           <div className='flex items-center gap-2'>
             {eventStatus === 'live' && (
-              <span className='flex items-center gap-1.5 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white animate-live-glow'>
-                <span className='h-1.5 w-1.5 rounded-full bg-white animate-pulse' />
+              <span className='animate-live-glow flex items-center gap-1.5 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white'>
+                <span className='h-1.5 w-1.5 animate-pulse rounded-full bg-white' />
                 LIVE
               </span>
             )}
@@ -1072,7 +1280,9 @@ export function EventHomePage() {
           initialSort='highest_bid'
           eventStatus={currentEvent.status}
           eventDateTime={resolveEventDateTime(currentEvent) ?? undefined}
-          onItemClick={(item, isWinning) => sharedAuctionProps.onItemClick(item, isWinning)}
+          onItemClick={(item, isWinning) =>
+            sharedAuctionProps.onItemClick(item, isWinning)
+          }
         />
       </div>
     </>
@@ -1081,7 +1291,7 @@ export function EventHomePage() {
   const seatTabContent = (
     <>
       <div
-        className='sticky top-0 z-20 px-4 py-3 border-b backdrop-blur-md'
+        className='sticky top-0 z-20 border-b px-4 py-3 backdrop-blur-md'
         style={{
           backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.92)',
           borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
@@ -1110,14 +1320,17 @@ export function EventHomePage() {
 
         {shouldShowSeatingError && (
           <div
-            className='flex items-center gap-3 rounded-2xl border p-4 animate-card-enter'
+            className='animate-card-enter flex items-center gap-3 rounded-2xl border p-4'
             style={{
               borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
               backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.06)',
             }}
           >
-            <AlertCircle className='h-5 w-5 text-destructive flex-shrink-0' />
-            <p className='text-sm' style={{ color: 'var(--event-text-on-background, #374151)' }}>
+            <AlertCircle className='text-destructive h-5 w-5 flex-shrink-0' />
+            <p
+              className='text-sm'
+              style={{ color: 'var(--event-text-on-background, #374151)' }}
+            >
               Unable to load seating information. Please try again later.
             </p>
           </div>
@@ -1125,15 +1338,21 @@ export function EventHomePage() {
 
         {seatingInfo && !shouldShowSeatingError && !seatingLoading && (
           <div className='animate-card-enter'>
-            <MySeatingSection seatingInfo={seatingInfo} venueMapLink={venueMapLink} />
+            <MySeatingSection
+              seatingInfo={seatingInfo}
+              venueMapLink={venueMapLink}
+            />
           </div>
         )}
 
         {!seatingLoading && !seatingInfo && !shouldShowSeatingError && (
           <div className='flex flex-col items-center justify-center py-20 text-center'>
             <div
-              className='mb-5 flex h-24 w-24 items-center justify-center rounded-full animate-float'
-              style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.1)' }}
+              className='animate-float mb-5 flex h-24 w-24 items-center justify-center rounded-full'
+              style={{
+                backgroundColor:
+                  'rgb(var(--event-primary, 59, 130, 246) / 0.1)',
+              }}
             >
               <span className='text-5xl'>🪑</span>
             </div>
@@ -1144,13 +1363,14 @@ export function EventHomePage() {
               {isPreviewMode ? 'Seating Preview' : 'No Seat Assigned Yet'}
             </p>
             <p
-              className='text-sm max-w-xs'
-              style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+              className='max-w-xs text-sm'
+              style={{
+                color: 'var(--event-text-muted-on-background, #6B7280)',
+              }}
             >
               {isPreviewMode
                 ? 'In the live experience, donors will see their table assignment, tablemates, and bidder number here.'
-                : 'Your table assignment will appear here once the event coordinator assigns seating. Check back closer to the event!'
-              }
+                : 'Your table assignment will appear here once the event coordinator assigns seating. Check back closer to the event!'}
             </p>
           </div>
         )}
@@ -1183,7 +1403,9 @@ export function EventHomePage() {
       return 'translate-x-0'
     }
 
-    return tabIndex < displayedTabIndex ? '-translate-x-full' : 'translate-x-full'
+    return tabIndex < displayedTabIndex
+      ? '-translate-x-full'
+      : 'translate-x-full'
   }
 
   // ─── Main render ─────────────────────────────────────────────────────────────
@@ -1204,7 +1426,7 @@ export function EventHomePage() {
           {tabOrder.map((tab) => (
             <section
               key={tab}
-              className={`absolute inset-0 overflow-y-auto overflow-x-hidden transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${getTabPanelPositionClass(tab)}`}
+              className={`absolute inset-0 overflow-x-hidden overflow-y-auto transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${getTabPanelPositionClass(tab)}`}
               style={{
                 WebkitOverflowScrolling: 'touch',
                 pointerEvents: tab === visibleTab ? 'auto' : 'none',
@@ -1218,10 +1440,7 @@ export function EventHomePage() {
       </main>
 
       {/* Fixed bottom navigation */}
-      <BottomTabNav
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
+      <BottomTabNav activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Auction Item Detail Modal */}
       <AuctionItemDetailModal
@@ -1237,13 +1456,19 @@ export function EventHomePage() {
         isSubmittingBid={isPlacingBid || isSettingMaxBid || isBuyingNow}
         isWatching={isItemWatching}
         currentUserMaxBid={
-          selectedAuctionItemId ? maxBidItemMap[selectedAuctionItemId] ?? null : null
+          selectedAuctionItemId
+            ? (maxBidItemMap[selectedAuctionItemId] ?? null)
+            : null
         }
         isCurrentUserWinning={
-          selectedAuctionItemId ? winningItemMap[selectedAuctionItemId] : undefined
+          selectedAuctionItemId
+            ? winningItemMap[selectedAuctionItemId]
+            : undefined
         }
         onWatchToggle={
-          isPreviewMode ? undefined : (isWatching) => setIsItemWatching(isWatching)
+          isPreviewMode
+            ? undefined
+            : (isWatching) => setIsItemWatching(isWatching)
         }
       />
     </div>
