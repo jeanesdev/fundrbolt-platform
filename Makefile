@@ -285,7 +285,23 @@ kill-backend:
 
 kill-frontend:
 	@echo "Stopping frontend server..."
-	pkill -f 'vite/bin/vite.js' || echo "Frontend not running"
+	@pids=$$(ps -eo pid=,ppid=,cmd= | awk -v self=$$$$ -v parent=$$PPID ' \
+		$$1 != self && $$1 != parent && $$2 != self && $$2 != parent && ($$0 ~ /vite\/bin\/vite\.js/ || $$0 ~ /\/bin\/pnpm dev( --port 5174)?$$/) { print $$1 }' ); \
+	if [ -n "$$pids" ]; then \
+		kill $$pids 2>/dev/null || true; \
+	else \
+		echo "Frontend not running"; \
+	fi
+
+kill-donor-pwa:
+	@echo "Stopping donor PWA server..."
+	@pids=$$(ps -eo pid=,ppid=,cmd= | awk -v self=$$$$ -v parent=$$PPID ' \
+		$$1 != self && $$1 != parent && $$2 != self && $$2 != parent && ($$0 ~ /frontend\/donor-pwa/ || $$0 ~ /\/bin\/pnpm dev --port 5174$$/ || $$0 ~ /vite\/bin\/vite\.js --port 5174$$/) { print $$1 }' ); \
+	if [ -n "$$pids" ]; then \
+		kill $$pids 2>/dev/null || true; \
+	else \
+		echo "Donor PWA not running"; \
+	fi
 
 kill-all: kill-backend kill-frontend
 

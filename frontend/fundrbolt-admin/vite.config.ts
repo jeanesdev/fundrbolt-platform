@@ -105,6 +105,8 @@ export default defineConfig({
     },
   },
   server: {
+    port: 5173,
+    strictPort: true,
     host: '0.0.0.0', // Listen on all interfaces
     allowedHosts: [
       '.ngrok-free.dev', // Allow all ngrok free domains

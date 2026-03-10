@@ -22,6 +22,7 @@ import { EventHeroSection, type EventStatus } from '@/components/event-home/Even
 import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { usePreviewMode } from '@/contexts/PreviewContext'
 import { useEventBranding } from '@/hooks/use-event-branding'
 import { useEventContext } from '@/hooks/use-event-context'
 import { useTabSwipe } from '@/hooks/use-tab-swipe'
@@ -105,6 +106,7 @@ function renderMarkdownToSafeHtml(markdown: string): string {
 
 export function EventHomePage() {
   const navigate = useNavigate()
+  const { isPreviewMode } = usePreviewMode()
   const params = useParams({ strict: false }) as {
     eventSlug?: string
     slug?: string
@@ -237,6 +239,10 @@ export function EventHomePage() {
   }, [userSelectedTab, currentEvent, resolveEventDateTime])
 
   const prefetchAuctionTabData = useCallback(async () => {
+    if (isPreviewMode) {
+      return
+    }
+
     if (!currentEvent?.id) {
       return
     }
@@ -336,7 +342,7 @@ export function EventHomePage() {
         const image = new Image()
         image.src = url
       })
-  }, [currentEvent, queryClient])
+  }, [currentEvent, isPreviewMode, queryClient])
 
   const setActiveTab = useCallback((tab: DonorTab) => {
     const currentVisibleTab = userSelectedTab === null ? activeTab : displayedTab
@@ -395,7 +401,7 @@ export function EventHomePage() {
     })
   }, [availableEvents, timeBaseRealMs, timeBaseSpoofMs])
 
-  // Seating query
+  // Seating query (disabled in preview mode — no user-specific data)
   const {
     data: seatingInfo,
     error: seatingError,
@@ -403,7 +409,7 @@ export function EventHomePage() {
   } = useQuery<SeatingInfoResponse>({
     queryKey: ['seating', 'my-info', currentEvent?.id, spoofedUserId ?? 'self'],
     queryFn: () => getMySeatingInfo(currentEvent!.id),
-    enabled: !!currentEvent?.id,
+    enabled: !!currentEvent?.id && !isPreviewMode,
     placeholderData: keepPreviousData,
     staleTime: 10 * 1000,
     refetchInterval: 10 * 1000,
@@ -469,6 +475,8 @@ export function EventHomePage() {
   )
 
   const loadEvent = useCallback(() => {
+    // In preview mode, event data is seeded by the preview route — skip fetching
+    if (isPreviewMode) return
     if (eventSlug) {
       loadEventBySlug(eventSlug).catch(() => {
         toast.error('Failed to load event')
@@ -476,7 +484,7 @@ export function EventHomePage() {
         navigate({ to: '/home' })
       })
     }
-  }, [eventSlug, loadEventBySlug, navigate, setSelectedEvent])
+  }, [eventSlug, loadEventBySlug, navigate, setSelectedEvent, isPreviewMode])
 
   useEffect(() => {
     loadEvent()
@@ -571,6 +579,10 @@ export function EventHomePage() {
   }, [currentEvent])
 
   useEffect(() => {
+    if (isPreviewMode) {
+      return
+    }
+
     if (!currentEvent?.id) {
       return
     }
@@ -582,7 +594,7 @@ export function EventHomePage() {
     return () => {
       window.clearTimeout(timeoutId)
     }
-  }, [currentEvent?.id, prefetchAuctionTabData])
+  }, [currentEvent?.id, isPreviewMode, prefetchAuctionTabData])
 
   const { data: watchListData } = useQuery({
     queryKey: ['watchlist', currentEvent?.id, watchlistScope],
@@ -698,16 +710,25 @@ export function EventHomePage() {
   })
 
   const handlePlaceBid = useCallback(
-    (itemId: string, amount: number) => { mutatePlaceBid({ itemId, amount }) },
-    [mutatePlaceBid]
+    (itemId: string, amount: number) => {
+      if (isPreviewMode) { toast.info('Bidding is disabled in preview mode'); return }
+      mutatePlaceBid({ itemId, amount })
+    },
+    [mutatePlaceBid, isPreviewMode]
   )
   const handleSetMaxBid = useCallback(
-    (itemId: string, amount: number) => { mutatePlaceMaxBid({ itemId, maxAmount: amount }) },
-    [mutatePlaceMaxBid]
+    (itemId: string, amount: number) => {
+      if (isPreviewMode) { toast.info('Bidding is disabled in preview mode'); return }
+      mutatePlaceMaxBid({ itemId, maxAmount: amount })
+    },
+    [mutatePlaceMaxBid, isPreviewMode]
   )
   const handleBuyNow = useCallback(
-    (itemId: string) => { mutateBuyNow({ itemId }) },
-    [mutateBuyNow]
+    (itemId: string) => {
+      if (isPreviewMode) { toast.info('Bidding is disabled in preview mode'); return }
+      mutateBuyNow({ itemId })
+    },
+    [mutateBuyNow, isPreviewMode]
   )
 
   // Compute visible tab state (needed by swipe hooks — must be before early returns)
@@ -862,6 +883,11 @@ export function EventHomePage() {
         watchListData?.watch_list?.some((e) => e.auction_item_id === item.id) ?? false
       setIsItemWatching(isWatched)
 
+      if (isPreviewMode) {
+        setSelectedAuctionItemId(item.id)
+        return
+      }
+
       try {
         const detail = await queryClient.fetchQuery({
           queryKey: ['auction-item-detail', currentEvent.id, item.id],
@@ -910,7 +936,7 @@ export function EventHomePage() {
       onAddToCalendar={generateICSFile}
       venueMapLink={venueMapLink}
       switcherSlot={
-        currentEventForSwitcher && eventsForSwitcher.length > 0 ? (
+        !isPreviewMode && currentEventForSwitcher && eventsForSwitcher.length > 0 ? (
           <EventSwitcher
             currentEvent={currentEventForSwitcher}
             events={eventsForSwitcher}
@@ -1039,6 +1065,7 @@ export function EventHomePage() {
         <AuctionGallery
           eventId={currentEvent.id}
           watchlistScope={watchlistScope}
+          disableWatchlist={isPreviewMode}
           maxBidItemMap={maxBidItemMap}
           winningItemMap={winningItemMap}
           initialFilter='all'
@@ -1114,14 +1141,16 @@ export function EventHomePage() {
               className='mb-2 text-lg font-bold'
               style={{ color: 'var(--event-text-on-background, #111827)' }}
             >
-              No Seat Assigned Yet
+              {isPreviewMode ? 'Seating Preview' : 'No Seat Assigned Yet'}
             </p>
             <p
               className='text-sm max-w-xs'
               style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
             >
-              Your table assignment will appear here once the event coordinator assigns seating.
-              Check back closer to the event!
+              {isPreviewMode
+                ? 'In the live experience, donors will see their table assignment, tablemates, and bidder number here.'
+                : 'Your table assignment will appear here once the event coordinator assigns seating. Check back closer to the event!'
+              }
             </p>
           </div>
         )}
@@ -1198,6 +1227,7 @@ export function EventHomePage() {
       <AuctionItemDetailModal
         eventId={currentEvent.id}
         itemId={selectedAuctionItemId}
+        showWatchButton={!isPreviewMode}
         eventStatus={currentEvent.status}
         eventDateTime={resolveEventDateTime(currentEvent) ?? undefined}
         onClose={() => setSelectedAuctionItemId(null)}
@@ -1212,7 +1242,9 @@ export function EventHomePage() {
         isCurrentUserWinning={
           selectedAuctionItemId ? winningItemMap[selectedAuctionItemId] : undefined
         }
-        onWatchToggle={(isWatching) => setIsItemWatching(isWatching)}
+        onWatchToggle={
+          isPreviewMode ? undefined : (isWatching) => setIsItemWatching(isWatching)
+        }
       />
     </div>
   )

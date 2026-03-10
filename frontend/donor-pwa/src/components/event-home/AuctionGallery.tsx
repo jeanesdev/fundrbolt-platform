@@ -174,6 +174,7 @@ async function fetchAuctionItems(
 export interface AuctionGalleryProps {
   eventId: string;
   watchlistScope?: string;
+  disableWatchlist?: boolean;
   maxBidItemMap?: Record<string, number>;
   winningItemMap?: Record<string, boolean>;
   initialFilter?: AuctionFilterType;
@@ -231,6 +232,7 @@ const sortOptions: { value: AuctionSortType; label: string }[] = [
 export function AuctionGallery({
   eventId,
   watchlistScope = 'self',
+  disableWatchlist = false,
   maxBidItemMap = {},
   winningItemMap = {},
   initialFilter = 'all',
@@ -261,7 +263,7 @@ export function AuctionGallery({
   const { data: watchListData } = useQuery({
     queryKey: ['watchlist', eventId, watchlistScope],
     queryFn: () => watchListService.getWatchList(eventId),
-    enabled: !!eventId,
+    enabled: !!eventId && !disableWatchlist,
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
     refetchOnMount: false,
@@ -691,13 +693,17 @@ export function AuctionGallery({
 
   const handleToggleWatch = useCallback(
     (item: AuctionItemGalleryItem, nextWatched: boolean) => {
+      if (disableWatchlist) {
+        return;
+      }
+
       if (nextWatched) {
         addToWatchList(item.id);
       } else {
         removeFromWatchList(item.id);
       }
     },
-    [addToWatchList, removeFromWatchList]
+    [addToWatchList, disableWatchlist, removeFromWatchList]
   );
 
   // Loading state
@@ -937,7 +943,7 @@ export function AuctionGallery({
                   isWatched={watchedItemIds.has(item.id)}
                   currentUserMaxBid={maxBidItemMap[item.id] ?? null}
                   isCurrentUserWinning={isItemCurrentlyWinning(item.id)}
-                  onToggleWatch={handleToggleWatch}
+                  onToggleWatch={disableWatchlist ? undefined : handleToggleWatch}
                   onClick={handleBidClick}
                   onBidClick={handleBidClick}
                   eventStatus={eventStatus}
@@ -980,7 +986,7 @@ export function AuctionGallery({
                 isWatched={watchedItemIds.has(item.id)}
                 currentUserMaxBid={maxBidItemMap[item.id] ?? null}
                 isCurrentUserWinning={isItemCurrentlyWinning(item.id)}
-                onToggleWatch={handleToggleWatch}
+                onToggleWatch={disableWatchlist ? undefined : handleToggleWatch}
                 onClick={handleBidClick}
                 onBidClick={handleBidClick}
                 eventStatus={eventStatus}
@@ -1013,7 +1019,7 @@ export function AuctionGallery({
               isWatched={watchedItemIds.has(item.id)}
               currentUserMaxBid={maxBidItemMap[item.id] ?? null}
               isCurrentUserWinning={isItemCurrentlyWinning(item.id)}
-              onToggleWatch={handleToggleWatch}
+              onToggleWatch={disableWatchlist ? undefined : handleToggleWatch}
               onClick={handleBidClick}
               onBidClick={handleBidClick}
               eventStatus={eventStatus}

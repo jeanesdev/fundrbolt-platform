@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
+import { usePreviewMode } from '@/contexts/PreviewContext'
 import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
 import { useItemViewTracking } from '@/hooks/useItemViewTracking'
 import { cn } from '@/lib/utils'
@@ -31,7 +32,7 @@ import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
 import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
 import '@ncdai/react-wheel-picker/style.css'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowRight,
   ChevronLeft,
@@ -47,6 +48,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 export interface AuctionItemDetailModalProps {
   eventId: string
   itemId: string | null
+  showWatchButton?: boolean
   eventStatus?: 'draft' | 'active' | 'closed'
   eventDateTime?: string
   onClose: () => void
@@ -91,6 +93,7 @@ function normalizeIdentifier(value: unknown): string | null {
 export function AuctionItemDetailModal({
   eventId,
   itemId,
+  showWatchButton = true,
   eventStatus = 'active',
   eventDateTime,
   onClose,
@@ -103,6 +106,8 @@ export function AuctionItemDetailModal({
   isCurrentUserWinning,
   currentUserMaxBid = null,
 }: AuctionItemDetailModalProps) {
+  const { isPreviewMode, previewData } = usePreviewMode()
+  const queryClient = useQueryClient()
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [isFullscreenImageOpen, setIsFullscreenImageOpen] = useState(false)
   const [fullscreenImageSrc, setFullscreenImageSrc] = useState<string | null>(
@@ -138,7 +143,23 @@ export function AuctionItemDetailModal({
   } = useQuery({
     queryKey: ['auction-item-detail', eventId, itemId],
     queryFn: () => auctionItemService.getAuctionItem(eventId, itemId!),
-    enabled: !!itemId && !!eventId,
+    enabled: !!itemId && !!eventId && !isPreviewMode,
+    initialData: () => {
+      if (!itemId) {
+        return undefined
+      }
+
+      const cachedItem = queryClient.getQueryData(['auction-item-detail', eventId, itemId])
+      if (cachedItem) {
+        return cachedItem
+      }
+
+      if (!isPreviewMode) {
+        return undefined
+      }
+
+      return previewData?.auctionItems.find((auctionItem) => auctionItem.id === itemId)
+    },
     staleTime: 60 * 1000,
     gcTime: 10 * 60 * 1000,
     retry: 1,
@@ -149,7 +170,7 @@ export function AuctionItemDetailModal({
   useItemViewTracking({
     eventId,
     itemId,
-    enabled: !!itemId && eventStatus === 'active',
+    enabled: !!itemId && eventStatus === 'active' && !isPreviewMode,
   })
 
   const isOpen = !!itemId
@@ -708,13 +729,15 @@ export function AuctionItemDetailModal({
                         Item #{item.bid_number}
                       </DialogDescription>
                     </div>
-                    <WatchListButton
-                      eventId={eventId}
-                      itemId={item.id}
-                      isWatching={isWatching}
-                      onToggle={onWatchToggle}
-                      variant='icon'
-                    />
+                    {showWatchButton && (
+                      <WatchListButton
+                        eventId={eventId}
+                        itemId={item.id}
+                        isWatching={isWatching}
+                        onToggle={onWatchToggle}
+                        variant='icon'
+                      />
+                    )}
                   </div>
                 </DialogHeader>
 

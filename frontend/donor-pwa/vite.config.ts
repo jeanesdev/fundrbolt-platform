@@ -10,7 +10,8 @@ export default defineConfig({
   plugins: [
     tanstackRouter({
       target: 'react',
-      autoCodeSplitting: true,
+      // Disabled because generated route stubs were overwriting preview routes during dev.
+      autoCodeSplitting: false,
     }),
     react(),
     tailwindcss(),
@@ -103,6 +104,8 @@ export default defineConfig({
     },
   },
   server: {
+    port: 5174,
+    strictPort: true,
     host: '0.0.0.0', // Listen on all interfaces
     allowedHosts: [
       '.ngrok-free.dev', // Allow all ngrok free domains

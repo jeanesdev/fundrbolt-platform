@@ -24,6 +24,7 @@ from app.api.v1 import (
     consent,
     cookies,
     donor_seating,
+    event_preview,
     events,
     events_food_options,
     events_links,
@@ -92,5 +93,7 @@ api_router.include_router(ticket_options.router, tags=["admin-tickets"])
 api_router.include_router(promo_codes.router, tags=["admin-tickets"])
 api_router.include_router(sales_tracking.router, prefix="/admin", tags=["admin-tickets"])
 api_router.include_router(admin.router, tags=["admin"])
+api_router.include_router(event_preview.admin_router, tags=["admin-preview"])
+api_router.include_router(event_preview.preview_router, tags=["event-preview"])
 
 __all__ = ["api_router"]
