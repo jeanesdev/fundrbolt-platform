@@ -91,6 +91,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 
 **NPO Onboarding Wizard**
 
+- **FR-000**: The NPO profile step MUST collect the following required fields: NPO name, EIN/charity registration number, website URL, and primary contact phone number. Mission/description MUST be clearly marked as optional and MAY be left blank.
 - **FR-001**: The NPO onboarding wizard MUST be accessible from a public URL suitable for linking from the landing page.
 - **FR-002**: The wizard MUST present onboarding in a sequence of clearly labelled, single-purpose steps rather than one combined form.
 - **FR-003**: The wizard MUST display a persistent progress indicator showing the current step and total steps remaining.
@@ -139,7 +140,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 
 ### Key Entities
 
-- **NPO Application**: Represents a submitted request to register a nonprofit on FundrBolt. Contains applicant contact details, NPO name, description, submission timestamp, current status (pending / approved / rejected), and rejection reason if applicable.
+- **NPO Application**: Represents a submitted request to register a nonprofit on FundrBolt. Required fields: NPO name, EIN/charity registration number, website URL, primary contact phone. Optional fields: mission/description. Also contains: applicant contact details, submission timestamp, current status (pending / approved / rejected), and rejection reason if applicable.
 - **User Account**: A FundrBolt user. May exist prior to NPO onboarding or be created as part of it. Linked to one or more NPOs once approved.
 - **Wizard Session**: Tracks in-progress onboarding state for a visitor or user, allowing resumption within 24 hours. Stores completed steps and entered data.
 - **Event (First Event)**: An optional event created during the final step of NPO onboarding. Follows the same structure as any FundrBolt event but is pre-associated with the pending NPO.
@@ -157,6 +158,14 @@ A FundrBolt super admin receives an email notification for a new NPO application
 - **SC-005**: 100% of submitted NPO applications appear in the admin review queue, regardless of email delivery status.
 - **SC-006**: Zero instances of a user being permanently stuck due to an expired verification link — all users can self-serve a new link without contacting support.
 - **SC-007**: All outgoing system emails are free of placeholder text, broken links, and unbranded content.
+
+---
+
+## Clarifications
+
+### Session 2026-03-10
+
+- Q: What fields does the NPO profile step collect? → A: Core fields — name (required), EIN/charity registration number (required), website URL (required), primary contact phone (required), mission/description (optional).
 
 ---
 
