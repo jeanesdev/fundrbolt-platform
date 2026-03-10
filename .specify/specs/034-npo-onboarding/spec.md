@@ -106,6 +106,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 - **FR-009**: The first event creation step MUST be clearly optional — users may skip it and create events later from within the admin interface.
 - **FR-010**: Upon successful submission, the wizard MUST display a confirmation screen that sets clear expectations about the review process and next steps.
 - **FR-010a**: The NPO application submission endpoint MUST be rate limited per IP, consistent with existing platform rate limiting patterns, to prevent automated spam submissions.
+- **FR-010b**: Both the sign-up form and the NPO submission form MUST include invisible, non-interactive bot detection. No visible challenge or puzzle MUST be presented to legitimate users. Requests detected as automated MUST be silently rejected with a friendly error message.
 
 **Email Verification**
 
@@ -136,6 +137,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 
 - **FR-025**: A standalone user account sign-up flow MUST be accessible from a public URL suitable for landing page linking.
 - **FR-025a**: The sign-up endpoint MUST be rate limited per IP, consistent with existing platform rate limiting patterns, to prevent automated account creation abuse.
+- **FR-025b**: The sign-up form MUST include invisible, non-interactive bot detection consistent with FR-010b.
 - **FR-026**: The sign-up flow MUST be presented as a sequence of simple, friendly steps rather than a single form.
 - **FR-027**: The sign-up flow MUST include email verification before granting full account access.
 - **FR-028**: If an entered email address already has an account, the system MUST display a friendly prompt to sign in or reset the password instead of a generic error.
@@ -177,6 +179,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 - Q: What approval timeline should be communicated to applicants? → A: 3–5 business days.
 - Q: How is unauthenticated wizard session state stored for 24-hour resume? → A: Server-side session; the browser holds only an opaque session token (cookie). Sensitive data never persists in browser storage.
 - Q: Should the public sign-up and NPO submission endpoints be rate limited? → A: Yes — both sign-up and NPO submission are rate limited per IP, consistent with existing platform patterns.
+- Q: Should a CAPTCHA be added to prevent bot abuse? → A: Yes — invisible/non-interactive bot detection (e.g., Cloudflare Turnstile or reCAPTCHA v3) on both sign-up and NPO submission. No visible challenge shown to real users.
 
 ---
 
