@@ -1,22 +1,22 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  PreviewProvider,
+  type PreviewEventData,
+} from '@/contexts/PreviewContext'
+import { EventHomePage } from '@/features/events/EventHomePage'
+import type { Sponsor } from '@/lib/api/sponsors'
+import apiClient from '@/lib/axios'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { useEventStore } from '@/stores/event-store'
+import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
+import type { AuctionItemDetail } from '@/types/auction-item'
+import type { EventDetail } from '@/types/event'
 import {
   useQuery,
   useQueryClient,
   type InfiniteData,
 } from '@tanstack/react-query'
-import {
-  PreviewProvider,
-  type PreviewEventData,
-} from '@/contexts/PreviewContext'
-import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
-import type { AuctionItemDetail } from '@/types/auction-item'
-import type { EventDetail } from '@/types/event'
 import { AlertCircle, Loader2 } from 'lucide-react'
-import { useEventContextStore } from '@/stores/event-context-store'
-import { useEventStore } from '@/stores/event-store'
-import type { Sponsor } from '@/lib/api/sponsors'
-import apiClient from '@/lib/axios'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { EventHomePage } from '@/features/events/EventHomePage'
 
 interface PreviewPageProps {
   eventId?: string

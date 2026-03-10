@@ -5,6 +5,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import type { LegalDocumentPublic } from '@/types/legal'
+import { sanitizeHtmlFragment } from '@fundrbolt/shared/utils'
 
 interface LegalDocumentViewerProps {
   document: LegalDocumentPublic
@@ -14,6 +15,7 @@ interface LegalDocumentViewerProps {
 export function LegalDocumentViewer({ document, className }: LegalDocumentViewerProps) {
   const documentTitle =
     document.document_type === 'terms_of_service' ? 'Terms of Service' : 'Privacy Policy'
+  const sanitizedContent = sanitizeHtmlFragment(document.content)
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -35,7 +37,7 @@ export function LegalDocumentViewer({ document, className }: LegalDocumentViewer
         <div className="prose prose-sm max-w-none dark:prose-invert">
           <div
             className="whitespace-pre-wrap"
-            dangerouslySetInnerHTML={{ __html: document.content }}
+            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
         </div>
       </CardContent>

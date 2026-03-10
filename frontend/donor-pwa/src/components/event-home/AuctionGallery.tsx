@@ -9,26 +9,7 @@
  * - Empty state with Gavel icon
  * - Loading spinner for scroll trigger
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
-import watchListService from '@/services/watchlistService'
-import type {
-  AuctionFilterType,
-  AuctionItemGalleryItem,
-  AuctionSortType,
-} from '@/types/auction-gallery'
-import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
-import { Eye, Gavel, Loader2 } from 'lucide-react'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import apiClient from '@/lib/axios'
-import { cn } from '@/lib/utils'
+import { StaleDataIndicator } from '@/components/pwa/stale-data-indicator'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -37,7 +18,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { StaleDataIndicator } from '@/components/pwa/stale-data-indicator'
+import apiClient from '@/lib/axios'
+import { cn } from '@/lib/utils'
+import watchListService from '@/services/watchlistService'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import type {
+  AuctionFilterType,
+  AuctionItemGalleryItem,
+  AuctionSortType,
+} from '@/types/auction-gallery'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import { Eye, Gavel, Loader2 } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AuctionItemCard } from './AuctionItemCard'
 
 declare global {

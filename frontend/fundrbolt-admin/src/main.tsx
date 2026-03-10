@@ -1,5 +1,6 @@
 import { handleServerError } from '@/lib/handle-server-error'
 import { useAuthStore } from '@/stores/auth-store'
+import { useGlobalInputSanitizer } from '@fundrbolt/shared/hooks'
 import {
   QueryCache,
   QueryClient,
@@ -84,21 +85,29 @@ declare module '@tanstack/react-router' {
   }
 }
 
+function SecurityHardening({ children }: { children: React.ReactNode }) {
+  useGlobalInputSanitizer()
+
+  return children
+}
+
 // Render the app
 const rootElement = document.getElementById('root')!
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <FontProvider>
-            <DirectionProvider>
-              <RouterProvider router={router} />
-            </DirectionProvider>
-          </FontProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
+      <SecurityHardening>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <FontProvider>
+              <DirectionProvider>
+                <RouterProvider router={router} />
+              </DirectionProvider>
+            </FontProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </SecurityHardening>
     </StrictMode>
   )
 }

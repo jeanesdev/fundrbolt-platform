@@ -9,36 +9,6 @@
  * Branding CSS variables (injected by useEventBranding):
  *   --event-primary, --event-secondary, --event-background, --event-accent
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { AxiosError } from 'axios'
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { usePreviewMode } from '@/contexts/PreviewContext'
-import auctionItemService from '@/services/auctionItemService'
-import {
-  getMySeatingInfo,
-  type SeatingInfoResponse,
-} from '@/services/seating-service'
-import watchListService from '@/services/watchlistService'
-import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
-import type { EventMediaUsageTag } from '@/types/event'
-import type { RegisteredEventWithBranding } from '@/types/event-branding'
-import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
-import { AlertCircle, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { useEventContextStore } from '@/stores/event-context-store'
-import { useEventStore } from '@/stores/event-store'
-import apiClient from '@/lib/axios'
-import { useEventBranding } from '@/hooks/use-event-branding'
-import { useEventContext } from '@/hooks/use-event-context'
-import { useTabSwipe } from '@/hooks/use-tab-swipe'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   AuctionGallery,
   EventDetails,
@@ -57,67 +27,37 @@ import {
 } from '@/components/event-home/EventHeroSection'
 import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { ProfileDropdown } from '@/components/profile-dropdown'
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
-
-function renderMarkdownToSafeHtml(markdown: string): string {
-  if (!markdown.trim()) {
-    return ''
-  }
-
-  let html = escapeHtml(markdown)
-
-  html = html
-    .replace(
-      /^###\s+(.+)$/gim,
-      '<h3 class="mt-4 mb-2 text-base font-semibold">$1</h3>'
-    )
-    .replace(
-      /^##\s+(.+)$/gim,
-      '<h2 class="mt-4 mb-2 text-lg font-semibold">$1</h2>'
-    )
-    .replace(/^#\s+(.+)$/gim, '<h1 class="mt-4 mb-2 text-xl font-bold">$1</h1>')
-    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(
-      /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline">$1</a>'
-    )
-    .replace(/^(?:- |\* )(.+)$/gim, '<li>$1</li>')
-
-  html = html.replace(
-    /(<li>.*<\/li>)/gims,
-    '<ul class="my-2 list-disc pl-5 space-y-1">$1</ul>'
-  )
-
-  const blocks = html
-    .split(/\n{2,}/)
-    .map((block) => block.trim())
-    .filter(Boolean)
-
-  return blocks
-    .map((block) => {
-      if (
-        block.startsWith('<h1') ||
-        block.startsWith('<h2') ||
-        block.startsWith('<h3') ||
-        block.startsWith('<ul')
-      ) {
-        return block
-      }
-
-      return `<p class="mb-2 leading-relaxed">${block.replace(/\n/g, '<br />')}</p>`
-    })
-    .join('')
-}
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { usePreviewMode } from '@/contexts/PreviewContext'
+import { useEventBranding } from '@/hooks/use-event-branding'
+import { useEventContext } from '@/hooks/use-event-context'
+import { useTabSwipe } from '@/hooks/use-tab-swipe'
+import apiClient from '@/lib/axios'
+import auctionItemService from '@/services/auctionItemService'
+import {
+  getMySeatingInfo,
+  type SeatingInfoResponse,
+} from '@/services/seating-service'
+import watchListService from '@/services/watchlistService'
+import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { useEventStore } from '@/stores/event-store'
+import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
+import type { EventMediaUsageTag } from '@/types/event'
+import type { RegisteredEventWithBranding } from '@/types/event-branding'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
+import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import type { AxiosError } from 'axios'
+import { AlertCircle, Loader2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 export function EventHomePage() {
   const navigate = useNavigate()
