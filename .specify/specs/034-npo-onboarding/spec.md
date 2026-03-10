@@ -70,7 +70,8 @@ A FundrBolt super admin receives an email notification for a new NPO application
 
 1. **Given** a new NPO application has been submitted, **When** a super admin opens the admin panel, **Then** the pending NPO is visible in a dedicated review queue with all submitted details.
 2. **Given** an admin approves an NPO application, **When** the action is confirmed, **Then** the NPO becomes active, the applicant receives a professionally formatted approval email, and the applicant gains NPO Admin access.
-3. **Given** an admin rejects an NPO application, **When** the action is confirmed with a reason, **Then** the applicant receives a professionally formatted rejection email that explains what happened and, where applicable, how they may reapply or contact support.
+3. **Given** an admin rejects an NPO application, **When** the action is confirmed with a reason, **Then** the applicant receives a professionally formatted rejection email that explains what happened and that the admin may re-open it for revision.
+4. **Given** an admin re-opens a rejected application, **When** the action is taken, **Then** the applicant receives a professionally formatted email notifying them the application is re-opened and they may revise and resubmit it.
 4. **Given** an NPO application has been pending for more than 5 business days, **When** no action has been taken, **Then** the admin interface visually flags the application as overdue.
 
 ---
@@ -82,6 +83,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 - What if the NPO name entered closely matches an existing registered NPO? The system warns the applicant so they can confirm the name is intentional or correct it before submitting.
 - What if the admin notification email fails to send? The pending NPO still appears in the admin review queue so no application is silently dropped.
 - What if a user attempts to submit multiple NPO applications in a short window? The system warns them of a potential duplicate before allowing resubmission.
+- What happens after an NPO application is rejected? The admin may re-open the application, which triggers an email notifying the applicant that their application has been re-opened for revision. The applicant can then update their details and resubmit. The application history (original submission, rejection reason, revision) is preserved.
 
 ---
 
@@ -122,8 +124,10 @@ A FundrBolt super admin receives an email notification for a new NPO application
 - **FR-019**: Submitted NPO applications MUST appear in a dedicated pending-review queue within the admin interface.
 - **FR-020**: Admins MUST be able to approve or reject an NPO application from the admin interface.
 - **FR-021**: Rejection MUST require the admin to provide a reason, which is included in the notification email to the applicant.
+- **FR-021a**: After rejecting an application, an admin MAY re-open it. Re-opening MUST notify the applicant by email that their application has been re-opened for revision and resubmission.
+- **FR-021b**: When a re-opened application is resubmitted by the applicant, it MUST re-enter the pending-review queue as a new review cycle. The full history — original submission, rejection reason, and revised submission — MUST be preserved and visible to admins.
 - **FR-022**: Upon approval, the applicant's account MUST be automatically elevated to NPO Admin role for the approved NPO.
-- **FR-023**: The applicant MUST receive a professionally formatted email notifying them of the approval or rejection decision.
+- **FR-023**: The applicant MUST receive a professionally formatted email notifying them of the approval, rejection, or re-opening decision.
 - **FR-024**: Applications pending for more than 5 business days MUST be visually flagged as overdue in the admin review queue.
 
 **User Sign-Up Flow (Standalone)**
@@ -140,7 +144,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 
 ### Key Entities
 
-- **NPO Application**: Represents a submitted request to register a nonprofit on FundrBolt. Required fields: NPO name, EIN/charity registration number, website URL, primary contact phone. Optional fields: mission/description. Also contains: applicant contact details, submission timestamp, current status (pending / approved / rejected), and rejection reason if applicable.
+- **NPO Application**: Represents a submitted request to register a nonprofit on FundrBolt. Required fields: NPO name, EIN/charity registration number, website URL, primary contact phone. Optional fields: mission/description. Also contains: applicant contact details, submission timestamp, current status (pending / approved / rejected / reopened), rejection reason if applicable, and full revision history.
 - **User Account**: A FundrBolt user. May exist prior to NPO onboarding or be created as part of it. Linked to one or more NPOs once approved.
 - **Wizard Session**: Tracks in-progress onboarding state for a visitor or user, allowing resumption within 24 hours. Stores completed steps and entered data.
 - **Event (First Event)**: An optional event created during the final step of NPO onboarding. Follows the same structure as any FundrBolt event but is pre-associated with the pending NPO.
@@ -166,6 +170,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 ### Session 2026-03-10
 
 - Q: What fields does the NPO profile step collect? → A: Core fields — name (required), EIN/charity registration number (required), website URL (required), primary contact phone (required), mission/description (optional).
+- Q: What is the reapplication policy for rejected NPO applications? → A: Admin can re-open a rejected application; the applicant is notified and can revise and resubmit. The rejected record is updated rather than replaced.
 
 ---
 
