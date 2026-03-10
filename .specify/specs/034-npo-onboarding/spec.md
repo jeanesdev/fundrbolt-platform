@@ -101,7 +101,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 - **FR-005**: For already-authenticated users, the wizard MUST skip account creation and email verification and begin at the NPO profile step.
 - **FR-006**: The wizard MUST explain the NPO approval process — including what happens after submission, who reviews applications, and that the typical timeline is 3–5 business days — in plain, friendly language before or during the submission step.
 - **FR-007**: The wizard MUST allow users to navigate back to previous steps to review or correct information.
-- **FR-008**: The wizard MUST preserve in-progress state for at least 24 hours so users can resume a partially completed wizard without re-entering data.
+- **FR-008**: The wizard MUST preserve in-progress state server-side for at least 24 hours, identified by an opaque session token stored in a browser cookie. No personally identifiable data entered during the wizard MUST be stored in browser-side storage (localStorage or sessionStorage).
 - **FR-009**: The first event creation step MUST be clearly optional — users may skip it and create events later from within the admin interface.
 - **FR-010**: Upon successful submission, the wizard MUST display a confirmation screen that sets clear expectations about the review process and next steps.
 
@@ -146,7 +146,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 
 - **NPO Application**: Represents a submitted request to register a nonprofit on FundrBolt. Required fields: NPO name, EIN/charity registration number, website URL, primary contact phone. Optional fields: mission/description. Also contains: applicant contact details, submission timestamp, current status (pending / approved / rejected / reopened), rejection reason if applicable, and full revision history.
 - **User Account**: A FundrBolt user. May exist prior to NPO onboarding or be created as part of it. Linked to one or more NPOs once approved.
-- **Wizard Session**: Tracks in-progress onboarding state for a visitor or user, allowing resumption within 24 hours. Stores completed steps and entered data.
+- **Wizard Session**: Tracks in-progress onboarding state for a visitor or user, stored server-side and identified by an opaque token in a browser cookie. Allows resumption within 24 hours. Stores completed steps and entered data. Automatically expires after 24 hours of inactivity.
 - **Event (First Event)**: An optional event created during the final step of NPO onboarding. Follows the same structure as any FundrBolt event but is pre-associated with the pending NPO.
 
 ---
@@ -172,6 +172,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 - Q: What fields does the NPO profile step collect? → A: Core fields — name (required), EIN/charity registration number (required), website URL (required), primary contact phone (required), mission/description (optional).
 - Q: What is the reapplication policy for rejected NPO applications? → A: Admin can re-open a rejected application; the applicant is notified and can revise and resubmit. The rejected record is updated rather than replaced.
 - Q: What approval timeline should be communicated to applicants? → A: 3–5 business days.
+- Q: How is unauthenticated wizard session state stored for 24-hour resume? → A: Server-side session; the browser holds only an opaque session token (cookie). Sensitive data never persists in browser storage.
 
 ---
 
@@ -181,6 +182,6 @@ A FundrBolt super admin receives an email notification for a new NPO application
 - "First event" during NPO onboarding collects only basic event details (name, date, type). Full event configuration is completed later from within the admin interface.
 - Email template design follows the existing FundrBolt brand guidelines already established on the platform.
 - The wizard is part of a publicly accessible pre-authentication section of the existing Admin PWA, rather than a separate standalone application.
-- Users who abandon the wizard mid-way and return within 24 hours are identified by a browser session token; no login is required to resume an in-progress wizard before the account creation step is complete.
+- Users who abandon the wizard mid-way and return within 24 hours are identified by an opaque session token stored in a browser cookie; wizard state is held server-side. No personally identifiable data is stored in browser-side storage.
 - The standalone user sign-up flow and the NPO onboarding wizard share the same account creation and email verification steps as reusable components.
 - The "5 business day" overdue threshold for admin review is a reasonable default; this can be adjusted by configuration without a code change.
