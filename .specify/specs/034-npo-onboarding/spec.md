@@ -21,7 +21,7 @@ A person with no existing FundrBolt account discovers FundrBolt (via the landing
 2. **Given** a visitor is on the account creation step, **When** they enter an email already registered, **Then** they are prompted to sign in to their existing account instead of creating a duplicate.
 3. **Given** a visitor has completed account creation, **When** they have not yet verified their email, **Then** they cannot advance past the email verification step until the link in the verification email is clicked.
 4. **Given** a visitor has completed the NPO profile step, **When** they reach the first event step, **Then** they can choose to skip it and complete onboarding without creating an event yet.
-5. **Given** a visitor submits their NPO application, **When** submission is successful, **Then** they see a confirmation screen explaining their NPO is under review, what the review process involves, and an approximate timeline.
+5. **Given** a visitor submits their NPO application, **When** submission is successful, **Then** they see a confirmation screen explaining their NPO is under review, that the typical review timeline is 3–5 business days, and what to expect next.
 6. **Given** the FundrBolt admin team, **When** a new NPO application is submitted, **Then** they receive a professionally formatted email notification with the NPO's details and a direct link to review the application.
 
 ---
@@ -99,7 +99,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 - **FR-003**: The wizard MUST display a persistent progress indicator showing the current step and total steps remaining.
 - **FR-004**: For unauthenticated visitors, the wizard MUST begin with account creation and email verification steps before advancing to NPO-specific steps.
 - **FR-005**: For already-authenticated users, the wizard MUST skip account creation and email verification and begin at the NPO profile step.
-- **FR-006**: The wizard MUST explain the NPO approval process — including what happens after submission, who reviews applications, and an approximate timeline — in plain, friendly language before or during the submission step.
+- **FR-006**: The wizard MUST explain the NPO approval process — including what happens after submission, who reviews applications, and that the typical timeline is 3–5 business days — in plain, friendly language before or during the submission step.
 - **FR-007**: The wizard MUST allow users to navigate back to previous steps to review or correct information.
 - **FR-008**: The wizard MUST preserve in-progress state for at least 24 hours so users can resume a partially completed wizard without re-entering data.
 - **FR-009**: The first event creation step MUST be clearly optional — users may skip it and create events later from within the admin interface.
@@ -171,6 +171,7 @@ A FundrBolt super admin receives an email notification for a new NPO application
 
 - Q: What fields does the NPO profile step collect? → A: Core fields — name (required), EIN/charity registration number (required), website URL (required), primary contact phone (required), mission/description (optional).
 - Q: What is the reapplication policy for rejected NPO applications? → A: Admin can re-open a rejected application; the applicant is notified and can revise and resubmit. The rejected record is updated rather than replaced.
+- Q: What approval timeline should be communicated to applicants? → A: 3–5 business days.
 
 ---
 
