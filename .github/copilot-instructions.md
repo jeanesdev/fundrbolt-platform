@@ -67,6 +67,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Browser localStorage (view preference persistence only — no backend storage) (032-admin-pwa-mobile)
 - Python 3.11 (backend) + TypeScript 5.x / React 19 (donor PWA & admin PWA) (033-payment-processing)
 - Azure Database for PostgreSQL (primary data); Azure Blob Storage (receipt PDFs); Azure Cache for Redis (session/rate-limit) (033-payment-processing)
+- Python 3.11 (backend) · TypeScript 5.9 / React 19 (frontend Admin PWA) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, Alembic (backend); React 19, Vite 7, TanStack Router, Zustand, Radix UI, Tailwind 4 (frontend) (034-npo-onboarding)
+- Azure Database for PostgreSQL (new `onboarding_sessions` table; `npo_applications` enum updated; `npos` enum updated) · Azure Cache for Redis (rate-limit keys) (034-npo-onboarding)
 
 ## Project Structure
 ```
@@ -151,9 +153,9 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 034-npo-onboarding: Added Python 3.11 (backend) · TypeScript 5.9 / React 19 (frontend Admin PWA) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, Alembic (backend); React 19, Vite 7, TanStack Router, Zustand, Radix UI, Tailwind 4 (frontend)
 - 033-payment-processing: Added Python 3.11 (backend) + TypeScript 5.x / React 19 (donor PWA & admin PWA)
 - 032-pwa-capabilities: Added TypeScript 5.x, React 18+ + `vite-plugin-pwa` (Workbox-based SW generation), `virtual:pwa-register/react` (React hooks for SW lifecycle)
-- 032-admin-pwa-mobile: Added TypeScript 5.9, React 19, Node 22 + Vite 7, TanStack Router, TanStack React Table 8, TanStack React Query 5, Radix UI primitives, Tailwind CSS 4, Zustand 5, shadcn/ui sidebar component, Lucide icons
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields
   - ✅ Updated registration_guests with is_table_captain boolean field
   - ✅ US1 - Customize Table Capacity: Event coordinators can set custom capacity per table (1-20), system enforces limits
