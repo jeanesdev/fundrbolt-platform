@@ -895,7 +895,11 @@ async def social_auth_callback(
     except ValueError as e:
         await db.rollback()
         error_msg = str(e)
-        if "not found" in error_msg.lower() or "not provisioned" in error_msg.lower():
+        if (
+            "not found" in error_msg.lower()
+            or "not provisioned" in error_msg.lower()
+            or "pre-provisioned" in error_msg.lower()
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail={"code": "ACCESS_DENIED", "message": error_msg},

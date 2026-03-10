@@ -1,6 +1,7 @@
 import { SessionExpiryWarning } from '@/components/SessionExpiryWarning'
 import { handleServerError } from '@/lib/handle-server-error'
 import { useAuthStore } from '@/stores/auth-store'
+import { useGlobalInputSanitizer } from '@fundrbolt/shared/hooks'
 import {
   QueryCache,
   QueryClient,
@@ -88,6 +89,7 @@ declare module '@tanstack/react-router' {
 // Auto-login component - restores session from storage on app load
 function AutoLogin({ children }: { children: React.ReactNode }) {
   const { initializeFromStorage } = useAuthStore()
+  useGlobalInputSanitizer()
 
   useEffect(() => {
     // Initialize auth state from localStorage (tokens, user data, etc.)

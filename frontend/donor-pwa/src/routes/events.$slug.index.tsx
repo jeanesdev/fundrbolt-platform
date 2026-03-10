@@ -9,6 +9,7 @@ import { useEventBranding } from '@/hooks/use-event-branding'
 import { getEventBySlug, type EventMediaUsageTag } from '@/lib/api/events'
 import { hasValidRefreshToken } from '@/lib/storage/tokens'
 import { useAuthStore } from '@/stores/auth-store'
+import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, CalendarPlus, Loader2 } from 'lucide-react'
@@ -342,49 +343,4 @@ function RouteComponent() {
       </div>
     </div>
   )
-}
-
-// ─── Markdown utilities (shared with EventHomePage) ──────────────────────────
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
-
-function renderMarkdownToSafeHtml(markdown: string): string {
-  if (!markdown.trim()) return ''
-  let html = escapeHtml(markdown)
-  html = html
-    .replace(/^###\s+(.+)$/gim, '<h3 class="mt-4 mb-2 text-base font-semibold">$1</h3>')
-    .replace(/^##\s+(.+)$/gim, '<h2 class="mt-4 mb-2 text-lg font-semibold">$1</h2>')
-    .replace(/^#\s+(.+)$/gim, '<h1 class="mt-4 mb-2 text-xl font-bold">$1</h1>')
-    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(
-      /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer" class="underline">$1</a>',
-    )
-    .replace(/^(?:- |\* )(.+)$/gim, '<li>$1</li>')
-  html = html.replace(/(<li>.*<\/li>)/gims, '<ul class="my-2 list-disc pl-5 space-y-1">$1</ul>')
-  const blocks = html
-    .split(/\n{2,}/)
-    .map((block) => block.trim())
-    .filter(Boolean)
-  return blocks
-    .map((block) => {
-      if (
-        block.startsWith('<h1') ||
-        block.startsWith('<h2') ||
-        block.startsWith('<h3') ||
-        block.startsWith('<ul')
-      )
-        return block
-      return `<p>${block}</p>`
-    })
-    .join('\n')
 }

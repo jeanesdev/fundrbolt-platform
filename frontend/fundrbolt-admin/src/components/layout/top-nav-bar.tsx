@@ -2,28 +2,12 @@
  * TopNavBar
  * Horizontal navigation bar replacing the sidebar.
  *
- * Desktop: Logo | NPO selector | Event selector | Nav dropdowns | Search | Profile
+ * Desktop: Logo | Nav dropdowns | Search | Profile
  * Mobile:  Logo | Hamburger (sheet) | Search | Profile
  */
 import { CommandMenu } from '@/components/command-menu'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Button } from '@/components/ui/button'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { InitialAvatar } from '@/components/ui/initial-avatar'
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -39,21 +23,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { useSearch } from '@/context/search-provider'
-import { useEventContext } from '@/hooks/use-event-context'
-import { useNpoContext } from '@/hooks/use-npo-context'
 import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
 import { cn } from '@/lib/utils'
 import { LogoWhiteGold } from '@fundrbolt/shared/assets'
 import { Link, useLocation, useNavigate } from '@tanstack/react-router'
 import {
   BarChart3,
-  Building2,
   Calendar,
   Gavel,
   Menu,
@@ -71,258 +47,6 @@ const groupIconMap: Record<string, React.ElementType> = {
   Auctions: Gavel,
   Data: BarChart3,
   Admin: Settings,
-}
-
-/* ─── NPO Selector (top-bar version) ─── */
-function NpoDropdown() {
-  const {
-    selectedNpoId,
-    selectedNpoName,
-    availableNpos,
-    selectNpo,
-    isSingleNpoUser,
-    canChangeNpo,
-  } = useNpoContext()
-
-  const selectedNpo = availableNpos.find((npo) => npo.id === selectedNpoId)
-  const selectedNpoLogo = selectedNpo?.logo_url
-
-  const npoIcon = (
-    <div className='bg-primary/10 flex size-7 items-center justify-center overflow-hidden rounded'>
-      {selectedNpoLogo ? (
-        <img
-          src={selectedNpoLogo}
-          alt={selectedNpoName}
-          className='size-full object-cover'
-        />
-      ) : (
-        <Building2 className='size-4' />
-      )}
-    </div>
-  )
-
-  if (isSingleNpoUser && !canChangeNpo) {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className='flex cursor-default items-center px-1'>
-            {npoIcon}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side='bottom'>
-          <p>{selectedNpoName}</p>
-        </TooltipContent>
-      </Tooltip>
-    )
-  }
-
-  return (
-    <DropdownMenu>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant='ghost'
-              size='icon'
-              className='size-8'
-            >
-              {npoIcon}
-              <span className='sr-only'>
-                {selectedNpoName || 'Select NPO'}
-              </span>
-            </Button>
-          </DropdownMenuTrigger>
-        </TooltipTrigger>
-        <TooltipContent side='bottom'>
-          <p>{selectedNpoName || 'Select NPO'}</p>
-        </TooltipContent>
-      </Tooltip>
-      <DropdownMenuContent align='start' className='min-w-52'>
-        <DropdownMenuLabel className='text-muted-foreground text-xs'>
-          Organizations
-        </DropdownMenuLabel>
-        {availableNpos.map((npo) => (
-          <DropdownMenuItem
-            key={npo.id || 'platform'}
-            onClick={() => selectNpo(npo.id, npo.name)}
-            className='gap-2 p-2'
-          >
-            <div className='flex size-6 items-center justify-center overflow-hidden rounded-sm border'>
-              {npo.logo_url ? (
-                <img
-                  src={npo.logo_url}
-                  alt={npo.name}
-                  className='size-full object-cover'
-                />
-              ) : (
-                <Building2 className='size-4 shrink-0' />
-              )}
-            </div>
-            <div className='flex-1'>
-              <div className='font-medium'>{npo.name}</div>
-              {npo.id === null && (
-                <div className='text-muted-foreground text-xs'>
-                  View all organizations
-                </div>
-              )}
-            </div>
-            {selectedNpoId === npo.id && (
-              <span className='text-primary text-xs'>✓</span>
-            )}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
-/* ─── Event Selector (top-bar version) ─── */
-function EventDropdown() {
-  const {
-    selectedEventId,
-    selectedEventName,
-    availableEvents,
-    isLoading,
-    selectEvent,
-    isEventSelected,
-    shouldShowSearch,
-  } = useEventContext()
-
-  const [searchQuery, setSearchQuery] = useState('')
-
-  const filteredEvents =
-    shouldShowSearch && searchQuery
-      ? availableEvents.filter((event) =>
-        event.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      : availableEvents
-
-  if (!isLoading && availableEvents.length === 0) {
-    return (
-      <div className='text-muted-foreground flex items-center gap-2 px-2 text-sm'>
-        <Calendar className='size-3.5' />
-        <span>No Events</span>
-      </div>
-    )
-  }
-
-  const eventIcon = (
-    <div className='bg-accent flex size-7 items-center justify-center overflow-hidden rounded'>
-      {isEventSelected ? (
-        <InitialAvatar
-          name={selectedEventName || 'Event'}
-          brandingPrimaryColor={null}
-          size='sm'
-          className='h-full w-full rounded'
-        />
-      ) : (
-        <Calendar className='size-4' />
-      )}
-    </div>
-  )
-
-  return (
-    <DropdownMenu>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant='ghost'
-              size='icon'
-              className='size-8'
-            >
-              {eventIcon}
-              <span className='sr-only'>
-                {selectedEventName || 'Select Event'}
-              </span>
-            </Button>
-          </DropdownMenuTrigger>
-        </TooltipTrigger>
-        <TooltipContent side='bottom'>
-          <p>{selectedEventName || 'Select Event'}</p>
-        </TooltipContent>
-      </Tooltip>
-      <DropdownMenuContent align='start' className='min-w-56 p-0'>
-        {shouldShowSearch ? (
-          <Command>
-            <CommandInput
-              placeholder='Search events...'
-              value={searchQuery}
-              onValueChange={setSearchQuery}
-            />
-            <CommandList>
-              <CommandEmpty>No events found.</CommandEmpty>
-              <CommandGroup>
-                {filteredEvents.map((event) => (
-                  <CommandItem
-                    key={event.id}
-                    onSelect={() => {
-                      selectEvent(event.id, event.name, event.slug)
-                      setSearchQuery('')
-                    }}
-                    className='gap-2 p-2'
-                  >
-                    <EventRow
-                      event={event}
-                      isSelected={selectedEventId === event.id}
-                    />
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        ) : (
-          <>
-            <DropdownMenuLabel className='text-muted-foreground px-2 py-1.5 text-xs'>
-              Select Event
-            </DropdownMenuLabel>
-            {availableEvents.map((event) => (
-              <DropdownMenuItem
-                key={event.id}
-                onClick={() => selectEvent(event.id, event.name, event.slug)}
-                className='gap-2 p-2'
-              >
-                <EventRow
-                  event={event}
-                  isSelected={selectedEventId === event.id}
-                />
-              </DropdownMenuItem>
-            ))}
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
-function EventRow({
-  event,
-  isSelected,
-}: {
-  event: { id: string; name: string; status: string }
-  isSelected: boolean
-}) {
-  return (
-    <>
-      <div className='flex size-6 items-center justify-center overflow-hidden rounded-sm border'>
-        <InitialAvatar
-          name={event.name}
-          brandingPrimaryColor={null}
-          size='sm'
-          className='h-full w-full rounded-sm'
-        />
-      </div>
-      <div className='min-w-0 flex-1'>
-        <div className='truncate font-medium'>{event.name}</div>
-        <div className='text-muted-foreground text-xs'>
-          {event.status === 'active' && '🟢 Active'}
-          {event.status === 'draft' && '📝 Draft'}
-          {event.status === 'closed' && '🔒 Closed'}
-        </div>
-      </div>
-      {isSelected && <span className='text-primary text-xs'>✓</span>}
-    </>
-  )
 }
 
 /* ─── Desktop Navigation Dropdowns ─── */
@@ -421,8 +145,6 @@ function DesktopNav() {
 /* ─── Mobile Sheet Nav ─── */
 function MobileNav() {
   const { navItems, eventNavGroups } = useRoleBasedNav()
-  const { selectedNpoName } = useNpoContext()
-  const { selectedEventName } = useEventContext()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const href = useLocation({ select: (l) => l.href })
@@ -462,32 +184,6 @@ function MobileNav() {
             <img src={LogoWhiteGold} alt='Fundrbolt' className='h-6 w-auto' />
           </SheetTitle>
         </SheetHeader>
-
-        {/* Context selectors */}
-        <div className='space-y-3 border-b px-4 py-3'>
-          <div className='flex items-center gap-3'>
-            <NpoDropdown />
-            <div className='flex flex-col'>
-              <span className='text-muted-foreground text-xs font-medium uppercase'>
-                Organization
-              </span>
-              <span className='max-w-40 truncate text-sm'>
-                {selectedNpoName || 'Select NPO'}
-              </span>
-            </div>
-          </div>
-          <div className='flex items-center gap-3'>
-            <EventDropdown />
-            <div className='flex flex-col'>
-              <span className='text-muted-foreground text-xs font-medium uppercase'>
-                Event
-              </span>
-              <span className='max-w-40 truncate text-sm'>
-                {selectedEventName || 'Select Event'}
-              </span>
-            </div>
-          </div>
-        </div>
 
         {/* Navigation groups */}
         <nav className='flex-1 overflow-y-auto px-2 py-2'>
@@ -571,15 +267,6 @@ export function TopNavBar() {
         <Link to='/' className='flex items-center'>
           <img src={LogoWhiteGold} alt='Fundrbolt' className='h-7 w-auto' />
         </Link>
-
-        {/* Separator */}
-        <div className='bg-border mx-1 hidden h-6 w-px md:block' />
-
-        {/* NPO & Event selectors — hidden on mobile (in sheet instead) */}
-        <div className='hidden items-center gap-1 md:flex'>
-          <NpoDropdown />
-          <EventDropdown />
-        </div>
 
         {/* Separator */}
         <div className='bg-border mx-1 hidden h-6 w-px md:block' />

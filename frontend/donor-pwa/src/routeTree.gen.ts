@@ -9,9 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PreviewRouteImport } from './routes/preview'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CheckinIndexRouteImport } from './routes/checkin.index'
+import { Route as PreviewEventIdRouteImport } from './routes/preview.$eventId'
 import { Route as InvitationsAcceptRouteImport } from './routes/invitations/accept'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
 import { Route as AuthenticatedRegistrationsRouteImport } from './routes/_authenticated/registrations'
@@ -54,6 +56,11 @@ import { Route as AuthenticatedEventsEventSlugAuctionItemsCreateRouteImport } fr
 import { Route as AuthenticatedEventsEventSlugAuctionItemsItemIdIndexRouteImport } from './routes/_authenticated/events/$eventSlug/auction-items/$itemId/index'
 import { Route as AuthenticatedEventsEventSlugAuctionItemsItemIdEditRouteImport } from './routes/_authenticated/events/$eventSlug/auction-items/$itemId/edit'
 
+const PreviewRoute = PreviewRouteImport.update({
+  id: '/preview',
+  path: '/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -67,6 +74,11 @@ const CheckinIndexRoute = CheckinIndexRouteImport.update({
   id: '/checkin/',
   path: '/checkin/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewEventIdRoute = PreviewEventIdRouteImport.update({
+  id: '/$eventId',
+  path: '/$eventId',
+  getParentRoute: () => PreviewRoute,
 } as any)
 const InvitationsAcceptRoute = InvitationsAcceptRouteImport.update({
   id: '/invitations/accept',
@@ -295,6 +307,7 @@ const AuthenticatedEventsEventSlugAuctionItemsItemIdEditRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/preview': typeof PreviewRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -316,6 +329,7 @@ export interface FileRoutesByFullPath {
   '/registrations': typeof AuthenticatedRegistrationsRoute
   '/events/$slug': typeof EventsSlugRouteWithChildren
   '/invitations/accept': typeof InvitationsAcceptRoute
+  '/preview/$eventId': typeof PreviewEventIdRoute
   '/checkin/': typeof CheckinIndexRoute
   '/events/$eventSlug': typeof AuthenticatedEventsEventSlugRouteRouteWithChildren
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
@@ -340,6 +354,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/preview': typeof PreviewRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/password-reset': typeof authPasswordResetRoute
@@ -359,6 +374,7 @@ export interface FileRoutesByTo {
   '/home': typeof AuthenticatedHomeRoute
   '/registrations': typeof AuthenticatedRegistrationsRoute
   '/invitations/accept': typeof InvitationsAcceptRoute
+  '/preview/$eventId': typeof PreviewEventIdRoute
   '/checkin': typeof CheckinIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/events/create': typeof AuthenticatedEventsCreateRoute
@@ -384,6 +400,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/preview': typeof PreviewRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/otp': typeof authOtpRoute
@@ -405,6 +422,7 @@ export interface FileRoutesById {
   '/_authenticated/registrations': typeof AuthenticatedRegistrationsRoute
   '/events/$slug': typeof EventsSlugRouteWithChildren
   '/invitations/accept': typeof InvitationsAcceptRoute
+  '/preview/$eventId': typeof PreviewEventIdRoute
   '/checkin/': typeof CheckinIndexRoute
   '/_authenticated/events/$eventSlug': typeof AuthenticatedEventsEventSlugRouteRouteWithChildren
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
@@ -431,6 +449,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/preview'
     | '/settings'
     | '/forgot-password'
     | '/otp'
@@ -452,6 +471,7 @@ export interface FileRouteTypes {
     | '/registrations'
     | '/events/$slug'
     | '/invitations/accept'
+    | '/preview/$eventId'
     | '/checkin/'
     | '/events/$eventSlug'
     | '/errors/$error'
@@ -476,6 +496,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/preview'
     | '/forgot-password'
     | '/otp'
     | '/password-reset'
@@ -495,6 +516,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/registrations'
     | '/invitations/accept'
+    | '/preview/$eventId'
     | '/checkin'
     | '/errors/$error'
     | '/events/create'
@@ -519,6 +541,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/preview'
     | '/_authenticated/settings'
     | '/(auth)/forgot-password'
     | '/(auth)/otp'
@@ -540,6 +563,7 @@ export interface FileRouteTypes {
     | '/_authenticated/registrations'
     | '/events/$slug'
     | '/invitations/accept'
+    | '/preview/$eventId'
     | '/checkin/'
     | '/_authenticated/events/$eventSlug'
     | '/_authenticated/errors/$error'
@@ -566,6 +590,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  PreviewRoute: typeof PreviewRouteWithChildren
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
   authPasswordResetRoute: typeof authPasswordResetRoute
@@ -589,6 +614,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/preview': {
+      id: '/preview'
+      path: '/preview'
+      fullPath: '/preview'
+      preLoaderRoute: typeof PreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -609,6 +641,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/checkin/'
       preLoaderRoute: typeof CheckinIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/preview/$eventId': {
+      id: '/preview/$eventId'
+      path: '/$eventId'
+      fullPath: '/preview/$eventId'
+      preLoaderRoute: typeof PreviewEventIdRouteImport
+      parentRoute: typeof PreviewRoute
     }
     '/invitations/accept': {
       id: '/invitations/accept'
@@ -982,6 +1021,17 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface PreviewRouteChildren {
+  PreviewEventIdRoute: typeof PreviewEventIdRoute
+}
+
+const PreviewRouteChildren: PreviewRouteChildren = {
+  PreviewEventIdRoute: PreviewEventIdRoute,
+}
+
+const PreviewRouteWithChildren =
+  PreviewRoute._addFileChildren(PreviewRouteChildren)
+
 interface EventsSlugRouteChildren {
   EventsSlugRegisterRoute: typeof EventsSlugRegisterRoute
   EventsSlugIndexRoute: typeof EventsSlugIndexRoute
@@ -999,6 +1049,7 @@ const EventsSlugRouteWithChildren = EventsSlugRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  PreviewRoute: PreviewRouteWithChildren,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
   authPasswordResetRoute: authPasswordResetRoute,

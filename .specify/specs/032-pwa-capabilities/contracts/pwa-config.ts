@@ -7,7 +7,9 @@
  * Reference: FR-001, FR-005, FR-007, FR-008, FR-011, FR-012, FR-014, FR-015, FR-018
  */
 
-import type { VitePWAOptions } from 'vite-plugin-pwa'
+// Stub for the VitePWA plugin options type (vite-plugin-pwa is not installed at the spec level)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type VitePWAOptions = Record<string, any>
 
 /**
  * App-specific manifest values that differ between Donor PWA and Admin PWA.

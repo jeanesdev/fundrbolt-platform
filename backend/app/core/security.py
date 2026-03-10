@@ -241,6 +241,44 @@ def decode_token(token: str, verify_expiration: bool = True) -> dict[str, Any]:
     )
 
 
+def create_preview_token(
+    event_id: str,
+    admin_user_id: str,
+    expires_delta: timedelta | None = None,
+) -> str:
+    """Create a short-lived JWT token for previewing an event as a donor.
+
+    Args:
+        event_id: UUID of the event to preview
+        admin_user_id: UUID of the admin user requesting the preview
+        expires_delta: Optional custom expiration time (default: 30 minutes)
+
+    Returns:
+        str: Encoded JWT preview token
+
+    Example:
+        token = create_preview_token(str(event.id), str(user.id))
+    """
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=30))
+
+    to_encode: dict[str, Any] = {
+        "sub": admin_user_id,
+        "event_id": event_id,
+        "type": "preview",
+        "exp": expire,
+        "iat": datetime.utcnow(),
+        "jti": secrets.token_urlsafe(32),
+    }
+
+    encoded_jwt: str = jwt.encode(
+        to_encode,
+        settings.jwt_secret_key,
+        algorithm=settings.jwt_algorithm,
+    )
+
+    return encoded_jwt
+
+
 def generate_verification_token() -> str:
     """Generate a cryptographically secure random token.
 

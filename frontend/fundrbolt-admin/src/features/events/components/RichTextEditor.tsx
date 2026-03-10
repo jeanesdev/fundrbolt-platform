@@ -6,6 +6,7 @@
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
 import { Bold, Italic, Link, List, ListOrdered } from 'lucide-react'
 import { useState } from 'react'
 
@@ -43,33 +44,8 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
     }, 0)
   }
 
-  // Simple markdown to HTML conversion for preview (basic implementation)
-  const renderPreview = (text: string) => {
-    if (!text) return '<p class="text-muted-foreground">No content to preview</p>'
-
-    let html = text
-      // Headings
-      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mt-4 mb-2">$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-4 mb-2">$1</h1>')
-      // Bold and italic
-      .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      // Links
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary underline">$1</a>')
-      // Unordered lists
-      .replace(/^\* (.+)$/gim, '<li class="ml-4">$1</li>')
-      // Paragraphs
-      .replace(/\n\n/g, '</p><p class="mb-2">')
-
-    // Wrap in paragraph if not already wrapped
-    if (!html.startsWith('<')) {
-      html = '<p class="mb-2">' + html + '</p>'
-    }
-
-    return html
-  }
+  const previewHtml = renderMarkdownToSafeHtml(value)
+  const hasPreviewContent = previewHtml.trim().length > 0
 
   return (
     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'edit' | 'preview')} className="w-full">
@@ -147,7 +123,11 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
       <TabsContent value="preview" className="mt-0">
         <div
           className="min-h-[200px] w-full p-4 rounded-md border bg-muted/50 overflow-auto"
-          dangerouslySetInnerHTML={{ __html: renderPreview(value) }}
+          dangerouslySetInnerHTML={{
+            __html: hasPreviewContent
+              ? previewHtml
+              : '<p class="text-muted-foreground">No content to preview</p>',
+          }}
         />
       </TabsContent>
     </Tabs>

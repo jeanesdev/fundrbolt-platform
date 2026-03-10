@@ -63,7 +63,10 @@ class SocialStartResponse(BaseModel):
 class SocialCallbackRequest(BaseModel):
     """Request to complete social auth after provider callback."""
 
-    attempt_id: uuid.UUID
+    attempt_id: uuid.UUID | None = Field(
+        default=None,
+        description="Auth attempt ID from the start response when available",
+    )
     code: str = Field(..., description="Authorization code from provider")
     state: str = Field(..., description="State token for CSRF validation")
 

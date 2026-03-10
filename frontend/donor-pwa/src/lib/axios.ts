@@ -11,6 +11,7 @@ import type {
   SocialAuthStartRequest,
   SocialAuthStartResponse,
 } from '@fundrbolt/shared/types';
+import { sanitizeRequestPayload } from '@fundrbolt/shared/utils';
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 import { useAuthStore } from '@/stores/auth-store';
@@ -59,6 +60,17 @@ apiClient.interceptors.request.use(
 
     if (spoofedNowIso) {
       config.headers['X-Debug-Now'] = spoofedNowIso;
+    }
+
+    if (config.params) {
+      config.params = sanitizeRequestPayload(config.params);
+    }
+
+    if (config.data instanceof FormData && config.headers) {
+      delete (config.headers as Record<string, string>)['Content-Type'];
+      delete (config.headers as Record<string, string>)['content-type'];
+    } else if (config.data !== undefined) {
+      config.data = sanitizeRequestPayload(config.data);
     }
 
     return config;
