@@ -1,155 +1,160 @@
-# Tasks: NPO Onboarding Wizard (034)
+# Tasks: NPO Onboarding Wizard
 
-**Input**: Design documents from `.specify/specs/034-npo-onboarding/`
-**Prerequisites**: plan.md ✅ spec.md ✅ research.md ✅ data-model.md ✅ contracts/ ✅ quickstart.md ✅
+**Input**: Design documents from `/specs/034-npo-onboarding/`
+**Prerequisites**: plan.md ✅, spec.md ✅, research.md ✅, data-model.md ✅, contracts/ ✅, quickstart.md ✅
 
-**Total tasks**: 52 | **Test tasks**: 0 (none requested in spec)
+**Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
 ## Format: `[ID] [P?] [Story] Description`
 - **[P]**: Can run in parallel (different files, no dependencies on incomplete tasks)
-- **[Story]**: Which user story this task belongs to (US1–US4)
-- File paths are relative to repository root
+- **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
+- Exact file paths are listed in every description
 
 ---
 
-## Phase 1: Setup (Shared Infrastructure)
+## Phase 1: Setup
 
-**Purpose**: Register new API router and add configuration entries for new dependencies. These changes unblock everything else.
+**Purpose**: Environment configuration and wiring that must exist before any implementation begins.
 
-- [ ] T001 Register `/api/v1/public/onboarding` router in `backend/app/main.py` (import and include the new public onboarding router)
-- [ ] T002 [P] Add `TURNSTILE_SECRET_KEY: str` and `ADMIN_NOTIFICATION_EMAIL: str` to `backend/app/core/config.py` Settings model
-- [ ] T003 [P] Add `VITE_TURNSTILE_SITE_KEY` to frontend type declarations in `frontend/fundrbolt-admin/src/vite-env.d.ts` and update `frontend/fundrbolt-admin/.env.example`
+- [ ] T001 Add `TURNSTILE_SECRET_KEY` and `ADMIN_NOTIFICATION_EMAIL` to `backend/.env.example`
+- [ ] T002 [P] Add `VITE_TURNSTILE_SITE_KEY` to `frontend/fundrbolt-admin/.env.example`
+- [ ] T003 Register public onboarding router (`/api/v1/public/onboarding`) in `backend/app/main.py`
+
+**Checkpoint**: Environment variables documented; router mount point registered.
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: Database schema, core models, shared utilities, and shared UI components that MUST be complete before any user story can be implemented.
+**Purpose**: Database schema and core model/schema infrastructure that ALL user stories depend on. No user story work can begin until this phase is complete.
 
-**⚠️ CRITICAL**: No user story work can begin until this phase is complete.
+**⚠️ CRITICAL**: Complete this phase before starting any user story phase.
 
-- [ ] T004 Write Alembic migration for `onboarding_sessions` table and `onboardingsessiontype` enum in `backend/alembic/versions/XXXX_add_onboarding_sessions_table.py` (SQL from data-model.md Migration 1)
-- [ ] T005 Write Alembic migration to add `under_revision` to `NPOStatus` and `reopened` to `ApplicationStatus` in `backend/alembic/versions/XXXX_add_npo_application_reopened_status.py` (SQL from data-model.md Migration 2)
-- [ ] T006 [P] Create `OnboardingSession` SQLAlchemy model in `backend/app/models/onboarding_session.py` (columns: id, token, session_type, current_step, completed_steps, form_data, user_id FK, expires_at, created_at, updated_at)
-- [ ] T007 [P] Add `UNDER_REVISION = "under_revision"` to `NPOStatus` enum in `backend/app/models/npo.py`
-- [ ] T008 [P] Add `REOPENED = "reopened"` to `ApplicationStatus` enum in `backend/app/models/npo_application.py`
-- [ ] T009 [P] Create Pydantic schemas in `backend/app/schemas/onboarding.py`: `CreateSessionRequest`, `SessionResponse`, `UpdateStepRequest`, `SubmitNpoRequest`, `SubmitNpoResponse`, `ErrorResponse`
-- [ ] T010 [P] Implement Cloudflare Turnstile verification in `backend/app/services/captcha_service.py`: async `verify_turnstile_token(token: str, remote_ip: str) -> bool` using `httpx` to call `https://challenges.cloudflare.com/turnstile/v0/siteverify`
-- [ ] T011 [P] Create shared wizard UI primitives in `frontend/fundrbolt-admin/src/features/shared/wizard/`: `WizardLayout.tsx` (step container with back/next buttons), `WizardProgressBar.tsx` (step dots/bar), `index.ts`
+- [ ] T004 Write Alembic migration `add_onboarding_sessions_table` (create `onboarding_sessions` table + `onboardingsessiontype` enum + indexes) in `backend/alembic/versions/xxxx_add_onboarding_sessions_table.py`
+- [ ] T005 Create `OnboardingSession` SQLAlchemy model (`id`, `token`, `session_type`, `current_step`, `completed_steps`, `form_data`, `user_id` FK, `expires_at`, `created_at`, `updated_at`) in `backend/app/models/onboarding_session.py`
+- [ ] T006 [P] Create Pydantic schemas (`CreateSessionRequest`, `UpdateStepRequest`, `SubmitOnboardingRequest`, `SessionResponse`, `SubmitOnboardingResponse`, `ErrorResponse`) in `backend/app/schemas/onboarding.py`
+- [ ] T007 Run `alembic upgrade head` to apply new migration and confirm table exists
 
-**Checkpoint**: Migrations applied, models defined, CAPTCHA service ready, and wizard UI shell exists — user story implementation can now begin.
+**Checkpoint**: `onboarding_sessions` table is live; `OnboardingSession` model and schemas are importable. User story implementation can now begin.
 
 ---
 
 ## Phase 3: User Story 1 — New Visitor Registers an NPO (Priority: P1) 🎯 MVP
 
-**Goal**: A person with no account can visit a public URL, create an account with email verification, fill in NPO details and an optional first event, submit their application, and see a confirmation screen. The admin team receives an email notification.
+**Goal**: A person with no FundrBolt account can start at a public URL, create their account, verify their email, fill in NPO details, optionally create a first event, and submit their application — arriving at a confirmation screen. The admin team receives an email notification.
 
-**Independent Test**: Open a private browser window → navigate to `/register/npo` → complete all 5 steps (account → verify email → NPO profile → first event → confirmation) → confirm NPO application appears in admin queue → confirm admin notification email received (see quickstart.md §Testing).
+**Independent Test**: A tester with no account opens `http://localhost:5173/register/npo` in a private window, completes all wizard steps including email verification, and reaches a confirmation screen that states the typical review timeline is 3–5 business days. The backend `audit_logs` table has a new submitted entry; the admin notification email is sent within 2 minutes.
 
-### Backend
+### Backend — Service & Logic
 
-- [ ] T012 Implement `OnboardingService` in `backend/app/services/onboarding_service.py`: `create_session()`, `get_session_by_token()`, `update_step()`, `submit_npo_onboarding()` (creates `NPO`, `NPOApplication`, optional `Event`, sets `user_id` on session, enforces 24h expiry and at-most-one-active-session-per-user rule)
-- [ ] T013 [P] Implement `POST /api/v1/public/onboarding/sessions` in `backend/app/api/v1/public/onboarding.py` with `@rate_limit(max_requests=20, window_seconds=3600)` — creates session, returns opaque token in `Set-Cookie` header and JSON body
-- [ ] T014 [P] Implement `GET /api/v1/public/onboarding/sessions/{token}` in `backend/app/api/v1/public/onboarding.py` — returns current_step, completed_steps, non-sensitive form_data; 404 on expired/missing
-- [ ] T015 Implement `PATCH /api/v1/public/onboarding/sessions/{token}/steps/{step_name}` in `backend/app/api/v1/public/onboarding.py` — saves step form_data (merged), advances current_step, marks step completed; rejects passwords in form_data
-- [ ] T016 Implement `POST /api/v1/public/onboarding/submit` in `backend/app/api/v1/public/onboarding.py` with `@rate_limit(max_requests=5, window_seconds=3600)`: verify Turnstile token via `CaptchaService`, validate session has user_id and completed required steps, call `OnboardingService.submit_npo_onboarding()`, send admin notification email
-- [ ] T017 Add `send_npo_application_admin_notification()` method to `backend/app/services/email_service.py` — professionally formatted email to `settings.ADMIN_NOTIFICATION_EMAIL` with applicant name, email, NPO name, EIN, and direct admin review link (FR-016/017/018)
+- [ ] T008 Create `OnboardingService` with `create_session()`, `get_session()`, `update_step()`, and `expire_stale_sessions()` methods in `backend/app/services/onboarding_service.py`
+- [ ] T009 Add `verify_turnstile_token(token: str) -> bool` helper to `OnboardingService` (calls Cloudflare Turnstile verify API) in `backend/app/services/onboarding_service.py`
+- [ ] T010 Add `submit_npo_onboarding()` method to `OnboardingService` — validates session completeness, creates NPO record (status `PENDING_APPROVAL`), creates `NPOApplication` record, optionally creates first `Event`, dispatches admin notification email in `backend/app/services/onboarding_service.py`
+- [ ] T011 Add near-match NPO name duplicate warning check to `OnboardingService.submit_npo_onboarding()` (returns warning flag, not a hard error) in `backend/app/services/onboarding_service.py`
 
-### Frontend
+### Backend — API Endpoints
 
-- [ ] T018 [P] Create `NpoOnboardingWizard.tsx` in `frontend/fundrbolt-admin/src/features/npo-onboarding/NpoOnboardingWizard.tsx` — session-aware step container: on mount, create or restore session via token cookie; renders `WizardProgressBar` and active step component; handles back/next navigation
-- [ ] T019 [P] Create `StepAccount.tsx` in `frontend/fundrbolt-admin/src/features/auth/sign-up-wizard/StepAccount.tsx` — collects first name, last name, email, password; renders `TurnstileWidget`; on submit calls auth register endpoint; detects duplicate email and prompts sign-in (FR-028 handled here for NPO flow)
-- [ ] T020 [P] Create `StepVerifyEmail.tsx` in `frontend/fundrbolt-admin/src/features/auth/sign-up-wizard/StepVerifyEmail.tsx` — polling or event-based check for email verification state; resend button (calls existing `/api/v1/auth/verify-email/resend`); blocks Next until verified (FR-013/014/015)
-- [ ] T021 [P] Create `StepNpoProfile.tsx` in `frontend/fundrbolt-admin/src/features/npo-onboarding/StepNpoProfile.tsx` — form fields: NPO name (required), EIN (required, format hint), website URL (required), primary phone (required), mission/description (optional, clearly labelled); saves via `PATCH .../steps/npo_profile`
-- [ ] T022 [P] Create `StepFirstEvent.tsx` in `frontend/fundrbolt-admin/src/features/npo-onboarding/StepFirstEvent.tsx` — form: event name, date, type; prominent "Skip for now" button; explains event can be added later; saves via `PATCH .../steps/first_event` (FR-009)
-- [ ] T023 [P] Create `StepConfirmation.tsx` in `frontend/fundrbolt-admin/src/features/npo-onboarding/StepConfirmation.tsx` — confirmation screen: submitted NPO name, plain-language explanation of review process, 3–5 business day timeline, what to expect next (FR-006/010)
-- [ ] T024 Create `register-npo` route in `frontend/fundrbolt-admin/src/routes/(auth)/register-npo/index.tsx` — renders `NpoOnboardingWizard`; no auth guard (public URL)
-- [ ] T025 [P] Create Zustand onboarding session store in `frontend/fundrbolt-admin/src/stores/onboardingSessionStore.ts` — state: `sessionToken`, `currentStep`, `completedSteps`, `sessionType`; actions: `initSession()`, `advanceStep()`, `restoreSession()`
-- [ ] T026 [P] Add API client functions in `frontend/fundrbolt-admin/src/lib/api/onboarding.ts`: `createOnboardingSession()`, `getOnboardingSession()`, `updateOnboardingStep()`, `submitNpoOnboarding()`
-- [ ] T027 [P] Create `TurnstileWidget.tsx` in `frontend/fundrbolt-admin/src/features/shared/TurnstileWidget.tsx` — invisible Cloudflare Turnstile widget using `@marsidev/react-turnstile`; exposes `onToken` callback; uses `VITE_TURNSTILE_SITE_KEY`
-- [ ] T028 Create `index.ts` barrel exports for `npo-onboarding` and `sign-up-wizard` feature directories
-- [ ] T029 Wire all NPO wizard steps into `NpoOnboardingWizard.tsx` step map; verify full end-to-end flow renders correctly (account → verify → npo_profile → first_event → confirmation) and session token is persisted between steps
+- [ ] T012 Implement `POST /api/v1/public/onboarding/sessions` with `@rate_limit(max_requests=20, window_seconds=3600)` in `backend/app/api/v1/public/onboarding.py`
+- [ ] T013 [P] Implement `GET /api/v1/public/onboarding/sessions/{token}` (returns session state; 404 if expired) in `backend/app/api/v1/public/onboarding.py`
+- [ ] T014 [P] Implement `PATCH /api/v1/public/onboarding/sessions/{token}/steps/{step_name}` (merge step data, advance `current_step`, update `completed_steps`) in `backend/app/api/v1/public/onboarding.py`
+- [ ] T015 Implement `POST /api/v1/public/onboarding/submit` with `@rate_limit(max_requests=5, window_seconds=3600)`, Turnstile verification, CAPTCHA-rejection friendy error, and `OnboardingService.submit_npo_onboarding()` dispatch in `backend/app/api/v1/public/onboarding.py`
 
-**Checkpoint**: A user with no account can complete the full NPO registration wizard end-to-end. Admin notification email is delivered on submit.
+### Backend — Email
+
+- [ ] T016 Add `send_npo_application_submitted_admin_notification()` to `EmailService` (professionally formatted, includes applicant name/email, NPO name, description, direct admin link per FR-016/017) in `backend/app/services/email_service.py`
+
+### Frontend — Shared Components
+
+- [ ] T017 Create onboarding API client functions (`createSession`, `getSession`, `updateStep`, `submitOnboarding`) using existing axios/fetch patterns in `frontend/fundrbolt-admin/src/lib/api/onboarding.ts`
+- [ ] T018 [P] Create `TurnstileWidget` component (wraps Cloudflare Turnstile invisible widget, exposes `onVerify` callback) in `frontend/fundrbolt-admin/src/features/npo-onboarding/TurnstileWidget.tsx`
+- [ ] T019 Create `SignUpWizard` reusable step container with persistent step progress bar component in `frontend/fundrbolt-admin/src/features/auth/sign-up-wizard/SignUpWizard.tsx`
+- [ ] T020 [P] Create `StepAccount` component — collects first name, last name, email, password; triggers account creation; handles "email already exists" with friendly sign-in prompt (FR-028) in `frontend/fundrbolt-admin/src/features/auth/sign-up-wizard/StepAccount.tsx`
+- [ ] T021 [P] Create `StepVerifyEmail` component — verification waiting screen with resend link; polls or listens for verification completion; blocks Next until verified (FR-013/014) in `frontend/fundrbolt-admin/src/features/auth/sign-up-wizard/StepVerifyEmail.tsx`
+- [ ] T022 Create barrel export file in `frontend/fundrbolt-admin/src/features/auth/sign-up-wizard/index.ts`
+
+### Frontend — NPO Onboarding Wizard
+
+- [ ] T023 [P] Create `StepNpoProfile` component — required fields: NPO name, EIN, website URL, phone; optional: mission/description; shows duplicate-name warning when applicable (FR-000) in `frontend/fundrbolt-admin/src/features/npo-onboarding/StepNpoProfile.tsx`
+- [ ] T024 [P] Create `StepFirstEvent` component — basic event fields (name, date, type) with clearly labelled "Skip for now" action (FR-009) in `frontend/fundrbolt-admin/src/features/npo-onboarding/StepFirstEvent.tsx`
+- [ ] T025 [P] Create `StepConfirmation` component — explains NPO is under review, states 3–5 business day timeline, describes next steps (FR-006/010) in `frontend/fundrbolt-admin/src/features/npo-onboarding/StepConfirmation.tsx`
+- [ ] T026 Create `NpoOnboardingWizard` container — session lifecycle (create on load, restore state on reload via cookie token), step orchestration (account → verify → npo_profile → first_event → confirmation), back-navigation, session expiry messaging in `frontend/fundrbolt-admin/src/features/npo-onboarding/NpoOnboardingWizard.tsx`
+- [ ] T027 Create public route `register-npo` (TanStack Router) that renders `NpoOnboardingWizard` in `frontend/fundrbolt-admin/src/routes/(auth)/register-npo/index.tsx`
+- [ ] T028 Create barrel export file in `frontend/fundrbolt-admin/src/features/npo-onboarding/index.ts`
+
+**Checkpoint**: A new visitor can navigate to `/register/npo`, complete the full wizard end-to-end including email verification, and receive a submission confirmation. Admin notification email is dispatched. US1 is fully functional and independently testable.
 
 ---
 
 ## Phase 4: User Story 2 — Existing User Applies to Add an NPO (Priority: P2)
 
-**Goal**: A logged-in user accessing `/register/npo` skips account creation and email verification, starting directly at the NPO profile step. Their second (or subsequent) NPO registration is independent from any existing NPO.
+**Goal**: A logged-in FundrBolt user can start the NPO onboarding flow and skip directly to the NPO profile step because they are already authenticated with a verified email.
 
-**Independent Test**: Log in as an existing verified user → navigate to `/register/npo` → confirm wizard opens at NPO profile step (no account or verify steps shown) → complete and submit → confirm a new NPO application appears in the admin queue without affecting the user's existing NPO.
+**Independent Test**: A tester logged in to an existing account opens `/register/npo`, sees the wizard open at the NPO profile step (account and email steps are absent from the progress bar), completes NPO details and optional first event, submits, and receives the confirmation screen.
 
-### Backend
+- [ ] T029 Update `POST /api/v1/public/onboarding/sessions` to accept an optional `Authorization: Bearer` header; if valid JWT provided, set `user_id` on the new session and set `current_step = 'npo_profile'` in `backend/app/api/v1/public/onboarding.py`
+- [ ] T030 Update `OnboardingService.create_session()` to accept optional `user_id: UUID | None`; when set, skip to `npo_profile` step and mark `account` and `verify_email` as pre-completed in `backend/app/services/onboarding_service.py`
+- [ ] T031 Update `NpoOnboardingWizard` to detect auth state on mount; if logged-in, pass auth token to `createSession` call so wizard opens at NPO profile step, hiding account and verify steps from progress bar in `frontend/fundrbolt-admin/src/features/npo-onboarding/NpoOnboardingWizard.tsx`
 
-- [ ] T030 In `POST /api/v1/public/onboarding/sessions`, detect authenticated user from `Authorization: Bearer` header (optional auth): if present and valid, set `user_id` on the new session and set `current_step = 'npo_profile'`; return session with auth-aware initial step in `backend/app/api/v1/public/onboarding.py`
-- [ ] T031 In `OnboardingService.create_session()`, enforce at-most-one-active-session-per-`user_id`-per-`session_type` check: if session exists, return existing session token rather than creating a duplicate in `backend/app/services/onboarding_service.py`
-
-### Frontend
-
-- [ ] T032 In `NpoOnboardingWizard.tsx`, read auth state from existing auth store on mount; if user is authenticated, request session with auth token (sets backend to start at `npo_profile`); hide StepAccount and StepVerifyEmail from progress bar and step map in `frontend/fundrbolt-admin/src/features/npo-onboarding/NpoOnboardingWizard.tsx`
-- [ ] T033 Add "Register a New NPO" action link in the authenticated admin sidebar or NPO management section so logged-in users can easily discover the flow in `frontend/fundrbolt-admin/src/` (exact nav file per existing codebase structure)
-
-**Checkpoint**: Logged-in users reach NPO profile immediately. No account duplication occurs. Both US1 and US2 paths are independently testable.
+**Checkpoint**: Logged-in users skip account/verify steps; submitted NPO is a new entity separate from any existing NPO. US2 independently testable.
 
 ---
 
 ## Phase 5: User Story 3 — New Visitor Creates a User Account Only (Priority: P3)
 
-**Goal**: A visitor can register a FundrBolt account (without NPO registration) via a clean multi-step sign-up flow accessible from a public URL. The existing single-page sign-up form is replaced by the wizard.
+**Goal**: A person who wants a FundrBolt account without registering an NPO can follow a clean, friendly multi-step sign-up flow at a public URL. They receive a welcome email on verification.
 
-**Independent Test**: Open private browser → navigate to `/sign-up` → complete steps (name/email → password → verify email → dashboard) → confirm account is active and welcome email received. Test duplicate email detection and resend-verification prompt on sign-in with unverified account.
+**Independent Test**: A tester opens `/register` (or `/sign-up`), completes account creation and email verification in simple steps, and arrives at the admin dashboard. They receive a professionally formatted welcome email. The existing flat sign-up page is replaced by the refactored wizard.
 
-### Backend
+- [ ] T032 Add `send_welcome_email()` to `EmailService` (professionally formatted, sent after email verification for new accounts per FR-030) in `backend/app/services/email_service.py`
+- [ ] T033 Trigger `send_welcome_email()` in the existing email verification handler after a user's email is confirmed in `backend/app/api/v1/auth.py`
+- [ ] T034 Update `handleUnverifiedSignIn` logic (or auth error response handler) to return a resend-verification prompt rather than a generic access-denied error for unverified users attempting to sign in (FR-029) in `frontend/fundrbolt-admin/src/routes/(auth)/sign-in.tsx`
+- [ ] T035 Refactor `sign-up.tsx` to compose `SignUpWizard`, `StepAccount`, and `StepVerifyEmail` (replacing the existing single-page form; reuses components from T020/T021) in `frontend/fundrbolt-admin/src/routes/(auth)/sign-up.tsx`
+- [ ] T036 Add `user_signup` session type path to `OnboardingService` if not already covered — ensure `POST /sessions` with `session_type=user_signup` works without NPO steps in `backend/app/services/onboarding_service.py`
 
-- [ ] T034 Apply `@rate_limit(max_requests=20, window_seconds=3600)` to `POST /api/v1/auth/register` in `backend/app/api/v1/auth.py` (FR-025a — check if already present; add if missing)
-- [ ] T035 Add Turnstile token field to the register request schema and verify via `CaptchaService` in the register endpoint in `backend/app/api/v1/auth.py` and `backend/app/schemas/auth.py` (FR-025b)
-- [ ] T036 Add `send_welcome_email()` method to `backend/app/services/email_service.py` — triggered after email verification is confirmed; professionally formatted with user's first name (FR-030)
-
-### Frontend
-
-- [ ] T037 [P] Create `SignUpWizard.tsx` in `frontend/fundrbolt-admin/src/features/auth/sign-up-wizard/SignUpWizard.tsx` — multi-step container for standalone sign-up: step 1 (name + email), step 2 (password creation), step 3 (verify email), step 4 (redirect to dashboard); reuses `StepAccount.tsx`, `StepVerifyEmail.tsx` from Phase 3
-- [ ] T038 Refactor `frontend/fundrbolt-admin/src/routes/(auth)/sign-up.tsx` to render `<SignUpWizard />` instead of the current single-page form; keep route path unchanged so existing links still work
-- [ ] T039 In `StepAccount.tsx`, handle the `409 Conflict` (email already registered) response from the register endpoint by rendering a friendly inline message with "Sign in" and "Reset password" links instead of a generic error toast (FR-028)
-- [ ] T040 In `frontend/fundrbolt-admin/src/routes/(auth)/sign-in.tsx`, detect the server's `email_not_verified` error code and show a resend-verification prompt (button + friendly copy) rather than an access-denied error message (FR-029)
-
-**Checkpoint**: New users can sign up via the clean wizard. Duplicate email and unverified sign-in edge cases show friendly, helpful UI. US1, US2, and US3 all work independently.
+**Checkpoint**: A new visitor can sign up via a multi-step flow at the standalone sign-up URL, verify their email, receive a welcome email, and reach the dashboard. US3 independently testable alongside US1 and US2.
 
 ---
 
-## Phase 6: User Story 4 — Admin Reviews and Approves/Rejects/Reopens (Priority: P4)
+## Phase 6: User Story 4 — Admin Reviews and Approves/Rejects an NPO Application (Priority: P4)
 
-**Goal**: Admins can see pending NPO applications, approve or reject them, and reopen rejected applications. Each action triggers a professionally formatted email to the applicant. Applications pending > 5 business days are visually flagged.
+**Goal**: A super admin can view pending NPO applications in a dedicated review queue, approve or reject them, re-open rejected applications for applicant revision, and see overdue applications visually flagged. All actions trigger professionally formatted applicant emails.
 
-**Independent Test**: As SuperAdmin, find a pending NPO application → approve it → confirm applicant receives approval email and gains NPO Admin role. Then test rejection with reason → confirm rejection email with reason. Then reopen the rejected application → confirm reopened email. Confirm overdue flag appears after 5 business days on a pending application.
+**Independent Test**: A tester acting as super-admin can: (a) find a pending NPO application in the admin queue, (b) approve it and confirm the applicant receives an approval email and gains NPO Admin role, (c) reject another with a reason and confirm rejection email, (d) re-open the rejected one and confirm the applicant receives a re-opened email. An application older than 5 business days shows an overdue indicator.
 
-### Backend
+### Backend — Schema & Model Changes
 
-- [ ] T041 [P] Implement `POST /api/v1/npos/{npo_id}/applications/{application_id}/reopen` in `backend/app/api/v1/npos.py`: SuperAdmin only; transitions NPO to `UNDER_REVISION`, application to `REOPENED`; appends `review_notes` entry with action, actor, timestamp, and reason; sends reopen email; writes audit log entry (FR-021a, contracts/npo-application-admin-api.yaml)
-- [ ] T042 [P] Implement `GET /api/v1/npos/{npo_id}/applications/{application_id}` in `backend/app/api/v1/npos.py` returning full application detail including `review_notes` revision history array (contracts/npo-application-admin-api.yaml)
-- [ ] T043 Add `send_npo_application_reopened_email()` method to `backend/app/services/email_service.py` — notifies applicant their application has been reopened for revision; includes admin's reason and a link to resubmit (FR-021a, FR-023, FR-030)
-- [ ] T044 Verify approval and rejection emails exist in `backend/app/services/email_service.py`; if missing or not professionally formatted, update/add `send_npo_application_approved_email()` and `send_npo_application_rejected_email()` to match brand standards (FR-023, FR-030)
+- [ ] T037 Write Alembic migration `add_npo_application_reopened_status` — `ALTER TYPE npostatus ADD VALUE IF NOT EXISTS 'under_revision'` and `ALTER TYPE applicationstatus ADD VALUE IF NOT EXISTS 'reopened'` in `backend/alembic/versions/xxxx_add_npo_application_reopened_status.py`
+- [ ] T038 [P] Add `UNDER_REVISION = "under_revision"` to `NPOStatus` enum in `backend/app/models/npo.py`
+- [ ] T039 [P] Add `REOPENED = "reopened"` to `ApplicationStatus` enum in `backend/app/models/npo_application.py`
+- [ ] T040 Run `alembic upgrade head` and confirm enum values exist in the database
 
-### Frontend
+### Backend — Service & Endpoints
 
-- [ ] T045 [P] Add Reopen button and confirmation modal to the rejected NPO application detail view in `frontend/fundrbolt-admin/src/` (locate existing NPO admin pages; add modal with reason text field); calls `POST .../applications/{id}/reopen`
-- [ ] T046 [P] Add revision history section to the NPO application detail view showing the `review_notes` timeline (submission, rejection reason, reopen notes, resubmission); calls `GET .../applications/{id}`
-- [ ] T047 Add overdue visual flag to pending NPO application cards/rows in the admin review queue: calculate business days since `submitted_at`, show orange/red badge when > 5 business days (FR-024)
-- [ ] T048 Add API client functions to `frontend/fundrbolt-admin/src/lib/api/npos.ts`: `reopenNpoApplication(npoId, applicationId, reason)`, `getNpoApplication(npoId, applicationId)`
+- [ ] T041 Add `reopen_application()` method to the NPO service layer — validates current status is `REJECTED`, sets NPO status to `UNDER_REVISION`, sets application status to `REOPENED`, appends reopen action to `review_notes`, dispatches "reopened" email in `backend/app/services/npo_service.py`
+- [ ] T042 Add `is_overdue` calculated property to NPO application response schema (`pending_since > 5 business days`) in `backend/app/schemas/npo_application.py`
+- [ ] T043 Implement `POST /api/v1/npos/{npo_id}/applications/{application_id}/reopen` endpoint (SuperAdmin only, per contract `npo-application-admin-api.yaml`) in `backend/app/api/v1/npos.py`
+- [ ] T044 Add `send_npo_application_reopened_email()` to `EmailService` (professionally formatted; informs applicant the application has been re-opened for revision per FR-021a) in `backend/app/services/email_service.py`
 
-**Checkpoint**: Full admin review loop is complete. Admins can approve, reject, and reopen applications. Applicants receive professionally formatted emails for every decision. All 4 user stories are independently functional.
+### Frontend — Admin Review Queue
+
+- [ ] T045 Add "Reopen" action button to rejected NPO application row/detail view (enabled only for `REJECTED` status; dispatches reopen endpoint; shows confirmation dialog with reason input) in `frontend/fundrbolt-admin/src/features/npos/` (locate and update relevant NPO detail/list component)
+- [ ] T046 Add overdue visual badge/indicator to NPO applications pending > 5 business days in the admin NPO list/review queue UI in `frontend/fundrbolt-admin/src/features/npos/` (locate and update relevant component)
+
+**Checkpoint**: Full admin review workflow is functional. Super admins can approve, reject, and re-open applications. All applicant emails send correctly. Overdue applications are flagged. All 4 user stories are independently functional.
 
 ---
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-**Purpose**: Final consistency, resilience, and cleanup work that spans multiple stories.
+**Purpose**: Tests, cleanup, and validation across all stories.
 
-- [ ] T049 [P] Email template consistency audit: verify all 6 email types (verification, welcome, NPO admin notification, approval, rejection, reopen) use the same `_create_email_html_template()` header/footer and FundrBolt brand colours in `backend/app/services/email_service.py` (FR-030)
-- [ ] T050 [P] Add expired session cleanup: implement a periodic task or background job in `backend/app/tasks/` that deletes `onboarding_sessions` where `expires_at < now()`; wire into app startup or a scheduled call
-- [ ] T051 Add NPO name similarity warning in `StepNpoProfile.tsx`: on blur of the NPO name field, call existing NPO search endpoint; if a close match is found, show an inline warning prompting the user to verify their name is intentional (edge case from spec)
-- [ ] T052 Run quickstart.md end-to-end validation: follow all test scenarios in `.specify/specs/034-npo-onboarding/quickstart.md` (happy path, resume flow, reopen flow) and confirm all pass; fix any gaps found
+- [ ] T047 [P] Write integration tests for onboarding API (session create, step patch, submit, rate limits, expired session 404, CAPTCHA rejection, duplicate email) in `backend/app/tests/test_onboarding_api.py`
+- [ ] T048 [P] Write unit tests for `OnboardingService` (state machine transitions, Turnstile helper, session expiry logic, near-duplicate NPO name check) in `backend/app/tests/test_onboarding_service.py`
+- [ ] T049 Audit all 6 new/modified email templates for consistent FundrBolt branding, no placeholder text, and working links (FR-030): welcome, verification, NPO submission confirmation, admin notification, approval, rejection, re-opened in `backend/app/services/email_service.py`
+- [ ] T050 [P] Add periodic session cleanup task (delete or mark expired `onboarding_sessions` older than 48 hours) in `backend/app/tasks/` or as an Alembic-scheduled SQL job
+- [ ] T051 [P] Run backend CI checks: `cd backend && poetry run ruff check . && poetry run ruff format --check . && poetry run mypy app --strict --ignore-missing-imports --exclude 'app/tests' && poetry run pytest -v --tb=short`
+- [ ] T052 [P] Run frontend CI checks: `cd frontend/fundrbolt-admin && pnpm lint && pnpm format:check && pnpm build`
+- [ ] T053 Validate `quickstart.md` end-to-end on local dev — follow all test flows in `specs/034-npo-onboarding/quickstart.md` and confirm they work as documented
 
 ---
 
@@ -157,72 +162,105 @@
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: No dependencies — can start immediately  
-- **Foundational (Phase 2)**: Depends on Phase 1 — **BLOCKS all user stories**
-- **US1 (Phase 3)**: Depends on Phase 2 — No dependencies on US2/US3/US4  
-- **US2 (Phase 4)**: Depends on Phase 2 — Builds on US1 wizard infrastructure (T018 must be complete)
-- **US3 (Phase 5)**: Depends on Phase 2 — Reuses `StepAccount.tsx` and `StepVerifyEmail.tsx` from US1 (T019, T020 must be complete)
-- **US4 (Phase 6)**: Depends on Phase 2 — Requires enum additions (T007/T008) and migration (T005) from Phase 2
-- **Polish (Phase 7)**: Depends on all 4 user story phases
+- **Setup (Phase 1)**: No dependencies — can start immediately
+- **Foundational (Phase 2)**: Depends on Phase 1 — **BLOCKS all user story phases**
+- **US1 (Phase 3)**: Depends on Phase 2 — primary MVP increment
+- **US2 (Phase 4)**: Depends on Phase 2; reuses components from US1 (T019–T028 must be complete)
+- **US3 (Phase 5)**: Depends on Phase 2; reuses sign-up-wizard components from US1 (T019–T022 must be complete)
+- **US4 (Phase 6)**: Depends on Phase 2; partially independent of US1–US3 (admin side); email additions depend on US1 email infrastructure (T016)
+- **Polish (Phase 7)**: Depends on all desired user stories being complete
 
-### User Story Independence
+### User Story Dependencies
 
-| Story | Can start after | Blocked by | Can run in parallel with |
-|-------|----------------|------------|--------------------------|
-| US1 (P1) | Phase 2 done | Nothing | US4 backend tasks |
-| US2 (P2) | Phase 2 done + T018 done | US1 frontend | US3, US4 |
-| US3 (P3) | Phase 2 done + T019/T020 done | US1 StepAccount/VerifyEmail | US4 |
-| US4 (P4) | Phase 2 done | Nothing | US1, US3 |
+| Story | Depends On | Can Parallel With |
+|-------|-----------|-------------------|
+| US1 (P1) | Phase 2 complete | US4 backend changes |
+| US2 (P2) | Phase 2 + US1 frontend components (T019–T028) | US3, US4 |
+| US3 (P3) | Phase 2 + US1 sign-up-wizard components (T019–T022) | US4 |
+| US4 (P4) | Phase 2 + US1 email infrastructure (T016) | US2, US3 |
 
 ### Within Each User Story
 
-- Backend services (T012, T017) before endpoints (T013–T016)
-- Frontend store/API client (T025/T026) before wizard containers (T018)
-- Step components (T019–T023) before wizard integration (T029)
+- Backend service methods before API endpoints
+- API endpoints before frontend API client
+- Shared components (SignUpWizard, StepAccount, StepVerifyEmail) before wizard containers
+- Wizard container before route registration
 
 ---
 
 ## Parallel Opportunities
 
-### Phase 2 (run all together after Phase 1)
+### Phase 3 (US1) — launch these together after T010 is done
 ```
-T006 OnboardingSession model
-T007 NPOStatus enum update        } all in parallel
-T008 ApplicationStatus enum update
-T009 Pydantic schemas
-T010 CaptchaService
-T011 WizardLayout/ProgressBar
-```
-T004 and T005 (migrations) should run sequentially (T004 → T005) to maintain a clean migration dependency chain.
-
-### Phase 3 (US1) — Backend and Frontend in parallel
-```
-Backend stream:           Frontend stream:
-T012 OnboardingService    T018 NpoOnboardingWizard
-T013 POST /sessions    →  T019 StepAccount
-T014 GET /sessions        T020 StepVerifyEmail
-T015 PATCH /steps         T021 StepNpoProfile
-T016 POST /submit         T022 StepFirstEvent
-T017 admin email          T023 StepConfirmation
-                          T025 Zustand store     } parallel
-                          T026 API client        }
-                          T027 TurnstileWidget   }
-T029 End-to-end integration (requires both streams complete)
+T013 GET session endpoint
+T014 PATCH step endpoint
+T018 TurnstileWidget component
+T020 StepAccount component
+T021 StepVerifyEmail component
+T023 StepNpoProfile component
+T024 StepFirstEvent component
+T025 StepConfirmation component
 ```
 
-### Phase 6 (US4) — backend tasks T041, T042, T043, T044 and frontend T045, T046, T048 can all run in parallel
+### Phase 6 (US4) — launch these together
+```
+T038 NPOStatus enum addition
+T039 ApplicationStatus enum addition
+```
+
+### Phase 7 (Polish) — launch these together after all stories complete
+```
+T047 Integration tests
+T048 Unit tests
+T050 Session cleanup task
+T051 Backend CI checks
+T052 Frontend CI checks
+```
 
 ---
 
 ## Implementation Strategy
 
-**MVP = Phase 1 + Phase 2 + Phase 3 (US1 only)**
+### MVP: User Story 1 Only (Phases 1–3)
 
-After completing US1, a new NPO can be registered end-to-end via the wizard. This is the highest-value increment and can be shipped independently. US2, US3, and US4 each add a complete, independently testable capability on top of the MVP.
+1. Complete Phase 1: Setup (T001–T003)
+2. Complete Phase 2: Foundational (T004–T007) — **critical blocker**
+3. Complete Phase 3: User Story 1 (T008–T028)
+4. **STOP and VALIDATE**: Follow the US1 independent test — new visitor can register an NPO end-to-end
+5. Deploy/demo if ready
 
-**Suggested delivery order**:
-1. Phase 1 + 2 (foundation) — single session
-2. Phase 3 (US1) — 2–3 sessions; ships as MVP
-3. Phase 6 (US4) can run in parallel with Phase 4/5 as it is backend-heavy and largely independent
-4. Phase 4 (US2) + Phase 5 (US3) — one session each
-5. Phase 7 (Polish) — final session before PR
+### Incremental Delivery
+
+| Step | Delivers |
+|------|---------|
+| Phases 1–3 | MVP: New visitor full NPO onboarding (**US1**) |
+| + Phase 4 | Existing users can add an NPO skipping account steps (**US2**) |
+| + Phase 5 | Clean multi-step user sign-up standalone flow (**US3**) |
+| + Phase 6 | Admin review queue with approve / reject / reopen / overdue (**US4**) |
+| + Phase 7 | Tests, email audit, session cleanup, CI green |
+
+### Parallel Team Strategy (if staffed)
+
+Once Phase 2 is complete:
+- **Dev A**: US1 backend (T008–T016)
+- **Dev B**: US1 frontend shared components (T017–T022)
+- **Dev C**: US4 backend enum + service changes (T037–T044)
+
+US1 frontend wizard components (T023–T028) begin after Dev B completes T019–T022.
+
+---
+
+## Summary
+
+| Metric | Count |
+|--------|-------|
+| Total tasks | 53 |
+| Phase 1 (Setup) | 3 |
+| Phase 2 (Foundational) | 4 |
+| Phase 3 (US1 — MVP) | 21 |
+| Phase 4 (US2) | 3 |
+| Phase 5 (US3) | 5 |
+| Phase 6 (US4) | 10 |
+| Phase 7 (Polish) | 7 |
+| Parallelizable [P] tasks | 25 |
+| MVP task count (Phases 1–3) | 28 |
