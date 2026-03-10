@@ -1,6 +1,6 @@
 # Feature Specification: NPO Onboarding Wizard
 
-**Feature Branch**: `034-npo-onboarding-i`
+**Feature Branch**: `034-npo-onboarding`
 **Created**: 2026-03-10
 **Status**: Draft
 **Input**: User description: "npo-onboarding: I need to clean up the process of setting up a new npo. I want it to be friendly, simple, and intuitive. Instead of having one big form, it should walk them through in smaller reasonable steps. It should explain the process of getting approval, it should include automated email verification, setting up a new user account if they don't have one, and setting up their first event. The FundrBolt Admin team still needs to approve the new NPO and I want to make sure we get an email when a new NPO is created. All emails should be professionally formatted. I will eventually have a link from our landing page to the first step of creating an NPO and a link to the first step of creating a new user. The process for signing up for an account needs to be cleaned up into simple friendly steps also."
