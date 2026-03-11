@@ -1,0 +1,259 @@
+openapi: "3.1.0"
+info:
+  title: FundrBolt Onboarding Session API
+  version: "1.0"
+  description: >
+    Public (unauthenticated) endpoints for managing wizard sessions during
+    user sign-up and NPO onboarding. All endpoints are rate-limited per IP
+    and require a valid Cloudflare Turnstile token on state-mutating calls.
+
+servers:
+  - url: /api/v1/public/onboarding
+
+paths:
+
+  /sessions:
+    post:
+      summary: Create a new onboarding wizard session
+      description: >
+        Creates a new server-side wizard session and returns an opaque token.
+        The client stores this token and sends it as the X-Onboarding-Token
+        header on all subsequent session requests. Rate limited: 20 req/hour/IP.
+      operationId: createOnboardingSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionRequest"
+      responses:
+        "201":
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /sessions/{token}:
+    get:
+      summary: Get current session state
+      description: >
+        Returns the current step, completed steps, and non-sensitive form data
+        for the session. Used by the frontend to restore wizard state on page
+        reload or browser return within the 24-hour window.
+      operationId: getOnboardingSession
+      parameters:
+        - $ref: "#/components/parameters/SessionToken"
+      responses:
+        "200":
+          description: Session state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "404":
+          description: Session not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /sessions/{token}/steps/{step_name}:
+    patch:
+      summary: Update a wizard step's data
+      description: >
+        Saves the form data for a specific step and advances current_step.
+        Marks the step as completed. Data is merged (not replaced) into the
+        session's form_data for the given step key.
+      operationId: updateOnboardingStep
+      parameters:
+        - $ref: "#/components/parameters/SessionToken"
+        - name: step_name
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [account, npo_profile, first_event]
+          description: Name of the wizard step being saved
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStepRequest"
+      responses:
+        "200":
+          description: Step saved, session updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "404":
+          description: Session not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error in step data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /submit:
+    post:
+      summary: Submit NPO application from wizard session
+      description: >
+        Reads the completed wizard session and creates the NPO record,
+        NPO application, and (optionally) the first event. Requires that the
+        user_id is set on the session (account creation and email verification
+        must be complete). Validates Cloudflare Turnstile token. Rate limited:
+        5 req/hour/IP.
+      operationId: submitNpoOnboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitOnboardingRequest"
+      responses:
+        "201":
+          description: NPO application submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmitOnboardingResponse"
+        "400":
+          description: Session incomplete (missing required steps or unverified email)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: CAPTCHA verification failed or validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  parameters:
+    SessionToken:
+      name: token
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Opaque session token issued at session creation
+
+  schemas:
+    CreateSessionRequest:
+      type: object
+      required: [session_type]
+      properties:
+        session_type:
+          type: string
+          enum: [user_signup, npo_onboarding]
+          description: >
+            user_signup: 2-step flow (account + verify).
+            npo_onboarding: 5-step flow (account + verify + NPO + event + confirm).
+
+    UpdateStepRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          description: >
+            Step-specific form data to merge into the session. Shape varies by step_name.
+            account step: {first_name, last_name, email, phone (optional)}
+            npo_profile step: {npo_name, ein, website_url, phone, mission_description (optional)}
+            first_event step: {event_name, event_date, event_type} or {} to skip
+
+    SubmitOnboardingRequest:
+      type: object
+      required: [session_token, turnstile_token]
+      properties:
+        session_token:
+          type: string
+          format: uuid
+          description: The onboarding session token
+        turnstile_token:
+          type: string
+          description: Cloudflare Turnstile verification token from the frontend widget
+
+    SubmitOnboardingResponse:
+      type: object
+      properties:
+        npo_id:
+          type: string
+          format: uuid
+          description: ID of the newly created NPO (in PENDING_APPROVAL status)
+        application_id:
+          type: string
+          format: uuid
+          description: ID of the NPO application
+        event_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of the created first event, or null if step was skipped
+        message:
+          type: string
+          example: "Your NPO application has been submitted. You will hear back within 3–5 business days."
+
+    SessionResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          format: uuid
+        session_type:
+          type: string
+          enum: [user_signup, npo_onboarding]
+        current_step:
+          type: string
+        completed_steps:
+          type: array
+          items:
+            type: string
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Set after account creation. Null until then.
+        form_data:
+          type: object
+          description: Accumulated (non-sensitive) form data for completed steps
+        expires_at:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+        code:
+          type: string
+          description: Machine-readable error code
