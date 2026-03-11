@@ -33,14 +33,23 @@ export async function getEventGuests(eventId: string): Promise<EventGuestsRespon
 
 // ─── My activity ─────────────────────────────────────────────────────────
 
+export interface DonorBidHistoryEntry {
+  bid_id: string
+  bid_amount: number
+  bid_status: string
+  placed_at: string
+  outbid_by_bidder_number: number | null
+}
+
 export interface DonorBidItem {
   auction_item_id: string
   item_number: number
   item_title: string
-  bid_amount: number
-  bid_status: string
+  latest_bid_amount: number
+  latest_bid_status: string
   placed_at: string
   primary_image_url: string | null
+  bid_history: DonorBidHistoryEntry[]
 }
 
 export interface DonorDonationItem {

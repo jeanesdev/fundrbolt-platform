@@ -6,6 +6,7 @@
  * - Table name / number with captain badge
  * - Compact tablemates grid
  */
+import type { GuestProfileData } from '@/components/event-home/GuestProfileModal'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
@@ -53,6 +54,7 @@ interface SeatingInfoResponse {
 interface MySeatingProps {
   seatingInfo: SeatingInfoResponse
   venueMapLink?: string | null
+  onGuestClick?: (guest: GuestProfileData) => void
 }
 
 const loadedMapImageUrls = new Set<string>()
@@ -148,7 +150,7 @@ function getEmbedMapUrl(url: string): string {
   }
 }
 
-export function MySeatingSection({ seatingInfo, venueMapLink }: MySeatingProps) {
+export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: MySeatingProps) {
   const [isMapFullscreenOpen, setIsMapFullscreenOpen] = useState(false)
   const [mapImageFailed, setMapImageFailed] = useState(false)
   const [mapImageLoaded, setMapImageLoaded] = useState(false)
@@ -541,7 +543,23 @@ export function MySeatingSection({ seatingInfo, venueMapLink }: MySeatingProps) 
           {displayTablemates.length > 0 ? (
             <div className='relative grid grid-cols-3 gap-2 sm:grid-cols-4'>
               {displayTablemates.map((mate) => (
-                <div key={mate.guestId} className='flex flex-col items-center gap-1.5'>
+                <div
+                  key={mate.guestId}
+                  className={`flex flex-col items-center gap-1.5 ${onGuestClick && !mate.isCurrentUser ? 'cursor-pointer active:opacity-70' : ''}`}
+                  role={onGuestClick && !mate.isCurrentUser ? 'button' : undefined}
+                  tabIndex={onGuestClick && !mate.isCurrentUser ? 0 : undefined}
+                  aria-label={onGuestClick && !mate.isCurrentUser ? `View ${mate.name ?? 'guest'}'s profile` : undefined}
+                  onClick={onGuestClick && !mate.isCurrentUser ? () => onGuestClick({
+                    guestId: mate.guestId,
+                    name: mate.name,
+                    bidderNumber: mate.bidderNumber,
+                    tableNumber: resolvedTableNumber,
+                    tableName: tableAssignment?.tableName ?? null,
+                    company: mate.company,
+                    profileImageUrl: mate.profileImageUrl,
+                    isTableCaptain: mate.isTableCaptain,
+                  }) : undefined}
+                >
                   <div className='relative'>
                     <div
                       className='flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 text-xs font-bold'

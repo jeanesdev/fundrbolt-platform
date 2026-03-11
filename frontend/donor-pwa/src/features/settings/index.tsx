@@ -1,61 +1,67 @@
-import { Header } from '@/components/layout/header'
-import { Main } from '@/components/layout/main'
-import { Search } from '@/components/search'
-import { Separator } from '@/components/ui/separator'
-import { Outlet } from '@tanstack/react-router'
-import { CreditCard, KeyRound, Shield, UserCog } from 'lucide-react'
-import { SidebarNav } from './components/sidebar-nav'
+import { BottomNav } from '@/components/layout/bottom-nav'
+import { useTabSwipe } from '@/hooks/use-tab-swipe'
+import { Outlet, useLocation, useNavigate } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
 
-const sidebarNavItems = [
-  {
-    title: 'Profile',
-    href: '/settings',
-    icon: <UserCog size={18} />,
-  },
-  {
-    title: 'Password',
-    href: '/settings/password',
-    icon: <KeyRound size={18} />,
-  },
-  {
-    title: 'Payment Methods',
-    href: '/settings/payment',
-    icon: <CreditCard size={18} />,
-  },
-  {
-    title: 'Privacy & Consent',
-    href: '/settings/consent',
-    icon: <Shield size={18} />,
-  },
-]
+const SETTINGS_TABS = [
+  '/settings',
+  '/settings/password',
+  '/settings/consent',
+  '/settings/payment',
+] as const
 
 export function Settings() {
-  return (
-    <>
-      {/* ===== Top Heading ===== */}
-      <Header>
-        <Search />
-      </Header>
+  const navigate = useNavigate()
+  const pathname = useLocation({ select: (l) => l.pathname })
 
-      <Main fixed>
-        <div className='space-y-0.5'>
-          <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>
-            Settings
-          </h1>
-          <p className='text-muted-foreground'>
-            Manage your account settings and set e-mail preferences.
-          </p>
+  const currentIndex = SETTINGS_TABS.indexOf(
+    pathname as (typeof SETTINGS_TABS)[number]
+  )
+
+  const { onTouchStart, onTouchMove, onTouchEnd } = useTabSwipe({
+    onSwipeLeft: () => {
+      if (currentIndex < SETTINGS_TABS.length - 1) {
+        void navigate({ to: SETTINGS_TABS[currentIndex + 1] })
+      }
+    },
+    onSwipeRight: () => {
+      if (currentIndex > 0) {
+        void navigate({ to: SETTINGS_TABS[currentIndex - 1] })
+      } else {
+        // Swipe right from first settings tab → go back to events
+        void navigate({ to: '/home' })
+      }
+    },
+  })
+
+  return (
+    <div className='bg-background flex min-h-screen flex-col'>
+      {/* Compact header with back button */}
+      <header className='bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 flex h-14 items-center border-b backdrop-blur'>
+        <div className='flex w-full items-center px-4'>
+          <button
+            onClick={() => void navigate({ to: '/home' })}
+            className='text-muted-foreground hover:text-foreground flex items-center gap-1'
+            aria-label='Back to event'
+          >
+            <ArrowLeft className='h-5 w-5' />
+            <span className='text-sm font-medium'>Event</span>
+          </button>
+          <h1 className='ml-3 text-base font-semibold'>Settings</h1>
         </div>
-        <Separator className='my-4 lg:my-6' />
-        <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 lg:flex-row lg:space-y-0 lg:space-x-12'>
-          <aside className='top-0 lg:sticky lg:w-1/5'>
-            <SidebarNav items={sidebarNavItems} />
-          </aside>
-          <div className='flex w-full p-1'>
-            <Outlet />
-          </div>
-        </div>
-      </Main>
-    </>
+      </header>
+
+      {/* Swipeable content area */}
+      <main
+        className='flex-1 overflow-y-auto px-4 py-4 pb-20'
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <Outlet />
+      </main>
+
+      <BottomNav />
+    </div>
   )
 }

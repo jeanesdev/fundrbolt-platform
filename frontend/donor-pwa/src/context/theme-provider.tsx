@@ -1,4 +1,4 @@
-import { getCookie, removeCookie, setCookie } from '@/lib/cookies'
+import { removeCookie, setCookie } from '@/lib/cookies'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
 type Theme = 'dark' | 'light' | 'system'
@@ -38,9 +38,8 @@ export function ThemeProvider({
   storageKey = THEME_COOKIE_NAME,
   ...props
 }: ThemeProviderProps) {
-  const [theme, _setTheme] = useState<Theme>(
-    () => (getCookie(storageKey) as Theme) || defaultTheme
-  )
+  // Donor PWA is always dark — ignore cookie/system preference
+  const [theme, _setTheme] = useState<Theme>('dark')
 
   // Optimized: Memoize the resolved theme calculation to prevent unnecessary re-computations
   const resolvedTheme = useMemo((): ResolvedTheme => {

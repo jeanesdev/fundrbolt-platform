@@ -3,13 +3,23 @@
 import logging
 import uuid
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.middleware.auth import get_current_active_user
+from app.models.auction_bid import AuctionBid
+from app.models.auction_item import AuctionItem
+from app.models.donation import Donation
+from app.models.event_registration import EventRegistration
+from app.models.event_table import EventTable
+from app.models.registration_guest import RegistrationGuest
 from app.models.user import User
 from app.schemas.seating import SeatingInfoResponse
 from app.services.seating_service import SeatingService
@@ -231,3 +241,248 @@ async def get_my_seating_info(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
         ) from e
+
+
+# ---------------------------------------------------------------------------
+# Response schemas for guest directory and donor activity
+# ---------------------------------------------------------------------------
+
+
+class EventGuestItem(BaseModel):
+    guest_id: str
+    name: str | None
+    bidder_number: int | None
+    table_number: int | None
+    table_name: str | None
+    profile_image_url: str | None
+    is_table_captain: bool
+
+
+class EventGuestsResponse(BaseModel):
+    guests: list[EventGuestItem]
+    total: int
+
+
+class DonorBidHistoryEntry(BaseModel):
+    bid_id: str
+    bid_amount: Decimal
+    bid_status: str
+    placed_at: datetime
+    outbid_by_bidder_number: int | None = None
+
+
+class DonorBidItem(BaseModel):
+    auction_item_id: str
+    item_number: int
+    item_title: str
+    latest_bid_amount: Decimal
+    latest_bid_status: str
+    placed_at: datetime
+    primary_image_url: str | None
+    bid_history: list[DonorBidHistoryEntry]
+
+
+class DonorDonationItem(BaseModel):
+    donation_id: str
+    amount: Decimal
+    labels: list[str]
+    donated_at: datetime
+
+
+class DonorActivityResponse(BaseModel):
+    bids: list[DonorBidItem]
+    donations: list[DonorDonationItem]
+
+
+# ---------------------------------------------------------------------------
+# Endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/{event_id}/guests",
+    response_model=EventGuestsResponse,
+    summary="Get all guests registered for an event",
+)
+async def get_event_guests(
+    event_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
+) -> EventGuestsResponse:
+    """Return all checked-in / registered guests for the event (for donor guest directory)."""
+    # Verify caller has a registration for this event (or is super_admin)
+    role_name = getattr(current_user, "role_name", None)
+    if role_name != "super_admin":
+        reg_check = await db.execute(
+            select(EventRegistration).where(
+                EventRegistration.event_id == event_id,
+                EventRegistration.user_id == current_user.id,
+            )
+        )
+        if reg_check.scalar_one_or_none() is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No registration found for this event",
+            )
+
+    # Load all guests for the event, with their event_table for table_name
+    result = await db.execute(
+        select(RegistrationGuest)
+        .join(EventRegistration, RegistrationGuest.registration_id == EventRegistration.id)
+        .where(EventRegistration.event_id == event_id)
+        .order_by(RegistrationGuest.table_number, RegistrationGuest.bidder_number)
+    )
+    guests = result.scalars().all()
+
+    # Build a lookup of table_number → table_name for this event
+    table_result = await db.execute(select(EventTable).where(EventTable.event_id == event_id))
+    table_map: dict[int, str | None] = {
+        t.table_number: t.table_name for t in table_result.scalars().all()
+    }
+
+    items = [
+        EventGuestItem(
+            guest_id=str(g.id),
+            name=g.name,
+            bidder_number=g.bidder_number,
+            table_number=g.table_number,
+            table_name=table_map.get(g.table_number) if g.table_number is not None else None,
+            profile_image_url=None,  # No profile images in current schema
+            is_table_captain=bool(g.is_table_captain),
+        )
+        for g in guests
+    ]
+
+    return EventGuestsResponse(guests=items, total=len(items))
+
+
+@router.get(
+    "/{event_id}/my-activity",
+    response_model=DonorActivityResponse,
+    summary="Get the current donor's bids and donations for an event",
+)
+async def get_my_activity(
+    event_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
+) -> DonorActivityResponse:
+    """Return the authenticated donor's auction bids and donations for an event."""
+    # Bids — load with auction_item and its media, ordered by item then time
+    bids_result = await db.execute(
+        select(AuctionBid)
+        .options(selectinload(AuctionBid.auction_item).selectinload(AuctionItem.media))
+        .where(
+            AuctionBid.event_id == event_id,
+            AuctionBid.user_id == current_user.id,
+        )
+        .order_by(AuctionBid.auction_item_id, AuctionBid.placed_at)
+    )
+    bids_rows = bids_result.scalars().all()
+
+    # Group bids by auction_item_id
+    grouped: dict[uuid.UUID, list[AuctionBid]] = {}
+    for b in bids_rows:
+        grouped.setdefault(b.auction_item_id, []).append(b)
+
+    # Find outbidders for "outbid" bids (batch query for efficiency)
+    outbid_map: dict[uuid.UUID, int | None] = {}  # bid.id -> outbidder bidder_number
+    item_ids_with_outbid = [
+        item_id
+        for item_id, item_bids in grouped.items()
+        if any(b.bid_status == "outbid" for b in item_bids)
+    ]
+
+    if item_ids_with_outbid:
+        # Fetch all competing bids on these items from other users
+        competitor_result = await db.execute(
+            select(
+                AuctionBid.auction_item_id,
+                AuctionBid.bidder_number,
+                AuctionBid.placed_at,
+                AuctionBid.bid_amount,
+            )
+            .where(
+                AuctionBid.auction_item_id.in_(item_ids_with_outbid),
+                AuctionBid.user_id != current_user.id,
+                AuctionBid.bid_status.in_(["winning", "active", "outbid"]),
+            )
+            .order_by(AuctionBid.auction_item_id, AuctionBid.placed_at)
+        )
+        competitor_bids = competitor_result.all()
+
+        # Group competitor bids by item
+        competitor_map: dict[uuid.UUID, list[tuple[datetime, int, Decimal]]] = {}
+        for cb in competitor_bids:
+            competitor_map.setdefault(cb.auction_item_id, []).append(
+                (cb.placed_at, cb.bidder_number, cb.bid_amount)
+            )
+
+        # For each outbid bid, find the first competing bid placed at/after it with a higher amount
+        for item_id, item_bids in grouped.items():
+            competitors = competitor_map.get(item_id, [])
+            if not competitors:
+                continue
+            for ub in item_bids:
+                if ub.bid_status == "outbid":
+                    for cp_at, cp_bidder, cp_amount in competitors:
+                        if cp_at >= ub.placed_at and cp_amount > ub.bid_amount:
+                            outbid_map[ub.id] = cp_bidder
+                            break
+
+    # Build one DonorBidItem per auction item
+    bid_items = []
+    for item_id, item_bids in grouped.items():
+        latest_bid = max(item_bids, key=lambda b: b.placed_at)
+        item = latest_bid.auction_item
+        primary_image: str | None = None
+        if item and item.media:
+            primary_image = item.media[0].file_path
+
+        history = [
+            DonorBidHistoryEntry(
+                bid_id=str(b.id),
+                bid_amount=b.bid_amount,
+                bid_status=b.bid_status,
+                placed_at=b.placed_at,
+                outbid_by_bidder_number=outbid_map.get(b.id),
+            )
+            for b in sorted(item_bids, key=lambda b: b.placed_at, reverse=True)
+        ]
+        bid_items.append(
+            DonorBidItem(
+                auction_item_id=str(item_id),
+                item_number=item.bid_number if item else 0,
+                item_title=item.title if item else "",
+                latest_bid_amount=latest_bid.bid_amount,
+                latest_bid_status=latest_bid.bid_status,
+                placed_at=latest_bid.placed_at,
+                primary_image_url=primary_image,
+                bid_history=history,
+            )
+        )
+
+    bid_items.sort(key=lambda x: x.item_number)
+
+    # Donations — load with labels
+    donations_result = await db.execute(
+        select(Donation)
+        .options(selectinload(Donation.labels))
+        .where(
+            Donation.event_id == event_id,
+            Donation.donor_user_id == current_user.id,
+        )
+        .order_by(Donation.created_at.desc())
+    )
+    donation_rows = donations_result.scalars().all()
+
+    donation_items = [
+        DonorDonationItem(
+            donation_id=str(d.id),
+            amount=d.amount,
+            labels=[lbl.name for lbl in d.labels],
+            donated_at=d.created_at,
+        )
+        for d in donation_rows
+    ]
+
+    return DonorActivityResponse(bids=bid_items, donations=donation_items)

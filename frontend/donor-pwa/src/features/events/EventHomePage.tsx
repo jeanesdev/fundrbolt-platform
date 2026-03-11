@@ -12,7 +12,6 @@
 import {
   AuctionGallery,
   EventDetails,
-  EventSwitcher,
   MySeatingSection,
 } from '@/components/event-home'
 import { AuctionItemDetailModal } from '@/components/event-home/AuctionItemDetailModal'
@@ -25,6 +24,10 @@ import {
   EventHeroSection,
   type EventStatus,
 } from '@/components/event-home/EventHeroSection'
+import type { GuestProfileData } from '@/components/event-home/GuestProfileModal'
+import { GuestProfileModal } from '@/components/event-home/GuestProfileModal'
+import { MyBidsDonationsSection } from '@/components/event-home/MyBidsDonationsSection'
+import { OtherGuestsSection } from '@/components/event-home/OtherGuestsSection'
 import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -38,6 +41,10 @@ import {
   getMySeatingInfo,
   type SeatingInfoResponse,
 } from '@/services/seating-service'
+import {
+  getEventGuests,
+  getMyActivity,
+} from '@/services/donor-activity-service'
 import watchListService from '@/services/watchlistService'
 import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { useEventContextStore } from '@/stores/event-context-store'
@@ -71,7 +78,7 @@ export function EventHomePage() {
     useEventStore()
   const { applyBranding, clearBranding } = useEventBranding()
   const { setSelectedEvent } = useEventContextStore()
-  const { availableEvents } = useEventContext()
+  const { } = useEventContext()
   const spoofedUserId = useDebugSpoofStore((state) => state.spoofedUser?.id)
   const watchlistScope = spoofedUserId ?? 'self'
   const timeBaseRealMs = useDebugSpoofStore((state) => state.timeBaseRealMs)
@@ -349,35 +356,6 @@ export function EventHomePage() {
     [userSelectedTab, activeTab, displayedTab, prefetchAuctionTabData]
   )
 
-  // Events for switcher
-  const eventsForSwitcher = useMemo((): RegisteredEventWithBranding[] => {
-    return availableEvents.map((event) => {
-      const eventDate = event.event_date ? new Date(event.event_date) : null
-      const now = getEffectiveNow()
-      const is_past = eventDate ? eventDate <= now : false
-      const is_upcoming =
-        eventDate && !is_past
-          ? eventDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-          : false
-      return {
-        id: event.id,
-        name: event.name,
-        slug: event.slug,
-        event_datetime: event.event_date || '',
-        timezone: '',
-        is_past,
-        is_upcoming,
-        thumbnail_url: event.logo_url || null,
-        primary_color: '#3B82F6',
-        secondary_color: '#9333EA',
-        background_color: '#FFFFFF',
-        accent_color: '#3B82F6',
-        npo_name: event.npo_name || 'Organization',
-        npo_logo_url: null,
-      }
-    })
-  }, [availableEvents, timeBaseRealMs, timeBaseSpoofMs])
-
   // Seating query (disabled in preview mode — no user-specific data)
   const {
     data: seatingInfo,
@@ -400,6 +378,33 @@ export function EventHomePage() {
   const seatingStatusCode = (seatingError as AxiosError | null)?.response
     ?.status
   const shouldShowSeatingError = !!seatingError && seatingStatusCode !== 404
+
+  // Event guests query (seat tab — other guests directory)
+  const { data: guestsData } = useQuery({
+    queryKey: ['event-guests', currentEvent?.id, spoofedUserId ?? 'self'],
+    queryFn: () => getEventGuests(currentEvent!.id),
+    enabled: !!currentEvent?.id && !isPreviewMode,
+    staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000,
+  })
+
+  // My activity query (bids + donations — seat tab)
+  const { data: myActivity } = useQuery({
+    queryKey: ['my-activity', currentEvent?.id, spoofedUserId ?? 'self'],
+    queryFn: () => getMyActivity(currentEvent!.id),
+    enabled: !!currentEvent?.id && !isPreviewMode,
+    staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
+  })
+
+  // Guest profile modal state
+  const [selectedGuest, setSelectedGuest] = useState<GuestProfileData | null>(null)
+  const [guestProfileOpen, setGuestProfileOpen] = useState(false)
+
+  const handleGuestClick = useCallback((guest: GuestProfileData) => {
+    setSelectedGuest(guest)
+    setGuestProfileOpen(true)
+  }, [])
 
   // Current event for switcher
   const currentEventForSwitcher =
@@ -450,13 +455,6 @@ export function EventHomePage() {
       resolveEventDateTime,
       getTaggedImageUrl,
     ])
-
-  const handleEventSelect = useCallback(
-    (event: RegisteredEventWithBranding) => {
-      navigate({ to: '/events/$eventSlug', params: { eventSlug: event.slug } })
-    },
-    [navigate]
-  )
 
   const loadEvent = useCallback(() => {
     // In preview mode, event data is seeded by the preview route — skip fetching
@@ -864,8 +862,11 @@ export function EventHomePage() {
     const nextIndex = displayedTabIndex + 1
     if (nextIndex < tabOrder.length) {
       setActiveTab(tabOrder[nextIndex])
+    } else {
+      // Swiped left past the last tab — open settings
+      void navigate({ to: '/settings' })
     }
-  }, [displayedTabIndex, tabOrder, setActiveTab])
+  }, [displayedTabIndex, tabOrder, setActiveTab, navigate])
 
   const swipeToPrevTab = useCallback(() => {
     const prevIndex = displayedTabIndex - 1
@@ -1075,17 +1076,7 @@ export function EventHomePage() {
       status={eventStatus}
       onAddToCalendar={generateICSFile}
       venueMapLink={venueMapLink}
-      switcherSlot={
-        !isPreviewMode &&
-        currentEventForSwitcher &&
-        eventsForSwitcher.length > 0 ? (
-          <EventSwitcher
-            currentEvent={currentEventForSwitcher}
-            events={eventsForSwitcher}
-            onEventSelect={handleEventSelect}
-          />
-        ) : undefined
-      }
+      switcherSlot={undefined}
       profileSlot={<ProfileDropdown />}
     />
   )
@@ -1242,13 +1233,13 @@ export function EventHomePage() {
             className='text-base font-bold'
             style={{ color: 'var(--event-text-on-background, #111827)' }}
           >
-            My Info
+            My Event
           </h2>
           <ProfileDropdown />
         </div>
       </div>
 
-      <div className='px-4 py-4'>
+      <div className='space-y-4 px-4 py-4'>
         {seatingLoading && (
           <div className='flex items-center justify-center py-16'>
             <Loader2
@@ -1281,12 +1272,13 @@ export function EventHomePage() {
             <MySeatingSection
               seatingInfo={seatingInfo}
               venueMapLink={venueMapLink}
+              onGuestClick={handleGuestClick}
             />
           </div>
         )}
 
         {!seatingLoading && !seatingInfo && !shouldShowSeatingError && (
-          <div className='flex flex-col items-center justify-center py-20 text-center'>
+          <div className='flex flex-col items-center justify-center py-16 text-center'>
             <div
               className='animate-float mb-5 flex h-24 w-24 items-center justify-center rounded-full'
               style={{
@@ -1314,7 +1306,30 @@ export function EventHomePage() {
             </p>
           </div>
         )}
+
+        {/* My Bids & Donations */}
+        {myActivity && (myActivity.bids.length > 0 || myActivity.donations.length > 0) && (
+          <MyBidsDonationsSection
+            activity={myActivity}
+            isAuctionClosed={currentEvent?.status === 'closed'}
+          />
+        )}
+
+        {/* Other Guests Directory */}
+        {guestsData && guestsData.guests.length > 0 && (
+          <OtherGuestsSection
+            guests={guestsData.guests}
+            onGuestClick={handleGuestClick}
+          />
+        )}
       </div>
+
+      {/* Guest Profile Modal */}
+      <GuestProfileModal
+        guest={selectedGuest}
+        open={guestProfileOpen}
+        onOpenChange={setGuestProfileOpen}
+      />
     </>
   )
 

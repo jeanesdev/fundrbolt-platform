@@ -5,9 +5,11 @@
  * - Desktop / tablet: two-column table layout
  * - Mobile: stacked cards
  * - Searchable by item number or item description (bids)
+ * - Tap/click a bid row to see full bid history for that item
  */
-import type { DonorActivityResponse } from '@/services/donor-activity-service'
-import { ChevronDown, ChevronUp, Gavel, Gift, Search } from 'lucide-react'
+import type { DonorActivityResponse, DonorBidItem } from '@/services/donor-activity-service'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet'
+import { ChevronDown, ChevronRight, ChevronUp, Gavel, Gift, Search, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 interface MyBidsDonationsSectionProps {
@@ -18,7 +20,7 @@ interface MyBidsDonationsSectionProps {
 const BID_STATUS_LABELS: Record<string, { label: string; color: string }> = {
   winning: { label: 'Winning', color: '#16a34a' },
   outbid: { label: 'Outbid', color: '#dc2626' },
-  active: { label: 'Active', color: '#2563eb' },
+  active: { label: 'Winning', color: '#16a34a' },
   cancelled: { label: 'Cancelled', color: '#6b7280' },
   withdrawn: { label: 'Withdrawn', color: '#6b7280' },
 }
@@ -44,6 +46,118 @@ function fmtDate(iso: string): string {
   })
 }
 
+// ── Bid History Sheet ───────────────────────────────────────────────────────
+
+interface BidHistorySheetProps {
+  bid: DonorBidItem | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  isAuctionClosed: boolean
+}
+
+function BidHistorySheet({ bid, open, onOpenChange, isAuctionClosed }: BidHistorySheetProps) {
+  if (!bid) return null
+  const labels = isAuctionClosed ? BID_STATUS_CLOSED_LABELS : BID_STATUS_LABELS
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side='bottom'
+        className='mx-auto max-w-lg rounded-t-3xl pb-8 outline-none [&>button:last-of-type]:hidden'
+        style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}
+      >
+        <SheetHeader className='sr-only'>
+          <SheetTitle>Bid History – {bid.item_title}</SheetTitle>
+        </SheetHeader>
+
+        {/* Close button */}
+        <SheetClose
+          className='absolute end-4 top-4 flex h-8 w-8 items-center justify-center rounded-full transition-opacity hover:opacity-80'
+          style={{
+            backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
+            color: 'rgb(var(--event-primary, 59, 130, 246))',
+          }}
+          aria-label='Close'
+        >
+          <X className='h-4 w-4' strokeWidth={3} />
+        </SheetClose>
+
+        <div className='px-1 pt-2'>
+          {/* Item header */}
+          <div className='mb-4'>
+            <p className='text-xs font-semibold' style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}>
+              Item #{bid.item_number}
+            </p>
+            <h2 className='text-lg font-bold leading-tight' style={{ color: 'var(--event-text-on-background, #111827)' }}>
+              {bid.item_title}
+            </h2>
+          </div>
+
+          {/* Bid history list — deduplicated by amount, worst status wins */}
+          <div className='flex flex-col gap-2'>
+            {(() => {
+              // Collapse multiple records for the same bid amount into one.
+              // Priority: outbid > active/winning. Keep the earliest placed_at for that amount.
+              const statusPriority = (s: string) => (s === 'outbid' ? 2 : s === 'cancelled' || s === 'withdrawn' ? 1 : 0)
+              const seen = new Map<string, typeof bid.bid_history[0]>()
+              for (const entry of [...bid.bid_history].reverse()) {
+                const key = String(entry.bid_amount)
+                const existing = seen.get(key)
+                const effectiveStatus = entry.outbid_by_bidder_number != null ? 'outbid' : entry.bid_status
+                const existingStatus = existing ? (existing.outbid_by_bidder_number != null ? 'outbid' : existing.bid_status) : ''
+                if (!existing || statusPriority(effectiveStatus) > statusPriority(existingStatus)) {
+                  seen.set(key, entry)
+                }
+              }
+              const dedupedHistory = [...seen.values()].sort(
+                (a, b) => new Date(b.placed_at).getTime() - new Date(a.placed_at).getTime()
+              )
+              return dedupedHistory.map((entry, idx) => {
+              const effectiveStatus = entry.outbid_by_bidder_number != null ? 'outbid' : entry.bid_status
+              const statusInfo = labels[effectiveStatus] ?? { label: effectiveStatus, color: '#6b7280' }
+              const isLatest = idx === 0
+              return (
+                <div
+                  key={entry.bid_id}
+                  className='rounded-xl border px-3 py-2.5'
+                  style={{
+                    borderColor: isLatest
+                      ? `${statusInfo.color}55`
+                      : 'rgb(var(--event-primary, 59, 130, 246) / 0.12)',
+                    backgroundColor: isLatest
+                      ? `${statusInfo.color}12`
+                      : 'rgb(var(--event-primary, 59, 130, 246) / 0.03)',
+                  }}
+                >
+                  <div className='flex items-center justify-between gap-2'>
+                    <div>
+                      <p className='text-base font-black' style={{ color: 'var(--event-text-on-background, #111827)' }}>
+                        {fmtCurrency(Number(entry.bid_amount))}
+                      </p>
+                      <p className='text-xs' style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}>
+                        {fmtDate(entry.placed_at)}
+                      </p>
+                    </div>
+                    <span
+                      className='flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold'
+                      style={{ color: statusInfo.color, backgroundColor: `${statusInfo.color}1a` }}
+                    >
+                      {statusInfo.label}
+                    </span>
+                  </div>
+                </div>
+              )
+              })
+            })()}
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+// ── Main Component ──────────────────────────────────────────────────────────
+
 export function MyBidsDonationsSection({ activity, isAuctionClosed = false }: MyBidsDonationsSectionProps) {
   const getStatusInfo = (status: string) => {
     const labels = isAuctionClosed ? BID_STATUS_CLOSED_LABELS : BID_STATUS_LABELS
@@ -51,6 +165,8 @@ export function MyBidsDonationsSection({ activity, isAuctionClosed = false }: My
   }
   const [expanded, setExpanded] = useState(false)
   const [search, setSearch] = useState('')
+  const [selectedBid, setSelectedBid] = useState<DonorBidItem | null>(null)
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   const hasBids = activity.bids.length > 0
   const hasDonations = activity.donations.length > 0
@@ -67,10 +183,13 @@ export function MyBidsDonationsSection({ activity, isAuctionClosed = false }: My
 
   if (!hasBids && !hasDonations) return null
 
-  const totalBid = activity.bids.reduce((s, b) => s + b.bid_amount, 0)
-  const totalDonation = activity.donations.reduce((s, d) => s + d.amount, 0)
+  const totalBid = activity.bids
+    .filter((b) => b.latest_bid_status === 'winning' || b.latest_bid_status === 'active')
+    .reduce((s, b) => s + Number(b.latest_bid_amount), 0)
+  const totalDonation = activity.donations.reduce((s, d) => s + Number(d.amount), 0)
 
   return (
+    <>
     <div
       className='overflow-hidden rounded-2xl border'
       style={{
@@ -189,20 +308,29 @@ export function MyBidsDonationsSection({ activity, isAuctionClosed = false }: My
                           <th className='px-3 py-2 text-right font-semibold' style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}>Your Bid</th>
                           <th className='px-3 py-2 text-center font-semibold' style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}>Status</th>
                           <th className='px-3 py-2 text-right font-semibold' style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}>Placed</th>
+                          <th className='w-6' />
                         </tr>
                       </thead>
                       <tbody>
                         {filteredBids.map((bid) => {
-                          const statusInfo = getStatusInfo(bid.bid_status)
+                          const statusInfo = getStatusInfo(bid.latest_bid_status)
                           return (
-                            <tr key={bid.auction_item_id} className='border-t' style={{ borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.08)' }}>
+                            <tr
+                              key={bid.auction_item_id}
+                              className='cursor-pointer border-t transition-colors hover:bg-black/5'
+                              style={{ borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.08)' }}
+                              onClick={() => { setSelectedBid(bid); setHistoryOpen(true) }}
+                            >
                               <td className='px-3 py-2 font-mono font-semibold' style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}>{bid.item_number}</td>
                               <td className='px-3 py-2 max-w-xs truncate' style={{ color: 'var(--event-text-on-background, #111827)' }}>{bid.item_title}</td>
-                              <td className='px-3 py-2 text-right font-semibold' style={{ color: 'var(--event-text-on-background, #111827)' }}>{fmtCurrency(bid.bid_amount)}</td>
+                              <td className='px-3 py-2 text-right font-semibold' style={{ color: 'var(--event-text-on-background, #111827)' }}>{fmtCurrency(bid.latest_bid_amount)}</td>
                               <td className='px-3 py-2 text-center'>
                                 <span className='inline-block rounded-full px-2 py-0.5 text-xs font-semibold' style={{ color: statusInfo.color, backgroundColor: `${statusInfo.color}1a` }}>{statusInfo.label}</span>
                               </td>
                               <td className='px-3 py-2 text-right text-xs' style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}>{fmtDate(bid.placed_at)}</td>
+                              <td className='px-3 py-2'>
+                                <ChevronRight className='h-3.5 w-3.5' style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }} />
+                              </td>
                             </tr>
                           )
                         })}
@@ -213,28 +341,33 @@ export function MyBidsDonationsSection({ activity, isAuctionClosed = false }: My
                   {/* Mobile cards */}
                   <div className='grid gap-2 md:hidden'>
                     {filteredBids.map((bid) => {
-                      const statusInfo = getStatusInfo(bid.bid_status)
+                      const statusInfo = getStatusInfo(bid.latest_bid_status)
                       return (
-                        <div
+                        <button
                           key={bid.auction_item_id}
-                          className='rounded-xl border px-3 py-2.5'
+                          type='button'
+                          className='w-full rounded-xl border px-3 py-2.5 text-left transition-colors active:opacity-70'
                           style={{
                             borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.12)',
                             backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.03)',
                           }}
+                          onClick={() => { setSelectedBid(bid); setHistoryOpen(true) }}
                         >
                           <div className='flex items-start justify-between gap-2'>
                             <div className='min-w-0 flex-1'>
                               <p className='text-xs font-semibold' style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}>Item #{bid.item_number}</p>
                               <p className='text-sm font-semibold truncate' style={{ color: 'var(--event-text-on-background, #111827)' }}>{bid.item_title}</p>
                             </div>
-                            <div className='flex-shrink-0 text-right'>
-                              <p className='text-base font-black' style={{ color: 'var(--event-text-on-background, #111827)' }}>{fmtCurrency(bid.bid_amount)}</p>
-                              <span className='inline-block rounded-full px-2 py-0.5 text-xs font-semibold mt-0.5' style={{ color: statusInfo.color, backgroundColor: `${statusInfo.color}1a` }}>{statusInfo.label}</span>
+                            <div className='flex flex-shrink-0 items-start gap-1.5'>
+                              <div className='text-right'>
+                                <p className='text-base font-black' style={{ color: 'var(--event-text-on-background, #111827)' }}>{fmtCurrency(bid.latest_bid_amount)}</p>
+                                <span className='inline-block rounded-full px-2 py-0.5 text-xs font-semibold mt-0.5' style={{ color: statusInfo.color, backgroundColor: `${statusInfo.color}1a` }}>{statusInfo.label}</span>
+                              </div>
+                              <ChevronRight className='mt-1 h-4 w-4 flex-shrink-0' style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }} />
                             </div>
                           </div>
                           <p className='mt-1 text-xs' style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}>{fmtDate(bid.placed_at)}</p>
-                        </div>
+                        </button>
                       )
                     })}
                   </div>
@@ -299,5 +432,13 @@ export function MyBidsDonationsSection({ activity, isAuctionClosed = false }: My
         </div>
       )}
     </div>
+
+    <BidHistorySheet
+      bid={selectedBid}
+      open={historyOpen}
+      onOpenChange={setHistoryOpen}
+      isAuctionClosed={isAuctionClosed}
+    />
+    </>
   )
 }
