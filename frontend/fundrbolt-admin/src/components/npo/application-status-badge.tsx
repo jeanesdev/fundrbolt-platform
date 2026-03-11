@@ -2,12 +2,7 @@
  * Application Status Badge Component
  * Displays application status and submit button for NPO Admins
  */
-import { useCallback, useEffect, useState } from 'react'
-import { npoService } from '@/services/npo-service'
-import type { NPODetail } from '@/types/npo'
-import { AlertCircle, Send } from 'lucide-react'
-import { toast } from 'sonner'
-import { useNPOStore } from '@/stores/npo-store'
+import { NPOLegalAgreementModal } from '@/components/npo/npo-legal-agreement-modal'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +15,12 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { NPOLegalAgreementModal } from '@/components/npo/npo-legal-agreement-modal'
+import { npoService } from '@/services/npo-service'
+import { useNPOStore } from '@/stores/npo-store'
+import type { NPODetail } from '@/types/npo'
+import { AlertCircle, Send } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 interface ApplicationStatusBadgeProps {
   npo: NPODetail

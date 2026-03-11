@@ -6,15 +6,7 @@
  * On success: registers user via auth store, persists step data to the
  * onboarding session, then calls onNext.
  */
-import { useCallback, useRef, useState } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Link } from '@tanstack/react-router'
-import { AlertCircle, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { updateStep } from '@/lib/api/onboarding'
+import { PasswordInput } from '@/components/password-input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -26,7 +18,15 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { PasswordInput } from '@/components/password-input'
+import { updateStep } from '@/lib/api/onboarding'
+import { useAuthStore } from '@/stores/auth-store'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Link } from '@tanstack/react-router'
+import { AlertCircle, Loader2 } from 'lucide-react'
+import { useCallback, useRef, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
 import {
   TurnstileWidget,
   type TurnstileWidgetHandle,

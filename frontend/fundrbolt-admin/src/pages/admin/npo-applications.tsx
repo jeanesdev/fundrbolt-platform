@@ -2,19 +2,8 @@
  * SuperAdmin NPO Applications Page
  * Lists pending NPO applications with search, filter, and review actions
  */
-import { useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import npoService from '@/services/npo-service'
-import type { ApplicationStatus, NPOApplication } from '@/types/npo'
-import {
-  AlertCircle,
-  Building2,
-  ExternalLink,
-  RotateCcw,
-  Search,
-} from 'lucide-react'
-import { useViewPreference } from '@/hooks/use-view-preference'
+import { ApplicationReviewDialog } from '@/components/admin/application-review-dialog'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -51,8 +40,19 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
-import { ApplicationReviewDialog } from '@/components/admin/application-review-dialog'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import npoService from '@/services/npo-service'
+import type { ApplicationStatus, NPOApplication } from '@/types/npo'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
+import {
+  AlertCircle,
+  Building2,
+  ExternalLink,
+  RotateCcw,
+  Search,
+} from 'lucide-react'
+import { useState } from 'react'
 
 // Status badge color mapping
 const statusColors: Record<ApplicationStatus, string> = {
@@ -275,7 +275,7 @@ export default function NPOApplicationsPage() {
                       </Button>
                     </Link>
                     {application.status === 'submitted' ||
-                    application.status === 'under_review' ? (
+                      application.status === 'under_review' ? (
                       <Button
                         size='sm'
                         onClick={() => setSelectedApplication(application)}
@@ -359,7 +359,7 @@ export default function NPOApplicationsPage() {
                             </Button>
                           </Link>
                           {application.status === 'submitted' ||
-                          application.status === 'under_review' ? (
+                            application.status === 'under_review' ? (
                             <Button
                               size='sm'
                               onClick={() =>

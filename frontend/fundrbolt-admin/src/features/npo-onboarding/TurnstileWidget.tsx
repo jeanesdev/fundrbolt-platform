@@ -10,8 +10,8 @@
  * - Test key that always passes: 1x00000000000000000000AA
  * - Set VITE_TURNSTILE_SITE_KEY in your .env.local for production.
  */
-import { forwardRef, useImperativeHandle, useRef } from 'react'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
+import { forwardRef, useImperativeHandle, useRef } from 'react'
 
 const SITE_KEY =
   import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '1x00000000000000000000AA'

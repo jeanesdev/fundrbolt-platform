@@ -15,21 +15,21 @@
  * The Turnstile CAPTCHA token is collected silently during the npo_profile
  * and first_event steps and used at submission time.
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { npoApi } from '@/services/npo-service'
-import { AlertCircle, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   createSession,
   getSession,
   submitOnboarding,
   type SessionResponse,
 } from '@/lib/api/onboarding'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { npoApi } from '@/services/npo-service'
+import { useAuthStore } from '@/stores/auth-store'
+import { AlertCircle, Loader2 } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import {
   SignUpWizard,
   type WizardStep,
