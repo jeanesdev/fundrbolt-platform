@@ -40,15 +40,6 @@ import { Eye, Gavel, Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AuctionItemCard } from './AuctionItemCard'
 
-declare global {
-  interface Window {
-    requestIdleCallback?: (
-      callback: IdleRequestCallback,
-      options?: IdleRequestOptions
-    ) => number
-    cancelIdleCallback?: (id: number) => void
-  }
-}
 
 function normalizeIdentifier(value: unknown): string | null {
   if (typeof value === 'string') {
@@ -291,14 +282,14 @@ export function AuctionGallery({
         (
           previous:
             | {
-                watch_list?: Array<{
-                  id: string
-                  user_id: string
-                  auction_item_id: string
-                  added_at: string
-                }>
-                total?: number
-              }
+              watch_list?: Array<{
+                id: string
+                user_id: string
+                auction_item_id: string
+                added_at: string
+              }>
+              total?: number
+            }
             | undefined
         ) => {
           const existing = previous?.watch_list ?? []
@@ -332,14 +323,14 @@ export function AuctionGallery({
         (
           previous:
             | {
-                watch_list?: Array<{
-                  id: string
-                  user_id: string
-                  auction_item_id: string
-                  added_at: string
-                }>
-                total?: number
-              }
+              watch_list?: Array<{
+                id: string
+                user_id: string
+                auction_item_id: string
+                added_at: string
+              }>
+              total?: number
+            }
             | undefined
         ) => {
           const existing = previous?.watch_list ?? []
@@ -696,10 +687,10 @@ export function AuctionGallery({
   // My Items: watched + bid on (max bid set)
   const myItemIds = isMyItemsMode
     ? new Set([
-        ...Array.from(watchedItemIds),
-        ...Object.keys(winningItemMap),
-        ...Object.keys(maxBidItemMap),
-      ])
+      ...Array.from(watchedItemIds),
+      ...Object.keys(winningItemMap),
+      ...Object.keys(maxBidItemMap),
+    ])
     : null
   const myItems = myItemIds
     ? items.filter((item) => myItemIds.has(item.id))
@@ -806,13 +797,13 @@ export function AuctionGallery({
                 style={
                   filter === option.value
                     ? {
-                        backgroundColor:
-                          'rgb(var(--event-primary, 59, 130, 246))',
-                        color: 'var(--event-text-on-primary, #FFFFFF)',
-                      }
+                      backgroundColor:
+                        'rgb(var(--event-primary, 59, 130, 246))',
+                      color: 'var(--event-text-on-primary, #FFFFFF)',
+                    }
                     : {
-                        color: 'var(--event-text-muted-on-background, #6B7280)',
-                      }
+                      color: 'var(--event-text-muted-on-background, #6B7280)',
+                    }
                 }
               >
                 {option.label}

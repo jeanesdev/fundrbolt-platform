@@ -3,7 +3,7 @@ import { Main } from '@/components/layout/main'
 import { Search } from '@/components/search'
 import { Separator } from '@/components/ui/separator'
 import { Outlet } from '@tanstack/react-router'
-import { KeyRound, Shield, UserCog } from 'lucide-react'
+import { CreditCard, KeyRound, Shield, UserCog } from 'lucide-react'
 import { SidebarNav } from './components/sidebar-nav'
 
 const sidebarNavItems = [
@@ -16,6 +16,11 @@ const sidebarNavItems = [
     title: 'Password',
     href: '/settings/password',
     icon: <KeyRound size={18} />,
+  },
+  {
+    title: 'Payment Methods',
+    href: '/settings/payment',
+    icon: <CreditCard size={18} />,
   },
   {
     title: 'Privacy & Consent',

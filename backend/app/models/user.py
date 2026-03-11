@@ -15,6 +15,8 @@ if TYPE_CHECKING:
     from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
     from app.models.donation import Donation
     from app.models.event_registration import EventRegistration
+    from app.models.payment_profile import PaymentProfile
+    from app.models.payment_transaction import PaymentTransaction
     from app.models.registration_guest import RegistrationGuest
     from app.models.role import Role
     from app.models.session import Session
@@ -164,6 +166,17 @@ class User(Base, UUIDMixin, TimestampMixin):
     social_identity_links: Mapped[list["SocialIdentityLink"]] = relationship(
         "SocialIdentityLink",
         back_populates="user",
+    )
+    # Feature 033: Payment processing relationships
+    payment_profiles: Mapped[list["PaymentProfile"]] = relationship(
+        "PaymentProfile",
+        back_populates="user",
+        foreign_keys="PaymentProfile.user_id",
+    )
+    payment_transactions: Mapped[list["PaymentTransaction"]] = relationship(
+        "PaymentTransaction",
+        back_populates="user",
+        foreign_keys="PaymentTransaction.user_id",
     )
 
     # Check constraints

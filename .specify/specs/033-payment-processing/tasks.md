@@ -18,11 +18,11 @@
 
 **Purpose**: Install new dependencies and create skeleton files / templates that everything else builds on.
 
-- [ ] T001 Install `cryptography`, `weasyprint`, and `celery[redis]` backend dependencies in `backend/pyproject.toml` via `poetry add`
-- [ ] T002 [P] Create receipt Jinja2 template skeleton files `backend/app/templates/receipts/receipt.html.j2` and `backend/app/templates/receipts/receipt_styles.css` (placeholder content, final content in Phase 7)
-- [ ] T003 [P] Add all payment processing env vars to `backend/.env.example` (PAYMENT_GATEWAY_BACKEND, CREDENTIAL_ENCRYPTION_KEY, PAYMENT_PROCESSING_FEE_PCT, PAYMENT_PROCESSING_FEE_FLAT_CENTS, PAYMENT_WEBHOOK_TIMEOUT_MINUTES, PAYMENT_PENDING_EXPIRY_HOURS, RECEIPTS_BLOB_CONTAINER, STUB_HPF_BASE_URL, CELERY_BROKER_URL)
-- [ ] T004 [P] Create `backend/app/services/payment_gateway/` subpackage with `__init__.py` exporting `PaymentGatewayPort`, `StubPaymentGateway`, `DeluxePaymentGateway`
-- [ ] T004a [P] Create Celery application instance in `backend/app/core/celery_app.py` — configure broker URL from `CELERY_BROKER_URL` env var (defaults to Redis URL), result backend pointing to same Redis instance, `autodiscover_tasks` from `["app.tasks"]`; expose `celery_app` as importable singleton; register beat schedule entries for `expire_pending_transactions` (every 5 min) and `retry_failed_receipts` (every 10 min)
+- [x] T001 Install `cryptography`, `weasyprint`, and `celery[redis]` backend dependencies in `backend/pyproject.toml` via `poetry add`
+- [x] T002 [P] Create receipt Jinja2 template skeleton files `backend/app/templates/receipts/receipt.html.j2` and `backend/app/templates/receipts/receipt_styles.css` (placeholder content, final content in Phase 7)
+- [x] T003 [P] Add all payment processing env vars to `backend/.env.example` (PAYMENT_GATEWAY_BACKEND, CREDENTIAL_ENCRYPTION_KEY, PAYMENT_PROCESSING_FEE_PCT, PAYMENT_PROCESSING_FEE_FLAT_CENTS, PAYMENT_WEBHOOK_TIMEOUT_MINUTES, PAYMENT_PENDING_EXPIRY_HOURS, RECEIPTS_BLOB_CONTAINER, STUB_HPF_BASE_URL, CELERY_BROKER_URL)
+- [x] T004 [P] Create `backend/app/services/payment_gateway/` subpackage with `__init__.py` exporting `PaymentGatewayPort`, `StubPaymentGateway`, `DeluxePaymentGateway`
+- [x] T004a [P] Create Celery application instance in `backend/app/core/celery_app.py` — configure broker URL from `CELERY_BROKER_URL` env var (defaults to Redis URL), result backend pointing to same Redis instance, `autodiscover_tasks` from `["app.tasks"]`; expose `celery_app` as importable singleton; register beat schedule entries for `expire_pending_transactions` (every 5 min) and `retry_failed_receipts` (every 10 min)
 
 **Checkpoint**: Dependencies installed, skeleton files exist, Celery app configured — Phase 2 can start
 
@@ -36,34 +36,34 @@
 
 ### Models (T005–T008 are fully parallel — different files)
 
-- [ ] T005 [P] Create `PaymentGatewayCredential` SQLAlchemy model in `backend/app/models/payment_gateway_credential.py` — columns: id (UUID PK), npo_id (FK, UNIQUE), gateway_name, merchant_id_enc, api_key_enc, api_secret_enc, gateway_id, is_live_mode, is_active, created_at, updated_at (see data-model.md §1.1)
-- [ ] T006 [P] Create `PaymentProfile` SQLAlchemy model in `backend/app/models/payment_profile.py` — columns: id, user_id (FK), npo_id (FK), gateway_profile_id, card_last4, card_brand, card_expiry_month, card_expiry_year, billing_name, billing_zip, is_default, deleted_at; UNIQUE(user_id, npo_id, gateway_profile_id) (see data-model.md §1.2)
-- [ ] T007 [P] Create `PaymentTransaction` SQLAlchemy model with `TransactionType` and `TransactionStatus` enums in `backend/app/models/payment_transaction.py` — all columns including gateway_transaction_id (UNIQUE), idempotency_key (UNIQUE), line_items (JSONB), gateway_response (JSONB), initiated_by (FK→users), parent_transaction_id (self-FK), session_created_at, reason (see data-model.md §1.3)
-- [ ] T008 [P] Create `PaymentReceipt` SQLAlchemy model in `backend/app/models/payment_receipt.py` — columns: id, transaction_id (FK, UNIQUE), pdf_url, pdf_generated_at, email_address, email_sent_at, email_attempts, created_at (no updated_at — append-only) (see data-model.md §1.4)
-- [ ] T009 Register all 4 new models and `TransactionType`/`TransactionStatus` enums in `backend/app/models/__init__.py` imports + `__all__` list
+- [x] T005 [P] Create `PaymentGatewayCredential` SQLAlchemy model in `backend/app/models/payment_gateway_credential.py` — columns: id (UUID PK), npo_id (FK, UNIQUE), gateway_name, merchant_id_enc, api_key_enc, api_secret_enc, gateway_id, is_live_mode, is_active, created_at, updated_at (see data-model.md §1.1)
+- [x] T006 [P] Create `PaymentProfile` SQLAlchemy model in `backend/app/models/payment_profile.py` — columns: id, user_id (FK), npo_id (FK), gateway_profile_id, card_last4, card_brand, card_expiry_month, card_expiry_year, billing_name, billing_zip, is_default, deleted_at; UNIQUE(user_id, npo_id, gateway_profile_id) (see data-model.md §1.2)
+- [x] T007 [P] Create `PaymentTransaction` SQLAlchemy model with `TransactionType` and `TransactionStatus` enums in `backend/app/models/payment_transaction.py` — all columns including gateway_transaction_id (UNIQUE), idempotency_key (UNIQUE), line_items (JSONB), gateway_response (JSONB), initiated_by (FK→users), parent_transaction_id (self-FK), session_created_at, reason (see data-model.md §1.3)
+- [x] T008 [P] Create `PaymentReceipt` SQLAlchemy model in `backend/app/models/payment_receipt.py` — columns: id, transaction_id (FK, UNIQUE), pdf_url, pdf_generated_at, email_address, email_sent_at, email_attempts, created_at (no updated_at — append-only) (see data-model.md §1.4)
+- [x] T009 Register all 4 new models and `TransactionType`/`TransactionStatus` enums in `backend/app/models/__init__.py` imports + `__all__` list
 
 ### Migration
 
-- [ ] T010 Write Alembic migration `backend/alembic/versions/[hash]_add_payment_processing_tables.py` — M1 payment_gateway_credentials table, M2 payment_profiles table + indexes, M3 payment_transactions table + indexes, M4 payment_receipts table + indexes, M5 payment_transaction_id FK on ticket_purchases, M6 checkout_open BOOLEAN on events, M7 partial indexes for pending poll + email retry (see data-model.md §3)
+- [x] T010 Write Alembic migration `backend/alembic/versions/a1b2c3d4e5f6_add_payment_processing_tables.py` — M1 payment_gateway_credentials table, M2 payment_profiles table + indexes, M3 payment_transactions table + indexes, M4 payment_receipts table + indexes, M5 payment_transaction_id FK on ticket_purchases, M6 checkout_open BOOLEAN on events, M7 partial indexes for pending poll + email retry (see data-model.md §3)
 
 ### Gateway Abstraction (T011 then T012/T013 in parallel)
 
-- [ ] T011 Create `PaymentGatewayPort` ABC in `backend/app/services/payment_gateway/port.py` — abstract methods: `create_hosted_session()`, `charge_profile()`, `void_transaction()`, `refund_transaction()`, `verify_webhook_signature()`, `get_transaction_status()` with typed return dataclasses `HostedSessionResult` and `TransactionResult` (see research.md R-001, R-003, R-005)
-- [ ] T012 [P] Implement `StubPaymentGateway` in `backend/app/services/payment_gateway/stub_gateway.py` — auto-approves all operations; `create_hosted_session()` returns stub token pointing to `/api/v1/payments/stub-hpf`; `charge_profile()` returns `approved`; `verify_webhook_signature()` always returns `True`; after simulating payment, asynchronously calls the webhook endpoint internally (see research.md R-001; docs/features/033-payment-processing.md Stub design)
-- [ ] T013 [P] Create `DeluxePaymentGateway` skeleton in `backend/app/services/payment_gateway/deluxe_gateway.py` — all methods raise `NotImplementedError` with docstrings citing the Deluxe API docs from research.md R-001 through R-005; holds merchant credential fields in `__init__` for future implementation
+- [x] T011 Create `PaymentGatewayPort` ABC in `backend/app/services/payment_gateway/port.py` — abstract methods: `create_hosted_session()`, `charge_profile()`, `void_transaction()`, `refund_transaction()`, `verify_webhook_signature()`, `get_transaction_status()` with typed return dataclasses `HostedSessionResult` and `TransactionResult` (see research.md R-001, R-003, R-005)
+- [x] T012 [P] Implement `StubPaymentGateway` in `backend/app/services/payment_gateway/stub_gateway.py` — auto-approves all operations; `create_hosted_session()` returns stub token pointing to `/api/v1/payments/stub-hpf`; `charge_profile()` returns `approved`; `verify_webhook_signature()` always returns `True`; after simulating payment, asynchronously calls the webhook endpoint internally (see research.md R-001; docs/features/033-payment-processing.md Stub design)
+- [x] T013 [P] Create `DeluxePaymentGateway` skeleton in `backend/app/services/payment_gateway/deluxe_gateway.py` — all methods raise `NotImplementedError` with docstrings citing the Deluxe API docs from research.md R-001 through R-005; holds merchant credential fields in `__init__` for future implementation
 
 ### Cross-Cutting Utilities (all parallel — different files)
 
-- [ ] T014 [P] Create Fernet encryption helper functions `encrypt_credential()` / `decrypt_credential()` in `backend/app/core/encryption.py` — reads `CREDENTIAL_ENCRYPTION_KEY` env var, uses `cryptography.fernet.Fernet` (see research.md R-009)
-- [ ] T015 [P] Create all Pydantic v2 request/response schemas in `backend/app/schemas/payment.py` — `PaymentSessionRequest`, `PaymentSessionResponse`, `PaymentProfileCreate`, `PaymentProfileRead`, `CheckoutRequest`, `CheckoutResponse`, `CheckoutBalanceResponse`, `AdminChargeRequest`, `AdminChargeResponse`, `VoidRequest`, `RefundRequest`, `RefundResponse`, `CredentialCreate`, `CredentialRead` (masked), `CredentialTestResponse`, `LineItemSchema` (see contracts/ for all field definitions)
-- [ ] T016 [P] Create gateway factory dependency in `backend/app/core/payment_deps.py` — reads `PAYMENT_GATEWAY_BACKEND` env var (`"stub"` or `"deluxe"`), returns the correct `PaymentGatewayPort` instance via FastAPI `Depends`; raises `RuntimeError` for unknown backends
+- [x] T014 [P] Create Fernet encryption helper functions `encrypt_credential()` / `decrypt_credential()` in `backend/app/core/encryption.py` — reads `CREDENTIAL_ENCRYPTION_KEY` env var, uses `cryptography.fernet.Fernet` (see research.md R-009)
+- [x] T015 [P] Create all Pydantic v2 request/response schemas in `backend/app/schemas/payment.py` — `PaymentSessionRequest`, `PaymentSessionResponse`, `PaymentProfileCreate`, `PaymentProfileRead`, `CheckoutRequest`, `CheckoutResponse`, `CheckoutBalanceResponse`, `AdminChargeRequest`, `AdminChargeResponse`, `VoidRequest`, `RefundRequest`, `RefundResponse`, `CredentialCreate`, `CredentialRead` (masked), `CredentialTestResponse`, `LineItemSchema` (see contracts/ for all field definitions)
+- [x] T016 [P] Create gateway factory dependency in `backend/app/core/payment_deps.py` — reads `PAYMENT_GATEWAY_BACKEND` env var (`"stub"` or `"deluxe"`), returns the correct `PaymentGatewayPort` instance via FastAPI `Depends`; raises `RuntimeError` for unknown backends
 
 ### Router Skeletons (T017–T019 parallel — different files)
 
-- [ ] T017 [P] Create donor payments router skeleton in `backend/app/api/v1/payments.py` — empty `APIRouter(prefix="/payments", tags=["payments"])`; no endpoints yet
-- [ ] T018 [P] Create admin payments router skeleton in `backend/app/api/v1/admin_payments.py` — empty `APIRouter(prefix="/admin/payments", tags=["admin-payments"])`; no endpoints yet
-- [ ] T019 [P] Create admin NPO credentials router skeleton in `backend/app/api/v1/admin_npo_credentials.py` — empty `APIRouter(prefix="/admin/npos", tags=["admin-npo-credentials"])`; no endpoints yet
-- [ ] T020 Register `payments`, `admin_payments`, and `admin_npo_credentials` routers in `backend/app/api/v1/__init__.py` alongside existing routers
+- [x] T017 [P] Create donor payments router skeleton in `backend/app/api/v1/payments.py` — empty `APIRouter(prefix="/payments", tags=["payments"])`; no endpoints yet
+- [x] T018 [P] Create admin payments router skeleton in `backend/app/api/v1/admin_payments.py` — empty `APIRouter(prefix="/admin/payments", tags=["admin-payments"])`; no endpoints yet
+- [x] T019 [P] Create admin NPO credentials router skeleton in `backend/app/api/v1/admin_npo_credentials.py` — empty `APIRouter(prefix="/admin/npos", tags=["admin-npo-credentials"])`; no endpoints yet
+- [x] T020 Register `payments`, `admin_payments`, and `admin_npo_credentials` routers in `backend/app/api/v1/__init__.py` alongside existing routers
 
 **Checkpoint**: Foundation complete — all user story phases can now proceed (in priority order or in parallel with separate developers)
 
@@ -77,10 +77,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T021 [US1] Implement `PaymentGatewayCredentialService` in `backend/app/services/payment_gateway_credential_service.py` — `create()`, `update()`, `delete()`, `get_masked()` (masks all but last 4 chars), `test_connection()` (calls `gateway.create_hosted_session()` with $0 amount to verify creds, returns success/failure)
-- [ ] T022 [US1] Add GET `/admin/npos/{npo_id}/payment-credentials`, POST (create), PUT (replace), DELETE, and POST `.../test` endpoints to `backend/app/api/v1/admin_npo_credentials.py` — all guarded by `require_role(UserRole.SUPER_ADMIN)`; GET returns masked `CredentialRead`; credentials encrypted via T014 before storage (see contracts/npo-credentials.md)
-- [ ] T023 [P] [US1] Create `NpoCredentialForm.tsx` admin component in `frontend/fundrbolt-admin/src/components/payments/NpoCredentialForm.tsx` — masked password inputs for merchant ID / API key / secret, live-mode toggle, "Test Connection" button that calls POST `.../test` and shows inline success/error (see contracts/npo-credentials.md Test endpoint)
-- [ ] T024 [US1] Create admin NPO payment settings route in `frontend/fundrbolt-admin/src/routes/npos.$npoId.payment-settings.tsx` — fetches existing masked credentials, renders `NpoCredentialForm`, handles create/update/delete with optimistic UI
+- [x] T021 [US1] Implement `PaymentGatewayCredentialService` in `backend/app/services/payment_gateway_credential_service.py` — `create()`, `update()`, `delete()`, `get_masked()` (masks all but last 4 chars), `test_connection()` (calls `gateway.create_hosted_session()` with $0 amount to verify creds, returns success/failure)
+- [x] T022 [US1] Add GET `/admin/npos/{npo_id}/payment-credentials`, POST (create), PUT (replace), DELETE, and POST `.../test` endpoints to `backend/app/api/v1/admin_npo_credentials.py` — all guarded by `require_role(UserRole.SUPER_ADMIN)`; GET returns masked `CredentialRead`; credentials encrypted via T014 before storage (see contracts/npo-credentials.md)
+- [x] T023 [P] [US1] Create `NpoCredentialForm.tsx` admin component in `frontend/fundrbolt-admin/src/components/payments/NpoCredentialForm.tsx` — masked password inputs for merchant ID / API key / secret, live-mode toggle, "Test Connection" button that calls POST `.../test` and shows inline success/error (see contracts/npo-credentials.md Test endpoint)
+- [x] T024 [US1] Create admin NPO payment settings route in `frontend/fundrbolt-admin/src/routes/npos.$npoId.payment-settings.tsx` — fetches existing masked credentials, renders `NpoCredentialForm`, handles create/update/delete with optimistic UI
 
 **Checkpoint**: Super admin can configure and validate NPO credentials end-to-end with stub gateway
 
@@ -94,13 +94,13 @@
 
 ### Implementation for User Story 2
 
-- [ ] T025 [US2] Implement `PaymentProfileService` in `backend/app/services/payment_profile_service.py` — `list_profiles(user_id, npo_id)`, `create_profile()`, `set_default()` (transaction: clear existing default then set new), `soft_delete()` (calls gateway to delete vault before writing `deleted_at`; checks outstanding balance and returns warning flag per FR-004)
-- [ ] T026 [US2] Implement `PaymentTransactionService.create_hosted_session()` in `backend/app/services/payment_transaction_service.py` — idempotency check on `idempotency_key`, create `PaymentTransaction(status=pending, session_created_at=now())`, call `gateway.create_hosted_session()`, return `PaymentSessionResponse`
-- [ ] T027 [US2] Add profile CRUD endpoints + POST `/payments/session` + GET `/payments/stub-hpf` (simple auto-approve HTML page with fake postMessage dispatch) to `backend/app/api/v1/payments.py` — donor-auth guarded; DELETE returns 200 with optional `warning` field per FR-004 (see contracts/donor-payments.md profiles section)
-- [ ] T028 [P] [US2] Create `HpfIframe.tsx` component in `frontend/donor-pwa/src/components/payments/HpfIframe.tsx` — renders iframe with `session_url`; listens for `postMessage` events validating `event.origin`; implements 30-second timeout → "Continue in browser" fallback button per research.md R-002; calls `onComplete(result)` prop
-- [ ] T029 [P] [US2] Create `SavedCardList.tsx` component in `frontend/donor-pwa/src/components/payments/SavedCardList.tsx` — lists masked cards (brand + last4 + expiry), default star badge, expiry-warning for expired cards, delete button with inline "last card + balance warning" confirmation, "Add card" button
-- [ ] T030 [P] [US2] Create typed payment API client module in `frontend/donor-pwa/src/api/payments.ts` — typed fetch helpers for all `/payments/*` endpoints matching `PaymentSessionResponse`, `PaymentProfileRead`, `CheckoutBalanceResponse`, `CheckoutResponse` shapes
-- [ ] T031 [US2] Create payment methods settings route in `frontend/donor-pwa/src/routes/settings.payment-methods.tsx` — sections: "Your saved cards" (`SavedCardList`) and "Add a card" (`HpfIframe` in drawer/modal); wires postMessage → `POST /payments/profiles` to persist after HPF completion
+- [x] T025 [US2] Implement `PaymentProfileService` in `backend/app/services/payment_profile_service.py` — `list_profiles(user_id, npo_id)`, `create_profile()`, `set_default()` (transaction: clear existing default then set new), `soft_delete()` (calls gateway to delete vault before writing `deleted_at`; checks outstanding balance and returns warning flag per FR-004)
+- [x] T026 [US2] Implement `PaymentTransactionService.create_hosted_session()` in `backend/app/services/payment_transaction_service.py` — idempotency check on `idempotency_key`, create `PaymentTransaction(status=pending, session_created_at=now())`, call `gateway.create_hosted_session()`, return `PaymentSessionResponse`
+- [x] T027 [US2] Add profile CRUD endpoints + POST `/payments/session` + GET `/payments/stub-hpf` (simple auto-approve HTML page with fake postMessage dispatch) to `backend/app/api/v1/payments.py` — donor-auth guarded; DELETE returns 200 with optional `warning` field per FR-004 (see contracts/donor-payments.md profiles section)
+- [x] T028 [P] [US2] Create `HpfIframe.tsx` component in `frontend/donor-pwa/src/components/payments/HpfIframe.tsx` — renders iframe with `session_url`; listens for `postMessage` events validating `event.origin`; implements 30-second timeout → "Continue in browser" fallback button per research.md R-002; calls `onComplete(result)` prop
+- [x] T029 [P] [US2] Create `SavedCardList.tsx` component in `frontend/donor-pwa/src/components/payments/SavedCardList.tsx` — lists masked cards (brand + last4 + expiry), default star badge, expiry-warning for expired cards, delete button with inline "last card + balance warning" confirmation, "Add card" button
+- [x] T030 [P] [US2] Create typed payment API client module in `frontend/donor-pwa/src/api/payments.ts` — typed fetch helpers for all `/payments/*` endpoints matching `PaymentSessionResponse`, `PaymentProfileRead`, `CheckoutBalanceResponse`, `CheckoutResponse` shapes
+- [x] T031 [US2] Create payment methods settings route in `frontend/donor-pwa/src/routes/settings.payment-methods.tsx` — sections: "Your saved cards" (`SavedCardList`) and "Add a card" (`HpfIframe` in drawer/modal); wires postMessage → `POST /payments/profiles` to persist after HPF completion
 
 **Checkpoint**: Donor can add, view, set-default, and delete a saved card end-to-end through stub HPF
 

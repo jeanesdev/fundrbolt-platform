@@ -11,12 +11,12 @@ import { Hash, Info } from 'lucide-react'
 
 interface BidderNumberBadgeProps {
   bidderNumber: number | null
-  _isCheckedIn: boolean
+  isCheckedIn: boolean
 }
 
 export function BidderNumberBadge({
   bidderNumber,
-  _isCheckedIn,
+  isCheckedIn: _isCheckedIn,
 }: BidderNumberBadgeProps) {
   // If bidder number exists, show it prominently (backend controls visibility policy)
   if (bidderNumber) {

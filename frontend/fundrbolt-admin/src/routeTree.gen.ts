@@ -50,6 +50,7 @@ import { Route as AuthenticatedEventsEventIdRouteRouteImport } from './routes/_a
 import { Route as AuthenticatedUsersUserIdIndexRouteImport } from './routes/_authenticated/users/$userId/index'
 import { Route as AuthenticatedNposNpoIdIndexRouteImport } from './routes/_authenticated/npos/$npoId.index'
 import { Route as AuthenticatedEventsEventIdIndexRouteImport } from './routes/_authenticated/events/$eventId/index'
+import { Route as AuthenticatedNposNpoIdPaymentSettingsRouteImport } from './routes/_authenticated/npos/$npoId/payment-settings'
 import { Route as AuthenticatedNposNpoIdEditRouteImport } from './routes/_authenticated/npos/$npoId/edit'
 import { Route as AuthenticatedEventsEventIdTicketsRouteImport } from './routes/_authenticated/events/$eventId/tickets'
 import { Route as AuthenticatedEventsEventIdSponsorsRouteImport } from './routes/_authenticated/events/$eventId/sponsors'
@@ -57,6 +58,7 @@ import { Route as AuthenticatedEventsEventIdSeatingRouteImport } from './routes/
 import { Route as AuthenticatedEventsEventIdRegistrationsRouteImport } from './routes/_authenticated/events/$eventId/registrations'
 import { Route as AuthenticatedEventsEventIdQuickEntryRouteImport } from './routes/_authenticated/events/$eventId/quick-entry'
 import { Route as AuthenticatedEventsEventIdPreviewRouteImport } from './routes/_authenticated/events/$eventId/preview'
+import { Route as AuthenticatedEventsEventIdPaymentsRouteImport } from './routes/_authenticated/events/$eventId/payments'
 import { Route as AuthenticatedEventsEventIdMediaRouteImport } from './routes/_authenticated/events/$eventId/media'
 import { Route as AuthenticatedEventsEventIdLinksRouteImport } from './routes/_authenticated/events/$eventId/links'
 import { Route as AuthenticatedEventsEventIdFoodRouteImport } from './routes/_authenticated/events/$eventId/food'
@@ -294,6 +296,12 @@ const AuthenticatedEventsEventIdIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
+const AuthenticatedNposNpoIdPaymentSettingsRoute =
+  AuthenticatedNposNpoIdPaymentSettingsRouteImport.update({
+    id: '/npos/$npoId/payment-settings',
+    path: '/npos/$npoId/payment-settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedNposNpoIdEditRoute =
   AuthenticatedNposNpoIdEditRouteImport.update({
     id: '/npos/$npoId/edit',
@@ -334,6 +342,12 @@ const AuthenticatedEventsEventIdPreviewRoute =
   AuthenticatedEventsEventIdPreviewRouteImport.update({
     id: '/preview',
     path: '/preview',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
+const AuthenticatedEventsEventIdPaymentsRoute =
+  AuthenticatedEventsEventIdPaymentsRouteImport.update({
+    id: '/payments',
+    path: '/payments',
     getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
 const AuthenticatedEventsEventIdMediaRoute =
@@ -496,6 +510,7 @@ export interface FileRoutesByFullPath {
   '/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
   '/events/$eventId/media': typeof AuthenticatedEventsEventIdMediaRoute
+  '/events/$eventId/payments': typeof AuthenticatedEventsEventIdPaymentsRoute
   '/events/$eventId/preview': typeof AuthenticatedEventsEventIdPreviewRoute
   '/events/$eventId/quick-entry': typeof AuthenticatedEventsEventIdQuickEntryRoute
   '/events/$eventId/registrations': typeof AuthenticatedEventsEventIdRegistrationsRoute
@@ -503,6 +518,7 @@ export interface FileRoutesByFullPath {
   '/events/$eventId/sponsors': typeof AuthenticatedEventsEventIdSponsorsRoute
   '/events/$eventId/tickets': typeof AuthenticatedEventsEventIdTicketsRouteWithChildren
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
+  '/npos/$npoId/payment-settings': typeof AuthenticatedNposNpoIdPaymentSettingsRoute
   '/events/$eventId/': typeof AuthenticatedEventsEventIdIndexRoute
   '/npos/$npoId/': typeof AuthenticatedNposNpoIdIndexRoute
   '/users/$userId/': typeof AuthenticatedUsersUserIdIndexRoute
@@ -558,12 +574,14 @@ export interface FileRoutesByTo {
   '/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
   '/events/$eventId/media': typeof AuthenticatedEventsEventIdMediaRoute
+  '/events/$eventId/payments': typeof AuthenticatedEventsEventIdPaymentsRoute
   '/events/$eventId/preview': typeof AuthenticatedEventsEventIdPreviewRoute
   '/events/$eventId/quick-entry': typeof AuthenticatedEventsEventIdQuickEntryRoute
   '/events/$eventId/registrations': typeof AuthenticatedEventsEventIdRegistrationsRoute
   '/events/$eventId/seating': typeof AuthenticatedEventsEventIdSeatingRoute
   '/events/$eventId/sponsors': typeof AuthenticatedEventsEventIdSponsorsRoute
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
+  '/npos/$npoId/payment-settings': typeof AuthenticatedNposNpoIdPaymentSettingsRoute
   '/events/$eventId': typeof AuthenticatedEventsEventIdIndexRoute
   '/npos/$npoId': typeof AuthenticatedNposNpoIdIndexRoute
   '/users/$userId': typeof AuthenticatedUsersUserIdIndexRoute
@@ -627,6 +645,7 @@ export interface FileRoutesById {
   '/_authenticated/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/_authenticated/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
   '/_authenticated/events/$eventId/media': typeof AuthenticatedEventsEventIdMediaRoute
+  '/_authenticated/events/$eventId/payments': typeof AuthenticatedEventsEventIdPaymentsRoute
   '/_authenticated/events/$eventId/preview': typeof AuthenticatedEventsEventIdPreviewRoute
   '/_authenticated/events/$eventId/quick-entry': typeof AuthenticatedEventsEventIdQuickEntryRoute
   '/_authenticated/events/$eventId/registrations': typeof AuthenticatedEventsEventIdRegistrationsRoute
@@ -634,6 +653,7 @@ export interface FileRoutesById {
   '/_authenticated/events/$eventId/sponsors': typeof AuthenticatedEventsEventIdSponsorsRoute
   '/_authenticated/events/$eventId/tickets': typeof AuthenticatedEventsEventIdTicketsRouteWithChildren
   '/_authenticated/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
+  '/_authenticated/npos/$npoId/payment-settings': typeof AuthenticatedNposNpoIdPaymentSettingsRoute
   '/_authenticated/events/$eventId/': typeof AuthenticatedEventsEventIdIndexRoute
   '/_authenticated/npos/$npoId/': typeof AuthenticatedNposNpoIdIndexRoute
   '/_authenticated/users/$userId/': typeof AuthenticatedUsersUserIdIndexRoute
@@ -695,6 +715,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/food'
     | '/events/$eventId/links'
     | '/events/$eventId/media'
+    | '/events/$eventId/payments'
     | '/events/$eventId/preview'
     | '/events/$eventId/quick-entry'
     | '/events/$eventId/registrations'
@@ -702,6 +723,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/sponsors'
     | '/events/$eventId/tickets'
     | '/npos/$npoId/edit'
+    | '/npos/$npoId/payment-settings'
     | '/events/$eventId/'
     | '/npos/$npoId/'
     | '/users/$userId/'
@@ -757,12 +779,14 @@ export interface FileRouteTypes {
     | '/events/$eventId/food'
     | '/events/$eventId/links'
     | '/events/$eventId/media'
+    | '/events/$eventId/payments'
     | '/events/$eventId/preview'
     | '/events/$eventId/quick-entry'
     | '/events/$eventId/registrations'
     | '/events/$eventId/seating'
     | '/events/$eventId/sponsors'
     | '/npos/$npoId/edit'
+    | '/npos/$npoId/payment-settings'
     | '/events/$eventId'
     | '/npos/$npoId'
     | '/users/$userId'
@@ -825,6 +849,7 @@ export interface FileRouteTypes {
     | '/_authenticated/events/$eventId/food'
     | '/_authenticated/events/$eventId/links'
     | '/_authenticated/events/$eventId/media'
+    | '/_authenticated/events/$eventId/payments'
     | '/_authenticated/events/$eventId/preview'
     | '/_authenticated/events/$eventId/quick-entry'
     | '/_authenticated/events/$eventId/registrations'
@@ -832,6 +857,7 @@ export interface FileRouteTypes {
     | '/_authenticated/events/$eventId/sponsors'
     | '/_authenticated/events/$eventId/tickets'
     | '/_authenticated/npos/$npoId/edit'
+    | '/_authenticated/npos/$npoId/payment-settings'
     | '/_authenticated/events/$eventId/'
     | '/_authenticated/npos/$npoId/'
     | '/_authenticated/users/$userId/'
@@ -1158,6 +1184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsEventIdIndexRouteImport
       parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
+    '/_authenticated/npos/$npoId/payment-settings': {
+      id: '/_authenticated/npos/$npoId/payment-settings'
+      path: '/npos/$npoId/payment-settings'
+      fullPath: '/npos/$npoId/payment-settings'
+      preLoaderRoute: typeof AuthenticatedNposNpoIdPaymentSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/npos/$npoId/edit': {
       id: '/_authenticated/npos/$npoId/edit'
       path: '/npos/$npoId/edit'
@@ -1205,6 +1238,13 @@ declare module '@tanstack/react-router' {
       path: '/preview'
       fullPath: '/events/$eventId/preview'
       preLoaderRoute: typeof AuthenticatedEventsEventIdPreviewRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
+    '/_authenticated/events/$eventId/payments': {
+      id: '/_authenticated/events/$eventId/payments'
+      path: '/payments'
+      fullPath: '/events/$eventId/payments'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdPaymentsRouteImport
       parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
     '/_authenticated/events/$eventId/media': {
@@ -1407,6 +1447,7 @@ interface AuthenticatedEventsEventIdRouteRouteChildren {
   AuthenticatedEventsEventIdFoodRoute: typeof AuthenticatedEventsEventIdFoodRoute
   AuthenticatedEventsEventIdLinksRoute: typeof AuthenticatedEventsEventIdLinksRoute
   AuthenticatedEventsEventIdMediaRoute: typeof AuthenticatedEventsEventIdMediaRoute
+  AuthenticatedEventsEventIdPaymentsRoute: typeof AuthenticatedEventsEventIdPaymentsRoute
   AuthenticatedEventsEventIdPreviewRoute: typeof AuthenticatedEventsEventIdPreviewRoute
   AuthenticatedEventsEventIdQuickEntryRoute: typeof AuthenticatedEventsEventIdQuickEntryRoute
   AuthenticatedEventsEventIdRegistrationsRoute: typeof AuthenticatedEventsEventIdRegistrationsRoute
@@ -1432,6 +1473,8 @@ const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRo
     AuthenticatedEventsEventIdFoodRoute: AuthenticatedEventsEventIdFoodRoute,
     AuthenticatedEventsEventIdLinksRoute: AuthenticatedEventsEventIdLinksRoute,
     AuthenticatedEventsEventIdMediaRoute: AuthenticatedEventsEventIdMediaRoute,
+    AuthenticatedEventsEventIdPaymentsRoute:
+      AuthenticatedEventsEventIdPaymentsRoute,
     AuthenticatedEventsEventIdPreviewRoute:
       AuthenticatedEventsEventIdPreviewRoute,
     AuthenticatedEventsEventIdQuickEntryRoute:
@@ -1499,6 +1542,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNposIndexRoute: typeof AuthenticatedNposIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
   AuthenticatedNposNpoIdEditRoute: typeof AuthenticatedNposNpoIdEditRoute
+  AuthenticatedNposNpoIdPaymentSettingsRoute: typeof AuthenticatedNposNpoIdPaymentSettingsRoute
   AuthenticatedNposNpoIdIndexRoute: typeof AuthenticatedNposNpoIdIndexRoute
   AuthenticatedUsersUserIdIndexRoute: typeof AuthenticatedUsersUserIdIndexRoute
 }
@@ -1514,6 +1558,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNposIndexRoute: AuthenticatedNposIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
   AuthenticatedNposNpoIdEditRoute: AuthenticatedNposNpoIdEditRoute,
+  AuthenticatedNposNpoIdPaymentSettingsRoute:
+    AuthenticatedNposNpoIdPaymentSettingsRoute,
   AuthenticatedNposNpoIdIndexRoute: AuthenticatedNposNpoIdIndexRoute,
   AuthenticatedUsersUserIdIndexRoute: AuthenticatedUsersUserIdIndexRoute,
 }
