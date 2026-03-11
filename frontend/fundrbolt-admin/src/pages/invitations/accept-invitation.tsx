@@ -2,18 +2,23 @@
  * Invitation Acceptance Page
  * Handles accepting NPO member invitations via JWT token from email
  */
-
+import { useEffect, useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { memberApi } from '@/services/npo-service'
+import { CheckCircle, Mail, Shield, UserPlus, XCircle } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { getErrorMessage, isConsentError } from '@/lib/error-utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { getErrorMessage, isConsentError } from '@/lib/error-utils'
-import { memberApi } from '@/services/npo-service'
-import { useAuthStore } from '@/stores/auth-store'
-import { useMutation } from '@tanstack/react-query'
-import { CheckCircle, Mail, Shield, UserPlus, XCircle } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
 
 interface InvitationDetails {
   npo_name: string
@@ -45,15 +50,18 @@ export default function AcceptInvitationPage() {
 
       // Special handling for consent errors
       if (isConsentError(err)) {
-        toast.error('Please accept the Terms of Service and Privacy Policy to continue')
-        setError('You must accept the Terms of Service and Privacy Policy before accepting this invitation.')
+        toast.error(
+          'Please accept the Terms of Service and Privacy Policy to continue'
+        )
+        setError(
+          'You must accept the Terms of Service and Privacy Policy before accepting this invitation.'
+        )
       } else {
         toast.error(message)
         setError(message)
       }
     },
   })
-
 
   // Extract token from URL and validate on mount
   useEffect(() => {
@@ -109,13 +117,13 @@ export default function AcceptInvitationPage() {
   // Loading state
   if (validating) {
     return (
-      <div className="container mx-auto flex min-h-[60vh] items-center justify-center py-12">
-        <Card className="w-full max-w-lg">
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-10 w-full" />
+      <div className='container mx-auto flex min-h-[60vh] items-center justify-center py-12'>
+        <Card className='w-full max-w-lg'>
+          <CardContent className='pt-6'>
+            <div className='space-y-4'>
+              <Skeleton className='h-12 w-full' />
+              <Skeleton className='h-24 w-full' />
+              <Skeleton className='h-10 w-full' />
             </div>
           </CardContent>
         </Card>
@@ -126,20 +134,25 @@ export default function AcceptInvitationPage() {
   // Error state
   if (error) {
     return (
-      <div className="container mx-auto flex min-h-[60vh] items-center justify-center py-12">
-        <Card className="w-full max-w-lg border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-950/20">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center space-y-4 text-center">
-              <div className="rounded-full bg-red-100 p-3 dark:bg-red-900/30">
-                <XCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+      <div className='container mx-auto flex min-h-[60vh] items-center justify-center py-12'>
+        <Card className='w-full max-w-lg border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-950/20'>
+          <CardContent className='pt-6'>
+            <div className='flex flex-col items-center space-y-4 text-center'>
+              <div className='rounded-full bg-red-100 p-3 dark:bg-red-900/30'>
+                <XCircle className='h-8 w-8 text-red-600 dark:text-red-400' />
               </div>
               <div>
-                <h3 className="mb-2 text-lg font-semibold text-red-900 dark:text-red-100">
+                <h3 className='mb-2 text-lg font-semibold text-red-900 dark:text-red-100'>
                   Invalid Invitation
                 </h3>
-                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                <p className='text-sm text-red-700 dark:text-red-300'>
+                  {error}
+                </p>
               </div>
-              <Button onClick={() => (window.location.href = '/')} variant="outline">
+              <Button
+                onClick={() => (window.location.href = '/')}
+                variant='outline'
+              >
                 Return to Dashboard
               </Button>
             </div>
@@ -151,70 +164,79 @@ export default function AcceptInvitationPage() {
 
   // Success state - show invitation details
   return (
-    <div className="container mx-auto flex min-h-[60vh] items-center justify-center py-12">
-      <Card className="w-full max-w-lg">
+    <div className='container mx-auto flex min-h-[60vh] items-center justify-center py-12'>
+      <Card className='w-full max-w-lg'>
         <CardHeader>
-          <div className="flex items-center justify-center mb-4">
-            <div className="rounded-full bg-blue-100 p-3 dark:bg-blue-900/30">
-              <Mail className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          <div className='mb-4 flex items-center justify-center'>
+            <div className='rounded-full bg-blue-100 p-3 dark:bg-blue-900/30'>
+              <Mail className='h-8 w-8 text-blue-600 dark:text-blue-400' />
             </div>
           </div>
-          <CardTitle className="text-center text-2xl">You've Been Invited!</CardTitle>
-          <CardDescription className="text-center">
+          <CardTitle className='text-center text-2xl'>
+            You've Been Invited!
+          </CardTitle>
+          <CardDescription className='text-center'>
             Accept this invitation to join the organization
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className='space-y-6'>
           {/* Invitation Details */}
-          <div className="space-y-4 rounded-lg border bg-muted/50 p-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Organization</p>
-              <p className="text-lg font-semibold">{details?.npo_name}</p>
+          <div className='bg-muted/50 space-y-4 rounded-lg border p-4'>
+            <div className='space-y-2'>
+              <p className='text-muted-foreground text-sm font-medium'>
+                Organization
+              </p>
+              <p className='text-lg font-semibold'>{details?.npo_name}</p>
             </div>
 
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Your Role</p>
-              <Badge className="bg-blue-500 text-white">
-                <Shield className="mr-1 h-3 w-3" />
+            <div className='space-y-2'>
+              <p className='text-muted-foreground text-sm font-medium'>
+                Your Role
+              </p>
+              <Badge className='bg-blue-500 text-white'>
+                <Shield className='mr-1 h-3 w-3' />
                 {details?.role.toUpperCase().replace('_', ' ')}
               </Badge>
             </div>
 
             {details?.inviter_name && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Invited By</p>
-                <p className="text-sm">{details.inviter_name}</p>
+              <div className='space-y-2'>
+                <p className='text-muted-foreground text-sm font-medium'>
+                  Invited By
+                </p>
+                <p className='text-sm'>{details.inviter_name}</p>
               </div>
             )}
 
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Email</p>
-              <p className="text-sm font-mono">{details?.email}</p>
+            <div className='space-y-2'>
+              <p className='text-muted-foreground text-sm font-medium'>Email</p>
+              <p className='font-mono text-sm'>{details?.email}</p>
             </div>
           </div>
 
           {/* Info Box */}
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/20">
-            <p className="text-sm text-blue-900 dark:text-blue-100">
-              <strong>Note:</strong> By accepting this invitation, you'll be added as a member
-              of {details?.npo_name} with {details?.role.replace('_', ' ')} permissions.
+          <div className='rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/20'>
+            <p className='text-sm text-blue-900 dark:text-blue-100'>
+              <strong>Note:</strong> By accepting this invitation, you'll be
+              added as a member of {details?.npo_name} with{' '}
+              {details?.role.replace('_', ' ')} permissions.
             </p>
           </div>
 
           {/* Action Buttons - Different based on auth status */}
           {isAuthenticated ? (
-            <div className="flex gap-3">
+            <div className='flex gap-3'>
               <Button
                 onClick={handleAccept}
                 disabled={acceptMutation.isPending}
-                className="flex-1"
-                size="lg"
+                className='flex-1'
+                size='lg'
               >
                 {acceptMutation.isPending ? (
                   <>Processing...</>
                 ) : (
                   <>
-                    <CheckCircle className="mr-2 h-4 w-4" />
+                    <CheckCircle className='mr-2 h-4 w-4' />
                     Accept Invitation
                   </>
                 )}
@@ -222,27 +244,27 @@ export default function AcceptInvitationPage() {
               <Button
                 onClick={handleDecline}
                 disabled={acceptMutation.isPending}
-                variant="outline"
-                size="lg"
+                variant='outline'
+                size='lg'
               >
                 Decline
               </Button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className='space-y-3'>
               <Button
                 onClick={handleRegisterAndAccept}
-                className="w-full"
-                size="lg"
+                className='w-full'
+                size='lg'
               >
-                <UserPlus className="mr-2 h-4 w-4" />
+                <UserPlus className='mr-2 h-4 w-4' />
                 Register and Accept Invitation
               </Button>
-              <div className="text-center text-sm text-muted-foreground">
+              <div className='text-muted-foreground text-center text-sm'>
                 Already have an account?{' '}
                 <a
                   href={`/sign-in?redirect=/invitations/accept?token=${encodeURIComponent(token)}`}
-                  className="font-medium text-primary hover:underline"
+                  className='text-primary font-medium hover:underline'
                 >
                   Log in to accept
                 </a>
@@ -251,8 +273,8 @@ export default function AcceptInvitationPage() {
           )}
 
           {acceptMutation.isError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/20">
-              <p className="text-sm text-red-900 dark:text-red-100">
+            <div className='rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/20'>
+              <p className='text-sm text-red-900 dark:text-red-100'>
                 {error || 'An error occurred while processing your invitation'}
               </p>
             </div>

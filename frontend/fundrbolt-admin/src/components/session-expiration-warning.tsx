@@ -1,3 +1,7 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouterState } from '@tanstack/react-router'
+import { useAuthStore } from '@/stores/auth-store'
+import apiClient from '@/lib/axios'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -7,10 +11,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import apiClient from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
-import { useRouterState } from '@tanstack/react-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface SessionExpirationWarningProps {
   /**
@@ -32,52 +32,57 @@ export function SessionExpirationWarning({
   const lastActivityRef = useRef<number>(Date.now())
   const idleTimeoutRef = useRef<number | null>(null)
 
-  const locationHref = useRouterState({ select: (state) => state.location.href })
+  const locationHref = useRouterState({
+    select: (state) => state.location.href,
+  })
   const { accessToken, refreshToken, reset } = useAuthStore()
 
   // Extend session by refreshing the access token
-  const handleExtendSession = useCallback(async (silent = false) => {
-    if (!refreshToken) return false
+  const handleExtendSession = useCallback(
+    async (silent = false) => {
+      if (!refreshToken) return false
 
-    // Prevent too frequent refresh attempts (minimum 30 seconds between)
-    const now = Date.now()
-    if (now - lastRefreshAttempt < 30000) {
-      return false
-    }
-
-    if (!silent) {
-      setIsExtending(true)
-    }
-
-    try {
-      const response = await apiClient.post('/auth/refresh', {
-        refresh_token: refreshToken,
-      })
-
-      const { access_token } = response.data
-      useAuthStore.getState().setAccessToken(access_token)
-      setLastRefreshAttempt(now)
-
-      // Close dialog on success
-      if (!silent) {
-        setIsOpen(false)
-        setSecondsRemaining(null)
+      // Prevent too frequent refresh attempts (minimum 30 seconds between)
+      const now = Date.now()
+      if (now - lastRefreshAttempt < 30000) {
+        return false
       }
 
-      return true
-    } catch {
-      // If refresh fails, only logout if this was a user action
       if (!silent) {
-        reset()
-        window.location.href = '/sign-in'
+        setIsExtending(true)
       }
-      return false
-    } finally {
-      if (!silent) {
-        setIsExtending(false)
+
+      try {
+        const response = await apiClient.post('/auth/refresh', {
+          refresh_token: refreshToken,
+        })
+
+        const { access_token } = response.data
+        useAuthStore.getState().setAccessToken(access_token)
+        setLastRefreshAttempt(now)
+
+        // Close dialog on success
+        if (!silent) {
+          setIsOpen(false)
+          setSecondsRemaining(null)
+        }
+
+        return true
+      } catch {
+        // If refresh fails, only logout if this was a user action
+        if (!silent) {
+          reset()
+          window.location.href = '/sign-in'
+        }
+        return false
+      } finally {
+        if (!silent) {
+          setIsExtending(false)
+        }
       }
-    }
-  }, [refreshToken, reset, lastRefreshAttempt])
+    },
+    [refreshToken, reset, lastRefreshAttempt]
+  )
 
   // Handle logout
   const handleLogout = useCallback(() => {
@@ -85,23 +90,32 @@ export function SessionExpirationWarning({
     window.location.href = '/sign-in'
   }, [reset])
 
-  const recordActivity = useCallback((shouldRefresh: boolean) => {
-    lastActivityRef.current = Date.now()
-    setIsOpen(false)
-    setSecondsRemaining(null)
+  const recordActivity = useCallback(
+    (shouldRefresh: boolean) => {
+      lastActivityRef.current = Date.now()
+      setIsOpen(false)
+      setSecondsRemaining(null)
 
-    if (idleTimeoutRef.current) {
-      window.clearTimeout(idleTimeoutRef.current)
-    }
+      if (idleTimeoutRef.current) {
+        window.clearTimeout(idleTimeoutRef.current)
+      }
 
-    idleTimeoutRef.current = window.setTimeout(() => {
-      handleLogout()
-    }, idleTimeoutMs)
+      idleTimeoutRef.current = window.setTimeout(() => {
+        handleLogout()
+      }, idleTimeoutMs)
 
-    if (shouldRefresh && accessToken && refreshToken) {
-      handleExtendSession(true)
-    }
-  }, [accessToken, refreshToken, handleExtendSession, handleLogout, idleTimeoutMs])
+      if (shouldRefresh && accessToken && refreshToken) {
+        handleExtendSession(true)
+      }
+    },
+    [
+      accessToken,
+      refreshToken,
+      handleExtendSession,
+      handleLogout,
+      idleTimeoutMs,
+    ]
+  )
 
   // Track activity and refresh on focus/visibility
   useEffect(() => {
@@ -220,7 +234,10 @@ export function SessionExpirationWarning({
           >
             Log Out
           </Button>
-          <Button onClick={() => handleExtendSession(false)} disabled={isExtending}>
+          <Button
+            onClick={() => handleExtendSession(false)}
+            disabled={isExtending}
+          >
             {isExtending ? 'Extending...' : 'Stay Logged In'}
           </Button>
         </AlertDialogFooter>

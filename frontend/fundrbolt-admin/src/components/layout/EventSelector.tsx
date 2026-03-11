@@ -9,7 +9,9 @@
  * - Displays event logo or initial avatar fallback
  * - Filtered by currently selected NPO
  */
-
+import { useState } from 'react'
+import { Calendar, ChevronsUpDown } from 'lucide-react'
+import { useEventContext } from '@/hooks/use-event-context'
 import {
   Command,
   CommandEmpty,
@@ -32,9 +34,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { useEventContext } from '@/hooks/use-event-context'
-import { Calendar, ChevronsUpDown } from 'lucide-react'
-import { useState } from 'react'
 
 export function EventSelector() {
   const { isMobile } = useSidebar()
@@ -54,11 +53,12 @@ export function EventSelector() {
   const [searchQuery, setSearchQuery] = useState('')
 
   // Filter events by search query (case-insensitive)
-  const filteredEvents = shouldShowSearch && searchQuery
-    ? availableEvents.filter((event) =>
-      event.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    : availableEvents
+  const filteredEvents =
+    shouldShowSearch && searchQuery
+      ? availableEvents.filter((event) =>
+          event.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : availableEvents
 
   // If no events available, show empty state
   if (!isLoading && availableEvents.length === 0) {
@@ -74,10 +74,10 @@ export function EventSelector() {
               <Calendar className='size-4' />
             </div>
             <div className='grid flex-1 text-start text-sm leading-tight'>
-              <span className='truncate font-medium text-muted-foreground'>
+              <span className='text-muted-foreground truncate font-medium'>
                 No Events
               </span>
-              <span className='truncate text-xs text-muted-foreground'>
+              <span className='text-muted-foreground truncate text-xs'>
                 Create an event to get started
               </span>
             </div>
@@ -92,11 +92,7 @@ export function EventSelector() {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton
-            size='lg'
-            className='cursor-default'
-            disabled
-          >
+          <SidebarMenuButton size='lg' className='cursor-default' disabled>
             <div className='bg-sidebar-accent text-sidebar-accent-foreground flex aspect-square size-8 items-center justify-center rounded-lg'>
               <Calendar className='size-4' />
             </div>
@@ -118,7 +114,7 @@ export function EventSelector() {
               size='lg'
               className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
             >
-              <div className='bg-sidebar-accent text-sidebar-accent-foreground flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden'>
+              <div className='bg-sidebar-accent text-sidebar-accent-foreground flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg'>
                 {selectedEvent ? (
                   <InitialAvatar
                     name={selectedEventName || 'Event'}
@@ -134,7 +130,7 @@ export function EventSelector() {
                 <span className='truncate font-semibold'>
                   {selectedEventName || 'Select Event'}
                 </span>
-                <span className='truncate text-xs text-muted-foreground'>
+                <span className='text-muted-foreground truncate text-xs'>
                   {isEventSelected ? 'Event Context' : 'No event selected'}
                 </span>
               </div>
@@ -167,7 +163,7 @@ export function EventSelector() {
                         }}
                         className='gap-2 p-2'
                       >
-                        <div className='flex size-6 items-center justify-center rounded-sm border overflow-hidden'>
+                        <div className='flex size-6 items-center justify-center overflow-hidden rounded-sm border'>
                           <InitialAvatar
                             name={event.name}
                             brandingPrimaryColor={null}
@@ -175,8 +171,10 @@ export function EventSelector() {
                             className='h-full w-full rounded-sm'
                           />
                         </div>
-                        <div className='flex-1 min-w-0'>
-                          <div className='font-medium truncate'>{event.name}</div>
+                        <div className='min-w-0 flex-1'>
+                          <div className='truncate font-medium'>
+                            {event.name}
+                          </div>
                           <div className='text-muted-foreground text-xs'>
                             {event.status === 'active' && '🟢 Active'}
                             {event.status === 'draft' && '📝 Draft'}
@@ -194,16 +192,18 @@ export function EventSelector() {
             ) : (
               // Simple dropdown for fewer than 10 events
               <>
-                <DropdownMenuLabel className='text-muted-foreground text-xs px-2 py-1.5'>
+                <DropdownMenuLabel className='text-muted-foreground px-2 py-1.5 text-xs'>
                   Select Event
                 </DropdownMenuLabel>
                 {availableEvents.map((event) => (
                   <DropdownMenuItem
                     key={event.id}
-                    onClick={() => selectEvent(event.id, event.name, event.slug)}
+                    onClick={() =>
+                      selectEvent(event.id, event.name, event.slug)
+                    }
                     className='gap-2 p-2'
                   >
-                    <div className='flex size-6 items-center justify-center rounded-sm border overflow-hidden'>
+                    <div className='flex size-6 items-center justify-center overflow-hidden rounded-sm border'>
                       <InitialAvatar
                         name={event.name}
                         brandingPrimaryColor={null}
@@ -211,8 +211,8 @@ export function EventSelector() {
                         className='h-full w-full rounded-sm'
                       />
                     </div>
-                    <div className='flex-1 min-w-0'>
-                      <div className='font-medium truncate'>{event.name}</div>
+                    <div className='min-w-0 flex-1'>
+                      <div className='truncate font-medium'>{event.name}</div>
                       <div className='text-muted-foreground text-xs'>
                         {event.status === 'active' && '🟢 Active'}
                         {event.status === 'draft' && '📝 Draft'}

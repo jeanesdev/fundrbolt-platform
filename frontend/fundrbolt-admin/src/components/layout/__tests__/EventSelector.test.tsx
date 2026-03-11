@@ -1,8 +1,11 @@
-import { useEventContext, type UseEventContextReturn } from '@/hooks/use-event-context'
+import type { ComponentProps, ReactNode } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { ComponentProps, ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  useEventContext,
+  type UseEventContextReturn,
+} from '@/hooks/use-event-context'
 import { EventSelector } from '../EventSelector'
 
 vi.mock('@/hooks/use-event-context')
@@ -16,13 +19,14 @@ vi.mock('@/components/ui/sidebar', async () => {
     SidebarMenuItem: ({ children }: { children: ReactNode }) => (
       <li>{children}</li>
     ),
-    SidebarMenuButton: React.forwardRef<HTMLButtonElement, ComponentProps<'button'>>(
-      ({ children, ...props }, ref) => (
-        <button type='button' ref={ref} {...props}>
-          {children}
-        </button>
-      )
-    ),
+    SidebarMenuButton: React.forwardRef<
+      HTMLButtonElement,
+      ComponentProps<'button'>
+    >(({ children, ...props }, ref) => (
+      <button type='button' ref={ref} {...props}>
+        {children}
+      </button>
+    )),
     useSidebar: () => ({ isMobile: false }),
   }
 })
@@ -45,31 +49,49 @@ type CommandItemProps = {
 
 vi.mock('@/components/ui/dropdown-menu', () => {
   return {
-    DropdownMenu: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-    DropdownMenuTrigger: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-    DropdownMenuContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    DropdownMenu: ({ children }: { children: ReactNode }) => (
+      <div>{children}</div>
+    ),
+    DropdownMenuTrigger: ({ children }: { children: ReactNode }) => (
+      <div>{children}</div>
+    ),
+    DropdownMenuContent: ({ children }: { children: ReactNode }) => (
+      <div>{children}</div>
+    ),
     DropdownMenuItem: ({ children, onClick }: DropdownMenuItemProps) => (
       <button type='button' onClick={onClick}>
         {children}
       </button>
     ),
-    DropdownMenuLabel: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    DropdownMenuLabel: ({ children }: { children: ReactNode }) => (
+      <div>{children}</div>
+    ),
   }
 })
 
 vi.mock('@/components/ui/command', () => {
   return {
     Command: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-    CommandInput: ({ placeholder, value, onValueChange }: CommandInputProps) => (
+    CommandInput: ({
+      placeholder,
+      value,
+      onValueChange,
+    }: CommandInputProps) => (
       <input
         placeholder={placeholder}
         value={value}
         onChange={(event) => onValueChange?.(event.target.value)}
       />
     ),
-    CommandList: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-    CommandEmpty: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-    CommandGroup: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+    CommandList: ({ children }: { children: ReactNode }) => (
+      <div>{children}</div>
+    ),
+    CommandEmpty: ({ children }: { children: ReactNode }) => (
+      <div>{children}</div>
+    ),
+    CommandGroup: ({ children }: { children: ReactNode }) => (
+      <div>{children}</div>
+    ),
     CommandItem: ({ children, onSelect }: CommandItemProps) => (
       <button type='button' onClick={() => onSelect?.()}>
         {children}
@@ -130,7 +152,9 @@ describe('EventSelector', () => {
     render(<EventSelector />)
 
     expect(screen.getByText('No Events')).toBeInTheDocument()
-    expect(screen.getByText('Create an event to get started')).toBeInTheDocument()
+    expect(
+      screen.getByText('Create an event to get started')
+    ).toBeInTheDocument()
   })
 
   it('shows search input when shouldShowSearch is true', () => {
@@ -156,14 +180,28 @@ describe('EventSelector', () => {
       shouldShowSearch: true,
       selectEvent,
       availableEvents: [
-        { id: 'event-1', name: 'Alpha Event', slug: 'alpha-event', status: 'active', event_datetime: '2026-02-01T18:00:00Z' },
-        { id: 'event-2', name: 'Beta Event', slug: 'beta-event', status: 'draft', event_datetime: '2026-03-01T18:00:00Z' },
+        {
+          id: 'event-1',
+          name: 'Alpha Event',
+          slug: 'alpha-event',
+          status: 'active',
+          event_datetime: '2026-02-01T18:00:00Z',
+        },
+        {
+          id: 'event-2',
+          name: 'Beta Event',
+          slug: 'beta-event',
+          status: 'draft',
+          event_datetime: '2026-03-01T18:00:00Z',
+        },
       ],
     })
 
     render(<EventSelector />)
 
-    const input = screen.getByPlaceholderText('Search events...') as HTMLInputElement
+    const input = screen.getByPlaceholderText(
+      'Search events...'
+    ) as HTMLInputElement
     const user = userEvent.setup()
     await user.type(input, 'Beta')
 
@@ -174,7 +212,11 @@ describe('EventSelector', () => {
     const betaOption = screen.getByRole('button', { name: /Beta Event/i })
     await user.click(betaOption)
 
-    expect(selectEvent).toHaveBeenCalledWith('event-2', 'Beta Event', 'beta-event')
+    expect(selectEvent).toHaveBeenCalledWith(
+      'event-2',
+      'Beta Event',
+      'beta-event'
+    )
     expect(input.value).toBe('')
   })
 
@@ -186,8 +228,20 @@ describe('EventSelector', () => {
       selectedEventId: 'event-1',
       selectedEventName: 'Alpha Event',
       availableEvents: [
-        { id: 'event-1', name: 'Alpha Event', slug: 'alpha-event', status: 'active', event_datetime: '2026-02-01T18:00:00Z' },
-        { id: 'event-2', name: 'Beta Event', slug: 'beta-event', status: 'draft', event_datetime: '2026-03-01T18:00:00Z' },
+        {
+          id: 'event-1',
+          name: 'Alpha Event',
+          slug: 'alpha-event',
+          status: 'active',
+          event_datetime: '2026-02-01T18:00:00Z',
+        },
+        {
+          id: 'event-2',
+          name: 'Beta Event',
+          slug: 'beta-event',
+          status: 'draft',
+          event_datetime: '2026-03-01T18:00:00Z',
+        },
       ],
     })
 
@@ -205,6 +259,10 @@ describe('EventSelector', () => {
     const betaButton = screen.getAllByRole('button', { name: /Beta Event/i })[0]
     await user.click(betaButton)
 
-    expect(selectEvent).toHaveBeenCalledWith('event-2', 'Beta Event', 'beta-event')
+    expect(selectEvent).toHaveBeenCalledWith(
+      'event-2',
+      'Beta Event',
+      'beta-event'
+    )
   })
 })

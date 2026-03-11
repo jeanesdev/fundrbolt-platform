@@ -2,7 +2,10 @@
  * EventLinkForm Component
  * Form for adding/editing event links (video, website, social)
  */
-
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import type { EventLink, EventLinkType } from '@/types/event'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -20,10 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { EventLink, EventLinkType } from '@/types/event'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 
 const linkFormSchema = z.object({
   link_type: z.enum(['video', 'website', 'social_media']),
@@ -42,7 +41,12 @@ interface EventLinkFormProps {
   isSubmitting?: boolean
 }
 
-export function EventLinkForm({ link, onSubmit, onCancel, isSubmitting }: EventLinkFormProps) {
+export function EventLinkForm({
+  link,
+  onSubmit,
+  onCancel,
+  isSubmitting,
+}: EventLinkFormProps) {
   const form = useForm<LinkFormValues>({
     resolver: zodResolver(linkFormSchema),
     defaultValues: {
@@ -56,23 +60,23 @@ export function EventLinkForm({ link, onSubmit, onCancel, isSubmitting }: EventL
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
         <FormField
           control={form.control}
-          name="link_type"
+          name='link_type'
           render={({ field }) => (
             <FormItem>
               <FormLabel>Link Type</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select link type" />
+                    <SelectValue placeholder='Select link type' />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="video">Video (YouTube/Vimeo)</SelectItem>
-                  <SelectItem value="website">Website</SelectItem>
-                  <SelectItem value="social_media">Social Media</SelectItem>
+                  <SelectItem value='video'>Video (YouTube/Vimeo)</SelectItem>
+                  <SelectItem value='website'>Website</SelectItem>
+                  <SelectItem value='social_media'>Social Media</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -82,12 +86,12 @@ export function EventLinkForm({ link, onSubmit, onCancel, isSubmitting }: EventL
 
         <FormField
           control={form.control}
-          name="url"
+          name='url'
           render={({ field }) => (
             <FormItem>
               <FormLabel>URL</FormLabel>
               <FormControl>
-                <Input placeholder="https://example.com" {...field} />
+                <Input placeholder='https://example.com' {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -96,12 +100,12 @@ export function EventLinkForm({ link, onSubmit, onCancel, isSubmitting }: EventL
 
         <FormField
           control={form.control}
-          name="label"
+          name='label'
           render={({ field }) => (
             <FormItem>
               <FormLabel>Label (Optional)</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. Event Promo Video" {...field} />
+                <Input placeholder='e.g. Event Promo Video' {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -110,24 +114,27 @@ export function EventLinkForm({ link, onSubmit, onCancel, isSubmitting }: EventL
 
         <FormField
           control={form.control}
-          name="platform"
+          name='platform'
           render={({ field }) => (
             <FormItem>
               <FormLabel>Platform (Optional)</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. YouTube, Facebook, Instagram" {...field} />
+                <Input
+                  placeholder='e.g. YouTube, Facebook, Instagram'
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <div className="flex gap-2">
-          <Button type="submit" disabled={isSubmitting}>
+        <div className='flex gap-2'>
+          <Button type='submit' disabled={isSubmitting}>
             {isSubmitting ? 'Saving...' : link ? 'Update Link' : 'Add Link'}
           </Button>
           {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button type='button' variant='outline' onClick={onCancel}>
               Cancel
             </Button>
           )}

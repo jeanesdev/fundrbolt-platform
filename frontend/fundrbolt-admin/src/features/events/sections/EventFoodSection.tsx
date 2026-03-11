@@ -1,9 +1,16 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { FoodOptionSelector } from '../components/FoodOptionSelector'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventFoodSection() {
-  const { currentEvent, handleFoodOptionCreate, handleFoodOptionDelete } = useEventWorkspace()
+  const { currentEvent, handleFoodOptionCreate, handleFoodOptionDelete } =
+    useEventWorkspace()
 
   return (
     <Card>

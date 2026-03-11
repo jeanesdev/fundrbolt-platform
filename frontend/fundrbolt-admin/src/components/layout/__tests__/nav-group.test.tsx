@@ -1,11 +1,13 @@
-import { fireEvent, render, screen } from '@testing-library/react'
 import * as React from 'react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NavGroup } from '../nav-group'
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
-  useLocation: ({ select }: { select?: (location: { href: string }) => string } = {}) => {
+  useLocation: ({
+    select,
+  }: { select?: (location: { href: string }) => string } = {}) => {
     const location = { href: '/events/gala-night/details' }
     return select ? select(location) : location
   },
@@ -19,24 +21,33 @@ vi.mock('@/components/ui/sidebar', () => {
     setOpenMobile,
   }
 
-  const passthrough = (Tag: React.ElementType) =>
+  const passthrough =
+    (Tag: React.ElementType) =>
     ({ children, ...props }: { children?: React.ReactNode }) => (
       <Tag {...props}>{children}</Tag>
     )
 
   return {
     SidebarGroup: passthrough('div'),
-    SidebarGroupLabel: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+    SidebarGroupLabel: ({ children }: { children: React.ReactNode }) => (
+      <span>{children}</span>
+    ),
     SidebarMenu: passthrough('ul'),
     SidebarMenuItem: passthrough('li'),
-    SidebarMenuButton: ({ children, ...props }: React.ComponentProps<'button'>) => (
+    SidebarMenuButton: ({
+      children,
+      ...props
+    }: React.ComponentProps<'button'>) => (
       <button type='button' {...props}>
         {children}
       </button>
     ),
     SidebarMenuSub: passthrough('ul'),
     SidebarMenuSubItem: passthrough('li'),
-    SidebarMenuSubButton: ({ children, ...props }: React.ComponentProps<'button'>) => (
+    SidebarMenuSubButton: ({
+      children,
+      ...props
+    }: React.ComponentProps<'button'>) => (
       <button type='button' {...props}>
         {children}
       </button>
@@ -48,8 +59,16 @@ vi.mock('@/components/ui/sidebar', () => {
 vi.mock('@/components/ui/collapsible', () => {
   const CollapsibleContext = React.createContext(true)
 
-  const Collapsible = ({ open = true, children }: { open?: boolean; children: React.ReactNode }) => (
-    <CollapsibleContext.Provider value={open}>{children}</CollapsibleContext.Provider>
+  const Collapsible = ({
+    open = true,
+    children,
+  }: {
+    open?: boolean
+    children: React.ReactNode
+  }) => (
+    <CollapsibleContext.Provider value={open}>
+      {children}
+    </CollapsibleContext.Provider>
   )
 
   const CollapsibleContent = ({ children }: { children: React.ReactNode }) => {
@@ -58,17 +77,29 @@ vi.mock('@/components/ui/collapsible', () => {
     return <div>{children}</div>
   }
 
-  const CollapsibleTrigger = ({ children }: { children: React.ReactNode }) => <>{children}</>
+  const CollapsibleTrigger = ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  )
 
   return { Collapsible, CollapsibleContent, CollapsibleTrigger }
 })
 
 vi.mock('@/components/ui/dropdown-menu', () => ({
-  DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenu: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuItem: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
   DropdownMenuSeparator: () => <hr />,
 }))
 
@@ -108,10 +139,14 @@ describe('NavGroup', () => {
       />
     )
 
-    const toggleButton = screen.getByRole('button', { name: /Collapse Event: Gala Night/i })
+    const toggleButton = screen.getByRole('button', {
+      name: /Collapse Event: Gala Night/i,
+    })
     fireEvent.click(toggleButton)
 
-    expect(localStorage.getItem('fundrbolt-nav-group-event-gala-night-collapsed')).toBe('true')
+    expect(
+      localStorage.getItem('fundrbolt-nav-group-event-gala-night-collapsed')
+    ).toBe('true')
   })
 
   it('honors defaultCollapsed when no stored preference exists', () => {

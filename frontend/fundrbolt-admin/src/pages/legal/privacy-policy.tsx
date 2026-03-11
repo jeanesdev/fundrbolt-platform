@@ -2,12 +2,11 @@
  * Privacy Policy Page
  * Standalone page to view the current Privacy Policy document
  */
-
-import { LegalDocumentViewer } from '@/components/legal/legal-document-viewer'
-import { Button } from '@/components/ui/button'
-import { useLegalDocuments } from '@/hooks/use-legal-documents'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeft, Loader2 } from 'lucide-react'
+import { useLegalDocuments } from '@/hooks/use-legal-documents'
+import { Button } from '@/components/ui/button'
+import { LegalDocumentViewer } from '@/components/legal/legal-document-viewer'
 
 export function PrivacyPolicyPage() {
   const { privacyPolicy, isLoading, error } = useLegalDocuments()
@@ -22,19 +21,19 @@ export function PrivacyPolicyPage() {
           </Link>
         </Button>
         <h1 className='text-3xl font-bold'>Privacy Policy</h1>
-        <p className='mt-2 text-muted-foreground'>
+        <p className='text-muted-foreground mt-2'>
           Learn about how we collect, use, and protect your personal data.
         </p>
       </div>
 
       {isLoading && (
         <div className='flex items-center justify-center py-12'>
-          <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
+          <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
         </div>
       )}
 
       {error && (
-        <div className='rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive'>
+        <div className='border-destructive bg-destructive/10 text-destructive rounded-lg border p-4'>
           <p className='font-semibold'>Error loading Privacy Policy</p>
           <p className='text-sm'>{error}</p>
         </div>
@@ -47,7 +46,7 @@ export function PrivacyPolicyPage() {
       )}
 
       {!privacyPolicy && !isLoading && !error && (
-        <div className='rounded-lg border border-muted bg-muted/10 p-8 text-center'>
+        <div className='border-muted bg-muted/10 rounded-lg border p-8 text-center'>
           <p className='text-muted-foreground'>
             Privacy Policy document is not currently available.
           </p>
@@ -56,18 +55,18 @@ export function PrivacyPolicyPage() {
 
       <div className='mt-8 border-t pt-6'>
         <div className='space-y-4'>
-          <p className='text-sm text-muted-foreground'>
+          <p className='text-muted-foreground text-sm'>
             Questions about our Privacy Policy? Contact us for assistance.
           </p>
           <div className='flex gap-4'>
             <Link
               to='/sign-up'
-              className='text-sm font-medium text-primary hover:underline'
+              className='text-primary text-sm font-medium hover:underline'
             >
               Create Account
             </Link>
             <span className='text-muted-foreground'>•</span>
-            <span className='text-sm font-medium text-primary hover:underline cursor-pointer'>
+            <span className='text-primary cursor-pointer text-sm font-medium hover:underline'>
               <Link to='/'>Terms of Service</Link>
             </span>
           </div>

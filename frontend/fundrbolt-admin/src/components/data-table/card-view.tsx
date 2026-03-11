@@ -1,12 +1,12 @@
+import { useState } from 'react'
+import { type Row, type Table, flexRender } from '@tanstack/react-table'
+import { ChevronDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import { cn } from '@/lib/utils'
-import { type Row, type Table, flexRender } from '@tanstack/react-table'
-import { ChevronDown } from 'lucide-react'
-import { useState } from 'react'
 
 /** Columns with these IDs are excluded from the card field list. */
 const EXCLUDED_COLUMN_IDS = new Set(['select', 'actions'])

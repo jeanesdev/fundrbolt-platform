@@ -5,7 +5,10 @@
  * Provides an alternative to drag-and-drop for accessibility and precision.
  * Feature 014: Updated to respect custom table capacities.
  */
-
+import { useState } from 'react'
+import type { EventTableDetails } from '@/services/seating-service'
+import { toast } from 'sonner'
+import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -22,10 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
-import type { EventTableDetails } from '@/services/seating-service'
-import { useState } from 'react'
-import { toast } from 'sonner'
 
 interface TableOption {
   tableNumber: number
@@ -110,7 +109,7 @@ export function TableAssignmentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className='sm:max-w-md'>
         <DialogHeader>
           <DialogTitle>Assign Table</DialogTitle>
           <DialogDescription>
@@ -119,17 +118,17 @@ export function TableAssignmentModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
+        <div className='space-y-4 py-4'>
+          <div className='space-y-2'>
             <label
-              htmlFor="table-select"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              htmlFor='table-select'
+              className='text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
             >
               Table Number
             </label>
             <Select value={selectedTable} onValueChange={setSelectedTable}>
-              <SelectTrigger id="table-select">
-                <SelectValue placeholder="Select a table..." />
+              <SelectTrigger id='table-select'>
+                <SelectValue placeholder='Select a table...' />
               </SelectTrigger>
               <SelectContent>
                 {tableOptions.map((table) => (
@@ -138,16 +137,17 @@ export function TableAssignmentModal({
                     value={table.tableNumber.toString()}
                     disabled={!table.isAvailable}
                   >
-                    <div className="flex items-center justify-between w-full gap-2">
+                    <div className='flex w-full items-center justify-between gap-2'>
                       <span>
                         Table {table.tableNumber}
                         {table.tableName && ` - ${table.tableName}`}
                       </span>
                       <span
-                        className={`text-xs ${table.isAvailable
-                          ? 'text-muted-foreground'
-                          : 'text-destructive font-medium'
-                          }`}
+                        className={`text-xs ${
+                          table.isAvailable
+                            ? 'text-muted-foreground'
+                            : 'text-destructive font-medium'
+                        }`}
                       >
                         {table.currentOccupancy}/{table.capacity}
                         {!table.isAvailable && ' (Full)'}
@@ -161,12 +161,12 @@ export function TableAssignmentModal({
 
           {/* Table Info Preview */}
           {selectedTableInfo && (
-            <div className="rounded-lg border bg-muted/50 p-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">
+            <div className='bg-muted/50 rounded-lg border p-3 text-sm'>
+              <div className='flex items-center justify-between'>
+                <span className='font-medium'>
                   Table {selectedTableInfo.tableNumber}
                 </span>
-                <span className="text-muted-foreground">
+                <span className='text-muted-foreground'>
                   {selectedTableInfo.currentOccupancy + 1}/
                   {selectedTableInfo.capacity} after assignment
                 </span>
@@ -177,7 +177,7 @@ export function TableAssignmentModal({
 
         <DialogFooter>
           <Button
-            variant="outline"
+            variant='outline'
             onClick={handleCancel}
             disabled={isAssigning}
           >

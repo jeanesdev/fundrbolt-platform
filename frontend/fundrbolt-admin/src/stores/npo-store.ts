@@ -2,7 +2,6 @@
  * NPO (Non-Profit Organization) Zustand Store
  * Manages NPO state, members, applications, and branding
  */
-
 import npoService from '@/services/npo-service'
 import type {
   ApplicationListParams,
@@ -28,10 +27,25 @@ import { persist } from 'zustand/middleware'
 
 // Helper function to extract error message from unknown error
 function getErrorMessage(error: unknown): string {
-  if (error instanceof Error && 'response' in error && typeof error.response === 'object' && error.response !== null && 'data' in error.response && typeof error.response.data === 'object' && error.response.data !== null && 'detail' in error.response.data) {
+  if (
+    error instanceof Error &&
+    'response' in error &&
+    typeof error.response === 'object' &&
+    error.response !== null &&
+    'data' in error.response &&
+    typeof error.response.data === 'object' &&
+    error.response.data !== null &&
+    'detail' in error.response.data
+  ) {
     const detail = error.response.data.detail
     if (typeof detail === 'string') return detail
-    if (typeof detail === 'object' && detail !== null && 'message' in detail && typeof detail.message === 'string') return detail.message
+    if (
+      typeof detail === 'object' &&
+      detail !== null &&
+      'message' in detail &&
+      typeof detail.message === 'string'
+    )
+      return detail.message
   }
   if (error instanceof Error) return error.message
   return 'An unexpected error occurred'
@@ -71,7 +85,11 @@ interface NPOState {
   loadNPOById: (npoId: string) => Promise<void>
   createNPO: (data: NPOCreateRequest) => Promise<NPO>
   updateNPO: (npoId: string, data: NPOUpdateRequest) => Promise<NPO>
-  updateNPOStatus: (npoId: string, status: string, notes?: string) => Promise<NPO>
+  updateNPOStatus: (
+    npoId: string,
+    status: string,
+    notes?: string
+  ) => Promise<NPO>
   deleteNPO: (npoId: string) => Promise<void>
 
   // Actions - Applications
@@ -91,12 +109,22 @@ interface NPOState {
     memberId: string,
     data: MemberRoleUpdateRequest
   ) => Promise<NPOMember>
-  removeMember: (npoId: string, memberId: string, reason?: string) => Promise<void>
+  removeMember: (
+    npoId: string,
+    memberId: string,
+    reason?: string
+  ) => Promise<void>
 
   // Actions - Branding
   loadBranding: (npoId: string) => Promise<void>
-  createBranding: (npoId: string, data: BrandingCreateRequest) => Promise<NPOBranding>
-  updateBranding: (npoId: string, data: BrandingUpdateRequest) => Promise<NPOBranding>
+  createBranding: (
+    npoId: string,
+    data: BrandingCreateRequest
+  ) => Promise<NPOBranding>
+  updateBranding: (
+    npoId: string,
+    data: BrandingUpdateRequest
+  ) => Promise<NPOBranding>
   uploadLogo: (npoId: string, file: File) => Promise<string>
   deleteLogo: (npoId: string) => Promise<void>
 
@@ -222,7 +250,11 @@ export const useNPOStore = create<NPOState>()(
       updateNPOStatus: async (npoId, status, notes) => {
         set({ nposLoading: true, nposError: null })
         try {
-          const updatedNPO = await npoService.updateNPOStatus(npoId, status, notes)
+          const updatedNPO = await npoService.updateNPOStatus(
+            npoId,
+            status,
+            notes
+          )
           // Update in list
           set((state) => ({
             npos: state.npos.map((npo) =>
@@ -252,8 +284,10 @@ export const useNPOStore = create<NPOState>()(
           set((state) => ({
             npos: state.npos.filter((npo) => npo.id !== npoId),
             nposTotalCount: state.nposTotalCount - 1,
-            currentNPO: state.currentNPO?.id === npoId ? null : state.currentNPO,
-            currentNPOId: state.currentNPOId === npoId ? null : state.currentNPOId,
+            currentNPO:
+              state.currentNPO?.id === npoId ? null : state.currentNPO,
+            currentNPOId:
+              state.currentNPOId === npoId ? null : state.currentNPOId,
             nposLoading: false,
           }))
         } catch (error: unknown) {
@@ -276,16 +310,16 @@ export const useNPOStore = create<NPOState>()(
           // Update NPO in list and current NPO
           set((state) => ({
             npos: state.npos.map((n) => (n.id === npoId ? npo : n)),
-            currentNPO: state.currentNPO?.id === npoId
-              ? { ...state.currentNPO, ...npo }
-              : state.currentNPO,
+            currentNPO:
+              state.currentNPO?.id === npoId
+                ? { ...state.currentNPO, ...npo }
+                : state.currentNPO,
             nposLoading: false,
           }))
           return npo
         } catch (error: unknown) {
           set({
-            nposError:
-              getErrorMessage(error) || 'Failed to submit application',
+            nposError: getErrorMessage(error) || 'Failed to submit application',
             nposLoading: false,
           })
           throw error
@@ -351,8 +385,7 @@ export const useNPOStore = create<NPOState>()(
           })
         } catch (error: unknown) {
           set({
-            membersError:
-              getErrorMessage(error) || 'Failed to load members',
+            membersError: getErrorMessage(error) || 'Failed to load members',
             membersLoading: false,
           })
           throw error
@@ -367,8 +400,7 @@ export const useNPOStore = create<NPOState>()(
           // Note: Member won't be in list until they accept invitation
         } catch (error: unknown) {
           set({
-            membersError:
-              getErrorMessage(error) || 'Failed to invite member',
+            membersError: getErrorMessage(error) || 'Failed to invite member',
             membersLoading: false,
           })
           throw error
@@ -388,8 +420,7 @@ export const useNPOStore = create<NPOState>()(
           return member
         } catch (error: unknown) {
           set({
-            membersError:
-              getErrorMessage(error) || 'Failed to add member',
+            membersError: getErrorMessage(error) || 'Failed to add member',
             membersLoading: false,
           })
           throw error
@@ -434,8 +465,7 @@ export const useNPOStore = create<NPOState>()(
           }))
         } catch (error: unknown) {
           set({
-            membersError:
-              getErrorMessage(error) || 'Failed to remove member',
+            membersError: getErrorMessage(error) || 'Failed to remove member',
             membersLoading: false,
           })
           throw error
@@ -456,8 +486,7 @@ export const useNPOStore = create<NPOState>()(
           })
         } catch (error: unknown) {
           set({
-            brandingError:
-              getErrorMessage(error) || 'Failed to load branding',
+            brandingError: getErrorMessage(error) || 'Failed to load branding',
             brandingLoading: false,
           })
           throw error
@@ -511,27 +540,22 @@ export const useNPOStore = create<NPOState>()(
             content_type: file.type,
             file_size: file.size,
           }
-          const { upload_url, logo_url } = await npoService.branding.requestLogoUpload(
-            npoId,
-            uploadData
-          )
+          const { upload_url, logo_url } =
+            await npoService.branding.requestLogoUpload(npoId, uploadData)
 
           // Step 2: Upload file to Azure Blob Storage
           await npoService.branding.uploadLogoFile(upload_url, file)
 
           // Step 3: Update branding state with new logo URL
           set((state) => ({
-            branding: state.branding
-              ? { ...state.branding, logo_url }
-              : null,
+            branding: state.branding ? { ...state.branding, logo_url } : null,
             brandingLoading: false,
           }))
 
           return logo_url
         } catch (error: unknown) {
           set({
-            brandingError:
-              getErrorMessage(error) || 'Failed to upload logo',
+            brandingError: getErrorMessage(error) || 'Failed to upload logo',
             brandingLoading: false,
           })
           throw error
@@ -551,8 +575,7 @@ export const useNPOStore = create<NPOState>()(
           }))
         } catch (error: unknown) {
           set({
-            brandingError:
-              getErrorMessage(error) || 'Failed to delete logo',
+            brandingError: getErrorMessage(error) || 'Failed to delete logo',
             brandingLoading: false,
           })
           throw error

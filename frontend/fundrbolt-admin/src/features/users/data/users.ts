@@ -12,11 +12,11 @@ export const users = Array.from({ length: 500 }, () => {
     first_name,
     last_name,
     phone: faker.phone.number({ style: 'international' }),
-    organization_name: faker.helpers.arrayElement([
+    organization_name: faker.helpers.arrayElement([null, faker.company.name()]),
+    address_line1: faker.helpers.arrayElement([
       null,
-      faker.company.name(),
+      faker.location.streetAddress(),
     ]),
-    address_line1: faker.helpers.arrayElement([null, faker.location.streetAddress()]),
     address_line2: faker.helpers.arrayElement([
       null,
       faker.location.secondaryAddress(),
@@ -25,7 +25,10 @@ export const users = Array.from({ length: 500 }, () => {
     state: faker.helpers.arrayElement([null, faker.location.state()]),
     postal_code: faker.helpers.arrayElement([null, faker.location.zipCode()]),
     country: faker.helpers.arrayElement([null, faker.location.country()]),
-    profile_picture_url: faker.helpers.arrayElement([null, faker.image.avatar()]),
+    profile_picture_url: faker.helpers.arrayElement([
+      null,
+      faker.image.avatar(),
+    ]),
     social_media_links: faker.helpers.arrayElement([
       null,
       {

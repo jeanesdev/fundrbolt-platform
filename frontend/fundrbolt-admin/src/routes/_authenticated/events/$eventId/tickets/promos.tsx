@@ -1,5 +1,5 @@
-import { PromoCodesPage } from '@/features/events/tickets/PromoCodesPage'
 import { createFileRoute } from '@tanstack/react-router'
+import { PromoCodesPage } from '@/features/events/tickets/PromoCodesPage'
 
 export const Route = createFileRoute(
   '/_authenticated/events/$eventId/tickets/promos'

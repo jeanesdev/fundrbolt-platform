@@ -1,4 +1,7 @@
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import {
   Command,
   CommandEmpty,
@@ -12,11 +15,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { cn } from '@/lib/utils'
-import { Check, ChevronsUpDown } from 'lucide-react'
-import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
-import type { QuickEntryBuyNowBidResponse, QuickEntryBuyNowItem, QuickEntryBuyNowSummary } from '../api/quickEntryApi'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import type {
+  QuickEntryBuyNowBidResponse,
+  QuickEntryBuyNowItem,
+  QuickEntryBuyNowSummary,
+} from '../api/quickEntryApi'
 
 function parseToWholeDollar(value: string): string {
   const digits = value.replace(/[^\d]/g, '')
@@ -112,14 +116,14 @@ export function BuyNowEntryForm({
       {/* Event-level summary metrics */}
       {summary && (
         <div className='grid grid-cols-2 gap-3'>
-          <div className='rounded-md border bg-muted/20 p-3'>
-            <p className='text-xs text-muted-foreground'>Total Raised</p>
+          <div className='bg-muted/20 rounded-md border p-3'>
+            <p className='text-muted-foreground text-xs'>Total Raised</p>
             <p className='text-xl font-semibold'>
               ${summary.total_raised.toLocaleString('en-US')}
             </p>
           </div>
-          <div className='rounded-md border bg-muted/20 p-3'>
-            <p className='text-xs text-muted-foreground'>Number of Bids</p>
+          <div className='bg-muted/20 rounded-md border p-3'>
+            <p className='text-muted-foreground text-xs'>Number of Bids</p>
             <p className='text-xl font-semibold'>{summary.bid_count}</p>
           </div>
         </div>
@@ -153,7 +157,10 @@ export function BuyNowEntryForm({
               <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
             </button>
           </PopoverTrigger>
-          <PopoverContent className='w-[var(--radix-popover-trigger-width)] p-0' align='start'>
+          <PopoverContent
+            className='w-[var(--radix-popover-trigger-width)] p-0'
+            align='start'
+          >
             <Command>
               <CommandInput
                 placeholder='Search item number or name…'
@@ -189,13 +196,18 @@ export function BuyNowEntryForm({
                           #{item.bid_number} · {item.title}
                         </p>
                         <p className='text-muted-foreground text-xs'>
-                          Buy It Now: ${Math.round(item.buy_now_price).toLocaleString('en-US')}
+                          Buy It Now: $
+                          {Math.round(item.buy_now_price).toLocaleString(
+                            'en-US'
+                          )}
                         </p>
                       </div>
                       <Check
                         className={cn(
                           'ml-auto h-4 w-4 shrink-0',
-                          selectedItemId === item.id ? 'opacity-100' : 'opacity-0'
+                          selectedItemId === item.id
+                            ? 'opacity-100'
+                            : 'opacity-0'
                         )}
                       />
                     </CommandItem>
@@ -227,7 +239,8 @@ export function BuyNowEntryForm({
                 #{selectedItem.bid_number} · {selectedItem.title}
               </p>
               <p className='text-muted-foreground text-sm'>
-                Buy It Now: ${Math.round(selectedItem.buy_now_price).toLocaleString('en-US')}
+                Buy It Now: $
+                {Math.round(selectedItem.buy_now_price).toLocaleString('en-US')}
               </p>
             </div>
           </div>
@@ -244,10 +257,12 @@ export function BuyNowEntryForm({
             <input
               id='buy-now-amount'
               ref={amountRef}
-              className='w-full rounded-md border px-3 py-2 h-12 text-lg'
+              className='h-12 w-full rounded-md border px-3 py-2 text-lg'
               inputMode='numeric'
               value={amount}
-              onChange={(e) => onAmountChange(parseToWholeDollar(e.target.value))}
+              onChange={(e) =>
+                onAmountChange(parseToWholeDollar(e.target.value))
+              }
               onKeyDown={handleAmountKeyDown}
               placeholder='500'
               disabled={isSubmitting}
@@ -261,10 +276,12 @@ export function BuyNowEntryForm({
             <input
               id='buy-now-bidder'
               ref={bidderRef}
-              className='w-full rounded-md border px-3 py-2 h-12 text-lg'
+              className='h-12 w-full rounded-md border px-3 py-2 text-lg'
               inputMode='numeric'
               value={bidderNumber}
-              onChange={(e) => onBidderNumberChange(e.target.value.replace(/[^\d]/g, ''))}
+              onChange={(e) =>
+                onBidderNumberChange(e.target.value.replace(/[^\d]/g, ''))
+              }
               onKeyDown={onBidderKeyDown}
               placeholder='123'
               disabled={isSubmitting}
@@ -274,7 +291,7 @@ export function BuyNowEntryForm({
           <div className='col-span-2'>
             <button
               type='submit'
-              className='bg-primary text-primary-foreground w-full rounded-md px-4 py-3 text-base font-medium disabled:cursor-not-allowed disabled:opacity-60 h-12'
+              className='bg-primary text-primary-foreground h-12 w-full rounded-md px-4 py-3 text-base font-medium disabled:cursor-not-allowed disabled:opacity-60'
               disabled={isSubmitting || !amount || !bidderNumber}
             >
               {isSubmitting ? 'Recording…' : 'Record Buy It Now'}
@@ -292,14 +309,18 @@ export function BuyNowEntryForm({
           {viewMode === 'card' ? (
             <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
               {recentBids.map((bid) => (
-                <div key={bid.id} className='rounded-md border p-3 space-y-1'>
+                <div key={bid.id} className='space-y-1 rounded-md border p-3'>
                   <div className='flex items-center justify-between'>
                     <span className='font-medium'>#{bid.bidder_number}</span>
-                    <span className='font-semibold'>${bid.amount.toLocaleString('en-US')}</span>
+                    <span className='font-semibold'>
+                      ${bid.amount.toLocaleString('en-US')}
+                    </span>
                   </div>
                   <p className='text-sm'>{bid.donor_name ?? '—'}</p>
                   <div className='flex items-center justify-between'>
-                    <span className='text-xs text-muted-foreground'>{new Date(bid.entered_at).toLocaleTimeString()}</span>
+                    <span className='text-muted-foreground text-xs'>
+                      {new Date(bid.entered_at).toLocaleTimeString()}
+                    </span>
                     <button
                       type='button'
                       className='rounded border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60'
@@ -329,8 +350,12 @@ export function BuyNowEntryForm({
                     <tr key={bid.id} className='border-t'>
                       <td className='px-3 py-2'>{bid.bidder_number}</td>
                       <td className='px-3 py-2'>{bid.donor_name ?? '—'}</td>
-                      <td className='px-3 py-2'>${bid.amount.toLocaleString('en-US')}</td>
-                      <td className='px-3 py-2'>{new Date(bid.entered_at).toLocaleTimeString()}</td>
+                      <td className='px-3 py-2'>
+                        ${bid.amount.toLocaleString('en-US')}
+                      </td>
+                      <td className='px-3 py-2'>
+                        {new Date(bid.entered_at).toLocaleTimeString()}
+                      </td>
                       <td className='px-3 py-2'>
                         <button
                           type='button'
@@ -349,7 +374,9 @@ export function BuyNowEntryForm({
           )}
         </>
       ) : selectedItem ? (
-        <p className='text-muted-foreground text-sm'>No buy-it-now bids recorded for this item yet.</p>
+        <p className='text-muted-foreground text-sm'>
+          No buy-it-now bids recorded for this item yet.
+        </p>
       ) : null}
     </div>
   )

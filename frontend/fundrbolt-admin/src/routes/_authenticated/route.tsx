@@ -28,7 +28,8 @@ export const Route = createFileRoute('/_authenticated')({
       throw redirect({
         to: '/403',
         search: {
-          message: 'This area is for administrators only. Donors should use the donor portal.',
+          message:
+            'This area is for administrators only. Donors should use the donor portal.',
         },
       })
     }

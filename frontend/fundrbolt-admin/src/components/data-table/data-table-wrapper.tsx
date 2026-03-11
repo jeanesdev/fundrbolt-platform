@@ -1,5 +1,5 @@
-import { useViewPreference, type ViewMode } from '@/hooks/use-view-preference'
 import type { ReactNode } from 'react'
+import { useViewPreference, type ViewMode } from '@/hooks/use-view-preference'
 import { DataTableViewToggle } from './view-toggle'
 
 type DataTableWrapperProps = {

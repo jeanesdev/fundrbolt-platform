@@ -1,10 +1,17 @@
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { EventLinkForm } from '../components/EventLinkForm'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventLinksSection() {
-  const { currentEvent, handleLinkCreate, handleLinkDelete } = useEventWorkspace()
+  const { currentEvent, handleLinkCreate, handleLinkDelete } =
+    useEventWorkspace()
 
   return (
     <Card>
@@ -22,10 +29,14 @@ export function EventLinksSection() {
                 <Card key={link.id}>
                   <CardContent className='p-4'>
                     <div className='flex items-center justify-between gap-4'>
-                      <div className='flex-1 min-w-0'>
-                        <p className='font-medium'>{link.label || 'Untitled Link'}</p>
-                        <p className='text-sm text-muted-foreground truncate'>{link.url}</p>
-                        <p className='text-xs text-muted-foreground capitalize'>
+                      <div className='min-w-0 flex-1'>
+                        <p className='font-medium'>
+                          {link.label || 'Untitled Link'}
+                        </p>
+                        <p className='text-muted-foreground truncate text-sm'>
+                          {link.url}
+                        </p>
+                        <p className='text-muted-foreground text-xs capitalize'>
                           {link.link_type.replace('_', ' ')}
                         </p>
                       </div>

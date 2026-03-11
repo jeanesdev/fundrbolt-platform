@@ -9,13 +9,13 @@
  * - Changes to event selection invalidate TanStack Query cache for event-specific data
  * - Loads available events filtered by current NPO
  */
+import { useCallback, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { eventApi } from '@/services/event-service'
 import {
   useEventContextStore,
   type EventContextOption,
 } from '@/stores/event-context-store'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect } from 'react'
 import { useNpoContext } from './use-npo-context'
 
 export interface UseEventContextReturn {

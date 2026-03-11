@@ -162,14 +162,32 @@ async def get_applications(
             "pending_approval": "under_review",
             "approved": "approved",
             "rejected": "rejected",
+            "under_revision": "reopened",  # US4: admin reopened for revision
         }
         app_status = status_map.get(npo.status.value, "submitted")
+
+        # Compute is_overdue: pending > 5 business days
+        from datetime import date as _date
+        from datetime import timedelta as _timedelta
+
+        _is_overdue = False
+        if npo.status.value == "pending_approval":
+            start = npo.created_at.date()
+            today = _date.today()
+            bdays = 0
+            cur = start
+            while cur < today:
+                cur += _timedelta(days=1)
+                if cur.weekday() < 5:
+                    bdays += 1
+            _is_overdue = bdays > 5
 
         applications.append(
             {
                 "id": str(npo.id),
                 "npo_id": str(npo.id),
                 "status": app_status,
+                "is_overdue": _is_overdue,
                 "review_notes": None,
                 "reviewed_by_user_id": None,
                 "submitted_at": npo.created_at.isoformat(),
@@ -286,6 +304,84 @@ async def review_application(
                 "decision": review_request.decision,
                 "error": str(e),
             },
+        )
+
+    return NPOResponse.model_validate(npo)
+
+
+class ApplicationReopenRequest(BaseModel):
+    """Request schema for reopening a rejected NPO application."""
+
+    revision_notes: str | None = Field(
+        None,
+        max_length=1000,
+        description="Optional guidance for the applicant explaining what needs revision",
+    )
+
+
+@router.post(
+    "/npos/{npo_id}/reopen",
+    response_model=NPOResponse,
+    summary="Reopen rejected NPO application for revision",
+    description=(
+        "Re-open a rejected NPO application so the applicant can revise and resubmit. "
+        "Transitions NPO from REJECTED → UNDER_REVISION. SuperAdmin only."
+    ),
+    status_code=status.HTTP_200_OK,
+)
+async def reopen_npo_application(
+    npo_id: UUID,
+    reopen_request: ApplicationReopenRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_superadmin),
+) -> NPOResponse:
+    """
+    Reopen a rejected NPO application for applicant revision.
+
+    **SuperAdmin only**
+
+    State transition: REJECTED → UNDER_REVISION (NPO status)
+    Latest NPOApplication record: REJECTED → REOPENED
+
+    Sends email notification to NPO creator with any revision guidance.
+
+    Args:
+        npo_id: NPO ID to reopen
+        reopen_request: Optional revision notes for the applicant
+        db: Database session
+        current_user: Current SuperAdmin user
+
+    Returns:
+        Updated NPO with UNDER_REVISION status
+
+    Raises:
+        HTTPException: If validation fails or NPO not found
+    """
+    npo = await ApplicationService.reopen_application(
+        db=db,
+        npo_id=npo_id,
+        reopened_by_user_id=current_user.id,
+        revision_notes=reopen_request.revision_notes,
+    )
+
+    # Send email notification to applicant
+    email_service = get_email_service()
+    creator_name = npo.creator.first_name if npo.creator else None
+
+    try:
+        await email_service.send_npo_application_reopened_email(
+            to_email=npo.creator.email if npo.creator else npo.email,
+            user_name=creator_name or "Applicant",
+            npo_name=npo.name,
+            revision_notes=reopen_request.revision_notes,
+        )
+    except Exception as e:
+        from app.core.logging import get_logger
+
+        _logger = get_logger(__name__)
+        _logger.error(
+            "Failed to send application reopened email",
+            extra={"npo_id": str(npo_id), "error": str(e)},
         )
 
     return NPOResponse.model_validate(npo)

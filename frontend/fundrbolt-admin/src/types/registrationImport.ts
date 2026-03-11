@@ -48,7 +48,7 @@ export interface RegistrationImportRowExample {
   event_id?: string
   registrant_name: string
   registrant_email: string
-  registration_date: string  // YYYY-MM-DD
+  registration_date: string // YYYY-MM-DD
   quantity: number
   external_registration_id: string
   registrant_phone?: string

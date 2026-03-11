@@ -23,6 +23,7 @@ class ApplicationStatus(str, enum.Enum):
     UNDER_REVIEW = "under_review"
     APPROVED = "approved"
     REJECTED = "rejected"
+    REOPENED = "reopened"  # admin re-opened for applicant revision (US4)
 
 
 class NPOApplication(Base, UUIDMixin, TimestampMixin):

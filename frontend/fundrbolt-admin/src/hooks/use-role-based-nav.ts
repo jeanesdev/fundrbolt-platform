@@ -217,9 +217,9 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   // Grouped nav: Event, Guests, Auctions
   const eventNavGroups: EventNavGroup[] = selectedEventId
     ? EVENT_NAV_GROUPS.map((group) => ({
-      title: group.title,
-      items: group.sections.map(buildEventNavItem),
-    }))
+        title: group.title,
+        items: group.sections.map(buildEventNavItem),
+      }))
     : []
 
   const eventNavTitle = selectedEventId
@@ -323,38 +323,38 @@ const EVENT_NAV_GROUPS: Array<{
   title: string
   sections: EventSectionConfig[]
 }> = [
-    {
-      title: 'Event',
-      sections: [
-        sectionByPath('details'),
-        sectionByPath('preview'),
-        sectionByPath('media'),
-        sectionByPath('links'),
-        sectionByPath('food'),
-        sectionByPath('tickets'),
-        sectionByPath('tickets/sales'),
-        sectionByPath('tickets/promos'),
-        sectionByPath('sponsors'),
-      ],
-    },
-    {
-      title: 'Guests',
-      sections: [
-        sectionByPath('registrations'),
-        sectionByPath('checkin'),
-        sectionByPath('seating'),
-      ],
-    },
-    {
-      title: 'Auctions',
-      sections: [
-        sectionByPath('auction-items'),
-        sectionByPath('auction-bids'),
-        sectionByPath('quick-entry'),
-      ],
-    },
-    {
-      title: 'Data',
-      sections: [sectionByPath('dashboard')],
-    },
-  ]
+  {
+    title: 'Event',
+    sections: [
+      sectionByPath('details'),
+      sectionByPath('preview'),
+      sectionByPath('media'),
+      sectionByPath('links'),
+      sectionByPath('food'),
+      sectionByPath('tickets'),
+      sectionByPath('tickets/sales'),
+      sectionByPath('tickets/promos'),
+      sectionByPath('sponsors'),
+    ],
+  },
+  {
+    title: 'Guests',
+    sections: [
+      sectionByPath('registrations'),
+      sectionByPath('checkin'),
+      sectionByPath('seating'),
+    ],
+  },
+  {
+    title: 'Auctions',
+    sections: [
+      sectionByPath('auction-items'),
+      sectionByPath('auction-bids'),
+      sectionByPath('quick-entry'),
+    ],
+  },
+  {
+    title: 'Data',
+    sections: [sectionByPath('dashboard')],
+  },
+]

@@ -4,7 +4,12 @@
  * Displayed to users with npo_admin role.
  * Provides NPO-specific overview and management capabilities.
  */
-
+import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
+import { eventApi } from '@/services/event-service'
+import { memberApi } from '@/services/npo-service'
+import { useAuth } from '@/hooks/use-auth'
+import { useNpoContext } from '@/hooks/use-npo-context'
 import {
   Card,
   CardContent,
@@ -14,12 +19,6 @@ import {
 } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { listUsers } from '@/features/users/api/users-api'
-import { useAuth } from '@/hooks/use-auth'
-import { useNpoContext } from '@/hooks/use-npo-context'
-import { eventApi } from '@/services/event-service'
-import { memberApi } from '@/services/npo-service'
-import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
 
 export function NpoAdminDashboard() {
   const { user } = useAuth()

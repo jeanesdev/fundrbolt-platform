@@ -1,13 +1,13 @@
-import { toast as sonnerToast } from 'sonner';
+import { toast as sonnerToast } from 'sonner'
 
 export interface ToastOptions {
-  description?: string;
-  duration?: number;
-  variant?: 'default' | 'destructive';
+  description?: string
+  duration?: number
+  variant?: 'default' | 'destructive'
   action?: {
-    label: string;
-    onClick: () => void;
-  };
+    label: string
+    onClick: () => void
+  }
 }
 
 /**
@@ -29,35 +29,39 @@ export interface ToastOptions {
  */
 export function useToast() {
   const toast = (options: {
-    title?: string;
-    description?: string;
-    duration?: number;
-    variant?: 'default' | 'destructive';
+    title?: string
+    description?: string
+    duration?: number
+    variant?: 'default' | 'destructive'
     action?: {
-      label: string;
-      onClick: () => void;
-    };
+      label: string
+      onClick: () => void
+    }
   }) => {
-    const { title, description, duration, variant, action } = options;
+    const { title, description, duration, variant, action } = options
 
     if (variant === 'destructive') {
       sonnerToast.error(description || title || 'Error', {
         duration,
-        action: action ? {
-          label: action.label,
-          onClick: action.onClick,
-        } : undefined,
-      });
+        action: action
+          ? {
+              label: action.label,
+              onClick: action.onClick,
+            }
+          : undefined,
+      })
     } else {
       sonnerToast.success(description || title || 'Success', {
         duration,
-        action: action ? {
-          label: action.label,
-          onClick: action.onClick,
-        } : undefined,
-      });
+        action: action
+          ? {
+              label: action.label,
+              onClick: action.onClick,
+            }
+          : undefined,
+      })
     }
-  };
+  }
 
-  return { toast };
+  return { toast }
 }

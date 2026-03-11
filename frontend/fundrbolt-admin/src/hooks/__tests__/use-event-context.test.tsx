@@ -4,12 +4,11 @@
  * Tests for the React hook integrating EventContext store with React Query.
  * Validates NPO change handling, query invalidation, and event loading.
  */
-
+import type { ReactNode } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { eventApi } from '@/services/event-service'
 import type { Event, EventStatus } from '@/types/event'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
-import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useEventContext } from '../use-event-context'
 import * as useNpoContextModule from '../use-npo-context'

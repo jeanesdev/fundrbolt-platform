@@ -2,8 +2,19 @@
  * Ticket Sales Table
  * Displays searchable, sortable list of ticket purchases for an event
  */
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronDown,
+  Filter,
+  Search,
+  X,
+} from 'lucide-react'
 import { salesTrackingApi, type EventSalesList } from '@/api/salesTracking'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -39,18 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { useQuery } from '@tanstack/react-query'
-import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  ChevronDown,
-  Filter,
-  Search,
-  X,
-} from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 
 interface TicketSalesTableProps {
   eventId: string
@@ -509,7 +509,12 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                   <div className='bg-muted/30 rounded-md border p-3'>
                     <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'>
                       <div className='space-y-1'>
-                        <Label htmlFor='ticket-filter-purchaser' className='text-xs'>Purchaser</Label>
+                        <Label
+                          htmlFor='ticket-filter-purchaser'
+                          className='text-xs'
+                        >
+                          Purchaser
+                        </Label>
                         <Input
                           id='ticket-filter-purchaser'
                           placeholder='Filter purchaser…'
@@ -520,7 +525,12 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         />
                       </div>
                       <div className='space-y-1'>
-                        <Label htmlFor='ticket-filter-email' className='text-xs'>Email</Label>
+                        <Label
+                          htmlFor='ticket-filter-email'
+                          className='text-xs'
+                        >
+                          Email
+                        </Label>
                         <Input
                           id='ticket-filter-email'
                           placeholder='Filter email…'
@@ -531,7 +541,12 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         />
                       </div>
                       <div className='space-y-1'>
-                        <Label htmlFor='ticket-filter-package' className='text-xs'>Package</Label>
+                        <Label
+                          htmlFor='ticket-filter-package'
+                          className='text-xs'
+                        >
+                          Package
+                        </Label>
                         <Input
                           id='ticket-filter-package'
                           placeholder='Filter package…'
@@ -542,7 +557,12 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         />
                       </div>
                       <div className='space-y-1'>
-                        <Label htmlFor='ticket-filter-quantity' className='text-xs'>Quantity</Label>
+                        <Label
+                          htmlFor='ticket-filter-quantity'
+                          className='text-xs'
+                        >
+                          Quantity
+                        </Label>
                         <Input
                           id='ticket-filter-quantity'
                           placeholder='Filter quantity…'
@@ -553,7 +573,12 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         />
                       </div>
                       <div className='space-y-1'>
-                        <Label htmlFor='ticket-filter-total' className='text-xs'>Total</Label>
+                        <Label
+                          htmlFor='ticket-filter-total'
+                          className='text-xs'
+                        >
+                          Total
+                        </Label>
                         <Input
                           id='ticket-filter-total'
                           placeholder='Filter total…'
@@ -564,7 +589,12 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         />
                       </div>
                       <div className='space-y-1'>
-                        <Label htmlFor='ticket-filter-status' className='text-xs'>Status</Label>
+                        <Label
+                          htmlFor='ticket-filter-status'
+                          className='text-xs'
+                        >
+                          Status
+                        </Label>
                         <Select
                           value={filters.payment_status}
                           onValueChange={(v) =>
@@ -585,7 +615,12 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         </Select>
                       </div>
                       <div className='space-y-1'>
-                        <Label htmlFor='ticket-filter-purchased' className='text-xs'>Purchased</Label>
+                        <Label
+                          htmlFor='ticket-filter-purchased'
+                          className='text-xs'
+                        >
+                          Purchased
+                        </Label>
                         <Input
                           id='ticket-filter-purchased'
                           placeholder='Filter date…'
@@ -596,7 +631,12 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         />
                       </div>
                       <div className='space-y-1'>
-                        <Label htmlFor='ticket-filter-promo' className='text-xs'>Promo</Label>
+                        <Label
+                          htmlFor='ticket-filter-promo'
+                          className='text-xs'
+                        >
+                          Promo
+                        </Label>
                         <Input
                           id='ticket-filter-promo'
                           placeholder='Filter promo…'
@@ -607,7 +647,12 @@ export function TicketSalesTable({ eventId }: TicketSalesTableProps) {
                         />
                       </div>
                       <div className='space-y-1'>
-                        <Label htmlFor='ticket-filter-external' className='text-xs'>External ID</Label>
+                        <Label
+                          htmlFor='ticket-filter-external'
+                          className='text-xs'
+                        >
+                          External ID
+                        </Label>
                         <Input
                           id='ticket-filter-external'
                           placeholder='Filter external ID…'

@@ -4,7 +4,6 @@
  * Tests for WCAG AA compliant contrast calculation.
  * Validates luminance calculation, contrast ratios, and text color selection.
  */
-
 import { colors as brandColors } from '@fundrbolt/shared/assets'
 import { describe, expect, it } from 'vitest'
 import {
@@ -39,7 +38,12 @@ const PRIMARY_NAVY_RGB = { r: 17, g: 41, b: 76 } as const
 
 const stripHash = (hex: string) => hex.replace('#', '').toUpperCase()
 const ensureShortHex = (hex: string) => {
-  if (hex.length !== 6 || hex[0] !== hex[1] || hex[2] !== hex[3] || hex[4] !== hex[5]) {
+  if (
+    hex.length !== 6 ||
+    hex[0] !== hex[1] ||
+    hex[2] !== hex[3] ||
+    hex[4] !== hex[5]
+  ) {
     throw new Error('Color cannot be represented as 3-digit hex')
   }
   return `${hex[0]}${hex[2]}${hex[4]}`
@@ -202,7 +206,7 @@ describe('Color Utilities', () => {
         brandColors.accent.magenta,
       ]
 
-      accentSet.forEach(color => {
+      accentSet.forEach((color) => {
         const textColor = getContrastingTextColor(color)
         expect(meetsWCAGAA(textColor, color)).toBe(true)
       })

@@ -2,15 +2,14 @@
  * DebugSpoofSheet — bottom sheet for the Spoof Time debug tool.
  * Swipe down to dismiss. Only shown to super_admin users.
  */
-
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { useEventStore } from '@/stores/event-store'
-import { X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { useEventStore } from '@/stores/event-store'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -25,7 +24,7 @@ function toDateTimeLocalInputValue(date: Date): string {
 
 function parseEventStartForSpoof(
   eventDateTime: string | null | undefined,
-  eventTimezone: string | null | undefined,
+  eventTimezone: string | null | undefined
 ): Date | null {
   if (!eventDateTime) return null
 
@@ -36,7 +35,7 @@ function parseEventStartForSpoof(
   }
 
   const localMatch = eventDateTime.match(
-    /^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2}))?/,
+    /^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2}))?/
   )
   if (!localMatch) {
     const fallbackParsed = new Date(eventDateTime)
@@ -95,7 +94,7 @@ function parseEventStartForSpoof(
         zoned.day,
         zoned.hour,
         zoned.minute,
-        zoned.second,
+        zoned.second
       )
       const diffMs = targetAsUtcMs - guessAsLocalUtcMs
       if (diffMs === 0) break
@@ -123,7 +122,9 @@ interface DebugSpoofSheetProps {
 export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
   const [spoofTimeInput, setSpoofTimeInput] = useState('')
 
-  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null)
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(
+    null
+  )
 
   const timeBaseSpoofMs = useDebugSpoofStore((s) => s.timeBaseSpoofMs)
   const getEffectiveNowMs = useDebugSpoofStore((s) => s.getEffectiveNowMs)
@@ -135,7 +136,9 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
   useEffect(() => {
     if (open && timeBaseSpoofMs !== null) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSpoofTimeInput(toDateTimeLocalInputValue(new Date(getEffectiveNowMs())))
+      setSpoofTimeInput(
+        toDateTimeLocalInputValue(new Date(getEffectiveNowMs()))
+      )
     }
   }, [open, timeBaseSpoofMs, getEffectiveNowMs])
 
@@ -155,8 +158,12 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
       : null) ??
     null
 
-  const eventStartDate = parseEventStartForSpoof(resolvedEventDateTime, resolvedEventTimezone)
-  const hasValidEventStart = !!eventStartDate && !Number.isNaN(eventStartDate.getTime())
+  const eventStartDate = parseEventStartForSpoof(
+    resolvedEventDateTime,
+    resolvedEventTimezone
+  )
+  const hasValidEventStart =
+    !!eventStartDate && !Number.isNaN(eventStartDate.getTime())
 
   const handleSpoofTimeApply = () => {
     const trimmed = spoofTimeInput.trim()
@@ -177,7 +184,11 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0]
     if (!touch) return
-    touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() }
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now(),
+    }
   }, [])
 
   const handleTouchEnd = useCallback(
@@ -193,7 +204,7 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
       }
       touchStartRef.current = null
     },
-    [onOpenChange],
+    [onOpenChange]
   )
 
   if (!open) return null
@@ -209,29 +220,31 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
     >
       {/* Backdrop */}
       <div
-        className='absolute inset-0 bg-black/50 animate-in fade-in-0'
+        className='animate-in fade-in-0 absolute inset-0 bg-black/50'
         onClick={() => onOpenChange(false)}
         aria-hidden='true'
       />
 
       {/* Sheet */}
       <div
-        className='absolute inset-x-0 bottom-0 z-50 flex max-h-[85vh] flex-col rounded-t-2xl bg-white shadow-xl animate-in slide-in-from-bottom duration-300'
-        style={{
-          '--foreground': 'oklch(0.18 0.06 250)',
-          '--background': 'oklch(0.98 0.008 250)',
-          '--muted-foreground': 'oklch(0.50 0.06 250)',
-          '--border': 'oklch(0.88 0.03 250)',
-          '--input': 'oklch(0.88 0.03 250)',
-          '--ring': 'oklch(0.50 0.10 250)',
-          '--primary': 'oklch(0.35 0.12 250)',
-          '--primary-foreground': 'oklch(0.98 0.008 250)',
-          '--secondary': 'oklch(0.92 0.02 250)',
-          '--secondary-foreground': 'oklch(0.25 0.08 250)',
-          '--accent': 'oklch(0.88 0.04 250)',
-          '--accent-foreground': 'oklch(0.25 0.08 250)',
-          color: 'oklch(0.18 0.06 250)',
-        } as React.CSSProperties}
+        className='animate-in slide-in-from-bottom absolute inset-x-0 bottom-0 z-50 flex max-h-[85vh] flex-col rounded-t-2xl bg-white shadow-xl duration-300'
+        style={
+          {
+            '--foreground': 'oklch(0.18 0.06 250)',
+            '--background': 'oklch(0.98 0.008 250)',
+            '--muted-foreground': 'oklch(0.50 0.06 250)',
+            '--border': 'oklch(0.88 0.03 250)',
+            '--input': 'oklch(0.88 0.03 250)',
+            '--ring': 'oklch(0.50 0.10 250)',
+            '--primary': 'oklch(0.35 0.12 250)',
+            '--primary-foreground': 'oklch(0.98 0.008 250)',
+            '--secondary': 'oklch(0.92 0.02 250)',
+            '--secondary-foreground': 'oklch(0.25 0.08 250)',
+            '--accent': 'oklch(0.88 0.04 250)',
+            '--accent-foreground': 'oklch(0.25 0.08 250)',
+            color: 'oklch(0.18 0.06 250)',
+          } as React.CSSProperties
+        }
       >
         {/* Drag handle */}
         <div className='flex justify-center pt-3 pb-1'>
@@ -240,7 +253,9 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
 
         {/* Header */}
         <div className='flex items-center justify-between px-4 pb-2'>
-          <h2 className='text-lg font-semibold text-gray-900'>Debug Tools — Spoof Time</h2>
+          <h2 className='text-lg font-semibold text-gray-900'>
+            Debug Tools — Spoof Time
+          </h2>
           <button
             type='button'
             onClick={() => onOpenChange(false)}
@@ -255,7 +270,8 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
         <div className='overflow-y-auto px-4 pb-8'>
           <div className='space-y-4'>
             <p className='text-sm text-gray-500'>
-              Override the effective time to test event states (pre-event, during, post-event).
+              Override the effective time to test event states (pre-event,
+              during, post-event).
             </p>
 
             <div>
@@ -277,7 +293,8 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
 
             {timeBaseSpoofMs !== null && (
               <p className='text-sm text-amber-600'>
-                Currently spoofing: {new Date(getEffectiveNowMs()).toLocaleString()}
+                Currently spoofing:{' '}
+                {new Date(getEffectiveNowMs()).toLocaleString()}
               </p>
             )}
 
@@ -316,6 +333,6 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
         </div>
       </div>
     </div>,
-    document.body,
+    document.body
   )
 }

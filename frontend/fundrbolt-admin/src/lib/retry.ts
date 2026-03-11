@@ -1,11 +1,11 @@
-import { type AxiosError } from 'axios';
+import { type AxiosError } from 'axios'
 
 export interface RetryConfig {
-  maxRetries?: number;
-  initialDelayMs?: number;
-  maxDelayMs?: number;
-  backoffMultiplier?: number;
-  retryableStatusCodes?: number[];
+  maxRetries?: number
+  initialDelayMs?: number
+  maxDelayMs?: number
+  backoffMultiplier?: number
+  retryableStatusCodes?: number[]
 }
 
 const DEFAULT_CONFIG: Required<RetryConfig> = {
@@ -14,7 +14,7 @@ const DEFAULT_CONFIG: Required<RetryConfig> = {
   maxDelayMs: 10000,
   backoffMultiplier: 2,
   retryableStatusCodes: [408, 429, 500, 502, 503, 504],
-};
+}
 
 /**
  * Calculates exponential backoff delay with jitter
@@ -27,12 +27,13 @@ export function calculateBackoffDelay(
   attempt: number,
   config: Required<RetryConfig>
 ): number {
-  const exponentialDelay = config.initialDelayMs * Math.pow(config.backoffMultiplier, attempt);
-  const cappedDelay = Math.min(exponentialDelay, config.maxDelayMs);
+  const exponentialDelay =
+    config.initialDelayMs * Math.pow(config.backoffMultiplier, attempt)
+  const cappedDelay = Math.min(exponentialDelay, config.maxDelayMs)
 
   // Add jitter (±10%) to prevent thundering herd
-  const jitter = cappedDelay * 0.1 * (Math.random() * 2 - 1);
-  return Math.round(cappedDelay + jitter);
+  const jitter = cappedDelay * 0.1 * (Math.random() * 2 - 1)
+  return Math.round(cappedDelay + jitter)
 }
 
 /**
@@ -47,32 +48,32 @@ export function isRetryableError(
   config: Required<RetryConfig>
 ): boolean {
   if (!error || typeof error !== 'object') {
-    return false;
+    return false
   }
 
-  const axiosError = error as AxiosError;
+  const axiosError = error as AxiosError
 
   // Network errors (timeout, no connection, etc)
   if (axiosError.code === 'ECONNABORTED' || axiosError.code === 'ENOTFOUND') {
-    return true;
+    return true
   }
 
   // Check status codes
   if (axiosError.response?.status) {
     // Don't retry 401 (auth) or 409 (conflict) - already handled by interceptors
     if ([401, 409].includes(axiosError.response.status)) {
-      return false;
+      return false
     }
 
-    return config.retryableStatusCodes.includes(axiosError.response.status);
+    return config.retryableStatusCodes.includes(axiosError.response.status)
   }
 
   // Network timeout
   if (axiosError.code === 'ECONNREFUSED') {
-    return true;
+    return true
   }
 
-  return false;
+  return false
 }
 
 /**
@@ -82,7 +83,7 @@ export function isRetryableError(
  * @returns Promise that resolves after delay
  */
 export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /**
@@ -104,32 +105,32 @@ export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   config: RetryConfig = {}
 ): Promise<T> {
-  const mergedConfig = { ...DEFAULT_CONFIG, ...config };
-  let lastError: Error | unknown;
+  const mergedConfig = { ...DEFAULT_CONFIG, ...config }
+  let lastError: Error | unknown
 
   for (let attempt = 0; attempt <= mergedConfig.maxRetries; attempt++) {
     try {
-      return await fn();
+      return await fn()
     } catch (error) {
-      lastError = error;
+      lastError = error
 
       // Check if we should retry
       if (!isRetryableError(error, mergedConfig)) {
-        throw error;
+        throw error
       }
 
       // Don't sleep after last failed attempt
       if (attempt < mergedConfig.maxRetries) {
-        const delay = calculateBackoffDelay(attempt, mergedConfig);
+        const delay = calculateBackoffDelay(attempt, mergedConfig)
         // eslint-disable-next-line no-console
         console.warn(
           `Retrying after ${delay}ms (attempt ${attempt + 1}/${mergedConfig.maxRetries})`,
           error
-        );
-        await sleep(delay);
+        )
+        await sleep(delay)
       }
     }
   }
 
-  throw lastError;
+  throw lastError
 }

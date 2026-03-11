@@ -2,8 +2,6 @@
  * Consent service
  * API client for managing user consent (accept, status, history, data rights)
  */
-
-import apiClient from '@/lib/axios'
 import type {
   ConsentAcceptRequest,
   ConsentHistoryResponse,
@@ -12,6 +10,7 @@ import type {
   DataDeletionRequest,
   DataExportRequest,
 } from '@/types/consent'
+import apiClient from '@/lib/axios'
 
 export const consentService = {
   /**
@@ -19,7 +18,10 @@ export const consentService = {
    * @param request - Document IDs to accept
    */
   async acceptConsent(request: ConsentAcceptRequest): Promise<ConsentResponse> {
-    const response = await apiClient.post<ConsentResponse>('/consent/accept', request)
+    const response = await apiClient.post<ConsentResponse>(
+      '/consent/accept',
+      request
+    )
     return response.data
   },
 
@@ -27,7 +29,8 @@ export const consentService = {
    * Get current consent status for authenticated user
    */
   async getConsentStatus(): Promise<ConsentStatusResponse> {
-    const response = await apiClient.get<ConsentStatusResponse>('/consent/status')
+    const response =
+      await apiClient.get<ConsentStatusResponse>('/consent/status')
     return response.data
   },
 
@@ -40,9 +43,12 @@ export const consentService = {
     page = 1,
     pageSize = 10
   ): Promise<ConsentHistoryResponse> {
-    const response = await apiClient.get<ConsentHistoryResponse>('/consent/history', {
-      params: { page, page_size: pageSize },
-    })
+    const response = await apiClient.get<ConsentHistoryResponse>(
+      '/consent/history',
+      {
+        params: { page, page_size: pageSize },
+      }
+    )
     return response.data
   },
 
@@ -50,7 +56,9 @@ export const consentService = {
    * Request GDPR data export
    * @param request - Optional email override
    */
-  async requestDataExport(request?: DataExportRequest): Promise<{ message: string }> {
+  async requestDataExport(
+    request?: DataExportRequest
+  ): Promise<{ message: string }> {
     const response = await apiClient.post<{ message: string }>(
       '/consent/data-export',
       request || {}
@@ -76,7 +84,9 @@ export const consentService = {
    * Withdraw consent (requires follow-up action from user)
    */
   async withdrawConsent(): Promise<{ message: string }> {
-    const response = await apiClient.post<{ message: string }>('/consent/withdraw')
+    const response = await apiClient.post<{ message: string }>(
+      '/consent/withdraw'
+    )
     return response.data
   },
 }

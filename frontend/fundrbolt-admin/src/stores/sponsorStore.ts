@@ -1,53 +1,49 @@
-import sponsorService from '@/services/sponsorService';
+import sponsorService from '@/services/sponsorService'
 import type {
   ReorderSponsorsRequest,
   Sponsor,
   SponsorCreateRequest,
   SponsorUpdateRequest,
-} from '@/types/sponsor';
-import { create } from 'zustand';
+} from '@/types/sponsor'
+import { create } from 'zustand'
 
 interface SponsorState {
   // State
-  sponsors: Sponsor[];
-  isLoading: boolean;
-  error: string | null;
-  selectedSponsor: Sponsor | null;
+  sponsors: Sponsor[]
+  isLoading: boolean
+  error: string | null
+  selectedSponsor: Sponsor | null
 
   // Actions - List & Get
-  fetchSponsors: (eventId: string) => Promise<void>;
-  getSponsor: (eventId: string, sponsorId: string) => Promise<void>;
-  clearSelectedSponsor: () => void;
+  fetchSponsors: (eventId: string) => Promise<void>
+  getSponsor: (eventId: string, sponsorId: string) => Promise<void>
+  clearSelectedSponsor: () => void
 
   // Actions - Create/Update/Delete
   createSponsor: (
     eventId: string,
     data: SponsorCreateRequest,
     logoFile?: File
-  ) => Promise<Sponsor>;
+  ) => Promise<Sponsor>
   updateSponsor: (
     eventId: string,
     sponsorId: string,
     data: SponsorUpdateRequest
-  ) => Promise<void>;
-  deleteSponsor: (eventId: string, sponsorId: string) => Promise<void>;
+  ) => Promise<void>
+  deleteSponsor: (eventId: string, sponsorId: string) => Promise<void>
 
   // Actions - Logo Upload
-  uploadLogo: (
-    eventId: string,
-    sponsorId: string,
-    file: File
-  ) => Promise<void>;
+  uploadLogo: (eventId: string, sponsorId: string, file: File) => Promise<void>
 
   // Actions - Reorder
   reorderSponsors: (
     eventId: string,
     request: ReorderSponsorsRequest
-  ) => Promise<void>;
+  ) => Promise<void>
 
   // Utilities
-  clearError: () => void;
-  reset: () => void;
+  clearError: () => void
+  reset: () => void
 }
 
 const initialState = {
@@ -55,41 +51,41 @@ const initialState = {
   isLoading: false,
   error: null,
   selectedSponsor: null,
-};
+}
 
 export const useSponsorStore = create<SponsorState>((set) => ({
   ...initialState,
 
   // Fetch all sponsors for an event
   fetchSponsors: async (eventId: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null })
     try {
-      const sponsors = await sponsorService.listSponsors(eventId);
-      set({ sponsors, isLoading: false });
+      const sponsors = await sponsorService.listSponsors(eventId)
+      set({ sponsors, isLoading: false })
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to fetch sponsors';
-      set({ error: message, isLoading: false });
-      throw error;
+        error instanceof Error ? error.message : 'Failed to fetch sponsors'
+      set({ error: message, isLoading: false })
+      throw error
     }
   },
 
   // Get a single sponsor
   getSponsor: async (eventId: string, sponsorId: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null })
     try {
-      const sponsor = await sponsorService.getSponsor(eventId, sponsorId);
-      set({ selectedSponsor: sponsor, isLoading: false });
+      const sponsor = await sponsorService.getSponsor(eventId, sponsorId)
+      set({ selectedSponsor: sponsor, isLoading: false })
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to fetch sponsor';
-      set({ error: message, isLoading: false });
-      throw error;
+        error instanceof Error ? error.message : 'Failed to fetch sponsor'
+      set({ error: message, isLoading: false })
+      throw error
     }
   },
 
   clearSelectedSponsor: () => {
-    set({ selectedSponsor: null });
+    set({ selectedSponsor: null })
   },
 
   // Create a new sponsor (with optional logo upload)
@@ -98,11 +94,11 @@ export const useSponsorStore = create<SponsorState>((set) => ({
     data: SponsorCreateRequest,
     logoFile?: File
   ) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null })
     try {
-      const response = await sponsorService.createSponsor(eventId, data);
+      const response = await sponsorService.createSponsor(eventId, data)
 
-      let finalSponsor = response.sponsor;
+      let finalSponsor = response.sponsor
 
       // If logo file provided, upload it
       if (logoFile) {
@@ -110,21 +106,21 @@ export const useSponsorStore = create<SponsorState>((set) => ({
           eventId,
           response.sponsor.id,
           logoFile
-        );
+        )
       }
 
       // Add to sponsors list
       set((state) => ({
         sponsors: [...state.sponsors, finalSponsor],
         isLoading: false,
-      }));
+      }))
 
-      return finalSponsor;
+      return finalSponsor
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to create sponsor';
-      set({ error: message, isLoading: false });
-      throw error;
+        error instanceof Error ? error.message : 'Failed to create sponsor'
+      set({ error: message, isLoading: false })
+      throw error
     }
   },
 
@@ -134,13 +130,13 @@ export const useSponsorStore = create<SponsorState>((set) => ({
     sponsorId: string,
     data: SponsorUpdateRequest
   ) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null })
     try {
       const updatedSponsor = await sponsorService.updateSponsor(
         eventId,
         sponsorId,
         data
-      );
+      )
 
       // Update in sponsors list
       set((state) => ({
@@ -152,20 +148,20 @@ export const useSponsorStore = create<SponsorState>((set) => ({
             ? updatedSponsor
             : state.selectedSponsor,
         isLoading: false,
-      }));
+      }))
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to update sponsor';
-      set({ error: message, isLoading: false });
-      throw error;
+        error instanceof Error ? error.message : 'Failed to update sponsor'
+      set({ error: message, isLoading: false })
+      throw error
     }
   },
 
   // Delete a sponsor
   deleteSponsor: async (eventId: string, sponsorId: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null })
     try {
-      await sponsorService.deleteSponsor(eventId, sponsorId);
+      await sponsorService.deleteSponsor(eventId, sponsorId)
 
       // Remove from sponsors list
       set((state) => ({
@@ -175,24 +171,24 @@ export const useSponsorStore = create<SponsorState>((set) => ({
             ? null
             : state.selectedSponsor,
         isLoading: false,
-      }));
+      }))
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to delete sponsor';
-      set({ error: message, isLoading: false });
-      throw error;
+        error instanceof Error ? error.message : 'Failed to delete sponsor'
+      set({ error: message, isLoading: false })
+      throw error
     }
   },
 
   // Upload logo for existing sponsor
   uploadLogo: async (eventId: string, sponsorId: string, file: File) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null })
     try {
       const updatedSponsor = await sponsorService.uploadLogo(
         eventId,
         sponsorId,
         file
-      );
+      )
 
       // Update in sponsors list
       set((state) => ({
@@ -204,43 +200,40 @@ export const useSponsorStore = create<SponsorState>((set) => ({
             ? updatedSponsor
             : state.selectedSponsor,
         isLoading: false,
-      }));
+      }))
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to upload logo';
-      set({ error: message, isLoading: false });
-      throw error;
+        error instanceof Error ? error.message : 'Failed to upload logo'
+      set({ error: message, isLoading: false })
+      throw error
     }
   },
 
   // Reorder sponsors
-  reorderSponsors: async (
-    eventId: string,
-    request: ReorderSponsorsRequest
-  ) => {
-    set({ isLoading: true, error: null });
+  reorderSponsors: async (eventId: string, request: ReorderSponsorsRequest) => {
+    set({ isLoading: true, error: null })
     try {
       const reorderedSponsors = await sponsorService.reorderSponsors(
         eventId,
         request
-      );
+      )
 
-      set({ sponsors: reorderedSponsors, isLoading: false });
+      set({ sponsors: reorderedSponsors, isLoading: false })
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to reorder sponsors';
-      set({ error: message, isLoading: false });
-      throw error;
+        error instanceof Error ? error.message : 'Failed to reorder sponsors'
+      set({ error: message, isLoading: false })
+      throw error
     }
   },
 
   // Clear error
   clearError: () => {
-    set({ error: null });
+    set({ error: null })
   },
 
   // Reset store
   reset: () => {
-    set(initialState);
+    set(initialState)
   },
-}));
+}))

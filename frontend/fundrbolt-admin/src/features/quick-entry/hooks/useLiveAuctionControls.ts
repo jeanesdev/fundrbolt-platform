@@ -1,14 +1,18 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-
-import { assignWinner, deleteLiveBid, getLiveAuctionSummary, removeWinner } from '../api/quickEntryApi'
+import {
+  assignWinner,
+  deleteLiveBid,
+  getLiveAuctionSummary,
+  removeWinner,
+} from '../api/quickEntryApi'
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof AxiosError) {
     const apiMessage =
-      (error.response?.data as { detail?: { message?: string } })?.detail?.message ??
-      error.response?.data?.detail
+      (error.response?.data as { detail?: { message?: string } })?.detail
+        ?.message ?? error.response?.data?.detail
     if (typeof apiMessage === 'string') {
       return apiMessage
     }
@@ -19,7 +23,10 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback
 }
 
-export function useLiveAuctionControls(eventId: string, selectedItemId: string) {
+export function useLiveAuctionControls(
+  eventId: string,
+  selectedItemId: string
+) {
   const queryClient = useQueryClient()
 
   const summaryQuery = useQuery({

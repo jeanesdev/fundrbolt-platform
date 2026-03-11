@@ -1,4 +1,3 @@
-import apiClient from '@/lib/axios';
 import type {
   AuctionItem,
   AuctionItemCreate,
@@ -7,8 +6,9 @@ import type {
   AuctionItemUpdate,
   AuctionType,
   ItemStatus,
-} from '@/types/auction-item';
-import type { ImportReport } from '@/types/auctionItemImport';
+} from '@/types/auction-item'
+import type { ImportReport } from '@/types/auctionItemImport'
+import apiClient from '@/lib/axios'
 
 /**
  * Auction Item Service
@@ -21,18 +21,18 @@ class AuctionItemService {
   async listAuctionItems(
     eventId: string,
     params?: {
-      auctionType?: AuctionType;
-      status?: ItemStatus;
-      search?: string;
-      page?: number;
-      limit?: number;
+      auctionType?: AuctionType
+      status?: ItemStatus
+      search?: string
+      page?: number
+      limit?: number
     }
   ): Promise<AuctionItemListResponse> {
     const response = await apiClient.get<AuctionItemListResponse>(
       `/events/${eventId}/auction-items`,
       { params }
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -44,8 +44,8 @@ class AuctionItemService {
   ): Promise<AuctionItemDetail> {
     const response = await apiClient.get<AuctionItemDetail>(
       `/events/${eventId}/auction-items/${itemId}`
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -59,8 +59,8 @@ class AuctionItemService {
     const response = await apiClient.post<AuctionItem>(
       `/events/${eventId}/auction-items`,
       data
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -74,8 +74,8 @@ class AuctionItemService {
     const response = await apiClient.patch<AuctionItem>(
       `/events/${eventId}/auction-items/${itemId}`,
       data
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -83,47 +83,41 @@ class AuctionItemService {
    * Soft delete for published items, hard delete for drafts
    */
   async deleteAuctionItem(eventId: string, itemId: string): Promise<void> {
-    await apiClient.delete(`/events/${eventId}/auction-items/${itemId}`);
+    await apiClient.delete(`/events/${eventId}/auction-items/${itemId}`)
   }
 
   /**
    * Preflight a bulk import ZIP package for auction items
    */
-  async preflightImport(
-    eventId: string,
-    zipFile: File
-  ): Promise<ImportReport> {
-    const formData = new FormData();
-    formData.append('zip_file', zipFile);
+  async preflightImport(eventId: string, zipFile: File): Promise<ImportReport> {
+    const formData = new FormData()
+    formData.append('zip_file', zipFile)
     const response = await apiClient.post<ImportReport>(
       `/admin/events/${eventId}/auction-items/import/preflight`,
       formData,
       {
         headers: { 'Content-Type': 'multipart/form-data' },
       }
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
    * Commit a bulk import ZIP package for auction items
    */
-  async commitImport(
-    eventId: string,
-    zipFile: File
-  ): Promise<ImportReport> {
-    const formData = new FormData();
-    formData.append('zip_file', zipFile);
+  async commitImport(eventId: string, zipFile: File): Promise<ImportReport> {
+    const formData = new FormData()
+    formData.append('zip_file', zipFile)
     const response = await apiClient.post<ImportReport>(
       `/admin/events/${eventId}/auction-items/import/commit`,
       formData,
       {
         headers: { 'Content-Type': 'multipart/form-data' },
       }
-    );
-    return response.data;
+    )
+    return response.data
   }
 }
 
-export const auctionItemService = new AuctionItemService();
-export default auctionItemService;
+export const auctionItemService = new AuctionItemService()
+export default auctionItemService

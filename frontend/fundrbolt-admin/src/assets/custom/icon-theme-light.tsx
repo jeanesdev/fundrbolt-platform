@@ -1,5 +1,5 @@
-import { colors } from '@fundrbolt/shared/assets'
 import { type SVGProps } from 'react'
+import { colors } from '@fundrbolt/shared/assets'
 
 export function IconThemeLight(props: SVGProps<SVGSVGElement>) {
   return (

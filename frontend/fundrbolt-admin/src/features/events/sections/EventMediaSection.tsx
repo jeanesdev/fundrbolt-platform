@@ -1,6 +1,20 @@
+import { useEffect, useMemo, useState } from 'react'
+import type { EventMedia, HeroTransitionStyle } from '@/types/event'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -8,20 +22,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { EventMedia, HeroTransitionStyle } from '@/types/event'
-import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
 import { MediaUploader } from '../components/MediaUploader'
 import { useEventWorkspace } from '../useEventWorkspace'
 
-const transitionOptions: Array<{ value: HeroTransitionStyle; label: string }> = [
-  { value: 'documentary_style', label: 'Documentary style' },
-  { value: 'fade', label: 'Fade' },
-  { value: 'swipe', label: 'Swipe' },
-  { value: 'simple', label: 'Simple' },
-]
+const transitionOptions: Array<{ value: HeroTransitionStyle; label: string }> =
+  [
+    { value: 'documentary_style', label: 'Documentary style' },
+    { value: 'fade', label: 'Fade' },
+    { value: 'swipe', label: 'Swipe' },
+    { value: 'simple', label: 'Simple' },
+  ]
 
-const documentaryKeyframes = ['heroKenBurnsA', 'heroKenBurnsB', 'heroKenBurnsC', 'heroKenBurnsD'] as const
+const documentaryKeyframes = [
+  'heroKenBurnsA',
+  'heroKenBurnsB',
+  'heroKenBurnsC',
+  'heroKenBurnsD',
+] as const
 
 function hashString(value: string): number {
   let hash = 0
@@ -72,9 +89,9 @@ function HeroTransitionDemo({
     const animationDuration = `${7.2 + (seed % 4) * 0.45}s`
     const offsetX = 48 + (seed % 5)
     const offsetY = 48 + ((seed >> 3) % 5)
-    const brightness = 0.97 + ((seed % 5) * 0.015)
-    const saturate = 0.98 + (((seed >> 2) % 5) * 0.03)
-    const contrast = 0.98 + (((seed >> 4) % 4) * 0.02)
+    const brightness = 0.97 + (seed % 5) * 0.015
+    const saturate = 0.98 + ((seed >> 2) % 5) * 0.03
+    const contrast = 0.98 + ((seed >> 4) % 4) * 0.02
 
     return {
       opacity: isActive ? 1 : 0,
@@ -91,11 +108,16 @@ function HeroTransitionDemo({
     const duration = transitionStyle === 'simple' ? '400ms' : '900ms'
 
     if (transitionStyle === 'swipe') {
-      const distance = images.length > 0 ? (position - index + images.length) % images.length : 0
+      const distance =
+        images.length > 0
+          ? (position - index + images.length) % images.length
+          : 0
       const swipeOffset = distance === 1 ? '10%' : '-10%'
       return {
         opacity: isActive ? 1 : 0,
-        transform: isActive ? 'translateX(0%) scale(1.02)' : `translateX(${swipeOffset}) scale(1.02)`,
+        transform: isActive
+          ? 'translateX(0%) scale(1.02)'
+          : `translateX(${swipeOffset}) scale(1.02)`,
         transition: `opacity ${duration} ease, transform ${duration} ease`,
       }
     }
@@ -149,7 +171,7 @@ function HeroTransitionDemo({
             100% { transform: scale(1.1) translate3d(1.5%, 0.5%, 0); }
           }
         `}</style>
-        <div className='relative h-56 w-full overflow-hidden rounded-lg bg-muted'>
+        <div className='bg-muted relative h-56 w-full overflow-hidden rounded-lg'>
           {images.length > 0 ? (
             images.map((image, position) => (
               <div
@@ -162,13 +184,18 @@ function HeroTransitionDemo({
               />
             ))
           ) : (
-            <div className='flex h-full items-center justify-center text-sm text-muted-foreground'>
-              Upload at least one Main Event Page Hero image to preview transitions.
+            <div className='text-muted-foreground flex h-full items-center justify-center text-sm'>
+              Upload at least one Main Event Page Hero image to preview
+              transitions.
             </div>
           )}
           <div className='absolute inset-0 bg-gradient-to-b from-black/20 to-black/60' />
           <div className='absolute bottom-3 left-3 text-sm font-semibold text-white'>
-            {transitionOptions.find((option) => option.value === transitionStyle)?.label}
+            {
+              transitionOptions.find(
+                (option) => option.value === transitionStyle
+              )?.label
+            }
           </div>
         </div>
       </DialogContent>
@@ -193,12 +220,13 @@ export function EventMediaSection() {
       (currentEvent.media || [])
         .filter((item) => item.usage_tag === 'main_event_page_hero')
         .sort((a, b) => a.display_order - b.display_order),
-    [currentEvent.media],
+    [currentEvent.media]
   )
 
-  const [heroTransitionStyle, setHeroTransitionStyle] = useState<HeroTransitionStyle>(
-    currentEvent.hero_transition_style ?? 'documentary_style',
-  )
+  const [heroTransitionStyle, setHeroTransitionStyle] =
+    useState<HeroTransitionStyle>(
+      currentEvent.hero_transition_style ?? 'documentary_style'
+    )
   const [savingStyle, setSavingStyle] = useState(false)
   const [showDemo, setShowDemo] = useState(false)
   const demoKey = useMemo(
@@ -206,11 +234,13 @@ export function EventMediaSection() {
       `${showDemo}:${heroTransitionStyle}:${heroMedia
         .map((item) => `${item.id}:${item.file_url}`)
         .join('|')}`,
-    [heroMedia, heroTransitionStyle, showDemo],
+    [heroMedia, heroTransitionStyle, showDemo]
   )
 
   useEffect(() => {
-    setHeroTransitionStyle(currentEvent.hero_transition_style ?? 'documentary_style')
+    setHeroTransitionStyle(
+      currentEvent.hero_transition_style ?? 'documentary_style'
+    )
   }, [currentEvent.hero_transition_style])
 
   const handleTransitionStyleChange = async (value: HeroTransitionStyle) => {
@@ -218,10 +248,14 @@ export function EventMediaSection() {
     setSavingStyle(true)
 
     try {
-      await updateEvent(currentEvent.id || eventId, { hero_transition_style: value })
+      await updateEvent(currentEvent.id || eventId, {
+        hero_transition_style: value,
+      })
       toast.success('Hero transition style updated')
     } catch (_error) {
-      setHeroTransitionStyle(currentEvent.hero_transition_style ?? 'documentary_style')
+      setHeroTransitionStyle(
+        currentEvent.hero_transition_style ?? 'documentary_style'
+      )
       toast.error('Failed to update hero transition style')
     } finally {
       setSavingStyle(false)
@@ -234,7 +268,8 @@ export function EventMediaSection() {
         <CardHeader>
           <CardTitle>Main Event Page Hero Images</CardTitle>
           <CardDescription>
-            Manage slideshow images shown at the top of the Donor PWA event home page.
+            Manage slideshow images shown at the top of the Donor PWA event home
+            page.
           </CardDescription>
           <div className='flex flex-col gap-3 pt-2 sm:flex-row sm:items-center'>
             <div className='w-full sm:w-64'>
@@ -257,7 +292,11 @@ export function EventMediaSection() {
                 </SelectContent>
               </Select>
             </div>
-            <Button type='button' variant='outline' onClick={() => setShowDemo(true)}>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => setShowDemo(true)}
+            >
               Demo
             </Button>
           </div>
@@ -291,7 +330,11 @@ export function EventMediaSection() {
             onUpdateMedia={handleMediaUpdate}
             onDelete={handleMediaDelete}
             excludedUsageTags={['main_event_page_hero']}
-            allowedUploadUsageTags={['event_layout_map', 'npo_logo', 'event_logo']}
+            allowedUploadUsageTags={[
+              'event_layout_map',
+              'npo_logo',
+              'event_logo',
+            ]}
             defaultUploadUsageTag='event_layout_map'
             uploadProgress={uploadProgress}
             uploadingFiles={uploadingFiles}

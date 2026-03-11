@@ -3,52 +3,52 @@
  */
 
 export interface UserSummary {
-  id: string;
-  name: string;
-  email: string;
+  id: string
+  name: string
+  email: string
 }
 
 export interface WatcherSummary {
-  user: UserSummary;
-  watching_since: string;
+  user: UserSummary
+  watching_since: string
 }
 
 export interface ItemViewSummary {
-  user: UserSummary;
-  total_duration_seconds: number;
-  last_viewed_at: string;
+  user: UserSummary
+  total_duration_seconds: number
+  last_viewed_at: string
 }
 
 export interface BidSummary {
-  id: string;
-  user: UserSummary;
-  amount: number;
-  bid_type: 'regular' | 'max_bid';
-  placed_at: string;
+  id: string
+  user: UserSummary
+  amount: number
+  bid_type: 'regular' | 'max_bid'
+  placed_at: string
 }
 
 export interface AdminEngagementResponse {
-  auction_item_id: string;
-  watchers: WatcherSummary[];
-  views: ItemViewSummary[];
-  bids: BidSummary[];
+  auction_item_id: string
+  watchers: WatcherSummary[]
+  views: ItemViewSummary[]
+  bids: BidSummary[]
   summary: {
-    total_watchers: number;
-    total_views: number;
-    unique_viewers: number;
-    total_view_duration_seconds: number;
-    total_bids: number;
-  };
+    total_watchers: number
+    total_views: number
+    unique_viewers: number
+    total_view_duration_seconds: number
+    total_bids: number
+  }
 }
 
 export interface ItemPromotionUpdate {
-  badge_label?: string | null;
-  badge_color?: string | null;
-  notice_message?: string | null;
+  badge_label?: string | null
+  badge_color?: string | null
+  notice_message?: string | null
 }
 
 export interface BuyNowAvailabilityUpdate {
-  buy_now_enabled: boolean;
-  quantity_available?: number;
-  override_reason?: string | null;
+  buy_now_enabled: boolean
+  quantity_available?: number
+  override_reason?: string | null
 }

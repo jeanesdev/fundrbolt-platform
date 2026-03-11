@@ -63,45 +63,49 @@ export function LiveBidEntryForm({
   }
 
   return (
-    <form className="grid grid-cols-2 gap-3" onSubmit={handleSubmit}>
-      <div className="space-y-1">
-        <label className="text-sm font-medium" htmlFor="quick-entry-amount">
+    <form className='grid grid-cols-2 gap-3' onSubmit={handleSubmit}>
+      <div className='space-y-1'>
+        <label className='text-sm font-medium' htmlFor='quick-entry-amount'>
           Amount
         </label>
         <input
-          id="quick-entry-amount"
+          id='quick-entry-amount'
           ref={amountRef}
-          className="w-full rounded-md border px-3 py-2 h-12 text-lg"
-          inputMode="numeric"
+          className='h-12 w-full rounded-md border px-3 py-2 text-lg'
+          inputMode='numeric'
           value={amount}
-          onChange={(event) => onAmountChange(parseToWholeDollar(event.target.value))}
+          onChange={(event) =>
+            onAmountChange(parseToWholeDollar(event.target.value))
+          }
           onKeyDown={handleAmountKeyDown}
-          placeholder="1,000"
+          placeholder='1,000'
           disabled={disabled}
         />
       </div>
 
-      <div className="space-y-1">
-        <label className="text-sm font-medium" htmlFor="quick-entry-bidder">
+      <div className='space-y-1'>
+        <label className='text-sm font-medium' htmlFor='quick-entry-bidder'>
           Bidder Number
         </label>
         <input
-          id="quick-entry-bidder"
+          id='quick-entry-bidder'
           ref={bidderRef}
-          className="w-full rounded-md border px-3 py-2 h-12 text-lg"
-          inputMode="numeric"
+          className='h-12 w-full rounded-md border px-3 py-2 text-lg'
+          inputMode='numeric'
           value={bidderNumber}
-          onChange={(event) => onBidderNumberChange(event.target.value.replace(/[^\d]/g, ''))}
+          onChange={(event) =>
+            onBidderNumberChange(event.target.value.replace(/[^\d]/g, ''))
+          }
           onKeyDown={handleBidderKeyDown}
-          placeholder="123"
+          placeholder='123'
           disabled={disabled}
         />
       </div>
 
-      <div className="col-span-2">
+      <div className='col-span-2'>
         <button
-          type="submit"
-          className="bg-primary text-primary-foreground w-full rounded-md px-4 py-3 text-base font-medium disabled:cursor-not-allowed disabled:opacity-60 h-12"
+          type='submit'
+          className='bg-primary text-primary-foreground h-12 w-full rounded-md px-4 py-3 text-base font-medium disabled:cursor-not-allowed disabled:opacity-60'
           disabled={disabled}
         >
           {isSubmitting ? 'Submitting…' : 'Submit Bid'}

@@ -263,14 +263,18 @@ export async function getLiveAuctionOverview(
   return response.data
 }
 
-export async function getBuyNowSummary(eventId: string): Promise<QuickEntryBuyNowSummary> {
+export async function getBuyNowSummary(
+  eventId: string
+): Promise<QuickEntryBuyNowSummary> {
   const response = await apiClient.get<QuickEntryBuyNowSummary>(
     `/admin/events/${eventId}/quick-entry/buy-now/summary`
   )
   return response.data
 }
 
-export async function getBuyNowItems(eventId: string): Promise<QuickEntryBuyNowItem[]> {
+export async function getBuyNowItems(
+  eventId: string
+): Promise<QuickEntryBuyNowItem[]> {
   const response = await apiClient.get<{ items: QuickEntryBuyNowItem[] }>(
     `/admin/events/${eventId}/quick-entry/buy-now/items`
   )
@@ -292,13 +296,19 @@ export async function getBuyNowBids(
   eventId: string,
   itemId: string
 ): Promise<QuickEntryBuyNowBidResponse[]> {
-  const response = await apiClient.get<{ items: QuickEntryBuyNowBidResponse[] }>(
-    `/admin/events/${eventId}/quick-entry/buy-now/bids`,
-    { params: { item_id: itemId } }
-  )
+  const response = await apiClient.get<{
+    items: QuickEntryBuyNowBidResponse[]
+  }>(`/admin/events/${eventId}/quick-entry/buy-now/bids`, {
+    params: { item_id: itemId },
+  })
   return response.data.items
 }
 
-export async function deleteBuyNowBid(eventId: string, bidId: string): Promise<void> {
-  await apiClient.delete(`/admin/events/${eventId}/quick-entry/buy-now/bids/${bidId}`)
+export async function deleteBuyNowBid(
+  eventId: string,
+  bidId: string
+): Promise<void> {
+  await apiClient.delete(
+    `/admin/events/${eventId}/quick-entry/buy-now/bids/${bidId}`
+  )
 }

@@ -3,6 +3,24 @@
  * Shared layout wrapper for auction item detail views (Details + Engagement).
  * Provides the header, status badges, action buttons, sub-navigation, and dialogs.
  */
+import { type ReactNode, useEffect, useState } from 'react'
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useRouterState,
+} from '@tanstack/react-router'
+import { AuctionType, ItemStatus } from '@/types/auction-item'
+import {
+  ArrowLeft,
+  DollarSign,
+  Pencil,
+  Sparkles,
+  TrendingUp,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -17,24 +35,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { BuyNowEditor } from '@/features/events/auction-items/components/BuyNowEditor'
 import { PromotionEditor } from '@/features/events/auction-items/components/PromotionEditor'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
-import { cn } from '@/lib/utils'
-import { useAuctionItemStore } from '@/stores/auctionItemStore'
-import { AuctionType, ItemStatus } from '@/types/auction-item'
-import {
-  Link,
-  useNavigate,
-  useParams,
-  useRouterState,
-} from '@tanstack/react-router'
-import {
-  ArrowLeft,
-  DollarSign,
-  Pencil,
-  Sparkles,
-  TrendingUp,
-} from 'lucide-react'
-import { type ReactNode, useEffect, useState } from 'react'
-import { toast } from 'sonner'
 
 const tabs = [
   {
@@ -89,7 +89,14 @@ export function AuctionItemDetailLayout({
     return () => {
       clearSelectedItem()
     }
-  }, [eventId, itemId, getAuctionItem, clearSelectedItem, navigate, routeEventId])
+  }, [
+    eventId,
+    itemId,
+    getAuctionItem,
+    clearSelectedItem,
+    navigate,
+    routeEventId,
+  ])
 
   const handleEdit = () => {
     navigate({

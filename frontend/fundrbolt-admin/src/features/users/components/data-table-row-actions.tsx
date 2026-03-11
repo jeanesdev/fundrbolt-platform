@@ -1,11 +1,3 @@
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { Link } from '@tanstack/react-router'
 import { type Row } from '@tanstack/react-table'
@@ -18,6 +10,14 @@ import {
   UserPen,
   UserX,
 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { type User } from '../data/schema'
 import { useActivateUser, useVerifyUserEmail } from '../hooks/use-users'
 import { useUsers } from './users-provider'

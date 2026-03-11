@@ -1,3 +1,8 @@
+import { useState } from 'react'
+import { ExternalLink, Eye, Loader2, Smartphone } from 'lucide-react'
+import { toast } from 'sonner'
+import apiClient from '@/lib/axios'
+import { getErrorMessage } from '@/lib/error-utils'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -6,11 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import apiClient from '@/lib/axios'
-import { getErrorMessage } from '@/lib/error-utils'
-import { ExternalLink, Eye, Loader2, Smartphone } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventPreviewSection() {

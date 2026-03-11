@@ -2,8 +2,12 @@
  * Application Status Badge Component
  * Displays application status and submit button for NPO Admins
  */
-
-import { NPOLegalAgreementModal } from '@/components/npo/npo-legal-agreement-modal'
+import { useCallback, useEffect, useState } from 'react'
+import { npoService } from '@/services/npo-service'
+import type { NPODetail } from '@/types/npo'
+import { AlertCircle, Send } from 'lucide-react'
+import { toast } from 'sonner'
+import { useNPOStore } from '@/stores/npo-store'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,12 +20,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { npoService } from '@/services/npo-service'
-import { useNPOStore } from '@/stores/npo-store'
-import type { NPODetail } from '@/types/npo'
-import { AlertCircle, Send } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { NPOLegalAgreementModal } from '@/components/npo/npo-legal-agreement-modal'
 
 interface ApplicationStatusBadgeProps {
   npo: NPODetail
@@ -29,20 +28,22 @@ interface ApplicationStatusBadgeProps {
 }
 
 // Status badge color mapping
-const statusColors = {
+const statusColors: Record<string, string> = {
   submitted: 'bg-yellow-500',
   under_review: 'bg-blue-500',
   approved: 'bg-green-500',
   rejected: 'bg-red-500',
-} as const
+  reopened: 'bg-purple-500',
+}
 
 // Status label mapping
-const statusLabels = {
+const statusLabels: Record<string, string> = {
   submitted: 'Submitted',
   under_review: 'Under Review',
   approved: 'Approved',
   rejected: 'Rejected',
-} as const
+  reopened: 'Awaiting Revision',
+}
 
 export function ApplicationStatusBadge({
   npo,
@@ -54,7 +55,10 @@ export function ApplicationStatusBadge({
   const [showLegalModal, setShowLegalModal] = useState(false)
 
   // Validate required fields
-  const validateRequiredFields = useCallback((): { valid: boolean; error?: string } => {
+  const validateRequiredFields = useCallback((): {
+    valid: boolean
+    error?: string
+  } => {
     const fieldLabels: Record<string, string> = {
       name: 'Organization Name',
       description: 'Description',
@@ -92,7 +96,15 @@ export function ApplicationStatusBadge({
     } else {
       setErrorMessage(null)
     }
-  }, [npo.name, npo.description, npo.email, npo.phone, npo.address, npo.tax_id, validateRequiredFields])
+  }, [
+    npo.name,
+    npo.description,
+    npo.email,
+    npo.phone,
+    npo.address,
+    npo.tax_id,
+    validateRequiredFields,
+  ])
 
   // Check if submit button should be disabled
   const isSubmitDisabled = isSubmitting || !!errorMessage
@@ -124,35 +136,37 @@ export function ApplicationStatusBadge({
   if (npo.application) {
     const status = npo.application.status
     return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">
+      <div className='space-y-2'>
+        <div className='flex items-center gap-2'>
+          <span className='text-muted-foreground text-sm font-medium'>
             Application Status:
           </span>
           <Badge
-            variant="secondary"
+            variant='secondary'
             className={`${statusColors[status]} text-white`}
           >
             {statusLabels[status]}
           </Badge>
         </div>
         {npo.application.submitted_at && (
-          <p className="text-xs text-muted-foreground">
-            Submitted on {new Date(npo.application.submitted_at).toLocaleDateString()}
+          <p className='text-muted-foreground text-xs'>
+            Submitted on{' '}
+            {new Date(npo.application.submitted_at).toLocaleDateString()}
           </p>
         )}
-        {npo.application.status === 'rejected' && npo.application.review_notes && (
-          <div className="rounded-md bg-red-50 p-3 dark:bg-red-950/20">
-            <p className="text-sm font-medium text-red-800 dark:text-red-300">
-              Rejection Reason:
-            </p>
-            <p className="text-sm text-red-700 dark:text-red-400">
-              {typeof npo.application.review_notes === 'string'
-                ? npo.application.review_notes
-                : Object.values(npo.application.review_notes).join(', ')}
-            </p>
-          </div>
-        )}
+        {npo.application.status === 'rejected' &&
+          npo.application.review_notes && (
+            <div className='rounded-md bg-red-50 p-3 dark:bg-red-950/20'>
+              <p className='text-sm font-medium text-red-800 dark:text-red-300'>
+                Rejection Reason:
+              </p>
+              <p className='text-sm text-red-700 dark:text-red-400'>
+                {typeof npo.application.review_notes === 'string'
+                  ? npo.application.review_notes
+                  : Object.values(npo.application.review_notes).join(', ')}
+              </p>
+            </div>
+          )}
       </div>
     )
   }
@@ -167,9 +181,10 @@ export function ApplicationStatusBadge({
       // Update store manually using Zustand's set function
       useNPOStore.setState((state) => ({
         npos: state.npos.map((n) => (n.id === npo.id ? updatedNpo : n)),
-        currentNPO: state.currentNPO?.id === npo.id
-          ? { ...state.currentNPO, ...updatedNpo }
-          : state.currentNPO,
+        currentNPO:
+          state.currentNPO?.id === npo.id
+            ? { ...state.currentNPO, ...updatedNpo }
+            : state.currentNPO,
       }))
 
       setShowConfirmDialog(false) // Close confirmation dialog on success
@@ -180,12 +195,18 @@ export function ApplicationStatusBadge({
       let message = 'Failed to submit application. Please try again.'
 
       if (error && typeof error === 'object' && 'response' in error) {
-        const response = error.response as { data?: { detail?: string | { message?: string } } }
+        const response = error.response as {
+          data?: { detail?: string | { message?: string } }
+        }
         if (response?.data?.detail) {
           const detail = response.data.detail
           if (typeof detail === 'string') {
             message = detail
-          } else if (detail && typeof detail === 'object' && 'message' in detail) {
+          } else if (
+            detail &&
+            typeof detail === 'object' &&
+            'message' in detail
+          ) {
             message = detail.message as string
           }
         }
@@ -200,30 +221,33 @@ export function ApplicationStatusBadge({
   }
 
   return (
-    <div className="space-y-3">
+    <div className='space-y-3'>
       {/* Validation Error Message */}
       {errorMessage && (
-        <div className="rounded-md border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950/20">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5" />
-            <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
+        <div className='rounded-md border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950/20'>
+          <div className='flex items-start gap-2'>
+            <AlertCircle className='mt-0.5 h-4 w-4 text-red-600 dark:text-red-400' />
+            <p className='text-sm text-red-600 dark:text-red-400'>
+              {errorMessage}
+            </p>
           </div>
         </div>
       )}
 
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-muted-foreground">
+      <div className='flex items-center gap-2'>
+        <span className='text-muted-foreground text-sm font-medium'>
           Application Status:
         </span>
-        <Badge variant="outline">Draft (Not Submitted)</Badge>
+        <Badge variant='outline'>Draft (Not Submitted)</Badge>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Your organization profile is in draft status. Submit an application for approval.
+      <p className='text-muted-foreground text-xs'>
+        Your organization profile is in draft status. Submit an application for
+        approval.
       </p>
 
       {/* Submit Button - disabled until all required fields are complete */}
-      <Button size="sm" disabled={isSubmitDisabled} onClick={handleSubmitClick}>
-        <Send className="mr-2 h-4 w-4" />
+      <Button size='sm' disabled={isSubmitDisabled} onClick={handleSubmitClick}>
+        <Send className='mr-2 h-4 w-4' />
         Submit for Approval
       </Button>
 
@@ -233,15 +257,19 @@ export function ApplicationStatusBadge({
           <AlertDialogHeader>
             <AlertDialogTitle>Submit Application for Approval</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to submit your organization for approval? Once submitted,
-              you won't be able to edit some details until the review is complete.
+              Are you sure you want to submit your organization for approval?
+              Once submitted, you won't be able to edit some details until the
+              review is complete.
               <br />
               <br />
-              Our team will review your application and get back to you within 3-5 business days.
+              Our team will review your application and get back to you within
+              3-5 business days.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSubmitting}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault()

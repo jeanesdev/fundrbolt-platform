@@ -24,7 +24,10 @@ export interface EventWorkspaceContextValue {
   handleCancel: () => void
   handleDelete: () => Promise<void>
   handleMediaUpload: (file: File, usageTag: EventMediaUsageTag) => Promise<void>
-  handleMediaUpdate: (mediaId: string, data: MediaUpdateRequest) => Promise<void>
+  handleMediaUpdate: (
+    mediaId: string,
+    data: MediaUpdateRequest
+  ) => Promise<void>
   handleMediaDelete: (mediaId: string) => Promise<void>
   handleLinkCreate: (data: EventLinkCreateRequest) => Promise<void>
   handleLinkDelete: (linkId: string) => Promise<void>
@@ -35,7 +38,8 @@ export interface EventWorkspaceContextValue {
   fetchAuctionItems: (eventId: string) => Promise<void>
 }
 
-export const EventWorkspaceContext = createContext<EventWorkspaceContextValue | null>(null)
+export const EventWorkspaceContext =
+  createContext<EventWorkspaceContextValue | null>(null)
 
 export function EventWorkspaceProvider({
   value,
@@ -44,5 +48,9 @@ export function EventWorkspaceProvider({
   value: EventWorkspaceContextValue
   children: React.ReactNode
 }) {
-  return <EventWorkspaceContext.Provider value={value}>{children}</EventWorkspaceContext.Provider>
+  return (
+    <EventWorkspaceContext.Provider value={value}>
+      {children}
+    </EventWorkspaceContext.Provider>
+  )
 }

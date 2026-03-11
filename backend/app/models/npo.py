@@ -27,6 +27,7 @@ class NPOStatus(str, enum.Enum):
     APPROVED = "approved"
     SUSPENDED = "suspended"
     REJECTED = "rejected"
+    UNDER_REVISION = "under_revision"  # admin re-opened for applicant revision (US4)
 
 
 class NPO(Base, UUIDMixin, TimestampMixin):

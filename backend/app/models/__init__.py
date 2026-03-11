@@ -28,6 +28,7 @@ from app.models.npo import NPO
 from app.models.npo_application import NPOApplication
 from app.models.npo_branding import NPOBranding
 from app.models.npo_member import NPOMember
+from app.models.onboarding_session import OnboardingSession, OnboardingSessionType
 from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
 from app.models.quick_entry_buy_now_bid import QuickEntryBuyNowBid
 from app.models.quick_entry_donation import QuickEntryDonation
@@ -112,6 +113,8 @@ __all__ = [
     "NPOApplication",
     "NPOBranding",
     "NPOMember",
+    "OnboardingSession",
+    "OnboardingSessionType",
     "OptionResponse",
     "OptionType",
     "PaddleRaiseContribution",

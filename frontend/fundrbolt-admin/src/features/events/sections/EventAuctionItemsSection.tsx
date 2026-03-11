@@ -1,17 +1,30 @@
-import { AuctionItemImportReport } from '@/components/auction-items/AuctionItemImportReport'
+import { useEffect, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { auctionItemService } from '@/services/auctionItemService'
+import type { ImportReport } from '@/types/auctionItemImport'
+import { Loader2, Upload } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import { getErrorMessage } from '@/lib/error-utils'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { getErrorMessage } from '@/lib/error-utils'
-import { auctionItemService } from '@/services/auctionItemService'
-import { useAuctionItemStore } from '@/stores/auctionItemStore'
-import type { ImportReport } from '@/types/auctionItemImport'
-import { useNavigate } from '@tanstack/react-router'
-import { Loader2, Upload } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { AuctionItemImportReport } from '@/components/auction-items/AuctionItemImportReport'
 import { AuctionItemList } from '../components/AuctionItemList'
 import { useEventWorkspace } from '../useEventWorkspace'
 import { EventAuctionBidsSection } from './EventAuctionBidsSection'
@@ -22,24 +35,32 @@ interface EventAuctionItemsSectionProps {
   initialTab?: AuctionItemsTab
 }
 
-export function EventAuctionItemsSection({ initialTab = 'items' }: EventAuctionItemsSectionProps) {
+export function EventAuctionItemsSection({
+  initialTab = 'items',
+}: EventAuctionItemsSectionProps) {
   const navigate = useNavigate()
   const { currentEvent, auctionItems, fetchAuctionItems } = useEventWorkspace()
-  const deleteAuctionItem = useAuctionItemStore((state) => state.deleteAuctionItem)
+  const deleteAuctionItem = useAuctionItemStore(
+    (state) => state.deleteAuctionItem
+  )
   const isLoading = useAuctionItemStore((state) => state.isLoading)
   const error = useAuctionItemStore((state) => state.error)
-  const eventId = currentEvent.slug || currentEvent.id  // Use slug for navigation
+  const eventId = currentEvent.slug || currentEvent.id // Use slug for navigation
   const [importOpen, setImportOpen] = useState(false)
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importReport, setImportReport] = useState<ImportReport | null>(null)
   const [isPreflighting, setIsPreflighting] = useState(false)
   const [isCommitting, setIsCommitting] = useState(false)
-  const [commitProgress, setCommitProgress] = useState<{ current: number; total: number } | null>(null)
+  const [commitProgress, setCommitProgress] = useState<{
+    current: number
+    total: number
+  } | null>(null)
 
   useEffect(() => {
     if (currentEvent?.id) {
       fetchAuctionItems(currentEvent.id).catch((err) => {
-        const message = err instanceof Error ? err.message : 'Failed to load auction items'
+        const message =
+          err instanceof Error ? err.message : 'Failed to load auction items'
         toast.error(message)
       })
     }
@@ -52,9 +73,14 @@ export function EventAuctionItemsSection({ initialTab = 'items' }: EventAuctionI
     }
     try {
       setIsPreflighting(true)
-      const report = await auctionItemService.preflightImport(currentEvent.id, importFile)
+      const report = await auctionItemService.preflightImport(
+        currentEvent.id,
+        importFile
+      )
       setImportReport(report)
-      setCommitProgress(report.total_rows > 0 ? { current: 0, total: report.total_rows } : null)
+      setCommitProgress(
+        report.total_rows > 0 ? { current: 0, total: report.total_rows } : null
+      )
       toast.success('Preflight completed')
     } catch (err) {
       toast.error(getErrorMessage(err, 'Preflight failed'))
@@ -83,12 +109,18 @@ export function EventAuctionItemsSection({ initialTab = 'items' }: EventAuctionI
           })
         }, 600)
       }
-      const report = await auctionItemService.commitImport(currentEvent.id, importFile)
+      const report = await auctionItemService.commitImport(
+        currentEvent.id,
+        importFile
+      )
       if (progressTimer) {
         clearInterval(progressTimer)
       }
       if (report.total_rows > 0) {
-        setCommitProgress({ current: report.total_rows, total: report.total_rows })
+        setCommitProgress({
+          current: report.total_rows,
+          total: report.total_rows,
+        })
       }
       setImportReport(report)
       await fetchAuctionItems(currentEvent.id)
@@ -107,23 +139,24 @@ export function EventAuctionItemsSection({ initialTab = 'items' }: EventAuctionI
   }
 
   return (
-    <Tabs defaultValue={initialTab} className="space-y-6">
+    <Tabs defaultValue={initialTab} className='space-y-6'>
       <TabsList>
-        <TabsTrigger value="items">Auction Items</TabsTrigger>
-        <TabsTrigger value="bids">Auction Bids</TabsTrigger>
+        <TabsTrigger value='items'>Auction Items</TabsTrigger>
+        <TabsTrigger value='bids'>Auction Bids</TabsTrigger>
       </TabsList>
-      <TabsContent value="items">
+      <TabsContent value='items'>
         <Card>
           <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className='flex flex-wrap items-center justify-between gap-4'>
               <div>
                 <CardTitle>Auction Items</CardTitle>
                 <CardDescription>
-                  Manage live and silent auction items for your fundraising event
+                  Manage live and silent auction items for your fundraising
+                  event
                 </CardDescription>
               </div>
-              <Button variant="outline" onClick={() => setImportOpen(true)}>
-                <Upload className="mr-2 h-4 w-4" />
+              <Button variant='outline' onClick={() => setImportOpen(true)}>
+                <Upload className='mr-2 h-4 w-4' />
                 Import Items
               </Button>
             </div>
@@ -133,7 +166,12 @@ export function EventAuctionItemsSection({ initialTab = 'items' }: EventAuctionI
               items={auctionItems}
               isLoading={isLoading}
               error={error}
-              onAdd={() => navigate({ to: '/events/$eventId/auction-items/create', params: { eventId } })}
+              onAdd={() =>
+                navigate({
+                  to: '/events/$eventId/auction-items/create',
+                  params: { eventId },
+                })
+              }
               onEdit={(item) =>
                 navigate({
                   to: '/events/$eventId/auction-items/$itemId/edit',
@@ -147,13 +185,19 @@ export function EventAuctionItemsSection({ initialTab = 'items' }: EventAuctionI
                 })
               }
               onDelete={async (item) => {
-                if (!confirm(`Are you sure you want to delete "${item.title}"?`)) return
+                if (
+                  !confirm(`Are you sure you want to delete "${item.title}"?`)
+                )
+                  return
                 try {
                   await deleteAuctionItem(currentEvent.id, item.id)
                   toast.success('Auction item deleted successfully')
                   await fetchAuctionItems(currentEvent.id)
                 } catch (err) {
-                  const message = err instanceof Error ? err.message : 'Failed to delete auction item'
+                  const message =
+                    err instanceof Error
+                      ? err.message
+                      : 'Failed to delete auction item'
                   toast.error(message)
                 }
               }}
@@ -161,33 +205,41 @@ export function EventAuctionItemsSection({ initialTab = 'items' }: EventAuctionI
           </CardContent>
           <Dialog
             open={importOpen}
-            onOpenChange={(open) => (open ? setImportOpen(true) : closeImport())}
+            onOpenChange={(open) =>
+              open ? setImportOpen(true) : closeImport()
+            }
           >
-            <DialogContent className="max-w-3xl">
+            <DialogContent className='max-w-3xl'>
               <DialogHeader>
                 <DialogTitle>Import Auction Items</DialogTitle>
                 <DialogDescription>
-                  Upload a ZIP containing a single .xlsx or .csv workbook and any .jpg/.png images anywhere in the ZIP.
+                  Upload a ZIP containing a single .xlsx or .csv workbook and
+                  any .jpg/.png images anywhere in the ZIP.
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-4">
+              <div className='space-y-4'>
                 <Input
-                  type="file"
-                  accept=".zip"
-                  onChange={(event) => setImportFile(event.target.files?.[0] ?? null)}
+                  type='file'
+                  accept='.zip'
+                  onChange={(event) =>
+                    setImportFile(event.target.files?.[0] ?? null)
+                  }
                 />
-                <p className="text-xs text-muted-foreground">
-                  The workbook must include required columns and image filenames must match the image file names.
+                <p className='text-muted-foreground text-xs'>
+                  The workbook must include required columns and image filenames
+                  must match the image file names.
                 </p>
 
-                {importReport && <AuctionItemImportReport report={importReport} />}
+                {importReport && (
+                  <AuctionItemImportReport report={importReport} />
+                )}
               </div>
 
-              <DialogFooter className="gap-2">
+              <DialogFooter className='gap-2'>
                 {(isPreflighting || isCommitting) && (
-                  <div className="mr-auto flex items-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 className="h-3 w-3 animate-spin" />
+                  <div className='text-muted-foreground mr-auto flex items-center gap-2 text-xs'>
+                    <Loader2 className='h-3 w-3 animate-spin' />
                     {isPreflighting
                       ? 'Running preflight…'
                       : commitProgress
@@ -195,7 +247,7 @@ export function EventAuctionItemsSection({ initialTab = 'items' }: EventAuctionI
                         : 'Importing items…'}
                   </div>
                 )}
-                <Button variant="outline" onClick={closeImport}>
+                <Button variant='outline' onClick={closeImport}>
                   Cancel
                 </Button>
                 <Button onClick={handlePreflight} disabled={isPreflighting}>
@@ -203,7 +255,11 @@ export function EventAuctionItemsSection({ initialTab = 'items' }: EventAuctionI
                 </Button>
                 <Button
                   onClick={handleCommit}
-                  disabled={isCommitting || !importReport || importReport.error_count > 0}
+                  disabled={
+                    isCommitting ||
+                    !importReport ||
+                    importReport.error_count > 0
+                  }
                 >
                   {isCommitting ? 'Importing...' : 'Commit Import'}
                 </Button>
@@ -212,7 +268,7 @@ export function EventAuctionItemsSection({ initialTab = 'items' }: EventAuctionI
           </Dialog>
         </Card>
       </TabsContent>
-      <TabsContent value="bids">
+      <TabsContent value='bids'>
         <EventAuctionBidsSection />
       </TabsContent>
     </Tabs>

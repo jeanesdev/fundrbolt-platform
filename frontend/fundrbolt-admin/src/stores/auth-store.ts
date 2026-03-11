@@ -1,7 +1,7 @@
-import apiClient from '@/lib/axios'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import apiClient from '@/lib/axios'
 
 interface AuthUser {
   id: string
@@ -223,11 +223,15 @@ export const useAuthStore = create<AuthState>()(
         if (!user?.profile_picture_url) return null
 
         const pictureUrl = user.profile_picture_url
-        if (pictureUrl.startsWith('http://') || pictureUrl.startsWith('https://')) {
+        if (
+          pictureUrl.startsWith('http://') ||
+          pictureUrl.startsWith('https://')
+        ) {
           return pictureUrl
         }
 
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
+        const apiUrl =
+          import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
         const baseUrl = apiUrl.replace(/\/api\/v1$/, '')
         return `${baseUrl}${pictureUrl}`
       },

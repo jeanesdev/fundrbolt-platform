@@ -1,6 +1,12 @@
-import { SeatingTabContent } from '@/components/seating/SeatingTabContent'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { SeatingTabContent } from '@/components/seating/SeatingTabContent'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventSeatingSection() {
@@ -16,8 +22,8 @@ export function EventSeatingSection() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <p className="text-muted-foreground">Loading event...</p>
+          <div className='flex items-center justify-center py-8'>
+            <p className='text-muted-foreground'>Loading event...</p>
           </div>
         </CardContent>
       </Card>

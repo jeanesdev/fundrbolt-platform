@@ -7,9 +7,20 @@
 // Enums
 // ============================================
 
-export type NPOStatus = 'draft' | 'pending_approval' | 'approved' | 'suspended' | 'rejected'
+export type NPOStatus =
+  | 'draft'
+  | 'pending_approval'
+  | 'approved'
+  | 'suspended'
+  | 'rejected'
+  | 'under_revision'
 
-export type ApplicationStatus = 'submitted' | 'under_review' | 'approved' | 'rejected'
+export type ApplicationStatus =
+  | 'submitted'
+  | 'under_review'
+  | 'approved'
+  | 'rejected'
+  | 'reopened'
 
 export type MemberRole = 'admin' | 'co_admin' | 'staff'
 
@@ -117,6 +128,7 @@ export interface NPOApplication {
   id: string
   npo_id: string
   status: ApplicationStatus
+  is_overdue?: boolean
   review_notes: Record<string, string> | null
   reviewed_by_user_id: string | null
   submitted_at: string

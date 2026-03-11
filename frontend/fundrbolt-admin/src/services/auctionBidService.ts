@@ -1,10 +1,10 @@
-import apiClient from '@/lib/axios'
 import type {
   AuctionBidDashboardResponse,
   AuctionBidImportConfirmRequest,
   AuctionBidImportSummary,
   AuctionBidPreflightResult,
 } from '@/types/auctionBidImport'
+import apiClient from '@/lib/axios'
 
 /**
  * Auction Bid Import Service

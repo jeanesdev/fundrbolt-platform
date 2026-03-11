@@ -1,5 +1,5 @@
-import { colors } from '@fundrbolt/shared/assets'
 import { type SVGProps } from 'react'
+import { colors } from '@fundrbolt/shared/assets'
 
 export function IconThemeDark(props: SVGProps<SVGSVGElement>) {
   return (
@@ -60,7 +60,13 @@ export function IconThemeDark(props: SVGProps<SVGSVGElement>) {
           opacity={0.53}
         />
       </g>
-      <circle cx={62.74} cy={16.32} r={8} fill={colors.palette.indigo} opacity={0.5} />
+      <circle
+        cx={62.74}
+        cy={16.32}
+        r={8}
+        fill={colors.palette.indigo}
+        opacity={0.5}
+      />
       <path
         d='M62.74 16.32l4.1-6.87c1.19.71 2.18 1.72 2.86 2.92s1.04 2.57 1.04 3.95h-8z'
         fill={colors.palette.indigo}

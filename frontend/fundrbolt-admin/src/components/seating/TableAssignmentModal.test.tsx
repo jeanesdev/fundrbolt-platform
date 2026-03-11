@@ -7,10 +7,9 @@
  * Radix UI Select's portal rendering not being fully compatible with jsdom.
  * The component is tested for structure and critical rendering logic.
  */
-
-import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
 import { TableAssignmentModal } from './TableAssignmentModal'
 
 describe('TableAssignmentModal', () => {
@@ -45,10 +44,10 @@ describe('TableAssignmentModal', () => {
   it('renders modal with guest information', () => {
     render(<TableAssignmentModal {...defaultProps} />)
 
-    expect(screen.getByRole('heading', { name: /Assign Table/ })).toBeInTheDocument()
     expect(
-      screen.getByText(/Select a table for John Doe/)
+      screen.getByRole('heading', { name: /Assign Table/ })
     ).toBeInTheDocument()
+    expect(screen.getByText(/Select a table for John Doe/)).toBeInTheDocument()
     expect(screen.getByText(/Bidder #101/)).toBeInTheDocument()
   })
 
@@ -104,13 +103,17 @@ describe('TableAssignmentModal', () => {
   it('shows modal when open prop is true', () => {
     render(<TableAssignmentModal {...defaultProps} open={true} />)
 
-    expect(screen.getByRole('heading', { name: /Assign Table/ })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: /Assign Table/ })
+    ).toBeInTheDocument()
   })
 
   it('hides modal when open prop is false', () => {
     render(<TableAssignmentModal {...defaultProps} open={false} />)
 
-    expect(screen.queryByRole('heading', { name: /Assign Table/ })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: /Assign Table/ })
+    ).not.toBeInTheDocument()
   })
 
   it('renders correct guest bidder number', () => {

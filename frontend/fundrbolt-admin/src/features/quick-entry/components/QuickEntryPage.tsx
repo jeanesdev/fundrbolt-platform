@@ -1,3 +1,10 @@
+import { type KeyboardEvent, useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useParams } from '@tanstack/react-router'
+import { eventApi } from '@/services/event-service'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useEventContext } from '@/hooks/use-event-context'
 import {
   Command,
   CommandEmpty,
@@ -12,14 +19,10 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useEventContext } from '@/hooks/use-event-context'
-import { cn } from '@/lib/utils'
-import { eventApi } from '@/services/event-service'
-import { useQuery } from '@tanstack/react-query'
-import { useParams } from '@tanstack/react-router'
-import { Check, ChevronsUpDown } from 'lucide-react'
-import { type KeyboardEvent, useEffect, useMemo, useState } from 'react'
-import { getLiveAuctionOverview, getQuickEntryLiveAuctionItems } from '../api/quickEntryApi'
+import {
+  getLiveAuctionOverview,
+  getQuickEntryLiveAuctionItems,
+} from '../api/quickEntryApi'
 import { useBuyNowEntry } from '../hooks/useBuyNowEntry'
 import { useLiveAuctionControls } from '../hooks/useLiveAuctionControls'
 import { useLiveBidEntry } from '../hooks/useLiveBidEntry'
@@ -80,11 +83,16 @@ export function QuickEntryPage() {
   )
 
   const liveEventTotalRaised = useMemo(
-    () => liveAuctionItems.reduce((sum, item) => sum + (item.current_bid_amount ?? 0), 0),
+    () =>
+      liveAuctionItems.reduce(
+        (sum, item) => sum + (item.current_bid_amount ?? 0),
+        0
+      ),
     [liveAuctionItems]
   )
   const liveEventBidCount = useMemo(
-    () => liveAuctionItems.reduce((sum, item) => sum + (item.bid_count ?? 0), 0),
+    () =>
+      liveAuctionItems.reduce((sum, item) => sum + (item.bid_count ?? 0), 0),
     [liveAuctionItems]
   )
 
@@ -194,9 +202,15 @@ export function QuickEntryPage() {
           }
         >
           <TabsList className='h-11'>
-            <TabsTrigger value='LIVE_AUCTION' className='min-h-9 px-4'>Live Auction</TabsTrigger>
-            <TabsTrigger value='PADDLE_RAISE' className='min-h-9 px-4'>Paddle Raise</TabsTrigger>
-            <TabsTrigger value='BUY_NOW' className='min-h-9 px-4'>Buy It Now</TabsTrigger>
+            <TabsTrigger value='LIVE_AUCTION' className='min-h-9 px-4'>
+              Live Auction
+            </TabsTrigger>
+            <TabsTrigger value='PADDLE_RAISE' className='min-h-9 px-4'>
+              Paddle Raise
+            </TabsTrigger>
+            <TabsTrigger value='BUY_NOW' className='min-h-9 px-4'>
+              Buy It Now
+            </TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -204,18 +218,20 @@ export function QuickEntryPage() {
           <div className='space-y-3'>
             {liveAuctionItems.length > 0 && (
               <div className='grid grid-cols-2 gap-3 lg:grid-cols-3'>
-                <div className='rounded-md border bg-muted/20 p-3'>
-                  <p className='text-xs text-muted-foreground'>Total Raised</p>
+                <div className='bg-muted/20 rounded-md border p-3'>
+                  <p className='text-muted-foreground text-xs'>Total Raised</p>
                   <p className='text-xl font-semibold'>
                     ${liveEventTotalRaised.toLocaleString('en-US')}
                   </p>
                 </div>
-                <div className='rounded-md border bg-muted/20 p-3'>
-                  <p className='text-xs text-muted-foreground'>Number of Bids</p>
+                <div className='bg-muted/20 rounded-md border p-3'>
+                  <p className='text-muted-foreground text-xs'>
+                    Number of Bids
+                  </p>
                   <p className='text-xl font-semibold'>{liveEventBidCount}</p>
                 </div>
-                <div className='col-span-2 rounded-md border bg-muted/20 p-3 lg:col-span-1'>
-                  <p className='text-xs text-muted-foreground'>Items Done</p>
+                <div className='bg-muted/20 col-span-2 rounded-md border p-3 lg:col-span-1'>
+                  <p className='text-muted-foreground text-xs'>Items Done</p>
                   <p className='text-xl font-semibold'>
                     {overviewQuery.data?.items_with_winner ?? 0} /{' '}
                     {overviewQuery.data?.total_items ?? liveAuctionItems.length}
@@ -287,18 +303,26 @@ export function QuickEntryPage() {
                                 #{item.bid_number} · {item.title}
                               </p>
                               <p className='text-muted-foreground text-xs'>
-                                Starting: ${Math.round(item.starting_bid).toLocaleString('en-US')}
+                                Starting: $
+                                {Math.round(item.starting_bid).toLocaleString(
+                                  'en-US'
+                                )}
                               </p>
                               {item.current_bid_amount != null && (
                                 <p className='text-xs font-medium text-green-600 dark:text-green-400'>
-                                  Current: ${Math.round(item.current_bid_amount).toLocaleString('en-US')}
+                                  Current: $
+                                  {Math.round(
+                                    item.current_bid_amount
+                                  ).toLocaleString('en-US')}
                                 </p>
                               )}
                             </div>
                             <Check
                               className={cn(
                                 'ml-auto h-4 w-4 shrink-0',
-                                selectedItemId === item.id ? 'opacity-100' : 'opacity-0'
+                                selectedItemId === item.id
+                                  ? 'opacity-100'
+                                  : 'opacity-0'
                               )}
                             />
                           </CommandItem>
@@ -346,7 +370,7 @@ export function QuickEntryPage() {
       {mode === 'LIVE_AUCTION' ? (
         <>
           {summary?.bids.some((b) => b.status === 'winning') ? (
-            <p className="text-sm text-muted-foreground">
+            <p className='text-muted-foreground text-sm'>
               Winner assigned — remove winner to continue bidding.
             </p>
           ) : null}
@@ -356,7 +380,9 @@ export function QuickEntryPage() {
             onAmountChange={setAmount}
             onBidderNumberChange={setBidderNumber}
             onSubmit={submitBid}
-            disabled={isSubmitting || summary?.bids.some((b) => b.status === 'winning')}
+            disabled={
+              isSubmitting || summary?.bids.some((b) => b.status === 'winning')
+            }
             isSubmitting={isSubmitting}
             focusAmountToken={submitToken}
           />

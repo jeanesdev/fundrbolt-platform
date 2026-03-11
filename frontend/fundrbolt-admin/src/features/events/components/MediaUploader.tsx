@@ -2,21 +2,7 @@
  * MediaUploader Component
  * Drag-and-drop file uploader with progress tracking
  */
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type {
   EventMedia,
   EventMediaUsageTag,
@@ -32,8 +18,22 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 interface MediaUploaderProps {
   media: EventMedia[]
@@ -122,8 +122,8 @@ export function MediaUploader({
   const uploadTagOptions =
     allowedUploadUsageTags && allowedUploadUsageTags.length > 0
       ? usageTagOptions.filter((option) =>
-        allowedUploadUsageTags.includes(option.value)
-      )
+          allowedUploadUsageTags.includes(option.value)
+        )
       : usageTagOptions
 
   const filteredMedia = media.filter(Boolean).filter((item) => {
@@ -370,8 +370,9 @@ export function MediaUploader({
     <div className='space-y-4'>
       {/* Upload Zone */}
       <Card
-        className={`border-2 border-dashed transition-colors ${dragActive ? 'border-primary bg-primary/5' : 'border-muted'
-          }`}
+        className={`border-2 border-dashed transition-colors ${
+          dragActive ? 'border-primary bg-primary/5' : 'border-muted'
+        }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}

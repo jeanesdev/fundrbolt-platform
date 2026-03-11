@@ -1,7 +1,7 @@
+import type { ProjectionAdjustmentSet } from '@/services/event-dashboard'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import type { ProjectionAdjustmentSet } from '@/services/event-dashboard'
 import { formatCurrency, formatSourceLabel } from '../utils/formatters'
 
 interface ProjectionControlsProps {
@@ -11,7 +11,12 @@ interface ProjectionControlsProps {
   saving: boolean
 }
 
-export function ProjectionControls({ projections, onSave, onReset, saving }: ProjectionControlsProps) {
+export function ProjectionControls({
+  projections,
+  onSave,
+  onReset,
+  saving,
+}: ProjectionControlsProps) {
   if (!projections) {
     return null
   }
@@ -25,13 +30,17 @@ export function ProjectionControls({ projections, onSave, onReset, saving }: Pro
   return (
     <Card>
       <CardHeader className='pb-2'>
-        <CardTitle className='text-sm font-medium text-muted-foreground'>Projection Controls</CardTitle>
+        <CardTitle className='text-muted-foreground text-sm font-medium'>
+          Projection Controls
+        </CardTitle>
       </CardHeader>
       <CardContent className='space-y-3'>
         <div className='grid gap-3 md:grid-cols-2'>
           {projections.adjustments.map((adjustment) => (
             <label key={adjustment.source} className='space-y-1'>
-              <span className='text-xs text-muted-foreground'>{formatSourceLabel(adjustment.source)}</span>
+              <span className='text-muted-foreground text-xs'>
+                {formatSourceLabel(adjustment.source)}
+              </span>
               <Input
                 type='text'
                 defaultValue={formatCurrency(adjustment.projected.amount)}
@@ -42,12 +51,12 @@ export function ProjectionControls({ projections, onSave, onReset, saving }: Pro
                     projections.adjustments.map((item) =>
                       item.source === adjustment.source
                         ? {
-                          ...item,
-                          projected: {
-                            ...item.projected,
-                            amount: value,
-                          },
-                        }
+                            ...item,
+                            projected: {
+                              ...item.projected,
+                              amount: value,
+                            },
+                          }
                         : item
                     )
                   )
@@ -57,10 +66,21 @@ export function ProjectionControls({ projections, onSave, onReset, saving }: Pro
           ))}
         </div>
         <div className='flex gap-2'>
-          <Button type='button' size='sm' disabled={saving} onClick={() => onSave(projections.adjustments)}>
+          <Button
+            type='button'
+            size='sm'
+            disabled={saving}
+            onClick={() => onSave(projections.adjustments)}
+          >
             Save Projections
           </Button>
-          <Button type='button' size='sm' variant='outline' disabled={saving} onClick={onReset}>
+          <Button
+            type='button'
+            size='sm'
+            variant='outline'
+            disabled={saving}
+            onClick={onReset}
+          >
             Reset
           </Button>
         </div>

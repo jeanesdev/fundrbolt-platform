@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { PacingStatus } from '@/services/event-dashboard'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatPercent } from '../utils/formatters'
 
 interface PacingChartProps {
@@ -16,9 +16,9 @@ export function PacingChart({ pacing }: PacingChartProps) {
         <CardTitle>Pacing</CardTitle>
       </CardHeader>
       <CardContent className='space-y-3'>
-        <div className='h-3 rounded-full bg-muted'>
+        <div className='bg-muted h-3 rounded-full'>
           <div
-            className='h-3 rounded-full bg-primary'
+            className='bg-primary h-3 rounded-full'
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -26,7 +26,9 @@ export function PacingChart({ pacing }: PacingChartProps) {
           <span className='text-sm font-medium'>
             {isOnTrack ? 'On Track' : 'Needs Attention'}
           </span>
-          <span className='text-lg font-semibold'>{formatPercent(pacing.pacing_percent, 1)}</span>
+          <span className='text-lg font-semibold'>
+            {formatPercent(pacing.pacing_percent, 1)}
+          </span>
         </div>
       </CardContent>
     </Card>

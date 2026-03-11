@@ -1,9 +1,21 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { EventForm } from '../components/EventForm'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventDetailsSection() {
-  const { currentEvent, npoBranding, handleSubmit, handleCancel, isSubmitting } = useEventWorkspace()
+  const {
+    currentEvent,
+    npoBranding,
+    handleSubmit,
+    handleCancel,
+    isSubmitting,
+  } = useEventWorkspace()
 
   return (
     <Card>

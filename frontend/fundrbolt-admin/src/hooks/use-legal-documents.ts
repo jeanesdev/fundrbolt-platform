@@ -2,10 +2,9 @@
  * useLegalDocuments hook
  * Hook for fetching and managing legal documents
  */
-
-import { useLegalStore } from '@/stores/legal-store'
-import type { LegalDocumentType } from '@/types/legal'
 import { useEffect } from 'react'
+import type { LegalDocumentType } from '@/types/legal'
+import { useLegalStore } from '@/stores/legal-store'
 
 export function useLegalDocuments() {
   const {
@@ -18,7 +17,11 @@ export function useLegalDocuments() {
 
   // Auto-fetch all documents on mount if not already loaded
   useEffect(() => {
-    if (!documents.terms_of_service && !documents.privacy_policy && !isLoading) {
+    if (
+      !documents.terms_of_service &&
+      !documents.privacy_policy &&
+      !isLoading
+    ) {
       fetchAllDocuments().catch((err) => {
         // eslint-disable-next-line no-console
         console.error('Failed to fetch legal documents:', err)

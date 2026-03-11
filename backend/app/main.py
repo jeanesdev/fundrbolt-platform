@@ -116,6 +116,10 @@ app = FastAPI(
         {"name": "consent", "description": "User consent management and GDPR compliance"},
         {"name": "cookies", "description": "Cookie consent management (EU Cookie Law)"},
         {"name": "public-contact", "description": "Public contact form submission"},
+        {
+            "name": "public-onboarding",
+            "description": "Public NPO onboarding wizard (no auth required)",
+        },
         {"name": "admin-seating", "description": "Admin seating management and configuration"},
         {"name": "health", "description": "Health check and monitoring"},
         {"name": "metrics", "description": "Prometheus metrics for monitoring"},

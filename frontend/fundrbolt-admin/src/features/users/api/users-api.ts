@@ -93,13 +93,13 @@ export async function listUsers(params?: {
   // Transform page_size to per_page for backend API
   const apiParams = params
     ? {
-      page: params.page,
-      per_page: params.page_size,
-      role: params.role,
-      is_active: params.is_active,
-      npo_id: params.npo_id,
-      search: params.search,
-    }
+        page: params.page,
+        per_page: params.page_size,
+        role: params.role,
+        is_active: params.is_active,
+        npo_id: params.npo_id,
+        search: params.search,
+      }
     : undefined
 
   const response = await apiClient.get<UserListResponse>('/users', {

@@ -3,7 +3,17 @@
  * Allows users to add/edit their social media profile links
  * Validates URLs using platform-specific patterns
  */
-
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import {
+  Facebook,
+  Globe,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Youtube,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -15,10 +25,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Facebook, Globe, Instagram, Linkedin, Twitter, Youtube } from 'lucide-react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 
 // Social media URL validation patterns (matching backend patterns)
 const socialMediaPatterns = {
@@ -26,7 +32,8 @@ const socialMediaPatterns = {
   twitter: /^https?:\/\/(www\.)?(twitter|x)\.com\/[\w]+\/?.*$/i,
   instagram: /^https?:\/\/(www\.)?instagram\.com\/[\w.]+\/?.*$/i,
   linkedin: /^https?:\/\/(www\.)?linkedin\.com\/(company|in)\/[\w-]+\/?.*$/i,
-  youtube: /^https?:\/\/(www\.)?youtube\.com\/(c\/|@|channel\/|user\/)[\w-]+\/?.*$/i,
+  youtube:
+    /^https?:\/\/(www\.)?youtube\.com\/(c\/|@|channel\/|user\/)[\w-]+\/?.*$/i,
   website: /^https?:\/\/[\w-.]+\.[a-z]{2,}(\/.*)?$/i,
 }
 
@@ -147,7 +154,9 @@ export function SocialMediaLinksForm({
                     value={field.value || ''}
                   />
                 </FormControl>
-                <FormDescription>Your Facebook profile or page URL</FormDescription>
+                <FormDescription>
+                  Your Facebook profile or page URL
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -257,7 +266,9 @@ export function SocialMediaLinksForm({
                     value={field.value || ''}
                   />
                 </FormControl>
-                <FormDescription>Your personal or business website</FormDescription>
+                <FormDescription>
+                  Your personal or business website
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

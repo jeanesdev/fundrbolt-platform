@@ -1,15 +1,17 @@
 """Application service for NPO application submission and review."""
 
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.logging import get_logger
 from app.models.npo import NPO, NPOStatus
+from app.models.npo_application import ApplicationStatus, NPOApplication
 from app.models.user import User
 from app.services.audit_service import AuditService
 
@@ -259,20 +261,23 @@ class ApplicationService:
 
         if status:
             # Map application status to NPO status
-            # Application statuses: submitted, under_review, approved, rejected
-            # NPO statuses: draft, pending_approval, approved, rejected
+            # Application statuses: submitted, under_review, approved, rejected, reopened
+            # NPO statuses: draft, pending_approval, approved, rejected, under_revision
             status_map = {
                 "submitted": NPOStatus.PENDING_APPROVAL,  # Submitted = waiting for review
                 "under_review": NPOStatus.PENDING_APPROVAL,  # Same as submitted
                 "approved": NPOStatus.APPROVED,
                 "rejected": NPOStatus.REJECTED,
+                "reopened": NPOStatus.UNDER_REVISION,  # Reopened = awaiting resubmission
             }
             npo_status = status_map.get(status)
             if npo_status:
                 where_conditions.append(NPO.status == npo_status)
         else:
-            # Default: only show pending_approval if no status specified
-            where_conditions.append(NPO.status == NPOStatus.PENDING_APPROVAL)
+            # Default: show pending_approval and under_revision
+            where_conditions.append(
+                NPO.status.in_([NPOStatus.PENDING_APPROVAL, NPOStatus.UNDER_REVISION])
+            )
 
         # Count query
         count_stmt = select(NPO).where(*where_conditions)
@@ -340,3 +345,113 @@ class ApplicationService:
         )
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
+
+    @staticmethod
+    async def reopen_application(
+        db: AsyncSession,
+        npo_id: UUID,
+        reopened_by_user_id: UUID,
+        revision_notes: str | None = None,
+    ) -> NPO:
+        """
+        Reopen a rejected NPO application for applicant revision.
+
+        State transitions:
+        - REJECTED → UNDER_REVISION (NPO status)
+        - latest NPOApplication: REJECTED → REOPENED
+
+        Args:
+            db: Database session
+            npo_id: NPO ID to reopen
+            reopened_by_user_id: SuperAdmin user ID performing the reopen
+            revision_notes: Optional guidance for the applicant
+
+        Returns:
+            Updated NPO with UNDER_REVISION status
+
+        Raises:
+            HTTPException: If NPO not found, wrong status, or reviewer not found
+        """
+        # Fetch NPO with creator
+        stmt = (
+            select(NPO)
+            .options(selectinload(NPO.creator))
+            .where(NPO.id == npo_id, NPO.deleted_at.is_(None))
+        )
+        result = await db.execute(stmt)
+        npo = result.scalar_one_or_none()
+
+        if not npo:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"NPO with ID {npo_id} not found",
+            )
+
+        # Validate current status — only REJECTED applications can be reopened
+        if npo.status != NPOStatus.REJECTED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"Cannot reopen application: NPO status is {npo.status.value}, "
+                    "must be 'rejected'"
+                ),
+            )
+
+        # Fetch reviewer
+        reviewer = await db.get(User, reopened_by_user_id)
+        if not reviewer:
+            raise HTTPException(status_code=404, detail="Reviewer not found")
+
+        # Update NPO status
+        npo.status = NPOStatus.UNDER_REVISION
+
+        # Update the most recent NPOApplication record
+        app_stmt = (
+            select(NPOApplication)
+            .where(NPOApplication.npo_id == npo_id)
+            .order_by(desc(NPOApplication.created_at))
+            .limit(1)
+        )
+        app_result = await db.execute(app_stmt)
+        application = app_result.scalar_one_or_none()
+
+        if application:
+            application.status = ApplicationStatus.REOPENED
+            application.reviewed_by_user_id = reopened_by_user_id
+            application.reviewed_at = datetime.utcnow()
+            # Append reopen note to review_notes JSON array
+            existing_notes: list[Any] = (
+                list(application.review_notes) if isinstance(application.review_notes, list) else []
+            )
+            existing_notes.append(
+                {
+                    "action": "reopened",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "reviewer": reviewer.email,
+                    "notes": revision_notes,
+                }
+            )
+            application.review_notes = existing_notes  # type: ignore[assignment]
+
+        await db.commit()
+        await db.refresh(npo)
+
+        # Log audit event
+        await AuditService.log_npo_application_reopened(
+            db=db,
+            npo_id=npo_id,
+            npo_name=npo.name,
+            reopened_by_user_id=reopened_by_user_id,
+            reopened_by_email=reviewer.email,
+            revision_notes=revision_notes,
+        )
+
+        logger.info(
+            f"NPO application reopened for revision: {npo.name} (ID: {npo_id})",
+            extra={
+                "npo_id": str(npo_id),
+                "reopened_by": str(reopened_by_user_id),
+            },
+        )
+
+        return npo

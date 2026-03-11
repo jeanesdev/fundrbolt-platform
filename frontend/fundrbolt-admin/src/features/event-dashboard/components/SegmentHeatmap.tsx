@@ -1,12 +1,15 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { SegmentBreakdownItem } from '@/services/event-dashboard'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface SegmentHeatmapProps {
   items: SegmentBreakdownItem[]
 }
 
 export function SegmentHeatmap({ items }: SegmentHeatmapProps) {
-  const maxShare = Math.max(...items.map((item) => item.contribution_share), 0.0001)
+  const maxShare = Math.max(
+    ...items.map((item) => item.contribution_share),
+    0.0001
+  )
 
   return (
     <Card>
@@ -22,8 +25,11 @@ export function SegmentHeatmap({ items }: SegmentHeatmapProps) {
                 <span>{item.segment_label}</span>
                 <span>{(item.contribution_share * 100).toFixed(1)}%</span>
               </div>
-              <div className='h-2 rounded-full bg-muted'>
-                <div className='h-2 rounded-full bg-primary' style={{ width }} />
+              <div className='bg-muted h-2 rounded-full'>
+                <div
+                  className='bg-primary h-2 rounded-full'
+                  style={{ width }}
+                />
               </div>
             </div>
           )

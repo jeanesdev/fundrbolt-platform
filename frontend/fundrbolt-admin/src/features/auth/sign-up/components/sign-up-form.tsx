@@ -1,5 +1,13 @@
-import { TermsOfServiceModal } from '@/components/legal/terms-of-service-modal'
-import { PasswordInput } from '@/components/password-input'
+import { useEffect, useState } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate } from '@tanstack/react-router'
+import { consentService } from '@/services/consent-service'
+import { Info, Loader2, UserPlus } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { cn } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -12,16 +20,8 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
-import { consentService } from '@/services/consent-service'
-import { useAuthStore } from '@/stores/auth-store'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate } from '@tanstack/react-router'
-import { Info, Loader2, UserPlus } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
+import { TermsOfServiceModal } from '@/components/legal/terms-of-service-modal'
+import { PasswordInput } from '@/components/password-input'
 
 const formSchema = z
   .object({
@@ -66,10 +66,7 @@ const formSchema = z
       .string()
       .max(255, 'Street address must not exceed 255 characters')
       .optional(),
-    city: z
-      .string()
-      .max(100, 'City must not exceed 100 characters')
-      .optional(),
+    city: z.string().max(100, 'City must not exceed 100 characters').optional(),
     state: z
       .string()
       .max(100, 'State must not exceed 100 characters')
@@ -117,8 +114,15 @@ export function SignUpForm({
 }: React.HTMLAttributes<HTMLFormElement>) {
   const [isLoading, setIsLoading] = useState(false)
   const [showLegalModal, setShowLegalModal] = useState(false)
-  const [legalDocumentIds, setLegalDocumentIds] = useState<{ tosId: string; privacyId: string } | null>(null)
-  const [invitationContext, setInvitationContext] = useState<{ email: string; npo_name: string; token: string } | null>(null)
+  const [legalDocumentIds, setLegalDocumentIds] = useState<{
+    tosId: string
+    privacyId: string
+  } | null>(null)
+  const [invitationContext, setInvitationContext] = useState<{
+    email: string
+    npo_name: string
+    token: string
+  } | null>(null)
   const navigate = useNavigate()
   const register = useAuthStore((state) => state.register)
 
@@ -210,10 +214,14 @@ export function SignUpForm({
 
       // If this is an invitation registration, redirect to sign-in with return URL
       if (invitationContext) {
-        toast.info(`Now sign in to accept your invitation to ${invitationContext.npo_name}`)
+        toast.info(
+          `Now sign in to accept your invitation to ${invitationContext.npo_name}`
+        )
         navigate({
           to: '/sign-in',
-          search: { redirect: `/invitations/accept?token=${encodeURIComponent(invitationContext.token)}` },
+          search: {
+            redirect: `/invitations/accept?token=${encodeURIComponent(invitationContext.token)}`,
+          },
           replace: true,
         })
       } else {
@@ -223,7 +231,9 @@ export function SignUpForm({
       const error = err as {
         response?: {
           data?: {
-            detail?: string | { code?: string; message?: string; details?: unknown }
+            detail?:
+              | string
+              | { code?: string; message?: string; details?: unknown }
             error?: { message?: string }
           }
         }
@@ -240,7 +250,8 @@ export function SignUpForm({
 
           // Special handling for duplicate email
           if (error.response.data.detail.code === 'DUPLICATE_EMAIL') {
-            errorMessage = 'This email is already registered. Please use the "Log in to accept" link instead.'
+            errorMessage =
+              'This email is already registered. Please use the "Log in to accept" link instead.'
           }
         }
       } else if (error.response?.data?.error?.message) {
@@ -267,11 +278,12 @@ export function SignUpForm({
       >
         {/* Invitation Context Alert */}
         {invitationContext && (
-          <Alert className='bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800'>
+          <Alert className='border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20'>
             <Info className='h-4 w-4 text-blue-600 dark:text-blue-400' />
             <AlertDescription className='text-blue-900 dark:text-blue-100'>
-              You're creating an account to join <strong>{invitationContext.npo_name}</strong>.
-              After registration, you'll be prompted to sign in and accept the invitation.
+              You're creating an account to join{' '}
+              <strong>{invitationContext.npo_name}</strong>. After registration,
+              you'll be prompted to sign in and accept the invitation.
             </AlertDescription>
           </Alert>
         )}
@@ -319,7 +331,7 @@ export function SignUpForm({
                 />
               </FormControl>
               {invitationContext && (
-                <p className='text-xs text-muted-foreground'>
+                <p className='text-muted-foreground text-xs'>
                   Email from invitation (cannot be changed)
                 </p>
               )}
@@ -479,7 +491,7 @@ export function SignUpForm({
           control={form.control}
           name='acceptedTerms'
           render={({ field }) => (
-            <FormItem className='flex flex-row items-start space-x-3 space-y-0'>
+            <FormItem className='flex flex-row items-start space-y-0 space-x-3'>
               <FormControl>
                 <Checkbox
                   checked={field.value}

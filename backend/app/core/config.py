@@ -76,6 +76,13 @@ class Settings(BaseSettings):
     rate_limit_login_attempts: int = 5
     rate_limit_login_window_minutes: int = 15
 
+    # NPO Onboarding — Cloudflare Turnstile
+    # Test secret: 1x0000000000000000000000000000000AA (always succeeds)
+    turnstile_secret_key: str | None = None
+
+    # NPO Onboarding — Admin Notification Email
+    admin_notification_email: str | None = None
+
     # CORS
     cors_origins: str = (
         "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174"

@@ -3,7 +3,9 @@
  *
  * Displays meal selection summary for an event with counts per meal option.
  */
-
+import { useQuery } from '@tanstack/react-query'
+import { Loader2, UtensilsCrossed } from 'lucide-react'
+import { getMealSummary } from '@/lib/api/admin-attendees'
 import {
   Card,
   CardContent,
@@ -12,9 +14,6 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { getMealSummary } from '@/lib/api/admin-attendees'
-import { useQuery } from '@tanstack/react-query'
-import { Loader2, UtensilsCrossed } from 'lucide-react'
 
 interface MealSummaryCardProps {
   eventId: string
@@ -39,7 +38,7 @@ export function MealSummaryCard({ eventId, className }: MealSummaryCardProps) {
         </CardHeader>
         <CardContent>
           <div className='flex items-center justify-center py-8'>
-            <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
+            <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
           </div>
         </CardContent>
       </Card>
@@ -59,7 +58,7 @@ export function MealSummaryCard({ eventId, className }: MealSummaryCardProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className='text-sm text-muted-foreground'>{error.message}</p>
+          <p className='text-muted-foreground text-sm'>{error.message}</p>
         </CardContent>
       </Card>
     )
@@ -86,19 +85,23 @@ export function MealSummaryCard({ eventId, className }: MealSummaryCardProps) {
         {/* Overview Stats */}
         <div className='grid gap-4 sm:grid-cols-3'>
           <div className='space-y-1'>
-            <p className='text-sm font-medium text-muted-foreground'>
+            <p className='text-muted-foreground text-sm font-medium'>
               Total Active Attendees
             </p>
-            <p className='text-2xl font-bold'>{summary.total_active_attendees}</p>
+            <p className='text-2xl font-bold'>
+              {summary.total_active_attendees}
+            </p>
           </div>
           <div className='space-y-1'>
-            <p className='text-sm font-medium text-muted-foreground'>
+            <p className='text-muted-foreground text-sm font-medium'>
               Meal Selections
             </p>
-            <p className='text-2xl font-bold'>{summary.total_meal_selections}</p>
+            <p className='text-2xl font-bold'>
+              {summary.total_meal_selections}
+            </p>
           </div>
           <div className='space-y-1'>
-            <p className='text-sm font-medium text-muted-foreground'>
+            <p className='text-muted-foreground text-sm font-medium'>
               Selection Rate
             </p>
             <p className='text-2xl font-bold'>{selectionRate.toFixed(0)}%</p>
@@ -133,14 +136,14 @@ export function MealSummaryCard({ eventId, className }: MealSummaryCardProps) {
                       <div className='flex-1 space-y-1'>
                         <p className='font-medium'>{meal.name}</p>
                         {meal.description && (
-                          <p className='text-xs text-muted-foreground line-clamp-1'>
+                          <p className='text-muted-foreground line-clamp-1 text-xs'>
                             {meal.description}
                           </p>
                         )}
                       </div>
                       <div className='ml-4 text-right'>
                         <p className='font-medium'>{meal.count}</p>
-                        <p className='text-xs text-muted-foreground'>
+                        <p className='text-muted-foreground text-xs'>
                           {percentage.toFixed(0)}%
                         </p>
                       </div>
@@ -153,8 +156,8 @@ export function MealSummaryCard({ eventId, className }: MealSummaryCardProps) {
           </div>
         ) : (
           <div className='rounded-md border border-dashed p-8 text-center'>
-            <UtensilsCrossed className='mx-auto h-8 w-8 text-muted-foreground opacity-50' />
-            <p className='mt-2 text-sm text-muted-foreground'>
+            <UtensilsCrossed className='text-muted-foreground mx-auto h-8 w-8 opacity-50' />
+            <p className='text-muted-foreground mt-2 text-sm'>
               No meal options configured for this event
             </p>
           </div>
@@ -162,13 +165,18 @@ export function MealSummaryCard({ eventId, className }: MealSummaryCardProps) {
 
         {/* Pending Selections */}
         {summary.total_active_attendees > summary.total_meal_selections && (
-          <div className='rounded-md bg-muted/50 p-3'>
-            <p className='text-sm text-muted-foreground'>
-              <span className='font-medium text-foreground'>
+          <div className='bg-muted/50 rounded-md p-3'>
+            <p className='text-muted-foreground text-sm'>
+              <span className='text-foreground font-medium'>
                 {summary.total_active_attendees - summary.total_meal_selections}
               </span>{' '}
-              attendee{summary.total_active_attendees - summary.total_meal_selections !== 1 ? 's' : ''} haven't
-              selected a meal yet
+              attendee
+              {summary.total_active_attendees -
+                summary.total_meal_selections !==
+              1
+                ? 's'
+                : ''}{' '}
+              haven't selected a meal yet
             </p>
           </div>
         )}

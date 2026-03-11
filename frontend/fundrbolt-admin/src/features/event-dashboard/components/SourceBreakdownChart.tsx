@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { RevenueSourceSummary } from '@/services/event-dashboard'
 import {
   Bar,
@@ -10,10 +9,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import {
-  formatCurrencyCompact,
-  formatSourceLabel,
-} from '../utils/formatters'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { formatCurrencyCompact, formatSourceLabel } from '../utils/formatters'
 import { ChartTooltipContent } from './ChartTooltipContent'
 
 interface SourceBreakdownChartProps {
@@ -42,7 +39,12 @@ export function SourceBreakdownChart({ sources }: SourceBreakdownChartProps) {
               content={({ label, payload }) => (
                 <ChartTooltipContent
                   label={formatSourceLabel(String(label ?? ''))}
-                  payload={payload as unknown as Array<{ name?: string; value?: number }>}
+                  payload={
+                    payload as unknown as Array<{
+                      name?: string
+                      value?: number
+                    }>
+                  }
                   seriesLabels={{
                     actual: 'Actual',
                     projected: 'Projected',
@@ -55,7 +57,12 @@ export function SourceBreakdownChart({ sources }: SourceBreakdownChartProps) {
                 seriesName === 'actual' ? 'Actual' : 'Projected'
               }
             />
-            <Bar dataKey='actual' fill='currentColor' className='text-primary' radius={4} />
+            <Bar
+              dataKey='actual'
+              fill='currentColor'
+              className='text-primary'
+              radius={4}
+            />
             <Bar
               dataKey='projected'
               fill='currentColor'

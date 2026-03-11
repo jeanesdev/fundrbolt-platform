@@ -1,7 +1,7 @@
-import { Button } from '@/components/ui/button'
-import type { ViewMode } from '@/hooks/use-view-preference'
-import { cn } from '@/lib/utils'
 import { LayoutGrid, Table } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import type { ViewMode } from '@/hooks/use-view-preference'
+import { Button } from '@/components/ui/button'
 
 interface ViewToggleProps {
   value: ViewMode

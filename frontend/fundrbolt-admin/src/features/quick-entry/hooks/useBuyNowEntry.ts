@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AxiosError } from 'axios'
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
+import { AxiosError } from 'axios'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
   createBuyNowBid,
@@ -13,8 +13,8 @@ import {
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof AxiosError) {
     const apiMessage =
-      (error.response?.data as { detail?: { message?: string } })?.detail?.message ??
-      error.response?.data?.detail
+      (error.response?.data as { detail?: { message?: string } })?.detail
+        ?.message ?? error.response?.data?.detail
     if (typeof apiMessage === 'string') return apiMessage
   }
   if (error instanceof Error) return error.message
@@ -48,11 +48,15 @@ export function useBuyNowEntry(eventId: string) {
     refetchInterval: 10_000,
   })
 
-  const selectedItem = (itemsQuery.data ?? []).find((i) => i.id === selectedItemId)
+  const selectedItem = (itemsQuery.data ?? []).find(
+    (i) => i.id === selectedItemId
+  )
 
   const selectItem = (itemId: string) => {
     setSelectedItemId(itemId)
-    const item = (itemsQuery.data ?? []).find((candidate) => candidate.id === itemId)
+    const item = (itemsQuery.data ?? []).find(
+      (candidate) => candidate.id === itemId
+    )
     if (item) {
       setAmount(Math.round(item.buy_now_price).toLocaleString('en-US'))
       return
@@ -73,8 +77,12 @@ export function useBuyNowEntry(eventId: string) {
       )
       setBidderNumber('')
       setSubmitToken((t) => t + 1)
-      queryClient.invalidateQueries({ queryKey: ['quick-entry', 'buy-now-bids'] })
-      queryClient.invalidateQueries({ queryKey: ['quick-entry', 'buy-now-summary'] })
+      queryClient.invalidateQueries({
+        queryKey: ['quick-entry', 'buy-now-bids'],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['quick-entry', 'buy-now-summary'],
+      })
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, 'Failed to record buy-it-now bid'))
@@ -84,8 +92,12 @@ export function useBuyNowEntry(eventId: string) {
   const deleteMutation = useMutation({
     mutationFn: (bidId: string) => deleteBuyNowBid(eventId, bidId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quick-entry', 'buy-now-bids'] })
-      queryClient.invalidateQueries({ queryKey: ['quick-entry', 'buy-now-summary'] })
+      queryClient.invalidateQueries({
+        queryKey: ['quick-entry', 'buy-now-bids'],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['quick-entry', 'buy-now-summary'],
+      })
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, 'Failed to delete bid'))

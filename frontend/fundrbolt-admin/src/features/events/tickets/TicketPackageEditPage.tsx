@@ -2,11 +2,25 @@
  * Ticket Package Management - Edit Page
  * Form for editing existing ticket packages with optimistic locking
  */
-
-import { packageImagesApi } from '@/api/packageImages';
-import { ConflictDialog } from '@/components/ConflictDialog';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
+import { packageImagesApi } from '@/api/packageImages'
+import apiClient from '@/lib/axios'
+import { getErrorMessage } from '@/lib/error-utils'
+import { useToast } from '@/hooks/use-toast'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   Form,
   FormControl,
@@ -15,81 +29,80 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import { useEventWorkspace } from '@/features/events/useEventWorkspace';
-import { useToast } from '@/hooks/use-toast';
-import apiClient from '@/lib/axios';
-import { getErrorMessage } from '@/lib/error-utils';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useParams } from '@tanstack/react-router';
-import { ArrowLeft } from 'lucide-react';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { CustomOptionsManager } from './components/CustomOptionsManager';
-import { ImageUploadProgress } from './components/ImageUploadProgress';
-import { ImageUploadZone } from './components/ImageUploadZone';
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
+import { ConflictDialog } from '@/components/ConflictDialog'
+import { useEventWorkspace } from '@/features/events/useEventWorkspace'
+import { CustomOptionsManager } from './components/CustomOptionsManager'
+import { ImageUploadProgress } from './components/ImageUploadProgress'
+import { ImageUploadZone } from './components/ImageUploadZone'
 
 const packageSchema = z.object({
   name: z.string().min(1, 'Package name is required').max(100).optional(),
   description: z.string().max(5000).optional().nullable(),
-  price: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid price format').optional(),
+  price: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/, 'Invalid price format')
+    .optional(),
   seats_per_package: z.coerce.number().min(1).max(100).optional(),
   quantity_limit: z.preprocess(
     (val) => {
       // Handle empty string, null, undefined as null (unlimited)
-      if (val === '' || val === null || val === undefined || val === 0) return null;
-      return val;
+      if (val === '' || val === null || val === undefined || val === 0)
+        return null
+      return val
     },
-    z.union([z.number().min(1, 'Quantity must be at least 1'), z.null()]).optional()
+    z
+      .union([z.number().min(1, 'Quantity must be at least 1'), z.null()])
+      .optional()
   ),
   is_enabled: z.boolean().optional(),
   is_sponsorship: z.boolean().optional(),
   version: z.number(),
-});
+})
 
-type PackageFormData = z.infer<typeof packageSchema>;
+type PackageFormData = z.infer<typeof packageSchema>
 
 interface TicketPackage {
-  id: string;
-  event_id: string;
-  name: string;
-  description: string | null;
-  price: string;
-  seats_per_package: number;
-  quantity_limit: number | null;
-  sold_count: number;
-  display_order: number;
-  image_url: string | null;
-  is_enabled: boolean;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  version: number;
-  is_sold_out: boolean;
-  available_quantity: number | null;
-  is_sponsorship?: boolean;
+  id: string
+  event_id: string
+  name: string
+  description: string | null
+  price: string
+  seats_per_package: number
+  quantity_limit: number | null
+  sold_count: number
+  display_order: number
+  image_url: string | null
+  is_enabled: boolean
+  created_by: string
+  created_at: string
+  updated_at: string
+  version: number
+  is_sold_out: boolean
+  available_quantity: number | null
+  is_sponsorship?: boolean
 }
 
 export function TicketPackageEditPage() {
-  const { currentEvent } = useEventWorkspace();
+  const { currentEvent } = useEventWorkspace()
   const { eventId: routeEventId, packageId } = useParams({
     from: '/_authenticated/events/$eventId/tickets/$packageId/edit',
-  });
+  })
   // Use real UUID for API calls, keep route param for navigation
-  const eventId = currentEvent.id;
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const eventId = currentEvent.id
+  const navigate = useNavigate()
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadStatus, setUploadStatus] = useState<
+    'idle' | 'uploading' | 'success' | 'error'
+  >('idle')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [showConflictDialog, setShowConflictDialog] = useState(false)
 
   // Fetch package
   const { data: pkg, isLoading } = useQuery({
@@ -97,19 +110,19 @@ export function TicketPackageEditPage() {
     queryFn: async () => {
       const response = await apiClient.get<TicketPackage>(
         `/admin/events/${eventId}/packages/${packageId}`
-      );
-      return response.data;
+      )
+      return response.data
     },
-  });
+  })
 
   // Set initial image preview from package
   const handleSetInitialImage = () => {
     if (pkg?.image_url && !imagePreview) {
-      setImagePreview(pkg.image_url);
+      setImagePreview(pkg.image_url)
     }
-  };
+  }
 
-  handleSetInitialImage();
+  handleSetInitialImage()
 
   const form = useForm<PackageFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -126,156 +139,167 @@ export function TicketPackageEditPage() {
     },
     values: pkg
       ? {
-        name: pkg.name || '',
-        description: pkg.description || '',
-        price: pkg.price,
-        seats_per_package: pkg.seats_per_package,
-        quantity_limit: pkg.quantity_limit || 0,
-        is_enabled: pkg.is_enabled,
-        is_sponsorship: pkg.is_sponsorship,
-        version: pkg.version,
-      }
+          name: pkg.name || '',
+          description: pkg.description || '',
+          price: pkg.price,
+          seats_per_package: pkg.seats_per_package,
+          quantity_limit: pkg.quantity_limit || 0,
+          is_enabled: pkg.is_enabled,
+          is_sponsorship: pkg.is_sponsorship,
+          version: pkg.version,
+        }
       : undefined,
-  });
+  })
 
   const updateMutation = useMutation({
     mutationFn: async (data: PackageFormData) => {
       const response = await apiClient.patch(
         `/admin/events/${eventId}/packages/${packageId}`,
         data
-      );
-      return response.data;
+      )
+      return response.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ticket-packages', eventId] });
-      queryClient.invalidateQueries({ queryKey: ['ticket-package', eventId, packageId] });
+      queryClient.invalidateQueries({ queryKey: ['ticket-packages', eventId] })
+      queryClient.invalidateQueries({
+        queryKey: ['ticket-package', eventId, packageId],
+      })
       toast({
         title: 'Package updated',
         description: 'Ticket package has been updated successfully.',
-      });
+      })
       navigate({
         to: '/events/$eventId/tickets',
         params: { eventId: routeEventId },
-      });
+      })
     },
     onError: (error) => {
-      const errorResponse = error as { response?: { status?: number; data?: { detail?: string } } };
-      const status = errorResponse.response?.status;
-      const detail = errorResponse.response?.data?.detail;
+      const errorResponse = error as {
+        response?: { status?: number; data?: { detail?: string } }
+      }
+      const status = errorResponse.response?.status
+      const detail = errorResponse.response?.data?.detail
 
       // Handle 409 Conflict - concurrent edit
-      if (status === 409 || (typeof detail === 'string' && detail.includes('Version mismatch'))) {
-        setShowConflictDialog(true);
+      if (
+        status === 409 ||
+        (typeof detail === 'string' && detail.includes('Version mismatch'))
+      ) {
+        setShowConflictDialog(true)
       } else {
         toast({
           title: 'Update failed',
           description: getErrorMessage(error, 'Failed to update package'),
           variant: 'destructive',
-        });
+        })
       }
     },
-  });
+  })
 
   const onSubmit = (data: PackageFormData) => {
-    updateMutation.mutate(data);
-  };
+    updateMutation.mutate(data)
+  }
 
   const imageUploadMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedFile) return;
+      if (!selectedFile) return
 
       const response = await packageImagesApi.uploadImage(
         eventId,
         packageId,
         selectedFile,
         (progress) => setUploadProgress(progress)
-      );
-      return response;
+      )
+      return response
     },
     onSuccess: () => {
-      setUploadStatus('success');
-      setUploadProgress(100);
-      queryClient.invalidateQueries({ queryKey: ['ticket-package', eventId, packageId] });
+      setUploadStatus('success')
+      setUploadProgress(100)
+      queryClient.invalidateQueries({
+        queryKey: ['ticket-package', eventId, packageId],
+      })
       toast({
         title: 'Image uploaded',
         description: 'Package image has been uploaded successfully.',
-      });
+      })
     },
     onError: (error) => {
-      setUploadStatus('error');
+      setUploadStatus('error')
       toast({
         title: 'Image upload failed',
         description: getErrorMessage(error, 'Failed to upload image'),
         variant: 'destructive',
-      });
+      })
     },
-  });
+  })
 
   const imageDeleteMutation = useMutation({
     mutationFn: async () => {
-      const response = await packageImagesApi.deleteImage(eventId, packageId);
-      return response;
+      const response = await packageImagesApi.deleteImage(eventId, packageId)
+      return response
     },
     onSuccess: () => {
-      setImagePreview(null);
-      setSelectedFile(null);
-      setUploadProgress(0);
-      setUploadStatus('idle');
-      queryClient.invalidateQueries({ queryKey: ['ticket-package', eventId, packageId] });
+      setImagePreview(null)
+      setSelectedFile(null)
+      setUploadProgress(0)
+      setUploadStatus('idle')
+      queryClient.invalidateQueries({
+        queryKey: ['ticket-package', eventId, packageId],
+      })
       toast({
         title: 'Image deleted',
         description: 'Package image has been removed.',
-      });
+      })
     },
     onError: (error) => {
       toast({
         title: 'Delete failed',
         description: getErrorMessage(error, 'Failed to delete image'),
         variant: 'destructive',
-      });
+      })
     },
-  });
+  })
 
   const handleImageFile = (file: File) => {
-    setSelectedFile(file);
-    setUploadStatus('uploading');
-    setUploadProgress(0);
+    setSelectedFile(file)
+    setUploadStatus('uploading')
+    setUploadProgress(0)
     // Trigger upload immediately
-    imageUploadMutation.mutate();
-  };
+    imageUploadMutation.mutate()
+  }
 
   const handleRemoveImage = () => {
     if (imagePreview && !imagePreview.startsWith('blob:')) {
       // Remove from server
-      imageDeleteMutation.mutate();
+      imageDeleteMutation.mutate()
     } else {
       // Just reset local state
-      setImagePreview(null);
-      setSelectedFile(null);
-      setUploadProgress(0);
-      setUploadStatus('idle');
+      setImagePreview(null)
+      setSelectedFile(null)
+      setUploadProgress(0)
+      setUploadStatus('idle')
     }
-  };
+  }
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-96 bg-gray-200 rounded"></div>
+      <div className='space-y-4'>
+        <div className='animate-pulse space-y-4'>
+          <div className='h-8 w-1/4 rounded bg-gray-200'></div>
+          <div className='h-96 rounded bg-gray-200'></div>
         </div>
       </div>
-    );
+    )
   }
 
   if (!pkg) {
     return (
-      <div className="space-y-4">
+      <div className='space-y-4'>
         <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">Package not found</p>
+          <CardContent className='py-12 text-center'>
+            <p className='text-muted-foreground'>Package not found</p>
             <Button
-              className="mt-4"
+              className='mt-4'
               onClick={() =>
                 navigate({
                   to: '/events/$eventId/tickets',
@@ -288,14 +312,14 @@ export function TicketPackageEditPage() {
           </CardContent>
         </Card>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className='space-y-4 md:space-y-6'>
       <Button
-        variant="ghost"
-        className="mb-4"
+        variant='ghost'
+        className='mb-4'
         onClick={() =>
           navigate({
             to: '/events/$eventId/tickets',
@@ -303,7 +327,7 @@ export function TicketPackageEditPage() {
           })
         }
       >
-        <ArrowLeft className="mr-2 h-4 w-4" />
+        <ArrowLeft className='mr-2 h-4 w-4' />
         Back to Packages
       </Button>
 
@@ -316,15 +340,18 @@ export function TicketPackageEditPage() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
               <FormField
                 control={form.control}
-                name="name"
+                name='name'
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Package Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., VIP Table, General Admission" {...field} />
+                      <Input
+                        placeholder='e.g., VIP Table, General Admission'
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -333,14 +360,14 @@ export function TicketPackageEditPage() {
 
               <FormField
                 control={form.control}
-                name="description"
+                name='description'
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Describe what's included..."
-                        className="min-h-[100px]"
+                        className='min-h-[100px]'
                         {...field}
                         value={field.value || ''}
                       />
@@ -350,15 +377,15 @@ export function TicketPackageEditPage() {
                 )}
               />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
                 <FormField
                   control={form.control}
-                  name="price"
+                  name='price'
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Price (USD)</FormLabel>
                       <FormControl>
-                        <Input type="number" min="0" step="0.01" {...field} />
+                        <Input type='number' min='0' step='0.01' {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -367,12 +394,12 @@ export function TicketPackageEditPage() {
 
                 <FormField
                   control={form.control}
-                  name="seats_per_package"
+                  name='seats_per_package'
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Seats per Package</FormLabel>
                       <FormControl>
-                        <Input type="number" min="1" max="100" {...field} />
+                        <Input type='number' min='1' max='100' {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -382,21 +409,22 @@ export function TicketPackageEditPage() {
 
               <FormField
                 control={form.control}
-                name="quantity_limit"
+                name='quantity_limit'
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Quantity Limit</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        min="0"
-                        placeholder="Leave blank for unlimited"
+                        type='number'
+                        min='0'
+                        placeholder='Leave blank for unlimited'
                         {...field}
                         value={field.value || ''}
                       />
                     </FormControl>
                     <FormDescription>
-                      Leave blank for unlimited. Cannot reduce below sold count ({pkg.sold_count})
+                      Leave blank for unlimited. Cannot reduce below sold count
+                      ({pkg.sold_count})
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -405,11 +433,11 @@ export function TicketPackageEditPage() {
 
               <FormField
                 control={form.control}
-                name="is_enabled"
+                name='is_enabled'
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Enabled</FormLabel>
+                  <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
+                    <div className='space-y-0.5'>
+                      <FormLabel className='text-base'>Enabled</FormLabel>
                       <FormDescription>
                         Make this package visible to donors
                       </FormDescription>
@@ -426,26 +454,31 @@ export function TicketPackageEditPage() {
 
               <FormField
                 control={form.control}
-                name="is_sponsorship"
+                name='is_sponsorship'
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Sponsorship Package</FormLabel>
+                  <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
+                    <div className='space-y-0.5'>
+                      <FormLabel className='text-base'>
+                        Sponsorship Package
+                      </FormLabel>
                       <FormDescription>
                         Mark this package as a sponsorship for reporting
                       </FormDescription>
                     </div>
                     <FormControl>
-                      <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                      <Switch
+                        checked={field.value ?? false}
+                        onCheckedChange={field.onChange}
+                      />
                     </FormControl>
                   </FormItem>
                 )}
               />
 
-              <div className="space-y-3 rounded-lg border p-4 bg-muted/30">
+              <div className='bg-muted/30 space-y-3 rounded-lg border p-4'>
                 <div>
-                  <FormLabel className="text-base">Package Image</FormLabel>
-                  <FormDescription className="mt-1">
+                  <FormLabel className='text-base'>Package Image</FormLabel>
+                  <FormDescription className='mt-1'>
                     Upload or update your package image
                   </FormDescription>
                 </div>
@@ -453,7 +486,11 @@ export function TicketPackageEditPage() {
                 {uploadStatus === 'idle' || uploadStatus === 'success' ? (
                   <ImageUploadZone
                     onFileSelected={handleImageFile}
-                    disabled={updateMutation.isPending || imageUploadMutation.isPending || imageDeleteMutation.isPending}
+                    disabled={
+                      updateMutation.isPending ||
+                      imageUploadMutation.isPending ||
+                      imageDeleteMutation.isPending
+                    }
                     preview={imagePreview}
                     onRemovePreview={handleRemoveImage}
                   />
@@ -469,14 +506,14 @@ export function TicketPackageEditPage() {
               </div>
 
               {/* Custom Options Section */}
-              <div className="mt-6 pt-6 border-t">
+              <div className='mt-6 border-t pt-6'>
                 <CustomOptionsManager packageId={packageId} eventId={eventId} />
               </div>
 
-              <div className="flex justify-end gap-2 mt-6">
+              <div className='mt-6 flex justify-end gap-2'>
                 <Button
-                  type="button"
-                  variant="outline"
+                  type='button'
+                  variant='outline'
                   onClick={() =>
                     navigate({
                       to: '/events/$eventId/tickets',
@@ -486,7 +523,12 @@ export function TicketPackageEditPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={updateMutation.isPending || uploadStatus === 'uploading'}>
+                <Button
+                  type='submit'
+                  disabled={
+                    updateMutation.isPending || uploadStatus === 'uploading'
+                  }
+                >
                   {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
                 </Button>
               </div>
@@ -499,19 +541,21 @@ export function TicketPackageEditPage() {
       <ConflictDialog
         isOpen={showConflictDialog}
         onRefresh={() => {
-          queryClient.invalidateQueries({ queryKey: ['ticket-package', eventId, packageId] });
-          setShowConflictDialog(false);
+          queryClient.invalidateQueries({
+            queryKey: ['ticket-package', eventId, packageId],
+          })
+          setShowConflictDialog(false)
           // Reset form to latest values
-          form.reset();
+          form.reset()
         }}
         onCancel={() => {
-          setShowConflictDialog(false);
+          setShowConflictDialog(false)
           navigate({
             to: '/events/$eventId/tickets',
             params: { eventId: routeEventId },
-          });
+          })
         }}
       />
     </div>
-  );
+  )
 }
