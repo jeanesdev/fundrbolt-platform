@@ -24,6 +24,7 @@ export interface EventResponse {
   venue_name: string | null
   venue_capacity: number | null
   status: 'draft' | 'active' | 'closed'
+  checkout_open: boolean
   primary_color: string | null
   secondary_color: string | null
   logo_url: string | null
@@ -141,4 +142,29 @@ export async function getEventBranding(slug: string): Promise<{
     logo_url: event.logo_url,
     banner_url: event.banner_url,
   }
+}
+
+// ================================
+// Ticket Packages
+// ================================
+
+export interface PublicTicketPackage {
+  id: string
+  name: string
+  description: string | null
+  price: number
+  seats_per_package: number
+  quantity_remaining: number | null
+  sold_out: boolean
+  image_url: string | null
+}
+
+/**
+ * Get publicly visible ticket packages for an event (no auth required).
+ */
+export async function getTicketPackages(slug: string): Promise<PublicTicketPackage[]> {
+  const response: AxiosResponse<PublicTicketPackage[]> = await apiClient.get(
+    `/events/public/${slug}/ticket-packages`
+  )
+  return response.data
 }

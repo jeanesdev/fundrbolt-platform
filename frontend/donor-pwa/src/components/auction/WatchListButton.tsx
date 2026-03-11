@@ -52,7 +52,7 @@ export function WatchListButton({
       queryClient.invalidateQueries({ queryKey: ['auction-items', eventId] });
       toast.success('Added to watch list');
     },
-    onError: (error, variables, context) => {
+    onError: (_error, _variables, context) => {
       // Rollback on error
       if (context?.previousData) {
         queryClient.setQueryData(['watchlist', eventId], context.previousData);
@@ -77,7 +77,7 @@ export function WatchListButton({
       queryClient.invalidateQueries({ queryKey: ['auction-items', eventId] });
       toast.success('Removed from watch list');
     },
-    onError: (error, variables, context) => {
+    onError: (_error, _variables, context) => {
       // Rollback on error
       if (context?.previousData) {
         queryClient.setQueryData(['watchlist', eventId], context.previousData);

@@ -39,7 +39,9 @@ import { Route as EventsSlugIndexRouteImport } from './routes/events.$slug.index
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedNposIndexRouteImport } from './routes/_authenticated/npos/index'
 import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events/index'
+import { Route as EventsSlugTicketsRouteImport } from './routes/events.$slug.tickets'
 import { Route as EventsSlugRegisterRouteImport } from './routes/events.$slug.register'
+import { Route as EventsSlugCheckoutRouteImport } from './routes/events.$slug.checkout'
 import { Route as AuthenticatedSettingsPaymentRouteImport } from './routes/_authenticated/settings/payment'
 import { Route as AuthenticatedSettingsPasswordRouteImport } from './routes/_authenticated/settings/password'
 import { Route as AuthenticatedSettingsConsentRouteImport } from './routes/_authenticated/settings/consent'
@@ -49,6 +51,7 @@ import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenti
 import { Route as AuthenticatedEventsEventSlugRouteRouteImport } from './routes/_authenticated/events/$eventSlug/route'
 import { Route as AuthenticatedNposNpoIdIndexRouteImport } from './routes/_authenticated/npos/$npoId.index'
 import { Route as AuthenticatedEventsEventSlugIndexRouteImport } from './routes/_authenticated/events/$eventSlug/index'
+import { Route as EventsSlugTicketsCheckoutRouteImport } from './routes/events.$slug.tickets.checkout'
 import { Route as AuthenticatedNposNpoIdEditRouteImport } from './routes/_authenticated/npos/$npoId/edit'
 import { Route as AuthenticatedEventsEventSlugEditRouteImport } from './routes/_authenticated/events/$eventSlug/edit'
 import { Route as AuthenticatedEventsEventSlugAuctionItemsIndexRouteImport } from './routes/_authenticated/events/$eventSlug/auction-items/index'
@@ -210,9 +213,19 @@ const AuthenticatedEventsIndexRoute =
     path: '/events/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const EventsSlugTicketsRoute = EventsSlugTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => EventsSlugRoute,
+} as any)
 const EventsSlugRegisterRoute = EventsSlugRegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => EventsSlugRoute,
+} as any)
+const EventsSlugCheckoutRoute = EventsSlugCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => EventsSlugRoute,
 } as any)
 const AuthenticatedSettingsPaymentRoute =
@@ -267,6 +280,12 @@ const AuthenticatedEventsEventSlugIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedEventsEventSlugRouteRoute,
+  } as any)
+const EventsSlugTicketsCheckoutRoute =
+  EventsSlugTicketsCheckoutRouteImport.update({
+    id: '/checkout',
+    path: '/checkout',
+    getParentRoute: () => EventsSlugTicketsRoute,
   } as any)
 const AuthenticatedNposNpoIdEditRoute =
   AuthenticatedNposNpoIdEditRouteImport.update({
@@ -338,13 +357,16 @@ export interface FileRoutesByFullPath {
   '/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/settings/password': typeof AuthenticatedSettingsPasswordRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
+  '/events/$slug/checkout': typeof EventsSlugCheckoutRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
+  '/events/$slug/tickets': typeof EventsSlugTicketsRouteWithChildren
   '/events/': typeof AuthenticatedEventsIndexRoute
   '/npos/': typeof AuthenticatedNposIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/events/$slug/': typeof EventsSlugIndexRoute
   '/events/$eventSlug/edit': typeof AuthenticatedEventsEventSlugEditRoute
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
+  '/events/$slug/tickets/checkout': typeof EventsSlugTicketsCheckoutRoute
   '/events/$eventSlug/': typeof AuthenticatedEventsEventSlugIndexRoute
   '/npos/$npoId/': typeof AuthenticatedNposNpoIdIndexRoute
   '/events/$eventSlug/auction-items/create': typeof AuthenticatedEventsEventSlugAuctionItemsCreateRoute
@@ -382,13 +404,16 @@ export interface FileRoutesByTo {
   '/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/settings/password': typeof AuthenticatedSettingsPasswordRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
+  '/events/$slug/checkout': typeof EventsSlugCheckoutRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
+  '/events/$slug/tickets': typeof EventsSlugTicketsRouteWithChildren
   '/events': typeof AuthenticatedEventsIndexRoute
   '/npos': typeof AuthenticatedNposIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/events/$slug': typeof EventsSlugIndexRoute
   '/events/$eventSlug/edit': typeof AuthenticatedEventsEventSlugEditRoute
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
+  '/events/$slug/tickets/checkout': typeof EventsSlugTicketsCheckoutRoute
   '/events/$eventSlug': typeof AuthenticatedEventsEventSlugIndexRoute
   '/npos/$npoId': typeof AuthenticatedNposNpoIdIndexRoute
   '/events/$eventSlug/auction-items/create': typeof AuthenticatedEventsEventSlugAuctionItemsCreateRoute
@@ -431,13 +456,16 @@ export interface FileRoutesById {
   '/_authenticated/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/_authenticated/settings/password': typeof AuthenticatedSettingsPasswordRoute
   '/_authenticated/settings/payment': typeof AuthenticatedSettingsPaymentRoute
+  '/events/$slug/checkout': typeof EventsSlugCheckoutRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
+  '/events/$slug/tickets': typeof EventsSlugTicketsRouteWithChildren
   '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
   '/_authenticated/npos/': typeof AuthenticatedNposIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/events/$slug/': typeof EventsSlugIndexRoute
   '/_authenticated/events/$eventSlug/edit': typeof AuthenticatedEventsEventSlugEditRoute
   '/_authenticated/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
+  '/events/$slug/tickets/checkout': typeof EventsSlugTicketsCheckoutRoute
   '/_authenticated/events/$eventSlug/': typeof AuthenticatedEventsEventSlugIndexRoute
   '/_authenticated/npos/$npoId/': typeof AuthenticatedNposNpoIdIndexRoute
   '/_authenticated/events/$eventSlug/auction-items/create': typeof AuthenticatedEventsEventSlugAuctionItemsCreateRoute
@@ -480,13 +508,16 @@ export interface FileRouteTypes {
     | '/settings/consent'
     | '/settings/password'
     | '/settings/payment'
+    | '/events/$slug/checkout'
     | '/events/$slug/register'
+    | '/events/$slug/tickets'
     | '/events/'
     | '/npos/'
     | '/settings/'
     | '/events/$slug/'
     | '/events/$eventSlug/edit'
     | '/npos/$npoId/edit'
+    | '/events/$slug/tickets/checkout'
     | '/events/$eventSlug/'
     | '/npos/$npoId/'
     | '/events/$eventSlug/auction-items/create'
@@ -524,13 +555,16 @@ export interface FileRouteTypes {
     | '/settings/consent'
     | '/settings/password'
     | '/settings/payment'
+    | '/events/$slug/checkout'
     | '/events/$slug/register'
+    | '/events/$slug/tickets'
     | '/events'
     | '/npos'
     | '/settings'
     | '/events/$slug'
     | '/events/$eventSlug/edit'
     | '/npos/$npoId/edit'
+    | '/events/$slug/tickets/checkout'
     | '/events/$eventSlug'
     | '/npos/$npoId'
     | '/events/$eventSlug/auction-items/create'
@@ -572,13 +606,16 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/consent'
     | '/_authenticated/settings/password'
     | '/_authenticated/settings/payment'
+    | '/events/$slug/checkout'
     | '/events/$slug/register'
+    | '/events/$slug/tickets'
     | '/_authenticated/events/'
     | '/_authenticated/npos/'
     | '/_authenticated/settings/'
     | '/events/$slug/'
     | '/_authenticated/events/$eventSlug/edit'
     | '/_authenticated/npos/$npoId/edit'
+    | '/events/$slug/tickets/checkout'
     | '/_authenticated/events/$eventSlug/'
     | '/_authenticated/npos/$npoId/'
     | '/_authenticated/events/$eventSlug/auction-items/create'
@@ -824,11 +861,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/events/$slug/tickets': {
+      id: '/events/$slug/tickets'
+      path: '/tickets'
+      fullPath: '/events/$slug/tickets'
+      preLoaderRoute: typeof EventsSlugTicketsRouteImport
+      parentRoute: typeof EventsSlugRoute
+    }
     '/events/$slug/register': {
       id: '/events/$slug/register'
       path: '/register'
       fullPath: '/events/$slug/register'
       preLoaderRoute: typeof EventsSlugRegisterRouteImport
+      parentRoute: typeof EventsSlugRoute
+    }
+    '/events/$slug/checkout': {
+      id: '/events/$slug/checkout'
+      path: '/checkout'
+      fullPath: '/events/$slug/checkout'
+      preLoaderRoute: typeof EventsSlugCheckoutRouteImport
       parentRoute: typeof EventsSlugRoute
     }
     '/_authenticated/settings/payment': {
@@ -893,6 +944,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/events/$eventSlug/'
       preLoaderRoute: typeof AuthenticatedEventsEventSlugIndexRouteImport
       parentRoute: typeof AuthenticatedEventsEventSlugRouteRoute
+    }
+    '/events/$slug/tickets/checkout': {
+      id: '/events/$slug/tickets/checkout'
+      path: '/checkout'
+      fullPath: '/events/$slug/tickets/checkout'
+      preLoaderRoute: typeof EventsSlugTicketsCheckoutRouteImport
+      parentRoute: typeof EventsSlugTicketsRoute
     }
     '/_authenticated/npos/$npoId/edit': {
       id: '/_authenticated/npos/$npoId/edit'
@@ -1032,13 +1090,28 @@ const PreviewRouteChildren: PreviewRouteChildren = {
 const PreviewRouteWithChildren =
   PreviewRoute._addFileChildren(PreviewRouteChildren)
 
+interface EventsSlugTicketsRouteChildren {
+  EventsSlugTicketsCheckoutRoute: typeof EventsSlugTicketsCheckoutRoute
+}
+
+const EventsSlugTicketsRouteChildren: EventsSlugTicketsRouteChildren = {
+  EventsSlugTicketsCheckoutRoute: EventsSlugTicketsCheckoutRoute,
+}
+
+const EventsSlugTicketsRouteWithChildren =
+  EventsSlugTicketsRoute._addFileChildren(EventsSlugTicketsRouteChildren)
+
 interface EventsSlugRouteChildren {
+  EventsSlugCheckoutRoute: typeof EventsSlugCheckoutRoute
   EventsSlugRegisterRoute: typeof EventsSlugRegisterRoute
+  EventsSlugTicketsRoute: typeof EventsSlugTicketsRouteWithChildren
   EventsSlugIndexRoute: typeof EventsSlugIndexRoute
 }
 
 const EventsSlugRouteChildren: EventsSlugRouteChildren = {
+  EventsSlugCheckoutRoute: EventsSlugCheckoutRoute,
   EventsSlugRegisterRoute: EventsSlugRegisterRoute,
+  EventsSlugTicketsRoute: EventsSlugTicketsRouteWithChildren,
   EventsSlugIndexRoute: EventsSlugIndexRoute,
 }
 

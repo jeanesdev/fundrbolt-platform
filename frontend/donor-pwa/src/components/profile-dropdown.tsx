@@ -8,22 +8,30 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import useDialogState from '@/hooks/use-dialog-state'
 import { useAuthStore } from '@/stores/auth-store'
 import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { Link } from '@tanstack/react-router'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { Bug, Calendar, Check, LogOut, Settings } from 'lucide-react'
 import { useState } from 'react'
 
 export function ProfileDropdown() {
   const [open, setOpen] = useDialogState()
   const [menuOpen, setMenuOpen] = useState(false)
   const [spoofSheetOpen, setSpoofSheetOpen] = useState(false)
+  const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const getProfilePictureUrl = useAuthStore((state) => state.getProfilePictureUrl)
   const spoofedUser = useDebugSpoofStore((state) => state.spoofedUser)
   const timeBaseSpoofMs = useDebugSpoofStore((state) => state.timeBaseSpoofMs)
+  const availableEvents = useEventContextStore((state) => state.availableEvents)
+  const selectedEventSlug = useEventContextStore((state) => state.selectedEventSlug)
   const isSuperAdmin = user?.role === 'super_admin'
 
   const initials = user
@@ -68,8 +76,48 @@ export function ProfileDropdown() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          {availableEvents.length > 0 && (
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Calendar className='mr-2 size-4' />
+                <div className='flex min-w-0 flex-1 flex-col text-left'>
+                  <span>Event</span>
+                  <span className='text-muted-foreground truncate text-xs font-normal'>
+                    {availableEvents.find((e) => e.slug === selectedEventSlug)?.name ?? 'Select Event'}
+                  </span>
+                </div>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className='w-64'>
+                <DropdownMenuLabel className='text-muted-foreground text-xs'>Switch Event</DropdownMenuLabel>
+                {availableEvents.map((event) => (
+                  <DropdownMenuItem
+                    key={event.id}
+                    onClick={() => {
+                      setMenuOpen(false)
+                      void navigate({ to: '/events/$eventSlug', params: { eventSlug: event.slug } })
+                    }}
+                    className='gap-2'
+                  >
+                    <div className='min-w-0 flex-1'>
+                      <div className='truncate font-medium'>{event.name}</div>
+                      {event.npo_name && (
+                        <div className='text-muted-foreground truncate text-xs'>{event.npo_name}</div>
+                      )}
+                    </div>
+                    {event.slug === selectedEventSlug && (
+                      <Check className='size-4 shrink-0 text-primary' />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          )}
+          <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link to='/settings'>Profile</Link>
+            <Link to='/settings'>
+              <Settings className='mr-2 size-4' />
+              Settings
+            </Link>
           </DropdownMenuItem>
           {isSuperAdmin && (
             <>
@@ -81,6 +129,7 @@ export function ProfileDropdown() {
                   setTimeout(() => setSpoofSheetOpen(true), 150)
                 }}
               >
+                <Bug className='mr-2 size-4' />
                 Debug Tools
                 {isSpoofActive && (
                   <span className='ml-auto h-2 w-2 rounded-full bg-amber-400' />
@@ -89,7 +138,10 @@ export function ProfileDropdown() {
             </>
           )}
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setOpen(true)}>Sign out</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setOpen(true)}>
+            <LogOut className='mr-2 size-4' />
+            Sign out
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -4,7 +4,6 @@
  * Uses React Hook Form + Zod for form validation
  * Connects to PATCH /api/v1/users/me/profile endpoint
  */
-
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -17,12 +16,33 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import apiClient from '@/lib/axios'
-import { profileUpdateSchema, type ProfileUpdateFormData } from '@/schemas/profile'
+import {
+  profileUpdateSchema,
+  type ProfileUpdateFormData,
+} from '@/schemas/profile'
 import { useAuthStore } from '@/stores/auth-store'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+
+function formatPhoneNumber(value: string): string {
+  const digits = value.replace(/\D/g, '')
+  if (digits.length === 0) return ''
+  if (digits.length <= 3) return `(${digits}`
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+  if (digits.length <= 10)
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+  return `+${digits.slice(0, digits.length - 10)} (${digits.slice(-10, -7)}) ${digits.slice(-7, -4)}-${digits.slice(-4)}`
+}
+
+function phoneDisplayToE164(display: string): string {
+  const digits = display.replace(/\D/g, '')
+  if (!digits) return ''
+  if (digits.length === 10) return `+1${digits}`
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`
+  return display
+}
 
 interface ProfileFormProps {
   initialData?: Partial<ProfileUpdateFormData>
@@ -69,13 +89,15 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
     onError: (error: unknown) => {
       // T054: Display inline error messages
       const err = error as { response?: { data?: { detail?: string } } }
-      const errorMessage = err.response?.data?.detail || 'Failed to update profile'
+      const errorMessage =
+        err.response?.data?.detail || 'Failed to update profile'
       toast.error(errorMessage)
     },
   })
 
   const onSubmit = (data: ProfileUpdateFormData) => {
-    updateProfileMutation.mutate(data)
+    const phoneE164 = data.phone ? phoneDisplayToE164(data.phone) : undefined
+    updateProfileMutation.mutate({ ...data, phone: phoneE164 || undefined })
   }
 
   return (
@@ -112,7 +134,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
           />
         </div>
 
-        {/* Phone field - T048: E.164 validation */}
+        {/* Phone field - auto-formats as (XXX) XXX-XXXX */}
         <FormField
           control={form.control}
           name='phone'
@@ -120,11 +142,18 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
             <FormItem>
               <FormLabel>Phone</FormLabel>
               <FormControl>
-                <Input placeholder='+14155552671' {...field} value={field.value || ''} />
+                <Input
+                  placeholder='(555) 555-5555'
+                  {...field}
+                  value={field.value ? formatPhoneNumber(field.value) : ''}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, '')
+                    field.onChange(raw ? `+1${raw}` : '')
+                  }}
+                  inputMode='tel'
+                />
               </FormControl>
-              <FormDescription>
-                Phone number in E.164 format (e.g., +14155552671)
-              </FormDescription>
+              <FormDescription>Your contact phone number</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -138,7 +167,11 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
             <FormItem>
               <FormLabel>Organization Name</FormLabel>
               <FormControl>
-                <Input placeholder='Acme Inc.' {...field} value={field.value || ''} />
+                <Input
+                  placeholder='Acme Inc.'
+                  {...field}
+                  value={field.value || ''}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -154,7 +187,11 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
               <FormItem>
                 <FormLabel>Address Line 1</FormLabel>
                 <FormControl>
-                  <Input placeholder='123 Main St' {...field} value={field.value || ''} />
+                  <Input
+                    placeholder='123 Main St'
+                    {...field}
+                    value={field.value || ''}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -168,7 +205,11 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
               <FormItem>
                 <FormLabel>Address Line 2</FormLabel>
                 <FormControl>
-                  <Input placeholder='Apt 4B' {...field} value={field.value || ''} />
+                  <Input
+                    placeholder='Apt 4B'
+                    {...field}
+                    value={field.value || ''}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -183,7 +224,11 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
                 <FormItem>
                   <FormLabel>City</FormLabel>
                   <FormControl>
-                    <Input placeholder='San Francisco' {...field} value={field.value || ''} />
+                    <Input
+                      placeholder='San Francisco'
+                      {...field}
+                      value={field.value || ''}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -197,7 +242,11 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
                 <FormItem>
                   <FormLabel>State</FormLabel>
                   <FormControl>
-                    <Input placeholder='CA' {...field} value={field.value || ''} />
+                    <Input
+                      placeholder='CA'
+                      {...field}
+                      value={field.value || ''}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -211,7 +260,11 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
                 <FormItem>
                   <FormLabel>Postal Code</FormLabel>
                   <FormControl>
-                    <Input placeholder='94102' {...field} value={field.value || ''} />
+                    <Input
+                      placeholder='94102'
+                      {...field}
+                      value={field.value || ''}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -226,7 +279,11 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
               <FormItem>
                 <FormLabel>Country</FormLabel>
                 <FormControl>
-                  <Input placeholder='United States' {...field} value={field.value || ''} />
+                  <Input
+                    placeholder='United States'
+                    {...field}
+                    value={field.value || ''}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

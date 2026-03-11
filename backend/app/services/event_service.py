@@ -229,6 +229,7 @@ class EventService:
             )
 
         event.status = EventStatus.CLOSED
+        event.checkout_open = True  # auto-open checkout when event closes
         event.updated_by = current_user.id
 
         await db.commit()
@@ -880,6 +881,7 @@ async def close_expired_events(db: AsyncSession) -> int:
 
     for event in events_to_close:
         event.status = EventStatus.CLOSED
+        event.checkout_open = True  # auto-open checkout when event closes
         event.version += 1
 
     if events_to_close:
