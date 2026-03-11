@@ -15,6 +15,7 @@ import {
   EventSwitcher,
   MySeatingSection,
 } from '@/components/event-home'
+import { AuctionCountdownTimer } from '@/components/event-home/AuctionCountdownTimer'
 import { AuctionItemDetailModal } from '@/components/event-home/AuctionItemDetailModal'
 import {
   BottomTabNav,
@@ -25,6 +26,12 @@ import {
   EventHeroSection,
   type EventStatus,
 } from '@/components/event-home/EventHeroSection'
+import {
+  GuestProfileModal,
+  type GuestProfileData,
+} from '@/components/event-home/GuestProfileModal'
+import { MyBidsDonationsSection } from '@/components/event-home/MyBidsDonationsSection'
+import { OtherGuestsSection } from '@/components/event-home/OtherGuestsSection'
 import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -34,6 +41,12 @@ import { useEventContext } from '@/hooks/use-event-context'
 import { useTabSwipe } from '@/hooks/use-tab-swipe'
 import apiClient from '@/lib/axios'
 import auctionItemService from '@/services/auctionItemService'
+import {
+  getEventGuests,
+  getMyActivity,
+  type DonorActivityResponse,
+  type EventGuestsResponse,
+} from '@/services/donor-activity-service'
 import {
   getMySeatingInfo,
   type SeatingInfoResponse,
@@ -87,6 +100,10 @@ export function EventHomePage() {
   )
   const [maxBidItemMap, setMaxBidItemMap] = useState<Record<string, number>>({})
   const [displayedTab, setDisplayedTab] = useState<DonorTab>('home')
+  const [selectedGuest, setSelectedGuest] = useState<GuestProfileData | null>(
+    null
+  )
+  const [guestModalOpen, setGuestModalOpen] = useState(false)
   const prefetchedAuctionImagesRef = useRef<Set<string>>(new Set())
   const prefetchedVenueMapUrlsRef = useRef<Set<string>>(new Set())
   const queryClient = useQueryClient()
@@ -401,7 +418,20 @@ export function EventHomePage() {
     ?.status
   const shouldShowSeatingError = !!seatingError && seatingStatusCode !== 404
 
-  // Current event for switcher
+  const { data: activityData } = useQuery<DonorActivityResponse>({
+    queryKey: ['my-activity', currentEvent?.id, spoofedUserId ?? 'self'],
+    queryFn: () => getMyActivity(currentEvent!.id),
+    enabled: !!currentEvent?.id && !isPreviewMode,
+    staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
+  })
+
+  const { data: guestsData } = useQuery<EventGuestsResponse>({
+    queryKey: ['event-guests', currentEvent?.id],
+    queryFn: () => getEventGuests(currentEvent!.id),
+    enabled: !!currentEvent?.id && !isPreviewMode,
+    staleTime: 60 * 1000,
+  })
   const currentEventForSwitcher =
     useMemo((): RegisteredEventWithBranding | null => {
       if (!currentEvent) return null
@@ -639,14 +669,14 @@ export function EventHomePage() {
           (
             previous:
               | {
-                  watch_list?: Array<{
-                    id: string
-                    user_id: string
-                    auction_item_id: string
-                    added_at: string
-                  }>
-                  total?: number
-                }
+                watch_list?: Array<{
+                  id: string
+                  user_id: string
+                  auction_item_id: string
+                  added_at: string
+                }>
+                total?: number
+              }
               | undefined
           ) => {
             const existing = previous?.watch_list ?? []
@@ -741,14 +771,14 @@ export function EventHomePage() {
             (
               previous:
                 | {
-                    watch_list?: Array<{
-                      id: string
-                      user_id: string
-                      auction_item_id: string
-                      added_at: string
-                    }>
-                    total?: number
-                  }
+                  watch_list?: Array<{
+                    id: string
+                    user_id: string
+                    auction_item_id: string
+                    added_at: string
+                  }>
+                  total?: number
+                }
                 | undefined
             ) => {
               const existing = previous?.watch_list ?? []
@@ -1077,8 +1107,8 @@ export function EventHomePage() {
       venueMapLink={venueMapLink}
       switcherSlot={
         !isPreviewMode &&
-        currentEventForSwitcher &&
-        eventsForSwitcher.length > 0 ? (
+          currentEventForSwitcher &&
+          eventsForSwitcher.length > 0 ? (
           <EventSwitcher
             currentEvent={currentEventForSwitcher}
             events={eventsForSwitcher}
@@ -1196,6 +1226,15 @@ export function EventHomePage() {
             >
               Auction Items
             </h2>
+            {!!(currentEvent as unknown as Record<string, unknown>)
+              .auction_close_datetime && (
+                <AuctionCountdownTimer
+                  closeDateTime={
+                    (currentEvent as unknown as Record<string, unknown>)
+                      .auction_close_datetime as string
+                  }
+                />
+              )}
           </div>
           <div className='flex items-center gap-2'>
             {eventStatus === 'live' && (
@@ -1248,7 +1287,7 @@ export function EventHomePage() {
         </div>
       </div>
 
-      <div className='px-4 py-4'>
+      <div className='space-y-4 px-4 py-4'>
         {seatingLoading && (
           <div className='flex items-center justify-center py-16'>
             <Loader2
@@ -1313,6 +1352,23 @@ export function EventHomePage() {
                 : 'Your table assignment will appear here once the event coordinator assigns seating. Check back closer to the event!'}
             </p>
           </div>
+        )}
+
+        {activityData && (
+          <MyBidsDonationsSection
+            activity={activityData}
+            isAuctionClosed={eventStatus === 'past'}
+          />
+        )}
+
+        {guestsData && guestsData.guests.length > 0 && (
+          <OtherGuestsSection
+            guests={guestsData.guests}
+            onGuestClick={(guest) => {
+              setSelectedGuest(guest)
+              setGuestModalOpen(true)
+            }}
+          />
         )}
       </div>
     </>
@@ -1410,6 +1466,12 @@ export function EventHomePage() {
             ? undefined
             : (isWatching) => setIsItemWatching(isWatching)
         }
+      />
+
+      <GuestProfileModal
+        guest={selectedGuest}
+        open={guestModalOpen}
+        onOpenChange={setGuestModalOpen}
       />
     </div>
   )

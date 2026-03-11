@@ -78,8 +78,8 @@ export interface CheckoutRequest {
 
 export interface CheckoutResponse {
   transaction_id: string
-  /** 'approved' | 'declined' | 'pending' */
-  status: 'approved' | 'declined' | 'pending'
+  /** 'approved' | 'declined' | 'pending' | 'zero_balance' */
+  status: 'approved' | 'declined' | 'pending' | 'zero_balance'
   amount_charged: number
   gateway_transaction_id?: string | null
   decline_reason?: string | null
