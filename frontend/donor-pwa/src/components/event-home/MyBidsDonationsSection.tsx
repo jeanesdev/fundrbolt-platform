@@ -138,12 +138,14 @@ function BidHistorySheet({ bid, open, onOpenChange, isAuctionClosed }: BidHistor
                         {fmtDate(entry.placed_at)}
                       </p>
                     </div>
-                    <span
-                      className='flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold'
-                      style={{ color: statusInfo.color, backgroundColor: `${statusInfo.color}1a` }}
-                    >
-                      {statusInfo.label}
-                    </span>
+                    {isLatest && (
+                      <span
+                        className='flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold'
+                        style={{ color: statusInfo.color, backgroundColor: `${statusInfo.color}1a` }}
+                      >
+                        {statusInfo.label}
+                      </span>
+                    )}
                   </div>
                 </div>
               )
