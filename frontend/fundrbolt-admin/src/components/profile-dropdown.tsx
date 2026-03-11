@@ -29,7 +29,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { useEventStore } from '@/stores/event-store'
 import { Link } from '@tanstack/react-router'
-import { Building2, Calendar } from 'lucide-react'
+import { Building2, Calendar, Clock, LogOut, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -96,8 +96,8 @@ export function ProfileDropdown() {
   const filteredEvents =
     shouldShowSearch && eventSearchQuery
       ? availableEvents.filter((event) =>
-          event.name.toLowerCase().includes(eventSearchQuery.toLowerCase())
-        )
+        event.name.toLowerCase().includes(eventSearchQuery.toLowerCase())
+      )
       : availableEvents
 
   const handleSpoofTimeApply = () => {
@@ -312,7 +312,10 @@ export function ProfileDropdown() {
           </DropdownMenuSub>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link to='/settings'>Profile</Link>
+            <Link to='/settings'>
+              <Settings className='mr-2 size-4' />
+              Settings
+            </Link>
           </DropdownMenuItem>
           {isSuperAdmin && (
             <>
@@ -320,6 +323,7 @@ export function ProfileDropdown() {
               <DropdownMenuLabel>Debug Tools</DropdownMenuLabel>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
+                  <Clock className='mr-2 size-4' />
                   {timeBaseSpoofMs !== null
                     ? 'Update Spoof Time'
                     : 'Spoof Time'}
@@ -386,6 +390,7 @@ export function ProfileDropdown() {
           )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setOpen(true)}>
+            <LogOut className='mr-2 size-4' />
             Sign out
           </DropdownMenuItem>
         </DropdownMenuContent>

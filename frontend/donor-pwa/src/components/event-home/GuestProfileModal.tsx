@@ -4,8 +4,8 @@
  * Shown when a donor taps on a tablemate or on a card in the "Other Guests"
  * section.  All data is supplied by the caller; no API calls are made here.
  */
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { Crown, MapPin } from 'lucide-react'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet'
+import { Crown, MapPin, X } from 'lucide-react'
 
 export interface GuestProfileData {
   guestId: string
@@ -38,12 +38,24 @@ export function GuestProfileModal({ guest, open, onOpenChange }: GuestProfileMod
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side='bottom'
-        className='mx-auto max-w-lg rounded-t-3xl pb-8 outline-none'
+        className='mx-auto max-w-lg rounded-t-3xl pb-8 outline-none [&>button:last-of-type]:hidden'
         style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}
       >
         <SheetHeader className='sr-only'>
           <SheetTitle>{guest.name ?? 'Guest Profile'}</SheetTitle>
         </SheetHeader>
+
+        {/* High-contrast close button */}
+        <SheetClose
+          className='absolute end-4 top-4 flex h-8 w-8 items-center justify-center rounded-full transition-opacity hover:opacity-80'
+          style={{
+            backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.25)',
+            color: 'rgb(var(--event-primary, 59, 130, 246))',
+          }}
+          aria-label='Close'
+        >
+          <X className='h-4 w-4' strokeWidth={3} />
+        </SheetClose>
 
         <div className='flex flex-col items-center gap-4 pt-6'>
           {/* Avatar */}

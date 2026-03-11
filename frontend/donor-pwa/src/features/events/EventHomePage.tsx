@@ -26,10 +26,8 @@ import {
   EventHeroSection,
   type EventStatus,
 } from '@/components/event-home/EventHeroSection'
-import {
-  GuestProfileModal,
-  type GuestProfileData,
-} from '@/components/event-home/GuestProfileModal'
+import type { GuestProfileData } from '@/components/event-home/GuestProfileModal'
+import { GuestProfileModal } from '@/components/event-home/GuestProfileModal'
 import { MyBidsDonationsSection } from '@/components/event-home/MyBidsDonationsSection'
 import { OtherGuestsSection } from '@/components/event-home/OtherGuestsSection'
 import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
@@ -44,8 +42,6 @@ import auctionItemService from '@/services/auctionItemService'
 import {
   getEventGuests,
   getMyActivity,
-  type DonorActivityResponse,
-  type EventGuestsResponse,
 } from '@/services/donor-activity-service'
 import {
   getMySeatingInfo,
@@ -100,10 +96,6 @@ export function EventHomePage() {
   )
   const [maxBidItemMap, setMaxBidItemMap] = useState<Record<string, number>>({})
   const [displayedTab, setDisplayedTab] = useState<DonorTab>('home')
-  const [selectedGuest, setSelectedGuest] = useState<GuestProfileData | null>(
-    null
-  )
-  const [guestModalOpen, setGuestModalOpen] = useState(false)
   const prefetchedAuctionImagesRef = useRef<Set<string>>(new Set())
   const prefetchedVenueMapUrlsRef = useRef<Set<string>>(new Set())
   const queryClient = useQueryClient()
@@ -366,6 +358,56 @@ export function EventHomePage() {
     [userSelectedTab, activeTab, displayedTab, prefetchAuctionTabData]
   )
 
+  // Seating query (disabled in preview mode — no user-specific data)
+  const {
+    data: seatingInfo,
+    error: seatingError,
+    isLoading: seatingLoading,
+  } = useQuery<SeatingInfoResponse>({
+    queryKey: ['seating', 'my-info', currentEvent?.id, spoofedUserId ?? 'self'],
+    queryFn: () => getMySeatingInfo(currentEvent!.id),
+    enabled: !!currentEvent?.id && !isPreviewMode,
+    placeholderData: keepPreviousData,
+    staleTime: 10 * 1000,
+    refetchInterval: 10 * 1000,
+    retry: (failureCount, error) => {
+      const status = (error as AxiosError | undefined)?.response?.status
+      if (status === 404) return false
+      return failureCount < 1
+    },
+  })
+
+  const seatingStatusCode = (seatingError as AxiosError | null)?.response
+    ?.status
+  const shouldShowSeatingError = !!seatingError && seatingStatusCode !== 404
+
+  // Event guests query (seat tab — other guests directory)
+  const { data: guestsData } = useQuery({
+    queryKey: ['event-guests', currentEvent?.id, spoofedUserId ?? 'self'],
+    queryFn: () => getEventGuests(currentEvent!.id),
+    enabled: !!currentEvent?.id && !isPreviewMode,
+    staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000,
+  })
+
+  // My activity query (bids + donations — seat tab)
+  const { data: myActivity } = useQuery({
+    queryKey: ['my-activity', currentEvent?.id, spoofedUserId ?? 'self'],
+    queryFn: () => getMyActivity(currentEvent!.id),
+    enabled: !!currentEvent?.id && !isPreviewMode,
+    staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
+  })
+
+  // Guest profile modal state
+  const [selectedGuest, setSelectedGuest] = useState<GuestProfileData | null>(null)
+  const [guestProfileOpen, setGuestProfileOpen] = useState(false)
+
+  const handleGuestClick = useCallback((guest: GuestProfileData) => {
+    setSelectedGuest(guest)
+    setGuestProfileOpen(true)
+  }, [])
+
   // Events for switcher
   const eventsForSwitcher = useMemo((): RegisteredEventWithBranding[] => {
     return availableEvents.map((event) => {
@@ -395,43 +437,14 @@ export function EventHomePage() {
     })
   }, [availableEvents, timeBaseRealMs, timeBaseSpoofMs])
 
-  // Seating query (disabled in preview mode — no user-specific data)
-  const {
-    data: seatingInfo,
-    error: seatingError,
-    isLoading: seatingLoading,
-  } = useQuery<SeatingInfoResponse>({
-    queryKey: ['seating', 'my-info', currentEvent?.id, spoofedUserId ?? 'self'],
-    queryFn: () => getMySeatingInfo(currentEvent!.id),
-    enabled: !!currentEvent?.id && !isPreviewMode,
-    placeholderData: keepPreviousData,
-    staleTime: 10 * 1000,
-    refetchInterval: 10 * 1000,
-    retry: (failureCount, error) => {
-      const status = (error as AxiosError | undefined)?.response?.status
-      if (status === 404) return false
-      return failureCount < 1
+  const handleEventSelect = useCallback(
+    (event: RegisteredEventWithBranding) => {
+      navigate({ to: '/events/$eventSlug', params: { eventSlug: event.slug } })
     },
-  })
+    [navigate]
+  )
 
-  const seatingStatusCode = (seatingError as AxiosError | null)?.response
-    ?.status
-  const shouldShowSeatingError = !!seatingError && seatingStatusCode !== 404
-
-  const { data: activityData } = useQuery<DonorActivityResponse>({
-    queryKey: ['my-activity', currentEvent?.id, spoofedUserId ?? 'self'],
-    queryFn: () => getMyActivity(currentEvent!.id),
-    enabled: !!currentEvent?.id && !isPreviewMode,
-    staleTime: 30 * 1000,
-    refetchInterval: 30 * 1000,
-  })
-
-  const { data: guestsData } = useQuery<EventGuestsResponse>({
-    queryKey: ['event-guests', currentEvent?.id],
-    queryFn: () => getEventGuests(currentEvent!.id),
-    enabled: !!currentEvent?.id && !isPreviewMode,
-    staleTime: 60 * 1000,
-  })
+  // Current event for switcher
   const currentEventForSwitcher =
     useMemo((): RegisteredEventWithBranding | null => {
       if (!currentEvent) return null
@@ -480,13 +493,6 @@ export function EventHomePage() {
       resolveEventDateTime,
       getTaggedImageUrl,
     ])
-
-  const handleEventSelect = useCallback(
-    (event: RegisteredEventWithBranding) => {
-      navigate({ to: '/events/$eventSlug', params: { eventSlug: event.slug } })
-    },
-    [navigate]
-  )
 
   const loadEvent = useCallback(() => {
     // In preview mode, event data is seeded by the preview route — skip fetching
@@ -894,8 +900,11 @@ export function EventHomePage() {
     const nextIndex = displayedTabIndex + 1
     if (nextIndex < tabOrder.length) {
       setActiveTab(tabOrder[nextIndex])
+    } else {
+      // Swiped left past the last tab — open settings
+      void navigate({ to: '/settings' })
     }
-  }, [displayedTabIndex, tabOrder, setActiveTab])
+  }, [displayedTabIndex, tabOrder, setActiveTab, navigate])
 
   const swipeToPrevTab = useCallback(() => {
     const prevIndex = displayedTabIndex - 1
@@ -1281,7 +1290,7 @@ export function EventHomePage() {
             className='text-base font-bold'
             style={{ color: 'var(--event-text-on-background, #111827)' }}
           >
-            My Info
+            My Event
           </h2>
           <ProfileDropdown />
         </div>
@@ -1320,12 +1329,13 @@ export function EventHomePage() {
             <MySeatingSection
               seatingInfo={seatingInfo}
               venueMapLink={venueMapLink}
+              onGuestClick={handleGuestClick}
             />
           </div>
         )}
 
         {!seatingLoading && !seatingInfo && !shouldShowSeatingError && (
-          <div className='flex flex-col items-center justify-center py-20 text-center'>
+          <div className='flex flex-col items-center justify-center py-16 text-center'>
             <div
               className='animate-float mb-5 flex h-24 w-24 items-center justify-center rounded-full'
               style={{
@@ -1354,23 +1364,29 @@ export function EventHomePage() {
           </div>
         )}
 
-        {activityData && (
+        {/* My Bids & Donations */}
+        {myActivity && (myActivity.bids.length > 0 || myActivity.donations.length > 0) && (
           <MyBidsDonationsSection
-            activity={activityData}
-            isAuctionClosed={eventStatus === 'past'}
+            activity={myActivity}
+            isAuctionClosed={currentEvent?.status === 'closed'}
           />
         )}
 
+        {/* Other Guests Directory */}
         {guestsData && guestsData.guests.length > 0 && (
           <OtherGuestsSection
             guests={guestsData.guests}
-            onGuestClick={(guest) => {
-              setSelectedGuest(guest)
-              setGuestModalOpen(true)
-            }}
+            onGuestClick={handleGuestClick}
           />
         )}
       </div>
+
+      {/* Guest Profile Modal */}
+      <GuestProfileModal
+        guest={selectedGuest}
+        open={guestProfileOpen}
+        onOpenChange={setGuestProfileOpen}
+      />
     </>
   )
 
@@ -1466,12 +1482,6 @@ export function EventHomePage() {
             ? undefined
             : (isWatching) => setIsItemWatching(isWatching)
         }
-      />
-
-      <GuestProfileModal
-        guest={selectedGuest}
-        open={guestModalOpen}
-        onOpenChange={setGuestModalOpen}
       />
     </div>
   )
