@@ -32,6 +32,7 @@ from app.api.v1 import (
     invitations,
     legal_documents,
     members,
+    notifications,
     npos,
     promo_codes,
     public_testimonials,
@@ -90,6 +91,7 @@ api_router.include_router(admin_user_import.router)
 api_router.include_router(admin_event_dashboard.router)
 api_router.include_router(admin_quick_entry.router)
 api_router.include_router(donor_seating.router, tags=["donor-seating"])
+api_router.include_router(notifications.router, tags=["notifications"])
 api_router.include_router(ticket_packages.router, prefix="/admin", tags=["admin-tickets"])
 api_router.include_router(ticket_options.router, tags=["admin-tickets"])
 api_router.include_router(promo_codes.router, tags=["admin-tickets"])
