@@ -29,6 +29,14 @@ from app.models.npo_application import NPOApplication
 from app.models.npo_branding import NPOBranding
 from app.models.npo_member import NPOMember
 from app.models.onboarding_session import OnboardingSession, OnboardingSessionType
+from app.models.payment_gateway_credential import PaymentGatewayCredential
+from app.models.payment_profile import PaymentProfile
+from app.models.payment_receipt import PaymentReceipt
+from app.models.payment_transaction import (
+    PaymentTransaction,
+    TransactionStatus,
+    TransactionType,
+)
 from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
 from app.models.quick_entry_buy_now_bid import QuickEntryBuyNowBid
 from app.models.quick_entry_donation import QuickEntryDonation
@@ -158,5 +166,11 @@ __all__ = [
     "User",
     "UserConsent",
     "UUIDMixin",
+    "PaymentGatewayCredential",
+    "PaymentProfile",
+    "PaymentReceipt",
+    "PaymentTransaction",
+    "TransactionStatus",
+    "TransactionType",
     "WatchListEntry",
 ]

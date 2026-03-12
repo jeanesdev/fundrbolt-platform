@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils'
 import auctionItemService from '@/services/auctionItemService'
 import { useAuthStore } from '@/stores/auth-store'
 import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import type { AuctionItemDetail } from '@/types/auction-item'
 import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
 import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
 import '@ncdai/react-wheel-picker/style.css'
@@ -220,7 +221,7 @@ export function AuctionItemDetailModal({
       return false
     }
 
-    const itemData = item as Record<string, unknown>
+    const itemData = item as unknown as Record<string, unknown>
     const explicitWinningFlagKeys = [
       'is_current_user_winning',
       'is_winning',
@@ -831,9 +832,9 @@ export function AuctionItemDetailModal({
 
                   {/* Bidding Controls — only show when auction is open */}
                   {!isLiveAuctionItem &&
-                  isBiddingOpen &&
-                  eventStatus === 'active' &&
-                  !isEventInFuture ? (
+                    isBiddingOpen &&
+                    eventStatus === 'active' &&
+                    !isEventInFuture ? (
                     <div className='space-y-3'>
                       <div
                         className='relative h-[140px] overflow-hidden rounded-2xl border px-3 py-2'

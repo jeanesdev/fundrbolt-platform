@@ -29,6 +29,7 @@ from app.models.base import Base, UUIDMixin
 if TYPE_CHECKING:
     from app.models.event import Event
     from app.models.event_registration import EventRegistration
+    from app.models.payment_transaction import PaymentTransaction
     from app.models.user import User
 
 
@@ -454,6 +455,14 @@ class TicketPurchase(Base, UUIDMixin):
         nullable=False,
     )
 
+    # Feature 033: Link purchase to completed payment transaction
+    payment_transaction_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("payment_transactions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
     # Import Fields (Feature 021)
     external_sale_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
     purchaser_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
@@ -492,6 +501,10 @@ class TicketPurchase(Base, UUIDMixin):
         "AssignedTicket",
         back_populates="ticket_purchase",
         cascade="all, delete-orphan",
+    )
+    payment_transaction: Mapped["PaymentTransaction | None"] = relationship(
+        "PaymentTransaction",
+        foreign_keys=[payment_transaction_id],
     )
 
     # Constraints

@@ -11,6 +11,7 @@ import { LogoWhiteGold } from '@fundrbolt/shared/assets'
 import {
   BarChart3,
   Calendar,
+  CreditCard,
   Gavel,
   Menu,
   SearchIcon,
@@ -45,6 +46,7 @@ const groupIconMap: Record<string, React.ElementType> = {
   Event: Calendar,
   Guests: Users,
   Auctions: Gavel,
+  Finance: CreditCard,
   Data: BarChart3,
   Admin: Settings,
 }

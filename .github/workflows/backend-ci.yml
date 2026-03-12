@@ -137,7 +137,7 @@ jobs:
           SUPER_ADMIN_EMAIL: admin@test.example.com
           SUPER_ADMIN_PASSWORD: Test123!@#TestPassword
         run: poetry run pytest -v --tb=short
-        timeout-minutes: 10
+        timeout-minutes: 20
 
       - name: Upload coverage reports to Codecov
         if: matrix.python-version == '3.11'

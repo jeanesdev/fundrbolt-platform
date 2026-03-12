@@ -163,14 +163,26 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
   const clearSpoofedUser = useDebugSpoofStore((s) => s.clearSpoofedUser)
   const currentEvent = useEventStore((s) => s.currentEvent)
 
-  // Users query
+  // Users query – fetch all pages (backend caps per_page at 100)
   const { data: usersData, isLoading: usersLoading } = useQuery({
     queryKey: ['debug', 'users', 'spoof-list'],
     queryFn: async () => {
-      const response = await apiClient.get('/users', {
-        params: { page: 1, per_page: 50 },
-      })
-      return response.data as { items: UserOption[] }
+      const allItems: UserOption[] = []
+      let page = 1
+      let total = Infinity
+      while (allItems.length < total) {
+        const response = await apiClient.get('/users', {
+          params: { page, per_page: 100 },
+        })
+        const data = response.data as {
+          items: UserOption[]
+          total: number
+        }
+        allItems.push(...data.items)
+        total = data.total
+        page++
+      }
+      return { items: allItems }
     },
     enabled: open,
     staleTime: 60_000,

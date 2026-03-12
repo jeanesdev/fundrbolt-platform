@@ -7,25 +7,21 @@
  */
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Hash, Info } from 'lucide-react'
+import { Info } from 'lucide-react'
 
 interface BidderNumberBadgeProps {
   bidderNumber: number | null
-  _isCheckedIn: boolean
+  isCheckedIn: boolean
 }
 
 export function BidderNumberBadge({
   bidderNumber,
-  _isCheckedIn,
+  isCheckedIn: _isCheckedIn,
 }: BidderNumberBadgeProps) {
   // If bidder number exists, show it prominently (backend controls visibility policy)
   if (bidderNumber) {
     return (
       <div className='flex items-center gap-3'>
-        <Hash
-          className='h-5 w-5'
-          style={{ color: 'var(--event-card-text, #FFFFFF)' }}
-        />
         <div>
           <p
             className='text-sm font-medium'
@@ -41,7 +37,7 @@ export function BidderNumberBadge({
               color: 'var(--event-text-on-primary, #FFFFFF)',
             }}
           >
-            Bidder {bidderNumber}
+            #{bidderNumber}
           </Badge>
         </div>
       </div>

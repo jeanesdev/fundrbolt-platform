@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { checkinService } from '@/services/checkin-service'
 import {
   Check,
   ChevronDown,
+  CreditCard,
   Crown,
   Filter,
   Loader2,
@@ -51,6 +52,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  adminCreatePaymentProfile,
+  adminCreatePaymentSession,
+} from '@/lib/api/admin-payments'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useEventWorkspace } from '../useEventWorkspace'
 
@@ -140,6 +145,9 @@ export function EventCheckInSection() {
   const [editForm, setEditForm] = useState<EditFormState>(defaultEditForm)
   const [viewMode, setViewMode] = useViewPreference('check-in')
   const [cardFiltersOpen, setCardFiltersOpen] = useState(false)
+  const [addCardAttendee, setAddCardAttendee] = useState<Attendee | null>(null)
+  const [addCardHpfUrl, setAddCardHpfUrl] = useState<string | null>(null)
+  const [addCardLoading, setAddCardLoading] = useState(false)
 
   const activeFilterCount = useMemo(() => {
     let count = 0
@@ -422,6 +430,72 @@ export function EventCheckInSection() {
     setEditingAttendee(null)
     setEditForm(defaultEditForm)
   }
+
+  const closeAddCardDialog = () => {
+    setAddCardAttendee(null)
+    setAddCardHpfUrl(null)
+  }
+
+  const handleOpenAddCard = async (attendee: Attendee) => {
+    if (!attendee.user_id) return
+    setAddCardLoading(true)
+    try {
+      const response = await adminCreatePaymentSession(attendee.user_id, {
+        event_id: currentEvent.id,
+        npo_id: currentEvent.npo_id ?? null,
+        line_items: [],
+        save_profile: true,
+        return_url: window.location.href,
+        idempotency_key: `admin-checkin-${attendee.id}-${Date.now()}`,
+      })
+      setAddCardAttendee(attendee)
+      setAddCardHpfUrl(response.hpf_url)
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to start card entry'))
+    } finally {
+      setAddCardLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!addCardAttendee) return
+    const handleMessage = async (event: MessageEvent) => {
+      if (
+        !event.data ||
+        event.data.source !== 'fundrbolt-hpf' ||
+        event.data.type !== 'hpf_complete'
+      ) {
+        return
+      }
+      const payload = event.data
+      if (payload.status !== 'approved' || !payload.gatewayProfileId) {
+        toast.error('Card entry was not completed')
+        closeAddCardDialog()
+        return
+      }
+      try {
+        await adminCreatePaymentProfile(addCardAttendee.user_id!, {
+          npo_id: currentEvent.npo_id!,
+          gateway_profile_id: payload.gatewayProfileId,
+          card_last4: payload.cardLast4 ?? '',
+          card_brand: payload.cardBrand ?? '',
+          card_expiry_month: payload.cardExpiryMonth ?? 0,
+          card_expiry_year: payload.cardExpiryYear ?? 0,
+          is_default: true,
+        })
+        toast.success('Card saved successfully')
+        queryClient.invalidateQueries({
+          queryKey: ['event-attendees', currentEvent.id],
+        })
+        closeAddCardDialog()
+        closeManageDialog()
+      } catch (err) {
+        toast.error(getErrorMessage(err, 'Failed to save card'))
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [addCardAttendee, currentEvent, queryClient])
 
   if (isLoading) {
     return (
@@ -761,6 +835,21 @@ export function EventCheckInSection() {
                           <dd>{partyOf || '—'}</dd>
                           <dt className='text-muted-foreground'>Table #</dt>
                           <dd>{attendee.table_number ?? '—'}</dd>
+                          <dt className='text-muted-foreground'>Payment</dt>
+                          <dd>
+                            <span
+                              className={`flex items-center gap-1 text-xs ${
+                                attendee.has_payment_profile
+                                  ? 'text-green-600'
+                                  : 'text-muted-foreground'
+                              }`}
+                            >
+                              <CreditCard className='h-3 w-3' />
+                              {attendee.has_payment_profile
+                                ? 'Card on file'
+                                : 'No card'}
+                            </span>
+                          </dd>
                         </dl>
                         <Collapsible>
                           <CollapsibleTrigger className='text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs'>
@@ -812,6 +901,7 @@ export function EventCheckInSection() {
                     <TableHead>Table #</TableHead>
                     <TableHead>Bidder #</TableHead>
                     <TableHead>Checked In At</TableHead>
+                    <TableHead>Payment</TableHead>
                     <TableHead>Confirmation Code</TableHead>
                   </TableRow>
                   <TableRow>
@@ -922,6 +1012,11 @@ export function EventCheckInSection() {
                       />
                     </TableHead>
                     <TableHead>
+                      <span className='text-muted-foreground text-xs'>
+                        Payment
+                      </span>
+                    </TableHead>
+                    <TableHead>
                       <Input
                         placeholder='Filter code'
                         value={filters.confirmationCode}
@@ -939,7 +1034,7 @@ export function EventCheckInSection() {
                   {filteredAttendees.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={10}
+                        colSpan={11}
                         className='text-muted-foreground py-8 text-center'
                       >
                         No attendees match the current filters.
@@ -1024,6 +1119,28 @@ export function EventCheckInSection() {
                           <TableCell>{attendee.bidder_number ?? '—'}</TableCell>
                           <TableCell>
                             {formatDateTime(attendee.check_in_time)}
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              title={
+                                attendee.has_payment_profile
+                                  ? 'Card on file'
+                                  : 'No payment method'
+                              }
+                              aria-label={
+                                attendee.has_payment_profile
+                                  ? 'Card on file'
+                                  : 'No payment method'
+                              }
+                            >
+                              <CreditCard
+                                className={`h-4 w-4 ${
+                                  attendee.has_payment_profile
+                                    ? 'text-green-600'
+                                    : 'text-muted-foreground'
+                                }`}
+                              />
+                            </span>
                           </TableCell>
                           <TableCell className='font-mono text-xs'>
                             {attendee.registration_id}
@@ -1145,6 +1262,43 @@ export function EventCheckInSection() {
                   </Button>
                 </div>
               )}
+
+              {editingAttendee.user_id && (
+                <div className='space-y-2 rounded-md border p-3'>
+                  <div className='flex items-center justify-between'>
+                    <div className='flex items-center gap-2'>
+                      <CreditCard className='text-muted-foreground h-4 w-4' />
+                      <span className='text-sm font-medium'>Payment Method</span>
+                    </div>
+                    {editingAttendee.has_payment_profile ? (
+                      <span className='flex items-center gap-1 text-sm text-green-600'>
+                        <Check className='h-3 w-3' />
+                        Card on file
+                      </span>
+                    ) : (
+                      <span className='text-muted-foreground text-sm'>
+                        No payment method
+                      </span>
+                    )}
+                  </div>
+                  {!editingAttendee.has_payment_profile && (
+                    <Button
+                      type='button'
+                      variant='secondary'
+                      size='sm'
+                      disabled={addCardLoading}
+                      onClick={() => handleOpenAddCard(editingAttendee)}
+                    >
+                      {addCardLoading ? (
+                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                      ) : (
+                        <CreditCard className='mr-2 h-4 w-4' />
+                      )}
+                      Add Card
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -1173,6 +1327,36 @@ export function EventCheckInSection() {
                 Save
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(addCardAttendee && addCardHpfUrl)}
+        onOpenChange={(open) => {
+          if (!open) closeAddCardDialog()
+        }}
+      >
+        <DialogContent className='sm:max-w-lg'>
+          <DialogHeader>
+            <DialogTitle>Add Payment Card</DialogTitle>
+            <DialogDescription>
+              Securely enter card details for{' '}
+              <span className='font-medium'>{addCardAttendee?.name}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          {addCardHpfUrl && (
+            <iframe
+              src={addCardHpfUrl}
+              title='Payment card entry'
+              className='h-[420px] w-full rounded-md border'
+              sandbox='allow-forms allow-scripts allow-same-origin allow-popups'
+            />
+          )}
+          <DialogFooter>
+            <Button variant='outline' onClick={closeAddCardDialog}>
+              Cancel
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

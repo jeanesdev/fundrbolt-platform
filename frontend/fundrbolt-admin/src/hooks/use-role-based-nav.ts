@@ -304,6 +304,11 @@ const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
     path: 'quick-entry',
     icon: 'Zap',
   },
+  {
+    title: 'Payments',
+    path: 'payments',
+    icon: 'CreditCard',
+  },
 ]
 
 /** Helper to look up a section by its path. Throws at startup if a path is missing. */
@@ -351,6 +356,12 @@ const EVENT_NAV_GROUPS: Array<{
       sectionByPath('auction-items'),
       sectionByPath('auction-bids'),
       sectionByPath('quick-entry'),
+    ],
+  },
+  {
+    title: 'Finance',
+    sections: [
+      sectionByPath('payments'),
     ],
   },
   {

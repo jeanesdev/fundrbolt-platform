@@ -9,6 +9,8 @@ from app.api.v1 import (
     admin_auction_item_import,
     admin_donations,
     admin_event_dashboard,
+    admin_npo_credentials,
+    admin_payments,
     admin_quick_entry,
     admin_registration_import,
     admin_seating,
@@ -33,6 +35,7 @@ from app.api.v1 import (
     legal_documents,
     members,
     npos,
+    payments,
     promo_codes,
     public_testimonials,
     registrations,
@@ -97,5 +100,9 @@ api_router.include_router(sales_tracking.router, prefix="/admin", tags=["admin-t
 api_router.include_router(admin.router, tags=["admin"])
 api_router.include_router(event_preview.admin_router, tags=["admin-preview"])
 api_router.include_router(event_preview.preview_router, tags=["event-preview"])
+# Feature 033: Payment processing
+api_router.include_router(payments.router, tags=["payments"])
+api_router.include_router(admin_payments.router, tags=["admin-payments"])
+api_router.include_router(admin_npo_credentials.router, tags=["admin-npo-credentials"])
 
 __all__ = ["api_router"]
