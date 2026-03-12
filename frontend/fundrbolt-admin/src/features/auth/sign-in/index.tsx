@@ -1,3 +1,4 @@
+import { Link, useSearch } from '@tanstack/react-router'
 import {
   Card,
   CardContent,
@@ -6,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Link, useSearch } from '@tanstack/react-router'
 import { AuthLayout } from '../auth-layout'
 import { SocialLoginButtons } from './components/social-login-buttons'
 import { UserAuthForm } from './components/user-auth-form'

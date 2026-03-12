@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from app.models.payment_transaction import PaymentTransaction
     from app.models.sponsor import Sponsor
     from app.models.ticket_management import PromoCode, TicketPurchase
+    from app.models.ticket_management import TicketAssignment as TicketAssignment
     from app.models.ticket_package import TicketPackage
 
 
@@ -252,6 +253,13 @@ class Event(Base, UUIDMixin, TimestampMixin):
         server_default="false",
         comment="Controls end-of-night self-checkout access for donors. "
         "Auto-set to true when event transitions to closed.",
+    )
+
+    # Feature 036: Ticket purchasing per-donor cap
+    max_tickets_per_donor: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="Max total tickets a single donor can purchase for this event. NULL = unlimited. Default: 20",
     )
 
     # Optimistic Locking

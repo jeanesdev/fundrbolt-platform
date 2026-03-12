@@ -1,9 +1,9 @@
+import { Outlet } from '@tanstack/react-router'
+import { Separator } from '@/components/ui/separator'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { SettingsBottomNav } from '@/components/layout/settings-bottom-nav'
 import { Search } from '@/components/search'
-import { Separator } from '@/components/ui/separator'
-import { Outlet } from '@tanstack/react-router'
 
 export function Settings() {
   return (

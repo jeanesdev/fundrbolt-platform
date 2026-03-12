@@ -16,22 +16,22 @@ export enum ImportImageStatus {
 }
 
 export interface ImportRowResult {
-  row_number: number;
-  external_id?: string | null;
-  title?: string | null;
-  status: ImportRowStatus;
-  message: string;
-  image_status?: ImportImageStatus | null;
-  image_count?: number | null;
+  row_number: number
+  external_id?: string | null
+  title?: string | null
+  status: ImportRowStatus
+  message: string
+  image_status?: ImportImageStatus | null
+  image_count?: number | null
 }
 
 export interface ImportReport {
-  total_rows: number;
-  created_count: number;
-  updated_count: number;
-  skipped_count: number;
-  error_count: number;
-  warnings_count?: number;
-  rows: ImportRowResult[];
-  error_report_url?: string | null;
+  total_rows: number
+  created_count: number
+  updated_count: number
+  skipped_count: number
+  error_count: number
+  warnings_count?: number
+  rows: ImportRowResult[]
+  error_report_url?: string | null
 }

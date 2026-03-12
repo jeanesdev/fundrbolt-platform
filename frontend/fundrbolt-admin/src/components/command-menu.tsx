@@ -1,18 +1,7 @@
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from '@/components/ui/command'
-import { useSearch } from '@/context/search-provider'
-import { useNpoContext } from '@/hooks/use-npo-context'
-import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
-import { searchService, type SearchResponse } from '@/services/search'
+import React, { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
+import { searchService, type SearchResponse } from '@/services/search'
 import {
   ArrowRight,
   Building2,
@@ -22,7 +11,18 @@ import {
   User,
   UserCheck,
 } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import { useSearch } from '@/context/search-provider'
+import { useNpoContext } from '@/hooks/use-npo-context'
+import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from '@/components/ui/command'
 import { iconMap } from './layout/icon-map'
 import { ScrollArea } from './ui/scroll-area'
 
@@ -229,11 +229,11 @@ function ApiSearchResults({
               }}
             >
               <User className='text-muted-foreground mr-2 size-4' />
-              <div className='flex flex-1 items-center justify-between min-w-0'>
+              <div className='flex min-w-0 flex-1 items-center justify-between'>
                 <span className='truncate'>
                   {user.first_name} {user.last_name}
                 </span>
-                <span className='text-muted-foreground ml-2 text-xs truncate'>
+                <span className='text-muted-foreground ml-2 truncate text-xs'>
                   {user.email}
                 </span>
               </div>
@@ -279,9 +279,9 @@ function ApiSearchResults({
               }}
             >
               <Calendar className='text-muted-foreground mr-2 size-4' />
-              <div className='flex flex-1 items-center justify-between min-w-0'>
+              <div className='flex min-w-0 flex-1 items-center justify-between'>
                 <span className='truncate'>{event.name}</span>
-                <span className='text-muted-foreground ml-2 text-xs truncate'>
+                <span className='text-muted-foreground ml-2 truncate text-xs'>
                   {event.npo_name}
                 </span>
               </div>
@@ -310,9 +310,9 @@ function ApiSearchResults({
               }}
             >
               <Gavel className='text-muted-foreground mr-2 size-4' />
-              <div className='flex flex-1 items-center justify-between min-w-0'>
+              <div className='flex min-w-0 flex-1 items-center justify-between'>
                 <span className='truncate'>{item.name}</span>
-                <span className='text-muted-foreground ml-2 text-xs truncate'>
+                <span className='text-muted-foreground ml-2 truncate text-xs'>
                   {item.event_name}
                 </span>
               </div>
@@ -343,7 +343,7 @@ function ApiSearchResults({
               }}
             >
               <UserCheck className='text-muted-foreground mr-2 size-4' />
-              <div className='flex flex-1 items-center justify-between min-w-0'>
+              <div className='flex min-w-0 flex-1 items-center justify-between'>
                 <span className='truncate'>
                   {reg.name ?? reg.email ?? 'Unknown'}
                   {reg.bidder_number != null && (
@@ -352,7 +352,7 @@ function ApiSearchResults({
                     </span>
                   )}
                 </span>
-                <span className='text-muted-foreground ml-2 text-xs truncate'>
+                <span className='text-muted-foreground ml-2 truncate text-xs'>
                   {reg.event_name}
                 </span>
               </div>

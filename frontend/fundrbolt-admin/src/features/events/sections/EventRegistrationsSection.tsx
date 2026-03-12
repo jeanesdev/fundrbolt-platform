@@ -1,12 +1,18 @@
+import { useState } from 'react'
+import { Upload } from 'lucide-react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { AttendeeListTable } from '@/components/admin/AttendeeListTable'
 import { InviteGuestDialog } from '@/components/admin/InviteGuestDialog'
 import { MealSummaryCard } from '@/components/admin/MealSummaryCard'
 import { RegistrationImportDialog } from '@/components/admin/RegistrationImportDialog'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Upload } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventRegistrationsSection() {
@@ -27,14 +33,15 @@ export function EventRegistrationsSection() {
 
       <Card>
         <CardHeader>
-          <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+          <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
             <div>
               <CardTitle>Guest List</CardTitle>
               <CardDescription>
-                View all registrants and their guests, manage invitations, and export attendee data
+                View all registrants and their guests, manage invitations, and
+                export attendee data
               </CardDescription>
             </div>
-            <div className='flex flex-col sm:flex-row gap-2'>
+            <div className='flex flex-col gap-2 sm:flex-row'>
               <Button
                 onClick={() => setImportOpen(true)}
                 variant='outline'

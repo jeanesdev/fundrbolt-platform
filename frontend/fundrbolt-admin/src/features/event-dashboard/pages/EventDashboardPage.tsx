@@ -1,8 +1,8 @@
+import { useState } from 'react'
+import type { ScenarioType, SegmentType } from '@/services/event-dashboard'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
-import type { ScenarioType, SegmentType } from '@/services/event-dashboard'
-import { useState } from 'react'
 import { AlertCards } from '../components/AlertCards'
 import { CashflowTimeline } from '../components/CashflowTimeline'
 import { LastRefreshed } from '../components/LastRefreshed'
@@ -26,14 +26,19 @@ export function EventDashboardPage() {
   const [segmentType, setSegmentType] = useState<SegmentType>('guest')
 
   const summaryQuery = useEventDashboard(currentEvent.id, scenario)
-  const projectionsQuery = useEventDashboardProjections(currentEvent.id, scenario)
+  const projectionsQuery = useEventDashboardProjections(
+    currentEvent.id,
+    scenario
+  )
   const segmentsQuery = useEventDashboardSegments(currentEvent.id, segmentType)
   const updateProjections = useUpdateEventDashboardProjections(currentEvent.id)
 
   if (summaryQuery.isLoading) {
     return (
       <Card>
-        <CardContent className='p-6 text-sm text-muted-foreground'>Loading event dashboard...</CardContent>
+        <CardContent className='text-muted-foreground p-6 text-sm'>
+          Loading event dashboard...
+        </CardContent>
       </Card>
     )
   }
@@ -42,7 +47,9 @@ export function EventDashboardPage() {
     return (
       <Card>
         <CardContent className='space-y-4 p-6'>
-          <p className='text-sm text-destructive'>Unable to load event dashboard data.</p>
+          <p className='text-destructive text-sm'>
+            Unable to load event dashboard data.
+          </p>
           <Button type='button' onClick={() => void summaryQuery.refetch()}>
             Retry
           </Button>

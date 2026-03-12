@@ -1,6 +1,4 @@
-import { isRetryableError, retryWithBackoff } from '@/lib/retry'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import type {
   SocialAuthCallbackRequest,
   SocialAuthCallbackResponse,
@@ -10,7 +8,9 @@ import type {
   SocialAuthStartResponse,
 } from '@fundrbolt/shared/types'
 import { sanitizeRequestPayload } from '@fundrbolt/shared/utils'
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { isRetryableError, retryWithBackoff } from '@/lib/retry'
 
 // Global flag to track if consent modal is already shown
 let consentModalShown = false
@@ -116,22 +116,28 @@ apiClient.interceptors.response.use(
     // Don't retry if already retried
     if (originalRequest._retryCount) {
       // Already retried via retryWithBackoff, process error normally
-    } else if (!isAuthEndpoint && isRetryableError(error, { maxRetries: 3, initialDelayMs: 1000, maxDelayMs: 10000, backoffMultiplier: 2, retryableStatusCodes: [408, 429, 500, 502, 503, 504] })) {
+    } else if (
+      !isAuthEndpoint &&
+      isRetryableError(error, {
+        maxRetries: 3,
+        initialDelayMs: 1000,
+        maxDelayMs: 10000,
+        backoffMultiplier: 2,
+        retryableStatusCodes: [408, 429, 500, 502, 503, 504],
+      })
+    ) {
       // Mark that we're attempting retry
       originalRequest._retryCount = 0
 
       try {
         // Retry the request with exponential backoff
-        return await retryWithBackoff(
-          () => apiClient(originalRequest),
-          {
-            maxRetries: 3,
-            initialDelayMs: 1000,
-            maxDelayMs: 10000,
-            backoffMultiplier: 2,
-            retryableStatusCodes: [408, 429, 500, 502, 503, 504],
-          }
-        )
+        return await retryWithBackoff(() => apiClient(originalRequest), {
+          maxRetries: 3,
+          initialDelayMs: 1000,
+          maxDelayMs: 10000,
+          backoffMultiplier: 2,
+          retryableStatusCodes: [408, 429, 500, 502, 503, 504],
+        })
       } catch (retryError) {
         // Retry exhausted, process error below
         return Promise.reject(retryError)
@@ -248,7 +254,9 @@ apiClient.interceptors.response.use(
           // Note: In a real implementation, you'd trigger a global modal here
           // For now, we'll redirect to a consent update page
           // eslint-disable-next-line no-console
-          console.error('Consent required: User must accept updated legal documents')
+          console.error(
+            'Consent required: User must accept updated legal documents'
+          )
 
           // Reset flag after a delay to allow future consent checks
           setTimeout(() => {
@@ -256,11 +264,11 @@ apiClient.interceptors.response.use(
           }, 5000)
         }
       }
-    }    // Handle 429 Too Many Requests - extract retry-after if available
+    } // Handle 429 Too Many Requests - extract retry-after if available
     if (error.response?.status === 429) {
       const retryAfter = error.response.headers['retry-after']
       if (retryAfter) {
-        ; (error as AxiosError & { retryAfter?: number }).retryAfter = parseInt(
+        ;(error as AxiosError & { retryAfter?: number }).retryAfter = parseInt(
           retryAfter,
           10
         )
@@ -273,7 +281,9 @@ apiClient.interceptors.response.use(
 
 export const adminSocialAuthApi = {
   getProviders: async (): Promise<SocialAuthProvidersResponse> => {
-    const response = await apiClient.get<SocialAuthProvidersResponse>('/auth/social/providers')
+    const response = await apiClient.get<SocialAuthProvidersResponse>(
+      '/auth/social/providers'
+    )
     return response.data
   },
   start: async (

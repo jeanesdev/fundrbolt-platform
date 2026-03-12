@@ -1,10 +1,10 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   eventDashboardService,
   type ProjectionAdjustmentUpdate,
   type ScenarioType,
   type SegmentType,
 } from '@/services/event-dashboard'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 export function useEventDashboard(eventId: string, scenario: ScenarioType) {
   return useQuery({
@@ -15,7 +15,10 @@ export function useEventDashboard(eventId: string, scenario: ScenarioType) {
   })
 }
 
-export function useEventDashboardProjections(eventId: string, scenario: ScenarioType) {
+export function useEventDashboardProjections(
+  eventId: string,
+  scenario: ScenarioType
+) {
   return useQuery({
     queryKey: ['event-dashboard-projections', eventId, scenario],
     queryFn: () => eventDashboardService.getProjections(eventId, scenario),
@@ -47,7 +50,8 @@ export function useEventDashboardSegments(
 ) {
   return useQuery({
     queryKey: ['event-dashboard-segments', eventId, segmentType, sort],
-    queryFn: () => eventDashboardService.getSegments(eventId, segmentType, 20, sort),
+    queryFn: () =>
+      eventDashboardService.getSegments(eventId, segmentType, 20, sort),
     enabled: Boolean(eventId),
   })
 }

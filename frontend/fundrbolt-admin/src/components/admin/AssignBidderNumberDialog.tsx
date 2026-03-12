@@ -4,7 +4,13 @@
  * Dialog for manually assigning or reassigning a bidder number to a guest.
  * Handles conflict resolution when the requested number is already assigned.
  */
-
+import { useEffect, useState } from 'react'
+import { AlertTriangle, Hash, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import {
+  assignBidderNumber,
+  getNextAvailableBidderNumber,
+} from '@/lib/api/admin-seating'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -16,13 +22,6 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  assignBidderNumber,
-  getNextAvailableBidderNumber,
-} from '@/lib/api/admin-seating'
-import { AlertTriangle, Hash, Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
 
 interface AssignBidderNumberDialogProps {
   eventId: string
@@ -107,7 +106,9 @@ export function AssignBidderNumberDialog({
       }
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to assign bidder number'
+        error instanceof Error
+          ? error.message
+          : 'Failed to assign bidder number'
       toast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
@@ -127,11 +128,11 @@ export function AssignBidderNumberDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChangeInternal}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className='sm:max-w-[425px]'>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Hash className="h-5 w-5 text-amber-600" />
+            <DialogTitle className='flex items-center gap-2'>
+              <Hash className='h-5 w-5 text-amber-600' />
               {currentBidderNumber ? 'Reassign' : 'Assign'} Bidder Number
             </DialogTitle>
             <DialogDescription>
@@ -141,15 +142,15 @@ export function AssignBidderNumberDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
+          <div className='grid gap-4 py-4'>
             {/* Conflict Warning */}
             {conflictInfo && (
-              <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
-                  <div className="text-sm text-amber-800">
-                    <p className="font-medium">Number Swap Occurred</p>
-                    <p className="mt-1 text-amber-700">
+              <div className='rounded-md border border-amber-200 bg-amber-50 p-3'>
+                <div className='flex items-start gap-2'>
+                  <AlertTriangle className='mt-0.5 h-4 w-4 text-amber-600' />
+                  <div className='text-sm text-amber-800'>
+                    <p className='font-medium'>Number Swap Occurred</p>
+                    <p className='mt-1 text-amber-700'>
                       The previous holder of this number was automatically
                       reassigned to the next available number.
                     </p>
@@ -159,27 +160,27 @@ export function AssignBidderNumberDialog({
             )}
 
             {/* Bidder Number Input */}
-            <div className="grid gap-2">
-              <Label htmlFor="bidder-number">
-                Bidder Number <span className="text-destructive">*</span>
+            <div className='grid gap-2'>
+              <Label htmlFor='bidder-number'>
+                Bidder Number <span className='text-destructive'>*</span>
               </Label>
               <Input
-                id="bidder-number"
-                type="number"
+                id='bidder-number'
+                type='number'
                 min={100}
                 max={999}
-                placeholder="100-999"
+                placeholder='100-999'
                 value={bidderNumber}
                 onChange={(e) => setBidderNumber(e.target.value)}
                 required
                 disabled={isSubmitting}
-                className="font-mono"
+                className='font-mono'
               />
-              <p className="text-xs text-muted-foreground">
+              <p className='text-muted-foreground text-xs'>
                 Three-digit number between 100 and 999. If already assigned, the
                 previous holder will be reassigned to a new number.
               </p>
-              <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+              <div className='text-muted-foreground flex items-center justify-between gap-2 text-xs'>
                 <span>
                   {isLoadingNext
                     ? 'Loading next available bidder number...'
@@ -188,9 +189,9 @@ export function AssignBidderNumberDialog({
                       : 'Next available: unavailable'}
                 </span>
                 <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
+                  type='button'
+                  variant='ghost'
+                  size='sm'
                   disabled={isSubmitting || !nextAvailable}
                   onClick={() =>
                     nextAvailable && setBidderNumber(nextAvailable.toString())
@@ -204,22 +205,22 @@ export function AssignBidderNumberDialog({
 
           <DialogFooter>
             <Button
-              type="button"
-              variant="outline"
+              type='button'
+              variant='outline'
               onClick={() => handleOpenChangeInternal(false)}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type='submit' disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                   Assigning...
                 </>
               ) : (
                 <>
-                  <Hash className="mr-2 h-4 w-4" />
+                  <Hash className='mr-2 h-4 w-4' />
                   Assign Number
                 </>
               )}

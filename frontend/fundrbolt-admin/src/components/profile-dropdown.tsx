@@ -1,4 +1,13 @@
-import { SignOutDialog } from '@/components/sign-out-dialog'
+import { useState } from 'react'
+import { Link } from '@tanstack/react-router'
+import { Building2, Calendar, Clock, LogOut, Settings } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { useEventStore } from '@/stores/event-store'
+import useDialogState from '@/hooks/use-dialog-state'
+import { useEventContext } from '@/hooks/use-event-context'
+import { useNpoContext } from '@/hooks/use-npo-context'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,16 +31,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { InitialAvatar } from '@/components/ui/initial-avatar'
 import { Input } from '@/components/ui/input'
-import useDialogState from '@/hooks/use-dialog-state'
-import { useEventContext } from '@/hooks/use-event-context'
-import { useNpoContext } from '@/hooks/use-npo-context'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { useEventStore } from '@/stores/event-store'
-import { Link } from '@tanstack/react-router'
-import { Building2, Calendar, Clock, LogOut, Settings } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
+import { SignOutDialog } from '@/components/sign-out-dialog'
 
 function toDateTimeLocalInputValue(date: Date): string {
   const year = date.getFullYear()

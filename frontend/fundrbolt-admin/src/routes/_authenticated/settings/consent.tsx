@@ -1,7 +1,7 @@
+import { createFileRoute } from '@tanstack/react-router'
 import { ConsentHistory } from '@/components/legal/consent-history'
 import { DataRightsForm } from '@/components/legal/data-rights-form'
 import { ContentSection } from '@/features/settings/components/content-section'
-import { createFileRoute } from '@tanstack/react-router'
 
 function SettingsConsent() {
   return (

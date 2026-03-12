@@ -2,7 +2,11 @@
  * Application Review Dialog Component
  * Allows SuperAdmin to approve or reject NPO applications
  */
-
+import { useState } from 'react'
+import npoService from '@/services/npo-service'
+import type { NPOApplication } from '@/types/npo'
+import { CheckCircle2, XCircle } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,11 +28,6 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import npoService from '@/services/npo-service'
-import type { NPOApplication } from '@/types/npo'
-import { CheckCircle2, XCircle } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
 
 interface ApplicationReviewDialogProps {
   application: NPOApplication
@@ -45,14 +44,21 @@ export function ApplicationReviewDialog({
 }: ApplicationReviewDialogProps) {
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showConfirmation, setShowConfirmation] = useState<'approve' | 'reject' | null>(null)
+  const [showConfirmation, setShowConfirmation] = useState<
+    'approve' | 'reject' | null
+  >(null)
 
-  const canReview = application.status === 'submitted' || application.status === 'under_review'
+  const canReview =
+    application.status === 'submitted' || application.status === 'under_review'
 
   const handleReview = async (decision: 'approved' | 'rejected') => {
     setIsSubmitting(true)
     try {
-      await npoService.admin.reviewApplication(application.npo_id, decision, notes || undefined)
+      await npoService.admin.reviewApplication(
+        application.npo_id,
+        decision,
+        notes || undefined
+      )
       toast.success(
         decision === 'approved'
           ? 'Application approved successfully'
@@ -78,8 +84,11 @@ export function ApplicationReviewDialog({
 
   return (
     <>
-      <Dialog open={open && !showConfirmation} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-2xl">
+      <Dialog
+        open={open && !showConfirmation}
+        onOpenChange={(open) => !open && onClose()}
+      >
+        <DialogContent className='max-w-2xl'>
           <DialogHeader>
             <DialogTitle>Review Application</DialogTitle>
             <DialogDescription>
@@ -87,35 +96,51 @@ export function ApplicationReviewDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className='space-y-4'>
             {/* Application Details */}
-            <div className="rounded-lg border p-4 space-y-3">
+            <div className='space-y-3 rounded-lg border p-4'>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Organization</p>
-                <p className="text-base font-semibold">{application.npo_name || 'Unknown'}</p>
+                <p className='text-muted-foreground text-sm font-medium'>
+                  Organization
+                </p>
+                <p className='text-base font-semibold'>
+                  {application.npo_name || 'Unknown'}
+                </p>
               </div>
 
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Email</p>
-                <p className="text-sm">{application.npo_email || 'N/A'}</p>
+                <p className='text-muted-foreground text-sm font-medium'>
+                  Email
+                </p>
+                <p className='text-sm'>{application.npo_email || 'N/A'}</p>
               </div>
 
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Submitted</p>
-                <p className="text-sm">{formatDate(application.submitted_at)}</p>
+                <p className='text-muted-foreground text-sm font-medium'>
+                  Submitted
+                </p>
+                <p className='text-sm'>
+                  {formatDate(application.submitted_at)}
+                </p>
               </div>
 
               {application.reviewed_at && (
                 <>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Reviewed</p>
-                    <p className="text-sm">{formatDate(application.reviewed_at)}</p>
+                    <p className='text-muted-foreground text-sm font-medium'>
+                      Reviewed
+                    </p>
+                    <p className='text-sm'>
+                      {formatDate(application.reviewed_at)}
+                    </p>
                   </div>
 
                   {application.review_notes && (
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Review Notes</p>
-                      <p className="text-sm">
+                      <p className='text-muted-foreground text-sm font-medium'>
+                        Review Notes
+                      </p>
+                      <p className='text-sm'>
                         {typeof application.review_notes === 'string'
                           ? application.review_notes
                           : Object.values(application.review_notes).join(', ')}
@@ -128,42 +153,42 @@ export function ApplicationReviewDialog({
 
             {/* Review Notes Input (only for pending applications) */}
             {canReview && (
-              <div className="space-y-2">
-                <Label htmlFor="review-notes">Review Notes (Optional)</Label>
+              <div className='space-y-2'>
+                <Label htmlFor='review-notes'>Review Notes (Optional)</Label>
                 <Textarea
-                  id="review-notes"
-                  placeholder="Add notes about your decision..."
+                  id='review-notes'
+                  placeholder='Add notes about your decision...'
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={4}
                   disabled={isSubmitting}
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className='text-muted-foreground text-xs'>
                   These notes will be included in the email to the organization.
                 </p>
               </div>
             )}
           </div>
 
-          <DialogFooter className="flex-col gap-2 sm:flex-row">
-            <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+          <DialogFooter className='flex-col gap-2 sm:flex-row'>
+            <Button variant='outline' onClick={onClose} disabled={isSubmitting}>
               {canReview ? 'Cancel' : 'Close'}
             </Button>
             {canReview && (
               <>
                 <Button
-                  variant="destructive"
+                  variant='destructive'
                   onClick={() => setShowConfirmation('reject')}
                   disabled={isSubmitting}
                 >
-                  <XCircle className="mr-2 h-4 w-4" />
+                  <XCircle className='mr-2 h-4 w-4' />
                   Reject
                 </Button>
                 <Button
                   onClick={() => setShowConfirmation('approve')}
                   disabled={isSubmitting}
                 >
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  <CheckCircle2 className='mr-2 h-4 w-4' />
                   Approve
                 </Button>
               </>
@@ -182,8 +207,8 @@ export function ApplicationReviewDialog({
               <strong>{application.npo_name}</strong>?
               <br />
               <br />
-              The organization will be notified via email and their status will be updated to
-              "Approved".
+              The organization will be notified via email and their status will
+              be updated to "Approved".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -213,8 +238,8 @@ export function ApplicationReviewDialog({
               <strong>{application.npo_name}</strong>?
               <br />
               <br />
-              The organization will be notified via email and their status will be updated to
-              "Rejected".
+              The organization will be notified via email and their status will
+              be updated to "Rejected".
               {notes && (
                 <>
                   <br />
@@ -234,7 +259,7 @@ export function ApplicationReviewDialog({
             <AlertDialogAction
               onClick={() => handleReview('rejected')}
               disabled={isSubmitting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
             >
               {isSubmitting ? 'Rejecting...' : 'Reject Application'}
             </AlertDialogAction>

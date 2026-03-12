@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { useAuthStore } from '@/stores/auth-store'
 import NPOApplicationsPage from '@/pages/admin/npo-applications'
+import { useAuthStore } from '@/stores/auth-store'
 
 export const Route = createFileRoute('/_authenticated/admin/npo-applications')({
   beforeLoad: () => {

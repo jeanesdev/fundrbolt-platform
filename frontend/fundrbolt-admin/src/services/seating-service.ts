@@ -2,7 +2,6 @@
  * Seating Service
  * API service for event seating configuration and management
  */
-
 import api from '@/lib/axios'
 
 export interface EventSeatingConfig {
@@ -22,11 +21,11 @@ export interface EventSeatingConfigResponse {
  */
 export async function updateEventSeating(
   eventId: string,
-  config: EventSeatingConfig,
+  config: EventSeatingConfig
 ): Promise<EventSeatingConfigResponse> {
   const response = await api.patch<EventSeatingConfigResponse>(
     `/admin/events/${eventId}/seating/config`,
-    config,
+    config
   )
   return response.data
 }
@@ -36,12 +35,14 @@ export async function updateEventSeating(
  */
 export async function getAvailableBidderNumbers(
   eventId: string,
-  limit = 10,
+  limit = 10
 ): Promise<{ available_numbers: number[]; total_available: number }> {
-  const response = await api.get<{ available_numbers: number[]; total_available: number }>(
-    `/admin/events/${eventId}/seating/bidder-numbers/available`,
-    { params: { limit } },
-  )
+  const response = await api.get<{
+    available_numbers: number[]
+    total_available: number
+  }>(`/admin/events/${eventId}/seating/bidder-numbers/available`, {
+    params: { limit },
+  })
   return response.data
 }
 
@@ -92,11 +93,11 @@ export interface UpdateTableDetailsRequest {
 export async function updateTableDetails(
   eventId: string,
   tableNumber: number,
-  updates: UpdateTableDetailsRequest,
+  updates: UpdateTableDetailsRequest
 ): Promise<EventTableDetails> {
   const response = await api.patch<EventTableDetails>(
     `/admin/events/${eventId}/tables/${tableNumber}`,
-    updates,
+    updates
   )
   return response.data
 }
@@ -107,11 +108,11 @@ export async function updateTableDetails(
  */
 export async function fetchEventTables(
   eventId: string,
-  includeGuests = false,
+  includeGuests = false
 ): Promise<EventTablesListResponse> {
   const response = await api.get<EventTablesListResponse>(
     `/admin/events/${eventId}/tables`,
-    { params: { include_guests: includeGuests } },
+    { params: { include_guests: includeGuests } }
   )
   return response.data
 }

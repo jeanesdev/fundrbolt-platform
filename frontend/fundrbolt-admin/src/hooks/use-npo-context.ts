@@ -9,13 +9,13 @@
  * - Staff: Auto-select their assigned NPO, disable selector
  * - Changes to NPO selection invalidate TanStack Query cache
  */
+import { useCallback, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useEventContextStore } from '@/stores/event-context-store'
 import {
   useNPOContextStore,
   type NPOContextOption,
 } from '@/stores/npo-context-store'
-import { useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect } from 'react'
 import { useAuth } from './use-auth'
 
 export interface UseNpoContextReturn {

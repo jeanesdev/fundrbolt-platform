@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { CashflowPoint } from '@/services/event-dashboard'
 import {
   CartesianGrid,
@@ -10,6 +9,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrencyCompact } from '../utils/formatters'
 import { ChartTooltipContent } from './ChartTooltipContent'
 
@@ -42,7 +42,12 @@ export function CashflowTimeline({ points }: CashflowTimelineProps) {
               content={({ label, payload }) => (
                 <ChartTooltipContent
                   label={String(label ?? '')}
-                  payload={payload as unknown as Array<{ name?: string; value?: number }>}
+                  payload={
+                    payload as unknown as Array<{
+                      name?: string
+                      value?: number
+                    }>
+                  }
                   seriesLabels={{
                     actual: 'Actual',
                     projected: 'Projected',

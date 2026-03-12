@@ -1,7 +1,7 @@
-import { Card, CardContent } from '@/components/ui/card'
-import { useAuth } from '@/hooks/use-auth'
-import { createFileRoute } from '@tanstack/react-router'
 import { lazy, Suspense } from 'react'
+import { createFileRoute } from '@tanstack/react-router'
+import { useAuth } from '@/hooks/use-auth'
+import { Card, CardContent } from '@/components/ui/card'
 
 // Lazy load dashboard components for better performance
 const SuperAdminDashboard = lazy(() =>

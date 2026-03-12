@@ -1,8 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AxiosError } from 'axios'
 import { useMemo, useState } from 'react'
+import { AxiosError } from 'axios'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-
 import { createLiveBid, getQuickEntryStatus } from '../api/quickEntryApi'
 
 function getApiErrorMessage(error: AxiosError): string | null {
@@ -48,7 +47,10 @@ export function useLiveBidEntry(eventId: string, selectedItemId: string) {
     () => Number.parseInt(amount.replace(/,/g, ''), 10),
     [amount]
   )
-  const parsedBidder = useMemo(() => Number.parseInt(bidderNumber, 10), [bidderNumber])
+  const parsedBidder = useMemo(
+    () => Number.parseInt(bidderNumber, 10),
+    [bidderNumber]
+  )
 
   const mutation = useMutation({
     mutationFn: async () => {

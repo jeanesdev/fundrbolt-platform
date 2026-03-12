@@ -1,4 +1,4 @@
-import auctionItemService from '@/services/auctionItemService';
+import auctionItemService from '@/services/auctionItemService'
 import type {
   AuctionItem,
   AuctionItemCreate,
@@ -7,61 +7,61 @@ import type {
   AuctionItemUpdate,
   AuctionType,
   ItemStatus,
-} from '@/types/auction-item';
-import { create } from 'zustand';
+} from '@/types/auction-item'
+import { create } from 'zustand'
 
 interface AuctionItemState {
   // State
-  items: AuctionItem[];
-  selectedItem: AuctionItemDetail | null;
+  items: AuctionItem[]
+  selectedItem: AuctionItemDetail | null
   pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  } | null;
-  isLoading: boolean;
-  error: string | null;
+    page: number
+    limit: number
+    total: number
+    pages: number
+  } | null
+  isLoading: boolean
+  error: string | null
 
   // Filters
   filters: {
-    auctionType?: AuctionType;
-    status?: ItemStatus;
-    search?: string;
-    page: number;
-    limit: number;
-  };
+    auctionType?: AuctionType
+    status?: ItemStatus
+    search?: string
+    page: number
+    limit: number
+  }
 
   // Actions - List & Get
-  fetchAuctionItems: (eventId: string) => Promise<void>;
-  getAuctionItem: (eventId: string, itemId: string) => Promise<void>;
-  clearSelectedItem: () => void;
+  fetchAuctionItems: (eventId: string) => Promise<void>
+  getAuctionItem: (eventId: string, itemId: string) => Promise<void>
+  clearSelectedItem: () => void
 
   // Actions - Create/Update/Delete
   createAuctionItem: (
     eventId: string,
     data: AuctionItemCreate
-  ) => Promise<AuctionItem>;
+  ) => Promise<AuctionItem>
   updateAuctionItem: (
     eventId: string,
     itemId: string,
     data: AuctionItemUpdate
-  ) => Promise<void>;
-  deleteAuctionItem: (eventId: string, itemId: string) => Promise<void>;
+  ) => Promise<void>
+  deleteAuctionItem: (eventId: string, itemId: string) => Promise<void>
 
   // Actions - Filters
-  setFilters: (filters: Partial<AuctionItemState['filters']>) => void;
-  clearFilters: () => void;
+  setFilters: (filters: Partial<AuctionItemState['filters']>) => void
+  clearFilters: () => void
 
   // Utilities
-  clearError: () => void;
-  reset: () => void;
+  clearError: () => void
+  reset: () => void
 }
 
 const defaultFilters = {
   page: 1,
   limit: 50,
-};
+}
 
 const initialState = {
   items: [],
@@ -70,16 +70,16 @@ const initialState = {
   isLoading: false,
   error: null,
   filters: defaultFilters,
-};
+}
 
 export const useAuctionItemStore = create<AuctionItemState>((set, get) => ({
   ...initialState,
 
   // Fetch auction items for an event with current filters
   fetchAuctionItems: async (eventId: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null })
     try {
-      const { filters } = get();
+      const { filters } = get()
       const response: AuctionItemListResponse =
         await auctionItemService.listAuctionItems(eventId, {
           auctionType: filters.auctionType,
@@ -87,66 +87,57 @@ export const useAuctionItemStore = create<AuctionItemState>((set, get) => ({
           search: filters.search,
           page: filters.page,
           limit: filters.limit,
-        });
+        })
 
       set({
         items: response.items,
         pagination: response.pagination,
         isLoading: false,
-      });
+      })
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : 'Failed to fetch auction items';
-      set({ error: message, isLoading: false });
-      throw error;
+        error instanceof Error ? error.message : 'Failed to fetch auction items'
+      set({ error: message, isLoading: false })
+      throw error
     }
   },
 
   // Get a single auction item with full details
   getAuctionItem: async (eventId: string, itemId: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null })
     try {
-      const item = await auctionItemService.getAuctionItem(eventId, itemId);
-      set({ selectedItem: item, isLoading: false });
+      const item = await auctionItemService.getAuctionItem(eventId, itemId)
+      set({ selectedItem: item, isLoading: false })
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : 'Failed to fetch auction item';
-      set({ error: message, isLoading: false });
-      throw error;
+        error instanceof Error ? error.message : 'Failed to fetch auction item'
+      set({ error: message, isLoading: false })
+      throw error
     }
   },
 
   clearSelectedItem: () => {
-    set({ selectedItem: null });
+    set({ selectedItem: null })
   },
 
   // Create a new auction item
   createAuctionItem: async (eventId: string, data: AuctionItemCreate) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null })
     try {
-      const newItem = await auctionItemService.createAuctionItem(
-        eventId,
-        data
-      );
+      const newItem = await auctionItemService.createAuctionItem(eventId, data)
 
       // Add to items list
       set((state) => ({
         items: [...state.items, newItem],
         isLoading: false,
-      }));
+      }))
 
-      return newItem;
+      return newItem
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : 'Failed to create auction item';
-      set({ error: message, isLoading: false });
-      throw error;
+        error instanceof Error ? error.message : 'Failed to create auction item'
+      set({ error: message, isLoading: false })
+      throw error
     }
   },
 
@@ -156,13 +147,13 @@ export const useAuctionItemStore = create<AuctionItemState>((set, get) => ({
     itemId: string,
     data: AuctionItemUpdate
   ) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null })
     try {
       const updatedItem = await auctionItemService.updateAuctionItem(
         eventId,
         itemId,
         data
-      );
+      )
 
       // Update in items list
       set((state) => ({
@@ -174,22 +165,20 @@ export const useAuctionItemStore = create<AuctionItemState>((set, get) => ({
             ? { ...state.selectedItem, ...updatedItem }
             : state.selectedItem,
         isLoading: false,
-      }));
+      }))
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : 'Failed to update auction item';
-      set({ error: message, isLoading: false });
-      throw error;
+        error instanceof Error ? error.message : 'Failed to update auction item'
+      set({ error: message, isLoading: false })
+      throw error
     }
   },
 
   // Delete an auction item
   deleteAuctionItem: async (eventId: string, itemId: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null })
     try {
-      await auctionItemService.deleteAuctionItem(eventId, itemId);
+      await auctionItemService.deleteAuctionItem(eventId, itemId)
 
       // Remove from items list
       set((state) => ({
@@ -197,14 +186,12 @@ export const useAuctionItemStore = create<AuctionItemState>((set, get) => ({
         selectedItem:
           state.selectedItem?.id === itemId ? null : state.selectedItem,
         isLoading: false,
-      }));
+      }))
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : 'Failed to delete auction item';
-      set({ error: message, isLoading: false });
-      throw error;
+        error instanceof Error ? error.message : 'Failed to delete auction item'
+      set({ error: message, isLoading: false })
+      throw error
     }
   },
 
@@ -216,21 +203,21 @@ export const useAuctionItemStore = create<AuctionItemState>((set, get) => ({
         ...newFilters,
         page: newFilters.page ?? 1, // Reset to page 1 when changing filters
       },
-    }));
+    }))
   },
 
   // Clear all filters
   clearFilters: () => {
-    set({ filters: defaultFilters });
+    set({ filters: defaultFilters })
   },
 
   clearError: () => {
-    set({ error: null });
+    set({ error: null })
   },
 
   reset: () => {
-    set(initialState);
+    set(initialState)
   },
-}));
+}))
 
-export default useAuctionItemStore;
+export default useAuctionItemStore

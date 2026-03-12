@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import decode_token
-from app.middleware.rate_limit import api_rate_limit, strict_rate_limit
+from app.middleware.rate_limit import api_rate_limit, rate_limit, strict_rate_limit
 from app.schemas.auth import (
     EmailResendRequest,
     EmailVerifyRequest,
@@ -53,7 +53,7 @@ router = APIRouter()
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED, response_model=UserRegisterResponse)
-@api_rate_limit()
+@rate_limit(max_requests=30, window_seconds=3600)  # FR-025a: 30 registrations per hour per IP
 async def register(
     user_data: UserCreate,
     request: Request,
@@ -520,6 +520,19 @@ async def verify_email(
         email=user.email,
         ip_address=client_ip,
     )
+
+    # T033 — Send welcome email (non-blocking; failure does not affect response)
+    try:
+        from app.services.email_service import get_email_service  # noqa: PLC0415
+
+        email_service = get_email_service()
+        await email_service.send_welcome_email(
+            to_email=user.email,
+            user_name=user.first_name,
+        )
+        logger.info(f"Welcome email sent to {user.email} (user_id={user.id})")
+    except Exception as welcome_email_exc:
+        logger.error(f"Failed to send welcome email to {user.email}: {welcome_email_exc}")
 
     return EmailVerifyResponse(message="Email verified successfully")
 

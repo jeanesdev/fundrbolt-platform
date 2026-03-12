@@ -4,7 +4,11 @@
  * Button with confirmation dialog to automatically assign unassigned guests to tables.
  * Uses party-aware algorithm that keeps registration parties together when possible.
  */
-
+import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Sparkles } from 'lucide-react'
+import { toast } from 'sonner'
+import { autoAssignGuests } from '@/lib/api/admin-seating'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,11 +21,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import { autoAssignGuests } from '@/lib/api/admin-seating'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Sparkles } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
 
 interface AutoAssignButtonProps {
   eventId: string
@@ -70,7 +69,9 @@ export function AutoAssignButton({
       setOpen(false)
     },
     onError: (error: unknown) => {
-      const message = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to auto-assign guests'
+      const message =
+        (error as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail || 'Failed to auto-assign guests'
       toast.error(message)
     },
   })
@@ -87,32 +88,33 @@ export function AutoAssignButton({
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
         <Button
-          variant="default"
-          size="sm"
+          variant='default'
+          size='sm'
           disabled={disabled || autoAssignMutation.isPending}
         >
-          <Sparkles className="mr-2 h-4 w-4" />
+          <Sparkles className='mr-2 h-4 w-4' />
           Auto-Assign ({unassignedCount})
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Auto-Assign Guests to Tables?</AlertDialogTitle>
-          <AlertDialogDescription className="space-y-2">
+          <AlertDialogDescription className='space-y-2'>
             <p>
               This will automatically assign {unassignedCount} unassigned guest
               {unassignedCount !== 1 ? 's' : ''} to available tables using an
               intelligent algorithm.
             </p>
-            <p className="font-medium">The algorithm will:</p>
-            <ul className="list-disc list-inside space-y-1 text-sm">
+            <p className='font-medium'>The algorithm will:</p>
+            <ul className='list-inside list-disc space-y-1 text-sm'>
               <li>Keep registration parties together when possible</li>
               <li>Fill tables sequentially for efficient packing</li>
               <li>Prioritize larger parties first</li>
               <li>Split large parties only when necessary</li>
             </ul>
-            <p className="text-sm text-muted-foreground mt-2">
-              You can manually adjust assignments after auto-assignment if needed.
+            <p className='text-muted-foreground mt-2 text-sm'>
+              You can manually adjust assignments after auto-assignment if
+              needed.
             </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -124,7 +126,9 @@ export function AutoAssignButton({
             onClick={handleAutoAssign}
             disabled={autoAssignMutation.isPending}
           >
-            {autoAssignMutation.isPending ? 'Assigning...' : 'Auto-Assign Guests'}
+            {autoAssignMutation.isPending
+              ? 'Assigning...'
+              : 'Auto-Assign Guests'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

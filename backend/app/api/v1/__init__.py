@@ -38,10 +38,13 @@ from app.api.v1 import (
     payments,
     promo_codes,
     public_testimonials,
+    public_tickets,
     registrations,
     sales_tracking,
     search,
     sponsors,
+    ticket_assignments,
+    ticket_invitations,
     ticket_options,
     ticket_packages,
     users,
@@ -49,6 +52,7 @@ from app.api.v1 import (
 )
 from app.api.v1.public import contact as public_contact
 from app.api.v1.public import events as public_events
+from app.api.v1.public import onboarding as public_onboarding
 
 # Create v1 API router
 api_router = APIRouter()
@@ -80,6 +84,7 @@ api_router.include_router(cookies.router, prefix="/cookies", tags=["cookies"])
 api_router.include_router(search.router, tags=["search"])
 api_router.include_router(public_contact.router, prefix="/public", tags=["public-contact"])
 api_router.include_router(public_events.router, prefix="/public", tags=["public-events"])
+api_router.include_router(public_onboarding.router, prefix="/public", tags=["public-onboarding"])
 api_router.include_router(public_testimonials.router, tags=["public-testimonials"])
 api_router.include_router(admin_testimonials.router, tags=["admin-testimonials"])
 api_router.include_router(admin_seating.router, tags=["admin-seating"])
@@ -102,5 +107,9 @@ api_router.include_router(event_preview.preview_router, tags=["event-preview"])
 api_router.include_router(payments.router, tags=["payments"])
 api_router.include_router(admin_payments.router, tags=["admin-payments"])
 api_router.include_router(admin_npo_credentials.router, tags=["admin-npo-credentials"])
+# Feature 036: Ticket purchasing
+api_router.include_router(public_tickets.router, tags=["ticket-purchasing"])
+api_router.include_router(ticket_assignments.router, tags=["ticket-purchasing"])
+api_router.include_router(ticket_invitations.router, tags=["ticket-invitations"])
 
 __all__ = ["api_router"]

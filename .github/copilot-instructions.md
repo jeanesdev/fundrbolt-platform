@@ -69,6 +69,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Azure Database for PostgreSQL (primary data); Azure Blob Storage (receipt PDFs); Azure Cache for Redis (session/rate-limit) (033-payment-processing)
 - Python 3.11 (backend) · TypeScript 5.9 / React 19 (frontend Admin PWA) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, Alembic (backend); React 19, Vite 7, TanStack Router, Zustand, Radix UI, Tailwind 4 (frontend) (034-npo-onboarding)
 - Azure Database for PostgreSQL (new `onboarding_sessions` table; `npo_applications` enum updated; `npos` enum updated) · Azure Cache for Redis (rate-limit keys) (034-npo-onboarding)
+- Python 3.11 (backend) + TypeScript 5.x / React 19 (donor PWA) (036-ticket-purchasing)
+- Azure Database for PostgreSQL (primary data); Azure Blob Storage (sponsor logos); Azure Cache for Redis (session/rate-limit) (036-ticket-purchasing)
 
 ## Project Structure
 ```
@@ -153,9 +155,9 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 036-ticket-purchasing: Added Python 3.11 (backend) + TypeScript 5.x / React 19 (donor PWA)
 - 034-npo-onboarding: Added Python 3.11 (backend) · TypeScript 5.9 / React 19 (frontend Admin PWA) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, Alembic (backend); React 19, Vite 7, TanStack Router, Zustand, Radix UI, Tailwind 4 (frontend)
 - 033-payment-processing: Added Python 3.11 (backend) + TypeScript 5.x / React 19 (donor PWA & admin PWA)
-- 032-pwa-capabilities: Added TypeScript 5.x, React 18+ + `vite-plugin-pwa` (Workbox-based SW generation), `virtual:pwa-register/react` (React hooks for SW lifecycle)
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields
   - ✅ Updated registration_guests with is_table_captain boolean field
   - ✅ US1 - Customize Table Capacity: Event coordinators can set custom capacity per table (1-20), system enforces limits

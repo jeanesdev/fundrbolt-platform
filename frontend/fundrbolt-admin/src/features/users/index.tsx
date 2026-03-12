@@ -1,5 +1,5 @@
-import { useNpoContext } from '@/hooks/use-npo-context'
 import { getRouteApi } from '@tanstack/react-router'
+import { useNpoContext } from '@/hooks/use-npo-context'
 import { UsersDialogs } from './components/users-dialogs'
 import { UsersPrimaryButtons } from './components/users-primary-buttons'
 import { UsersProvider } from './components/users-provider'
@@ -20,7 +20,7 @@ export function Users() {
       ? search.status.includes('active') && !search.status.includes('inactive')
         ? true // Only "active" selected
         : !search.status.includes('active') &&
-          search.status.includes('inactive')
+            search.status.includes('inactive')
           ? false // Only "inactive" selected
           : undefined // Both selected or neither (show all)
       : true // Default: show only active users

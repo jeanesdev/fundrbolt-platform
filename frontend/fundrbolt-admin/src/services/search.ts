@@ -4,13 +4,18 @@
  *
  * T071: API call logic for search
  */
-
 import apiClient from '@/lib/axios'
 
 // Search request
 export interface SearchRequest {
   query: string
-  resource_types?: ('users' | 'npos' | 'events' | 'auction_items' | 'registrants')[]
+  resource_types?: (
+    | 'users'
+    | 'npos'
+    | 'events'
+    | 'auction_items'
+    | 'registrants'
+  )[]
   npo_id?: string | null
   limit?: number
 }

@@ -2,19 +2,29 @@
  * LegalDocumentViewer component
  * Displays legal document content with version and publication date
  */
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import type { LegalDocumentPublic } from '@/types/legal'
 import ReactMarkdown from 'react-markdown'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 
 interface LegalDocumentViewerProps {
   document: LegalDocumentPublic
   className?: string
 }
 
-export function LegalDocumentViewer({ document, className }: LegalDocumentViewerProps) {
+export function LegalDocumentViewer({
+  document,
+  className,
+}: LegalDocumentViewerProps) {
   const documentTitle =
-    document.document_type === 'terms_of_service' ? 'Terms of Service' : 'Privacy Policy'
+    document.document_type === 'terms_of_service'
+      ? 'Terms of Service'
+      : 'Privacy Policy'
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -29,11 +39,12 @@ export function LegalDocumentViewer({ document, className }: LegalDocumentViewer
       <CardHeader>
         <CardTitle>{documentTitle}</CardTitle>
         <CardDescription>
-          Version {document.version} • Published {formatDate(document.published_at)}
+          Version {document.version} • Published{' '}
+          {formatDate(document.published_at)}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="prose prose-sm max-w-none dark:prose-invert">
+        <div className='prose prose-sm dark:prose-invert max-w-none'>
           <ReactMarkdown>{document.content}</ReactMarkdown>
         </div>
       </CardContent>

@@ -1,9 +1,9 @@
 """Pydantic schemas for NPO application workflow."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, computed_field, field_validator
 
 from app.models.npo_application import ApplicationStatus
 
@@ -66,6 +66,29 @@ class ApplicationResponse(BaseModel):
     # Related NPO info
     npo_name: str | None = None
     npo_email: str | None = None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_overdue(self) -> bool:
+        """True if application has been pending for more than 5 business days."""
+        if self.status not in (
+            ApplicationStatus.SUBMITTED,
+            ApplicationStatus.UNDER_REVIEW,
+        ):
+            return False
+        ref_date: datetime | None = self.submitted_at
+        if not ref_date:
+            return False
+        # Count business days from submission to today
+        start: date = ref_date.date() if hasattr(ref_date, "date") else ref_date
+        today: date = date.today()
+        business_days = 0
+        current = start
+        while current < today:
+            current += timedelta(days=1)
+            if current.weekday() < 5:  # Mon=0 … Fri=4
+                business_days += 1
+        return business_days > 5
 
     model_config = {"from_attributes": True}
 

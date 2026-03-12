@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button'
 import type { ScenarioType } from '@/services/event-dashboard'
+import { Button } from '@/components/ui/button'
 
 interface ScenarioToggleProps {
   value: ScenarioType

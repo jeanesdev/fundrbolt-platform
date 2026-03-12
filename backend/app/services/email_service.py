@@ -818,6 +818,193 @@ This is an automated notification from the Fundrbolt Platform.
             email_type="admin_application_notification",
         )
 
+    async def send_npo_application_submitted_admin_notification(
+        self,
+        applicant_name: str,
+        applicant_email: str,
+        npo_name: str,
+        application_id: str,
+    ) -> bool:
+        """
+        Send notification to the configured admin email when a new NPO application
+        is submitted via the onboarding wizard.
+
+        Sent to: settings.admin_notification_email (or fallback npo_applications@fundrbolt.com)
+        Content: Applicant details, NPO name, direct review link.
+
+        Args:
+            applicant_name: Full name of the applicant.
+            applicant_email: Email address of the applicant.
+            npo_name: Name of the submitted NPO.
+            application_id: UUID string of the NPOApplication record.
+
+        Returns:
+            True if email sent successfully, False otherwise.
+        """
+        admin_email = settings.admin_notification_email or "npo_applications@fundrbolt.com"
+        subject = f"New NPO Application (Onboarding): {npo_name}"
+        review_url = f"{settings.frontend_admin_url}/admin/npo-applications"
+
+        import datetime as _dt
+
+        submitted_at = _dt.datetime.now(_dt.UTC).strftime("%B %d, %Y at %I:%M %p UTC")
+
+        plain_body = f"""
+New NPO Application Submitted via Onboarding Wizard
+
+Applicant: {applicant_name} <{applicant_email}>
+Organisation: {npo_name}
+Application ID: {application_id}
+Submitted: {submitted_at}
+
+Please review this application in the admin dashboard:
+{review_url}
+
+---
+This is an automated notification from the Fundrbolt Platform.
+        """.strip()
+
+        html_body = _create_email_html_template(
+            heading=f"New NPO Application: {npo_name}",
+            body_paragraphs=[
+                f"<strong>{applicant_name}</strong> ({applicant_email}) has submitted a new NPO "
+                f"application for <strong>{npo_name}</strong> via the onboarding wizard.",
+                f"<strong>Application ID:</strong> {application_id}<br>"
+                f"<strong>Submitted:</strong> {submitted_at}",
+                "Please review and action this application in the admin dashboard.",
+            ],
+            cta_text="Review Application",
+            cta_url=review_url,
+            footer_text="This is an automated notification from the Fundrbolt Platform.",
+        )
+
+        return await self._send_email_with_retry(
+            to_email=admin_email,
+            subject=subject,
+            body=plain_body,
+            email_type="npo_onboarding_admin_notification",
+            html_body=html_body,
+        )
+
+    async def send_welcome_email(
+        self,
+        to_email: str,
+        user_name: str,
+        dashboard_url: str | None = None,
+    ) -> bool:
+        """
+        Send a welcome email after a user's email address is verified.
+
+        Args:
+            to_email: Recipient email address.
+            user_name: User's first name for personalised greeting.
+            dashboard_url: Optional direct link to the user's dashboard.
+
+        Returns:
+            True if email sent successfully, False otherwise.
+        """
+        subject = f"Welcome to FundrBolt, {user_name}!"
+        url = dashboard_url or f"{settings.frontend_admin_url}/dashboard"
+
+        plain_body = f"""
+Hi {user_name},
+
+Welcome to FundrBolt! Your email address has been verified and your account is now active.
+
+You can log in to your dashboard at any time here:
+{url}
+
+If you have any questions, just reply to this email or visit our help center.
+
+—The FundrBolt Team
+        """.strip()
+
+        html_body = _create_email_html_template(
+            heading=f"Welcome to FundrBolt, {user_name}! 🎉",
+            body_paragraphs=[
+                f"Hi <strong>{user_name}</strong>,",
+                "Your email address has been verified and your FundrBolt account is now active. "
+                "We're glad you're here!",
+                "Log in to your dashboard to explore the platform and start raising funds.",
+            ],
+            cta_text="Go to Dashboard",
+            cta_url=url,
+            footer_text="You received this email because you created an account on FundrBolt.",
+        )
+
+        return await self._send_email_with_retry(
+            to_email=to_email,
+            subject=subject,
+            body=plain_body,
+            email_type="welcome",
+            html_body=html_body,
+        )
+
+    async def send_npo_application_reopened_email(
+        self,
+        to_email: str,
+        user_name: str,
+        npo_name: str,
+        revision_notes: str | None = None,
+    ) -> bool:
+        """
+        Notify an applicant that their rejected NPO application has been re-opened
+        for revision by an admin.
+
+        Args:
+            to_email: Applicant's email address.
+            user_name: Applicant's first name.
+            npo_name: Name of the NPO application.
+            revision_notes: Optional guidance from the admin reviewer.
+
+        Returns:
+            True if email sent successfully, False otherwise.
+        """
+        subject = f"Your NPO application for {npo_name} has been re-opened"
+        wizard_url = f"{settings.frontend_admin_url}/register/npo"
+
+        notes_paragraph = (
+            f"The reviewer left the following feedback:<br><em>{revision_notes}</em>"
+            if revision_notes
+            else "Please log in and resubmit with any requested updates."
+        )
+
+        plain_body = f"""
+Hi {user_name},
+
+Good news — your NPO application for "{npo_name}" has been re-opened for revision.
+
+You can log in to FundrBolt and resubmit your application at:
+{wizard_url}
+
+{f"Reviewer notes: {revision_notes}" if revision_notes else ""}
+
+If you have any questions about this decision, please contact us by replying to this email.
+
+—The FundrBolt Team
+        """.strip()
+
+        html_body = _create_email_html_template(
+            heading=f"Your application for {npo_name} has been re-opened",
+            body_paragraphs=[
+                f"Hi <strong>{user_name}</strong>,",
+                f"Good news! Your NPO application for <strong>{npo_name}</strong> has been "
+                "re-opened for revision.",
+                notes_paragraph,
+            ],
+            cta_text="Update & Resubmit Application",
+            cta_url=wizard_url,
+            footer_text="If you have questions about this decision, please reply to this email.",
+        )
+
+        return await self._send_email_with_retry(
+            to_email=to_email,
+            subject=subject,
+            body=plain_body,
+            email_type="npo_application_reopened",
+            html_body=html_body,
+        )
+
     async def _send_via_azure(
         self, to_email: str, subject: str, body: str, html_body: str | None = None
     ) -> None:

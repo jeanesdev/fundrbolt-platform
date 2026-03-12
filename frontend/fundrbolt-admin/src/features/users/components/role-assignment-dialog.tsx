@@ -1,4 +1,8 @@
-import { SelectDropdown } from '@/components/select-dropdown'
+import React from 'react'
+import { z } from 'zod'
+import { useForm, useWatch } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -19,11 +23,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Shield } from 'lucide-react'
-import React from 'react'
-import { useForm, useWatch } from 'react-hook-form'
-import { z } from 'zod'
+import { SelectDropdown } from '@/components/select-dropdown'
 import type { User } from '../api/users-api'
 import { roles } from '../data/data'
 import { useUpdateUserRole } from '../hooks/use-users'

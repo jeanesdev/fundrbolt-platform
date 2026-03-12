@@ -65,27 +65,40 @@ export interface GuestDetailsUpdateRequest {
 
 class CheckInService {
   async lookup(request: CheckInLookupRequest): Promise<CheckInLookupResponse> {
-    const response = await apiClient.post<CheckInLookupResponse>('/checkin/lookup', request)
+    const response = await apiClient.post<CheckInLookupResponse>(
+      '/checkin/lookup',
+      request
+    )
     return response.data
   }
 
   async checkInRegistration(registrationId: string): Promise<CheckInResponse> {
-    const response = await apiClient.post<CheckInResponse>(`/checkin/registrations/${registrationId}`)
+    const response = await apiClient.post<CheckInResponse>(
+      `/checkin/registrations/${registrationId}`
+    )
     return response.data
   }
 
   async checkInGuest(guestId: string): Promise<CheckInResponse> {
-    const response = await apiClient.post<CheckInResponse>(`/checkin/guests/${guestId}`)
+    const response = await apiClient.post<CheckInResponse>(
+      `/checkin/guests/${guestId}`
+    )
     return response.data
   }
 
-  async undoCheckInRegistration(registrationId: string): Promise<CheckInResponse> {
-    const response = await apiClient.delete<CheckInResponse>(`/checkin/registrations/${registrationId}`)
+  async undoCheckInRegistration(
+    registrationId: string
+  ): Promise<CheckInResponse> {
+    const response = await apiClient.delete<CheckInResponse>(
+      `/checkin/registrations/${registrationId}`
+    )
     return response.data
   }
 
   async undoCheckInGuest(guestId: string): Promise<CheckInResponse> {
-    const response = await apiClient.delete<CheckInResponse>(`/checkin/guests/${guestId}`)
+    const response = await apiClient.delete<CheckInResponse>(
+      `/checkin/guests/${guestId}`
+    )
     return response.data
   }
 
@@ -105,7 +118,10 @@ class CheckInService {
     guestId: string,
     payload: GuestDetailsUpdateRequest
   ): Promise<void> {
-    await apiClient.patch(`/admin/events/${eventId}/guests/${guestId}/details`, payload)
+    await apiClient.patch(
+      `/admin/events/${eventId}/guests/${guestId}/details`,
+      payload
+    )
   }
 
   async replaceGuestUser(
@@ -113,9 +129,12 @@ class CheckInService {
     guestId: string,
     email: string
   ): Promise<void> {
-    await apiClient.post(`/admin/events/${eventId}/guests/${guestId}/replace-user`, {
-      email,
-    })
+    await apiClient.post(
+      `/admin/events/${eventId}/guests/${guestId}/replace-user`,
+      {
+        email,
+      }
+    )
   }
 }
 

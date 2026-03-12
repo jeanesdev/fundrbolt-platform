@@ -1,3 +1,4 @@
+import { AlertTriangle } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -7,15 +8,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { AlertTriangle } from 'lucide-react';
+} from '@/components/ui/alert-dialog'
 
 interface ConflictDialogProps {
-  isOpen: boolean;
-  onRefresh: () => void;
-  onCancel: () => void;
-  title?: string;
-  description?: string;
+  isOpen: boolean
+  onRefresh: () => void
+  onCancel: () => void
+  title?: string
+  description?: string
 }
 
 /**
@@ -49,11 +49,11 @@ export function ConflictDialog({
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
+          <div className='flex items-center gap-2'>
+            <AlertTriangle className='text-destructive h-5 w-5' />
             <AlertDialogTitle>{title}</AlertDialogTitle>
           </div>
-          <AlertDialogDescription className="mt-2">
+          <AlertDialogDescription className='mt-2'>
             {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -67,7 +67,7 @@ export function ConflictDialog({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  );
+  )
 }
 
-export default ConflictDialog;
+export default ConflictDialog

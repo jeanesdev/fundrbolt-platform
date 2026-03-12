@@ -19,7 +19,11 @@ export function IconLayoutCompact(props: SVGProps<SVGSVGElement>) {
         strokeLinecap='round'
         strokeMiterlimit={10}
       />
-      <g stroke={colors.secondary.white} strokeLinecap='round' strokeMiterlimit={10}>
+      <g
+        stroke={colors.secondary.white}
+        strokeLinecap='round'
+        strokeMiterlimit={10}
+      >
         <path
           fill='none'
           opacity={0.66}

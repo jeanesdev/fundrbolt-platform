@@ -4,10 +4,12 @@
  * Tests for the Zustand store managing event selection with smart defaults.
  * Validates smart default logic, manual selection persistence, and state management.
  */
-
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useEventContextStore, type EventContextOption } from '../event-context-store'
+import {
+  useEventContextStore,
+  type EventContextOption,
+} from '../event-context-store'
 
 describe('useEventContextStore', () => {
   beforeEach(() => {
@@ -187,7 +189,12 @@ describe('useEventContextStore', () => {
 
       // Manual selection first
       act(() => {
-        result.current.selectEvent('event-manual', 'Manual Event', 'manual-event', true)
+        result.current.selectEvent(
+          'event-manual',
+          'Manual Event',
+          'manual-event',
+          true
+        )
       })
 
       // Add new events and apply smart default
@@ -267,7 +274,12 @@ describe('useEventContextStore', () => {
       const { result } = renderHook(() => useEventContextStore())
 
       act(() => {
-        result.current.selectEvent('event-persist', 'Persist Event', 'persist-event', true)
+        result.current.selectEvent(
+          'event-persist',
+          'Persist Event',
+          'persist-event',
+          true
+        )
       })
 
       // Check localStorage
@@ -292,7 +304,10 @@ describe('useEventContextStore', () => {
         },
         version: 0,
       }
-      localStorage.setItem('fundrbolt-event-context-storage', JSON.stringify(mockState))
+      localStorage.setItem(
+        'fundrbolt-event-context-storage',
+        JSON.stringify(mockState)
+      )
 
       // Force store to rehydrate from localStorage
       // Note: In real usage, this happens automatically on page load
@@ -321,7 +336,13 @@ describe('useEventContextStore', () => {
       act(() => {
         result.current.selectEvent('event-123', 'My Event', 'my-event', true)
         result.current.setAvailableEvents([
-          { id: 'event-1', name: 'Event 1', slug: 'event-1', status: 'active', event_datetime: '2026-02-01T18:00:00Z' }
+          {
+            id: 'event-1',
+            name: 'Event 1',
+            slug: 'event-1',
+            status: 'active',
+            event_datetime: '2026-02-01T18:00:00Z',
+          },
         ])
         result.current.setLoading(true)
         result.current.setError('Test error')

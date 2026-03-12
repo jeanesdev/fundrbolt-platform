@@ -1,10 +1,10 @@
-import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
-import { Main } from '@/components/layout/main'
+import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { ClerkProvider } from '@clerk/clerk-react'
+import { ExternalLink, Key } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
-import { ClerkProvider } from '@clerk/clerk-react'
-import { createFileRoute, Outlet } from '@tanstack/react-router'
-import { ExternalLink, Key } from 'lucide-react'
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import { Main } from '@/components/layout/main'
 
 export const Route = createFileRoute('/clerk')({
   component: RouteComponent,

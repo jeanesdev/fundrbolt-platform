@@ -1,6 +1,6 @@
-import { useInitialAvatar } from '@/hooks/use-initial-avatar'
 import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useInitialAvatar } from '@/hooks/use-initial-avatar'
 import { InitialAvatar } from '../initial-avatar'
 
 vi.mock('@/hooks/use-initial-avatar')
@@ -19,12 +19,7 @@ describe('InitialAvatar', () => {
   })
 
   it('renders initials with accessible label and inline styles', () => {
-    render(
-      <InitialAvatar
-        name='Event Vision'
-        brandingPrimaryColor='#0088cc'
-      />
-    )
+    render(<InitialAvatar name='Event Vision' brandingPrimaryColor='#0088cc' />)
 
     const avatar = screen.getByLabelText('Event Vision avatar')
     expect(avatar).toHaveTextContent('EV')
@@ -56,12 +51,7 @@ describe('InitialAvatar', () => {
       hasBorder: true,
     })
 
-    render(
-      <InitialAvatar
-        name='Border Case'
-        brandingPrimaryColor='#000000'
-      />
-    )
+    render(<InitialAvatar name='Border Case' brandingPrimaryColor='#000000' />)
 
     const avatar = screen.getByLabelText('Border Case avatar')
     expect(avatar.className).toContain('border-2')

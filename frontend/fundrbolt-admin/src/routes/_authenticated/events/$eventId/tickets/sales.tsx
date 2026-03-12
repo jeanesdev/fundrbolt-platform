@@ -1,7 +1,7 @@
+import { createFileRoute } from '@tanstack/react-router'
 import { SalesSummaryCard } from '@/features/events/tickets/components/SalesSummaryCard'
 import { TicketSalesTable } from '@/features/events/tickets/components/TicketSalesTable'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
-import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute(
   '/_authenticated/events/$eventId/tickets/sales'

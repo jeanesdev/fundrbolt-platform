@@ -2,25 +2,9 @@
  * Ticket Package Management - Index Page
  * Lists all ticket packages for an event with CRUD operations
  */
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
-import { Progress } from '@/components/ui/progress'
-import { useEventWorkspace } from '@/features/events/useEventWorkspace'
-import { useToast } from '@/hooks/use-toast'
-import apiClient from '@/lib/axios'
-import { getErrorMessage } from '@/lib/error-utils'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useNavigate, useParams } from '@tanstack/react-router'
 import {
   DndContext,
   type DragEndEvent,
@@ -37,8 +21,6 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useParams } from '@tanstack/react-router'
 import {
   Eye,
   EyeOff,
@@ -48,7 +30,25 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react'
-import { useState } from 'react'
+import apiClient from '@/lib/axios'
+import { getErrorMessage } from '@/lib/error-utils'
+import { useToast } from '@/hooks/use-toast'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import { Progress } from '@/components/ui/progress'
+import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { PurchasersList } from './components/PurchasersList'
 import { SalesExportButton } from './components/SalesExportButton'
 import { TicketSalesImportDialog } from './components/TicketSalesImportDialog'

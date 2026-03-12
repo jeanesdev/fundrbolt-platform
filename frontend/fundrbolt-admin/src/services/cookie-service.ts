@@ -2,14 +2,13 @@
  * Cookie consent service
  * API client for managing cookie consent preferences
  */
-
-import apiClient from '@/lib/axios'
 import type {
   CookieConsentRequest,
   CookieConsentResponse,
   CookieConsentStatusResponse,
   CookieConsentUpdateRequest,
 } from '@/types/cookie'
+import apiClient from '@/lib/axios'
 
 export const cookieService = {
   /**

@@ -59,15 +59,18 @@ export default defineConfig(
         'warn',
         {
           selector: 'Literal[value=/#[0-9a-f]{3,8}/i]',
-          message: 'Do not hardcode hex colors. Import from @fundrbolt/shared/assets instead.',
+          message:
+            'Do not hardcode hex colors. Import from @fundrbolt/shared/assets instead.',
         },
         {
           selector: 'Literal[value=/rgb\\(/i]',
-          message: 'Do not hardcode RGB colors. Import from @fundrbolt/shared/assets instead.',
+          message:
+            'Do not hardcode RGB colors. Import from @fundrbolt/shared/assets instead.',
         },
         {
           selector: 'Literal[value=/hsl\\(/i]',
-          message: 'Do not hardcode HSL colors. Import from @fundrbolt/shared/assets instead.',
+          message:
+            'Do not hardcode HSL colors. Import from @fundrbolt/shared/assets instead.',
         },
       ],
     },

@@ -1,5 +1,5 @@
-import { useLocation } from '@tanstack/react-router'
 import * as React from 'react'
+import { useLocation } from '@tanstack/react-router'
 import { useBreakpoint } from './use-breakpoint'
 
 const STORAGE_KEY = 'fundrbolt_view_prefs'
@@ -42,8 +42,8 @@ export function useViewPreference(
 
   const defaultMode: ViewMode =
     tier === 'phone' ||
-      tier === 'tablet-portrait' ||
-      tier === 'tablet-landscape'
+    tier === 'tablet-portrait' ||
+    tier === 'tablet-landscape'
       ? 'card'
       : 'table'
 

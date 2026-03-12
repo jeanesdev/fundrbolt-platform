@@ -1,3 +1,5 @@
+import { useState, type ReactNode } from 'react'
+import { Loader2 } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,8 +11,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
-import { Loader2 } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
 
 const REASONS = [
   { value: 'duplicate', label: 'Duplicate registration' },
@@ -43,9 +43,8 @@ export function CancelAttendeesDialog({
   isPending = false,
   onConfirm,
 }: CancelAttendeesDialogProps) {
-  const [reason, setReason] = useState<CancelAttendeesPayload['cancellation_reason']>(
-    'requested'
-  )
+  const [reason, setReason] =
+    useState<CancelAttendeesPayload['cancellation_reason']>('requested')
   const [note, setNote] = useState('')
 
   const handleConfirm = () => {
@@ -62,18 +61,22 @@ export function CancelAttendeesDialog({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
-        <div className="space-y-2 mt-2">
-          <label className="text-sm font-medium">Cancellation Reason</label>
-          <div className="flex flex-col gap-2">
+        <div className='mt-2 space-y-2'>
+          <label className='text-sm font-medium'>Cancellation Reason</label>
+          <div className='flex flex-col gap-2'>
             {REASONS.map((r) => (
-              <label key={r.value} className="flex items-center gap-2">
+              <label key={r.value} className='flex items-center gap-2'>
                 <input
-                  type="radio"
-                  name="cancel-reason"
+                  type='radio'
+                  name='cancel-reason'
                   value={r.value}
                   checked={reason === r.value}
-                  onChange={() => setReason(r.value as CancelAttendeesPayload['cancellation_reason'])}
-                  className="accent-primary"
+                  onChange={() =>
+                    setReason(
+                      r.value as CancelAttendeesPayload['cancellation_reason']
+                    )
+                  }
+                  className='accent-primary'
                   disabled={isPending}
                 />
                 <span>{r.label}</span>
@@ -82,11 +85,11 @@ export function CancelAttendeesDialog({
           </div>
           {reason === 'other' && (
             <Input
-              placeholder="Enter custom reason"
+              placeholder='Enter custom reason'
               value={note}
               onChange={(e) => setNote(e.target.value)}
               disabled={isPending}
-              className="mt-2"
+              className='mt-2'
             />
           )}
         </div>
@@ -95,11 +98,11 @@ export function CancelAttendeesDialog({
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={isPending}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
           >
             {isPending ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                 Processing...
               </>
             ) : (

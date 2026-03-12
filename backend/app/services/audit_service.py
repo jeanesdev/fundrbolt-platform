@@ -43,6 +43,7 @@ class AuditEventType(str, Enum):
     NPO_APPLICATION_SUBMITTED = "npo_application_submitted"
     NPO_APPLICATION_APPROVED = "npo_application_approved"
     NPO_APPLICATION_REJECTED = "npo_application_rejected"
+    NPO_APPLICATION_REOPENED = "npo_application_reopened"
     NPO_MEMBER_INVITED = "npo_member_invited"
     NPO_MEMBER_ADDED = "npo_member_added"
     NPO_MEMBER_REMOVED = "npo_member_removed"
@@ -858,6 +859,45 @@ class AuditService:
                 "npo_id": str(npo_id),
                 "npo_name": npo_name,
                 "reviewed_by_user_id": str(reviewed_by_user_id),
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+    @staticmethod
+    async def log_npo_application_reopened(
+        db: AsyncSession,
+        npo_id: uuid.UUID,
+        npo_name: str,
+        reopened_by_user_id: uuid.UUID,
+        reopened_by_email: str,
+        revision_notes: str | None = None,
+        ip_address: str | None = None,
+    ) -> None:
+        """Log NPO application reopened (revision requested) event."""
+        from app.models.audit_log import AuditLog
+
+        audit_log = AuditLog(
+            user_id=reopened_by_user_id,
+            action=AuditEventType.NPO_APPLICATION_REOPENED.value,
+            ip_address=ip_address or "unknown",
+            user_agent=None,
+            event_metadata={
+                "npo_id": str(npo_id),
+                "npo_name": npo_name,
+                "reopened_by_email": reopened_by_email,
+                "revision_notes": revision_notes,
+            },
+        )
+        db.add(audit_log)
+        await db.commit()
+
+        logger.info(
+            "NPO application reopened for revision",
+            extra={
+                "event_type": AuditEventType.NPO_APPLICATION_REOPENED.value,
+                "npo_id": str(npo_id),
+                "npo_name": npo_name,
+                "reopened_by_user_id": str(reopened_by_user_id),
                 "timestamp": datetime.utcnow().isoformat(),
             },
         )

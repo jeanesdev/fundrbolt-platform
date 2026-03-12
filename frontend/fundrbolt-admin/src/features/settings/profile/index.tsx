@@ -1,12 +1,12 @@
+import { useEffect } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import apiClient from '@/lib/axios'
+import { Separator } from '@/components/ui/separator'
 import { ProfileForm } from '@/components/profile/ProfileForm'
 import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
 import { SocialMediaLinksForm } from '@/components/profile/social-media-links-form'
-import { Separator } from '@/components/ui/separator'
-import apiClient from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
-import { toast } from 'sonner'
 import { ContentSection } from '../components/content-section'
 
 export function SettingsProfile() {
@@ -26,7 +26,10 @@ export function SettingsProfile() {
 
   // Sync profile picture URL to auth store when userData changes
   useEffect(() => {
-    if (userData?.profile_picture_url && userData.profile_picture_url !== user?.profile_picture_url) {
+    if (
+      userData?.profile_picture_url &&
+      userData.profile_picture_url !== user?.profile_picture_url
+    ) {
       updateUser({ profile_picture_url: userData.profile_picture_url })
     }
   }, [userData?.profile_picture_url, user?.profile_picture_url, updateUser])
@@ -57,14 +60,18 @@ export function SettingsProfile() {
     },
     onError: (error: unknown) => {
       const err = error as { response?: { data?: { detail?: string } } }
-      const errorMessage = err.response?.data?.detail || 'Failed to update social media links'
+      const errorMessage =
+        err.response?.data?.detail || 'Failed to update social media links'
       toast.error(errorMessage)
     },
   })
 
   if (isLoading) {
     return (
-      <ContentSection title='Profile' desc='This is how others will see you on the site.'>
+      <ContentSection
+        title='Profile'
+        desc='This is how others will see you on the site.'
+      >
         <div>Loading...</div>
       </ContentSection>
     )
@@ -98,7 +105,9 @@ export function SettingsProfile() {
 
         <div>
           <h3 className='text-lg font-medium'>Personal Information</h3>
-          <p className='text-muted-foreground text-sm'>Update your personal details</p>
+          <p className='text-muted-foreground text-sm'>
+            Update your personal details
+          </p>
           <div className='mt-4'>
             <ProfileForm initialData={userData} />
           </div>

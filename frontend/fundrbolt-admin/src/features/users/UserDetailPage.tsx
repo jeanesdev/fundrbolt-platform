@@ -1,8 +1,3 @@
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { cn } from '@/lib/utils'
 import { Link, useParams } from '@tanstack/react-router'
 import {
   ArrowLeft,
@@ -17,6 +12,11 @@ import {
   Twitter,
   Youtube,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import { useUser } from './hooks/use-users'
 
 export function UserDetailPage() {
@@ -48,7 +48,8 @@ export function UserDetailPage() {
   const fullName = `${user.first_name} ${user.last_name}`
   const hasAddress =
     user.address_line1 || user.city || user.state || user.postal_code
-  const hasSocialMedia = user.social_media_links && Object.keys(user.social_media_links).length > 0
+  const hasSocialMedia =
+    user.social_media_links && Object.keys(user.social_media_links).length > 0
 
   const socialIcons: Record<string, typeof Facebook> = {
     facebook: Facebook,
@@ -70,7 +71,9 @@ export function UserDetailPage() {
         </Button>
         <div>
           <h2 className='text-2xl font-bold tracking-tight'>User Profile</h2>
-          <p className='text-muted-foreground'>View user information and activity</p>
+          <p className='text-muted-foreground'>
+            View user information and activity
+          </p>
         </div>
       </div>
 
@@ -79,7 +82,7 @@ export function UserDetailPage() {
         <Card className='md:col-span-1'>
           <CardHeader className='text-center'>
             {/* Profile Picture */}
-            <div className='mx-auto mb-4 flex h-32 w-32 items-center justify-center overflow-hidden rounded-full bg-muted'>
+            <div className='bg-muted mx-auto mb-4 flex h-32 w-32 items-center justify-center overflow-hidden rounded-full'>
               {user.profile_picture_url ? (
                 <img
                   src={user.profile_picture_url}
@@ -87,7 +90,7 @@ export function UserDetailPage() {
                   className='h-full w-full object-cover'
                 />
               ) : (
-                <div className='flex h-full w-full items-center justify-center bg-primary/10 text-4xl font-semibold text-primary'>
+                <div className='bg-primary/10 text-primary flex h-full w-full items-center justify-center text-4xl font-semibold'>
                   {user.first_name[0]}
                   {user.last_name[0]}
                 </div>
@@ -95,12 +98,14 @@ export function UserDetailPage() {
             </div>
             <CardTitle className='text-xl'>{fullName}</CardTitle>
             {user.organization_name && (
-              <p className='text-muted-foreground text-sm'>{user.organization_name}</p>
+              <p className='text-muted-foreground text-sm'>
+                {user.organization_name}
+              </p>
             )}
           </CardHeader>
           <CardContent className='space-y-4'>
             {/* Status Badges */}
-            <div className='flex flex-wrap gap-2 justify-center'>
+            <div className='flex flex-wrap justify-center gap-2'>
               <Badge
                 variant='outline'
                 className={cn(
@@ -181,30 +186,34 @@ export function UserDetailPage() {
               <>
                 <Separator />
                 <div className='space-y-2'>
-                  <p className='text-muted-foreground text-xs font-medium'>Social Media</p>
+                  <p className='text-muted-foreground text-xs font-medium'>
+                    Social Media
+                  </p>
                   <div className='flex flex-wrap gap-2'>
-                    {Object.entries(user.social_media_links!).map(([platform, url]) => {
-                      if (!url) return null
-                      const Icon = socialIcons[platform] || Globe
-                      return (
-                        <Button
-                          key={platform}
-                          asChild
-                          variant='outline'
-                          size='sm'
-                          className='gap-2'
-                        >
-                          <a
-                            href={url}
-                            target='_blank'
-                            rel='noopener noreferrer'
+                    {Object.entries(user.social_media_links!).map(
+                      ([platform, url]) => {
+                        if (!url) return null
+                        const Icon = socialIcons[platform] || Globe
+                        return (
+                          <Button
+                            key={platform}
+                            asChild
+                            variant='outline'
+                            size='sm'
+                            className='gap-2'
                           >
-                            <Icon className='h-4 w-4' />
-                            <span className='capitalize'>{platform}</span>
-                          </a>
-                        </Button>
-                      )
-                    })}
+                            <a
+                              href={url}
+                              target='_blank'
+                              rel='noopener noreferrer'
+                            >
+                              <Icon className='h-4 w-4' />
+                              <span className='capitalize'>{platform}</span>
+                            </a>
+                          </Button>
+                        )
+                      }
+                    )}
                   </div>
                 </div>
               </>
@@ -229,7 +238,9 @@ export function UserDetailPage() {
 
               {user.npo_memberships && user.npo_memberships.length > 0 && (
                 <div>
-                  <p className='text-muted-foreground mb-2 text-sm'>NPO Memberships</p>
+                  <p className='text-muted-foreground mb-2 text-sm'>
+                    NPO Memberships
+                  </p>
                   <div className='space-y-2'>
                     {user.npo_memberships.map((membership) => (
                       <div
@@ -247,7 +258,9 @@ export function UserDetailPage() {
                         </div>
                         <Badge
                           variant={
-                            membership.status === 'active' ? 'default' : 'secondary'
+                            membership.status === 'active'
+                              ? 'default'
+                              : 'secondary'
                           }
                           className='capitalize'
                         >
@@ -268,7 +281,9 @@ export function UserDetailPage() {
             </CardHeader>
             <CardContent className='space-y-3'>
               <div className='flex justify-between'>
-                <span className='text-muted-foreground text-sm'>Last Login</span>
+                <span className='text-muted-foreground text-sm'>
+                  Last Login
+                </span>
                 <span className='text-sm'>
                   {user.last_login_at
                     ? new Date(user.last_login_at).toLocaleString()
@@ -276,13 +291,17 @@ export function UserDetailPage() {
                 </span>
               </div>
               <div className='flex justify-between'>
-                <span className='text-muted-foreground text-sm'>Account Created</span>
+                <span className='text-muted-foreground text-sm'>
+                  Account Created
+                </span>
                 <span className='text-sm'>
                   {new Date(user.created_at).toLocaleDateString()}
                 </span>
               </div>
               <div className='flex justify-between'>
-                <span className='text-muted-foreground text-sm'>Last Updated</span>
+                <span className='text-muted-foreground text-sm'>
+                  Last Updated
+                </span>
                 <span className='text-sm'>
                   {new Date(user.updated_at).toLocaleDateString()}
                 </span>

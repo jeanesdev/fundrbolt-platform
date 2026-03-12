@@ -1,6 +1,6 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { AlertTriangle, WifiOff } from 'lucide-react';
+import { AlertTriangle, WifiOff } from 'lucide-react'
+import { useNetworkStatus } from '@/hooks/useNetworkStatus'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 /**
  * Displays a connection status banner
@@ -20,29 +20,30 @@ import { AlertTriangle, WifiOff } from 'lucide-react';
  * ```
  */
 export function ConnectionStatus() {
-  const { isOnline } = useNetworkStatus();
+  const { isOnline } = useNetworkStatus()
 
   if (isOnline) {
-    return null;
+    return null
   }
 
   return (
     <Alert
-      variant="destructive"
-      className="fixed top-0 left-0 right-0 z-50 rounded-none border-b-2 m-0"
+      variant='destructive'
+      className='fixed top-0 right-0 left-0 z-50 m-0 rounded-none border-b-2'
     >
-      <div className="flex items-center gap-2">
-        <WifiOff className="h-4 w-4 flex-shrink-0" />
-        <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+      <div className='flex items-center gap-2'>
+        <WifiOff className='h-4 w-4 flex-shrink-0' />
+        <AlertTriangle className='h-4 w-4 flex-shrink-0' />
       </div>
-      <AlertDescription className="ml-0">
-        <div className="font-semibold">No internet connection</div>
-        <div className="text-sm opacity-90">
-          You are offline. Changes may not be saved. Please check your connection.
+      <AlertDescription className='ml-0'>
+        <div className='font-semibold'>No internet connection</div>
+        <div className='text-sm opacity-90'>
+          You are offline. Changes may not be saved. Please check your
+          connection.
         </div>
       </AlertDescription>
     </Alert>
-  );
+  )
 }
 
 /**
@@ -65,29 +66,29 @@ export function OfflineProtected({
   children,
   fallback,
 }: {
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
+  children: React.ReactNode
+  fallback?: React.ReactNode
 }) {
-  const { isOnline } = useNetworkStatus();
+  const { isOnline } = useNetworkStatus()
 
   if (!isOnline) {
     return (
-      <div className="opacity-50 pointer-events-none">
+      <div className='pointer-events-none opacity-50'>
         {fallback || (
-          <div className="flex items-center justify-center p-8 text-center">
-            <div className="space-y-2">
-              <WifiOff className="h-8 w-8 mx-auto text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
+          <div className='flex items-center justify-center p-8 text-center'>
+            <div className='space-y-2'>
+              <WifiOff className='text-muted-foreground mx-auto h-8 w-8' />
+              <p className='text-muted-foreground text-sm'>
                 This action is unavailable while offline
               </p>
             </div>
           </div>
         )}
       </div>
-    );
+    )
   }
 
-  return <>{children}</>;
+  return <>{children}</>
 }
 
-export default ConnectionStatus;
+export default ConnectionStatus

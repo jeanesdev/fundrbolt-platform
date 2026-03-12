@@ -3,7 +3,14 @@
  * Feature 014: User Story 1, 2, 3
  * Panel for editing table customization (capacity, name, captain)
  */
-
+import { useEffect, useState } from 'react'
+import {
+  updateTableDetails,
+  type EventTableDetails,
+} from '@/services/seating-service'
+import { Crown, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,11 +28,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
-import { updateTableDetails, type EventTableDetails } from '@/services/seating-service'
-import { Crown, Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
 
 interface TableDetailsPanelProps {
   eventId: string
@@ -84,7 +86,11 @@ export function TableDetailsPanel({
         table_captain_id: captainId === '' ? null : captainId,
       }
 
-      const updatedTable = await updateTableDetails(eventId, table.table_number, updates)
+      const updatedTable = await updateTableDetails(
+        eventId,
+        table.table_number,
+        updates
+      )
 
       onUpdate(updatedTable)
 
@@ -92,13 +98,16 @@ export function TableDetailsPanel({
 
       onClose()
     } catch (error) {
-      const err = error as { response?: { status?: number; data?: { detail?: string } } }
+      const err = error as {
+        response?: { status?: number; data?: { detail?: string } }
+      }
 
       let errorMessage = 'Failed to update table customization'
       if (err.response?.status === 409) {
         errorMessage = err.response.data?.detail || 'Table capacity conflict'
       } else if (err.response?.status === 422) {
-        errorMessage = 'Invalid input: ' + (err.response.data?.detail || 'Validation error')
+        errorMessage =
+          'Invalid input: ' + (err.response.data?.detail || 'Validation error')
       } else if (err.response?.data?.detail) {
         errorMessage = err.response.data.detail
       }
@@ -133,81 +142,82 @@ export function TableDetailsPanel({
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+        <form onSubmit={handleSubmit} className='mt-6 space-y-6'>
           {/* Custom Capacity Input (User Story 1) */}
-          <div className="space-y-2">
-            <Label htmlFor="custom-capacity">Custom Capacity</Label>
-            <div className="flex gap-2">
+          <div className='space-y-2'>
+            <Label htmlFor='custom-capacity'>Custom Capacity</Label>
+            <div className='flex gap-2'>
               <Input
-                id="custom-capacity"
-                type="number"
-                min="1"
-                max="20"
+                id='custom-capacity'
+                type='number'
+                min='1'
+                max='20'
                 value={customCapacity}
                 onChange={(e) => setCustomCapacity(e.target.value)}
                 placeholder={`Default: ${table.effective_capacity}`}
               />
               <Button
-                type="button"
-                variant="outline"
+                type='button'
+                variant='outline'
                 onClick={handleClearCapacity}
                 disabled={!customCapacity}
               >
                 Clear
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Current: {table.current_occupancy}/{table.effective_capacity} seats occupied
+            <p className='text-muted-foreground text-xs'>
+              Current: {table.current_occupancy}/{table.effective_capacity}{' '}
+              seats occupied
             </p>
           </div>
 
           {/* Table Name Input (User Story 2) */}
-          <div className="space-y-2">
-            <Label htmlFor="table-name">Table Name</Label>
-            <div className="flex gap-2">
+          <div className='space-y-2'>
+            <Label htmlFor='table-name'>Table Name</Label>
+            <div className='flex gap-2'>
               <Input
-                id="table-name"
-                type="text"
+                id='table-name'
+                type='text'
                 maxLength={50}
                 value={tableName}
                 onChange={(e) => setTableName(e.target.value)}
-                placeholder="e.g., VIP Sponsors, Youth Group"
+                placeholder='e.g., VIP Sponsors, Youth Group'
               />
               <Button
-                type="button"
-                variant="outline"
+                type='button'
+                variant='outline'
                 onClick={handleClearName}
                 disabled={!tableName}
               >
                 Clear
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className='text-muted-foreground text-xs'>
               Optional friendly name (max 50 characters)
             </p>
           </div>
 
           {/* Table Captain Dropdown (User Story 3) */}
-          <div className="space-y-2">
-            <Label htmlFor="table-captain">Table Captain</Label>
-            <div className="flex gap-2">
+          <div className='space-y-2'>
+            <Label htmlFor='table-captain'>Table Captain</Label>
+            <div className='flex gap-2'>
               <Select value={captainId} onValueChange={setCaptainId}>
-                <SelectTrigger id="table-captain" className="flex-1">
-                  <SelectValue placeholder="No captain assigned" />
+                <SelectTrigger id='table-captain' className='flex-1'>
+                  <SelectValue placeholder='No captain assigned' />
                 </SelectTrigger>
                 <SelectContent>
                   {guestsAtTable.length === 0 ? (
-                    <SelectItem value="" disabled>
+                    <SelectItem value='' disabled>
                       No guests at this table
                     </SelectItem>
                   ) : (
                     guestsAtTable.map((guest) => (
                       <SelectItem key={guest.guest_id} value={guest.guest_id}>
-                        <div className="flex items-center gap-2">
-                          <Crown className="h-3 w-3 text-amber-500" />
+                        <div className='flex items-center gap-2'>
+                          <Crown className='h-3 w-3 text-amber-500' />
                           <span>{guest.name || 'Unknown Guest'}</span>
                           {guest.bidder_number && (
-                            <span className="text-xs text-muted-foreground">
+                            <span className='text-muted-foreground text-xs'>
                               (#{guest.bidder_number})
                             </span>
                           )}
@@ -218,26 +228,33 @@ export function TableDetailsPanel({
                 </SelectContent>
               </Select>
               <Button
-                type="button"
-                variant="outline"
+                type='button'
+                variant='outline'
                 onClick={handleClearCaptain}
                 disabled={!captainId}
               >
                 Clear
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className='text-muted-foreground text-xs'>
               Designate one guest as table captain (optional)
             </p>
           </div>
 
           {/* Form Actions */}
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+          <div className='flex justify-end gap-2 pt-4'>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type='submit' disabled={isSubmitting}>
+              {isSubmitting && (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              )}
               Save Changes
             </Button>
           </div>

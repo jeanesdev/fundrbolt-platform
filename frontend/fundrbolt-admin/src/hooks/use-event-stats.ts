@@ -2,7 +2,6 @@
  * useEventStats Hook
  * Fetches badge counts for the currently selected event using React Query
  */
-
 import { useQuery } from '@tanstack/react-query'
 import { eventApi } from '@/services/event-service'
 import type { EventStats } from '@/types/event'

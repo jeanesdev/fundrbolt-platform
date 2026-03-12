@@ -31,7 +31,10 @@ export function formatCurrencyCompact(value: number): string {
   return `${sign}$${Math.round(abs).toLocaleString('en-US')}`
 }
 
-export function formatPercent(value: number, maximumFractionDigits = 1): string {
+export function formatPercent(
+  value: number,
+  maximumFractionDigits = 1
+): string {
   return `${new Intl.NumberFormat('en-US', {
     maximumFractionDigits,
   }).format(value)}%`

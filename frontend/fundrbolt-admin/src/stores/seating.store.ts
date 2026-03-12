@@ -3,21 +3,20 @@
  *
  * Manages state for drag-and-drop table assignments with optimistic updates and rollback.
  */
-
+import {
+  fetchEventTables,
+  updateTableDetails,
+  type EventTableDetails,
+} from '@/services/seating-service'
+import { toast } from 'sonner'
+import { create } from 'zustand'
 import {
   assignGuestToTable,
   getSeatingGuests,
   getTableOccupancy,
   removeGuestFromTable,
-  type GuestSeatingInfo
+  type GuestSeatingInfo,
 } from '@/lib/api/admin-seating'
-import {
-  fetchEventTables,
-  updateTableDetails,
-  type EventTableDetails
-} from '@/services/seating-service'
-import { toast } from 'sonner'
-import { create } from 'zustand'
 
 interface SeatingState {
   // Table assignments: tableNumber -> list of guests
@@ -48,7 +47,11 @@ interface SeatingState {
 
 interface SeatingActions {
   // Initialize store with event data
-  initialize: (eventId: string, tableCount: number, maxGuestsPerTable: number) => void
+  initialize: (
+    eventId: string,
+    tableCount: number,
+    maxGuestsPerTable: number
+  ) => void
 
   // Load all guests and their assignments
   loadGuests: () => Promise<void>
@@ -103,7 +106,9 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
       eventId,
       tableCount,
       maxGuestsPerTable,
-      tables: new Map(Array.from({ length: tableCount }, (_, i) => [i + 1, []])),
+      tables: new Map(
+        Array.from({ length: tableCount }, (_, i) => [i + 1, []])
+      ),
       unassignedGuests: [],
     })
   },
@@ -142,7 +147,8 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
       // Load table details after guests are loaded
       await get().loadTableDetails()
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error'
       toast.error(`Failed to load guest seating information: ${errorMessage}`)
       set({ isLoading: false })
     }
@@ -162,7 +168,8 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
 
       set({ tableDetails: details })
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error'
       toast.error(`Failed to load table details: ${errorMessage}`)
     }
   },
@@ -209,7 +216,8 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
 
     // Check capacity using table details (Feature 014)
     const tableDetail = tableDetails.get(tableNumber)
-    const maxCapacity = tableDetail?.effective_capacity ?? get().maxGuestsPerTable
+    const maxCapacity =
+      tableDetail?.effective_capacity ?? get().maxGuestsPerTable
     const targetTableGuests = tables.get(tableNumber) || []
 
     if (targetTableGuests.length >= maxCapacity) {
@@ -260,7 +268,11 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
       })
     }
 
-    set({ tables: newTables, unassignedGuests: newUnassigned, tableDetails: newTableDetails })
+    set({
+      tables: newTables,
+      unassignedGuests: newUnassigned,
+      tableDetails: newTableDetails,
+    })
 
     // Make API call
     try {
@@ -269,7 +281,9 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
       set({ rollbackState: null })
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to assign guest to table'
+        error instanceof Error
+          ? error.message
+          : 'Failed to assign guest to table'
       toast.error(errorMessage)
       get().rollback()
     }
@@ -330,7 +344,11 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
       })
     }
 
-    set({ tables: newTables, unassignedGuests: newUnassigned, tableDetails: newTableDetails })
+    set({
+      tables: newTables,
+      unassignedGuests: newUnassigned,
+      tableDetails: newTableDetails,
+    })
 
     // Make API call
     try {
@@ -339,7 +357,9 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
       set({ rollbackState: null })
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to remove guest from table'
+        error instanceof Error
+          ? error.message
+          : 'Failed to remove guest from table'
       toast.error(errorMessage)
       get().rollback()
     }
@@ -396,7 +416,9 @@ export const useSeatingStore = create<SeatingStore>((set, get) => ({
       toast.success(`Table ${tableNumber} customization updated`)
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to update table customization'
+        error instanceof Error
+          ? error.message
+          : 'Failed to update table customization'
       toast.error(errorMessage)
       get().rollback()
     }

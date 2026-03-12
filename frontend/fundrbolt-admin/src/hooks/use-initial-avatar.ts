@@ -12,10 +12,9 @@
  * - Auto-adjusts text color (white/navy) for WCAG AA compliance (4.5:1 ratio)
  * - Adds border for navy-on-white theme when contrast insufficient
  */
-
-import { getContrastingTextColor, meetsWCAGAA } from '@/lib/colors'
-import { colors as brandColors } from '@fundrbolt/shared/assets'
 import { useMemo } from 'react'
+import { colors as brandColors } from '@fundrbolt/shared/assets'
+import { getContrastingTextColor, meetsWCAGAA } from '@/lib/colors'
 
 export interface InitialAvatarConfig {
   initials: string
@@ -73,7 +72,10 @@ export function useInitialAvatar({
 
     // Determine background color
     let bgColor: string
-    if (brandingPrimaryColor && /^#[A-Fa-f0-9]{3,6}$/.test(brandingPrimaryColor)) {
+    if (
+      brandingPrimaryColor &&
+      /^#[A-Fa-f0-9]{3,6}$/.test(brandingPrimaryColor)
+    ) {
       // Use branding color if valid hex
       bgColor = brandingPrimaryColor
     } else {
@@ -85,7 +87,9 @@ export function useInitialAvatar({
     const textColor = getContrastingTextColor(bgColor)
 
     // Check if we need a border (navy background on white text needs border)
-    const needsBorder = bgColor === brandColors.palette.ink && textColor === brandColors.secondary.white
+    const needsBorder =
+      bgColor === brandColors.palette.ink &&
+      textColor === brandColors.secondary.white
     // Alternative: Check WCAG compliance and add border if barely passing
     const wcagCompliant = meetsWCAGAA(textColor, bgColor)
     const hasBorder = needsBorder || !wcagCompliant

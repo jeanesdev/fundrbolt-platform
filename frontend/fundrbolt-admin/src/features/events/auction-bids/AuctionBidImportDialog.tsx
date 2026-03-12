@@ -1,3 +1,21 @@
+import { useRef, useState } from 'react'
+import axios from 'axios'
+import { auctionBidService } from '@/services/auctionBidService'
+import type {
+  AuctionBidImportIssue,
+  AuctionBidImportSummary,
+  AuctionBidPreflightResult,
+} from '@/types/auctionBidImport'
+import {
+  AlertCircle,
+  CheckCircle,
+  Download,
+  FileText,
+  Upload,
+  XCircle,
+} from 'lucide-react'
+import { getErrorMessage } from '@/lib/error-utils'
+import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,24 +29,6 @@ import {
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useToast } from '@/hooks/use-toast'
-import { getErrorMessage } from '@/lib/error-utils'
-import { auctionBidService } from '@/services/auctionBidService'
-import type {
-  AuctionBidImportIssue,
-  AuctionBidImportSummary,
-  AuctionBidPreflightResult,
-} from '@/types/auctionBidImport'
-import axios from 'axios'
-import {
-  AlertCircle,
-  CheckCircle,
-  Download,
-  FileText,
-  Upload,
-  XCircle,
-} from 'lucide-react'
-import { useRef, useState } from 'react'
 
 interface AuctionBidImportDialogProps {
   open: boolean
@@ -312,8 +312,9 @@ export function AuctionBidImportDialog({
       setStage('complete')
       toast({
         title: 'Import Complete',
-        description: `Created ${result.created_bids} bids${result.skipped_bids ? `, skipped ${result.skipped_bids}` : ''
-          }.`,
+        description: `Created ${result.created_bids} bids${
+          result.skipped_bids ? `, skipped ${result.skipped_bids}` : ''
+        }.`,
       })
       onImportComplete?.(result)
     } catch (error) {
@@ -515,23 +516,23 @@ export function AuctionBidImportDialog({
 
                 {(preflightResult.row_errors.length > 0 ||
                   preflightResult.row_warnings.length > 0) && (
-                    <div className='space-y-2'>
-                      <div className='flex items-center gap-2 text-sm'>
-                        <AlertCircle className='text-muted-foreground h-4 w-4' />
-                        Issues
-                      </div>
-                      <ScrollArea className='border-border h-48 w-full rounded-md border p-3'>
-                        <div className='space-y-3'>
-                          {preflightResult.row_errors.map((issue, index) => (
-                            <IssueRow key={`error-${index}`} issue={issue} />
-                          ))}
-                          {preflightResult.row_warnings.map((issue, index) => (
-                            <IssueRow key={`warning-${index}`} issue={issue} />
-                          ))}
-                        </div>
-                      </ScrollArea>
+                  <div className='space-y-2'>
+                    <div className='flex items-center gap-2 text-sm'>
+                      <AlertCircle className='text-muted-foreground h-4 w-4' />
+                      Issues
                     </div>
-                  )}
+                    <ScrollArea className='border-border h-48 w-full rounded-md border p-3'>
+                      <div className='space-y-3'>
+                        {preflightResult.row_errors.map((issue, index) => (
+                          <IssueRow key={`error-${index}`} issue={issue} />
+                        ))}
+                        {preflightResult.row_warnings.map((issue, index) => (
+                          <IssueRow key={`warning-${index}`} issue={issue} />
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                )}
               </div>
             )}
 

@@ -4,7 +4,11 @@
  * Displayed to users with super_admin role.
  * Provides platform-wide overview and management capabilities.
  */
-
+import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
+import { eventApi } from '@/services/event-service'
+import { npoApi } from '@/services/npo-service'
+import { useAuth } from '@/hooks/use-auth'
 import {
   Card,
   CardContent,
@@ -14,11 +18,6 @@ import {
 } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { listUsers } from '@/features/users/api/users-api'
-import { useAuth } from '@/hooks/use-auth'
-import { eventApi } from '@/services/event-service'
-import { npoApi } from '@/services/npo-service'
-import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
 
 export function SuperAdminDashboard() {
   const { user } = useAuth()

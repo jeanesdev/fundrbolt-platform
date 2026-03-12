@@ -4,7 +4,6 @@
  * Handles API requests for seating management including table assignments
  * and bidder number management.
  */
-
 import apiClient from '@/lib/axios'
 
 /**
@@ -215,7 +214,7 @@ export const getSeatingGuests = async (
 ): Promise<GuestSeatingListResponse> => {
   const params: Record<string, number> = {
     page,
-    per_page: perPage
+    per_page: perPage,
   }
 
   // Only include table_filter if explicitly set to a number
@@ -277,14 +276,15 @@ export const autoAssignRegistrationBidderNumbers = async (
   guestIds: string[],
   startingBidderNumber: number
 ): Promise<RegistrationBidderNumberAutoAssignResponse> => {
-  const response = await apiClient.post<RegistrationBidderNumberAutoAssignResponse>(
-    `/admin/events/${eventId}/registrations/bidder-numbers/auto-assign`,
-    {
-      starting_bidder_number: startingBidderNumber,
-      registration_ids: registrationIds,
-      guest_ids: guestIds,
-    }
-  )
+  const response =
+    await apiClient.post<RegistrationBidderNumberAutoAssignResponse>(
+      `/admin/events/${eventId}/registrations/bidder-numbers/auto-assign`,
+      {
+        starting_bidder_number: startingBidderNumber,
+        registration_ids: registrationIds,
+        guest_ids: guestIds,
+      }
+    )
 
   return response.data
 }

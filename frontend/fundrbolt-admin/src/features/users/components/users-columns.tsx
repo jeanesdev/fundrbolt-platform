@@ -1,10 +1,10 @@
-import { DataTableColumnHeader } from '@/components/data-table'
-import { LongText } from '@/components/long-text'
-import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
-import { cn } from '@/lib/utils'
 import { Link } from '@tanstack/react-router'
 import { type ColumnDef } from '@tanstack/react-table'
+import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import { DataTableColumnHeader } from '@/components/data-table'
+import { LongText } from '@/components/long-text'
 import { callTypes, roles } from '../data/data'
 import { type User } from '../data/schema'
 import { DataTableRowActions } from './data-table-row-actions'
@@ -57,7 +57,8 @@ export const usersColumns: ColumnDef<User>[] = [
       )
     },
     filterFn: (row, _id, value) => {
-      const fullName = `${row.original.first_name} ${row.original.last_name}`.toLowerCase()
+      const fullName =
+        `${row.original.first_name} ${row.original.last_name}`.toLowerCase()
       return fullName.includes(value.toLowerCase())
     },
     meta: {
@@ -210,7 +211,9 @@ export const usersColumns: ColumnDef<User>[] = [
         return (
           <div className='text-sm'>
             <div className='font-medium'>{m.npo_name}</div>
-            <div className='text-muted-foreground text-xs capitalize'>{m.role}</div>
+            <div className='text-muted-foreground text-xs capitalize'>
+              {m.role}
+            </div>
           </div>
         )
       }
@@ -219,7 +222,10 @@ export const usersColumns: ColumnDef<User>[] = [
         <div className='text-sm'>
           <div className='font-medium'>{memberships.length} NPOs</div>
           <div className='text-muted-foreground text-xs'>
-            {memberships.slice(0, 2).map(m => m.npo_name).join(', ')}
+            {memberships
+              .slice(0, 2)
+              .map((m) => m.npo_name)
+              .join(', ')}
             {memberships.length > 2 && ', ...'}
           </div>
         </div>

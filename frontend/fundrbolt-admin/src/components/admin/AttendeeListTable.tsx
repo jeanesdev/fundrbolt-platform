@@ -4,8 +4,30 @@
  * Displays event attendees (registrants + guests) with meal selections,
  * CSV export, and guest invitation features.
  */
-
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  ArrowUpDown,
+  Download,
+  Filter,
+  Hash,
+  Loader2,
+  Mail,
+  PenLine,
+  Trash2,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import {
+  type Attendee,
+  deleteGuest,
+  downloadAttendeesCSV,
+  getEventAttendees,
+  sendGuestInvitation,
+} from '@/lib/api/admin-attendees'
+import { autoAssignRegistrationBidderNumbers } from '@/lib/api/admin-seating'
+import { cancelRegistration } from '@/lib/api/cancel-registration'
+import { getErrorMessage } from '@/lib/error-utils'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,32 +65,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import {
-  type Attendee,
-  deleteGuest,
-  downloadAttendeesCSV,
-  getEventAttendees,
-  sendGuestInvitation,
-} from '@/lib/api/admin-attendees'
-import { autoAssignRegistrationBidderNumbers } from '@/lib/api/admin-seating'
-import { cancelRegistration } from '@/lib/api/cancel-registration'
-import { getErrorMessage } from '@/lib/error-utils'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  ArrowUpDown,
-  Download,
-  Filter,
-  Hash,
-  Loader2,
-  Mail,
-  PenLine,
-  Trash2,
-} from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { AssignBidderNumberDialog } from './AssignBidderNumberDialog'
-import { CancelAttendeesDialog, type CancelAttendeesPayload } from './CancelAttendeesDialog'
+import {
+  CancelAttendeesDialog,
+  type CancelAttendeesPayload,
+} from './CancelAttendeesDialog'
 import { CancelRegistrationDialog } from './CancelRegistrationDialog'
 
 interface AttendeeListTableProps {
@@ -139,8 +141,14 @@ export function AttendeeListTable({
     name: string
   } | null>(null)
   // Cancel registration handler
-  const handleCancelRegistrationClick = (registrationId: string, registrantName: string) => {
-    setRegistrantToCancel({ registration_id: registrationId, name: registrantName })
+  const handleCancelRegistrationClick = (
+    registrationId: string,
+    registrantName: string
+  ) => {
+    setRegistrantToCancel({
+      registration_id: registrationId,
+      name: registrantName,
+    })
     setCancelDialogOpen(true)
   }
   const handleCancelRegistrationComplete = () => {
@@ -175,8 +183,13 @@ export function AttendeeListTable({
 
   // Delete guest mutation
   const deleteGuestMutation = useMutation({
-    mutationFn: ({ guestId, payload }: { guestId: string; payload: CancelAttendeesPayload }) =>
-      deleteGuest(guestId, payload),
+    mutationFn: ({
+      guestId,
+      payload,
+    }: {
+      guestId: string
+      payload: CancelAttendeesPayload
+    }) => deleteGuest(guestId, payload),
     onSuccess: () => {
       toast.success('Guest deleted successfully')
       queryClient.invalidateQueries({ queryKey: ['event-attendees', eventId] })
@@ -236,13 +249,17 @@ export function AttendeeListTable({
   }
 
   const handleBulkCancelConfirm = async (payload: CancelAttendeesPayload) => {
-    const selected = attendees.filter((attendee) => selectedAttendees.has(attendee.id))
+    const selected = attendees.filter((attendee) =>
+      selectedAttendees.has(attendee.id)
+    )
     if (selected.length === 0) {
       toast.error('No attendees selected')
       return
     }
 
-    const toastId = toast.loading(`Cancelling ${selected.length} attendee(s)...`)
+    const toastId = toast.loading(
+      `Cancelling ${selected.length} attendee(s)...`
+    )
     setBulkCancelPending(true)
     try {
       const results = await Promise.allSettled(
@@ -263,13 +280,22 @@ export function AttendeeListTable({
       if (failures.length > 0) {
         const failureMessages = failures
           .map((failure) =>
-            getErrorMessage((failure as PromiseRejectedResult).reason, 'Cancel failed')
+            getErrorMessage(
+              (failure as PromiseRejectedResult).reason,
+              'Cancel failed'
+            )
           )
           .slice(0, 3)
-        const detail = failureMessages.length > 0 ? `: ${failureMessages.join(' • ')}` : ''
-        toast.error(`Failed to cancel ${failures.length} attendee(s)${detail}`, { id: toastId })
+        const detail =
+          failureMessages.length > 0 ? `: ${failureMessages.join(' • ')}` : ''
+        toast.error(
+          `Failed to cancel ${failures.length} attendee(s)${detail}`,
+          { id: toastId }
+        )
       } else {
-        toast.success(`Cancelled ${selected.length} attendee(s)`, { id: toastId })
+        toast.success(`Cancelled ${selected.length} attendee(s)`, {
+          id: toastId,
+        })
       }
 
       queryClient.invalidateQueries({ queryKey: ['event-attendees', eventId] })
@@ -277,7 +303,9 @@ export function AttendeeListTable({
       setSelectedAttendees(new Set())
       setBulkCancelDialogOpen(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Failed to cancel selected attendees'), { id: toastId })
+      toast.error(getErrorMessage(err, 'Failed to cancel selected attendees'), {
+        id: toastId,
+      })
     } finally {
       setBulkCancelPending(false)
     }
@@ -299,16 +327,14 @@ export function AttendeeListTable({
     if (selectedAttendees.size === displayedAttendees.length) {
       setSelectedAttendees(new Set())
     } else {
-      setSelectedAttendees(
-        new Set(displayedAttendees.map((a) => a.id) || [])
-      )
+      setSelectedAttendees(new Set(displayedAttendees.map((a) => a.id) || []))
     }
   }
 
   if (isLoading) {
     return (
       <div className='flex items-center justify-center p-8'>
-        <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
+        <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
       </div>
     )
   }
@@ -317,7 +343,7 @@ export function AttendeeListTable({
     return (
       <div className='p-8 text-center'>
         <p className='text-destructive'>Error loading attendees</p>
-        <p className='text-sm text-muted-foreground'>{error.message}</p>
+        <p className='text-muted-foreground text-sm'>{error.message}</p>
       </div>
     )
   }
@@ -325,13 +351,15 @@ export function AttendeeListTable({
   const attendees = data?.attendees || []
   const totalAttendees = data?.total || 0
   const activeAttendees = attendees.filter(
-    (attendee) => attendee.status !== 'cancelled' && attendee.status !== 'canceled'
+    (attendee) =>
+      attendee.status !== 'cancelled' && attendee.status !== 'canceled'
   ).length
   const selectedAttendeeRows = attendees.filter((attendee) =>
     selectedAttendees.has(attendee.id)
   )
   const eligibleSelectedAttendees = selectedAttendeeRows.filter(
-    (attendee) => attendee.status !== 'cancelled' && attendee.status !== 'canceled'
+    (attendee) =>
+      attendee.status !== 'cancelled' && attendee.status !== 'canceled'
   )
   const selectedMissingBidderNumber = eligibleSelectedAttendees.filter(
     (attendee) => !attendee.bidder_number
@@ -343,7 +371,9 @@ export function AttendeeListTable({
     (attendee) => attendee.attendee_type === 'guest'
   )
   const registrantIdsToAssign = Array.from(
-    new Set(registrantsMissingBidderNumber.map((attendee) => attendee.registration_id))
+    new Set(
+      registrantsMissingBidderNumber.map((attendee) => attendee.registration_id)
+    )
   )
   const guestIdsToAssign = Array.from(
     new Set(guestsMissingBidderNumber.map((attendee) => attendee.id))
@@ -352,7 +382,9 @@ export function AttendeeListTable({
   const totalEligibleSelectedCount = eligibleSelectedAttendees.length
   const totalMissingCount = selectedMissingBidderNumber.length
   const alreadyAssignedCount = totalEligibleSelectedCount - totalMissingCount
-  const statusOptions = Array.from(new Set(attendees.map((attendee) => attendee.status))).sort()
+  const statusOptions = Array.from(
+    new Set(attendees.map((attendee) => attendee.status))
+  ).sort()
   const matchesText = (value: string | null | undefined, needle: string) =>
     value?.toLowerCase().includes(needle.toLowerCase()) ?? false
   const filteredAttendees = attendees.filter((attendee) => {
@@ -458,13 +490,15 @@ export function AttendeeListTable({
           type='button'
         >
           {label}
-          <ArrowUpDown className='h-3 w-3 text-muted-foreground' />
-          <span className='text-xs text-muted-foreground'>{sortIndicator(key)}</span>
+          <ArrowUpDown className='text-muted-foreground h-3 w-3' />
+          <span className='text-muted-foreground text-xs'>
+            {sortIndicator(key)}
+          </span>
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className='rounded-sm p-1 text-muted-foreground hover:text-foreground'
+              className='text-muted-foreground hover:text-foreground rounded-sm p-1'
               type='button'
               aria-label={`Filter ${label}`}
             >
@@ -485,7 +519,9 @@ export function AttendeeListTable({
               <Input
                 placeholder={placeholder}
                 value={filters[filterKey]}
-                onChange={(event) => updateFilter(filterKey, event.target.value)}
+                onChange={(event) =>
+                  updateFilter(filterKey, event.target.value)
+                }
                 onKeyDown={(event) => event.stopPropagation()}
               />
             </div>
@@ -514,13 +550,15 @@ export function AttendeeListTable({
           type='button'
         >
           {label}
-          <ArrowUpDown className='h-3 w-3 text-muted-foreground' />
-          <span className='text-xs text-muted-foreground'>{sortIndicator(key)}</span>
+          <ArrowUpDown className='text-muted-foreground h-3 w-3' />
+          <span className='text-muted-foreground text-xs'>
+            {sortIndicator(key)}
+          </span>
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className='rounded-sm p-1 text-muted-foreground hover:text-foreground'
+              className='text-muted-foreground hover:text-foreground rounded-sm p-1'
               type='button'
               aria-label={`Filter ${label}`}
             >
@@ -569,7 +607,11 @@ export function AttendeeListTable({
     }
 
     const startingNumber = Number.parseInt(autoAssignStartNumber, 10)
-    if (Number.isNaN(startingNumber) || startingNumber < 100 || startingNumber > 999) {
+    if (
+      Number.isNaN(startingNumber) ||
+      startingNumber < 100 ||
+      startingNumber > 999
+    ) {
       toast.error('Starting bidder number must be between 100 and 999')
       return
     }
@@ -596,7 +638,8 @@ export function AttendeeListTable({
       if (result.errors.length > 0) {
         summaryParts.push(`Failed ${result.errors.length}`)
       }
-      const description = summaryParts.length > 0 ? summaryParts.join(' • ') : undefined
+      const description =
+        summaryParts.length > 0 ? summaryParts.join(' • ') : undefined
 
       if (result.errors.length > 0) {
         toast.error('Auto-assign completed with errors', {
@@ -611,9 +654,12 @@ export function AttendeeListTable({
       setSelectedAttendees(new Set())
       setAutoAssignDialogOpen(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Failed to auto-assign bidder numbers'), {
-        id: toastId,
-      })
+      toast.error(
+        getErrorMessage(err, 'Failed to auto-assign bidder numbers'),
+        {
+          id: toastId,
+        }
+      )
     } finally {
       setAutoAssignPending(false)
     }
@@ -624,12 +670,11 @@ export function AttendeeListTable({
       {/* Toolbar */}
       <div className='flex flex-wrap items-center justify-between gap-2'>
         <div className='flex items-center gap-3'>
-          <div className='text-sm text-muted-foreground'>
-            Showing {displayedAttendees.length} of {totalAttendees} attendees • {activeAttendees} active
+          <div className='text-muted-foreground text-sm'>
+            Showing {displayedAttendees.length} of {totalAttendees} attendees •{' '}
+            {activeAttendees} active
             {selectedAttendees.size > 0 && (
-              <span className='ml-2'>
-                ({selectedAttendees.size} selected)
-              </span>
+              <span className='ml-2'>({selectedAttendees.size} selected)</span>
             )}
           </div>
           <DataTableViewToggle value={viewMode} onChange={setViewMode} />
@@ -639,9 +684,9 @@ export function AttendeeListTable({
             variant='ghost'
             size='sm'
             onClick={resetFilters}
-            disabled={
-              Object.values(filters).every((value) => value === '' || value === 'all')
-            }
+            disabled={Object.values(filters).every(
+              (value) => value === '' || value === 'all'
+            )}
           >
             Clear Filters
           </Button>
@@ -660,14 +705,10 @@ export function AttendeeListTable({
             onClick={() => setBulkCancelDialogOpen(true)}
             disabled={selectedAttendees.size === 0}
           >
-            <Trash2 className='mr-2 h-4 w-4 text-destructive' />
+            <Trash2 className='text-destructive mr-2 h-4 w-4' />
             Cancel Selected
           </Button>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={handleExportCSV}
-          >
+          <Button variant='outline' size='sm' onClick={handleExportCSV}>
             <Download className='mr-2 h-4 w-4' />
             Export CSV
           </Button>
@@ -678,7 +719,7 @@ export function AttendeeListTable({
       {viewMode === 'card' ? (
         <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
           {displayedAttendees.length === 0 ? (
-            <div className='col-span-full flex h-24 items-center justify-center rounded-md border text-muted-foreground'>
+            <div className='text-muted-foreground col-span-full flex h-24 items-center justify-center rounded-md border'>
               {attendees.length === 0
                 ? 'No attendees registered yet'
                 : 'No attendees match the current filters'}
@@ -686,18 +727,21 @@ export function AttendeeListTable({
           ) : (
             displayedAttendees.map((attendee) => {
               const isCancelled =
-                attendee.status === 'cancelled' || attendee.status === 'canceled'
+                attendee.status === 'cancelled' ||
+                attendee.status === 'canceled'
               // Find guests belonging to this registrant
               const guests =
                 attendee.attendee_type === 'registrant'
                   ? displayedAttendees.filter(
-                    (a) => a.attendee_type === 'guest' && a.guest_of === attendee.name
-                  )
+                      (a) =>
+                        a.attendee_type === 'guest' &&
+                        a.guest_of === attendee.name
+                    )
                   : []
               return (
                 <div
                   key={attendee.id}
-                  className={`rounded-lg border bg-card p-4 shadow-sm ${selectedAttendees.has(attendee.id) ? 'ring-2 ring-primary' : ''}`}
+                  className={`bg-card rounded-lg border p-4 shadow-sm ${selectedAttendees.has(attendee.id) ? 'ring-primary ring-2' : ''}`}
                 >
                   {/* Card header */}
                   <div className='mb-3 flex items-center justify-between'>
@@ -720,20 +764,29 @@ export function AttendeeListTable({
                         <Button
                           variant='ghost'
                           size='sm'
-                          onClick={() => handleDeleteClick(attendee.id, attendee.name)}
-                          disabled={deleteGuestMutation.isPending || isCancelled}
+                          onClick={() =>
+                            handleDeleteClick(attendee.id, attendee.name)
+                          }
+                          disabled={
+                            deleteGuestMutation.isPending || isCancelled
+                          }
                         >
-                          <Trash2 className='h-4 w-4 text-destructive' />
+                          <Trash2 className='text-destructive h-4 w-4' />
                         </Button>
                       )}
                       {attendee.attendee_type === 'registrant' && (
                         <Button
                           variant='ghost'
                           size='sm'
-                          onClick={() => handleCancelRegistrationClick(attendee.registration_id, attendee.name)}
+                          onClick={() =>
+                            handleCancelRegistrationClick(
+                              attendee.registration_id,
+                              attendee.name
+                            )
+                          }
                           disabled={isCancelled}
                         >
-                          <Trash2 className='h-4 w-4 text-destructive' />
+                          <Trash2 className='text-destructive h-4 w-4' />
                         </Button>
                       )}
                     </div>
@@ -742,48 +795,76 @@ export function AttendeeListTable({
                   <div className='space-y-1.5'>
                     <div className='font-medium'>{attendee.name}</div>
                     <div className='flex items-center gap-2'>
-                      <Badge variant={attendee.attendee_type === 'registrant' ? 'default' : 'secondary'}>
+                      <Badge
+                        variant={
+                          attendee.attendee_type === 'registrant'
+                            ? 'default'
+                            : 'secondary'
+                        }
+                      >
                         {attendee.attendee_type}
                       </Badge>
                       {attendee.bidder_number && (
-                        <Badge variant='outline' className='bg-amber-50 text-amber-700 border-amber-200 font-mono font-semibold'>
+                        <Badge
+                          variant='outline'
+                          className='border-amber-200 bg-amber-50 font-mono font-semibold text-amber-700'
+                        >
                           <Hash className='mr-1 h-3 w-3' />
                           {attendee.bidder_number}
                         </Badge>
                       )}
-                      <Badge variant={attendee.status === 'confirmed' ? 'default' : 'outline'}>
+                      <Badge
+                        variant={
+                          attendee.status === 'confirmed'
+                            ? 'default'
+                            : 'outline'
+                        }
+                      >
                         {attendee.status}
                       </Badge>
                     </div>
                   </div>
                   {/* More details (collapsible) */}
                   <Collapsible>
-                    <CollapsibleTrigger className='mt-3 flex w-full items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground'>
+                    <CollapsibleTrigger className='text-muted-foreground hover:text-foreground mt-3 flex w-full items-center gap-1 text-xs font-medium'>
                       More details
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <dl className='mt-2 space-y-1 border-t pt-2 text-sm'>
                         {attendee.email && (
                           <div className='flex gap-2'>
-                            <dt className='text-xs text-muted-foreground'>Email</dt>
+                            <dt className='text-muted-foreground text-xs'>
+                              Email
+                            </dt>
                             <dd className='truncate'>{attendee.email}</dd>
                           </div>
                         )}
                         {attendee.phone && (
                           <div className='flex gap-2'>
-                            <dt className='text-xs text-muted-foreground'>Phone</dt>
+                            <dt className='text-muted-foreground text-xs'>
+                              Phone
+                            </dt>
                             <dd>{attendee.phone}</dd>
                           </div>
                         )}
-                        {includeMealSelections && (attendee.meal_selection || attendee.meal_description) && (
-                          <div className='flex gap-2'>
-                            <dt className='text-xs text-muted-foreground'>Meal</dt>
-                            <dd className='truncate'>{attendee.meal_selection || attendee.meal_description}</dd>
-                          </div>
-                        )}
+                        {includeMealSelections &&
+                          (attendee.meal_selection ||
+                            attendee.meal_description) && (
+                            <div className='flex gap-2'>
+                              <dt className='text-muted-foreground text-xs'>
+                                Meal
+                              </dt>
+                              <dd className='truncate'>
+                                {attendee.meal_selection ||
+                                  attendee.meal_description}
+                              </dd>
+                            </div>
+                          )}
                         {attendee.guest_of && (
                           <div className='flex gap-2'>
-                            <dt className='text-xs text-muted-foreground'>Guest Of</dt>
+                            <dt className='text-muted-foreground text-xs'>
+                              Guest Of
+                            </dt>
                             <dd>{attendee.guest_of}</dd>
                           </div>
                         )}
@@ -793,18 +874,30 @@ export function AttendeeListTable({
                   {/* Nested guests (FR-014) */}
                   {guests.length > 0 && (
                     <Collapsible>
-                      <CollapsibleTrigger className='mt-2 flex w-full items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground'>
+                      <CollapsibleTrigger className='text-muted-foreground hover:text-foreground mt-2 flex w-full items-center gap-1 text-xs font-medium'>
                         Guests ({guests.length})
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <div className='mt-2 space-y-2 border-t pt-2'>
                           {guests.map((guest) => (
-                            <div key={guest.id} className='rounded border bg-muted/50 p-2 text-sm'>
+                            <div
+                              key={guest.id}
+                              className='bg-muted/50 rounded border p-2 text-sm'
+                            >
                               <div className='font-medium'>{guest.name}</div>
                               {guest.meal_selection && (
-                                <div className='text-xs text-muted-foreground'>Meal: {guest.meal_selection}</div>
+                                <div className='text-muted-foreground text-xs'>
+                                  Meal: {guest.meal_selection}
+                                </div>
                               )}
-                              <Badge variant={guest.status === 'confirmed' ? 'default' : 'outline'} className='mt-1'>
+                              <Badge
+                                variant={
+                                  guest.status === 'confirmed'
+                                    ? 'default'
+                                    : 'outline'
+                                }
+                                className='mt-1'
+                              >
                                 {guest.status}
                               </Badge>
                             </div>
@@ -835,18 +928,36 @@ export function AttendeeListTable({
                   { value: 'registrant', label: 'Registrant' },
                   { value: 'guest', label: 'Guest' },
                 ])}
-                {renderTextHeader('Bidder #', 'bidder', 'bidder', 'Filter bidder #')}
+                {renderTextHeader(
+                  'Bidder #',
+                  'bidder',
+                  'bidder',
+                  'Filter bidder #'
+                )}
                 {renderTextHeader('Email', 'email', 'email', 'Filter email')}
                 {renderTextHeader('Phone', 'phone', 'phone', 'Filter phone')}
                 {includeMealSelections &&
-                  renderTextHeader('Meal Selection', 'meal', 'meal', 'Filter meal')}
-                {renderTextHeader('Guest Of', 'guestOf', 'guestOf', 'Filter guest of')}
+                  renderTextHeader(
+                    'Meal Selection',
+                    'meal',
+                    'meal',
+                    'Filter meal'
+                  )}
+                {renderTextHeader(
+                  'Guest Of',
+                  'guestOf',
+                  'guestOf',
+                  'Filter guest of'
+                )}
                 {renderOptionHeader(
                   'Status',
                   'status',
                   'status',
                   [{ value: 'all', label: 'All statuses' }].concat(
-                    statusOptions.map((status) => ({ value: status, label: status }))
+                    statusOptions.map((status) => ({
+                      value: status,
+                      label: status,
+                    }))
                   )
                 )}
                 <TableHead className='text-right'>Actions</TableHead>
@@ -859,7 +970,7 @@ export function AttendeeListTable({
                     colSpan={includeMealSelections ? 10 : 9}
                     className='text-center'
                   >
-                    <p className='py-8 text-muted-foreground'>
+                    <p className='text-muted-foreground py-8'>
                       {attendees.length === 0
                         ? 'No attendees registered yet'
                         : 'No attendees match the current filters'}
@@ -869,7 +980,8 @@ export function AttendeeListTable({
               ) : (
                 displayedAttendees.map((attendee) => {
                   const isCancelled =
-                    attendee.status === 'cancelled' || attendee.status === 'canceled'
+                    attendee.status === 'cancelled' ||
+                    attendee.status === 'canceled'
                   return (
                     <TableRow key={attendee.id}>
                       <TableCell>
@@ -897,7 +1009,7 @@ export function AttendeeListTable({
                           {attendee.bidder_number ? (
                             <Badge
                               variant='outline'
-                              className='bg-amber-50 text-amber-700 border-amber-200 font-mono font-semibold'
+                              className='border-amber-200 bg-amber-50 font-mono font-semibold text-amber-700'
                             >
                               <Hash className='mr-1 h-3 w-3' />
                               {attendee.bidder_number}
@@ -939,7 +1051,9 @@ export function AttendeeListTable({
                       <TableCell>
                         <Badge
                           variant={
-                            attendee.status === 'confirmed' ? 'default' : 'outline'
+                            attendee.status === 'confirmed'
+                              ? 'default'
+                              : 'outline'
                           }
                         >
                           {attendee.status}
@@ -947,33 +1061,43 @@ export function AttendeeListTable({
                       </TableCell>
                       <TableCell className='text-right'>
                         <div className='flex items-center justify-end gap-2'>
-                          {attendee.attendee_type === 'guest' && attendee.email && (
-                            <Button
-                              variant='ghost'
-                              size='sm'
-                              onClick={() => handleSendInvitation(attendee.id)}
-                              disabled={sendInvitationMutation.isPending}
-                            >
-                              {sendInvitationMutation.isPending &&
-                                sendInvitationMutation.variables === attendee.id ? (
-                                <Loader2 className='h-4 w-4 animate-spin' />
-                              ) : (
-                                <>
-                                  <Mail className='mr-2 h-4 w-4' />
-                                  Send Invite
-                                </>
-                              )}
-                            </Button>
-                          )}
+                          {attendee.attendee_type === 'guest' &&
+                            attendee.email && (
+                              <Button
+                                variant='ghost'
+                                size='sm'
+                                onClick={() =>
+                                  handleSendInvitation(attendee.id)
+                                }
+                                disabled={sendInvitationMutation.isPending}
+                              >
+                                {sendInvitationMutation.isPending &&
+                                sendInvitationMutation.variables ===
+                                  attendee.id ? (
+                                  <Loader2 className='h-4 w-4 animate-spin' />
+                                ) : (
+                                  <>
+                                    <Mail className='mr-2 h-4 w-4' />
+                                    Send Invite
+                                  </>
+                                )}
+                              </Button>
+                            )}
                           {attendee.attendee_type === 'guest' && (
                             <Button
                               variant='ghost'
                               size='sm'
-                              onClick={() => handleDeleteClick(attendee.id, attendee.name)}
-                              disabled={deleteGuestMutation.isPending || isCancelled}
-                              aria-label={isCancelled ? 'Guest cancelled' : 'Cancel guest'}
+                              onClick={() =>
+                                handleDeleteClick(attendee.id, attendee.name)
+                              }
+                              disabled={
+                                deleteGuestMutation.isPending || isCancelled
+                              }
+                              aria-label={
+                                isCancelled ? 'Guest cancelled' : 'Cancel guest'
+                              }
                             >
-                              <Trash2 className='mr-2 h-4 w-4 text-destructive' />
+                              <Trash2 className='text-destructive mr-2 h-4 w-4' />
                               {isCancelled ? 'Cancelled' : 'Cancel'}
                             </Button>
                           )}
@@ -981,11 +1105,20 @@ export function AttendeeListTable({
                             <Button
                               variant='ghost'
                               size='sm'
-                              onClick={() => handleCancelRegistrationClick(attendee.registration_id, attendee.name)}
+                              onClick={() =>
+                                handleCancelRegistrationClick(
+                                  attendee.registration_id,
+                                  attendee.name
+                                )
+                              }
                               disabled={isCancelled}
-                              aria-label={isCancelled ? 'Registration cancelled' : 'Cancel registration'}
+                              aria-label={
+                                isCancelled
+                                  ? 'Registration cancelled'
+                                  : 'Cancel registration'
+                              }
                             >
-                              <Trash2 className='mr-2 h-4 w-4 text-destructive' />
+                              <Trash2 className='text-destructive mr-2 h-4 w-4' />
                               {isCancelled ? 'Cancelled' : 'Cancel'}
                             </Button>
                           )}
@@ -1005,15 +1138,18 @@ export function AttendeeListTable({
         <CancelAttendeesDialog
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
-          title="Cancel Guest"
+          title='Cancel Guest'
           description={
             <>
-              Are you sure you want to cancel <strong>{guestToDelete.name}</strong>?
+              Are you sure you want to cancel{' '}
+              <strong>{guestToDelete.name}</strong>?
               <br />
               This will also remove their meal selections.
             </>
           }
-          confirmLabel={deleteGuestMutation.isPending ? 'Cancelling...' : 'Cancel Guest'}
+          confirmLabel={
+            deleteGuestMutation.isPending ? 'Cancelling...' : 'Cancel Guest'
+          }
           isPending={deleteGuestMutation.isPending}
           onConfirm={handleDeleteConfirm}
         />
@@ -1045,7 +1181,7 @@ export function AttendeeListTable({
       <CancelAttendeesDialog
         open={bulkCancelDialogOpen}
         onOpenChange={setBulkCancelDialogOpen}
-        title="Cancel Selected Attendees"
+        title='Cancel Selected Attendees'
         description={
           <>This will cancel {selectedAttendees.size} selected attendees.</>
         }
@@ -1056,7 +1192,9 @@ export function AttendeeListTable({
 
       <AlertDialog
         open={autoAssignDialogOpen}
-        onOpenChange={(open) => !autoAssignPending && setAutoAssignDialogOpen(open)}
+        onOpenChange={(open) =>
+          !autoAssignPending && setAutoAssignDialogOpen(open)
+        }
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1065,19 +1203,24 @@ export function AttendeeListTable({
               {totalSelectedCount === 0
                 ? 'Select attendees without bidder numbers to continue.'
                 : `Assign bidder numbers to ${totalMissingCount} attendee(s)?`}
-              {registrantsMissingBidderNumber.length > 0 && guestsMissingBidderNumber.length > 0 && (
-                <span className='mt-2 block text-xs text-muted-foreground'>
-                  Includes {registrantsMissingBidderNumber.length} registrant(s) and {guestsMissingBidderNumber.length} guest(s).
-                </span>
-              )}
+              {registrantsMissingBidderNumber.length > 0 &&
+                guestsMissingBidderNumber.length > 0 && (
+                  <span className='text-muted-foreground mt-2 block text-xs'>
+                    Includes {registrantsMissingBidderNumber.length}{' '}
+                    registrant(s) and {guestsMissingBidderNumber.length}{' '}
+                    guest(s).
+                  </span>
+                )}
               {alreadyAssignedCount > 0 && (
-                <span className='mt-2 block text-xs text-muted-foreground'>
-                  {alreadyAssignedCount} selected attendee(s) already have bidder numbers and will be skipped.
+                <span className='text-muted-foreground mt-2 block text-xs'>
+                  {alreadyAssignedCount} selected attendee(s) already have
+                  bidder numbers and will be skipped.
                 </span>
               )}
               {totalSelectedCount > totalEligibleSelectedCount && (
-                <span className='mt-2 block text-xs text-muted-foreground'>
-                  {totalSelectedCount - totalEligibleSelectedCount} selected attendee(s) are canceled and will be skipped.
+                <span className='text-muted-foreground mt-2 block text-xs'>
+                  {totalSelectedCount - totalEligibleSelectedCount} selected
+                  attendee(s) are canceled and will be skipped.
                 </span>
               )}
             </AlertDialogDescription>
@@ -1098,7 +1241,9 @@ export function AttendeeListTable({
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={autoAssignPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={autoAssignPending}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               disabled={autoAssignPending || totalMissingCount === 0}
               onClick={handleAutoAssignBidderNumbers}

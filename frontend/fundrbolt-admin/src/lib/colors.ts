@@ -28,9 +28,12 @@ export function calculateLuminance(r: number, g: number, b: number): number {
   const bsRGB = b / 255
 
   // Apply gamma correction for each channel
-  const rLinear = rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4)
-  const gLinear = gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4)
-  const bLinear = bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4)
+  const rLinear =
+    rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4)
+  const gLinear =
+    gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4)
+  const bLinear =
+    bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4)
 
   // Calculate relative luminance using coefficients from WCAG spec
   return 0.2126 * rLinear + 0.7152 * gLinear + 0.0722 * bLinear
@@ -45,7 +48,10 @@ export function calculateLuminance(r: number, g: number, b: number): number {
  * @param luminance2 - Relative luminance of second color (0-1)
  * @returns Contrast ratio (1-21)
  */
-export function getContrastRatio(luminance1: number, luminance2: number): number {
+export function getContrastRatio(
+  luminance1: number,
+  luminance2: number
+): number {
   const lighter = Math.max(luminance1, luminance2)
   const darker = Math.min(luminance1, luminance2)
 
@@ -59,7 +65,9 @@ export function getContrastRatio(luminance1: number, luminance2: number): number
  * @param hex - Hex color string (e.g., "#FFF", "#FFFFFF", "FFF", "FFFFFF")
  * @returns RGB object with r, g, b properties (0-255) or null if invalid
  */
-export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+export function hexToRgb(
+  hex: string
+): { r: number; g: number; b: number } | null {
   // Remove # prefix if present
   const cleanHex = hex.replace(/^#/, '')
 
@@ -69,9 +77,13 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } | nul
   }
 
   // Handle 3-digit hex (e.g., "FFF" -> "FFFFFF")
-  const fullHex = cleanHex.length === 3
-    ? cleanHex.split('').map(char => char + char).join('')
-    : cleanHex
+  const fullHex =
+    cleanHex.length === 3
+      ? cleanHex
+          .split('')
+          .map((char) => char + char)
+          .join('')
+      : cleanHex
 
   const r = parseInt(fullHex.substring(0, 2), 16)
   const g = parseInt(fullHex.substring(2, 4), 16)
@@ -117,7 +129,10 @@ export function getContrastingTextColor(bgHex: string): string {
  * @param backgroundHex - Background color in hex format
  * @returns true if contrast ratio >= 4.5:1
  */
-export function meetsWCAGAA(foregroundHex: string, backgroundHex: string): boolean {
+export function meetsWCAGAA(
+  foregroundHex: string,
+  backgroundHex: string
+): boolean {
   const fgRgb = hexToRgb(foregroundHex)
   const bgRgb = hexToRgb(backgroundHex)
 

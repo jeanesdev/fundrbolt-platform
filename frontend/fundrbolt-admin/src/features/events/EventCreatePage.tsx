@@ -2,23 +2,29 @@
  * EventCreatePage
  * Page for creating a new event
  */
-
-import { NPOSelect } from '@/components/npo/npo-select'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useAuth } from '@/hooks/use-auth'
-import { useEventStore } from '@/stores/event-store'
-import type { EventCreateRequest, EventUpdateRequest } from '@/types/event'
-import { useNavigate } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import type { EventCreateRequest, EventUpdateRequest } from '@/types/event'
+import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
+import { useEventStore } from '@/stores/event-store'
+import { useAuth } from '@/hooks/use-auth'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { NPOSelect } from '@/components/npo/npo-select'
 import { EventForm } from './components/EventForm'
 
 export function EventCreatePage() {
   const navigate = useNavigate()
   const { isSuperAdmin, npoId } = useAuth()
-  const { createEvent, loadNPOBranding, npoBranding, npoBrandingLoading } = useEventStore()
+  const { createEvent, loadNPOBranding, npoBranding, npoBrandingLoading } =
+    useEventStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedNpoId, setSelectedNpoId] = useState<string>('')
 
@@ -34,7 +40,9 @@ export function EventCreatePage() {
     }
   }, [effectiveNpoId, loadNPOBranding])
 
-  const handleSubmit = async (data: EventCreateRequest & Partial<EventUpdateRequest>) => {
+  const handleSubmit = async (
+    data: EventCreateRequest & Partial<EventUpdateRequest>
+  ) => {
     setIsSubmitting(true)
     try {
       const createdEvent = await createEvent(data as EventCreateRequest)
@@ -44,9 +52,13 @@ export function EventCreatePage() {
       }
 
       toast.success('Event created successfully!')
-      navigate({ to: '/events/$eventId/edit', params: { eventId: createdEvent.id } })
+      navigate({
+        to: '/events/$eventId/edit',
+        params: { eventId: createdEvent.id },
+      })
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create event'
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to create event'
       toast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
@@ -58,16 +70,20 @@ export function EventCreatePage() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      <div className="mb-4 md:mb-6 space-y-4">
-        <Button variant="ghost" onClick={handleCancel} className="px-0 hover:bg-transparent">
-          <ArrowLeft className="h-4 w-4 mr-2" />
+    <div className='space-y-4 md:space-y-6'>
+      <div className='mb-4 space-y-4 md:mb-6'>
+        <Button
+          variant='ghost'
+          onClick={handleCancel}
+          className='px-0 hover:bg-transparent'
+        >
+          <ArrowLeft className='mr-2 h-4 w-4' />
           Back to Events
         </Button>
 
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Create New Event</h1>
-          <p className="text-sm md:text-base text-muted-foreground mt-1 md:mt-2">
+          <h1 className='text-2xl font-bold md:text-3xl'>Create New Event</h1>
+          <p className='text-muted-foreground mt-1 text-sm md:mt-2 md:text-base'>
             Set up a new fundraising event for your organization
           </p>
         </div>
@@ -82,15 +98,15 @@ export function EventCreatePage() {
               Choose which organization this event is for
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className='space-y-4'>
             <NPOSelect
               value={selectedNpoId}
               onValueChange={setSelectedNpoId}
-              label="Organization"
-              placeholder="Select an organization"
+              label='Organization'
+              placeholder='Select an organization'
               required
             />
-            <p className="text-sm text-muted-foreground">
+            <p className='text-muted-foreground text-sm'>
               Select an organization to continue creating the event
             </p>
           </CardContent>
@@ -103,8 +119,8 @@ export function EventCreatePage() {
           <CardHeader>
             <CardTitle>Event Details</CardTitle>
             <CardDescription>
-              Fill in the information below to create your event. You can add media,
-              links, and food options after creation.
+              Fill in the information below to create your event. You can add
+              media, links, and food options after creation.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -128,9 +144,9 @@ export function EventCreatePage() {
               Please wait while we load the organization's branding
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center justify-center py-8">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <CardContent className='flex items-center justify-center py-8'>
+            <div className='text-muted-foreground flex items-center gap-2'>
+              <div className='border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent' />
               <span>Loading branding...</span>
             </div>
           </CardContent>
@@ -147,10 +163,10 @@ export function EventCreatePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">
+            <p className='text-muted-foreground'>
               Please contact an administrator to be added to an organization.
             </p>
-            <Button onClick={handleCancel} className="mt-4">
+            <Button onClick={handleCancel} className='mt-4'>
               Back to Events
             </Button>
           </CardContent>

@@ -1,9 +1,8 @@
 /**
  * Service for ticket sales import API calls
  */
-
-import apiClient from '@/lib/axios'
 import type { ImportResult, PreflightResult } from '@/types/ticketSalesImport'
+import apiClient from '@/lib/axios'
 
 export interface ImportConfirmRequest {
   preflight_id: string

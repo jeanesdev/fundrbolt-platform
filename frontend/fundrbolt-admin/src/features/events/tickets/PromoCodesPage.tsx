@@ -2,6 +2,12 @@
  * Promo Codes Management Page
  * Lists all promo codes for an event with CRUD operations
  */
+import { useCallback, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Copy, Pencil, Plus, Trash2 } from 'lucide-react'
+import apiClient from '@/lib/axios'
+import { getErrorMessage } from '@/lib/error-utils'
+import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -38,12 +44,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
-import { useToast } from '@/hooks/use-toast'
-import apiClient from '@/lib/axios'
-import { getErrorMessage } from '@/lib/error-utils'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Copy, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useCallback, useState } from 'react'
 
 interface PromoCode {
   id: string

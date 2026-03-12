@@ -1,3 +1,16 @@
+import { useState } from 'react'
+import {
+  AlertCircle,
+  CheckCircle2,
+  Download,
+  FileText,
+  Loader2,
+  Upload,
+  UploadCloud,
+  XCircle,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { useNpoContext } from '@/hooks/use-npo-context'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,19 +24,6 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useNpoContext } from '@/hooks/use-npo-context'
-import {
-  AlertCircle,
-  CheckCircle2,
-  Download,
-  FileText,
-  Loader2,
-  Upload,
-  UploadCloud,
-  XCircle,
-} from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
 import {
   buildUserImportErrorReport,
   commitUserImport,
@@ -59,7 +59,7 @@ const statusVariant = (status: string) => {
 const severityIcon = (severity: string) => {
   switch (severity) {
     case 'error':
-      return <XCircle className='h-4 w-4 text-destructive' />
+      return <XCircle className='text-destructive h-4 w-4' />
     case 'warning':
       return <AlertCircle className='h-4 w-4 text-yellow-600' />
     default:
@@ -155,14 +155,16 @@ export function UsersImportDialog({
       )
       setResult(response)
     } catch (_error) {
-      const errorMessage =
-        (_error as { response?: { data?: { detail?: { message?: string } | string } } })
-          ?.response?.data?.detail
+      const errorMessage = (
+        _error as {
+          response?: { data?: { detail?: { message?: string } | string } }
+        }
+      )?.response?.data?.detail
       const message =
-        typeof errorMessage === 'string'
-          ? errorMessage
-          : errorMessage?.message
-      toast.error(message || 'Import failed. Please try again or re-run preflight.')
+        typeof errorMessage === 'string' ? errorMessage : errorMessage?.message
+      toast.error(
+        message || 'Import failed. Please try again or re-run preflight.'
+      )
     } finally {
       setIsCommitting(false)
     }
@@ -189,7 +191,7 @@ export function UsersImportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='w-[calc(100dvw-2rem)] max-w-[calc(100dvw-2rem)] sm:max-w-3xl max-h-[90vh] flex flex-col overflow-hidden p-4 sm:p-6'>
+      <DialogContent className='flex max-h-[90vh] w-[calc(100dvw-2rem)] max-w-[calc(100dvw-2rem)] flex-col overflow-hidden p-4 sm:max-w-3xl sm:p-6'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
             <UploadCloud size={18} /> Import Users
@@ -203,19 +205,19 @@ export function UsersImportDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto space-y-4'>
+        <div className='flex-1 space-y-4 overflow-y-auto'>
           <div className='space-y-2'>
             <label htmlFor='user-import-file' className='text-sm font-medium'>
               Select File
             </label>
-            <div className='flex items-center gap-2 min-w-0'>
+            <div className='flex min-w-0 items-center gap-2'>
               <input
                 id='user-import-file'
                 type='file'
                 accept='.csv,.json'
                 onChange={handleFileChange}
                 disabled={isPreflighting || isCommitting}
-                className='flex-1 min-w-0 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90'
+                className='file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 min-w-0 flex-1 text-sm file:mr-3 file:rounded-md file:border-0 file:px-3 file:py-2 file:text-sm file:font-medium'
               />
               {file && (
                 <Badge variant='outline' className='gap-1'>
@@ -225,7 +227,7 @@ export function UsersImportDialog({
               )}
             </div>
             {!selectedNpoId && (
-              <p className='text-sm text-muted-foreground'>
+              <p className='text-muted-foreground text-sm'>
                 NPO selection is optional. Select one to add memberships.
               </p>
             )}
@@ -236,17 +238,19 @@ export function UsersImportDialog({
               <TabsTrigger value='csv'>CSV Example</TabsTrigger>
               <TabsTrigger value='json'>JSON Example</TabsTrigger>
             </TabsList>
-            <TabsContent value='csv' className='space-y-2 w-full min-w-0'>
-              <p className='text-sm text-muted-foreground'>CSV file with header row:</p>
-              <pre className='rounded-md bg-muted p-3 text-[11px] sm:text-xs whitespace-pre-wrap break-words w-full max-w-full'>
-                <code className='block whitespace-pre-wrap break-words'>
+            <TabsContent value='csv' className='w-full min-w-0 space-y-2'>
+              <p className='text-muted-foreground text-sm'>
+                CSV file with header row:
+              </p>
+              <pre className='bg-muted w-full max-w-full rounded-md p-3 text-[11px] break-words whitespace-pre-wrap sm:text-xs'>
+                <code className='block break-words whitespace-pre-wrap'>
                   {USER_IMPORT_EXAMPLE_CSV}
                 </code>
               </pre>
               <Button
                 variant='outline'
                 size='sm'
-                className='w-full whitespace-normal break-words text-center'
+                className='w-full text-center break-words whitespace-normal'
                 onClick={() =>
                   downloadExample(
                     USER_IMPORT_EXAMPLE_CSV,
@@ -255,21 +259,23 @@ export function UsersImportDialog({
                   )
                 }
               >
-                <Download className='h-4 w-4 mr-2' />
+                <Download className='mr-2 h-4 w-4' />
                 Download CSV Example
               </Button>
             </TabsContent>
-            <TabsContent value='json' className='space-y-2 w-full min-w-0'>
-              <p className='text-sm text-muted-foreground'>JSON array of users:</p>
-              <pre className='rounded-md bg-muted p-3 text-[11px] sm:text-xs whitespace-pre-wrap break-words w-full max-w-full'>
-                <code className='block whitespace-pre-wrap break-words'>
+            <TabsContent value='json' className='w-full min-w-0 space-y-2'>
+              <p className='text-muted-foreground text-sm'>
+                JSON array of users:
+              </p>
+              <pre className='bg-muted w-full max-w-full rounded-md p-3 text-[11px] break-words whitespace-pre-wrap sm:text-xs'>
+                <code className='block break-words whitespace-pre-wrap'>
                   {USER_IMPORT_EXAMPLE_JSON}
                 </code>
               </pre>
               <Button
                 variant='outline'
                 size='sm'
-                className='w-full whitespace-normal break-words text-center'
+                className='w-full text-center break-words whitespace-normal'
                 onClick={() =>
                   downloadExample(
                     USER_IMPORT_EXAMPLE_JSON,
@@ -278,34 +284,36 @@ export function UsersImportDialog({
                   )
                 }
               >
-                <Download className='h-4 w-4 mr-2' />
+                <Download className='mr-2 h-4 w-4' />
                 Download JSON Example
               </Button>
             </TabsContent>
           </Tabs>
 
-          <div className='text-xs text-muted-foreground space-y-1'>
+          <div className='text-muted-foreground space-y-1 text-xs'>
             <p>
               <strong>Required fields:</strong> full_name, email, role
             </p>
             <p>
-              <strong>Roles:</strong> npo_admin, event_coordinator, donor (donors are
-              created without NPO membership)
+              <strong>Roles:</strong> npo_admin, event_coordinator, donor
+              (donors are created without NPO membership)
             </p>
             <p>
-              <strong>Optional fields:</strong> npo_identifier (informational), phone,
-              title, organization_name, address_line1, address_line2, city, state,
-              postal_code, country, profile_picture_url, social_media_links, password
+              <strong>Optional fields:</strong> npo_identifier (informational),
+              phone, title, organization_name, address_line1, address_line2,
+              city, state, postal_code, country, profile_picture_url,
+              social_media_links, password
             </p>
             <p>
               <strong>Max rows:</strong> 5,000 per file
             </p>
             <p>
-              <strong>Passwords:</strong> if blank, a temporary password is generated and a
-              reset email is sent
+              <strong>Passwords:</strong> if blank, a temporary password is
+              generated and a reset email is sent
             </p>
             <p>
-              <strong>Social links:</strong> provide a JSON object (CSV uses a JSON string)
+              <strong>Social links:</strong> provide a JSON object (CSV uses a
+              JSON string)
             </p>
           </div>
 
@@ -315,8 +323,8 @@ export function UsersImportDialog({
               <div className='space-y-4'>
                 <div className='grid gap-3 sm:grid-cols-2'>
                   {preflight && (
-                    <div className='rounded-md border border-border p-3'>
-                      <p className='text-sm text-muted-foreground'>Summary</p>
+                    <div className='border-border rounded-md border p-3'>
+                      <p className='text-muted-foreground text-sm'>Summary</p>
                       <div className='mt-1 space-y-1 text-sm'>
                         <div className='flex items-center gap-2'>
                           <FileText className='h-4 w-4' />
@@ -327,7 +335,7 @@ export function UsersImportDialog({
                           {preflight.valid_rows} valid
                         </div>
                         <div className='flex items-center gap-2'>
-                          <XCircle className='h-4 w-4 text-destructive' />
+                          <XCircle className='text-destructive h-4 w-4' />
                           {preflight.error_rows} errors
                         </div>
                         <div className='flex items-center gap-2'>
@@ -338,21 +346,25 @@ export function UsersImportDialog({
                     </div>
                   )}
                   {result && (
-                    <div className='rounded-md border border-border p-3'>
-                      <p className='text-sm text-muted-foreground'>Results</p>
+                    <div className='border-border rounded-md border p-3'>
+                      <p className='text-muted-foreground text-sm'>Results</p>
                       <div className='mt-1 space-y-1 text-sm'>
                         <div>{result.created_rows} created</div>
                         <div>{result.skipped_rows} skipped</div>
-                        <div>{result.membership_added_rows} memberships added</div>
+                        <div>
+                          {result.membership_added_rows} memberships added
+                        </div>
                         <div>{result.failed_rows} failed</div>
                       </div>
                     </div>
                   )}
                   {preflight?.error_report_url && preflight.error_rows > 0 && (
-                    <div className='rounded-md border border-border p-3'>
-                      <p className='text-sm text-muted-foreground'>Error report</p>
+                    <div className='border-border rounded-md border p-3'>
+                      <p className='text-muted-foreground text-sm'>
+                        Error report
+                      </p>
                       <a
-                        className='text-sm font-medium text-primary underline'
+                        className='text-primary text-sm font-medium underline'
                         href={preflight.error_report_url}
                         download='user-import-errors.csv'
                       >
@@ -361,42 +373,48 @@ export function UsersImportDialog({
                     </div>
                   )}
                   {result && result.failed_rows > 0 && (
-                    <div className='rounded-md border border-border p-3'>
-                      <p className='text-sm text-muted-foreground'>Failure report</p>
+                    <div className='border-border rounded-md border p-3'>
+                      <p className='text-muted-foreground text-sm'>
+                        Failure report
+                      </p>
                       <Button
                         variant='outline'
                         size='sm'
-                        className='w-full whitespace-normal break-words text-center'
+                        className='w-full text-center break-words whitespace-normal'
                         onClick={handleDownloadSummaryErrors}
                       >
-                        <Download className='h-4 w-4 mr-2' />
+                        <Download className='mr-2 h-4 w-4' />
                         Download failure report
                       </Button>
                     </div>
                   )}
                 </div>
 
-                <ScrollArea className='h-64 rounded-md border border-border p-3'>
+                <ScrollArea className='border-border h-64 rounded-md border p-3'>
                   <div className='space-y-3'>
                     {result?.rows?.length ? (
                       result.rows.map((row) => (
                         <div
                           key={`${row.row_number}-${row.email ?? 'row'}`}
-                          className='flex flex-col gap-2 border-b border-border pb-3'
+                          className='border-border flex flex-col gap-2 border-b pb-3'
                         >
                           <div className='flex flex-wrap items-center gap-2 text-sm'>
                             <span className='text-muted-foreground'>
                               Row {row.row_number}
                             </span>
                             {row.full_name && (
-                              <span className='font-medium'>{row.full_name}</span>
+                              <span className='font-medium'>
+                                {row.full_name}
+                              </span>
                             )}
                             {row.email && (
-                              <span className='text-xs text-muted-foreground'>
+                              <span className='text-muted-foreground text-xs'>
                                 {row.email}
                               </span>
                             )}
-                            <Badge variant={statusVariant(row.status)}>{row.status}</Badge>
+                            <Badge variant={statusVariant(row.status)}>
+                              {row.status}
+                            </Badge>
                           </div>
                           <p className='text-sm'>{row.message}</p>
                         </div>
@@ -435,11 +453,12 @@ export function UsersImportDialog({
                             </span>
                           </div>
                         ))}
-                        {!preflight?.issues?.length && !preflight?.warnings?.length && (
-                          <p className='text-sm text-muted-foreground'>
-                            No issues to display.
-                          </p>
-                        )}
+                        {!preflight?.issues?.length &&
+                          !preflight?.warnings?.length && (
+                            <p className='text-muted-foreground text-sm'>
+                              No issues to display.
+                            </p>
+                          )}
                       </div>
                     )}
                   </div>
@@ -458,7 +477,9 @@ export function UsersImportDialog({
             disabled={!canRunPreflight || isPreflighting || isCommitting}
             variant='secondary'
           >
-            {isPreflighting && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+            {isPreflighting && (
+              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+            )}
             Run Preflight
           </Button>
           <Button onClick={handleCommit} disabled={!canCommit || isCommitting}>

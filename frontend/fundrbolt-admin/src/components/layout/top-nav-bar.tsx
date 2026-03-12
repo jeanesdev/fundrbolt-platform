@@ -5,8 +5,22 @@
  * Desktop: Logo | Nav dropdowns | Search | Profile
  * Mobile:  Logo | Hamburger (sheet) | Search | Profile
  */
-import { CommandMenu } from '@/components/command-menu'
-import { ProfileDropdown } from '@/components/profile-dropdown'
+import { useState } from 'react'
+import { Link, useLocation, useNavigate } from '@tanstack/react-router'
+import { LogoWhiteGold } from '@fundrbolt/shared/assets'
+import {
+  BarChart3,
+  Calendar,
+  CreditCard,
+  Gavel,
+  Menu,
+  SearchIcon,
+  Settings,
+  Users,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useSearch } from '@/context/search-provider'
+import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
 import { Button } from '@/components/ui/button'
 import {
   NavigationMenu,
@@ -23,22 +37,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { useSearch } from '@/context/search-provider'
-import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
-import { cn } from '@/lib/utils'
-import { LogoWhiteGold } from '@fundrbolt/shared/assets'
-import { Link, useLocation, useNavigate } from '@tanstack/react-router'
-import {
-  BarChart3,
-  Calendar,
-  CreditCard,
-  Gavel,
-  Menu,
-  SearchIcon,
-  Settings,
-  Users,
-} from 'lucide-react'
-import { useState } from 'react'
+import { CommandMenu } from '@/components/command-menu'
+import { ProfileDropdown } from '@/components/profile-dropdown'
 import { iconMap } from './icon-map'
 
 /** Map nav group titles to lucide icons for the trigger buttons */
@@ -90,7 +90,13 @@ function DesktopNav() {
   ]
 
   return (
-    <NavigationMenu viewport={false} value={openNav} onValueChange={(v) => { if (v) setOpenNav(v) }}>
+    <NavigationMenu
+      viewport={false}
+      value={openNav}
+      onValueChange={(v) => {
+        if (v) setOpenNav(v)
+      }}
+    >
       <NavigationMenuList>
         {allGroups.map((group) => (
           <NavigationMenuItem key={group.title} value={group.title}>
@@ -118,13 +124,15 @@ function DesktopNav() {
                             'flex flex-col items-center gap-1 rounded-sm px-3 py-2.5 text-sm transition-colors',
                             'hover:bg-accent hover:text-accent-foreground',
                             isActive &&
-                            'bg-accent/50 text-accent-foreground font-medium'
+                              'bg-accent/50 text-accent-foreground font-medium'
                           )}
                         >
                           {Icon && (
                             <Icon className='text-muted-foreground size-5' />
                           )}
-                          <span className='text-center leading-tight'>{item.title}</span>
+                          <span className='text-center leading-tight'>
+                            {item.title}
+                          </span>
                           {item.badge != null && (
                             <span className='text-muted-foreground text-xs tabular-nums'>
                               {item.badge}
@@ -215,7 +223,7 @@ function MobileNav() {
                             'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
                             'hover:bg-accent hover:text-accent-foreground',
                             isActive &&
-                            'bg-accent text-accent-foreground font-medium'
+                              'bg-accent text-accent-foreground font-medium'
                           )}
                         >
                           {Icon && (

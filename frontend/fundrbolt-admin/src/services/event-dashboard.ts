@@ -116,7 +116,10 @@ class EventDashboardService {
     return response.data
   }
 
-  async updateProjections(eventId: string, payload: ProjectionAdjustmentUpdate) {
+  async updateProjections(
+    eventId: string,
+    payload: ProjectionAdjustmentUpdate
+  ) {
     const response = await apiClient.post<ProjectionAdjustmentSet>(
       `/admin/events/${eventId}/dashboard/projections`,
       payload

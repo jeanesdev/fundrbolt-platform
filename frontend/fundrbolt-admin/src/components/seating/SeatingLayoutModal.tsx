@@ -3,7 +3,11 @@
  *
  * Modal to view and upload event space layout image for seating reference.
  */
-
+import { useRef, useState, useEffect } from 'react'
+import { mediaApi } from '@/services/event-service'
+import { Loader2, Maximize2, Upload, X, ImageIcon } from 'lucide-react'
+import { toast } from 'sonner'
+import { useEventStore } from '@/stores/event-store'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -14,11 +18,6 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { mediaApi } from '@/services/event-service'
-import { Loader2, Maximize2, Upload, X, ImageIcon } from 'lucide-react'
-import { useRef, useState, useEffect } from 'react'
-import { toast } from 'sonner'
-import { useEventStore } from '@/stores/event-store'
 
 interface SeatingLayoutModalProps {
   open: boolean
@@ -35,7 +34,6 @@ export function SeatingLayoutModal({
   currentImageUrl,
   onImageUploaded,
 }: SeatingLayoutModalProps) {
-
   const [uploading, setUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     currentImageUrl || null
@@ -106,9 +104,10 @@ export function SeatingLayoutModal({
       onImageUploaded(media.file_url)
       toast.success('Layout image uploaded successfully')
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error
-        ? error.message
-        : 'Failed to upload layout image. Please try again.'
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to upload layout image. Please try again.'
       toast.error(errorMessage)
     } finally {
       setUploading(false)
@@ -128,7 +127,7 @@ export function SeatingLayoutModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+        <DialogContent className='max-h-[90vh] max-w-4xl overflow-auto'>
           <DialogHeader>
             <DialogTitle>Event Space Layout</DialogTitle>
             <DialogDescription>
@@ -137,52 +136,53 @@ export function SeatingLayoutModal({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className='space-y-4'>
             {/* Upload or Select from Gallery */}
-            <div className="flex gap-2">
+            <div className='flex gap-2'>
               <Button
-                type="button"
+                type='button'
                 variant={showMediaGallery ? 'outline' : 'default'}
-                size="sm"
+                size='sm'
                 onClick={() => setShowMediaGallery(false)}
-                className="flex-1"
+                className='flex-1'
               >
-                <Upload className="h-4 w-4 mr-2" />
+                <Upload className='mr-2 h-4 w-4' />
                 Upload New
               </Button>
               <Button
-                type="button"
+                type='button'
                 variant={showMediaGallery ? 'default' : 'outline'}
-                size="sm"
+                size='sm'
                 onClick={() => setShowMediaGallery(true)}
                 disabled={eventMedia.length === 0}
-                className="flex-1"
+                className='flex-1'
               >
-                <ImageIcon className="h-4 w-4 mr-2" />
-                Select from Gallery {eventMedia.length > 0 && `(${eventMedia.length})`}
+                <ImageIcon className='mr-2 h-4 w-4' />
+                Select from Gallery{' '}
+                {eventMedia.length > 0 && `(${eventMedia.length})`}
               </Button>
             </div>
 
             {showMediaGallery ? (
               /* Gallery Selection */
-              <div className="space-y-2">
+              <div className='space-y-2'>
                 <Label>Select from Event Media</Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-96 overflow-y-auto border rounded-lg p-3">
+                <div className='grid max-h-96 grid-cols-2 gap-3 overflow-y-auto rounded-lg border p-3 sm:grid-cols-3'>
                   {eventMedia.map((media) => (
                     <button
                       key={media.id}
-                      type="button"
+                      type='button'
                       onClick={() => handleSelectFromGallery(media.file_url)}
-                      className="relative group border-2 rounded-lg overflow-hidden hover:border-primary transition-colors aspect-square"
+                      className='group hover:border-primary relative aspect-square overflow-hidden rounded-lg border-2 transition-colors'
                     >
                       <img
                         src={media.file_url}
                         alt={media.file_name}
-                        className="w-full h-full object-cover"
+                        className='h-full w-full object-cover'
                       />
                       {previewUrl === media.file_url && (
-                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                          <div className="bg-primary text-primary-foreground rounded-full p-2">
+                        <div className='bg-primary/20 absolute inset-0 flex items-center justify-center'>
+                          <div className='bg-primary text-primary-foreground rounded-full p-2'>
                             ✓
                           </div>
                         </div>
@@ -193,78 +193,78 @@ export function SeatingLayoutModal({
               </div>
             ) : (
               /* Upload Section - Hidden file input */
-              <div className="space-y-2">
+              <div className='space-y-2'>
                 <Input
                   ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
+                  type='file'
+                  accept='image/*'
                   onChange={handleFileSelect}
                   disabled={uploading}
-                  className="hidden"
+                  className='hidden'
                 />
               </div>
             )}
 
             {/* Upload Progress */}
             {uploading && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
+              <div className='text-muted-foreground flex items-center gap-2 text-sm'>
+                <Loader2 className='h-4 w-4 animate-spin' />
                 Uploading layout image...
               </div>
             )}
 
             {/* Preview Section */}
             {previewUrl ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
+              <div className='space-y-2'>
+                <div className='flex items-center justify-between'>
                   <Label>Preview</Label>
                   <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
+                    type='button'
+                    variant='outline'
+                    size='sm'
                     onClick={handleRemove}
                     disabled={uploading}
                   >
-                    <X className="h-4 w-4 mr-2" />
+                    <X className='mr-2 h-4 w-4' />
                     Remove Image
                   </Button>
                 </div>
-                <div className="border rounded-lg overflow-hidden bg-muted/50 relative group">
+                <div className='bg-muted/50 group relative overflow-hidden rounded-lg border'>
                   <img
                     src={previewUrl}
-                    alt="Event space layout"
-                    className="w-full h-auto object-contain max-h-[60vh] cursor-pointer transition-opacity hover:opacity-90"
+                    alt='Event space layout'
+                    className='h-auto max-h-[60vh] w-full cursor-pointer object-contain transition-opacity hover:opacity-90'
                     onClick={() => {
                       setIsFullscreen(true)
                       onOpenChange(false)
                     }}
                   />
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-black/10">
-                    <div className="bg-white/90 rounded-full p-3 shadow-lg">
-                      <Maximize2 className="h-6 w-6 text-gray-700" />
+                  <div className='pointer-events-none absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 transition-opacity group-hover:opacity-100'>
+                    <div className='rounded-full bg-white/90 p-3 shadow-lg'>
+                      <Maximize2 className='h-6 w-6 text-gray-700' />
                     </div>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className='text-muted-foreground text-xs'>
                   Click image to view fullscreen
                 </p>
               </div>
             ) : (
-              <div className="border-2 border-dashed rounded-lg p-12 text-center text-muted-foreground">
-                <Upload className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="mb-4">No layout image uploaded</p>
+              <div className='text-muted-foreground rounded-lg border-2 border-dashed p-12 text-center'>
+                <Upload className='mx-auto mb-4 h-12 w-12 opacity-50' />
+                <p className='mb-4'>No layout image uploaded</p>
                 {!showMediaGallery && (
                   <Button
-                    type="button"
-                    variant="outline"
+                    type='button'
+                    variant='outline'
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
                   >
-                    <Upload className="h-4 w-4 mr-2" />
+                    <Upload className='mr-2 h-4 w-4' />
                     Choose File
                   </Button>
                 )}
-                <p className="text-sm mt-4">
+                <p className='mt-4 text-sm'>
                   Upload a floor plan to help with seating assignments
                 </p>
               </div>
@@ -276,7 +276,7 @@ export function SeatingLayoutModal({
       {/* Fullscreen Image Overlay - Outside Dialog */}
       {isFullscreen && (
         <div
-          className="fixed inset-0 bg-black/95 flex items-center justify-center"
+          className='fixed inset-0 flex items-center justify-center bg-black/95'
           style={{
             cursor: 'pointer',
             zIndex: 9999,
@@ -290,8 +290,8 @@ export function SeatingLayoutModal({
           }}
         >
           <button
-            type="button"
-            className="absolute top-4 right-4 p-3 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors border border-white/20"
+            type='button'
+            className='absolute top-4 right-4 rounded-full border border-white/20 bg-white/20 p-3 text-white transition-colors hover:bg-white/30'
             style={{
               cursor: 'pointer',
               zIndex: 10000,
@@ -302,12 +302,12 @@ export function SeatingLayoutModal({
               onOpenChange(true)
             }}
           >
-            <X className="h-6 w-6" />
+            <X className='h-6 w-6' />
           </button>
           <img
             src={previewUrl || ''}
-            alt="Event space layout - fullscreen"
-            className="max-w-full max-h-full object-contain p-4"
+            alt='Event space layout - fullscreen'
+            className='max-h-full max-w-full object-contain p-4'
             style={{ pointerEvents: 'none' }}
           />
         </div>

@@ -1,10 +1,10 @@
-import apiClient from '@/lib/axios';
 import type {
   AdminEngagementResponse,
   BuyNowAvailabilityUpdate,
   ItemPromotionUpdate,
-} from '@/types/auction-engagement';
-import type { AuctionItem } from '@/types/auction-item';
+} from '@/types/auction-engagement'
+import type { AuctionItem } from '@/types/auction-item'
+import apiClient from '@/lib/axios'
 
 /**
  * Auction Item Engagement Service
@@ -21,8 +21,8 @@ class AuctionEngagementService {
     const response = await apiClient.get<AdminEngagementResponse>(
       `/admin/auction/items/${itemId}/engagement`,
       { params: { event_id: eventId } }
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -37,8 +37,8 @@ class AuctionEngagementService {
       `/admin/auction/items/${itemId}/promotion`,
       data,
       { params: { event_id: eventId } }
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -53,10 +53,10 @@ class AuctionEngagementService {
       `/admin/auction/items/${itemId}/buy-now`,
       data,
       { params: { event_id: eventId } }
-    );
-    return response.data;
+    )
+    return response.data
   }
 }
 
-export const auctionEngagementService = new AuctionEngagementService();
-export default auctionEngagementService;
+export const auctionEngagementService = new AuctionEngagementService()
+export default auctionEngagementService

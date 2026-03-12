@@ -1,5 +1,3 @@
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
-import { useViewPreference } from '@/hooks/use-view-preference'
 import {
   type FormEvent,
   type KeyboardEvent,
@@ -8,6 +6,8 @@ import {
   useRef,
   useState,
 } from 'react'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import type {
   QuickEntryDonationLabel,
   QuickEntryPaddleDonationResponse,
@@ -211,7 +211,7 @@ export function PaddleRaiseEntryForm({
             <input
               id='quick-entry-paddle-amount'
               ref={amountRef}
-              className='w-full rounded-md border px-3 py-2 h-12 text-lg'
+              className='h-12 w-full rounded-md border px-3 py-2 text-lg'
               inputMode='numeric'
               value={amount}
               onChange={(event) =>
@@ -233,7 +233,7 @@ export function PaddleRaiseEntryForm({
             <input
               id='quick-entry-paddle-bidder'
               ref={bidderRef}
-              className='w-full rounded-md border px-3 py-2 h-12 text-lg'
+              className='h-12 w-full rounded-md border px-3 py-2 text-lg'
               inputMode='numeric'
               value={bidderNumber}
               onChange={(event) =>
@@ -248,7 +248,7 @@ export function PaddleRaiseEntryForm({
 
         <button
           type='submit'
-          className='w-full rounded-md bg-primary px-4 py-3 text-base font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 h-12'
+          className='bg-primary text-primary-foreground hover:bg-primary/90 h-12 w-full rounded-md px-4 py-3 text-base font-medium disabled:opacity-50'
           disabled={disabled}
         >
           {disabled ? 'Submitting…' : 'Submit Donation'}
@@ -330,27 +330,45 @@ export function PaddleRaiseEntryForm({
       {viewMode === 'card' ? (
         <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
           {filteredAndSortedDonations.length === 0 ? (
-            <div className='col-span-full rounded-md border py-4 text-center text-sm text-muted-foreground'>
+            <div className='text-muted-foreground col-span-full rounded-md border py-4 text-center text-sm'>
               {recentDonations.length === 0
                 ? 'No paddle raise donations entered yet.'
                 : 'No donations match the current filters.'}
             </div>
           ) : (
             filteredAndSortedDonations.map((donation) => (
-              <div key={donation.id} className='rounded-md border p-3 space-y-1'>
+              <div
+                key={donation.id}
+                className='space-y-1 rounded-md border p-3'
+              >
                 <div className='flex items-center justify-between'>
-                  <span className='text-lg font-semibold'>${donation.amount.toLocaleString('en-US')}</span>
-                  <span className='text-sm text-muted-foreground'>#{donation.bidder_number}</span>
+                  <span className='text-lg font-semibold'>
+                    ${donation.amount.toLocaleString('en-US')}
+                  </span>
+                  <span className='text-muted-foreground text-sm'>
+                    #{donation.bidder_number}
+                  </span>
                 </div>
                 <p className='text-sm'>{donation.donor_name ?? '—'}</p>
                 <div className='flex flex-wrap gap-1'>
-                  {donation.labels.length
-                    ? donation.labels.map((label, idx) => (
-                      <span key={idx} className='rounded-full bg-muted px-2 py-0.5 text-xs'>{label.label}</span>
+                  {donation.labels.length ? (
+                    donation.labels.map((label, idx) => (
+                      <span
+                        key={idx}
+                        className='bg-muted rounded-full px-2 py-0.5 text-xs'
+                      >
+                        {label.label}
+                      </span>
                     ))
-                    : <span className='text-xs text-muted-foreground'>No labels</span>}
+                  ) : (
+                    <span className='text-muted-foreground text-xs'>
+                      No labels
+                    </span>
+                  )}
                 </div>
-                <p className='text-xs text-muted-foreground'>{new Date(donation.entered_at).toLocaleTimeString()}</p>
+                <p className='text-muted-foreground text-xs'>
+                  {new Date(donation.entered_at).toLocaleTimeString()}
+                </p>
               </div>
             ))
           )}
@@ -367,7 +385,9 @@ export function PaddleRaiseEntryForm({
                     currentSort={tableSort}
                     onSort={(f) => toggleSort(f as SortField)}
                     filterValue={tableFilters.amount}
-                    onFilterChange={(v) => setTableFilters((p) => ({ ...p, amount: v }))}
+                    onFilterChange={(v) =>
+                      setTableFilters((p) => ({ ...p, amount: v }))
+                    }
                   />
                 </th>
                 <th className='px-3 py-2'>
@@ -377,7 +397,9 @@ export function PaddleRaiseEntryForm({
                     currentSort={tableSort}
                     onSort={(f) => toggleSort(f as SortField)}
                     filterValue={tableFilters.bidder}
-                    onFilterChange={(v) => setTableFilters((p) => ({ ...p, bidder: v }))}
+                    onFilterChange={(v) =>
+                      setTableFilters((p) => ({ ...p, bidder: v }))
+                    }
                   />
                 </th>
                 <th className='px-3 py-2'>
@@ -387,7 +409,9 @@ export function PaddleRaiseEntryForm({
                     currentSort={tableSort}
                     onSort={(f) => toggleSort(f as SortField)}
                     filterValue={tableFilters.donor}
-                    onFilterChange={(v) => setTableFilters((p) => ({ ...p, donor: v }))}
+                    onFilterChange={(v) =>
+                      setTableFilters((p) => ({ ...p, donor: v }))
+                    }
                   />
                 </th>
                 <th className='px-3 py-2'>
@@ -397,7 +421,9 @@ export function PaddleRaiseEntryForm({
                     currentSort={tableSort}
                     onSort={(f) => toggleSort(f as SortField)}
                     filterValue={tableFilters.labels}
-                    onFilterChange={(v) => setTableFilters((p) => ({ ...p, labels: v }))}
+                    onFilterChange={(v) =>
+                      setTableFilters((p) => ({ ...p, labels: v }))
+                    }
                   />
                 </th>
                 <th className='px-3 py-2'>
@@ -407,7 +433,9 @@ export function PaddleRaiseEntryForm({
                     currentSort={tableSort}
                     onSort={(f) => toggleSort(f as SortField)}
                     filterValue={tableFilters.time}
-                    onFilterChange={(v) => setTableFilters((p) => ({ ...p, time: v }))}
+                    onFilterChange={(v) =>
+                      setTableFilters((p) => ({ ...p, time: v }))
+                    }
                   />
                 </th>
               </tr>

@@ -19,14 +19,17 @@ export function ChartTooltipContent({
   }
 
   return (
-    <div className='rounded-md border bg-popover px-3 py-2 text-popover-foreground shadow-sm'>
+    <div className='bg-popover text-popover-foreground rounded-md border px-3 py-2 shadow-sm'>
       {label && <p className='mb-2 text-xs font-medium'>{label}</p>}
       <div className='space-y-1'>
         {payload.map((entry) => {
           const key = entry.name ?? 'value'
           const value = typeof entry.value === 'number' ? entry.value : 0
           return (
-            <div key={key} className='flex items-center justify-between gap-4 text-xs'>
+            <div
+              key={key}
+              className='flex items-center justify-between gap-4 text-xs'
+            >
               <span>{seriesLabels?.[key] ?? key}</span>
               <span className='font-semibold'>{formatCurrency(value)}</span>
             </div>

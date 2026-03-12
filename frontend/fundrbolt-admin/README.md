@@ -325,6 +325,7 @@ Each dashboard shows role-appropriate data and actions.
    - Copyright with dynamic year
 
 **Components**:
+
 - `components/legal/tos-modal.tsx` - Terms acceptance modal
 - `components/legal/cookie-banner.tsx` - First-visit cookie consent
 - `components/legal/consent-history.tsx` - History table
@@ -332,19 +333,23 @@ Each dashboard shows role-appropriate data and actions.
 - `components/legal/legal-footer.tsx` - Footer with legal links
 
 **Pages**:
+
 - `pages/legal/terms-of-service.tsx` - Full TOS document
 - `pages/legal/privacy-policy.tsx` - Full privacy policy
 - `pages/legal/cookie-policy.tsx` - Cookie preferences
 - `pages/legal/consent-settings.tsx` - Consent history + data rights
 
 **Hooks**:
+
 - `hooks/use-tos.ts` - TOS loading, acceptance, versioning
 - `hooks/use-cookies.ts` - Cookie consent, preferences
 
 **Stores**:
+
 - `stores/tos-store.ts` - TOS state (current version, user acceptance)
 
 **Routes**:
+
 - `/terms-of-service` - Public TOS page
 - `/privacy-policy` - Public privacy page
 - `/settings/cookies` - Cookie preferences (authenticated)

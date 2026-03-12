@@ -1,26 +1,31 @@
-import apiClient from '@/lib/axios';
-import { DiscountType, type PromoCodeCreate, type PromoCodeRead, type PromoCodeUpdate } from "@/types/ticket-management";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
-import { useEffect } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import { toast } from "sonner";
+import { useEffect } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  DiscountType,
+  type PromoCodeCreate,
+  type PromoCodeRead,
+  type PromoCodeUpdate,
+} from '@/types/ticket-management'
+import { X } from 'lucide-react'
+import { toast } from 'sonner'
+import apiClient from '@/lib/axios'
 
 interface PromoCodeFormDialogProps {
-  eventId: string;
-  open: boolean;
-  onClose: () => void;
-  editingCode?: PromoCodeRead | null;
+  eventId: string
+  open: boolean
+  onClose: () => void
+  editingCode?: PromoCodeRead | null
 }
 
 interface FormData {
-  code: string;
-  discount_type: DiscountType;
-  discount_value: number;
-  max_uses: number | null;
-  valid_from: string;
-  valid_until: string;
-  is_active: boolean;
+  code: string
+  discount_type: DiscountType
+  discount_value: number
+  max_uses: number | null
+  valid_from: string
+  valid_until: string
+  is_active: boolean
 }
 
 export function PromoCodeFormDialog({
@@ -29,8 +34,8 @@ export function PromoCodeFormDialog({
   onClose,
   editingCode,
 }: PromoCodeFormDialogProps) {
-  const queryClient = useQueryClient();
-  const isEditing = !!editingCode;
+  const queryClient = useQueryClient()
+  const isEditing = !!editingCode
 
   const {
     register,
@@ -40,18 +45,18 @@ export function PromoCodeFormDialog({
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
-      code: "",
+      code: '',
       discount_type: DiscountType.PERCENTAGE,
       discount_value: 0,
       max_uses: null,
-      valid_from: "",
-      valid_until: "",
+      valid_from: '',
+      valid_until: '',
       is_active: true,
     },
-  });
+  })
 
   const discountType =
-    useWatch({ control, name: "discount_type" }) ?? DiscountType.PERCENTAGE;
+    useWatch({ control, name: 'discount_type' }) ?? DiscountType.PERCENTAGE
 
   // Reset form when dialog opens/closes or editing code changes
   useEffect(() => {
@@ -63,26 +68,26 @@ export function PromoCodeFormDialog({
           discount_value: Number(editingCode.discount_value),
           max_uses: editingCode.max_uses,
           valid_from: editingCode.valid_from
-            ? new Date(editingCode.valid_from).toISOString().split("T")[0]
-            : "",
+            ? new Date(editingCode.valid_from).toISOString().split('T')[0]
+            : '',
           valid_until: editingCode.valid_until
-            ? new Date(editingCode.valid_until).toISOString().split("T")[0]
-            : "",
+            ? new Date(editingCode.valid_until).toISOString().split('T')[0]
+            : '',
           is_active: editingCode.is_active,
-        });
+        })
       } else {
         reset({
-          code: "",
+          code: '',
           discount_type: DiscountType.PERCENTAGE,
           discount_value: 0,
           max_uses: null,
-          valid_from: "",
-          valid_until: "",
+          valid_from: '',
+          valid_until: '',
           is_active: true,
-        });
+        })
       }
     }
-  }, [open, editingCode, reset]);
+  }, [open, editingCode, reset])
 
   // Create mutation
   const createMutation = useMutation({
@@ -90,19 +95,20 @@ export function PromoCodeFormDialog({
       const response = await apiClient.post<PromoCodeRead>(
         `/admin/events/${eventId}/promo-codes`,
         data
-      );
-      return response.data;
+      )
+      return response.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["promoCodes", eventId] });
-      toast.success("Promo code created successfully");
-      onClose();
+      queryClient.invalidateQueries({ queryKey: ['promoCodes', eventId] })
+      toast.success('Promo code created successfully')
+      onClose()
     },
     onError: (error: unknown) => {
-      const detail = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail;
-      toast.error(detail || "Failed to create promo code");
+      const detail = (error as { response?: { data?: { detail?: string } } })
+        .response?.data?.detail
+      toast.error(detail || 'Failed to create promo code')
     },
-  });
+  })
 
   // Update mutation
   const updateMutation = useMutation({
@@ -110,19 +116,20 @@ export function PromoCodeFormDialog({
       const response = await apiClient.patch<PromoCodeRead>(
         `/admin/events/${eventId}/promo-codes/${editingCode!.id}`,
         data
-      );
-      return response.data;
+      )
+      return response.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["promoCodes", eventId] });
-      toast.success("Promo code updated successfully");
-      onClose();
+      queryClient.invalidateQueries({ queryKey: ['promoCodes', eventId] })
+      toast.success('Promo code updated successfully')
+      onClose()
     },
     onError: (error: unknown) => {
-      const detail = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail;
-      toast.error(detail || "Failed to update promo code");
+      const detail = (error as { response?: { data?: { detail?: string } } })
+        .response?.data?.detail
+      toast.error(detail || 'Failed to update promo code')
     },
-  });
+  })
 
   const onSubmit = async (data: FormData) => {
     if (isEditing) {
@@ -134,15 +141,15 @@ export function PromoCodeFormDialog({
         valid_from: data.valid_from || null,
         valid_until: data.valid_until || null,
         is_active: data.is_active ?? true,
-      };
+      }
 
       // Remove code and discount fields if promo has been used
       if (editingCode.used_count > 0) {
-        delete updatePayload.discount_type;
-        delete updatePayload.discount_value;
+        delete updatePayload.discount_type
+        delete updatePayload.discount_value
       }
 
-      await updateMutation.mutateAsync(updatePayload);
+      await updateMutation.mutateAsync(updatePayload)
     } else {
       // Build create payload
       const createPayload: PromoCodeCreate = {
@@ -153,38 +160,38 @@ export function PromoCodeFormDialog({
         valid_from: data.valid_from || null,
         valid_until: data.valid_until || null,
         is_active: data.is_active ?? true,
-      };
+      }
 
-      await createMutation.mutateAsync(createPayload);
+      await createMutation.mutateAsync(createPayload)
     }
-  };
+  }
 
-  if (!open) return null;
+  if (!open) return null
 
-  const hasBeenUsed = !!(editingCode && editingCode.used_count > 0);
+  const hasBeenUsed = !!(editingCode && editingCode.used_count > 0)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-background w-full max-w-md rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'>
+      <div className='bg-background max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg shadow-lg'>
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-semibold">
-            {isEditing ? "Edit Promo Code" : "Create Promo Code"}
+        <div className='flex items-center justify-between border-b p-6'>
+          <h2 className='text-xl font-semibold'>
+            {isEditing ? 'Edit Promo Code' : 'Create Promo Code'}
           </h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-muted rounded transition-colors"
+            className='hover:bg-muted rounded p-1 transition-colors'
           >
-            <X className="h-5 w-5" />
+            <X className='h-5 w-5' />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className='space-y-4 p-6'>
           {/* Warning for used codes */}
           {hasBeenUsed && (
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
-              <strong>Note:</strong> This promo code has been used{" "}
+            <div className='rounded border border-yellow-200 bg-yellow-50 p-3 text-sm'>
+              <strong>Note:</strong> This promo code has been used{' '}
               {editingCode.used_count} time(s). Code and discount amount cannot
               be modified.
             </div>
@@ -192,40 +199,40 @@ export function PromoCodeFormDialog({
 
           {/* Code */}
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Code <span className="text-red-500">*</span>
+            <label className='mb-1 block text-sm font-medium'>
+              Code <span className='text-red-500'>*</span>
             </label>
             <input
-              type="text"
-              {...register("code", {
-                required: "Code is required",
+              type='text'
+              {...register('code', {
+                required: 'Code is required',
                 pattern: {
                   value: /^[A-Z0-9]+$/i,
-                  message: "Code must contain only letters and numbers",
+                  message: 'Code must contain only letters and numbers',
                 },
                 maxLength: {
                   value: 20,
-                  message: "Code must be 20 characters or less",
+                  message: 'Code must be 20 characters or less',
                 },
               })}
               disabled={hasBeenUsed}
-              className="w-full px-3 py-2 border rounded-md uppercase disabled:bg-muted disabled:cursor-not-allowed"
-              placeholder="e.g., SUMMER2024"
+              className='disabled:bg-muted w-full rounded-md border px-3 py-2 uppercase disabled:cursor-not-allowed'
+              placeholder='e.g., SUMMER2024'
             />
             {errors.code && (
-              <p className="text-sm text-red-500 mt-1">{errors.code.message}</p>
+              <p className='mt-1 text-sm text-red-500'>{errors.code.message}</p>
             )}
           </div>
 
           {/* Discount Type */}
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Discount Type <span className="text-red-500">*</span>
+            <label className='mb-1 block text-sm font-medium'>
+              Discount Type <span className='text-red-500'>*</span>
             </label>
             <select
-              {...register("discount_type", { required: true })}
+              {...register('discount_type', { required: true })}
               disabled={hasBeenUsed}
-              className="w-full px-3 py-2 border rounded-md bg-background text-foreground disabled:bg-muted disabled:cursor-not-allowed"
+              className='bg-background text-foreground disabled:bg-muted w-full rounded-md border px-3 py-2 disabled:cursor-not-allowed'
             >
               <option value={DiscountType.PERCENTAGE}>Percentage (%)</option>
               <option value={DiscountType.FIXED_AMOUNT}>
@@ -236,35 +243,37 @@ export function PromoCodeFormDialog({
 
           {/* Discount Value */}
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Discount Value <span className="text-red-500">*</span>
+            <label className='mb-1 block text-sm font-medium'>
+              Discount Value <span className='text-red-500'>*</span>
             </label>
             <input
-              type="number"
-              step="0.01"
-              min="0.01"
-              max={discountType === DiscountType.PERCENTAGE ? "100" : undefined}
-              {...register("discount_value", {
-                required: "Discount value is required",
+              type='number'
+              step='0.01'
+              min='0.01'
+              max={discountType === DiscountType.PERCENTAGE ? '100' : undefined}
+              {...register('discount_value', {
+                required: 'Discount value is required',
                 min: {
                   value: 0.01,
-                  message: "Discount must be greater than 0",
+                  message: 'Discount must be greater than 0',
                 },
                 validate: (value) => {
                   if (discountType === DiscountType.PERCENTAGE && value > 100) {
-                    return "Percentage cannot exceed 100";
+                    return 'Percentage cannot exceed 100'
                   }
-                  return true;
+                  return true
                 },
               })}
               disabled={hasBeenUsed}
-              className="w-full px-3 py-2 border rounded-md disabled:bg-muted disabled:cursor-not-allowed"
+              className='disabled:bg-muted w-full rounded-md border px-3 py-2 disabled:cursor-not-allowed'
               placeholder={
-                discountType === DiscountType.PERCENTAGE ? "e.g., 25" : "e.g., 10.00"
+                discountType === DiscountType.PERCENTAGE
+                  ? 'e.g., 25'
+                  : 'e.g., 10.00'
               }
             />
             {errors.discount_value && (
-              <p className="text-sm text-red-500 mt-1">
+              <p className='mt-1 text-sm text-red-500'>
                 {errors.discount_value.message}
               </p>
             )}
@@ -272,89 +281,91 @@ export function PromoCodeFormDialog({
 
           {/* Max Uses */}
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className='mb-1 block text-sm font-medium'>
               Maximum Uses
             </label>
             <input
-              type="number"
-              {...register("max_uses", {
-                min: { value: 1, message: "Must be at least 1" },
+              type='number'
+              {...register('max_uses', {
+                min: { value: 1, message: 'Must be at least 1' },
               })}
-              className="w-full px-3 py-2 border rounded-md"
-              placeholder="Leave empty for unlimited"
+              className='w-full rounded-md border px-3 py-2'
+              placeholder='Leave empty for unlimited'
             />
             {errors.max_uses && (
-              <p className="text-sm text-red-500 mt-1">
+              <p className='mt-1 text-sm text-red-500'>
                 {errors.max_uses.message}
               </p>
             )}
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className='text-muted-foreground mt-1 text-sm'>
               Leave empty for unlimited uses
             </p>
           </div>
 
           {/* Valid From */}
           <div>
-            <label className="block text-sm font-medium mb-1">Valid From</label>
+            <label className='mb-1 block text-sm font-medium'>Valid From</label>
             <input
-              type="date"
-              {...register("valid_from")}
-              className="w-full px-3 py-2 border rounded-md"
+              type='date'
+              {...register('valid_from')}
+              className='w-full rounded-md border px-3 py-2'
             />
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className='text-muted-foreground mt-1 text-sm'>
               Leave empty to start immediately
             </p>
           </div>
 
           {/* Valid Until */}
           <div>
-            <label className="block text-sm font-medium mb-1">Valid Until</label>
+            <label className='mb-1 block text-sm font-medium'>
+              Valid Until
+            </label>
             <input
-              type="date"
-              {...register("valid_until")}
-              className="w-full px-3 py-2 border rounded-md"
+              type='date'
+              {...register('valid_until')}
+              className='w-full rounded-md border px-3 py-2'
             />
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className='text-muted-foreground mt-1 text-sm'>
               Leave empty for no expiration
             </p>
           </div>
 
           {/* Is Active */}
-          <div className="flex items-center gap-2">
+          <div className='flex items-center gap-2'>
             <input
-              type="checkbox"
-              id="is_active"
-              {...register("is_active")}
-              className="rounded border-gray-300"
+              type='checkbox'
+              id='is_active'
+              {...register('is_active')}
+              className='rounded border-gray-300'
             />
-            <label htmlFor="is_active" className="text-sm cursor-pointer">
+            <label htmlFor='is_active' className='cursor-pointer text-sm'>
               Active (can be used)
             </label>
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-4">
+          <div className='flex gap-3 pt-4'>
             <button
-              type="button"
+              type='button'
               onClick={onClose}
-              className="flex-1 px-4 py-2 border rounded-md hover:bg-muted transition-colors"
+              className='hover:bg-muted flex-1 rounded-md border px-4 py-2 transition-colors'
             >
               Cancel
             </button>
             <button
-              type="submit"
+              type='submit'
               disabled={createMutation.isPending || updateMutation.isPending}
-              className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className='bg-primary text-primary-foreground hover:bg-primary/90 flex-1 rounded-md px-4 py-2 transition-colors disabled:opacity-50'
             >
               {createMutation.isPending || updateMutation.isPending
-                ? "Saving..."
+                ? 'Saving...'
                 : isEditing
-                  ? "Update"
-                  : "Create"}
+                  ? 'Update'
+                  : 'Create'}
             </button>
           </div>
         </form>
       </div>
     </div>
-  );
+  )
 }

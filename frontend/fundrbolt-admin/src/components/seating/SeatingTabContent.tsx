@@ -4,19 +4,8 @@
  * Main container for the interactive seating assignment interface with drag-and-drop.
  * Can be used both as a standalone page and within a tab.
  */
-
-import { TableDetailsPanel } from '@/components/admin/seating/TableDetailsPanel'
-import { AutoAssignButton } from '@/components/seating/AutoAssignButton'
-import { GuestCard } from '@/components/seating/GuestCard'
-import { SeatingLayoutModal } from '@/components/seating/SeatingLayoutModal'
-import { TableAssignmentModal } from '@/components/seating/TableAssignmentModal'
-import { TableCard } from '@/components/seating/TableCard'
-import { UnassignedSection } from '@/components/seating/UnassignedSection'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
+import { useEffect, useState } from 'react'
 import type { EventTableDetails } from '@/services/seating-service'
-import { useSeatingStore } from '@/stores/seating.store'
 import {
   DndContext,
   DragOverlay,
@@ -27,8 +16,18 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core'
 import { Image, LayoutGrid, RefreshCw } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { useSeatingStore } from '@/stores/seating.store'
+import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { TableDetailsPanel } from '@/components/admin/seating/TableDetailsPanel'
+import { AutoAssignButton } from '@/components/seating/AutoAssignButton'
+import { GuestCard } from '@/components/seating/GuestCard'
+import { SeatingLayoutModal } from '@/components/seating/SeatingLayoutModal'
+import { TableAssignmentModal } from '@/components/seating/TableAssignmentModal'
+import { TableCard } from '@/components/seating/TableCard'
+import { UnassignedSection } from '@/components/seating/UnassignedSection'
 
 interface SeatingTabContentProps {
   eventId: string
@@ -52,7 +51,9 @@ export function SeatingTabContent({
     null
   )
   const [detailsPanelOpen, setDetailsPanelOpen] = useState(false)
-  const [selectedTableNumber, setSelectedTableNumber] = useState<number | null>(null)
+  const [selectedTableNumber, setSelectedTableNumber] = useState<number | null>(
+    null
+  )
 
   const {
     tables,
@@ -193,20 +194,20 @@ export function SeatingTabContent({
 
   if (isLoading && tables.size === 0) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-10 w-32" />
+      <div className='space-y-6'>
+        <div className='flex items-center justify-between'>
+          <Skeleton className='h-8 w-48' />
+          <Skeleton className='h-10 w-32' />
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
+          <div className='lg:col-span-2'>
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'>
               {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-64" />
+                <Skeleton key={i} className='h-64' />
               ))}
             </div>
           </div>
-          <Skeleton className="h-96" />
+          <Skeleton className='h-96' />
         </div>
       </div>
     )
@@ -224,21 +225,21 @@ export function SeatingTabContent({
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="space-y-6">
+      <div className='space-y-6'>
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
-            <LayoutGrid className="h-6 w-6 text-primary" />
-            <h2 className="text-xl font-bold">Seating Assignments</h2>
+        <div className='flex flex-wrap items-center justify-between gap-2'>
+          <div className='flex items-center gap-3'>
+            <LayoutGrid className='text-primary h-6 w-6' />
+            <h2 className='text-xl font-bold'>Seating Assignments</h2>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className='flex flex-wrap items-center gap-2'>
             <Button
-              variant="outline"
-              size="sm"
+              variant='outline'
+              size='sm'
               onClick={() => setLayoutModalOpen(true)}
               disabled={isLoading}
             >
-              <Image className="mr-2 h-4 w-4" />
+              <Image className='mr-2 h-4 w-4' />
               Layout
             </Button>
             <AutoAssignButton
@@ -248,8 +249,8 @@ export function SeatingTabContent({
               onRefresh={loadGuests}
             />
             <Button
-              variant="outline"
-              size="sm"
+              variant='outline'
+              size='sm'
               onClick={handleRefresh}
               disabled={isLoading}
             >
@@ -262,38 +263,38 @@ export function SeatingTabContent({
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <div className="bg-card border rounded-lg p-4">
-            <p className="text-sm text-muted-foreground">Total Tables</p>
-            <p className="text-2xl font-bold">{tableCount}</p>
+        <div className='grid grid-cols-1 gap-4 sm:grid-cols-4'>
+          <div className='bg-card rounded-lg border p-4'>
+            <p className='text-muted-foreground text-sm'>Total Tables</p>
+            <p className='text-2xl font-bold'>{tableCount}</p>
           </div>
-          <div className="bg-card border rounded-lg p-4">
-            <p className="text-sm text-muted-foreground">Capacity per Table</p>
-            <p className="text-2xl font-bold">{maxGuestsPerTable}</p>
+          <div className='bg-card rounded-lg border p-4'>
+            <p className='text-muted-foreground text-sm'>Capacity per Table</p>
+            <p className='text-2xl font-bold'>{maxGuestsPerTable}</p>
           </div>
-          <div className="bg-card border rounded-lg p-4">
-            <p className="text-sm text-muted-foreground">Assigned Guests</p>
-            <p className="text-2xl font-bold">
+          <div className='bg-card rounded-lg border p-4'>
+            <p className='text-muted-foreground text-sm'>Assigned Guests</p>
+            <p className='text-2xl font-bold'>
               {Array.from(tables.values()).reduce(
                 (sum, guests) => sum + guests.length,
                 0
               )}
             </p>
           </div>
-          <div className="bg-card border rounded-lg p-4">
-            <p className="text-sm text-muted-foreground">Unassigned</p>
-            <p className="text-2xl font-bold text-amber-600">
+          <div className='bg-card rounded-lg border p-4'>
+            <p className='text-muted-foreground text-sm'>Unassigned</p>
+            <p className='text-2xl font-bold text-amber-600'>
               {unassignedGuests.length}
             </p>
           </div>
         </div>
 
         {/* Seating Chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
           {/* Tables Grid - Scrollable */}
-          <div className="lg:col-span-2">
-            <div className="max-h-[600px] overflow-y-auto pr-2">
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className='lg:col-span-2'>
+            <div className='max-h-[600px] overflow-y-auto pr-2'>
+              <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'>
                 {tablesArray.map((table) => (
                   <TableCard
                     key={table.number}
@@ -309,7 +310,7 @@ export function SeatingTabContent({
           </div>
 
           {/* Unassigned Guests */}
-          <div className="lg:col-span-1">
+          <div className='lg:col-span-1'>
             <UnassignedSection
               guests={unassignedGuests}
               onAssignClick={handleAssignClick}
@@ -351,8 +352,14 @@ export function SeatingTabContent({
       {/* Table Details Panel (Feature 014) */}
       <TableDetailsPanel
         eventId={eventId}
-        table={selectedTableNumber ? tableDetails.get(selectedTableNumber) ?? null : null}
-        guestsAtTable={selectedTableNumber ? tables.get(selectedTableNumber) ?? [] : []}
+        table={
+          selectedTableNumber
+            ? (tableDetails.get(selectedTableNumber) ?? null)
+            : null
+        }
+        guestsAtTable={
+          selectedTableNumber ? (tables.get(selectedTableNumber) ?? []) : []
+        }
         isOpen={detailsPanelOpen}
         onClose={() => setDetailsPanelOpen(false)}
         onUpdate={handleTableUpdate}

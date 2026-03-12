@@ -2,9 +2,8 @@
  * Package Image Upload API Client
  * Handles image upload/delete operations for ticket packages
  */
-
-import apiClient from '@/lib/axios';
-import type { TicketPackageRead } from '@/types/ticket-management';
+import type { TicketPackageRead } from '@/types/ticket-management'
+import apiClient from '@/lib/axios'
 
 export const packageImagesApi = {
   /**
@@ -17,8 +16,8 @@ export const packageImagesApi = {
     file: File,
     onProgress?: (progress: number) => void
   ): Promise<TicketPackageRead> {
-    const formData = new FormData();
-    formData.append('file', file);
+    const formData = new FormData()
+    formData.append('file', file)
 
     const response = await apiClient.post(
       `/admin/events/${eventId}/packages/${packageId}/image`,
@@ -27,28 +26,34 @@ export const packageImagesApi = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        onUploadProgress: (progressEvent: { total?: number; loaded: number }) => {
+        onUploadProgress: (progressEvent: {
+          total?: number
+          loaded: number
+        }) => {
           if (onProgress && progressEvent.total) {
             const percentCompleted = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
-            );
-            onProgress(percentCompleted);
+            )
+            onProgress(percentCompleted)
           }
         },
       }
-    );
+    )
 
-    return response.data as TicketPackageRead;
+    return response.data as TicketPackageRead
   },
 
   /**
    * Delete image for a ticket package
    * Returns updated TicketPackageRead with image_url cleared
    */
-  async deleteImage(eventId: string, packageId: string): Promise<TicketPackageRead> {
+  async deleteImage(
+    eventId: string,
+    packageId: string
+  ): Promise<TicketPackageRead> {
     const response = await apiClient.delete(
       `/admin/events/${eventId}/packages/${packageId}/image`
-    );
-    return response.data as TicketPackageRead;
+    )
+    return response.data as TicketPackageRead
   },
-};
+}
