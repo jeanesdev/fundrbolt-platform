@@ -1,7 +1,7 @@
 """add_payment_processing_tables
 
-Revision ID: a1b2c3d4e5f6
-Revises: fc956ee403ec
+Revision ID: pay033_001
+Revises: 034a002_npo_reopened, badge_color_002
 Create Date: 2026-03-10 00:00:00.000000
 
 Migration plan:
@@ -22,8 +22,8 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "a1b2c3d4e5f6"
-down_revision: str | None = "fc956ee403ec"
+revision: str = "pay033_001"
+down_revision: str | Sequence[str] | None = "badge_color_002"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -142,27 +142,10 @@ def upgrade() -> None:
 
     # ── Create enum types for M3 ─────────────────────────────────────────────
     op.execute(
-        """
-        DO $$ BEGIN
-            CREATE TYPE transaction_type_enum AS ENUM (
-                'charge', 'auth_only', 'capture', 'void', 'refund'
-            );
-        EXCEPTION
-            WHEN duplicate_object THEN null;
-        END $$;
-        """
+        "CREATE TYPE transaction_type_enum AS ENUM ('charge', 'auth_only', 'capture', 'void', 'refund')"
     )
     op.execute(
-        """
-        DO $$ BEGIN
-            CREATE TYPE transaction_status_enum AS ENUM (
-                'pending', 'authorized', 'captured', 'voided',
-                'refunded', 'declined', 'error'
-            );
-        EXCEPTION
-            WHEN duplicate_object THEN null;
-        END $$;
-        """
+        "CREATE TYPE transaction_status_enum AS ENUM ('pending', 'authorized', 'captured', 'voided', 'refunded', 'declined', 'error')"
     )
 
     # ── M3: payment_transactions ─────────────────────────────────────────────
@@ -219,7 +202,7 @@ def upgrade() -> None:
         ),
         sa.Column(
             "transaction_type",
-            sa.Enum(
+            postgresql.ENUM(
                 "charge",
                 "auth_only",
                 "capture",
@@ -232,7 +215,7 @@ def upgrade() -> None:
         ),
         sa.Column(
             "status",
-            sa.Enum(
+            postgresql.ENUM(
                 "pending",
                 "authorized",
                 "captured",
@@ -362,21 +345,15 @@ def upgrade() -> None:
     )
 
     # ── M6: events.checkout_open ─────────────────────────────────────────────
-    op.add_column(
-        "events",
-        sa.Column(
-            "checkout_open",
-            sa.Boolean,
-            nullable=False,
-            server_default="false",
-        ),
+    op.execute(
+        "ALTER TABLE events ADD COLUMN IF NOT EXISTS checkout_open BOOLEAN NOT NULL DEFAULT false"
     )
 
     # ── M7: Partial indexes ───────────────────────────────────────────────────
     # Pending transactions for polling fallback cron
     op.execute(
         """
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_payment_transactions_pending_session
+        CREATE INDEX IF NOT EXISTS ix_payment_transactions_pending_session
         ON payment_transactions (status, session_created_at)
         WHERE status = 'pending';
         """
@@ -384,7 +361,7 @@ def upgrade() -> None:
     # Receipts pending email delivery for retry cron
     op.execute(
         """
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_payment_receipts_email_retry
+        CREATE INDEX IF NOT EXISTS ix_payment_receipts_email_retry
         ON payment_receipts (email_sent_at, email_attempts)
         WHERE email_sent_at IS NULL;
         """
@@ -395,11 +372,11 @@ def downgrade() -> None:
     """Remove all payment processing tables and column additions."""
 
     # M7: Partial indexes
-    op.execute("DROP INDEX CONCURRENTLY IF EXISTS ix_payment_receipts_email_retry;")
-    op.execute("DROP INDEX CONCURRENTLY IF EXISTS ix_payment_transactions_pending_session;")
+    op.execute("DROP INDEX IF EXISTS ix_payment_receipts_email_retry;")
+    op.execute("DROP INDEX IF EXISTS ix_payment_transactions_pending_session;")
 
     # M6: events.checkout_open
-    op.drop_column("events", "checkout_open")
+    op.execute("ALTER TABLE events DROP COLUMN IF EXISTS checkout_open")
 
     # M5: ticket_purchases.payment_transaction_id
     op.drop_index("ix_ticket_purchases_payment_transaction_id", table_name="ticket_purchases")

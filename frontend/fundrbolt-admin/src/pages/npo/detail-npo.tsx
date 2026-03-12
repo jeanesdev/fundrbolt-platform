@@ -23,6 +23,7 @@ import {
   Building2,
   Calendar,
   ClipboardCheck,
+  CreditCard,
   Edit,
   Globe,
   Mail,
@@ -197,6 +198,14 @@ export default function NpoDetailPage() {
               <ClipboardCheck className="mr-2 h-4 w-4" />
               <span>Review Application</span>
             </Button>
+          )}
+          {user?.role === 'super_admin' && (
+            <Link to="/npos/$npoId/payment-settings" params={{ npoId }} className="flex-1 md:flex-none">
+              <Button variant="outline" className="w-full">
+                <CreditCard className="mr-2 h-4 w-4" />
+                <span>Payment Settings</span>
+              </Button>
+            </Link>
           )}
           <Link to="/npos/$npoId/edit" params={{ npoId }} className="flex-1 md:flex-none">
             <Button variant="outline" className="w-full">

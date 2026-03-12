@@ -14,6 +14,7 @@ from sqlalchemy.orm import selectinload
 from app.models.event import Event, FoodOption
 from app.models.event_registration import EventRegistration
 from app.models.meal_selection import MealSelection
+from app.models.payment_profile import PaymentProfile
 from app.models.registration_guest import RegistrationGuest
 from app.services.bidder_number_service import BidderNumberService
 from app.services.email_service import EmailService, _create_email_html_template
@@ -70,6 +71,22 @@ class AdminGuestService:
         )
         registrations = registrations_result.scalars().all()
 
+        # Load user IDs that have a saved payment profile for this event's NPO
+        # in a single query to avoid N+1 issues.
+        npo_id_result = await db.execute(select(Event.npo_id).where(Event.id == event_id))
+        npo_id_row = npo_id_result.scalar_one_or_none()
+        users_with_profile: set[str] = set()
+        if npo_id_row is not None:
+            profile_result = await db.execute(
+                select(PaymentProfile.user_id)
+                .where(
+                    PaymentProfile.npo_id == npo_id_row,
+                    PaymentProfile.deleted_at.is_(None),
+                )
+                .distinct()
+            )
+            users_with_profile = {str(row[0]) for row in profile_result.fetchall()}
+
         attendees = []
 
         # Process each registration
@@ -99,10 +116,12 @@ class AdminGuestService:
                             }
                             break
 
+                reg_user_id = str(registration.user.id)
                 attendee = {
                     "id": str(primary_guest.id),
                     "registration_id": str(registration.id),
                     "attendee_type": "registrant",
+                    "user_id": reg_user_id,
                     "name": primary_guest.name
                     or f"{registration.user.first_name} {registration.user.last_name}",
                     "email": primary_guest.email or registration.user.email,
@@ -117,6 +136,7 @@ class AdminGuestService:
                         if primary_guest.check_in_time
                         else None
                     ),
+                    "has_payment_profile": reg_user_id in users_with_profile,
                     "status": primary_guest.status,
                     "created_at": primary_guest.created_at.isoformat(),
                 }
@@ -143,10 +163,12 @@ class AdminGuestService:
                             }
                             break
 
+                reg_user_id = str(registration.user.id)
                 attendee = {
                     "id": str(registration.id),
                     "registration_id": str(registration.id),
                     "attendee_type": "registrant",
+                    "user_id": reg_user_id,
                     "name": f"{registration.user.first_name} {registration.user.last_name}",
                     "email": registration.user.email,
                     "phone": registration.user.phone or "",
@@ -156,6 +178,7 @@ class AdminGuestService:
                     "is_table_captain": False,
                     "checked_in": False,
                     "check_in_time": None,
+                    "has_payment_profile": reg_user_id in users_with_profile,
                     "status": registration.status,
                     "created_at": registration.created_at.isoformat(),
                 }
@@ -187,10 +210,12 @@ class AdminGuestService:
                             }
                             break
 
+                guest_user_id = str(guest.user_id) if guest.user_id else None
                 guest_attendee = {
                     "id": str(guest.id),
                     "registration_id": str(registration.id),
                     "attendee_type": "guest",
+                    "user_id": guest_user_id,
                     "name": guest.name,
                     "email": guest.email or "",
                     "phone": guest.phone or "",
@@ -201,6 +226,9 @@ class AdminGuestService:
                     "checked_in": bool(guest.check_in_time),
                     "check_in_time": (
                         guest.check_in_time.isoformat() if guest.check_in_time else None
+                    ),
+                    "has_payment_profile": bool(
+                        guest_user_id and guest_user_id in users_with_profile
                     ),
                     "status": guest.status or "confirmed",
                 }

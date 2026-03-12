@@ -6,8 +6,12 @@
 import type {
   AdminChargeRequest,
   AdminChargeResponse,
+  AdminPaymentProfileCreate,
+  AdminPaymentSessionRequest,
+  AdminPaymentSessionResponse,
   CheckoutStatusResponse,
   DonorListResponse,
+  PaymentProfileRead,
   RefundRequest,
   RefundResponse,
   TransactionListResponse,
@@ -95,6 +99,30 @@ export async function refundTransaction(
 ): Promise<RefundResponse> {
   const { data } = await apiClient.post<RefundResponse>(
     `/admin/payments/${transactionId}/refund`,
+    payload
+  )
+  return data
+}
+
+// ── Admin-on-behalf HPF session + profile (check-in card entry) ──────────────
+
+export async function adminCreatePaymentSession(
+  userId: string,
+  payload: AdminPaymentSessionRequest
+): Promise<AdminPaymentSessionResponse> {
+  const { data } = await apiClient.post<AdminPaymentSessionResponse>(
+    `/admin/payments/users/${userId}/session`,
+    payload
+  )
+  return data
+}
+
+export async function adminCreatePaymentProfile(
+  userId: string,
+  payload: AdminPaymentProfileCreate
+): Promise<PaymentProfileRead> {
+  const { data } = await apiClient.post<PaymentProfileRead>(
+    `/admin/payments/users/${userId}/profiles`,
     payload
   )
   return data

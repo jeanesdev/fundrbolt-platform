@@ -30,12 +30,17 @@ from app.models.user import User
 from app.schemas.payment import (
     AdminChargeRequest,
     AdminChargeResponse,
+    PaymentProfileCreate,
+    PaymentProfileRead,
+    PaymentSessionRequest,
+    PaymentSessionResponse,
     RefundRequest,
     RefundResponse,
     VoidRequest,
 )
 from app.services.checkout_service import CheckoutService
 from app.services.payment_gateway.port import PaymentGatewayPort
+from app.services.payment_profile_service import PaymentProfileService, profile_to_read
 from app.services.payment_transaction_service import PaymentTransactionService
 
 router = APIRouter(prefix="/admin/payments", tags=["admin-payments"])
@@ -444,3 +449,77 @@ async def refund_transaction_endpoint(
         status=refund_txn.status.value,
         amount_refunded=refund_txn.amount,
     )
+
+
+# ── Admin-on-behalf HPF session + profile (check-in card entry) ──────────────
+
+
+@router.post(
+    "/users/{user_id}/session",
+    response_model=PaymentSessionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator", "npo_staff")
+async def admin_create_payment_session_for_user(
+    user_id: uuid.UUID,
+    body: PaymentSessionRequest,
+    current_user: CurrentUser,
+    db: DB,
+    gateway: Gateway,
+) -> PaymentSessionResponse:
+    """Create an HPF session on behalf of a donor (admin-initiated).
+
+    Used during event check-in when a donor does not yet have a saved card.
+    The session is created under ``user_id`` (not the admin's own account).
+    """
+    # Verify the target user exists
+    user_result = await db.execute(select(User).where(User.id == user_id))
+    if user_result.scalar_one_or_none() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    svc = PaymentTransactionService(db)
+    response = await svc.create_hosted_session(
+        user_id=user_id,
+        request=body,
+        gateway=gateway,
+    )
+    await db.commit()
+    return response
+
+
+@router.post(
+    "/users/{user_id}/profiles",
+    response_model=PaymentProfileRead,
+    status_code=status.HTTP_201_CREATED,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator", "npo_staff")
+async def admin_create_payment_profile_for_user(
+    user_id: uuid.UUID,
+    body: PaymentProfileCreate,
+    current_user: CurrentUser,
+    db: DB,
+) -> PaymentProfileRead:
+    """Save a tokenised card on behalf of a donor (admin-initiated).
+
+    Called after the HPF iframe's postMessage is received while an admin has
+    the check-in 'Add Card' dialog open.  Associates the card with ``user_id``
+    in the NPO vault, not the admin's account.
+    """
+    # Verify the target user exists
+    user_result = await db.execute(select(User).where(User.id == user_id))
+    if user_result.scalar_one_or_none() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    svc = PaymentProfileService(db)
+    profile = await svc.create_profile(
+        user_id=user_id,
+        npo_id=body.npo_id,
+        data=body,
+    )
+    await db.commit()
+    await db.refresh(profile)
+    return profile_to_read(profile)
