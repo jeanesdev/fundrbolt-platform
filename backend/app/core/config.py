@@ -83,6 +83,20 @@ class Settings(BaseSettings):
     # NPO Onboarding — Admin Notification Email
     admin_notification_email: str | None = None
 
+    # VAPID (Web Push)
+    vapid_private_key: str | None = None
+    vapid_public_key: str | None = None
+    vapid_claims_email: str = "mailto:admin@fundrbolt.com"
+
+    # Twilio SMS
+    twilio_account_sid: str | None = None
+    twilio_auth_token: str | None = None
+    twilio_from_number: str | None = None
+
+    # Celery
+    celery_broker_url: str = "redis://localhost:6379/2"
+    celery_result_backend: str = "redis://localhost:6379/3"
+
     # CORS
     cors_origins: str = (
         "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174"

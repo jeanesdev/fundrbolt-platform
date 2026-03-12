@@ -47,6 +47,51 @@ services:
       timeout: 5s
       retries: 5
 
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fundrbolt_celery_worker
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=4
+    environment:
+      DATABASE_URL: postgresql://fundrbolt_user:fundrbolt_password@postgres:5432/fundrbolt_db
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/2
+      CELERY_RESULT_BACKEND: redis://redis:6379/3
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-super-secret-jwt-key-change-in-production}
+      EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-DoNotReply@fundrbolt.com}
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-admin@fundrbolt.com}
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:-ChangeMe123!}
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.celery_app", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fundrbolt_celery_beat
+    command: celery -A app.celery_app beat --loglevel=info
+    environment:
+      DATABASE_URL: postgresql://fundrbolt_user:fundrbolt_password@postgres:5432/fundrbolt_db
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/2
+      CELERY_RESULT_BACKEND: redis://redis:6379/3
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-super-secret-jwt-key-change-in-production}
+      EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-DoNotReply@fundrbolt.com}
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:-admin@fundrbolt.com}
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD:-ChangeMe123!}
+    depends_on:
+      redis:
+        condition: service_healthy
+
 volumes:
   fundrbolt_postgres_data:
   fundrbolt_redis_data:
