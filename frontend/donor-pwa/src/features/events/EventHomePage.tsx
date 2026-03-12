@@ -29,6 +29,7 @@ import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
+import { PushOptInPrompt } from '@/components/notifications/PushOptInPrompt'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { usePreviewMode } from '@/contexts/PreviewContext'
 import { useEventBranding } from '@/hooks/use-event-branding'
@@ -1118,6 +1119,9 @@ export function EventHomePage() {
             />
           </div>
         )}
+
+        {/* Push notification opt-in prompt */}
+        <PushOptInPrompt />
 
         {/* CTA for bidding */}
         {eventStatus !== 'past' && (

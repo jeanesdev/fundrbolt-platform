@@ -137,7 +137,18 @@ class NotificationService:
                     extra={"notification_id": str(notification.id), "room": room},
                 )
 
-        # TODO: Dispatch Celery tasks for push/email/sms channels
+        # Dispatch Celery task for push delivery if PUSH channel is enabled
+        if DeliveryChannelEnum.PUSH in channels:
+            try:
+                from app.tasks.notification_tasks import send_push_notification_task
+
+                send_push_notification_task.delay(str(notification.id))
+            except Exception:
+                logger.warning(
+                    "Failed to dispatch push notification task",
+                    extra={"notification_id": str(notification.id)},
+                )
+
         logger.info(
             "Notification created",
             extra={

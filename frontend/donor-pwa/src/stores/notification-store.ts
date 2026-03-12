@@ -2,9 +2,10 @@
  * Notification store (Zustand)
  * Manages notification UI state: unread count, panel visibility, cached notifications
  */
-
 import type { NotificationData } from '@/services/notification-service'
 import { create } from 'zustand'
+
+export type ConnectionStatus = 'connected' | 'disconnected' | 'reconnecting'
 
 interface NotificationState {
   /** Current unread count */
@@ -13,6 +14,8 @@ interface NotificationState {
   isOpen: boolean
   /** Cached notifications for the panel */
   notifications: NotificationData[]
+  /** Socket.IO connection status */
+  connectionStatus: ConnectionStatus
 
   // Actions
   setUnreadCount: (count: number) => void
@@ -24,12 +27,14 @@ interface NotificationState {
   markAsRead: (notificationId: string) => void
   markAllAsRead: () => void
   setNotifications: (notifications: NotificationData[]) => void
+  setConnectionStatus: (status: ConnectionStatus) => void
 }
 
 export const useNotificationStore = create<NotificationState>((set) => ({
   unreadCount: 0,
   isOpen: false,
   notifications: [],
+  connectionStatus: 'disconnected',
 
   setUnreadCount: (count) => set({ unreadCount: count }),
   incrementUnreadCount: () =>
@@ -48,7 +53,7 @@ export const useNotificationStore = create<NotificationState>((set) => ({
       notifications: state.notifications.map((n) =>
         n.id === notificationId
           ? { ...n, is_read: true, read_at: new Date().toISOString() }
-          : n,
+          : n
       ),
     })),
 
@@ -63,4 +68,5 @@ export const useNotificationStore = create<NotificationState>((set) => ({
     })),
 
   setNotifications: (notifications) => set({ notifications }),
+  setConnectionStatus: (connectionStatus) => set({ connectionStatus }),
 }))

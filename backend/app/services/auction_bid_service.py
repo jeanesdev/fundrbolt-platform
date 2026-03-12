@@ -23,8 +23,12 @@ from app.models.auction_bid import (
     TransactionStatus,
 )
 from app.models.auction_item import AuctionItem, AuctionType
+from app.models.event import Event
 from app.models.event_registration import EventRegistration
+from app.models.notification import NotificationPriorityEnum, NotificationTypeEnum
 from app.models.registration_guest import RegistrationGuest
+from app.services.notification_service import NotificationService
+from app.websocket.notification_ws import sio
 
 logger = logging.getLogger(__name__)
 
@@ -154,9 +158,70 @@ class AuctionBidService:
         )
         self.db.add(audit)
 
-    async def _outbid_previous(self, previous_bid: AuctionBid, actor_user_id: UUID) -> None:
+    async def _outbid_previous(
+        self,
+        previous_bid: AuctionBid,
+        actor_user_id: UUID,
+        new_bid_amount: Decimal | None = None,
+        item: AuctionItem | None = None,
+    ) -> None:
         await self._create_status_copy(
             previous_bid, new_status=BidStatus.OUTBID, actor_user_id=actor_user_id
+        )
+
+        # Send outbid notification to the previous high bidder
+        try:
+            await self._send_outbid_notification(
+                previous_bid=previous_bid,
+                new_bid_amount=new_bid_amount,
+                item=item,
+            )
+        except Exception:
+            logger.warning(
+                "Failed to send outbid notification",
+                extra={
+                    "user_id": str(previous_bid.user_id),
+                    "item_id": str(previous_bid.auction_item_id),
+                },
+            )
+
+    async def _send_outbid_notification(
+        self,
+        previous_bid: AuctionBid,
+        new_bid_amount: Decimal | None = None,
+        item: AuctionItem | None = None,
+    ) -> None:
+        """Create an outbid notification for the outbid user."""
+        if item is None:
+            item = await self._get_auction_item(previous_bid.auction_item_id)
+
+        # Fetch event slug for deep link
+        event_result = await self.db.execute(
+            select(Event.slug).where(Event.id == previous_bid.event_id)
+        )
+        event_slug = event_result.scalar_one_or_none() or str(previous_bid.event_id)
+
+        amount_str = f"${new_bid_amount:,.2f}" if new_bid_amount else "a higher amount"
+        old_amount_str = f"${previous_bid.bid_amount:,.2f}"
+
+        await NotificationService.create_notification(
+            db=self.db,
+            event_id=previous_bid.event_id,
+            user_id=previous_bid.user_id,
+            notification_type=NotificationTypeEnum.OUTBID,
+            priority=NotificationPriorityEnum.HIGH,
+            title="You've been outbid!",
+            body=(
+                f"Someone bid {amount_str} on {item.title}. "
+                f"Your bid of {old_amount_str} is no longer the highest."
+            ),
+            data={
+                "item_id": str(item.id),
+                "deep_link": f"/events/{event_slug}/auction/{item.id}",
+                "animation_type": "flash",
+                "bid_amount": str(new_bid_amount) if new_bid_amount else None,
+            },
+            sio=sio,
         )
 
     async def place_bid(
@@ -216,7 +281,12 @@ class AuctionBidService:
             await self.db.flush()
 
             if current_high and current_high.user_id != user_id:
-                await self._outbid_previous(current_high, actor_user_id=user_id)
+                await self._outbid_previous(
+                    current_high,
+                    actor_user_id=user_id,
+                    new_bid_amount=bid_amount,
+                    item=item,
+                )
 
             await self.db.commit()
             await self._publish_bid_update(new_bid)
@@ -255,7 +325,12 @@ class AuctionBidService:
             and current_high.user_id != user_id
             and bid_amount > current_high.bid_amount
         ):
-            await self._outbid_previous(current_high, actor_user_id=user_id)
+            await self._outbid_previous(
+                current_high,
+                actor_user_id=user_id,
+                new_bid_amount=bid_amount,
+                item=item,
+            )
 
         await self._apply_proxy_bidding(item, starting_high_bid=new_bid)
 
@@ -304,7 +379,12 @@ class AuctionBidService:
             self.db.add(auto_bid)
             await self.db.flush()
 
-            await self._outbid_previous(current_high, actor_user_id=best.user_id)
+            await self._outbid_previous(
+                current_high,
+                actor_user_id=best.user_id,
+                new_bid_amount=next_amount,
+                item=item,
+            )
             current_high = auto_bid
 
     async def list_item_bids(

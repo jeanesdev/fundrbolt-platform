@@ -1,12 +1,15 @@
 """Socket.IO server for real-time notification delivery."""
 
+from datetime import datetime
 from typing import Any
 
 import jwt
 import socketio
+from sqlalchemy import select
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.models.notification import Notification
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -71,7 +74,11 @@ async def disconnect(sid: str) -> None:
 
 @sio.on("notification:join_event")
 async def join_event(sid: str, data: dict[str, Any]) -> None:
-    """Join a user-scoped notification room for an event."""
+    """Join a user-scoped notification room for an event.
+
+    If `last_seen_at` is provided, emit any notifications created after that
+    timestamp (max 50) so the client can catch up on missed notifications.
+    """
     session = await sio.get_session(sid)
     user_id = session.get("user_id")
     event_id = data.get("event_id")
@@ -85,6 +92,17 @@ async def join_event(sid: str, data: dict[str, Any]) -> None:
         "Socket.IO joined room",
         extra={"sid": sid, "user_id": user_id, "room": room},
     )
+
+    # Sync missed notifications if client provides last_seen_at
+    last_seen_at = data.get("last_seen_at")
+    if last_seen_at:
+        try:
+            await _emit_missed_notifications(sid, user_id, event_id, last_seen_at)
+        except Exception:
+            logger.warning(
+                "Failed to emit missed notifications",
+                extra={"sid": sid, "user_id": user_id, "event_id": event_id},
+            )
 
 
 @sio.on("notification:leave_event")
@@ -125,3 +143,87 @@ async def emit_notification(
             "Failed to emit notification",
             extra={"user_id": user_id, "event_id": event_id, "room": room},
         )
+
+
+async def emit_unread_count(
+    user_id: str,
+    event_id: str,
+    unread_count: int,
+) -> None:
+    """Emit updated unread count to a user's event room.
+
+    Args:
+        user_id: Target user UUID string
+        event_id: Target event UUID string
+        unread_count: Current unread notification count
+    """
+    room = f"user:{user_id}:event:{event_id}"
+    try:
+        await sio.emit("notification:count", {"unread_count": unread_count}, room=room)
+    except Exception:
+        logger.warning(
+            "Failed to emit unread count",
+            extra={"user_id": user_id, "event_id": event_id, "room": room},
+        )
+
+
+async def _emit_missed_notifications(
+    sid: str,
+    user_id: str,
+    event_id: str,
+    last_seen_at: str,
+) -> None:
+    """Emit notifications created after last_seen_at to a specific client.
+
+    Args:
+        sid: Socket.IO session ID (for targeted emit)
+        user_id: User UUID string
+        event_id: Event UUID string
+        last_seen_at: ISO-format timestamp of last seen notification
+    """
+    from app.core.database import AsyncSessionLocal
+
+    cutoff = datetime.fromisoformat(last_seen_at)
+
+    async with AsyncSessionLocal() as db:
+        stmt = (
+            select(Notification)
+            .where(
+                Notification.user_id == user_id,
+                Notification.event_id == event_id,
+                Notification.created_at > cutoff,
+            )
+            .order_by(Notification.created_at.asc())
+            .limit(50)
+        )
+        result = await db.execute(stmt)
+        missed = list(result.scalars().all())
+
+    if not missed:
+        return
+
+    for notification in missed:
+        payload = {
+            "id": str(notification.id),
+            "notification_type": notification.notification_type.value
+            if hasattr(notification.notification_type, "value")
+            else str(notification.notification_type),
+            "title": notification.title,
+            "body": notification.body,
+            "priority": notification.priority.value
+            if hasattr(notification.priority, "value")
+            else str(notification.priority),
+            "data": notification.data,
+            "created_at": notification.created_at.isoformat() if notification.created_at else None,
+        }
+        await sio.emit("notification:new", payload, to=sid)
+
+    logger.info(
+        "Emitted missed notifications",
+        extra={
+            "sid": sid,
+            "user_id": user_id,
+            "event_id": event_id,
+            "count": len(missed),
+        },
+    )

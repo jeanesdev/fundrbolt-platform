@@ -16,6 +16,7 @@ from app.schemas.notification import (
     UnreadCountResponse,
 )
 from app.services.notification_service import NotificationService
+from app.websocket.notification_ws import emit_unread_count
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -64,6 +65,7 @@ async def get_unread_count(
 @router.post("/{notification_id}/read", status_code=status.HTTP_200_OK)
 async def mark_notification_read(
     notification_id: uuid.UUID,
+    event_id: uuid.UUID | None = Query(None, description="Event ID for count sync"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> dict[str, bool]:
@@ -77,6 +79,14 @@ async def mark_notification_read(
             detail="Notification not found or already read",
         )
     await db.commit()
+
+    # Emit updated unread count to client via Socket.IO
+    if event_id:
+        unread = await NotificationService.get_unread_count(
+            db=db, user_id=current_user.id, event_id=event_id
+        )
+        await emit_unread_count(str(current_user.id), str(event_id), unread)
+
     return {"success": True}
 
 
@@ -91,4 +101,8 @@ async def mark_all_notifications_read(
         db=db, user_id=current_user.id, event_id=body.event_id
     )
     await db.commit()
+
+    # Emit updated unread count (should be 0 after mark-all-read)
+    await emit_unread_count(str(current_user.id), str(body.event_id), 0)
+
     return MarkAllReadResponse(updated_count=updated_count)
