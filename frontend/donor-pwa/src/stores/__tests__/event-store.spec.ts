@@ -57,7 +57,7 @@ describe('getEventsWithDetails', () => {
       { id: '2', event_id: 'e2', event: undefined },
     ];
 
-    // @ts-expect-error - simplified mock data
+
     const events = getEventsWithDetails(registrations);
     expect(events).toHaveLength(0);
   });

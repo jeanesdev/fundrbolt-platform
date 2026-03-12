@@ -167,6 +167,9 @@ importers:
       react-hook-form:
         specifier: ^7.64.0
         version: 7.71.1(react@19.2.3)
+      react-markdown:
+        specifier: ^10.1.0
+        version: 10.1.0(@types/react@19.2.9)(react@19.2.3)
       react-top-loading-bar:
         specifier: ^3.0.2
         version: 3.0.2(react@19.2.3)

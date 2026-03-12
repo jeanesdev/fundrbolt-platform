@@ -7,6 +7,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     Enum,
@@ -28,8 +29,10 @@ if TYPE_CHECKING:
     from app.models.event_registration import EventRegistration
     from app.models.event_table import EventTable
     from app.models.npo import NPO
+    from app.models.payment_transaction import PaymentTransaction
     from app.models.sponsor import Sponsor
     from app.models.ticket_management import PromoCode, TicketPurchase
+    from app.models.ticket_management import TicketAssignment as TicketAssignment
     from app.models.ticket_package import TicketPackage
 
 
@@ -242,6 +245,23 @@ class Event(Base, UUIDMixin, TimestampMixin):
         comment="Azure Blob URL for event space layout image",
     )
 
+    # Payment Processing (Feature 033)
+    checkout_open: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        comment="Controls end-of-night self-checkout access for donors. "
+        "Auto-set to true when event transitions to closed.",
+    )
+
+    # Feature 036: Ticket purchasing per-donor cap
+    max_tickets_per_donor: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="Max total tickets a single donor can purchase for this event. NULL = unlimited. Default: 20",
+    )
+
     # Optimistic Locking
     version: Mapped[int] = mapped_column(
         Integer,
@@ -332,6 +352,11 @@ class Event(Base, UUIDMixin, TimestampMixin):
         "DonationLabel",
         back_populates="event",
         cascade="all, delete-orphan",
+    )
+    # Feature 033: Payment processing
+    payment_transactions: Mapped[list["PaymentTransaction"]] = relationship(
+        "PaymentTransaction",
+        back_populates="event",
     )
 
     # Computed Properties (Feature 012)

@@ -71,6 +71,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Azure Database for PostgreSQL (new `onboarding_sessions` table; `npo_applications` enum updated; `npos` enum updated) · Azure Cache for Redis (rate-limit keys) (034-npo-onboarding)
 - Python 3.11+ (Backend), TypeScript 5.9 (Frontend) (035-donor-notifications)
 - Azure Database for PostgreSQL (notification data, preferences, push subscriptions, campaigns), Azure Cache for Redis (pub/sub for real-time, notification count cache, Celery broker) (035-donor-notifications)
+- Python 3.11 (backend) + TypeScript 5.x / React 19 (donor PWA) (036-ticket-purchasing)
+- Azure Database for PostgreSQL (primary data); Azure Blob Storage (sponsor logos); Azure Cache for Redis (session/rate-limit) (036-ticket-purchasing)
 
 ## Project Structure
 ```
@@ -155,6 +157,7 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 036-ticket-purchasing: Added Python 3.11 (backend) + TypeScript 5.x / React 19 (donor PWA)
 - 035-donor-notifications: Added Python 3.11+ (Backend), TypeScript 5.9 (Frontend)
 - 034-npo-onboarding: Added Python 3.11 (backend) · TypeScript 5.9 / React 19 (frontend Admin PWA) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, Alembic (backend); React 19, Vite 7, TanStack Router, Zustand, Radix UI, Tailwind 4 (frontend)
 - 033-payment-processing: Added Python 3.11 (backend) + TypeScript 5.x / React 19 (donor PWA & admin PWA)

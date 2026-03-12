@@ -1096,6 +1096,122 @@ If you have any questions about this decision, please contact us by replying to 
         with ThreadPoolExecutor() as executor:
             await loop.run_in_executor(executor, _send_sync)
 
+    async def send_receipt_email(
+        self,
+        to_email: str,
+        donor_name: str,
+        event_name: str,
+        transaction_id: str,
+        amount_total: float,
+        pdf_bytes: bytes | None = None,
+    ) -> bool:
+        """Send a payment receipt email, optionally with PDF attachment.
+
+        Args:
+            to_email: Recipient email address
+            donor_name: Donor's display name for personalisation
+            event_name: Name of the event for the subject line
+            transaction_id: Transaction UUID for reference
+            amount_total: Total amount charged (USD)
+            pdf_bytes: Optional PDF receipt bytes to attach
+
+        Returns:
+            True if sent successfully, False on mock mode.
+
+        Raises:
+            EmailSendError: If sending fails after retries.
+        """
+        subject = f"Your receipt for {event_name}"
+        greeting = f"Hi {donor_name},"
+        amount_formatted = f"${amount_total:,.2f}"
+
+        body = (
+            f"{greeting}\n\n"
+            f"Thank you! Your payment of {amount_formatted} for {event_name} "
+            f"has been processed successfully.\n\n"
+            f"Transaction ID: {transaction_id}\n\n"
+            "Please find your receipt attached to this email. "
+            "You can also access your receipt any time from your account.\n\n"
+            "Thank you for your support!\n\n"
+            "— The FundrBolt Team"
+        )
+
+        if not self.enabled:
+            logger.info(
+                "[MOCK EMAIL] receipt email",
+                extra={
+                    "to": to_email,
+                    "subject": subject,
+                    "has_attachment": pdf_bytes is not None,
+                },
+            )
+            return True
+
+        # Send with optional PDF attachment via Azure
+        import asyncio as _asyncio
+        import base64
+        from concurrent.futures import ThreadPoolExecutor as _ThreadPoolExecutor
+
+        def _send_sync_with_attachment() -> None:
+            try:
+                from azure.communication.email import EmailClient
+
+                if not settings.azure_communication_connection_string:
+                    raise EmailSendError("Azure connection string not configured")
+
+                client = EmailClient.from_connection_string(
+                    settings.azure_communication_connection_string
+                )
+
+                content: dict[str, str] = {"subject": subject, "plainText": body}
+
+                message: dict[str, object] = {
+                    "senderAddress": settings.email_from_address,
+                    "recipients": {"to": [{"address": to_email}]},
+                    "content": content,
+                }
+
+                if pdf_bytes:
+                    message["attachments"] = [
+                        {
+                            "name": f"receipt-{transaction_id[:8]}.pdf",
+                            "contentType": "application/pdf",
+                            "contentInBase64": base64.b64encode(pdf_bytes).decode(),
+                        }
+                    ]
+
+                poller = client.begin_send(message)
+                poller.result()
+
+                logger.info(
+                    "Receipt email sent",
+                    extra={
+                        "to": to_email,
+                        "transaction_id": transaction_id,
+                        "has_pdf": pdf_bytes is not None,
+                    },
+                )
+            except Exception as exc:
+                logger.error("Failed to send receipt email", extra={"error": str(exc)})
+                raise EmailSendError(f"Receipt email failed: {exc}") from exc
+
+        # Retry up to 3 times with exponential backoff
+        delay = 1.0
+        last_exc: Exception | None = None
+        for attempt in range(3):
+            try:
+                loop = _asyncio.get_event_loop()
+                with _ThreadPoolExecutor() as executor:
+                    await loop.run_in_executor(executor, _send_sync_with_attachment)
+                return True
+            except EmailSendError as exc:
+                last_exc = exc
+                if attempt < 2:
+                    await _asyncio.sleep(delay)
+                    delay *= 2
+
+        raise EmailSendError("Failed to send receipt email after 3 attempts") from last_exc
+
 
 # Singleton instance
 _email_service: EmailService | None = None

@@ -26,6 +26,24 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 
+function formatPhoneNumber(value: string): string {
+  const digits = value.replace(/\D/g, '')
+  if (digits.length === 0) return ''
+  if (digits.length <= 3) return `(${digits}`
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+  if (digits.length <= 10)
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+  return `+${digits.slice(0, digits.length - 10)} (${digits.slice(-10, -7)}) ${digits.slice(-7, -4)}-${digits.slice(-4)}`
+}
+
+function phoneDisplayToE164(display: string): string {
+  const digits = display.replace(/\D/g, '')
+  if (!digits) return ''
+  if (digits.length === 10) return `+1${digits}`
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`
+  return display
+}
+
 interface ProfileFormProps {
   initialData?: Partial<ProfileUpdateFormData>
 }
@@ -78,7 +96,8 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
   })
 
   const onSubmit = (data: ProfileUpdateFormData) => {
-    updateProfileMutation.mutate(data)
+    const phoneE164 = data.phone ? phoneDisplayToE164(data.phone) : undefined
+    updateProfileMutation.mutate({ ...data, phone: phoneE164 || undefined })
   }
 
   return (
@@ -115,7 +134,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
           />
         </div>
 
-        {/* Phone field - T048: E.164 validation */}
+        {/* Phone field - auto-formats as (XXX) XXX-XXXX */}
         <FormField
           control={form.control}
           name='phone'
@@ -124,14 +143,17 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
               <FormLabel>Phone</FormLabel>
               <FormControl>
                 <Input
-                  placeholder='+14155552671'
+                  placeholder='(555) 555-5555'
                   {...field}
-                  value={field.value || ''}
+                  value={field.value ? formatPhoneNumber(field.value) : ''}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, '')
+                    field.onChange(raw ? `+1${raw}` : '')
+                  }}
+                  inputMode='tel'
                 />
               </FormControl>
-              <FormDescription>
-                Phone number in E.164 format (e.g., +14155552671)
-              </FormDescription>
+              <FormDescription>Your contact phone number</FormDescription>
               <FormMessage />
             </FormItem>
           )}

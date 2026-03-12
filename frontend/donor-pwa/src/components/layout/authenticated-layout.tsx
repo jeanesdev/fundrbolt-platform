@@ -36,6 +36,11 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     match => match.routeId.includes('/events/$eventSlug')
   )
 
+  // Check if we're on a settings page (should use sidebar-free layout)
+  const isSettingsPage = matches.some(
+    match => match.routeId.includes('/settings')
+  )
+
   // Restore user from refresh token on mount if needed
   useEffect(() => {
     const restore = async () => {
@@ -156,9 +161,9 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     )
   }
 
-  // For event detail pages, render sidebar-free layout (just the outlet)
-  // The child route (EventHomePage) handles its own full-page layout
-  if (isEventDetailPage) {
+  // For event detail pages or settings pages, render sidebar-free layout
+  // The child route handles its own full-page layout
+  if (isEventDetailPage || isSettingsPage) {
     return (
       <SearchProvider>
         <SkipToMain />

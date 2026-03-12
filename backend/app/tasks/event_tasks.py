@@ -46,6 +46,7 @@ async def close_expired_events_task(db: AsyncSession) -> int:
 
     for event in events_to_close:
         event.status = EventStatus.CLOSED
+        event.checkout_open = True  # auto-open checkout on close
         event.version += 1
 
     if events_to_close:

@@ -10,6 +10,8 @@ from app.api.v1 import (
     admin_donations,
     admin_event_dashboard,
     admin_notifications,
+    admin_npo_credentials,
+    admin_payments,
     admin_quick_entry,
     admin_registration_import,
     admin_seating,
@@ -36,13 +38,17 @@ from app.api.v1 import (
     notification_preferences,
     notifications,
     npos,
+    payments,
     promo_codes,
     public_testimonials,
+    public_tickets,
     push_subscriptions,
     registrations,
     sales_tracking,
     search,
     sponsors,
+    ticket_assignments,
+    ticket_invitations,
     ticket_options,
     ticket_packages,
     users,
@@ -105,5 +111,13 @@ api_router.include_router(sales_tracking.router, prefix="/admin", tags=["admin-t
 api_router.include_router(admin.router, tags=["admin"])
 api_router.include_router(event_preview.admin_router, tags=["admin-preview"])
 api_router.include_router(event_preview.preview_router, tags=["event-preview"])
+# Feature 033: Payment processing
+api_router.include_router(payments.router, tags=["payments"])
+api_router.include_router(admin_payments.router, tags=["admin-payments"])
+api_router.include_router(admin_npo_credentials.router, tags=["admin-npo-credentials"])
+# Feature 036: Ticket purchasing
+api_router.include_router(public_tickets.router, tags=["ticket-purchasing"])
+api_router.include_router(ticket_assignments.router, tags=["ticket-purchasing"])
+api_router.include_router(ticket_invitations.router, tags=["ticket-invitations"])
 
 __all__ = ["api_router"]

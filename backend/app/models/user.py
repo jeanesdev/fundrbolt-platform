@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from app.models.event_registration import EventRegistration
     from app.models.notification import Notification
     from app.models.notification_preference import NotificationPreference
+    from app.models.payment_profile import PaymentProfile
+    from app.models.payment_transaction import PaymentTransaction
     from app.models.push_subscription import PushSubscription
     from app.models.registration_guest import RegistrationGuest
     from app.models.role import Role
@@ -183,6 +185,17 @@ class User(Base, UUIDMixin, TimestampMixin):
         "PushSubscription",
         back_populates="user",
         cascade="all, delete-orphan",
+    )
+    # Feature 033: Payment processing relationships
+    payment_profiles: Mapped[list["PaymentProfile"]] = relationship(
+        "PaymentProfile",
+        back_populates="user",
+        foreign_keys="PaymentProfile.user_id",
+    )
+    payment_transactions: Mapped[list["PaymentTransaction"]] = relationship(
+        "PaymentTransaction",
+        back_populates="user",
+        foreign_keys="PaymentTransaction.user_id",
     )
 
     # Check constraints

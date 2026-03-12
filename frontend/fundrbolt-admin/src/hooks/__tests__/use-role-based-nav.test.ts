@@ -78,7 +78,7 @@ describe('useRoleBasedNav', () => {
 
     const { result } = renderHook(() => useRoleBasedNav())
 
-    expect(result.current.eventNavItems).toHaveLength(15)
+    expect(result.current.eventNavItems).toHaveLength(16)
     expect(
       result.current.eventNavItems.some(
         (item) => item.href === '/events/gala-night/quick-entry'

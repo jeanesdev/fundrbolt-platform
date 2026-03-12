@@ -9,6 +9,7 @@ export interface Attendee {
   id: string
   registration_id: string
   attendee_type: 'registrant' | 'guest'
+  user_id: string | null
   name: string
   email: string
   phone: string
@@ -21,6 +22,7 @@ export interface Attendee {
   is_table_captain?: boolean
   checked_in?: boolean
   check_in_time?: string | null
+  has_payment_profile?: boolean
   status: string
   created_at: string
 }

@@ -16,6 +16,9 @@ if TYPE_CHECKING:
     from app.models.npo_application import NPOApplication
     from app.models.npo_branding import NPOBranding
     from app.models.npo_member import NPOMember
+    from app.models.payment_gateway_credential import PaymentGatewayCredential
+    from app.models.payment_profile import PaymentProfile
+    from app.models.payment_transaction import PaymentTransaction
     from app.models.user import User
 
 
@@ -132,6 +135,22 @@ class NPO(Base, UUIDMixin, TimestampMixin):
         "Event",
         back_populates="npo",
         cascade="all, delete-orphan",
+    )
+
+    # Feature 033: Payment processing relationships
+    payment_gateway_credential: Mapped["PaymentGatewayCredential | None"] = relationship(
+        "PaymentGatewayCredential",
+        back_populates="npo",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    payment_profiles: Mapped[list["PaymentProfile"]] = relationship(
+        "PaymentProfile",
+        back_populates="npo",
+    )
+    payment_transactions: Mapped[list["PaymentTransaction"]] = relationship(
+        "PaymentTransaction",
+        back_populates="npo",
     )
 
     def __repr__(self) -> str:

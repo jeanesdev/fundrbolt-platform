@@ -102,6 +102,17 @@ class Settings(BaseSettings):
         "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174"
     )
 
+    # Payment Processing
+    payment_gateway_backend: str = "stub"
+    credential_encryption_key: str | None = None
+    payment_processing_fee_pct: float = 0.029
+    payment_processing_fee_flat_cents: int = 30
+    payment_webhook_timeout_minutes: int = 5
+    payment_pending_expiry_hours: int = 24
+    receipts_blob_container: str = "payment-receipts"
+    stub_hpf_base_url: str = "http://localhost:8000"
+    celery_broker_url: str = "redis://localhost:6379/1"
+
     def get_cors_origins_list(self) -> list[str]:
         """Parse CORS origins from comma-separated string."""
         parsed_origins = [
