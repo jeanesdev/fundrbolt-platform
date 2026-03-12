@@ -183,3 +183,34 @@ export interface VoidResponse {
   parent_transaction_id: string
   status: string
 }
+
+// ── Admin HPF session + profile (check-in card entry) ─────────────────────────
+
+export interface AdminPaymentSessionRequest {
+  event_id: string | null
+  npo_id?: string | null
+  line_items: []
+  save_profile: boolean
+  return_url: string
+  idempotency_key: string
+}
+
+export interface AdminPaymentSessionResponse {
+  transaction_id: string
+  session_token: string
+  hpf_url: string
+  expires_at: string
+  amount_total: string
+}
+
+export interface AdminPaymentProfileCreate {
+  npo_id: string
+  gateway_profile_id: string
+  card_last4: string
+  card_brand: string
+  card_expiry_month: number
+  card_expiry_year: number
+  billing_name?: string | null
+  billing_zip?: string | null
+  is_default?: boolean
+}

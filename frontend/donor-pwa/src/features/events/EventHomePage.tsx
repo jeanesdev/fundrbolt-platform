@@ -12,8 +12,10 @@
 import {
   AuctionGallery,
   EventDetails,
+  EventSwitcher,
   MySeatingSection,
 } from '@/components/event-home'
+import { AuctionCountdownTimer } from '@/components/event-home/AuctionCountdownTimer'
 import { AuctionItemDetailModal } from '@/components/event-home/AuctionItemDetailModal'
 import {
   BottomTabNav,
@@ -38,13 +40,13 @@ import { useTabSwipe } from '@/hooks/use-tab-swipe'
 import apiClient from '@/lib/axios'
 import auctionItemService from '@/services/auctionItemService'
 import {
-  getMySeatingInfo,
-  type SeatingInfoResponse,
-} from '@/services/seating-service'
-import {
   getEventGuests,
   getMyActivity,
 } from '@/services/donor-activity-service'
+import {
+  getMySeatingInfo,
+  type SeatingInfoResponse,
+} from '@/services/seating-service'
 import watchListService from '@/services/watchlistService'
 import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { useEventContextStore } from '@/stores/event-context-store'
@@ -78,7 +80,7 @@ export function EventHomePage() {
     useEventStore()
   const { applyBranding, clearBranding } = useEventBranding()
   const { setSelectedEvent } = useEventContextStore()
-  const { } = useEventContext()
+  const { availableEvents } = useEventContext()
   const spoofedUserId = useDebugSpoofStore((state) => state.spoofedUser?.id)
   const watchlistScope = spoofedUserId ?? 'self'
   const timeBaseRealMs = useDebugSpoofStore((state) => state.timeBaseRealMs)
@@ -406,6 +408,42 @@ export function EventHomePage() {
     setGuestProfileOpen(true)
   }, [])
 
+  // Events for switcher
+  const eventsForSwitcher = useMemo((): RegisteredEventWithBranding[] => {
+    return availableEvents.map((event) => {
+      const eventDate = event.event_date ? new Date(event.event_date) : null
+      const now = getEffectiveNow()
+      const is_past = eventDate ? eventDate <= now : false
+      const is_upcoming =
+        eventDate && !is_past
+          ? eventDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+          : false
+      return {
+        id: event.id,
+        name: event.name,
+        slug: event.slug,
+        event_datetime: event.event_date || '',
+        timezone: '',
+        is_past,
+        is_upcoming,
+        thumbnail_url: event.logo_url || null,
+        primary_color: '#3B82F6',
+        secondary_color: '#9333EA',
+        background_color: '#FFFFFF',
+        accent_color: '#3B82F6',
+        npo_name: event.npo_name || 'Organization',
+        npo_logo_url: null,
+      }
+    })
+  }, [availableEvents, timeBaseRealMs, timeBaseSpoofMs])
+
+  const handleEventSelect = useCallback(
+    (event: RegisteredEventWithBranding) => {
+      navigate({ to: '/events/$eventSlug', params: { eventSlug: event.slug } })
+    },
+    [navigate]
+  )
+
   // Current event for switcher
   const currentEventForSwitcher =
     useMemo((): RegisteredEventWithBranding | null => {
@@ -637,14 +675,14 @@ export function EventHomePage() {
           (
             previous:
               | {
-                  watch_list?: Array<{
-                    id: string
-                    user_id: string
-                    auction_item_id: string
-                    added_at: string
-                  }>
-                  total?: number
-                }
+                watch_list?: Array<{
+                  id: string
+                  user_id: string
+                  auction_item_id: string
+                  added_at: string
+                }>
+                total?: number
+              }
               | undefined
           ) => {
             const existing = previous?.watch_list ?? []
@@ -739,14 +777,14 @@ export function EventHomePage() {
             (
               previous:
                 | {
-                    watch_list?: Array<{
-                      id: string
-                      user_id: string
-                      auction_item_id: string
-                      added_at: string
-                    }>
-                    total?: number
-                  }
+                  watch_list?: Array<{
+                    id: string
+                    user_id: string
+                    auction_item_id: string
+                    added_at: string
+                  }>
+                  total?: number
+                }
                 | undefined
             ) => {
               const existing = previous?.watch_list ?? []
@@ -1076,7 +1114,17 @@ export function EventHomePage() {
       status={eventStatus}
       onAddToCalendar={generateICSFile}
       venueMapLink={venueMapLink}
-      switcherSlot={undefined}
+      switcherSlot={
+        !isPreviewMode &&
+          currentEventForSwitcher &&
+          eventsForSwitcher.length > 0 ? (
+          <EventSwitcher
+            currentEvent={currentEventForSwitcher}
+            events={eventsForSwitcher}
+            onEventSelect={handleEventSelect}
+          />
+        ) : undefined
+      }
       profileSlot={<ProfileDropdown />}
     />
   )
@@ -1187,6 +1235,15 @@ export function EventHomePage() {
             >
               Auction Items
             </h2>
+            {!!(currentEvent as unknown as Record<string, unknown>)
+              .auction_close_datetime && (
+                <AuctionCountdownTimer
+                  closeDateTime={
+                    (currentEvent as unknown as Record<string, unknown>)
+                      .auction_close_datetime as string
+                  }
+                />
+              )}
           </div>
           <div className='flex items-center gap-2'>
             {eventStatus === 'live' && (

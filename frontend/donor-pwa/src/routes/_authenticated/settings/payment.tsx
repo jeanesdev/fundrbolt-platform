@@ -38,13 +38,16 @@ import {
   listPaymentProfiles,
 } from '@/lib/api/payments'
 import { useAuthStore } from '@/stores/auth-store'
+import { useEventStore } from '@/stores/event-store'
 import type { HpfCompletePayload, PaymentProfile } from '@/types/payment'
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 function SettingsPayment() {
   const user = useAuthStore((s) => s.user)
-  const npoId = user?.npo_id ?? null
+  const currentEvent = useEventStore((s) => s.currentEvent)
+  // Donors don't have a fixed npo_id — derive it from the current event instead
+  const npoId = user?.npo_id ?? currentEvent?.npo_id ?? null
 
   const [profiles, setProfiles] = useState<PaymentProfile[]>([])
   const [isLoading, setIsLoading] = useState(true)

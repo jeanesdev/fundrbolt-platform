@@ -11,6 +11,10 @@ import asyncio
 import logging
 import uuid
 from datetime import UTC
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import celery
 
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -33,7 +37,7 @@ logger = logging.getLogger(__name__)
     max_retries=3,
     default_retry_delay=60,
 )  # type: ignore[misc]
-def generate_and_send_receipt(self: celery_app.Task, transaction_id: str) -> None:
+def generate_and_send_receipt(self: celery.Task, transaction_id: str) -> None:
     """Generate a PDF receipt for ``transaction_id`` and email it to the donor.
 
     Retries up to 3 times on failure with exponential backoff.
