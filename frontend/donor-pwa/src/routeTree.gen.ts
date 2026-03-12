@@ -16,6 +16,7 @@ import { Route as CheckinIndexRouteImport } from './routes/checkin.index'
 import { Route as PreviewEventIdRouteImport } from './routes/preview.$eventId'
 import { Route as InvitationsAcceptRouteImport } from './routes/invitations/accept'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
+import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as AuthenticatedRegistrationsRouteImport } from './routes/_authenticated/registrations'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
@@ -92,6 +93,11 @@ const EventsSlugRoute = EventsSlugRouteImport.update({
   id: '/events/$slug',
   path: '/events/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRegistrationsRoute =
   AuthenticatedRegistrationsRouteImport.update({
@@ -346,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/503': typeof errors503Route
   '/home': typeof AuthenticatedHomeRoute
   '/registrations': typeof AuthenticatedRegistrationsRoute
+  '/tickets': typeof AuthenticatedTicketsRoute
   '/events/$slug': typeof EventsSlugRouteWithChildren
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/preview/$eventId': typeof PreviewEventIdRoute
@@ -395,6 +402,7 @@ export interface FileRoutesByTo {
   '/503': typeof errors503Route
   '/home': typeof AuthenticatedHomeRoute
   '/registrations': typeof AuthenticatedRegistrationsRoute
+  '/tickets': typeof AuthenticatedTicketsRoute
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/preview/$eventId': typeof PreviewEventIdRoute
   '/checkin': typeof CheckinIndexRoute
@@ -445,6 +453,7 @@ export interface FileRoutesById {
   '/(errors)/503': typeof errors503Route
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/registrations': typeof AuthenticatedRegistrationsRoute
+  '/_authenticated/tickets': typeof AuthenticatedTicketsRoute
   '/events/$slug': typeof EventsSlugRouteWithChildren
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/preview/$eventId': typeof PreviewEventIdRoute
@@ -497,6 +506,7 @@ export interface FileRouteTypes {
     | '/503'
     | '/home'
     | '/registrations'
+    | '/tickets'
     | '/events/$slug'
     | '/invitations/accept'
     | '/preview/$eventId'
@@ -546,6 +556,7 @@ export interface FileRouteTypes {
     | '/503'
     | '/home'
     | '/registrations'
+    | '/tickets'
     | '/invitations/accept'
     | '/preview/$eventId'
     | '/checkin'
@@ -595,6 +606,7 @@ export interface FileRouteTypes {
     | '/(errors)/503'
     | '/_authenticated/home'
     | '/_authenticated/registrations'
+    | '/_authenticated/tickets'
     | '/events/$slug'
     | '/invitations/accept'
     | '/preview/$eventId'
@@ -699,6 +711,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/events/$slug'
       preLoaderRoute: typeof EventsSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/tickets': {
+      id: '/_authenticated/tickets'
+      path: '/tickets'
+      fullPath: '/tickets'
+      preLoaderRoute: typeof AuthenticatedTicketsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/registrations': {
       id: '/_authenticated/registrations'
@@ -1051,6 +1070,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedRegistrationsRoute: typeof AuthenticatedRegistrationsRoute
+  AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRoute
   AuthenticatedEventsEventSlugRouteRoute: typeof AuthenticatedEventsEventSlugRouteRouteWithChildren
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedEventsCreateRoute: typeof AuthenticatedEventsCreateRoute
@@ -1065,6 +1085,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedRegistrationsRoute: AuthenticatedRegistrationsRoute,
+  AuthenticatedTicketsRoute: AuthenticatedTicketsRoute,
   AuthenticatedEventsEventSlugRouteRoute:
     AuthenticatedEventsEventSlugRouteRouteWithChildren,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,

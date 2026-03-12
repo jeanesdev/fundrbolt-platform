@@ -11,6 +11,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     Numeric,
     String,
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
     from app.models.event import Event
     from app.models.event_registration import EventRegistration
     from app.models.payment_transaction import PaymentTransaction
+    from app.models.sponsor import Sponsor
     from app.models.user import User
 
 
@@ -46,6 +48,15 @@ class DiscountType(str, enum.Enum):
 
     PERCENTAGE = "percentage"
     FIXED_AMOUNT = "fixed_amount"
+
+
+class AssignmentStatus(str, enum.Enum):
+    """Status of a ticket assignment to a guest."""
+
+    ASSIGNED = "assigned"
+    INVITED = "invited"
+    REGISTERED = "registered"
+    CANCELLED = "cancelled"
 
 
 class PaymentStatus(str, enum.Enum):
@@ -463,6 +474,14 @@ class TicketPurchase(Base, UUIDMixin):
         index=True,
     )
 
+    # Feature 036: Link sponsorship purchase to sponsor
+    sponsorship_sponsor_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("sponsors.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
     # Import Fields (Feature 021)
     external_sale_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
     purchaser_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
@@ -506,6 +525,7 @@ class TicketPurchase(Base, UUIDMixin):
         "PaymentTransaction",
         foreign_keys=[payment_transaction_id],
     )
+    sponsorship_sponsor: Mapped["Sponsor | None"] = relationship("Sponsor")
 
     # Constraints
     __table_args__ = (
@@ -539,6 +559,13 @@ class AssignedTicket(Base, UUIDMixin):
     ticket_number: Mapped[int] = mapped_column(Integer, nullable=False)
     qr_code: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
 
+    # Feature 036: Assignment tracking
+    assignment_status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        server_default="unassigned",
+    )
+
     # Timestamps
     assigned_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -550,9 +577,226 @@ class AssignedTicket(Base, UUIDMixin):
     ticket_purchase: Mapped["TicketPurchase"] = relationship(
         "TicketPurchase", back_populates="assigned_tickets"
     )
+    assignment: Mapped["TicketAssignment | None"] = relationship(
+        "TicketAssignment",
+        back_populates="assigned_ticket",
+        uselist=False,
+    )
+
+    # Constraints
+    __table_args__ = (
+        CheckConstraint(
+            "assignment_status IN ('unassigned', 'assigned', 'registered')",
+            name="check_assigned_ticket_assignment_status",
+        ),
+    )
 
     def __repr__(self) -> str:
         return f"<AssignedTicket(id={self.id}, number={self.ticket_number}, qr={self.qr_code})>"
+
+
+class TicketAssignment(Base, UUIDMixin):
+    """Assignment of an individual ticket to a specific guest.
+
+    Business Rules:
+    - Each assigned ticket can have at most one assignment (1:1)
+    - Guest can be invited via email or self-assigned by purchaser
+    - Status tracks lifecycle: assigned → invited → registered or cancelled
+    - Cancelled assignments can specify who cancelled (guest, coordinator, purchaser)
+    """
+
+    __tablename__ = "ticket_assignments"
+
+    # Foreign Keys
+    assigned_ticket_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("assigned_tickets.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    ticket_purchase_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ticket_purchases.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    event_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("events.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    assigned_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    # Guest Details
+    guest_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    guest_email: Mapped[str] = mapped_column(String(254), nullable=False)
+
+    # Linked User & Registration
+    assignee_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    registration_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("event_registrations.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # Status
+    status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        server_default="assigned",
+    )
+
+    # Invitation Tracking
+    invitation_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    invitation_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default="0",
+    )
+
+    # Lifecycle Timestamps
+    registered_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    cancelled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    cancelled_by: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
+    # Self-assignment Flag
+    is_self_assignment: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default="false",
+    )
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    # Relationships
+    assigned_ticket: Mapped["AssignedTicket"] = relationship(
+        "AssignedTicket",
+        back_populates="assignment",
+    )
+    ticket_purchase: Mapped["TicketPurchase"] = relationship("TicketPurchase")
+    event: Mapped["Event"] = relationship("Event")
+    assigned_by: Mapped["User | None"] = relationship(
+        "User",
+        foreign_keys=[assigned_by_user_id],
+    )
+    assignee: Mapped["User | None"] = relationship(
+        "User",
+        foreign_keys=[assignee_user_id],
+    )
+    registration: Mapped["EventRegistration | None"] = relationship("EventRegistration")
+    invitations: Mapped[list["TicketInvitation"]] = relationship(
+        "TicketInvitation",
+        back_populates="assignment",
+        cascade="all, delete-orphan",
+    )
+
+    # Constraints
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('assigned', 'invited', 'registered', 'cancelled')",
+            name="check_ticket_assignment_status",
+        ),
+        CheckConstraint(
+            "cancelled_by IS NULL OR cancelled_by IN ('guest', 'coordinator', 'purchaser')",
+            name="check_ticket_assignment_cancelled_by",
+        ),
+        Index("ix_ticket_assignments_event_status", "event_id", "status"),
+        Index("ix_ticket_assignments_guest_email_event", "guest_email", "event_id"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<TicketAssignment(id={self.id}, guest={self.guest_name}, status={self.status})>"
+
+
+class TicketInvitation(Base, UUIDMixin):
+    """Record of an invitation email sent for a ticket assignment.
+
+    Business Rules:
+    - Each assignment can have multiple invitations (resends)
+    - invitation_token is unique and used for guest registration link
+    - Token has an expiry datetime for security
+    - Tracks open/registration for email analytics
+    """
+
+    __tablename__ = "ticket_invitations"
+
+    # Foreign Keys
+    assignment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ticket_assignments.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    # Invitation Details
+    email_address: Mapped[str] = mapped_column(String(254), nullable=False)
+    invitation_token: Mapped[str] = mapped_column(String(500), nullable=False, unique=True)
+    token_expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    # Tracking Timestamps
+    sent_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    opened_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    registered_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    # Relationships
+    assignment: Mapped["TicketAssignment"] = relationship(
+        "TicketAssignment",
+        back_populates="invitations",
+    )
+
+    def __repr__(self) -> str:
+        return f"<TicketInvitation(id={self.id}, email={self.email_address})>"
 
 
 class TicketAuditLog(Base, UUIDMixin):
@@ -599,6 +843,7 @@ class TicketAuditLog(Base, UUIDMixin):
 
 
 __all__ = [
+    "AssignmentStatus",
     "OptionType",
     "DiscountType",
     "PaymentStatus",
@@ -606,6 +851,10 @@ __all__ = [
     "CustomTicketOption",
     "OptionResponse",
     "PromoCode",
+    "PromoCodeApplication",
     "TicketPurchase",
+    "AssignedTicket",
+    "TicketAssignment",
+    "TicketInvitation",
     "TicketAuditLog",
 ]

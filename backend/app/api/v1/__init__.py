@@ -38,10 +38,13 @@ from app.api.v1 import (
     payments,
     promo_codes,
     public_testimonials,
+    public_tickets,
     registrations,
     sales_tracking,
     search,
     sponsors,
+    ticket_assignments,
+    ticket_invitations,
     ticket_options,
     ticket_packages,
     users,
@@ -104,5 +107,9 @@ api_router.include_router(event_preview.preview_router, tags=["event-preview"])
 api_router.include_router(payments.router, tags=["payments"])
 api_router.include_router(admin_payments.router, tags=["admin-payments"])
 api_router.include_router(admin_npo_credentials.router, tags=["admin-npo-credentials"])
+# Feature 036: Ticket purchasing
+api_router.include_router(public_tickets.router, tags=["ticket-purchasing"])
+api_router.include_router(ticket_assignments.router, tags=["ticket-purchasing"])
+api_router.include_router(ticket_invitations.router, tags=["ticket-invitations"])
 
 __all__ = ["api_router"]

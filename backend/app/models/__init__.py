@@ -60,6 +60,7 @@ from app.models.social_identity_link import SocialIdentityLink
 from app.models.sponsor import Sponsor
 from app.models.ticket_management import (
     AssignedTicket,
+    AssignmentStatus,
     CustomTicketOption,
     DiscountType,
     OptionResponse,
@@ -67,7 +68,9 @@ from app.models.ticket_management import (
     PaymentStatus,
     PromoCode,
     PromoCodeApplication,
+    TicketAssignment,
     TicketAuditLog,
+    TicketInvitation,
     TicketPackage,
     TicketPurchase,
 )
@@ -89,6 +92,7 @@ from app.models.watch_list_entry import WatchListEntry
 
 __all__ = [
     "AssignedTicket",
+    "AssignmentStatus",
     "AuctionBid",
     "AuctionItem",
     "AuditLog",
@@ -154,6 +158,8 @@ __all__ = [
     "AdminStepUpChallenge",
     "Sponsor",
     "TicketAuditLog",
+    "TicketAssignment",
+    "TicketInvitation",
     "TicketPackage",
     "TicketPurchase",
     "TimestampMixin",
