@@ -426,3 +426,22 @@
 [data-slot='alert-dialog-content'][data-state='closed'] {
   animation: modal-exit-to-bottom 0.38s ease-in both !important;
 }
+
+/* T063: Notification animations */
+@keyframes outbid-flash {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgb(251 191 36 / 0.3); }
+}
+
+@keyframes bid-confirmed-pulse {
+  0%, 100% { border-color: rgb(34 197 94 / 0.4); }
+  50% { border-color: rgb(34 197 94 / 1); }
+}
+
+.animate-outbid-flash {
+  animation: outbid-flash 1s ease-in-out;
+}
+
+.animate-bid-confirmed-pulse {
+  animation: bid-confirmed-pulse 0.5s ease-in-out;
+}

@@ -709,7 +709,7 @@ async def _send_sms_notification_async(notification_id: str) -> bool:
 
             # Get user phone
             user_result = await db.execute(
-                select(User.phone_number).where(User.id == notification.user_id)
+                select(User.phone).where(User.id == notification.user_id)
             )
             phone = user_result.scalar_one_or_none()
             if not phone:

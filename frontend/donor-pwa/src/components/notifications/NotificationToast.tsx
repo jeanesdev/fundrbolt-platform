@@ -3,10 +3,13 @@
  *
  * Uses Sonner's toast.custom() for display.
  * Styled per notification type (outbid → amber, item_won → green, default → neutral).
+ * T064: Supports animation_type in data payload (confetti, flash, pulse).
  */
+import { useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import type { NotificationData } from '@/services/notification-service'
 import { Gavel, Trophy, Bell } from 'lucide-react'
+import { ConfettiAnimation } from './ConfettiAnimation'
 
 function getToastStyle(type: string) {
   switch (type) {
@@ -30,6 +33,17 @@ function getToastStyle(type: string) {
   }
 }
 
+function getAnimationClass(animationType: string | undefined): string {
+  switch (animationType) {
+    case 'flash':
+      return 'animate-outbid-flash'
+    case 'pulse':
+      return 'animate-bid-confirmed-pulse'
+    default:
+      return ''
+  }
+}
+
 interface NotificationToastProps {
   notification: NotificationData
   onDismiss: () => void
@@ -41,8 +55,21 @@ export function NotificationToast({
 }: NotificationToastProps) {
   const navigate = useNavigate()
   const { className, icon } = getToastStyle(notification.notification_type)
+  const animationType = notification.data?.animation_type as string | undefined
+  const animationClass = getAnimationClass(animationType)
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   const deepLink = notification.data?.deep_link as string | undefined
+
+  // Haptic feedback for outbid and item_won notifications
+  useEffect(() => {
+    const type = notification.notification_type
+    if (type !== 'outbid' && type !== 'item_won') return
+    if (prefersReducedMotion) return
+    navigator.vibrate?.(200)
+  }, [notification.notification_type, prefersReducedMotion])
 
   const handleClick = () => {
     onDismiss()
@@ -52,20 +79,25 @@ export function NotificationToast({
   }
 
   return (
-    <button
-      type='button'
-      onClick={handleClick}
-      className={`flex w-full items-start gap-3 rounded-lg border p-4 shadow-lg transition-colors hover:opacity-90 ${className}`}
-    >
-      <div className='mt-0.5 flex-shrink-0'>{icon}</div>
-      <div className='min-w-0 flex-1 text-left'>
-        <p className='text-foreground text-sm font-semibold'>
-          {notification.title}
-        </p>
-        <p className='text-muted-foreground mt-0.5 line-clamp-2 text-xs'>
-          {notification.body}
-        </p>
-      </div>
-    </button>
+    <>
+      {animationType === 'confetti' && !prefersReducedMotion && (
+        <ConfettiAnimation />
+      )}
+      <button
+        type='button'
+        onClick={handleClick}
+        className={`flex w-full items-start gap-3 rounded-lg border p-4 shadow-lg transition-colors hover:opacity-90 ${className} ${animationClass}`}
+      >
+        <div className='mt-0.5 flex-shrink-0'>{icon}</div>
+        <div className='min-w-0 flex-1 text-left'>
+          <p className='text-foreground text-sm font-semibold'>
+            {notification.title}
+          </p>
+          <p className='text-muted-foreground mt-0.5 line-clamp-2 text-xs'>
+            {notification.body}
+          </p>
+        </div>
+      </button>
+    </>
   )
 }

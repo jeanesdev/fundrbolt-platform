@@ -159,6 +159,25 @@ class PushNotificationService:
             )
             return False
 
+        # T067: Skip push delivery if notification was triggered in spoof context
+        if notification.data and notification.data.get("_spoof_context"):
+            logger.info(
+                "Skipping push for spoof context notification",
+                extra={"notification_id": str(notification_id)},
+            )
+            # Mark as skipped
+            delivery_stmt = select(NotificationDeliveryStatus).where(
+                NotificationDeliveryStatus.notification_id == notification_id,
+                NotificationDeliveryStatus.channel == DeliveryChannelEnum.PUSH,
+            )
+            delivery_result = await db.execute(delivery_stmt)
+            delivery = delivery_result.scalar_one_or_none()
+            if delivery:
+                delivery.status = DeliveryStatusEnum.SKIPPED
+                delivery.failure_reason = "spoof_context"
+                await db.commit()
+            return False
+
         # Get active subscriptions for user
         sub_stmt = select(PushSubscription).where(
             PushSubscription.user_id == notification.user_id,

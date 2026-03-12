@@ -123,6 +123,12 @@ app = FastAPI(
             "description": "Public NPO onboarding wizard (no auth required)",
         },
         {"name": "admin-seating", "description": "Admin seating management and configuration"},
+        {"name": "notifications", "description": "Donor notification management and delivery"},
+        {"name": "push-notifications", "description": "Web Push subscription management"},
+        {
+            "name": "admin-notifications",
+            "description": "Admin custom notification campaigns",
+        },
         {"name": "health", "description": "Health check and monitoring"},
         {"name": "metrics", "description": "Prometheus metrics for monitoring"},
         {"name": "root", "description": "Root API information"},

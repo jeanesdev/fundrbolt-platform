@@ -304,6 +304,11 @@ const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
     path: 'quick-entry',
     icon: 'Zap',
   },
+  {
+    title: 'Notifications',
+    path: 'notifications',
+    icon: 'Bell',
+  },
 ]
 
 /** Helper to look up a section by its path. Throws at startup if a path is missing. */
@@ -335,6 +340,7 @@ const EVENT_NAV_GROUPS: Array<{
       sectionByPath('tickets/sales'),
       sectionByPath('tickets/promos'),
       sectionByPath('sponsors'),
+      sectionByPath('notifications'),
     ],
   },
   {
