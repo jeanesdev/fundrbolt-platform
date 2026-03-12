@@ -9,6 +9,7 @@ from app.api.v1 import (
     admin_auction_item_import,
     admin_donations,
     admin_event_dashboard,
+    admin_notifications,
     admin_quick_entry,
     admin_registration_import,
     admin_seating,
@@ -32,6 +33,7 @@ from app.api.v1 import (
     invitations,
     legal_documents,
     members,
+    notification_preferences,
     notifications,
     npos,
     promo_codes,
@@ -94,6 +96,8 @@ api_router.include_router(admin_quick_entry.router)
 api_router.include_router(donor_seating.router, tags=["donor-seating"])
 api_router.include_router(notifications.router, tags=["notifications"])
 api_router.include_router(push_subscriptions.router, tags=["push-notifications"])
+api_router.include_router(notification_preferences.router, tags=["notifications"])
+api_router.include_router(admin_notifications.router, tags=["admin-notifications"])
 api_router.include_router(ticket_packages.router, prefix="/admin", tags=["admin-tickets"])
 api_router.include_router(ticket_options.router, tags=["admin-tickets"])
 api_router.include_router(promo_codes.router, tags=["admin-tickets"])

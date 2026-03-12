@@ -242,6 +242,17 @@ class EventService:
         event.status = EventStatus.CLOSED
         event.updated_by = current_user.id
 
+        # T052: Dispatch checkout reminders when event closes
+        try:
+            from app.services.notification_scheduler import schedule_checkout_reminders
+
+            schedule_checkout_reminders(str(event_id))
+        except Exception:
+            logger.warning(
+                "Failed to schedule checkout reminders on event close",
+                extra={"event_id": str(event_id)},
+            )
+
         await db.commit()
 
         # Re-query to get fresh data with all relationships loaded

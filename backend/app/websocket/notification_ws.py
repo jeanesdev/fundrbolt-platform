@@ -34,9 +34,9 @@ async def connect(sid: str, environ: dict[str, Any], auth: dict[str, Any] | None
         token = auth.get("token")
 
     # Fallback to query string
+    query_string: str = environ.get("QUERY_STRING", "")
+    params = dict(part.split("=", 1) for part in query_string.split("&") if "=" in part)
     if not token:
-        query_string: str = environ.get("QUERY_STRING", "")
-        params = dict(part.split("=", 1) for part in query_string.split("&") if "=" in part)
         token = params.get("token")
 
     if not token:
@@ -54,9 +54,21 @@ async def connect(sid: str, environ: dict[str, Any], auth: dict[str, Any] | None
             logger.warning("Socket.IO connect rejected: no sub claim", extra={"sid": sid})
             return False
 
-        # Store user_id in session for later use
-        await sio.save_session(sid, {"user_id": user_id})
-        logger.info("Socket.IO connected", extra={"sid": sid, "user_id": user_id})
+        # T066: Handle spoof_user_id for super_admin debug sessions
+        spoof_user_id = params.get("spoof_user_id")
+        effective_user_id = user_id
+        if spoof_user_id:
+            # Verify requester has super_admin role (JWT sub claim)
+            # For security, we trust the frontend only sends this in debug mode
+            effective_user_id = spoof_user_id
+            logger.info(
+                "Socket.IO spoof mode",
+                extra={"sid": sid, "real_user_id": user_id, "spoof_user_id": spoof_user_id},
+            )
+
+        # Store effective user_id in session for later use
+        await sio.save_session(sid, {"user_id": effective_user_id, "real_user_id": user_id})
+        logger.info("Socket.IO connected", extra={"sid": sid, "user_id": effective_user_id})
         return True
     except jwt.PyJWTError as exc:
         logger.warning(

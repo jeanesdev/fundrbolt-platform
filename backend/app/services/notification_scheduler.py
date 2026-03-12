@@ -219,3 +219,52 @@ async def send_auction_closing_soon(db: AsyncSession, event_id: str, minutes_rem
         },
     )
     return sent
+
+
+# ---------------------------------------------------------------------------
+# T051: Checkout reminder scheduling
+# ---------------------------------------------------------------------------
+
+
+def schedule_checkout_reminders(
+    event_id: str,
+    initial_delay_minutes: int = 0,
+    followup_interval_minutes: int = 30,
+    max_reminders: int = 3,
+) -> list[str]:
+    """Schedule checkout reminder tasks (initial + follow-ups).
+
+    Args:
+        event_id: Event UUID string
+        initial_delay_minutes: Delay before first reminder (0 = immediate)
+        followup_interval_minutes: Interval between follow-up reminders
+        max_reminders: Maximum number of reminders (default 3)
+
+    Returns:
+        List of Celery task IDs for tracking.
+    """
+    from app.tasks.notification_tasks import send_checkout_reminders_task
+
+    now = datetime.now(UTC)
+    task_ids: list[str] = []
+
+    for i in range(max_reminders):
+        delay = initial_delay_minutes + (i * followup_interval_minutes)
+        eta = now + timedelta(minutes=delay)
+
+        result = send_checkout_reminders_task.apply_async(
+            args=[event_id],
+            eta=eta,
+        )
+        task_ids.append(result.id)
+
+    logger.info(
+        "Scheduled checkout reminders",
+        extra={
+            "event_id": event_id,
+            "count": len(task_ids),
+            "initial_delay_minutes": initial_delay_minutes,
+            "followup_interval_minutes": followup_interval_minutes,
+        },
+    )
+    return task_ids

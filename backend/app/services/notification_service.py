@@ -149,6 +149,30 @@ class NotificationService:
                     extra={"notification_id": str(notification.id)},
                 )
 
+        # T074: Dispatch email notification task if EMAIL channel is enabled
+        if DeliveryChannelEnum.EMAIL in channels:
+            try:
+                from app.tasks.notification_tasks import send_email_notification_task
+
+                send_email_notification_task.delay(str(notification.id))
+            except Exception:
+                logger.warning(
+                    "Failed to dispatch email notification task",
+                    extra={"notification_id": str(notification.id)},
+                )
+
+        # T074: Dispatch SMS notification task if SMS channel is enabled
+        if DeliveryChannelEnum.SMS in channels:
+            try:
+                from app.tasks.notification_tasks import send_sms_notification_task
+
+                send_sms_notification_task.delay(str(notification.id))
+            except Exception:
+                logger.warning(
+                    "Failed to dispatch SMS notification task",
+                    extra={"notification_id": str(notification.id)},
+                )
+
         logger.info(
             "Notification created",
             extra={
