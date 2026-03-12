@@ -4,6 +4,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import socketio as socketio_lib
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,6 +34,7 @@ from app.middleware.metrics import MetricsMiddleware
 from app.middleware.powered_by import PoweredByMiddleware
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.slug_validator import SlugValidationMiddleware
+from app.websocket.notification_ws import sio
 
 # Setup logging
 setup_logging()
@@ -189,3 +191,7 @@ async def root() -> JSONResponse:
             "health": "/health",
         }
     )
+
+
+# Wrap FastAPI with Socket.IO ASGI app for WebSocket support
+combined_app = socketio_lib.ASGIApp(sio, other_app=app)
