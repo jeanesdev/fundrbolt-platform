@@ -2,6 +2,7 @@ import { CountdownTimer } from '@/components/event-home/CountdownTimer'
 import { EventDetails } from '@/components/event-home/EventDetails'
 import { EventHeroSection, type EventStatus, type HeroTransitionStyle } from '@/components/event-home/EventHeroSection'
 import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
+import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EventHomePage } from '@/features/events/EventHomePage'
@@ -234,6 +235,12 @@ function RouteComponent() {
 
   return (
     <div className='min-h-screen' style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}>
+      {/* Profile menu overlay for authenticated users (not registered for this event) */}
+      {isAuthenticated && (
+        <div className='fixed top-3 right-3 z-50'>
+          <ProfileDropdown />
+        </div>
+      )}
       <EventHeroSection
         eventName={event.name}
         npoName={event.npo_name}
