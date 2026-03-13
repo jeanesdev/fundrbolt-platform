@@ -67,7 +67,27 @@ export const useEventContextStore = create<EventContextState>()(
           error: null,
         }),
 
-      setAvailableEvents: (events) => set({ availableEvents: events }),
+      setAvailableEvents: (events) => {
+        const { selectedEventSlug, selectedEventId } = get()
+        // If the persisted selection no longer matches any available event
+        // (e.g. the slug was renamed), clear the stale selection so the
+        // user isn't redirected to a 404.
+        const stillValid =
+          events.length === 0 ||
+          events.some(
+            (e) => e.slug === selectedEventSlug || e.id === selectedEventId
+          )
+        if (stillValid) {
+          set({ availableEvents: events })
+        } else {
+          set({
+            availableEvents: events,
+            selectedEventId: null,
+            selectedEventName: 'Select Event',
+            selectedEventSlug: null,
+          })
+        }
+      },
 
       setLoading: (loading) => set({ isLoading: loading }),
 
