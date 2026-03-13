@@ -6,7 +6,8 @@ import { useEventContextStore } from '@/stores/event-context-store'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
 import { colors, LogoWhiteGold } from '@fundrbolt/shared/assets'
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { Calendar, ChevronRight, Loader2, Shield } from 'lucide-react'
 
 // Unified display type — registered events plus admin-only events mapped to same shape
@@ -104,6 +105,7 @@ function EventCard({ event }: { event: DisplayEvent }) {
  */
 function DonorHomePage() {
   const user = useAuthStore((state) => state.user)
+  const navigate = useNavigate()
   // availableEvents includes both registered + admin-only events (merged by layout)
   const availableEvents = useEventContextStore((state) => state.availableEvents)
 
@@ -141,6 +143,13 @@ function DonorHomePage() {
     }))
 
   const allEvents = [...registeredEvents, ...adminOnlyEvents]
+
+  // Auto-redirect when the user only has one event
+  useEffect(() => {
+    if (!isLoading && allEvents.length === 1) {
+      void navigate({ to: '/events/$eventSlug', params: { eventSlug: allEvents[0].slug } })
+    }
+  }, [isLoading, allEvents.length, allEvents[0]?.slug, navigate])
 
   return (
     <div className='min-h-screen flex flex-col bg-gray-50'>
