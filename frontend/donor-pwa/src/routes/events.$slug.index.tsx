@@ -60,6 +60,48 @@ function RouteComponent() {
     }
   }, [event, applyBranding])
 
+  // Must be declared before any conditional returns to satisfy Rules of Hooks.
+  // Uses optional chaining on `event` since it may be undefined during loading.
+  const handleAddToCalendar = useCallback(() => {
+    if (!event?.event_datetime) return
+    const start = new Date(event.event_datetime)
+    // Default to 3-hour event duration
+    const end = new Date(start.getTime() + 3 * 60 * 60 * 1000)
+    const fmt = (d: Date) =>
+      d
+        .toISOString()
+        .replace(/[-:]/g, '')
+        .replace(/\.\d{3}/, '')
+    const locationParts = [event.venue_name, event.venue_address, event.venue_city, event.venue_state, event.venue_zip].filter(Boolean)
+    const location = locationParts.join(', ')
+    const description = (event.description ?? '').replace(/[#*_~`>\-|]/g, '').slice(0, 500)
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//FundrBolt//Event//EN',
+      'BEGIN:VEVENT',
+      `DTSTART:${fmt(start)}`,
+      `DTEND:${fmt(end)}`,
+      `SUMMARY:${event.name}`,
+      location ? `LOCATION:${location}` : '',
+      description ? `DESCRIPTION:${description}` : '',
+      `URL:${window.location.href}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]
+      .filter(Boolean)
+      .join('\r\n')
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${event.name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-')}.ics`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }, [event])
+
   // Authenticated users should stay on the canonical /events/:slug URL
   // and render the immersive donor event experience directly — but only
   // if they are registered for this event.
@@ -192,46 +234,6 @@ function RouteComponent() {
   })()
 
   const aboutEventHtml = renderMarkdownToSafeHtml(event.description ?? '')
-
-  const handleAddToCalendar = useCallback(() => {
-    if (!event.event_datetime) return
-    const start = new Date(event.event_datetime)
-    // Default to 3-hour event duration
-    const end = new Date(start.getTime() + 3 * 60 * 60 * 1000)
-    const fmt = (d: Date) =>
-      d
-        .toISOString()
-        .replace(/[-:]/g, '')
-        .replace(/\.\d{3}/, '')
-    const locationParts = [event.venue_name, event.venue_address, event.venue_city, event.venue_state, event.venue_zip].filter(Boolean)
-    const location = locationParts.join(', ')
-    const description = (event.description ?? '').replace(/[#*_~`>\-|]/g, '').slice(0, 500)
-    const ics = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//FundrBolt//Event//EN',
-      'BEGIN:VEVENT',
-      `DTSTART:${fmt(start)}`,
-      `DTEND:${fmt(end)}`,
-      `SUMMARY:${event.name}`,
-      location ? `LOCATION:${location}` : '',
-      description ? `DESCRIPTION:${description}` : '',
-      `URL:${window.location.href}`,
-      'END:VEVENT',
-      'END:VCALENDAR',
-    ]
-      .filter(Boolean)
-      .join('\r\n')
-    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${event.name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-')}.ics`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }, [event])
 
   return (
     <div className='min-h-screen' style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}>

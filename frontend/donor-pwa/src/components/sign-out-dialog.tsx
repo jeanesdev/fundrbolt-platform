@@ -14,13 +14,19 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
 
   const handleSignOut = async () => {
     await logout()
-    // Preserve current location for redirect after sign-in
-    const currentPath = location.href
-    navigate({
-      to: '/sign-in',
-      search: { redirect: currentPath },
-      replace: true,
-    })
+    const currentPath = location.pathname
+    // Don't redirect back to event pages — slugs may be stale after an admin
+    // renames an event. The home route resolves the correct slug after login.
+    const isEventPage = currentPath.startsWith('/events/')
+    if (isEventPage) {
+      navigate({ to: '/sign-in', replace: true })
+    } else {
+      navigate({
+        to: '/sign-in',
+        search: { redirect: currentPath },
+        replace: true,
+      })
+    }
   }
 
   return (
