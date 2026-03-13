@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EventHomePage } from '@/features/events/EventHomePage'
 import { useEventBranding } from '@/hooks/use-event-branding'
+import { useEventContext } from '@/hooks/use-event-context'
 import { getEventBySlug, type EventMediaUsageTag } from '@/lib/api/events'
 import { hasValidRefreshToken } from '@/lib/storage/tokens'
 import { useAuthStore } from '@/stores/auth-store'
 import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, CalendarPlus, Loader2 } from 'lucide-react'
+import { ArrowLeft, CalendarPlus, Loader2, Ticket } from 'lucide-react'
 import { useCallback, useEffect } from 'react'
 
 export const Route = createFileRoute('/events/$slug/')({
@@ -28,12 +29,14 @@ function RouteComponent() {
   const hasRefreshToken = hasValidRefreshToken()
   const { applyBranding } = useEventBranding()
   const { slug } = Route.useParams()
+  const { availableEvents, isLoading: eventsLoading } = useEventContext()
 
-  // Rest of component for unauthenticated users...
+  // Always fetch public event data — needed for both unauthenticated and
+  // the "not registered" authenticated view.
   const { data: event, isLoading, error } = useQuery({
     queryKey: ['event', slug],
     queryFn: () => getEventBySlug(slug),
-    enabled: !!slug && !isAuthenticated,
+    enabled: !!slug,
   })
 
   const { isLoading: isRestoringAuth } = useQuery({
@@ -57,9 +60,22 @@ function RouteComponent() {
   }, [event, applyBranding])
 
   // Authenticated users should stay on the canonical /events/:slug URL
-  // and render the immersive donor event experience directly.
+  // and render the immersive donor event experience directly — but only
+  // if they are registered for this event.
   if (isAuthenticated) {
-    return <EventHomePage />
+    // While registered-events list is still loading, show spinner
+    if (eventsLoading) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      )
+    }
+    const isRegistered = availableEvents.some((e) => e.slug === slug)
+    if (isRegistered) {
+      return <EventHomePage />
+    }
+    // Fall through to render the "Our Cause" page for unregistered users
   }
 
   if (isRestoringAuth) {
@@ -250,7 +266,7 @@ function RouteComponent() {
           </div>
         )}
 
-        {/* CTA — Login / Register buttons */}
+        {/* CTA — Purchase Tickets (authenticated, not registered) or Login / Register (unauthenticated) */}
         {isPast ? (
           <div
             className='rounded-2xl border p-5 text-center'
@@ -264,6 +280,34 @@ function RouteComponent() {
               style={{ color: 'var(--event-text-on-background, #374151)' }}
             >
               This event has already taken place. Thank you for your interest!
+            </p>
+          </div>
+        ) : isAuthenticated ? (
+          // Authenticated but not registered — show ticket purchase CTA
+          <div
+            className='rounded-2xl p-5 text-center space-y-3'
+            style={{
+              background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246) / 0.08) 0%, rgb(var(--event-secondary, 147, 51, 234) / 0.08) 100%)`,
+              borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
+            }}
+          >
+            <p className='text-sm font-medium' style={{ color: 'var(--event-text-on-background, #374151)' }}>
+              You are not yet registered for this event.
+            </p>
+            {/* TODO: Replace with real ticket purchase route when feature is implemented */}
+            <button
+              disabled
+              className='w-full rounded-2xl p-4 flex items-center justify-center gap-3 transition-all opacity-80 cursor-not-allowed'
+              style={{
+                background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
+              }}
+              title='Ticket purchasing coming soon'
+            >
+              <Ticket className='h-5 w-5 text-white' />
+              <span className='text-lg font-black text-white'>Purchase Tickets</span>
+            </button>
+            <p className='text-xs' style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}>
+              Ticket purchasing will be available soon.
             </p>
           </div>
         ) : (
