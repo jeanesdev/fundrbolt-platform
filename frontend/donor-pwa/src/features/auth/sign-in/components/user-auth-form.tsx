@@ -32,11 +32,13 @@ const formSchema = z.object({
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLFormElement> {
   redirectTo?: string
+  initialEmail?: string
 }
 
 export function UserAuthForm({
   className,
   redirectTo,
+  initialEmail,
   ...props
 }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
@@ -46,7 +48,7 @@ export function UserAuthForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
+      email: initialEmail || '',
       password: '',
     },
   })

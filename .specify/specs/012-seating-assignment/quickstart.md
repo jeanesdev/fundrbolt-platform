@@ -2,7 +2,7 @@
 
 **Feature**: 012-seating-assignment
 **Estimated Setup Time**: 30 minutes
-**Prerequisites**: Fundrbolt platform running locally (see root README.md)
+**Prerequisites**: FundrBolt platform running locally (see root README.md)
 
 ---
 

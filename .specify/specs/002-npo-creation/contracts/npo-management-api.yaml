@@ -4,7 +4,7 @@ info:
   description: API endpoints for Non-Profit Organization creation, management, and approval workflows
   version: 1.0.0
   contact:
-    name: Fundrbolt Platform
+    name: FundrBolt Platform
     email: support@fundrbolt.com
 
 servers:

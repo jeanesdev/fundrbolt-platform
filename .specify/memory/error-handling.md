@@ -1,4 +1,4 @@
-# Fundrbolt Error Handling
+# FundrBolt Error Handling
 
 ## Error Code Standards
 

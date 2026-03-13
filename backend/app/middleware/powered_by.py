@@ -1,4 +1,4 @@
-"""Middleware to add Fundrbolt powered-by header."""
+"""Middleware to add FundrBolt powered-by header."""
 
 from collections.abc import Callable
 from typing import Any
@@ -13,7 +13,7 @@ class PoweredByMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app: Any) -> None:
         super().__init__(app)
-        self.header_value = "Fundrbolt Platform"
+        self.header_value = "FundrBolt Platform"
 
     async def dispatch(self, request: Request, call_next: Callable[..., Any]) -> Response:
         response: Response = await call_next(request)

@@ -182,7 +182,7 @@ Test data: **5 published testimonials** available (2 donors, 2 NPO admins, 1 auc
 2. Check `<head>` section
 
 **Expected Results**:
-- [ ] `<title>` tag: "What Our Community Says | Fundrbolt"
+- [ ] `<title>` tag: "What Our Community Says | FundrBolt"
 - [ ] Meta description present
 - [ ] Open Graph tags (og:title, og:description) if configured
 - [ ] Proper semantic HTML5 structure

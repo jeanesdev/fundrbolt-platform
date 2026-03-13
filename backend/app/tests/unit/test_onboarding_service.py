@@ -6,14 +6,18 @@ Tests:
 - Cloudflare Turnstile verification mock
 - Session expiry cleanup
 - Near-duplicate NPO name check
+- Submission notifications
 """
 
+import uuid
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.npo import NPO, NPOStatus
+from app.models.npo_application import ApplicationStatus, NPOApplication
 from app.models.user import User
 from app.schemas.onboarding import CreateSessionRequest
 from app.services.onboarding_service import OnboardingService
@@ -234,6 +238,63 @@ class TestTurnstileVerification:
 
 
 # ---------------------------------------------------------------------------
+# Submit flow
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+class TestSubmitOnboarding:
+    async def test_submit_onboarding_accepts_inline_first_event_data(
+        self, db_session: AsyncSession, test_user: User
+    ) -> None:
+        """Final submit should accept first-event data without a prior step-save call."""
+        svc = _make_service(db_session)
+        session = await svc.create_session(
+            request=CreateSessionRequest(session_type="npo_onboarding"),
+            user_id=test_user.id,
+        )
+        test_user.email_verified = True
+        await db_session.commit()
+
+        await svc.update_step(
+            token=session.token,
+            step_name="npo_profile",
+            data={"npo_name": "Inline Event NPO", "ein": "12-3456789"},
+        )
+
+        scheduled_coroutines: list[object] = []
+
+        def capture_background_task(task_coro: object) -> None:
+            scheduled_coroutines.append(task_coro)
+            close = getattr(task_coro, "close", None)
+            if callable(close):
+                close()
+
+        with (
+            patch.object(svc, "verify_turnstile_token", AsyncMock(return_value=True)),
+            patch.object(svc, "_send_submission_notifications", AsyncMock()),
+            patch(
+                "app.services.onboarding_service._schedule_background_task",
+                side_effect=capture_background_task,
+            ) as schedule_task,
+        ):
+            response = await svc.submit_npo_onboarding(
+                session_token=session.token,
+                turnstile_token="turnstile-token",
+                first_event_data={
+                    "event_name": "Founders Gala",
+                    "event_date": "2026-09-12",
+                    "event_type": "GALA",
+                },
+                ip_address="127.0.0.1",
+            )
+
+        assert response.event_id is not None
+        schedule_task.assert_called_once()
+        assert len(scheduled_coroutines) == 1
+
+
+# ---------------------------------------------------------------------------
 # Session expiry cleanup
 # ---------------------------------------------------------------------------
 
@@ -264,6 +325,90 @@ class TestExpireStaleSessionsCleansup:
         # Fresh session still exists
         still_alive = await svc.get_session(fresh.token)
         assert still_alive is not None
+
+
+@pytest.mark.asyncio
+class TestSubmissionNotifications:
+    async def test_send_submission_notifications_sends_user_and_admin_emails(
+        self, db_session: AsyncSession, test_user: User
+    ) -> None:
+        """Onboarding submission should notify both the applicant and admins."""
+        svc = _make_service(db_session)
+        npo = NPO(
+            id=uuid.uuid4(),
+            name="Test NPO",
+            email=test_user.email,
+            status=NPOStatus.PENDING_APPROVAL,
+            created_by_user_id=test_user.id,
+        )
+        application = NPOApplication(
+            id=uuid.uuid4(),
+            npo_id=npo.id,
+            status=ApplicationStatus.SUBMITTED,
+        )
+
+        mock_email_service = MagicMock()
+        mock_email_service.send_npo_application_submitted_email = AsyncMock()
+        mock_email_service.send_npo_application_submitted_admin_notification = AsyncMock()
+
+        with patch(
+            "app.services.onboarding_service.EmailService",
+            return_value=mock_email_service,
+        ):
+            await svc._send_submission_notifications(test_user, npo, application)
+
+        mock_email_service.send_npo_application_submitted_email.assert_awaited_once_with(
+            to_email=test_user.email,
+            npo_name="Test NPO",
+            applicant_name=f"{test_user.first_name} {test_user.last_name}".strip()
+            or test_user.first_name,
+        )
+        mock_email_service.send_npo_application_submitted_admin_notification.assert_awaited_once_with(
+            applicant_name=f"{test_user.first_name} {test_user.last_name}".strip()
+            or test_user.first_name,
+            applicant_email=test_user.email,
+            npo_name="Test NPO",
+            application_id=str(application.id),
+        )
+
+    async def test_send_submission_notifications_still_attempts_admin_email_when_user_email_fails(
+        self, db_session: AsyncSession, test_user: User
+    ) -> None:
+        """Admin approval notification should still be attempted if user ack email fails."""
+        svc = _make_service(db_session)
+        npo = NPO(
+            id=uuid.uuid4(),
+            name="Test NPO",
+            email=test_user.email,
+            status=NPOStatus.PENDING_APPROVAL,
+            created_by_user_id=test_user.id,
+        )
+        application = NPOApplication(
+            id=uuid.uuid4(),
+            npo_id=npo.id,
+            status=ApplicationStatus.SUBMITTED,
+        )
+
+        mock_email_service = MagicMock()
+        mock_email_service.send_npo_application_submitted_email = AsyncMock(
+            side_effect=RuntimeError("boom")
+        )
+        mock_email_service.send_npo_application_submitted_admin_notification = AsyncMock()
+
+        with patch(
+            "app.services.onboarding_service.EmailService",
+            return_value=mock_email_service,
+        ):
+            await svc._send_submission_notifications(test_user, npo, application)
+
+        mock_email_service.send_npo_application_submitted_email.assert_awaited_once()
+        mock_email_service.send_npo_application_submitted_admin_notification.assert_awaited_once_with(
+            applicant_name=f"{test_user.first_name} {test_user.last_name}".strip()
+            or test_user.first_name,
+            applicant_email=test_user.email,
+            npo_name="Test NPO",
+            application_id=str(application.id),
+        )
 
 
 # ---------------------------------------------------------------------------

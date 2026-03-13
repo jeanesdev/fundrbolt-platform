@@ -21,7 +21,7 @@
 
 ### User Story 1 — NPO Configures Payment Account (Priority: P1)
 
-A Fundrbolt super admin enters and manages the payment processor credentials for each nonprofit
+A FundrBolt super admin enters and manages the payment processor credentials for each nonprofit
 organization. This links the NPO to their First American / Deluxe merchant account so that funds
 collected during events flow to the NPO's own bank account. Credentials are stored securely and
 are never displayed in full after saving. A "Test Connection" button allows admins to verify the
@@ -47,7 +47,7 @@ click "Test Connection", and confirm a success or error state is clearly communi
 
 A registered donor stores their payment card through a secure form operated by the payment
 processor (First American / Deluxe). The card entry form is hosted entirely by the payment
-processor — Fundrbolt never receives or stores raw card numbers. After the card is saved, a
+processor — FundrBolt never receives or stores raw card numbers. After the card is saved, a
 masked summary (brand, last 4 digits, expiry) appears in the donor's payment settings for use
 across all of that nonprofit's events.
 
@@ -233,7 +233,7 @@ via the donor's in-app transaction history.
 
 **Payment Method Management**
 
-- **FR-001**: Registered donors MUST be able to save a payment card through a form hosted entirely by the payment processor, so that card data is never transmitted to or stored by Fundrbolt.
+- **FR-001**: Registered donors MUST be able to save a payment card through a form hosted entirely by the payment processor, so that card data is never transmitted to or stored by FundrBolt.
 - **FR-002**: Donors MUST be able to view their saved cards showing only brand, last 4 digits, and expiry — no full card number is ever displayed.
 - **FR-003**: Donors MUST be able to designate one card as their default payment method.
 - **FR-004**: Donors MUST be able to remove a saved card at any time. If the donor has an outstanding balance for any active event and the card being removed is their last saved method for that NPO, the system MUST display a warning before confirming deletion. The deletion MUST still be permitted after the warning is acknowledged.
@@ -286,7 +286,7 @@ via the donor's in-app transaction history.
 - **FR-028**: Super admins MUST be able to enter, update, and delete payment processor credentials for each NPO.
 - **FR-029**: Payment credentials MUST be masked in all UI views after saving and MUST NOT be retrievable in full through the application.
 - **FR-030**: Super admins MUST be able to test credentials before activating them to confirm they are valid.
-- **FR-031**: Each NPO MUST have its own separate merchant account with the payment processor. Funds collected at an NPO's event MUST settle directly into that NPO's bank account. Fundrbolt MUST NOT act as an intermediary holder or disburser of collected funds.
+- **FR-031**: Each NPO MUST have its own separate merchant account with the payment processor. Funds collected at an NPO's event MUST settle directly into that NPO's bank account. FundrBolt MUST NOT act as an intermediary holder or disburser of collected funds.
 
 **General**
 
@@ -311,7 +311,7 @@ via the donor's in-app transaction history.
 
 - **SC-001**: Donors can complete end-of-night checkout (from opening the page to payment confirmation) in under 3 minutes.
 - **SC-002**: PDF receipts are delivered to donors' email addresses within 5 minutes of a successful payment confirmation.
-- **SC-003**: 100% of card data is captured through the payment processor's hosted form — Fundrbolt's systems never receive, transmit, or store raw card numbers.
+- **SC-003**: 100% of card data is captured through the payment processor's hosted form — FundrBolt's systems never receive, transmit, or store raw card numbers.
 - **SC-004**: Submitting a checkout form twice (double-click or concurrent sessions) results in exactly one charge — no duplicate payments occur.
 - **SC-005**: Donors can add, view, set default, and remove saved payment methods entirely without requiring help from event staff.
 - **SC-006**: 100% of completed transactions have a corresponding receipt accessible in the donor's in-app transaction history, even when email delivery fails.
@@ -322,9 +322,9 @@ via the donor's in-app transaction history.
 
 ## Assumptions
 
-- Each NPO has (or will have) its own separate merchant account with First American / Deluxe, and funds settle directly into the NPO's bank account. Fundrbolt never holds or disburses collected funds.
-- The payment processor's hosted card form signals form completion back to the application (e.g., via browser redirect or in-page message) so Fundrbolt can confirm a card was saved without receiving card data itself.
+- Each NPO has (or will have) its own separate merchant account with First American / Deluxe, and funds settle directly into the NPO's bank account. FundrBolt never holds or disburses collected funds.
+- The payment processor's hosted card form signals form completion back to the application (e.g., via browser redirect or in-page message) so FundrBolt can confirm a card was saved without receiving card data itself.
 - A donor can save multiple cards per nonprofit but only one is the default at any given time.
-- The distinction between "voidable" (unsettled) and "refundable only" (settled) is determined by the payment processor and communicated to Fundrbolt — application logic does not independently calculate settlement timing.
+- The distinction between "voidable" (unsettled) and "refundable only" (settled) is determined by the payment processor and communicated to FundrBolt — application logic does not independently calculate settlement timing.
 - Each NPO can operate in sandbox/test mode independently, allowing setup and testing without real charges.
 - Tickets purchased in advance are stored with their payment status; the end-of-night checkout service deducts already-paid amounts when computing the outstanding balance.

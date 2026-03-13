@@ -6,7 +6,7 @@
 
 ## Overview
 
-This guide provides step-by-step instructions for implementing the NPO creation and management feature in the Fundrbolt fundraising platform. The feature enables users to create non-profit organizations with comprehensive branding, staff management, and approval workflows.
+This guide provides step-by-step instructions for implementing the NPO creation and management feature in the FundrBolt fundraising platform. The feature enables users to create non-profit organizations with comprehensive branding, staff management, and approval workflows.
 
 ## Prerequisites
 

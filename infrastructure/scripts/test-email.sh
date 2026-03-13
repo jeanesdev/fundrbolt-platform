@@ -79,16 +79,16 @@ echo ""
 echo "📧 Sending test email..."
 echo "  From: $FROM_ADDRESS"
 echo "  To: $RECIPIENT"
-echo "  Subject: Test Email from Fundrbolt Platform"
+echo "  Subject: Test Email from FundrBolt Platform"
 echo ""
 
 # Send test email
 MESSAGE_ID=$(az communication email send \
   --sender "$FROM_ADDRESS" \
-  --subject "Test Email from Fundrbolt Platform" \
+  --subject "Test Email from FundrBolt Platform" \
   --text "Hello!
 
-This is a test email from the Fundrbolt Platform to verify email configuration.
+This is a test email from the FundrBolt Platform to verify email configuration.
 
 If you received this email, your email setup is working correctly!
 
@@ -103,10 +103,10 @@ Next steps:
 3. Review email headers to verify SPF, DKIM, DMARC
 
 Best regards,
-The Fundrbolt Platform Team" \
+The FundrBolt Platform Team" \
   --html "<html><body>
 <h2>Hello!</h2>
-<p>This is a test email from the <strong>Fundrbolt Platform</strong> to verify email configuration.</p>
+<p>This is a test email from the <strong>FundrBolt Platform</strong> to verify email configuration.</p>
 <p>If you received this email, your email setup is working correctly! ✅</p>
 <h3>Configuration Details:</h3>
 <ul>
@@ -120,7 +120,7 @@ The Fundrbolt Platform Team" \
   <li>Test email authentication score at <a href='https://www.mail-tester.com'>mail-tester.com</a></li>
   <li>Review email headers to verify SPF, DKIM, DMARC</li>
 </ol>
-<p>Best regards,<br>The Fundrbolt Platform Team</p>
+<p>Best regards,<br>The FundrBolt Platform Team</p>
 </body></html>" \
   --to "$RECIPIENT" \
   --connection-string "$CONNECTION_STRING" \

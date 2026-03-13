@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document captures the technical research and decisions made for implementing the authentication and role management system for the Fundrbolt platform. All decisions prioritize security, performance, and alignment with the constitution's principles.
+This document captures the technical research and decisions made for implementing the authentication and role management system for the FundrBolt platform. All decisions prioritize security, performance, and alignment with the constitution's principles.
 
 ---
 

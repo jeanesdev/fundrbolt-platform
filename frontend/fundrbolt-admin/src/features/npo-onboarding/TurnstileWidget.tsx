@@ -10,8 +10,8 @@
  * - Test key that always passes: 1x00000000000000000000AA
  * - Set VITE_TURNSTILE_SITE_KEY in your .env.local for production.
  */
-import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { forwardRef, useImperativeHandle, useRef } from 'react'
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 
 const SITE_KEY =
   import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '1x00000000000000000000AA'
@@ -26,6 +26,8 @@ export interface TurnstileWidgetHandle {
 interface TurnstileWidgetProps {
   /** Called with the Turnstile verification token when challenge succeeds. */
   onVerify: (token: string) => void
+  /** Called when the widget has loaded and is ready to execute. */
+  onLoad?: () => void
   /** Called when the challenge expires. */
   onExpire?: () => void
   /** Called on an unrecoverable widget error. */
@@ -46,7 +48,7 @@ interface TurnstileWidgetProps {
 export const TurnstileWidget = forwardRef<
   TurnstileWidgetHandle,
   TurnstileWidgetProps
->(({ onVerify, onExpire, onError }, ref) => {
+>(({ onVerify, onLoad, onExpire, onError }, ref) => {
   const turnstileRef = useRef<TurnstileInstance>(null)
 
   useImperativeHandle(ref, () => ({
@@ -67,6 +69,7 @@ export const TurnstileWidget = forwardRef<
         execution: 'execute',
         appearance: 'interaction-only',
       }}
+      onWidgetLoad={() => onLoad?.()}
       onSuccess={onVerify}
       onExpire={onExpire}
       onError={onError}

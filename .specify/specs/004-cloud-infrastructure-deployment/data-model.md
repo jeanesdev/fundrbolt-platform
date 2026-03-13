@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document defines the Azure resources required for the Fundrbolt Platform infrastructure, their relationships, configuration specifications, and dependencies. Unlike application data models, this represents infrastructure-as-code entity specifications.
+This document defines the Azure resources required for the FundrBolt Platform infrastructure, their relationships, configuration specifications, and dependencies. Unlike application data models, this represents infrastructure-as-code entity specifications.
 
 ## Resource Hierarchy
 

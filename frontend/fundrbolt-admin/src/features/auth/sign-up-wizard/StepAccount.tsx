@@ -6,7 +6,15 @@
  * On success: registers user via auth store, persists step data to the
  * onboarding session, then calls onNext.
  */
-import { PasswordInput } from '@/components/password-input'
+import { useCallback, useRef, useState } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Link } from '@tanstack/react-router'
+import { AlertCircle, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { updateStep } from '@/lib/api/onboarding'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,15 +26,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { updateStep } from '@/lib/api/onboarding'
-import { useAuthStore } from '@/stores/auth-store'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Link } from '@tanstack/react-router'
-import { AlertCircle, Loader2 } from 'lucide-react'
-import { useCallback, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
+import { PasswordInput } from '@/components/password-input'
 import {
   TurnstileWidget,
   type TurnstileWidgetHandle,
@@ -62,8 +62,8 @@ type FormValues = z.infer<typeof formSchema>
 interface StepAccountProps {
   /** Onboarding session token (used to persist step data). */
   sessionToken: string
-  /** Advance to the next step. */
-  onNext: () => void
+  /** Advance to the next step, passing the registered email address. */
+  onNext: (email: string) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -75,15 +75,107 @@ export function StepAccount({ sessionToken, onNext }: StepAccountProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [emailExists, setEmailExists] = useState(false)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [isCaptchaLoading, setIsCaptchaLoading] = useState(true)
   const turnstileRef = useRef<TurnstileWidgetHandle>(null)
+  const pendingSubmitRef = useRef<FormValues | null>(null)
   const register = useAuthStore((s) => s.register)
 
-  const handleCaptchaVerify = useCallback((token: string) => {
-    setCaptchaToken(token)
+  const refreshCaptcha = useCallback(() => {
+    setCaptchaToken(null)
+    setIsCaptchaLoading(true)
+    turnstileRef.current?.reset()
+    turnstileRef.current?.execute()
+  }, [])
+
+  const submitAccount = useCallback(
+    async (values: FormValues, token: string) => {
+      setIsLoading(true)
+      setErrorMsg(null)
+      setEmailExists(false)
+
+      try {
+        await register({
+          email: values.email,
+          password: values.password,
+          first_name: values.first_name,
+          last_name: values.last_name,
+        })
+
+        try {
+          await updateStep(sessionToken, 'account', {
+            first_name: values.first_name,
+            last_name: values.last_name,
+            email: values.email,
+            turnstile_token_present: Boolean(token),
+          })
+        } catch {
+          // Non-fatal – session might have expired; proceed anyway
+        }
+
+        toast.success('Account created! Please verify your email.')
+        onNext(values.email)
+      } catch (err: unknown) {
+        refreshCaptcha()
+
+        const status = (err as { response?: { status?: number } }).response
+          ?.status
+        const detail =
+          (
+            err as {
+              response?: {
+                data?: { error?: { message?: string; detail?: string } }
+              }
+            }
+          ).response?.data?.error?.message ||
+          (err as { message?: string }).message ||
+          'Registration failed. Please try again.'
+
+        if (status === 409 || detail.toLowerCase().includes('already')) {
+          setEmailExists(true)
+        } else {
+          setErrorMsg(detail)
+        }
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [onNext, refreshCaptcha, register, sessionToken]
+  )
+
+  const handleCaptchaVerify = useCallback(
+    (token: string) => {
+      setCaptchaToken(token)
+      setIsCaptchaLoading(false)
+      setErrorMsg(null)
+
+      const pendingValues = pendingSubmitRef.current
+      if (pendingValues) {
+        pendingSubmitRef.current = null
+        void submitAccount(pendingValues, token)
+      }
+    },
+    [submitAccount]
+  )
+
+  const handleCaptchaLoad = useCallback(() => {
+    setIsCaptchaLoading(true)
+    turnstileRef.current?.execute()
   }, [])
 
   const handleCaptchaExpire = useCallback(() => {
     setCaptchaToken(null)
+    setIsCaptchaLoading(true)
+    turnstileRef.current?.execute()
+  }, [])
+
+  const handleCaptchaError = useCallback(() => {
+    setCaptchaToken(null)
+    setIsCaptchaLoading(false)
+    pendingSubmitRef.current = null
+    setIsLoading(false)
+    setErrorMsg(
+      'Security check could not be completed. Disable blockers or retry in a moment.'
+    )
   }, [])
 
   const form = useForm<FormValues>({
@@ -98,64 +190,21 @@ export function StepAccount({ sessionToken, onNext }: StepAccountProps) {
   })
 
   const onSubmit = async (values: FormValues) => {
-    setIsLoading(true)
     setErrorMsg(null)
     setEmailExists(false)
 
-    // If no token yet (edge case), trigger execution and bail — user retries
-    if (!captchaToken) {
-      turnstileRef.current?.execute()
-      setErrorMsg('Security check in progress. Please try again in a moment.')
-      setIsLoading(false)
+    if (captchaToken) {
+      await submitAccount(values, captchaToken)
       return
     }
 
-    try {
-      // Register the user
-      await register({
-        email: values.email,
-        password: values.password,
-        first_name: values.first_name,
-        last_name: values.last_name,
-      })
+    pendingSubmitRef.current = values
+    setIsLoading(true)
 
-      // Persist step data into the onboarding session (no password stored)
-      try {
-        await updateStep(sessionToken, 'account', {
-          first_name: values.first_name,
-          last_name: values.last_name,
-          email: values.email,
-        })
-      } catch {
-        // Non-fatal – session might have expired; proceed anyway
-      }
-
-      toast.success('Account created! Please verify your email.')
-      onNext()
-    } catch (err: unknown) {
-      turnstileRef.current?.reset()
-      setCaptchaToken(null)
-
-      const status = (err as { response?: { status?: number } }).response
-        ?.status
-      const detail =
-        (
-          err as {
-            response?: {
-              data?: { error?: { message?: string; detail?: string } }
-            }
-          }
-        ).response?.data?.error?.message ||
-        (err as { message?: string }).message ||
-        'Registration failed. Please try again.'
-
-      if (status === 409 || detail.toLowerCase().includes('already')) {
-        setEmailExists(true)
-      } else {
-        setErrorMsg(detail)
-      }
-    } finally {
-      setIsLoading(false)
+    if (!captchaToken) {
+      setIsCaptchaLoading(true)
+      turnstileRef.current?.execute()
+      return
     }
   }
 
@@ -297,15 +346,29 @@ export function StepAccount({ sessionToken, onNext }: StepAccountProps) {
           {/* Turnstile widget (auto-executes, fires onVerify when challenge passes) */}
           <TurnstileWidget
             ref={turnstileRef}
+            onLoad={handleCaptchaLoad}
             onVerify={handleCaptchaVerify}
             onExpire={handleCaptchaExpire}
+            onError={handleCaptchaError}
           />
 
-          <Button type='submit' className='w-full' disabled={isLoading}>
+          {isCaptchaLoading && !captchaToken && !errorMsg && (
+            <p className='text-muted-foreground text-center text-xs'>
+              Running security check...
+            </p>
+          )}
+
+          <Button
+            type='submit'
+            className='w-full'
+            disabled={isLoading || (isCaptchaLoading && !captchaToken)}
+          >
             {isLoading ? (
               <>
                 <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                Creating account…
+                {captchaToken
+                  ? 'Creating account…'
+                  : 'Completing security check…'}
               </>
             ) : (
               'Continue'

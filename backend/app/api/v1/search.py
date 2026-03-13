@@ -5,7 +5,7 @@ Cross-resource search across Users, NPOs, Events, and Auction Items with role-ba
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import String, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -59,9 +59,22 @@ async def search(
         permission_service = PermissionService()
 
         # T077: Apply role-based NPO filtering
-        filtered_npo_id = await permission_service.get_npo_filter_for_user(
-            db, current_user, search_request.npo_id
-        )
+        try:
+            filtered_npo_id = await permission_service.get_npo_filter_for_user(
+                db, current_user, search_request.npo_id
+            )
+        except PermissionError as exc:
+            if str(exc) == "npo_id is required for non-super_admin users":
+                return SearchResponse(
+                    query=search_request.query,
+                    users=[],
+                    npos=[],
+                    events=[],
+                    auction_items=[],
+                    registrants=[],
+                    total_results=0,
+                )
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
 
         logger.info(f"Filtered NPO ID: {filtered_npo_id}")
 

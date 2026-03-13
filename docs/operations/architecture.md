@@ -1,11 +1,11 @@
-# Fundrbolt Platform Infrastructure Architecture
+# FundrBolt Platform Infrastructure Architecture
 
 **Last Updated**: 2025-10-27
 **Status**: Phase 9 - Production Ready
 
 ## Overview
 
-The Fundrbolt Platform is deployed on Microsoft Azure using a modern, cloud-native architecture optimized for scalability, security, and cost-efficiency. The infrastructure supports three environments (dev, staging, production) with comprehensive monitoring, automated backups, disaster recovery, and cost optimization.
+The FundrBolt Platform is deployed on Microsoft Azure using a modern, cloud-native architecture optimized for scalability, security, and cost-efficiency. The infrastructure supports three environments (dev, staging, production) with comprehensive monitoring, automated backups, disaster recovery, and cost optimization.
 
 ## Architecture Diagram
 

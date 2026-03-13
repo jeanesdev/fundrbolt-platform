@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document consolidates research findings and technical decisions for implementing the public landing page feature. All decisions align with the Fundrbolt Platform Constitution and leverage existing infrastructure from features 001 (authentication), 002 (NPO creation), and 005 (legal documentation).
+This document consolidates research findings and technical decisions for implementing the public landing page feature. All decisions align with the FundrBolt Platform Constitution and leverage existing infrastructure from features 001 (authentication), 002 (NPO creation), and 005 (legal documentation).
 
 ## Technical Decisions
 
@@ -253,9 +253,9 @@ export const LandingPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Fundrbolt - Fundraising Platform for Nonprofits</title>
+        <title>FundrBolt - Fundraising Platform for Nonprofits</title>
         <meta name="description" content="World-class fundraising software..." />
-        <meta property="og:title" content="Fundrbolt Fundraising Platform" />
+        <meta property="og:title" content="FundrBolt Fundraising Platform" />
         <meta property="og:description" content="..." />
         <meta property="og:image" content="https://fundrbolt.com/og-image.jpg" />
         <link rel="canonical" href="https://fundrbolt.com" />

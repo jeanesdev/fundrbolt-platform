@@ -29,16 +29,16 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     enabled: !!user, // Only fetch when user is authenticated
   })
 
-  // T059: Populate available NPOs including "Fundrbolt Platform" option for SuperAdmin
+  // T059: Populate available NPOs including "FundrBolt Platform" option for SuperAdmin
   useEffect(() => {
     if (nposData?.items) {
       const npoOptions: NPOContextOption[] = []
 
-      // T059: SuperAdmin gets "Fundrbolt Platform" option (null npoId)
+      // T059: SuperAdmin gets "FundrBolt Platform" option (null npoId)
       if (isSuperAdmin) {
         npoOptions.push({
           id: null,
-          name: 'Fundrbolt Platform',
+          name: 'FundrBolt Platform',
         })
       }
 

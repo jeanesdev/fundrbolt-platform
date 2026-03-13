@@ -206,7 +206,7 @@ Tasks are organized by user story priority. Each user story represents an indepe
 
 **Verification Checklist**:
 - [ ] Admin group appears for users with admin permissions
-- [ ] NPO link appears only when "Fundrbolt Platform All Organizations" selected
+- [ ] NPO link appears only when "FundrBolt Platform All Organizations" selected
 - [ ] NPO link hidden when specific NPO selected
 - [ ] Events and Users links always visible to admins
 - [ ] Non-admin users see no Admin group or only permitted items

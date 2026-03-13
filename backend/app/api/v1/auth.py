@@ -1,5 +1,6 @@
 """Authentication endpoints."""
 
+import hmac
 import logging
 import uuid
 
@@ -12,6 +13,7 @@ from app.core.security import decode_token
 from app.middleware.rate_limit import api_rate_limit, rate_limit, strict_rate_limit
 from app.schemas.auth import (
     EmailResendRequest,
+    EmailVerifyCodeRequest,
     EmailVerifyRequest,
     EmailVerifyResponse,
     LoginRequest,
@@ -89,7 +91,13 @@ async def register(
         # Register user and get verification token
         user, verification_token = await AuthService.register(db, user_data)
 
-        # Send verification email
+        # Generate and store OTP alongside the link token
+        from app.core.security import generate_verification_otp
+
+        otp = generate_verification_otp()
+        await RedisService.store_email_verification_otp(otp, user.id)
+
+        # Send verification email (includes link + OTP)
         from app.services.email_service import get_email_service
 
         email_service = get_email_service()
@@ -98,6 +106,7 @@ async def register(
                 to_email=user.email,
                 verification_token=verification_token,
                 user_name=user.first_name,
+                otp=otp,
             )
             logger.info(f"Verification email sent to {user.email} (user_id={user.id})")
         except Exception as e:
@@ -169,15 +178,15 @@ async def login(
     Flow:
     1. Check rate limit (5 attempts per 15 min per IP)
     2. Validate credentials (email + password)
-    3. Enforce email verification requirement
+    3. Validate account status
     4. Create session with device fingerprint
     5. Generate JWT tokens (15-min access, 7-day refresh)
     6. Return tokens and user details
 
     Business Rules:
     - Rate limit: 5 failed attempts per 15 minutes per IP
-    - Account must have email_verified=true
-    - Account must have is_active=true
+    - Unverified accounts may sign in to complete email verification
+    - Verified accounts must have is_active=true
     - Session tracks IP, user-agent, expires after 7 days
     - Refresh token includes JTI for revocation
 
@@ -190,7 +199,6 @@ async def login(
         LoginResponse with access_token, refresh_token, user data
 
     Raises:
-        HTTPException 400: Email not verified
         HTTPException 401: Invalid credentials
         HTTPException 403: Account deactivated
         HTTPException 429: Rate limit exceeded
@@ -242,15 +250,6 @@ async def login(
                 detail={
                     "code": "INVALID_CREDENTIALS",
                     "message": "Invalid email or password",
-                },
-            ) from e
-        elif "Email not verified" in error_msg:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={
-                    "code": "EMAIL_NOT_VERIFIED",
-                    "message": "Please verify your email before logging in",
-                    "details": {"email": login_data.email},
                 },
             ) from e
         elif "Account deactivated" in error_msg:
@@ -433,7 +432,7 @@ async def logout(
 
 
 @router.post("/verify-email", status_code=status.HTTP_200_OK, response_model=EmailVerifyResponse)
-@strict_rate_limit()
+@rate_limit(max_requests=10, window_seconds=3600)
 async def verify_email(
     verify_data: EmailVerifyRequest,
     request: Request,
@@ -540,7 +539,7 @@ async def verify_email(
 @router.post(
     "/verify-email/resend", status_code=status.HTTP_200_OK, response_model=EmailVerifyResponse
 )
-@strict_rate_limit()
+@rate_limit(max_requests=5, window_seconds=3600)
 async def resend_verification_email(
     resend_data: EmailResendRequest,
     db: AsyncSession = Depends(get_db),
@@ -572,11 +571,11 @@ async def resend_verification_email(
             - 404: User not found
     """
     # Look up user by email
-    from app.core.security import generate_verification_token
+    from app.core.security import generate_verification_otp, generate_verification_token
     from app.models.user import User
     from app.services.email_service import EmailService
 
-    stmt = select(User).where(User.email == resend_data.email)
+    stmt = select(User).where(User.email == resend_data.email.lower())
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
 
@@ -599,24 +598,220 @@ async def resend_verification_email(
             },
         )
 
-    # Generate new verification token
+    # Generate new verification token and OTP
     verification_token = generate_verification_token()
+    otp = generate_verification_otp()
 
-    # Store in Redis (replaces old token if exists)
+    # Store both in Redis (replaces old values if they exist)
     await RedisService.store_email_verification_token(verification_token, user.id)
+    await RedisService.store_email_verification_otp(otp, user.id)
 
-    # Send verification email
+    # Send verification email with link + OTP
     email_service = EmailService()
     await email_service.send_verification_email(
         to_email=user.email,
         verification_token=verification_token,
         user_name=user.first_name,
+        otp=otp,
     )
 
     # Log for debugging (not audit event since it's a retry)
     logger.info(f"Verification email resent to {user.email} (user_id={user.id})")
 
     return EmailVerifyResponse(message="Verification email sent")
+
+
+@router.post(
+    "/verify-email/code", status_code=status.HTTP_200_OK, response_model=EmailVerifyResponse
+)
+@rate_limit(max_requests=10, window_seconds=3600)
+async def verify_email_with_code(
+    code_data: EmailVerifyCodeRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> EmailVerifyResponse:
+    """Verify email address with 6-digit OTP code.
+
+    Flow:
+    1. Looks up user by email (case-insensitive)
+    2. Validates code format (Pydantic: exactly 6 digits)
+    3. Retrieves stored OTP from Redis using the user's ID
+    4. Constant-time compares provided code against stored OTP
+    5. Updates user: email_verified=True, is_active=True
+    6. Deletes OTP from Redis
+    7. Logs audit event
+    8. Sends welcome email (non-blocking)
+
+    Business Rules:
+    - No authentication required (works immediately after registration)
+    - OTP expires after 24 hours (same TTL as the link token)
+    - User cannot verify twice
+    - Constant-time comparison prevents timing attacks
+
+    Returns:
+        EmailVerifyResponse: Success message
+
+    Raises:
+        HTTPException 400: Invalid/expired code or already verified
+        HTTPException 404: User not found
+    """
+    from app.models.user import User  # noqa: PLC0415
+
+    # Look up user by email (case-insensitive — emails are stored lowercase)
+    stmt = select(User).where(User.email == code_data.email.lower())
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "USER_NOT_FOUND",
+                "message": "User not found",
+            },
+        )
+
+    # Check if already verified
+    if user.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "ALREADY_VERIFIED",
+                "message": "Email already verified",
+            },
+        )
+
+    # Retrieve stored OTP from Redis
+    stored_otp = await RedisService.get_email_verification_otp(user.id)
+    if not stored_otp:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "INVALID_CODE",
+                "message": "Invalid or expired verification code",
+            },
+        )
+
+    # Constant-time comparison to prevent timing attacks
+    if not hmac.compare_digest(stored_otp, code_data.code):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "INVALID_CODE",
+                "message": "Invalid or expired verification code",
+            },
+        )
+
+    # Update user verification status
+    user.email_verified = True
+    user.is_active = True
+    await db.commit()
+    await db.refresh(user)
+
+    # Delete OTP from Redis
+    await RedisService.delete_email_verification_otp(user.id)
+
+    # Link onboarding session to the verified user (if session_token provided)
+    if code_data.session_token:
+        try:
+            from datetime import UTC, datetime  # noqa: PLC0415
+
+            from app.models.onboarding_session import OnboardingSession  # noqa: PLC0415
+
+            stmt_session = select(OnboardingSession).where(
+                OnboardingSession.token == code_data.session_token,
+                OnboardingSession.expires_at > datetime.now(tz=UTC),
+            )
+            session_result = await db.execute(stmt_session)
+            onboarding_session = session_result.scalar_one_or_none()
+            if onboarding_session and not onboarding_session.user_id:
+                onboarding_session.user_id = user.id
+                await db.commit()
+                logger.info(
+                    f"Linked onboarding session {code_data.session_token[:8]}... to user {user.id}"
+                )
+        except Exception as session_link_exc:
+            logger.error(f"Failed to link onboarding session: {session_link_exc}")
+
+    # Log audit event
+    client_ip = request.client.host if request.client else None
+    await AuditService.log_email_verification(
+        db=db,
+        user_id=user.id,
+        email=user.email,
+        ip_address=client_ip,
+    )
+
+    # Send welcome email (non-blocking)
+    try:
+        from app.services.email_service import get_email_service  # noqa: PLC0415
+
+        email_service = get_email_service()
+        await email_service.send_welcome_email(
+            to_email=user.email,
+            user_name=user.first_name,
+        )
+        logger.info(f"Welcome email sent to {user.email} (user_id={user.id})")
+    except Exception as welcome_email_exc:
+        logger.error(f"Failed to send welcome email to {user.email}: {welcome_email_exc}")
+
+    # Auto-login: create JWT tokens so the caller is immediately authenticated
+    from app.core.security import create_access_token, create_refresh_token  # noqa: PLC0415
+    from app.services.auth_service import AuthService  # noqa: PLC0415
+    from app.services.session_service import SessionService  # noqa: PLC0415
+
+    await db.refresh(user, ["role"])
+    token_data = {
+        "sub": str(user.id),
+        "email": user.email,
+        "role": str(user.role_id),
+    }
+    access_token = create_access_token(data=token_data)
+    refresh_token = create_refresh_token(data=token_data)
+
+    refresh_payload = decode_token(refresh_token)
+    refresh_jti = refresh_payload["jti"]
+    user_agent = request.headers.get("user-agent", "")
+    await SessionService.create_session(
+        db=db,
+        user_id=user.id,
+        refresh_token_jti=refresh_jti,
+        device_info=user_agent,
+        ip_address=client_ip,
+        user_agent=user_agent,
+    )
+
+    npo_memberships = await AuthService.get_active_npo_memberships(db, user.id)
+    primary_npo_id = npo_memberships[0].npo_id if len(npo_memberships) == 1 else None
+    user_public = UserPublic(
+        id=user.id,
+        email=user.email,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        phone=user.phone,
+        organization_name=user.organization_name,
+        address_line1=user.address_line1,
+        address_line2=user.address_line2,
+        city=user.city,
+        state=user.state,
+        postal_code=user.postal_code,
+        country=user.country,
+        profile_picture_url=user.profile_picture_url,
+        email_verified=user.email_verified,
+        is_active=user.is_active,
+        role=user.role.name if user.role else "donor",
+        npo_id=primary_npo_id,
+        npo_memberships=npo_memberships,
+        created_at=user.created_at,
+    )
+
+    return EmailVerifyResponse(
+        message="Email verified successfully",
+        access_token=access_token,
+        refresh_token=refresh_token,
+        expires_in=900,
+        user=user_public,
+    )
 
 
 @router.post(

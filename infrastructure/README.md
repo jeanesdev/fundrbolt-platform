@@ -1,6 +1,6 @@
-# Fundrbolt Platform Infrastructure
+# FundrBolt Platform Infrastructure
 
-This directory contains the Infrastructure as Code (IaC) for deploying the Fundrbolt platform to Microsoft Azure.
+This directory contains the Infrastructure as Code (IaC) for deploying the FundrBolt platform to Microsoft Azure.
 
 ## Structure
 

@@ -3,7 +3,7 @@
  * Manages the currently selected NPO context for filtering data across the admin PWA
  *
  * Business Rules:
- * - SuperAdmin can select any NPO or "Fundrbolt Platform" (null npoId)
+ * - SuperAdmin can select any NPO or "FundrBolt Platform" (null npoId)
  * - NPO Admin sees only their assigned NPO (non-selectable)
  * - Event Coordinator sees NPOs they're registered with
  * - Staff sees only their assigned NPO (non-selectable)
@@ -14,7 +14,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export interface NPOContextOption {
-  id: string | null // null represents "Fundrbolt Platform" for SuperAdmin
+  id: string | null // null represents "FundrBolt Platform" for SuperAdmin
   name: string
   logo_url?: string | null
 }
@@ -40,7 +40,7 @@ interface NPOContextState {
 
   // Helper getters
   getSelectedNpoId: () => string | null
-  isFundrboltPlatformView: () => boolean
+  isFundrBoltPlatformView: () => boolean
 }
 
 export const useNPOContextStore = create<NPOContextState>()(
@@ -48,7 +48,7 @@ export const useNPOContextStore = create<NPOContextState>()(
     (set, get) => ({
       // Initial state
       selectedNpoId: null,
-      selectedNpoName: 'Fundrbolt Platform',
+      selectedNpoName: 'FundrBolt Platform',
       availableNpos: [],
       isLoading: false,
       error: null,
@@ -70,7 +70,7 @@ export const useNPOContextStore = create<NPOContextState>()(
       reset: () =>
         set({
           selectedNpoId: null,
-          selectedNpoName: 'Fundrbolt Platform',
+          selectedNpoName: 'FundrBolt Platform',
           availableNpos: [],
           isLoading: false,
           error: null,
@@ -81,7 +81,7 @@ export const useNPOContextStore = create<NPOContextState>()(
         return get().selectedNpoId
       },
 
-      isFundrboltPlatformView: (): boolean => {
+      isFundrBoltPlatformView: (): boolean => {
         return get().selectedNpoId === null
       },
     }),

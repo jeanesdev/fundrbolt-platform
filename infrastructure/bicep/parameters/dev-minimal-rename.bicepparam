@@ -1,4 +1,4 @@
-// Minimal deployment parameters for Fundrbolt rename (dev environment)
+// Minimal deployment parameters for FundrBolt rename (dev environment)
 using '../main-minimal-rename.bicep'
 
 param environment = 'dev'

@@ -1,4 +1,4 @@
-// Azure CDN Profile and Endpoint for Fundrbolt Branding Assets
+// Azure CDN Profile and Endpoint for FundrBolt Branding Assets
 // Provides fast, global delivery of logos for email templates and public assets
 
 @description('Name of the CDN Profile')

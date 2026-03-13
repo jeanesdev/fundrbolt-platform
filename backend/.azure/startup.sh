@@ -4,7 +4,7 @@
 
 set -e
 
-echo "Starting Fundrbolt backend..."
+echo "Starting FundrBolt backend..."
 echo "Environment: $ENVIRONMENT"
 echo "Python version: $(python --version)"
 

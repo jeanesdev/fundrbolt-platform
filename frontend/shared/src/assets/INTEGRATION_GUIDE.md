@@ -1,4 +1,4 @@
-# Fundrbolt Brand Assets - Integration Guide
+# FundrBolt Brand Assets - Integration Guide
 
 ## Quick Start
 
@@ -64,14 +64,14 @@ module.exports = {
 import { LogoNavyGold, LogoWhiteGold, getLogo } from '@fundrbolt/shared/assets';
 
 // Navy & Gold logo (for white/light backgrounds)
-<img src={LogoNavyGold} alt="Fundrbolt" className="h-12" />
+<img src={LogoNavyGold} alt="FundrBolt" className="h-12" />
 
 // White & Gold logo (for navy/dark backgrounds)
-<img src={LogoWhiteGold} alt="Fundrbolt" className="h-12" />
+<img src={LogoWhiteGold} alt="FundrBolt" className="h-12" />
 
 // Automatic selection based on background
-<img src={getLogo('dark')} alt="Fundrbolt" className="h-12" />
-<img src={getLogo('light')} alt="Fundrbolt" className="h-12" />
+<img src={getLogo('dark')} alt="FundrBolt" className="h-12" />
+<img src={getLogo('light')} alt="FundrBolt" className="h-12" />
 ```
 
 ### Email Templates
@@ -84,14 +84,14 @@ import { LogoWhiteGoldPng } from '@fundrbolt/shared/assets';
 // In email template HTML
 const emailHtml = `
   <div style="background-color: #11294c; padding: 20px;">
-    <img src="${LogoWhiteGoldPng}" alt="Fundrbolt" style="height: 60px;" />
+    <img src="${LogoWhiteGoldPng}" alt="FundrBolt" style="height: 60px;" />
   </div>
 `;
 ```
 
 For production emails, host the PNG on your CDN:
 ```html
-<img src="https://cdn.fundrbolt.com/logo-white-gold.png" alt="Fundrbolt" />
+<img src="https://cdn.fundrbolt.com/logo-white-gold.png" alt="FundrBolt" />
 ```
 
 ---
@@ -124,7 +124,7 @@ Most modern frameworks auto-detect favicons in the `public/` directory. Verify b
 
 ## 4. Typography System
 
-Fundrbolt uses a centralized typography system with standardized font families and typographic scales.
+FundrBolt uses a centralized typography system with standardized font families and typographic scales.
 
 ### Font Families
 
@@ -170,7 +170,7 @@ typography.caption  // { fontSize: '0.75rem', lineHeight: '1.4', fontWeight: 500
 #### h1 - Page Title
 ```tsx
 <h1 style={typography.h1}>
-  Welcome to Fundrbolt
+  Welcome to FundrBolt
 </h1>
 ```
 

@@ -192,7 +192,7 @@ function RouteComponent() {
     const ics = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//Fundrbolt//Event//EN',
+      'PRODID:-//FundrBolt//Event//EN',
       'BEGIN:VEVENT',
       `DTSTART:${fmt(start)}`,
       `DTEND:${fmt(end)}`,

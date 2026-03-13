@@ -1,10 +1,10 @@
 # Disaster Recovery Procedures
 
-Comprehensive disaster recovery (DR) procedures for the Fundrbolt platform, including backup strategies, restore procedures, and RTO/RPO targets.
+Comprehensive disaster recovery (DR) procedures for the FundrBolt platform, including backup strategies, restore procedures, and RTO/RPO targets.
 
 ## Overview
 
-The Fundrbolt platform implements a multi-layered backup strategy to ensure business continuity and data protection:
+The FundrBolt platform implements a multi-layered backup strategy to ensure business continuity and data protection:
 
 - **PostgreSQL**: Automated backups with point-in-time restore (PITR)
 - **Redis**: AOF persistence (production) with export to blob storage

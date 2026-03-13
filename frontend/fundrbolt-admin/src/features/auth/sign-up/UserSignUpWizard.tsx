@@ -1,11 +1,10 @@
 /**
- * UserSignUpWizard — two-step wizard for creating a user-only account.
+ * UserSignUpWizard — account creation wizard for a user-only account.
  *
- * Flow:  account → verify_email → dashboard
+ * Flow: account → verify_email route
  *
- * Reuses the shared SignUpWizard container and StepAccount / StepVerifyEmail
- * components. Creates a `user_signup` session on mount for server-side
- * progress tracking.
+ * Reuses the shared SignUpWizard container and StepAccount component. Creates
+ * a `user_signup` session on mount for server-side progress tracking.
  */
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
@@ -13,7 +12,6 @@ import { Loader2 } from 'lucide-react'
 import { createSession, type SessionResponse } from '@/lib/api/onboarding'
 import { SignUpWizard, type WizardStep } from '../sign-up-wizard/SignUpWizard'
 import { StepAccount } from '../sign-up-wizard/StepAccount'
-import { StepVerifyEmail } from '../sign-up-wizard/StepVerifyEmail'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -21,26 +19,12 @@ import { StepVerifyEmail } from '../sign-up-wizard/StepVerifyEmail'
 
 const SESSION_TOKEN_KEY = 'user_signup_session_token'
 
-const WIZARD_STEPS: WizardStep[] = [
-  { id: 'account', label: 'Create Account' },
-  { id: 'verify_email', label: 'Verify Email' },
-]
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
-type StepId = 'account' | 'verify_email'
+const WIZARD_STEPS: WizardStep[] = [{ id: 'account', label: 'Create Account' }]
 
 export function UserSignUpWizard() {
   const navigate = useNavigate()
   const [isInitialising, setIsInitialising] = useState(true)
   const [session, setSession] = useState<SessionResponse | null>(null)
-  const [currentStep, setCurrentStep] = useState<StepId>('account')
-  const [userEmail, setUserEmail] = useState('')
-
-  const stepIndex = WIZARD_STEPS.findIndex((s) => s.id === currentStep)
-  const currentStepIdx = stepIndex >= 0 ? stepIndex : 0
 
   const initSession = useCallback(async () => {
     setIsInitialising(true)
@@ -52,9 +36,6 @@ export function UserSignUpWizard() {
         const existing = await getSession(storedToken)
         if (existing) {
           setSession(existing)
-          setCurrentStep(existing.current_step as StepId)
-          const email = existing.form_data?.account?.email as string | undefined
-          if (email) setUserEmail(email)
           setIsInitialising(false)
           return
         }
@@ -74,13 +55,8 @@ export function UserSignUpWizard() {
   }, [initSession])
 
   const handleAccountCreated = (email: string) => {
-    setUserEmail(email)
-    setCurrentStep('verify_email')
-  }
-
-  const handleEmailVerified = () => {
     localStorage.removeItem(SESSION_TOKEN_KEY)
-    navigate({ to: '/' })
+    navigate({ to: '/verify-email', search: { email } })
   }
 
   if (isInitialising) {
@@ -94,22 +70,14 @@ export function UserSignUpWizard() {
   return (
     <SignUpWizard
       steps={WIZARD_STEPS}
-      currentStepIndex={currentStepIdx}
+      currentStepIndex={0}
       className='max-w-sm'
     >
-      {currentStep === 'account' && session && (
+      {session && (
         <StepAccount
           sessionToken={session.token}
-          onNext={() => {
-            const values = session.form_data?.account
-            if (values?.email) handleAccountCreated(values.email as string)
-            else setCurrentStep('verify_email')
-          }}
+          onNext={handleAccountCreated}
         />
-      )}
-
-      {currentStep === 'verify_email' && (
-        <StepVerifyEmail email={userEmail} onNext={handleEmailVerified} />
       )}
     </SignUpWizard>
   )

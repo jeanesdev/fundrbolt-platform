@@ -1,4 +1,4 @@
-# Fundrbolt Platform
+# FundrBolt Platform
 
 **Status**: Phase 9 Complete - Production Ready Infrastructure
 
@@ -6,7 +6,7 @@ A comprehensive nonprofit donation tracking platform built with modern cloud-nat
 
 ## Overview
 
-Fundrbolt Platform enables nonprofit organizations to track donations, manage donors, coordinate volunteers, and engage their communities. The platform consists of:
+FundrBolt Platform enables nonprofit organizations to track donations, manage donors, coordinate volunteers, and engage their communities. The platform consists of:
 
 - **Admin Portal**: React-based dashboard for NPO staff
 - **Donor PWA**: Progressive web app for donor engagement
@@ -480,4 +480,4 @@ make budget-status ENV=production
 
 ## License
 
-Copyright © 2025 Fundrbolt Platform. All rights reserved.
+Copyright © 2025 FundrBolt Platform. All rights reserved.

@@ -5,6 +5,8 @@ import uuid
 from datetime import datetime
 from typing import Any
 
+from redis.exceptions import ResponseError
+
 from app.core.redis import get_redis
 
 
@@ -195,6 +197,48 @@ class RedisService:
         await redis.delete(key)
 
     @staticmethod
+    async def store_email_verification_otp(otp: str, user_id: uuid.UUID) -> None:
+        """Store 6-digit OTP for email verification.
+
+        Key: email_verify_otp:{user_id}
+        Value: OTP string
+        TTL: 24 hours (same as the token)
+
+        Args:
+            otp: 6-digit OTP string
+            user_id: User UUID
+        """
+        redis = await get_redis()
+        key = f"email_verify_otp:{user_id}"
+        await redis.setex(key, RedisService.EMAIL_VERIFY_TTL, otp)
+
+    @staticmethod
+    async def get_email_verification_otp(user_id: uuid.UUID) -> str | None:
+        """Retrieve OTP for email verification.
+
+        Args:
+            user_id: User UUID
+
+        Returns:
+            OTP string if valid, None if expired or not found
+        """
+        redis = await get_redis()
+        key = f"email_verify_otp:{user_id}"
+        value = await redis.get(key)
+        return value if value is None else str(value)
+
+    @staticmethod
+    async def delete_email_verification_otp(user_id: uuid.UUID) -> None:
+        """Delete OTP after successful verification.
+
+        Args:
+            user_id: User UUID
+        """
+        redis = await get_redis()
+        key = f"email_verify_otp:{user_id}"
+        await redis.delete(key)
+
+    @staticmethod
     async def store_password_reset_token(token: str, user_id: uuid.UUID) -> None:
         """Store password reset token.
 
@@ -258,11 +302,16 @@ class RedisService:
         now = datetime.utcnow().timestamp()
         window_start = now - window_seconds
 
-        # Remove old entries outside the window
-        await redis.zremrangebyscore(key, 0, window_start)
+        # Remove old entries outside the window. If a malformed legacy key
+        # exists with a non-zset type, clear it and start fresh.
+        try:
+            await redis.zremrangebyscore(key, 0, window_start)
 
-        # Count attempts in current window
-        count = await redis.zcount(key, window_start, now)
+            # Count attempts in current window
+            count = await redis.zcount(key, window_start, now)
+        except ResponseError:
+            await redis.delete(key)
+            count = 0
 
         if count >= max_attempts:
             return True
@@ -291,8 +340,13 @@ class RedisService:
         now = datetime.utcnow().timestamp()
         window_start = now - window_seconds
 
-        await redis.zremrangebyscore(key, 0, window_start)
-        count = await redis.zcount(key, window_start, now)
+        try:
+            await redis.zremrangebyscore(key, 0, window_start)
+            count = await redis.zcount(key, window_start, now)
+        except ResponseError:
+            await redis.delete(key)
+            return False
+
         return count >= max_attempts
 
     @staticmethod
@@ -307,8 +361,13 @@ class RedisService:
         now = datetime.utcnow().timestamp()
         member = f"{now}:{datetime.utcnow().isoformat()}"
 
-        await redis.zadd(key, {member: now})
-        await redis.expire(key, window_seconds)
+        try:
+            await redis.zadd(key, {member: now})
+            await redis.expire(key, window_seconds)
+        except ResponseError:
+            await redis.delete(key)
+            await redis.zadd(key, {member: now})
+            await redis.expire(key, window_seconds)
 
     @staticmethod
     async def reset_rate_limit(key: str) -> None:

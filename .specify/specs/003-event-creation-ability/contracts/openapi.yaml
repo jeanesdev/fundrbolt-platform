@@ -1,10 +1,10 @@
 openapi: 3.0.3
 info:
-  title: Fundrbolt Events API
+  title: FundrBolt Events API
   description: API for creating and managing fundraising events
   version: 1.0.0
   contact:
-    name: Fundrbolt Platform
+    name: FundrBolt Platform
     email: engineering@fundrbolt.com
   license:
     name: Proprietary

@@ -39,6 +39,9 @@ export function UserAuthForm({
   redirectTo,
   ...props
 }: UserAuthFormProps) {
+  const onboardingRedirect = localStorage.getItem('onboarding_session_token')
+    ? '/register-npo'
+    : undefined
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
@@ -59,44 +62,32 @@ export function UserAuthForm({
       success: (response) => {
         setIsLoading(false)
 
+        if (!response.user.email_verified) {
+          navigate({
+            to: onboardingRedirect || '/verify-email',
+            search: onboardingRedirect
+              ? undefined
+              : { email: response.user.email },
+            replace: true,
+          })
+
+          return onboardingRedirect
+            ? 'Signed in. Return to onboarding after verifying your email.'
+            : 'Signed in. Verify your email to continue.'
+        }
+
         // Redirect to the stored location or default to dashboard
-        const targetPath = redirectTo || '/'
+        const targetPath = redirectTo || onboardingRedirect || '/'
         navigate({ to: targetPath, replace: true })
 
         return `Welcome back, ${response.user.first_name || response.user.email}!`
       },
       error: (err) => {
         setIsLoading(false)
-
-        // Extract error details
-        const apiError = err as {
-          response?: { data?: { detail?: { code?: string } } }
-        }
-        const errorCode = apiError?.response?.data?.detail?.code
         const errorMessage = getErrorMessage(
           err,
           'Login failed. Please try again.'
         )
-
-        // Check if email verification is required
-        if (errorCode === 'EMAIL_NOT_VERIFIED') {
-          // Show a more helpful message with action button
-          const email = data.email
-          toast.error(`Email verification required for ${email}`, {
-            description:
-              'Please check your inbox for the verification link, or request a new one.',
-            action: {
-              label: 'Resend Email',
-              onClick: () => {
-                // TODO: Implement resend verification email
-                toast.info('Redirecting to resend verification...')
-                navigate({ to: '/verify-email', search: { email } })
-              },
-            },
-            duration: 10000, // Show for 10 seconds
-          })
-          return // Don't show the error string, the custom toast handles it
-        }
 
         return errorMessage
       },

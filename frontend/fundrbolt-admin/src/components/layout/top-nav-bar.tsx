@@ -5,22 +5,8 @@
  * Desktop: Logo | Nav dropdowns | Search | Profile
  * Mobile:  Logo | Hamburger (sheet) | Search | Profile
  */
-import { useState } from 'react'
-import { Link, useLocation, useNavigate } from '@tanstack/react-router'
-import { LogoWhiteGold } from '@fundrbolt/shared/assets'
-import {
-  BarChart3,
-  Calendar,
-  CreditCard,
-  Gavel,
-  Menu,
-  SearchIcon,
-  Settings,
-  Users,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useSearch } from '@/context/search-provider'
-import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
+import { CommandMenu } from '@/components/command-menu'
+import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Button } from '@/components/ui/button'
 import {
   NavigationMenu,
@@ -37,8 +23,22 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { CommandMenu } from '@/components/command-menu'
-import { ProfileDropdown } from '@/components/profile-dropdown'
+import { useSearch } from '@/context/search-provider'
+import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
+import { cn } from '@/lib/utils'
+import LogoWhiteGoldPng from '@fundrbolt/shared/assets/logos/fundrbolt-logo-white-gold.png'
+import { Link, useLocation, useNavigate } from '@tanstack/react-router'
+import {
+  BarChart3,
+  Calendar,
+  CreditCard,
+  Gavel,
+  Menu,
+  SearchIcon,
+  Settings,
+  Users,
+} from 'lucide-react'
+import { useState } from 'react'
 import { iconMap } from './icon-map'
 
 /** Map nav group titles to lucide icons for the trigger buttons */
@@ -93,9 +93,7 @@ function DesktopNav() {
     <NavigationMenu
       viewport={false}
       value={openNav}
-      onValueChange={(v) => {
-        if (v) setOpenNav(v)
-      }}
+      onValueChange={setOpenNav}
     >
       <NavigationMenuList>
         {allGroups.map((group) => (
@@ -124,7 +122,7 @@ function DesktopNav() {
                             'flex flex-col items-center gap-1 rounded-sm px-3 py-2.5 text-sm transition-colors',
                             'hover:bg-accent hover:text-accent-foreground',
                             isActive &&
-                              'bg-accent/50 text-accent-foreground font-medium'
+                            'bg-accent/50 text-accent-foreground font-medium'
                           )}
                         >
                           {Icon && (
@@ -191,7 +189,11 @@ function MobileNav() {
       <SheetContent side='left' className='w-72 p-0'>
         <SheetHeader className='border-b px-4 py-3'>
           <SheetTitle className='flex items-center gap-2'>
-            <img src={LogoWhiteGold} alt='Fundrbolt' className='h-6 w-auto' />
+            <img
+              src={LogoWhiteGoldPng}
+              alt='FundrBolt'
+              className='h-6 w-auto'
+            />
           </SheetTitle>
         </SheetHeader>
 
@@ -223,7 +225,7 @@ function MobileNav() {
                             'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
                             'hover:bg-accent hover:text-accent-foreground',
                             isActive &&
-                              'bg-accent text-accent-foreground font-medium'
+                            'bg-accent text-accent-foreground font-medium'
                           )}
                         >
                           {Icon && (
@@ -275,7 +277,7 @@ export function TopNavBar() {
 
         {/* Logo */}
         <Link to='/' className='flex items-center'>
-          <img src={LogoWhiteGold} alt='Fundrbolt' className='h-7 w-auto' />
+          <img src={LogoWhiteGoldPng} alt='FundrBolt' className='h-7 w-auto' />
         </Link>
 
         {/* Separator */}

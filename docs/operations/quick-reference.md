@@ -1,6 +1,6 @@
 # Quick Reference Guide
 
-Fast reference for common operations on the Fundrbolt Platform.
+Fast reference for common operations on the FundrBolt Platform.
 
 ## Table of Contents
 

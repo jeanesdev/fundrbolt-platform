@@ -204,6 +204,21 @@ class TestEventListing:
 
         assert response.status_code == 401
 
+    async def test_list_events_donor_with_no_npo_returns_empty(
+        self,
+        donor_client: AsyncClient,
+    ) -> None:
+        """Brand-new authenticated users with no NPO should get an empty event list."""
+        response = await donor_client.get("/api/v1/events")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["items"] == []
+        assert data["total"] == 0
+        assert data["page"] == 1
+        assert data["per_page"] == 20
+        assert data["total_pages"] == 0
+
     async def test_list_events_total_pages_calculation(
         self,
         npo_admin_client: AsyncClient,

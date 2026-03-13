@@ -16,7 +16,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       includeAssets: [
         'favicon.ico',
         'images/*.png',
@@ -66,8 +66,8 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: 'Fundrbolt Donor Portal',
-        short_name: 'Fundrbolt',
+        name: 'FundrBolt Donor Portal',
+        short_name: 'FundrBolt',
         description:
           'Browse events, place bids, and support your favorite causes',
         theme_color: '#0f172a',

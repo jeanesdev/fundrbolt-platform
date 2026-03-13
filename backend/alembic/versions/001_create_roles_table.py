@@ -60,7 +60,7 @@ def upgrade() -> None:
         """
         INSERT INTO roles (name, description, scope) VALUES
             ('super_admin',
-             'Fundrbolt platform staff with full access to all NPOs and events',
+             'FundrBolt platform staff with full access to all NPOs and events',
              'platform'),
             ('npo_admin',
              'Full management access within assigned nonprofit organization(s)',

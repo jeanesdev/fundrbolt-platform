@@ -12,7 +12,7 @@ describe('useInitialAvatar', () => {
   describe('Initial Generation', () => {
     it('should generate initials from two-word name', () => {
       const { result } = renderHook(() =>
-        useInitialAvatar({ name: 'Fundrbolt Platform' })
+        useInitialAvatar({ name: 'FundrBolt Platform' })
       )
 
       expect(result.current.initials).toBe('FP')

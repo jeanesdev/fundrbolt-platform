@@ -22,6 +22,7 @@ def _create_email_html_template(
     cta_url: str | None = None,
     footer_text: str | None = None,
     logo_url: str | None = None,
+    otp_code: str | None = None,
 ) -> str:
     """
     Create a professional HTML email template.
@@ -32,15 +33,39 @@ def _create_email_html_template(
         cta_text: Optional call-to-action button text
         cta_url: Optional call-to-action button URL
         footer_text: Optional footer text
-        logo_url: Optional CDN URL for Fundrbolt logo
+        logo_url: Optional CDN URL for FundrBolt logo
 
     Returns:
         HTML email template string
     """
+    resolved_logo_url = (
+        logo_url or f"{settings.azure_cdn_logo_base_url}/fundrbolt-logo-white-gold.png"
+    )
+
     # Build body paragraphs
     paragraphs_html = "".join(
         f'<p style="margin: 0 0 16px 0; line-height: 1.6;">{p}</p>' for p in body_paragraphs
     )
+
+    # Build OTP code block if provided
+    otp_html = ""
+    if otp_code:
+        otp_html = f"""
+        <div style="background-color: #f3f4f6;
+                    border-radius: 8px;
+                    padding: 24px;
+                    text-align: center;
+                    margin: 24px 0;">
+          <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280;">Your verification code</p>
+          <p style="margin: 0;
+                    font-size: 36px;
+                    font-weight: 700;
+                    letter-spacing: 0.3em;
+                    color: #111827;
+                    font-family: 'Courier New', Courier, monospace;">{otp_code}</p>
+          <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">This code expires in 24 hours</p>
+        </div>
+        """
 
     # Build CTA button if provided
     cta_html = ""
@@ -83,7 +108,7 @@ def _create_email_html_template(
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fundrbolt Platform</title>
+    <title>FundrBolt</title>
     </head>
     <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
       <table role="presentation"
@@ -106,11 +131,7 @@ def _create_email_html_template(
                               text-align: center;
                               border-top-left-radius: 8px;
                               border-top-right-radius: 8px;">
-                    {
-        f'<img src="{logo_url}" alt="Fundrbolt" style="height: 60px; width: auto; display: inline-block;" />'
-        if logo_url
-        else '<h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">Fundrbolt</h1>'
-    }
+                                        <img src="{resolved_logo_url}" alt="FundrBolt" style="height: 60px; width: auto; display: inline-block;" />
                   </div>
                 </td>
               </tr>
@@ -126,11 +147,13 @@ def _create_email_html_template(
 
                   {paragraphs_html}
 
+                  {otp_html}
+
                   {cta_html}
 
                   <p style="margin: 32px 0 0 0; line-height: 1.6;">
                     Best regards,<br>
-                    <strong>The Fundrbolt Platform Team</strong>
+                    <strong>The FundrBolt Team</strong>
                   </p>
 
                   {footer_html}
@@ -178,7 +201,7 @@ class EmailService:
 
     def _get_logo_url(self, background: str = "dark") -> str:
         """
-        Get CDN URL for Fundrbolt logo based on background color.
+        Get CDN URL for FundrBolt logo based on background color.
 
         Args:
             background: Background color context ('light' or 'dark')
@@ -218,12 +241,12 @@ class EmailService:
         reset_url = f"{settings.frontend_admin_url}/reset-password?token={reset_token}"
 
         # Email content
-        subject = "Reset Your Password - Fundrbolt Platform"
+        subject = "Reset Your Password - FundrBolt"
         greeting = f"Hi {user_name}," if user_name else "Hi,"
         body = f"""
 {greeting}
 
-You requested to reset your password for your Fundrbolt Platform account.
+You requested to reset your password for your FundrBolt account.
 
 Click the link below to reset your password:
 {reset_url}
@@ -233,14 +256,14 @@ This link will expire in 1 hour.
 If you didn't request this password reset, please ignore this email.
 
 Best regards,
-The Fundrbolt Platform Team
+The FundrBolt Team
         """.strip()
 
         # HTML version with logo
         html_body = _create_email_html_template(
             heading="Reset Your Password",
             body_paragraphs=[
-                "You requested to reset your password for your Fundrbolt Platform account.",
+                "You requested to reset your password for your FundrBolt account.",
                 "Click the button below to reset your password. This link will expire in 1 hour.",
             ],
             cta_text="Reset Password",
@@ -255,7 +278,11 @@ The Fundrbolt Platform Team
         )
 
     async def send_verification_email(
-        self, to_email: str, verification_token: str, user_name: str | None = None
+        self,
+        to_email: str,
+        verification_token: str,
+        user_name: str | None = None,
+        otp: str | None = None,
     ) -> bool:
         """
         Send email verification email with retry logic.
@@ -275,37 +302,45 @@ The Fundrbolt Platform Team
         verification_url = f"{settings.frontend_donor_url}/verify-email?token={verification_token}"
 
         # Email content
-        subject = "Verify Your Email - Fundrbolt Platform"
+        subject = "Verify Your Email - FundrBolt"
         greeting = f"Hi {user_name}" if user_name else "Hi"
 
         # Plain text version
+        otp_text = f"\nOr enter this 6-digit code on the verification page: {otp}\n" if otp else ""
         body = f"""
 {greeting},
 
-Welcome to Fundrbolt Platform!
+Welcome to FundrBolt!
 
 Please verify your email address by clicking the link below:
 {verification_url}
-
+{otp_text}
 This link will expire in 24 hours.
 
 If you didn't create an account, please ignore this email.
 
 Best regards,
-The Fundrbolt Platform Team
+The FundrBolt Team
         """.strip()
 
         # HTML version with logo
+        otp_body_note = (
+            "You can also enter the 6-digit code shown below directly on the verification page."
+            if otp
+            else None
+        )
         html_body = _create_email_html_template(
-            heading="Welcome to Fundrbolt Platform!",
+            heading="Welcome to FundrBolt!",
             body_paragraphs=[
                 f"Thank you for creating an account{' ' + user_name if user_name else ''}! To get started, we need to verify your email address.",
                 "Click the button below to verify your email and activate your account.",
+                *(([otp_body_note]) if otp_body_note else []),
             ],
             cta_text="Verify Email Address",
             cta_url=verification_url,
             footer_text="This verification link will expire in 24 hours. If you didn't create an account, please ignore this email.",
             logo_url=self._get_logo_url("dark"),  # White/gold logo on navy background
+            otp_code=otp,
         )
 
         # Send with retry logic
@@ -341,7 +376,7 @@ The Fundrbolt Platform Team
         )
 
         # Email content
-        subject = f"Invitation to Join {npo_name} - Fundrbolt Platform"
+        subject = f"Invitation to Join {npo_name} - FundrBolt"
         inviter = f"{invited_by_name} from" if invited_by_name else "A member of"
         role_display = role.replace("_", " ").title()
 
@@ -349,31 +384,31 @@ The Fundrbolt Platform Team
         body = f"""
 Hi,
 
-{inviter} {npo_name} has invited you to join their organization on Fundrbolt Platform as a {role_display}.
+{inviter} {npo_name} has invited you to join their organization on FundrBolt as a {role_display}.
 
 Click the link below to accept the invitation:
 {invitation_url}
 
 This invitation will expire in 7 days.
 
-If you don't have a Fundrbolt Platform account yet, you'll be able to create one when you accept the invitation.
+If you don't have a FundrBolt account yet, you'll be able to create one when you accept the invitation.
 
 Best regards,
-The Fundrbolt Platform Team
+The FundrBolt Team
         """.strip()
 
         # HTML version with logo
         html_body = _create_email_html_template(
             heading=f"You're Invited to Join {npo_name}!",
             body_paragraphs=[
-                f"{inviter} {npo_name} has invited you to join their organization on Fundrbolt Platform as a <strong>{role_display}</strong>.",
+                f"{inviter} {npo_name} has invited you to join their organization on FundrBolt as a <strong>{role_display}</strong>.",
                 "Click the button below to accept your invitation and get started.",
             ],
             cta_text="Accept Invitation",
             cta_url=invitation_url,
             footer_text=(
                 "This invitation will expire in 7 days. "
-                "If you don't have a Fundrbolt Platform account yet, you'll be able to create one when you accept the invitation."
+                "If you don't have a FundrBolt account yet, you'll be able to create one when you accept the invitation."
             ),
             logo_url=self._get_logo_url("dark"),  # White/gold logo on navy background
         )
@@ -419,7 +454,7 @@ You can view your team members and manage permissions in your NPO dashboard:
 {dashboard_url}
 
 Best regards,
-The Fundrbolt Platform Team
+The FundrBolt Team
         """.strip()
 
         return await self._send_email_with_retry(to_email, subject, body, "npo_invitation_accepted")
@@ -444,7 +479,7 @@ The Fundrbolt Platform Team
         body = f"""
 {greeting}
 
-Thank you for submitting your application for {npo_name} on Fundrbolt Platform.
+Thank you for submitting your application for {npo_name} on FundrBolt.
 
 Your application is now under review by our team. We'll notify you once a decision has been made.
 
@@ -453,11 +488,27 @@ You can check the status of your application by logging into your account.
 If you have any questions, please don't hesitate to contact us.
 
 Best regards,
-The Fundrbolt Platform Team
+The FundrBolt Team
         """.strip()
 
+        html_body = _create_email_html_template(
+            heading=f"We received your application for {npo_name}",
+            body_paragraphs=[
+                "Thank you for creating your organization on FundrBolt.",
+                f"Your application for <strong>{npo_name}</strong> is now under review by our team.",
+                "We will email you again as soon as the review is complete or if we need any additional information.",
+            ],
+            cta_text="Open Admin Portal",
+            cta_url=f"{settings.frontend_admin_url}/dashboard",
+            footer_text="This acknowledgement confirms that we received your organization submission and it is pending review.",
+        )
+
         return await self._send_email_with_retry(
-            to_email, subject, body, "npo_application_submitted"
+            to_email,
+            subject,
+            body,
+            "npo_application_submitted",
+            html_body,
         )
 
     async def send_npo_application_approved_email(
@@ -483,7 +534,7 @@ The Fundrbolt Platform Team
 
 Congratulations! Your application for {npo_name} has been approved.
 
-Your organization is now active on Fundrbolt Platform. You can start:
+Your organization is now active on FundrBolt. You can start:
 - Customizing your NPO branding
 - Inviting team members
 - Creating donation campaigns and events
@@ -491,10 +542,10 @@ Your organization is now active on Fundrbolt Platform. You can start:
 Visit your dashboard to get started:
 {dashboard_url}
 
-Welcome to Fundrbolt Platform!
+Welcome to FundrBolt!
 
 Best regards,
-The Fundrbolt Platform Team
+The FundrBolt Team
         """.strip()
 
         return await self._send_email_with_retry(
@@ -528,7 +579,7 @@ The Fundrbolt Platform Team
         body = f"""
 {greeting}
 
-Thank you for your interest in joining Fundrbolt Platform with {npo_name}.
+Thank you for your interest in joining FundrBolt with {npo_name}.
 
 After careful review, we're unable to approve your application at this time.{reason_text}
 
@@ -537,7 +588,7 @@ You may submit a new application in the future if you'd like to try again.
 If you have any questions or need clarification, please contact us.
 
 Best regards,
-The Fundrbolt Platform Team
+The FundrBolt Team
         """.strip()
 
         return await self._send_email_with_retry(
@@ -655,7 +706,7 @@ What happens next:
 You can check your application status anytime in your dashboard.
 
 Best regards,
-The Fundrbolt Platform Team
+The FundrBolt Team
 
 ---
 This is an automated message. Please do not reply to this email.
@@ -672,10 +723,10 @@ This is an automated message. Please do not reply to this email.
         self, to_email: str, npo_name: str, applicant_name: str | None = None
     ) -> bool:
         """
-        Send notification email when NPO application is approved.
+        Send notification email when non-profit organization application is approved.
 
         Sent to: NPO creator
-        Content: Approval confirmation with next steps
+        Content: Approval confirmation with next steps and sign-in link
 
         Args:
             to_email: NPO creator's email address
@@ -685,38 +736,59 @@ This is an automated message. Please do not reply to this email.
         Returns:
             True if email sent successfully, False otherwise
         """
-        subject = f"NPO Application Approved: {npo_name}"
+        subject = f"Non-Profit Organization Application Approved: {npo_name}"
         greeting = f"Hi {applicant_name}" if applicant_name else "Hi"
+        sign_in_url = f"{settings.frontend_admin_url}/sign-in"
 
         body = f"""
 {greeting},
 
-Congratulations! Your NPO application for {npo_name} has been approved!
+Congratulations! Your non-profit organization application for {npo_name} has been approved!
 
-Your organization is now active on the Fundrbolt Platform. You can now:
+Your organization is now active on FundrBolt. You can now:
 - Invite co-administrators and staff members
 - Create and manage fundraising events
 - Customize your organization's branding
 - Accept donations from supporters
 
-Get started by logging into your dashboard and inviting your team members.
+Sign in to your dashboard to get started:
+{sign_in_url}
 
-If you have any questions, please don't hesitate to reach out to our support team.
-
-Welcome to Fundrbolt!
+Welcome to FundrBolt!
 
 Best regards,
-The Fundrbolt Platform Team
-
----
-This is an automated message. Please do not reply to this email.
+The FundrBolt Team
         """.strip()
+
+        html_body = _create_email_html_template(
+            heading=f"Your application for {npo_name} has been approved!",
+            body_paragraphs=[
+                f"Congratulations, <strong>{npo_name}</strong> is now active on FundrBolt!",
+                "Here's what you can do next:",
+                (
+                    '<ul style="margin: 0 0 16px 0; padding-left: 24px;">'
+                    '<li style="margin-bottom: 6px;">Invite co-administrators and staff members</li>'
+                    '<li style="margin-bottom: 6px;">Create and manage fundraising events</li>'
+                    '<li style="margin-bottom: 6px;">Customize your organization\'s branding</li>'
+                    '<li style="margin-bottom: 6px;">Accept donations from supporters</li>'
+                    "</ul>"
+                ),
+                "Sign in to your dashboard to get started and welcome your team.",
+            ],
+            cta_text="Sign In to FundrBolt",
+            cta_url=sign_in_url,
+            footer_text=(
+                f"You are receiving this email because your non-profit organization "
+                f"application for {npo_name} was approved on FundrBolt."
+            ),
+        )
 
         return await self._send_email_with_retry(
             to_email=to_email,
             subject=subject,
             body=body,
             email_type="application_approved",
+            html_body=html_body,
         )
 
     async def send_application_rejected_email(
@@ -749,7 +821,7 @@ This is an automated message. Please do not reply to this email.
         body = f"""
 {greeting},
 
-Thank you for your interest in joining the Fundrbolt Platform with {npo_name}.
+Thank you for your interest in joining the FundrBolt with {npo_name}.
 
 After reviewing your application, we are unable to approve it at this time.{reason_text}
 
@@ -758,7 +830,7 @@ If you believe this decision was made in error or if you have additional informa
 You may also submit a new application with updated information in the future.
 
 Best regards,
-The Fundrbolt Platform Team
+The FundrBolt Team
 
 ---
 This is an automated message. Please do not reply to this email.
@@ -777,7 +849,7 @@ This is an automated message. Please do not reply to this email.
         """
         Send notification to admins when a new NPO application is submitted.
 
-        Sent to: npo_applications@fundrbolt.com
+        Sent to: settings.admin_notification_email (or fallback npo_applications@fundrbolt.com)
         Content: Alert that new application needs review
 
         Args:
@@ -788,7 +860,7 @@ This is an automated message. Please do not reply to this email.
         Returns:
             True if email sent successfully, False otherwise
         """
-        admin_email = "npo_applications@fundrbolt.com"
+        admin_email = settings.admin_notification_email or "npo_applications@fundrbolt.com"
         subject = f"New NPO Application: {npo_name}"
         applicant_info = f" by {applicant_name}" if applicant_name else ""
 
@@ -808,7 +880,7 @@ Please review this application in the admin dashboard.
 Review Link: {__import__("os").getenv("FRONTEND_URL", "http://localhost:5173")}/admin/npo-applications
 
 ---
-This is an automated notification from the Fundrbolt Platform.
+This is an automated notification from the FundrBolt.
         """.strip()
 
         return await self._send_email_with_retry(
@@ -861,7 +933,7 @@ Please review this application in the admin dashboard:
 {review_url}
 
 ---
-This is an automated notification from the Fundrbolt Platform.
+This is an automated notification from the FundrBolt.
         """.strip()
 
         html_body = _create_email_html_template(
@@ -875,7 +947,7 @@ This is an automated notification from the Fundrbolt Platform.
             ],
             cta_text="Review Application",
             cta_url=review_url,
-            footer_text="This is an automated notification from the Fundrbolt Platform.",
+            footer_text="This is an automated notification from the FundrBolt.",
         )
 
         return await self._send_email_with_retry(
@@ -930,6 +1002,7 @@ If you have any questions, just reply to this email or visit our help center.
             cta_text="Go to Dashboard",
             cta_url=url,
             footer_text="You received this email because you created an account on FundrBolt.",
+            logo_url=self._get_logo_url("dark"),
         )
 
         return await self._send_email_with_retry(
@@ -1060,6 +1133,7 @@ If you have any questions about this decision, please contact us by replying to 
                 # Prepare message
                 message = {
                     "senderAddress": settings.email_from_address,
+                    "senderDisplayName": settings.email_from_name,
                     "recipients": {"to": [{"address": to_email}]},
                     "content": content,
                 }
@@ -1167,6 +1241,7 @@ If you have any questions about this decision, please contact us by replying to 
 
                 message: dict[str, object] = {
                     "senderAddress": settings.email_from_address,
+                    "senderDisplayName": settings.email_from_name,
                     "recipients": {"to": [{"address": to_email}]},
                     "content": content,
                 }
