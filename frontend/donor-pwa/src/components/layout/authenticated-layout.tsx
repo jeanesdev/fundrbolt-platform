@@ -41,6 +41,11 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     match => match.routeId.includes('/settings')
   )
 
+  // Home page has its own layout (sidebar-free with custom header)
+  const isHomePage = matches.some(
+    match => match.routeId === '/_authenticated/home'
+  )
+
   // Restore user from refresh token on mount if needed
   useEffect(() => {
     const restore = async () => {
@@ -161,9 +166,9 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     )
   }
 
-  // For event detail pages or settings pages, render sidebar-free layout
+  // For event detail pages, settings pages, or home page, render sidebar-free layout
   // The child route handles its own full-page layout
-  if (isEventDetailPage || isSettingsPage) {
+  if (isEventDetailPage || isSettingsPage || isHomePage) {
     return (
       <SearchProvider>
         <SkipToMain />
