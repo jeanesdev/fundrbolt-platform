@@ -8,9 +8,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import useDialogState from '@/hooks/use-dialog-state'
@@ -18,12 +15,13 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { useEventContextStore } from '@/stores/event-context-store'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Bug, Calendar, Check, LogOut, Settings } from 'lucide-react'
+import { Bug, Calendar, Check, ChevronDown, ChevronUp, LogOut, Settings } from 'lucide-react'
 import { useState } from 'react'
 
 export function ProfileDropdown() {
   const [open, setOpen] = useDialogState()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [eventListOpen, setEventListOpen] = useState(false)
   const [spoofSheetOpen, setSpoofSheetOpen] = useState(false)
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
@@ -44,7 +42,7 @@ export function ProfileDropdown() {
 
   return (
     <>
-      <DropdownMenu modal={false} open={!!menuOpen} onOpenChange={setMenuOpen}>
+      <DropdownMenu modal={false} open={!!menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setEventListOpen(false) }}>
         <DropdownMenuTrigger asChild>
           <Button variant='ghost' className='relative h-8 w-8 rounded-full'>
             <Avatar className='h-8 w-8'>
@@ -77,40 +75,52 @@ export function ProfileDropdown() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {availableEvents.length > 0 && (
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Calendar className='mr-2 size-4' />
+            <>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault()
+                  setEventListOpen((v) => !v)
+                }}
+                className='gap-2'
+              >
+                <Calendar className='mr-2 size-4 shrink-0' />
                 <div className='flex min-w-0 flex-1 flex-col text-left'>
                   <span>Event</span>
                   <span className='text-muted-foreground truncate text-xs font-normal'>
                     {availableEvents.find((e) => e.slug === selectedEventSlug)?.name ?? 'Select Event'}
                   </span>
                 </div>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className='w-64'>
-                <DropdownMenuLabel className='text-muted-foreground text-xs'>Switch Event</DropdownMenuLabel>
-                {availableEvents.map((event) => (
-                  <DropdownMenuItem
-                    key={event.id}
-                    onClick={() => {
-                      setMenuOpen(false)
-                      void navigate({ to: '/events/$eventSlug', params: { eventSlug: event.slug } })
-                    }}
-                    className='gap-2'
-                  >
-                    <div className='min-w-0 flex-1'>
-                      <div className='truncate font-medium'>{event.name}</div>
-                      {event.npo_name && (
-                        <div className='text-muted-foreground truncate text-xs'>{event.npo_name}</div>
+                {eventListOpen ? (
+                  <ChevronUp className='size-4 shrink-0 text-muted-foreground' />
+                ) : (
+                  <ChevronDown className='size-4 shrink-0 text-muted-foreground' />
+                )}
+              </DropdownMenuItem>
+              {eventListOpen && (
+                <div className='border-l-2 border-muted ml-4 pl-2'>
+                  {availableEvents.map((event) => (
+                    <DropdownMenuItem
+                      key={event.id}
+                      onClick={() => {
+                        setMenuOpen(false)
+                        void navigate({ to: '/events/$eventSlug', params: { eventSlug: event.slug } })
+                      }}
+                      className='gap-2'
+                    >
+                      <div className='min-w-0 flex-1'>
+                        <div className='truncate font-medium'>{event.name}</div>
+                        {event.npo_name && (
+                          <div className='text-muted-foreground truncate text-xs'>{event.npo_name}</div>
+                        )}
+                      </div>
+                      {event.slug === selectedEventSlug && (
+                        <Check className='size-4 shrink-0 text-primary' />
                       )}
-                    </div>
-                    {event.slug === selectedEventSlug && (
-                      <Check className='size-4 shrink-0 text-primary' />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+                    </DropdownMenuItem>
+                  ))}
+                </div>
+              )}
+            </>
           )}
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
