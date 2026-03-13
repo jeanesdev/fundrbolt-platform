@@ -39,9 +39,6 @@ export function UserAuthForm({
   redirectTo,
   ...props
 }: UserAuthFormProps) {
-  const onboardingRedirect = localStorage.getItem('onboarding_session_token')
-    ? '/register-npo'
-    : undefined
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
@@ -62,22 +59,37 @@ export function UserAuthForm({
       success: (response) => {
         setIsLoading(false)
 
+        // If the user already has an NPO or a privileged role, they've completed
+        // onboarding. Clear any stale session token so they don't get looped back.
+        const privilegedRoles = ['super_admin', 'npo_admin', 'event_coordinator', 'staff']
+        const alreadyOnboarded =
+          privilegedRoles.includes(response.user.role ?? '') ||
+          (Array.isArray(response.user.npo_memberships) && response.user.npo_memberships.length > 0)
+        if (alreadyOnboarded) {
+          localStorage.removeItem('onboarding_session_token')
+        }
+
+        const resolvedOnboardingRedirect =
+          !alreadyOnboarded && localStorage.getItem('onboarding_session_token')
+            ? '/register-npo'
+            : undefined
+
         if (!response.user.email_verified) {
           navigate({
-            to: onboardingRedirect || '/verify-email',
-            search: onboardingRedirect
+            to: resolvedOnboardingRedirect || '/verify-email',
+            search: resolvedOnboardingRedirect
               ? undefined
               : { email: response.user.email },
             replace: true,
           })
 
-          return onboardingRedirect
+          return resolvedOnboardingRedirect
             ? 'Signed in. Return to onboarding after verifying your email.'
             : 'Signed in. Verify your email to continue.'
         }
 
         // Redirect to the stored location or default to dashboard
-        const targetPath = redirectTo || onboardingRedirect || '/'
+        const targetPath = redirectTo || resolvedOnboardingRedirect || '/'
         navigate({ to: targetPath, replace: true })
 
         return `Welcome back, ${response.user.first_name || response.user.email}!`
