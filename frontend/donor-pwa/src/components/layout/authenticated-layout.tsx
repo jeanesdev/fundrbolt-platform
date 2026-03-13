@@ -119,6 +119,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           id: string
           name: string
           slug: string
+          status?: string
           event_date?: string
           npo?: { name: string }
           logo_url?: string
@@ -127,12 +128,15 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           if (existing) {
             // User is registered AND has admin access
             existing.has_admin_access = true
+            existing.status = event.status
           } else {
-            // User has admin access only
+            // User has admin access only — include all statuses so admins can
+            // see and navigate to their own draft events
             eventMap.set(event.id, {
               id: event.id,
               name: event.name,
               slug: event.slug,
+              status: event.status,
               event_date: event.event_date,
               npo_name: event.npo?.name,
               logo_url: event.logo_url,

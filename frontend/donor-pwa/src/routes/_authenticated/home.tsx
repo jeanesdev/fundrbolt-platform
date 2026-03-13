@@ -7,8 +7,8 @@ import type { RegisteredEventWithBranding } from '@/types/event-branding'
 import { colors, LogoWhiteGold } from '@fundrbolt/shared/assets'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useEffect } from 'react'
 import { Calendar, ChevronRight, Loader2, Shield } from 'lucide-react'
+import { useEffect } from 'react'
 
 // Unified display type — registered events plus admin-only events mapped to same shape
 type DisplayEvent = RegisteredEventWithBranding & { has_admin_access?: boolean }
@@ -144,12 +144,18 @@ function DonorHomePage() {
 
   const allEvents = [...registeredEvents, ...adminOnlyEvents]
 
-  // Auto-redirect when the user only has one event
+  // Only auto-redirect to published events — draft events require admin knowledge
+  // to navigate to, so never silently send a regular donor to a draft.
+  const publishedEvents = allEvents.filter(
+    (e) => !e.has_admin_access || availableEvents.find((a) => a.id === e.id)?.status === 'published'
+  )
+
+  // Auto-redirect when the user only has one published event
   useEffect(() => {
-    if (!isLoading && allEvents.length === 1) {
-      void navigate({ to: '/events/$eventSlug', params: { eventSlug: allEvents[0].slug } })
+    if (!isLoading && publishedEvents.length === 1) {
+      void navigate({ to: '/events/$eventSlug', params: { eventSlug: publishedEvents[0].slug } })
     }
-  }, [isLoading, allEvents.length, allEvents[0]?.slug, navigate])
+  }, [isLoading, publishedEvents.length, publishedEvents[0]?.slug, navigate])
 
   return (
     <div className='min-h-screen flex flex-col bg-gray-50'>
