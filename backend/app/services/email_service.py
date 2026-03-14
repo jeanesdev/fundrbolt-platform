@@ -302,7 +302,9 @@ The FundrBolt Team
         verification_url = f"{settings.frontend_donor_url}/verify-email?token={verification_token}"
 
         # Email content
-        subject = "Verify Your Email - FundrBolt"
+        subject = (
+            f"{otp} — Verify your FundrBolt account" if otp else "Verify Your Email - FundrBolt"
+        )
         greeting = f"Hi {user_name}" if user_name else "Hi"
 
         # Plain text version

@@ -7,14 +7,14 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { AuthLayout } from '../auth-layout'
-import { SignUpForm } from './components/sign-up-form'
+import { DonorSignUpWizard } from './components/DonorSignUpWizard'
 
 export function SignUp() {
   const { intent } = useSearch({ from: '/(auth)/sign-up' })
@@ -112,18 +112,10 @@ export function SignUp() {
   return (
     <AuthLayout>
       <Card className='gap-4'>
-        <CardHeader>
-          <CardTitle className='text-lg tracking-tight'>
-            Create an account
-          </CardTitle>
-          <CardDescription>
-            Enter your email and password to create a donor account.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <SignUpForm />
+        <CardContent className='pt-6'>
+          <DonorSignUpWizard />
         </CardContent>
-        <CardFooter className='flex-col gap-4'>
+        <CardFooter className='justify-center pt-0'>
           <p className='text-muted-foreground text-center text-sm'>
             Need a different account type?{' '}
             <Link
@@ -132,23 +124,6 @@ export function SignUp() {
             >
               Go back
             </Link>
-          </p>
-          <p className='text-muted-foreground px-8 text-center text-sm'>
-            By creating an account, you agree to our{' '}
-            <a
-              href='/terms'
-              className='hover:text-primary underline underline-offset-4'
-            >
-              Terms of Service
-            </a>{' '}
-            and{' '}
-            <a
-              href='/privacy'
-              className='hover:text-primary underline underline-offset-4'
-            >
-              Privacy Policy
-            </a>
-            .
           </p>
         </CardFooter>
       </Card>
