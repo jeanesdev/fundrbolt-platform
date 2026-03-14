@@ -15,6 +15,7 @@ interface AuthUser {
   role: string
   npo_id: string | null
   profile_picture_url?: string | null
+  email_verified?: boolean
 }
 
 interface LoginRequest {

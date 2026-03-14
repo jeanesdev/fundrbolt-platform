@@ -61,6 +61,12 @@ export function UserAuthForm({
       success: (response) => {
         setIsLoading(false)
 
+        // Redirect unverified users to the email verification page
+        if (response.user.email_verified === false) {
+          navigate({ to: '/verify-email', search: { email: response.user.email }, replace: true })
+          return 'Please verify your email to continue.'
+        }
+
         // Navigate using router instead of full page reload
         // The auth state is already set by the login function
         if (redirectTo && typeof redirectTo === 'string') {
