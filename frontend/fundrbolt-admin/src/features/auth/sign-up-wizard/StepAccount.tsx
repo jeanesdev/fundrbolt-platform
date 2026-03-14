@@ -15,8 +15,10 @@ import { AlertCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { updateStep } from '@/lib/api/onboarding'
+import { consentService } from '@/services/consent-service'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -27,6 +29,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
+import { TermsOfServiceModal } from '@/components/legal/terms-of-service-modal'
 import {
   TurnstileWidget,
   type TurnstileWidgetHandle,
@@ -47,6 +50,9 @@ const formSchema = z
       .regex(/[a-zA-Z]/, 'Password must contain at least one letter')
       .regex(/[0-9]/, 'Password must contain at least one number'),
     confirmPassword: z.string().min(1, 'Please confirm your password'),
+    acceptedTerms: z.boolean().refine((val) => val === true, {
+      message: 'You must accept the Terms of Service to continue',
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match.",
@@ -76,6 +82,11 @@ export function StepAccount({ sessionToken, onNext }: StepAccountProps) {
   const [emailExists, setEmailExists] = useState(false)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [isCaptchaLoading, setIsCaptchaLoading] = useState(true)
+  const [showLegalModal, setShowLegalModal] = useState(false)
+  const [legalDocumentIds, setLegalDocumentIds] = useState<{
+    tosId: string
+    privacyId: string
+  } | null>(null)
   const turnstileRef = useRef<TurnstileWidgetHandle>(null)
   const pendingSubmitRef = useRef<FormValues | null>(null)
   const register = useAuthStore((s) => s.register)
@@ -100,6 +111,18 @@ export function StepAccount({ sessionToken, onNext }: StepAccountProps) {
           first_name: values.first_name,
           last_name: values.last_name,
         })
+
+        // Record legal consent
+        if (legalDocumentIds) {
+          try {
+            await consentService.acceptConsent({
+              tos_document_id: legalDocumentIds.tosId,
+              privacy_document_id: legalDocumentIds.privacyId,
+            })
+          } catch {
+            // Non-fatal — don't block onboarding if consent recording fails
+          }
+        }
 
         try {
           await updateStep(sessionToken, 'account', {
@@ -139,7 +162,7 @@ export function StepAccount({ sessionToken, onNext }: StepAccountProps) {
         setIsLoading(false)
       }
     },
-    [onNext, refreshCaptcha, register, sessionToken]
+    [legalDocumentIds, onNext, refreshCaptcha, register, sessionToken]
   )
 
   const handleCaptchaVerify = useCallback(
@@ -178,6 +201,11 @@ export function StepAccount({ sessionToken, onNext }: StepAccountProps) {
     )
   }, [])
 
+  const handleAcceptLegal = async (tosId: string, privacyId: string) => {
+    setLegalDocumentIds({ tosId, privacyId })
+    form.setValue('acceptedTerms', true)
+  }
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -186,6 +214,7 @@ export function StepAccount({ sessionToken, onNext }: StepAccountProps) {
       email: '',
       password: '',
       confirmPassword: '',
+      acceptedTerms: false,
     },
   })
 
@@ -343,6 +372,37 @@ export function StepAccount({ sessionToken, onNext }: StepAccountProps) {
             )}
           />
 
+          {/* Terms of Service */}
+          <FormField
+            control={form.control}
+            name='acceptedTerms'
+            render={({ field }) => (
+              <FormItem className='flex flex-row items-start space-y-0 space-x-3'>
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    disabled={isLoading}
+                  />
+                </FormControl>
+                <div className='space-y-1 leading-none'>
+                  <FormLabel className='text-sm font-normal'>
+                    I accept the{' '}
+                    <Button
+                      type='button'
+                      variant='link'
+                      className='h-auto p-0 text-sm font-normal underline'
+                      onClick={() => setShowLegalModal(true)}
+                    >
+                      Terms of Service and Privacy Policy
+                    </Button>
+                  </FormLabel>
+                  <FormMessage />
+                </div>
+              </FormItem>
+            )}
+          />
+
           {/* Turnstile widget (auto-executes, fires onVerify when challenge passes) */}
           <TurnstileWidget
             ref={turnstileRef}
@@ -383,6 +443,12 @@ export function StepAccount({ sessionToken, onNext }: StepAccountProps) {
           Sign in
         </Link>
       </p>
+
+      <TermsOfServiceModal
+        open={showLegalModal}
+        onOpenChange={setShowLegalModal}
+        onAccept={handleAcceptLegal}
+      />
     </div>
   )
 }
