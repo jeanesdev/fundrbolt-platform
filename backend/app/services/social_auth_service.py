@@ -21,7 +21,7 @@ from app.core.metrics import (
     SOCIAL_AUTH_STARTS_TOTAL,
     SOCIAL_AUTH_SUCCESS_TOTAL,
 )
-from app.core.security import create_access_token, create_refresh_token
+from app.core.security import create_access_token, create_refresh_token, decode_token
 from app.models.social_auth_attempt import SocialAuthAttempt
 from app.models.social_auth_challenge import (
     AdminStepUpChallenge,
@@ -244,7 +244,7 @@ class SocialAuthService:
                 email_verified,
                 attempt.id,
             )
-            return await cls._complete_auth(db, attempt, user)
+            return await cls._complete_auth(db, attempt, user, is_new_account=True)
         else:
             # Admin PWA – deny, no pre-provisioned account
             attempt.result = "denied"
@@ -500,10 +500,22 @@ class SocialAuthService:
         db: AsyncSession,
         attempt: SocialAuthAttempt,
         user: User,
+        is_new_account: bool = False,
     ) -> SocialAuthSuccessResponse:
         """Issue tokens and mark attempt as successful."""
-        access_token = create_access_token(data={"sub": str(user.id)})
-        refresh_token = create_refresh_token(data={"sub": str(user.id)})
+        token_data = {"sub": str(user.id)}
+        access_token = create_access_token(data=token_data)
+        refresh_token = create_refresh_token(data=token_data)
+
+        # Store session in Redis so the refresh token is valid
+        refresh_payload = decode_token(refresh_token)
+        refresh_jti = refresh_payload["jti"]
+        from app.services.session_service import SessionService  # noqa: PLC0415
+        await SessionService.create_session(
+            db=db,
+            user_id=user.id,
+            refresh_token_jti=refresh_jti,
+        )
 
         attempt.result = "success"
         attempt.user_id = user.id
@@ -517,6 +529,7 @@ class SocialAuthService:
                 "user_id": str(user.id),
                 "provider": attempt.provider_key,
                 "app_context": attempt.app_context,
+                "is_new_account": is_new_account,
             },
         )
         SOCIAL_AUTH_SUCCESS_TOTAL.labels(
@@ -529,6 +542,7 @@ class SocialAuthService:
             user_id=user.id,
             access_token=access_token,
             refresh_token=refresh_token,
+            is_new_account=is_new_account,
         )
 
     @classmethod
@@ -661,7 +675,9 @@ class SocialAuthService:
 
         name = provider_claims.get("name", "")
         parts = name.split(" ", 1) if name else ["", ""]
-        first_name = parts[0] or "Social"
+        # Fall back to the part of the email before @ rather than "Social User"
+        email_prefix = email.split("@")[0] if email else ""
+        first_name = parts[0] or email_prefix or "New"
         last_name = parts[1] if len(parts) > 1 else "User"
 
         # Create user with random password (they use social login)
