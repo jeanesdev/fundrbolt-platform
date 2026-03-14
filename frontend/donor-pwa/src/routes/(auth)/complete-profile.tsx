@@ -1,9 +1,19 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { CompleteProfile } from '@/features/auth/complete-profile'
+import { useAuthStore } from '@/stores/auth-store'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { z } from 'zod'
 
-export const Route = createFileRoute('/(auth)/complete-profile')({
-  component: RouteComponent,
+const searchSchema = z.object({
+  redirect: z.string().optional(),
 })
 
-function RouteComponent() {
-  return <div>Hello "/(auth)/complete-profile"!</div>
-}
+export const Route = createFileRoute('/(auth)/complete-profile')({
+  validateSearch: searchSchema,
+  beforeLoad: () => {
+    const { isAuthenticated } = useAuthStore.getState()
+    if (!isAuthenticated) {
+      throw redirect({ to: '/sign-in' })
+    }
+  },
+  component: CompleteProfile,
+})
