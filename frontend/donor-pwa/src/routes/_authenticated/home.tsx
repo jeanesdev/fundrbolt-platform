@@ -164,9 +164,11 @@ function DonorHomePage() {
         className='sticky top-0 z-50'
         style={{ backgroundColor: colors.primary.navy }}
       >
-        <div className='flex h-14 items-center justify-between px-5'>
-          <img src={LogoWhiteGold} alt='FundrBolt' className='h-7' />
-          <ProfileDropdown />
+        <div className='relative flex h-16 items-center justify-center px-5'>
+          <img src={LogoWhiteGold} alt='FundrBolt' className='h-10' />
+          <div className='absolute right-5'>
+            <ProfileDropdown />
+          </div>
         </div>
       </header>
 
