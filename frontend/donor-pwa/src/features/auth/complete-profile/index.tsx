@@ -1,13 +1,4 @@
-import { useState } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
-import { useNavigate, useSearch } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import apiClient from '@/lib/axios'
+import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -25,8 +16,17 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
 import { AuthLayout } from '@/features/auth/auth-layout'
+import apiClient from '@/lib/axios'
+import { useAuthStore } from '@/stores/auth-store'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation } from '@tanstack/react-query'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import { Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
 import { markProfileSetupSeen } from './utils'
 
 // ---------------------------------------------------------------------------
@@ -36,6 +36,8 @@ import { markProfileSetupSeen } from './utils'
 const phoneRegex = /^\+[1-9]\d{1,14}$/
 
 const completeProfileSchema = z.object({
+  first_name: z.string().min(1, 'First name is required').max(100),
+  last_name: z.string().min(1, 'Last name is required').max(100),
   linkedin: z
     .string()
     .regex(/^([a-zA-Z0-9\-_.]+)?$/, 'Enter only your LinkedIn username')
@@ -94,6 +96,8 @@ export function CompleteProfile() {
   const form = useForm<FormValues>({
     resolver: zodResolver(completeProfileSchema),
     defaultValues: {
+      first_name: user?.first_name ?? '',
+      last_name: user?.last_name ?? '',
       linkedin: '',
       twitter: '',
       website: '',
@@ -115,8 +119,8 @@ export function CompleteProfile() {
           : `https://${data.website}`
 
       const payload: Record<string, unknown> = {
-        first_name: user?.first_name ?? '',
-        last_name: user?.last_name ?? '',
+        first_name: data.first_name,
+        last_name: data.last_name,
       }
       if (data.phone) payload['phone'] = data.phone
       if (Object.keys(socialLinks).length > 0) {
@@ -130,7 +134,7 @@ export function CompleteProfile() {
       setUser(data.user ?? data)
       if (user) markProfileSetupSeen(user.id)
       toast.success('Profile saved!')
-      navigate({ to: redirectTo as any })
+      navigate({ to: redirectTo as string })
     },
     onError: () => {
       toast.error('Failed to save profile. Please try again.')
@@ -139,7 +143,7 @@ export function CompleteProfile() {
 
   const handleSkip = () => {
     if (user) markProfileSetupSeen(user.id)
-    navigate({ to: redirectTo as any })
+    navigate({ to: redirectTo as string })
   }
 
   if (!user) return null
@@ -183,7 +187,51 @@ export function CompleteProfile() {
                 )}
                 className='space-y-4'
               >
-                {/* Phone */}
+                {/* Name */}
+                <div className='grid grid-cols-2 gap-3'>
+                  <FormField
+                    control={form.control}
+                    name='first_name'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First name</FormLabel>
+                        <FormControl>
+                          <Input placeholder='Jane' {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name='last_name'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last name</FormLabel>
+                        <FormControl>
+                          <Input placeholder='Smith' {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Email (read-only — change via Settings) */}
+                <FormItem>
+                  <FormLabel>
+                    Email{' '}
+                    <span className='text-muted-foreground font-normal text-xs'>
+                      (change in Settings)
+                    </span>
+                  </FormLabel>
+                  <Input
+                    value={user.email}
+                    readOnly
+                    disabled
+                    className='bg-muted text-muted-foreground'
+                  />
+                </FormItem>
                 <FormField
                   control={form.control}
                   name='phone'

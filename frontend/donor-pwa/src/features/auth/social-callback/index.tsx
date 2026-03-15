@@ -61,8 +61,10 @@ export function SocialCallback() {
           })
           if (result.is_new_account) {
             toast.success('Welcome to FundrBolt! Your account has been created.')
+            navigate({ to: '/complete-profile', search: { redirect: '/home' } })
+          } else {
+            navigate({ to: '/' })
           }
-          navigate({ to: '/' })
         } else if (result.status === 'pending_verification') {
           setPending({
             reason: result.reason,
