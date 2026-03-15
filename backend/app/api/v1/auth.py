@@ -37,6 +37,7 @@ from app.schemas.social_auth import (
     EmailVerificationRequest,
     LinkConfirmationRequest,
     ProviderKey,
+    SocialAttemptContextResponse,
     SocialAuthPendingResponse,
     SocialAuthSuccessResponse,
     SocialCallbackRequest,
@@ -1036,6 +1037,45 @@ async def list_social_providers(
 ) -> SocialProviderListResponse:
     """List social providers available for the given app context."""
     return SocialAuthService.list_providers(app_context)
+
+
+@router.get(
+    "/social/attempt-context",
+    status_code=status.HTTP_200_OK,
+    response_model=SocialAttemptContextResponse,
+)
+async def get_social_attempt_context(
+    state: str,
+    db: AsyncSession = Depends(get_db),
+) -> SocialAttemptContextResponse:
+    """Look up the app_context and redirect_uri for a social auth attempt by state token.
+
+    Used by the admin PWA callback to detect when it has received a redirect
+    that was initiated from the donor PWA, so it can forward the request
+    to the correct application.
+    """
+    from sqlalchemy import select
+
+    from app.models.social_auth_attempt import SocialAuthAttempt
+
+    stmt = select(SocialAuthAttempt).where(
+        SocialAuthAttempt.state_token == state,
+        SocialAuthAttempt.result == "started",
+    )
+    result = await db.execute(stmt)
+    attempt = result.scalar_one_or_none()
+    if attempt is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "ATTEMPT_NOT_FOUND",
+                "message": "Auth attempt not found or already completed",
+            },
+        )
+    return SocialAttemptContextResponse(
+        app_context=AppContext(attempt.app_context),
+        redirect_uri=attempt.redirect_uri,
+    )
 
 
 @router.post(

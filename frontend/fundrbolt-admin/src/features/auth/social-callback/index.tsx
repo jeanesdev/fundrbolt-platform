@@ -1,9 +1,3 @@
-import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useSearch } from '@tanstack/react-router'
-import type { SocialAuthProvider } from '@fundrbolt/shared/types'
-import { Loader2 } from 'lucide-react'
-import { useAuthStore } from '@/stores/auth-store'
-import { adminSocialAuthApi } from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -13,6 +7,12 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { AuthLayout } from '@/features/auth/auth-layout'
+import { adminSocialAuthApi } from '@/lib/axios'
+import { useAuthStore } from '@/stores/auth-store'
+import type { SocialAuthProvider } from '@fundrbolt/shared/types'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import { Loader2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 type PendingInfo = {
   reason: string
@@ -38,6 +38,25 @@ export function SocialCallback() {
 
     const handleCallback = async () => {
       try {
+        // First, look up which app initiated this OAuth attempt by the state token.
+        // Since Google only allows localhost:5173 as the redirect URI, donor PWA flows
+        // always land here — we need to forward them to the correct app.
+        let attemptContext: { app_context: string; redirect_uri: string | null } | null = null
+        try {
+          attemptContext = await adminSocialAuthApi.getAttemptContext(state)
+        } catch {
+          // If we can't look up the attempt, fall through to the normal admin flow
+          // (will likely fail gracefully with a "state not found" error from the callback)
+        }
+
+        if (attemptContext?.app_context === 'donor_pwa' && attemptContext.redirect_uri) {
+          // This attempt was started from the donor PWA — redirect there with the same query params
+          const donorCallbackUrl = new URL(attemptContext.redirect_uri)
+          donorCallbackUrl.search = window.location.search
+          window.location.href = donorCallbackUrl.toString()
+          return
+        }
+
         const provider = state.split(':')[0] as SocialAuthProvider
         const result = await adminSocialAuthApi.callback(provider, {
           code,

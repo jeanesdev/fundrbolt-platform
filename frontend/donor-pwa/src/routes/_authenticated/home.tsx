@@ -209,4 +209,3 @@ function DonorHomePage() {
 export const Route = createFileRoute('/_authenticated/home')({
   component: DonorHomePage,
 })
-

@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
-import { CheckCircle2, Loader2, Mail } from 'lucide-react'
-import { toast } from 'sonner'
-import apiClient from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import apiClient from '@/lib/axios'
+import { useAuthStore } from '@/stores/auth-store'
+import { useNavigate } from '@tanstack/react-router'
+import { CheckCircle2, Loader2, Mail } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 interface StepVerifyEmailProps {
   email: string
