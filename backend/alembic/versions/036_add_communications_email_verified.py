@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "036_add_communications_email_verified"
+revision = "036_comms_email_verified"
 down_revision = "035_add_communications_email"
 branch_labels = None
 depends_on = None
