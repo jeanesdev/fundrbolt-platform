@@ -604,13 +604,13 @@ class OnboardingService:
 
             notification_results = await asyncio.gather(
                 email_service.send_npo_application_submitted_email(
-                    to_email=user.email,
+                    to_email=user.contact_email,
                     npo_name=npo.name,
                     applicant_name=applicant_name,
                 ),
                 email_service.send_npo_application_submitted_admin_notification(
                     applicant_name=applicant_name,
-                    applicant_email=user.email,
+                    applicant_email=user.contact_email,
                     npo_name=npo.name,
                     application_id=str(application.id),
                 ),

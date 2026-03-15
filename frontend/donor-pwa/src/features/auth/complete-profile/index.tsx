@@ -38,6 +38,12 @@ const phoneRegex = /^\+[1-9]\d{1,14}$/
 const completeProfileSchema = z.object({
   first_name: z.string().min(1, 'First name is required').max(100),
   last_name: z.string().min(1, 'Last name is required').max(100),
+  communications_email: z
+    .string()
+    .email('Must be a valid email address')
+    .max(255)
+    .optional()
+    .or(z.literal('')),
   linkedin: z
     .string()
     .regex(/^([a-zA-Z0-9\-_.]+)?$/, 'Enter only your LinkedIn username')
@@ -98,6 +104,7 @@ export function CompleteProfile() {
     defaultValues: {
       first_name: user?.first_name ?? '',
       last_name: user?.last_name ?? '',
+      communications_email: user?.communications_email ?? '',
       linkedin: '',
       twitter: '',
       website: '',
@@ -122,6 +129,8 @@ export function CompleteProfile() {
         first_name: data.first_name,
         last_name: data.last_name,
       }
+      if (data.communications_email)
+        payload['communications_email'] = data.communications_email
       if (data.phone) payload['phone'] = data.phone
       if (Object.keys(socialLinks).length > 0) {
         payload['social_media_links'] = socialLinks
@@ -220,7 +229,7 @@ export function CompleteProfile() {
                 {/* Email (read-only — change via Settings) */}
                 <FormItem>
                   <FormLabel>
-                    Email{' '}
+                    Sign In Email{' '}
                     <span className='text-muted-foreground font-normal text-xs'>
                       (change in Settings)
                     </span>
@@ -232,6 +241,35 @@ export function CompleteProfile() {
                     className='bg-muted text-muted-foreground'
                   />
                 </FormItem>
+
+                {/* Communications email */}
+                <FormField
+                  control={form.control}
+                  name='communications_email'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Communications Email{' '}
+                        <span className='text-muted-foreground font-normal'>
+                          (optional)
+                        </span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type='email'
+                          inputMode='email'
+                          placeholder='personal@example.com'
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <p className='text-muted-foreground text-xs'>
+                        Where we'll send event notifications and updates. Defaults to your sign-in email.
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name='phone'

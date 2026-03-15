@@ -71,6 +71,15 @@ class User(Base, UUIDMixin, TimestampMixin):
     postal_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
     country: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
+    # Communications Email (optional second email for outbound mail)
+    # When set, all non-auth emails (event notifications, receipts, etc.) are sent here
+    # instead of `email`.  Login always uses `email`.
+    communications_email: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        index=True,
+    )
+
     # Profile Picture
     profile_picture_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
@@ -216,6 +225,15 @@ class User(Base, UUIDMixin, TimestampMixin):
             First name and last name concatenated
         """
         return f"{self.first_name} {self.last_name}"
+
+    @property
+    def contact_email(self) -> str:
+        """Email address to use for outbound communications.
+
+        Returns communications_email if set, otherwise falls back to email.
+        Use this for event notifications, receipts, and other non-auth mail.
+        """
+        return self.communications_email or self.email
 
     def __repr__(self) -> str:
         """Return string representation of user."""

@@ -526,12 +526,12 @@ async def verify_email(
 
         email_service = get_email_service()
         await email_service.send_welcome_email(
-            to_email=user.email,
+            to_email=user.contact_email,
             user_name=user.first_name,
         )
-        logger.info(f"Welcome email sent to {user.email} (user_id={user.id})")
+        logger.info(f"Welcome email sent to {user.contact_email} (user_id={user.id})")
     except Exception as welcome_email_exc:
-        logger.error(f"Failed to send welcome email to {user.email}: {welcome_email_exc}")
+        logger.error(f"Failed to send welcome email to {user.contact_email}: {welcome_email_exc}")
 
     return EmailVerifyResponse(message="Email verified successfully")
 
@@ -748,12 +748,12 @@ async def verify_email_with_code(
 
         email_service = get_email_service()
         await email_service.send_welcome_email(
-            to_email=user.email,
+            to_email=user.contact_email,
             user_name=user.first_name,
         )
-        logger.info(f"Welcome email sent to {user.email} (user_id={user.id})")
+        logger.info(f"Welcome email sent to {user.contact_email} (user_id={user.id})")
     except Exception as welcome_email_exc:
-        logger.error(f"Failed to send welcome email to {user.email}: {welcome_email_exc}")
+        logger.error(f"Failed to send welcome email to {user.contact_email}: {welcome_email_exc}")
 
     # Auto-login: create JWT tokens so the caller is immediately authenticated
     from app.core.security import create_access_token, create_refresh_token  # noqa: PLC0415

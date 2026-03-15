@@ -10,6 +10,7 @@ import { create } from 'zustand'
 interface AuthUser {
   id: string
   email: string
+  communications_email?: string | null
   first_name: string
   last_name: string
   role: string

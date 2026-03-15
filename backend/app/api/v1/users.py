@@ -112,6 +112,7 @@ async def get_current_user_profile(
     return UserPublicWithRole(
         id=current_user.id,
         email=current_user.email,
+        communications_email=current_user.communications_email,
         first_name=current_user.first_name,
         last_name=current_user.last_name,
         phone=current_user.phone,
@@ -177,6 +178,7 @@ async def update_current_user_profile(
             postal_code=profile_data.postal_code,
             country=profile_data.country,
             social_media_links=profile_data.social_media_links,
+            communications_email=profile_data.communications_email,
             password=None,  # Profile updates don't change password
         )
 
@@ -221,6 +223,7 @@ async def update_current_user_profile(
         return UserPublicWithRole(
             id=updated_user.id,
             email=updated_user.email,
+            communications_email=updated_user.communications_email,
             first_name=updated_user.first_name,
             last_name=updated_user.last_name,
             phone=updated_user.phone,
