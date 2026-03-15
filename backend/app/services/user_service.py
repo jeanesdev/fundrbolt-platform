@@ -398,8 +398,6 @@ class UserService:
             user.social_media_links = user_data.social_media_links
         if user_data.password is not None:
             user.password_hash = hash_password(user_data.password)
-        if user_data.communications_email is not None:
-            user.communications_email = user_data.communications_email or None
 
         await db.commit()
         await db.refresh(user)

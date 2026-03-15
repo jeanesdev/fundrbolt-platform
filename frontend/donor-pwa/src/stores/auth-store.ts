@@ -11,6 +11,7 @@ interface AuthUser {
   id: string
   email: string
   communications_email?: string | null
+  communications_email_verified?: boolean
   first_name: string
   last_name: string
   role: string

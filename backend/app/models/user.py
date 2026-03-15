@@ -72,12 +72,18 @@ class User(Base, UUIDMixin, TimestampMixin):
     country: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Communications Email (optional second email for outbound mail)
-    # When set, all non-auth emails (event notifications, receipts, etc.) are sent here
-    # instead of `email`.  Login always uses `email`.
+    # When set AND verified, all non-auth emails (event notifications, receipts)
+    # are sent here instead of `email`.  Login always uses `email`.
     communications_email: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
         index=True,
+    )
+    communications_email_verified: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
     )
 
     # Profile Picture
@@ -230,10 +236,12 @@ class User(Base, UUIDMixin, TimestampMixin):
     def contact_email(self) -> str:
         """Email address to use for outbound communications.
 
-        Returns communications_email if set, otherwise falls back to email.
-        Use this for event notifications, receipts, and other non-auth mail.
+        Returns communications_email if set AND verified, otherwise falls back
+        to the sign-in email.  Use this for event notifications, receipts, etc.
         """
-        return self.communications_email or self.email
+        if self.communications_email and self.communications_email_verified:
+            return self.communications_email
+        return self.email
 
     def __repr__(self) -> str:
         """Return string representation of user."""

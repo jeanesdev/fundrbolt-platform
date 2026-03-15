@@ -239,6 +239,80 @@ class RedisService:
         await redis.delete(key)
 
     @staticmethod
+    async def store_email_change_otp(otp: str, user_id: uuid.UUID, new_email: str) -> None:
+        """Store OTP and pending new email for an email-change request.
+
+        Key: email_change_otp:{user_id}  → "{otp}:{new_email}"
+        TTL: 1 hour
+        """
+        redis = await get_redis()
+        key = f"email_change_otp:{user_id}"
+        await redis.setex(key, RedisService.PASSWORD_RESET_TTL, f"{otp}:{new_email}")
+
+    @staticmethod
+    async def get_email_change_otp(
+        user_id: uuid.UUID,
+    ) -> tuple[str, str] | None:
+        """Retrieve (otp, new_email) for an email-change request.
+
+        Returns None if expired or not found.
+        """
+        redis = await get_redis()
+        key = f"email_change_otp:{user_id}"
+        value = await redis.get(key)
+        if value is None:
+            return None
+        parts = str(value).split(":", 1)
+        if len(parts) != 2:
+            return None
+        return parts[0], parts[1]
+
+    @staticmethod
+    async def delete_email_change_otp(user_id: uuid.UUID) -> None:
+        """Delete OTP after successful email change."""
+        redis = await get_redis()
+        key = f"email_change_otp:{user_id}"
+        await redis.delete(key)
+
+    # ------------------------------------------------------------------
+    # Communications email OTP  (key: comms_email_otp:{user_id})
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    async def store_comms_email_otp(otp: str, user_id: uuid.UUID, new_email: str) -> None:
+        """Store OTP and pending communications email.
+
+        Key: comms_email_otp:{user_id}  → "{otp}:{new_email}"
+        TTL: 1 hour
+        """
+        redis = await get_redis()
+        key = f"comms_email_otp:{user_id}"
+        await redis.setex(key, RedisService.PASSWORD_RESET_TTL, f"{otp}:{new_email}")
+
+    @staticmethod
+    async def get_comms_email_otp(user_id: uuid.UUID) -> tuple[str, str] | None:
+        """Retrieve (otp, pending_email) for a communications email verification.
+
+        Returns None if expired or not found.
+        """
+        redis = await get_redis()
+        key = f"comms_email_otp:{user_id}"
+        value = await redis.get(key)
+        if value is None:
+            return None
+        parts = str(value).split(":", 1)
+        if len(parts) != 2:
+            return None
+        return parts[0], parts[1]
+
+    @staticmethod
+    async def delete_comms_email_otp(user_id: uuid.UUID) -> None:
+        """Delete OTP after successful communications email verification."""
+        redis = await get_redis()
+        key = f"comms_email_otp:{user_id}"
+        await redis.delete(key)
+
+    @staticmethod
     async def store_password_reset_token(token: str, user_id: uuid.UUID) -> None:
         """Store password reset token.
 

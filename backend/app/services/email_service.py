@@ -303,7 +303,7 @@ The FundrBolt Team
 
         # Email content
         subject = (
-            f"{otp} — Verify your FundrBolt account" if otp else "Verify Your Email - FundrBolt"
+            f"Verify your FundrBolt account -- {otp}" if otp else "Verify your FundrBolt account"
         )
         greeting = f"Hi {user_name}" if user_name else "Hi"
 
@@ -957,6 +957,58 @@ This is an automated notification from the FundrBolt.
             subject=subject,
             body=plain_body,
             email_type="npo_onboarding_admin_notification",
+            html_body=html_body,
+        )
+
+    async def send_communications_email_otp(
+        self,
+        to_email: str,
+        otp: str,
+        user_name: str | None = None,
+    ) -> bool:
+        """Send a 6-digit OTP to a new communications email address for verification.
+
+        Args:
+            to_email: The new communications email address to verify.
+            otp: 6-digit OTP code.
+            user_name: Optional first name for personalisation.
+
+        Returns:
+            True if email sent successfully, False otherwise.
+        """
+        greeting = f"Hi {user_name}," if user_name else "Hi,"
+        subject = f"Verify your communications email — {otp}"
+
+        plain_body = f"""
+{greeting}
+
+Enter this 6-digit code to verify your communications email address on FundrBolt:
+
+  {otp}
+
+This code expires in 1 hour. If you didn't request this, you can safely ignore it.
+
+—The FundrBolt Team
+        """.strip()
+
+        html_body = _create_email_html_template(
+            heading="Verify your email address",
+            body_paragraphs=[
+                f"{greeting}",
+                "Use the code below to verify this address as your FundrBolt communications email. "
+                "Event notifications and updates will be sent here once confirmed.",
+                "The code expires in <strong>1 hour</strong>.",
+            ],
+            footer_text="If you didn't request this, you can safely ignore this email.",
+            logo_url=self._get_logo_url("dark"),
+            otp_code=otp,
+        )
+
+        return await self._send_email_with_retry(
+            to_email=to_email,
+            subject=subject,
+            body=plain_body,
+            email_type="comms_email_verify",
             html_body=html_body,
         )
 

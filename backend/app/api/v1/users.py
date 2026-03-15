@@ -11,6 +11,9 @@ from app.core.database import get_db
 from app.middleware.auth import get_current_user, require_role
 from app.models.user import User
 from app.schemas.users import (
+    CommunicationsEmailConfirm,
+    CommunicationsEmailRequest,
+    CommunicationsEmailResponse,
     NPOMembershipInfo,
     ProfileUpdateRequest,
     RoleUpdateRequest,
@@ -113,6 +116,7 @@ async def get_current_user_profile(
         id=current_user.id,
         email=current_user.email,
         communications_email=current_user.communications_email,
+        communications_email_verified=current_user.communications_email_verified,
         first_name=current_user.first_name,
         last_name=current_user.last_name,
         phone=current_user.phone,
@@ -178,7 +182,6 @@ async def update_current_user_profile(
             postal_code=profile_data.postal_code,
             country=profile_data.country,
             social_media_links=profile_data.social_media_links,
-            communications_email=profile_data.communications_email,
             password=None,  # Profile updates don't change password
         )
 
@@ -224,6 +227,7 @@ async def update_current_user_profile(
             id=updated_user.id,
             email=updated_user.email,
             communications_email=updated_user.communications_email,
+            communications_email_verified=updated_user.communications_email_verified,
             first_name=updated_user.first_name,
             last_name=updated_user.last_name,
             phone=updated_user.phone,
@@ -247,6 +251,89 @@ async def update_current_user_profile(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except PermissionError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+
+
+@router.post(
+    "/me/communications-email/request-verification", response_model=CommunicationsEmailResponse
+)
+async def request_communications_email_verification(
+    body: CommunicationsEmailRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> CommunicationsEmailResponse:
+    """Send a 6-digit OTP to verify a new communications email address.
+
+    The OTP is stored in Redis (TTL 1 hour) alongside the pending address.
+    Nothing is saved to the database until the OTP is confirmed.
+    """
+    from app.core.security import generate_verification_otp  # noqa: PLC0415
+    from app.services.email_service import get_email_service  # noqa: PLC0415
+    from app.services.redis_service import RedisService  # noqa: PLC0415
+
+    # Prevent re-verifying the same sign-in email
+    if body.email == current_user.email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "SAME_AS_SIGNIN_EMAIL",
+                "message": "Communications email must differ from your sign-in email",
+            },
+        )
+
+    otp = generate_verification_otp()
+    await RedisService.store_comms_email_otp(otp, current_user.id, body.email)
+
+    email_service = get_email_service()
+    try:
+        await email_service.send_communications_email_otp(
+            to_email=body.email,
+            otp=otp,
+            user_name=current_user.first_name,
+        )
+    except Exception as exc:  # noqa: BLE001
+        import logging  # noqa: PLC0415
+
+        logging.getLogger(__name__).error(f"Failed to send comms email OTP: {exc}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": "EMAIL_SEND_FAILED", "message": "Failed to send verification email"},
+        ) from exc
+
+    return CommunicationsEmailResponse(message=f"Verification code sent to {body.email}")
+
+
+@router.post("/me/communications-email/confirm", response_model=CommunicationsEmailResponse)
+async def confirm_communications_email(
+    body: CommunicationsEmailConfirm,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> CommunicationsEmailResponse:
+    """Confirm communications email with the OTP that was sent.
+
+    On success, saves the verified address to the database.
+    """
+    from app.services.redis_service import RedisService  # noqa: PLC0415
+
+    result = await RedisService.get_comms_email_otp(current_user.id)
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "OTP_EXPIRED", "message": "Verification code expired or not found"},
+        )
+
+    stored_otp, pending_email = result
+    if body.otp != stored_otp:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "OTP_INVALID", "message": "Incorrect verification code"},
+        )
+
+    current_user.communications_email = pending_email
+    current_user.communications_email_verified = True
+    await db.commit()
+    await RedisService.delete_comms_email_otp(current_user.id)
+
+    return CommunicationsEmailResponse(message="Communications email verified successfully")
 
 
 @router.get("", response_model=UserListResponse)

@@ -98,13 +98,6 @@ class UserUpdateRequest(BaseModel):
     country: str | None = Field(None, max_length=100)
     password: str | None = Field(None, min_length=8, max_length=100)
     social_media_links: dict[str, str] | None = None
-    communications_email: EmailStr | None = None
-
-    @field_validator("communications_email")
-    @classmethod
-    def communications_email_lowercase(cls, v: str | None) -> str | None:
-        """Normalise communications_email to lowercase."""
-        return v.lower() if v else None
 
     @field_validator("password")
     @classmethod
@@ -138,13 +131,6 @@ class ProfileUpdateRequest(BaseModel):
     postal_code: str | None = Field(None, max_length=20)
     country: str | None = Field(None, max_length=100)
     social_media_links: dict[str, str] | None = None
-    communications_email: EmailStr | None = None
-
-    @field_validator("communications_email")
-    @classmethod
-    def communications_email_lowercase(cls, v: str | None) -> str | None:
-        """Normalise communications_email to lowercase."""
-        return v.lower() if v else None
 
     @field_validator("phone")
     @classmethod
@@ -180,6 +166,7 @@ class UserPublicWithRole(BaseModel):
     id: uuid.UUID
     email: str
     communications_email: str | None = None
+    communications_email_verified: bool = False
     first_name: str
     last_name: str
     phone: str | None = None
@@ -218,3 +205,32 @@ class UserActivateRequest(BaseModel):
     """Request schema for activating a user account."""
 
     is_active: bool
+
+
+# ================================
+# Communications Email Verification
+# ================================
+
+
+class CommunicationsEmailRequest(BaseModel):
+    """Request to set and verify a new communications email."""
+
+    email: EmailStr
+
+    @field_validator("email")
+    @classmethod
+    def email_must_be_lowercase(cls, v: str) -> str:
+        """Ensure email is lowercase."""
+        return v.lower()
+
+
+class CommunicationsEmailConfirm(BaseModel):
+    """Request to confirm communications email with OTP."""
+
+    otp: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+class CommunicationsEmailResponse(BaseModel):
+    """Response for communications email verification requests."""
+
+    message: str
