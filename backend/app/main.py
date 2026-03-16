@@ -200,4 +200,4 @@ async def root() -> JSONResponse:
 
 
 # Wrap FastAPI with Socket.IO ASGI app for WebSocket support
-combined_app = socketio_lib.ASGIApp(sio, other_app=app)
+combined_app = socketio_lib.ASGIApp(sio, other_asgi_app=app)
