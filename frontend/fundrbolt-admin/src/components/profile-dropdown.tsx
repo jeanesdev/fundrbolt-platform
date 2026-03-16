@@ -96,8 +96,8 @@ export function ProfileDropdown() {
   const filteredEvents =
     shouldShowSearch && eventSearchQuery
       ? availableEvents.filter((event) =>
-          event.name.toLowerCase().includes(eventSearchQuery.toLowerCase())
-        )
+        event.name.toLowerCase().includes(eventSearchQuery.toLowerCase())
+      )
       : availableEvents
 
   const handleSpoofTimeApply = () => {

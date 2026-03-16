@@ -1,0 +1,576 @@
+openapi: 3.1.0
+info:
+  title: Fundrbolt Donor Notifications API
+  version: 1.0.0
+  description: API contracts for the donor notification system (feature 035)
+
+paths:
+  # ──────────────────────────────────────────────
+  # Donor Notification Endpoints
+  # ──────────────────────────────────────────────
+
+  /api/v1/notifications:
+    get:
+      operationId: listNotifications
+      summary: List notifications for current donor
+      description: >
+        Returns notifications for the authenticated donor, scoped to a specific event.
+        Ordered by created_at DESC. Supports pagination via cursor.
+        When spoofed user header is present, returns spoofed user's notifications.
+      tags: [Donor Notifications]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: event_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Filter notifications to this event
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+          description: Max notifications to return
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Cursor for pagination (notification ID)
+        - name: unread_only
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: Filter to unread notifications only
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Notification"
+                  next_cursor:
+                    type: string
+                    nullable: true
+                  unread_count:
+                    type: integer
+                    description: Total unread notifications for this event
+
+  /api/v1/notifications/unread-count:
+    get:
+      operationId: getUnreadCount
+      summary: Get unread notification count for badge
+      description: >
+        Lightweight endpoint returning only the unread count for badge display.
+        Designed for frequent polling when Socket.IO is unavailable.
+      tags: [Donor Notifications]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: event_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unread_count:
+                    type: integer
+
+  /api/v1/notifications/{notification_id}/read:
+    post:
+      operationId: markNotificationRead
+      summary: Mark a single notification as read
+      tags: [Donor Notifications]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: notification_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+        "404":
+          description: Notification not found or does not belong to current user
+
+  /api/v1/notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      summary: Mark all notifications as read for an event
+      tags: [Donor Notifications]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [event_id]
+              properties:
+                event_id:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: All notifications marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated_count:
+                    type: integer
+
+  # ──────────────────────────────────────────────
+  # Push Subscription Endpoints
+  # ──────────────────────────────────────────────
+
+  /api/v1/notifications/push/subscribe:
+    post:
+      operationId: subscribePush
+      summary: Register a push notification subscription
+      description: >
+        Stores the Web Push API subscription object for the current user's device.
+        A user may have multiple active subscriptions (one per device).
+      tags: [Push Notifications]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint, keys]
+              properties:
+                endpoint:
+                  type: string
+                  format: uri
+                  description: Push service endpoint URL
+                keys:
+                  type: object
+                  required: [p256dh, auth]
+                  properties:
+                    p256dh:
+                      type: string
+                      description: Client public key (base64url encoded)
+                    auth:
+                      type: string
+                      description: Auth secret (base64url encoded)
+                platform:
+                  type: string
+                  enum: [ios, android, desktop]
+                  description: Detected device platform
+      responses:
+        "201":
+          description: Subscription created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  message:
+                    type: string
+
+  /api/v1/notifications/push/unsubscribe:
+    post:
+      operationId: unsubscribePush
+      summary: Deactivate a push subscription
+      tags: [Push Notifications]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [endpoint]
+              properties:
+                endpoint:
+                  type: string
+                  format: uri
+      responses:
+        "200":
+          description: Subscription deactivated
+
+  /api/v1/notifications/push/vapid-key:
+    get:
+      operationId: getVapidPublicKey
+      summary: Get the VAPID public key for push subscription
+      description: >
+        Returns the server's VAPID public key needed by the browser to
+        subscribe to push notifications. This endpoint is public since
+        the public key is not sensitive.
+      tags: [Push Notifications]
+      security: []
+      responses:
+        "200":
+          description: VAPID public key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  public_key:
+                    type: string
+                    description: VAPID public key (base64url encoded)
+
+  # ──────────────────────────────────────────────
+  # Notification Preferences Endpoints
+  # ──────────────────────────────────────────────
+
+  /api/v1/notifications/preferences:
+    get:
+      operationId: getNotificationPreferences
+      summary: Get current donor's notification preferences
+      tags: [Notification Preferences]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current preferences
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  preferences:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NotificationPreference"
+
+    put:
+      operationId: updateNotificationPreferences
+      summary: Update notification preferences (bulk)
+      description: >
+        Accepts a list of preference updates. In-app channel cannot be disabled.
+        SMS channel requires verified phone number.
+      tags: [Notification Preferences]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [preferences]
+              properties:
+                preferences:
+                  type: array
+                  items:
+                    type: object
+                    required: [notification_type, channel, enabled]
+                    properties:
+                      notification_type:
+                        $ref: "#/components/schemas/NotificationType"
+                      channel:
+                        $ref: "#/components/schemas/DeliveryChannel"
+                      enabled:
+                        type: boolean
+      responses:
+        "200":
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated_count:
+                    type: integer
+        "400":
+          description: >
+            Validation error (e.g., cannot disable in-app channel,
+            SMS requires verified phone)
+
+  # ──────────────────────────────────────────────
+  # Admin Notification Endpoints
+  # ──────────────────────────────────────────────
+
+  /api/v1/admin/events/{event_id}/notifications:
+    get:
+      operationId: listNotificationCampaigns
+      summary: List notification campaigns for an event
+      tags: [Admin Notifications]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of campaigns
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  campaigns:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NotificationCampaign"
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  per_page:
+                    type: integer
+
+    post:
+      operationId: sendCustomNotification
+      summary: Compose and send a custom notification to donors
+      description: >
+        All admin roles can send custom notifications.
+        Validates recipient criteria, resolves recipients, and dispatches
+        notification creation + delivery via background task.
+      tags: [Admin Notifications]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message, recipient_criteria, channels]
+              properties:
+                message:
+                  type: string
+                  maxLength: 500
+                  description: Notification message body
+                recipient_criteria:
+                  type: object
+                  required: [type]
+                  properties:
+                    type:
+                      type: string
+                      enum: [all_attendees, all_bidders, table, individual]
+                    table_number:
+                      type: integer
+                      description: Required when type is "table"
+                    user_ids:
+                      type: array
+                      items:
+                        type: string
+                        format: uuid
+                      description: Required when type is "individual"
+                channels:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/DeliveryChannel"
+                  minItems: 1
+                  description: At least one channel required
+      responses:
+        "201":
+          description: Campaign created and delivery started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationCampaign"
+        "400":
+          description: Validation error (empty recipients, invalid criteria)
+
+  # ──────────────────────────────────────────────
+  # Socket.IO Events (not REST — documented here for completeness)
+  # ──────────────────────────────────────────────
+  # Connection: wss://host/socket.io/?token={jwt_token}
+  #
+  # Server → Client Events:
+  #   "notification:new"
+  #     payload: { notification: Notification }
+  #     description: New notification created for this user+event
+  #
+  #   "notification:count"
+  #     payload: { event_id: UUID, unread_count: integer }
+  #     description: Updated unread count (sent after mark-read operations)
+  #
+  # Client → Server Events:
+  #   "notification:join_event"
+  #     payload: { event_id: UUID }
+  #     description: Join event room to receive notifications for this event
+  #
+  #   "notification:leave_event"
+  #     payload: { event_id: UUID }
+  #     description: Leave event room
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    NotificationType:
+      type: string
+      enum:
+        - outbid
+        - auction_opened
+        - auction_closing_soon
+        - auction_closed
+        - item_won
+        - admin_bid_placed
+        - paddle_raise
+        - checkout_reminder
+        - bid_confirmation
+        - proxy_bid_triggered
+        - welcome
+        - custom
+
+    DeliveryChannel:
+      type: string
+      enum: [inapp, push, email, sms]
+
+    NotificationPriority:
+      type: string
+      enum: [low, normal, high, urgent]
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        notification_type:
+          $ref: "#/components/schemas/NotificationType"
+        title:
+          type: string
+        body:
+          type: string
+        priority:
+          $ref: "#/components/schemas/NotificationPriority"
+        data:
+          type: object
+          nullable: true
+          properties:
+            item_id:
+              type: string
+              format: uuid
+            item_name:
+              type: string
+            bid_amount:
+              type: number
+            admin_name:
+              type: string
+            deep_link:
+              type: string
+            animation_type:
+              type: string
+              enum: [confetti, flash, pulse, none]
+        is_read:
+          type: boolean
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    NotificationPreference:
+      type: object
+      properties:
+        notification_type:
+          $ref: "#/components/schemas/NotificationType"
+        channel:
+          $ref: "#/components/schemas/DeliveryChannel"
+        enabled:
+          type: boolean
+
+    NotificationCampaign:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        sender:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+        message:
+          type: string
+        recipient_criteria:
+          type: object
+        channels:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeliveryChannel"
+        recipient_count:
+          type: integer
+        delivered_count:
+          type: integer
+        failed_count:
+          type: integer
+        status:
+          type: string
+          enum: [draft, sending, sent, failed]
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time

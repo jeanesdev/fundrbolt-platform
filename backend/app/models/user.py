@@ -15,8 +15,11 @@ if TYPE_CHECKING:
     from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
     from app.models.donation import Donation
     from app.models.event_registration import EventRegistration
+    from app.models.notification import Notification
+    from app.models.notification_preference import NotificationPreference
     from app.models.payment_profile import PaymentProfile
     from app.models.payment_transaction import PaymentTransaction
+    from app.models.push_subscription import PushSubscription
     from app.models.registration_guest import RegistrationGuest
     from app.models.role import Role
     from app.models.session import Session
@@ -181,6 +184,22 @@ class User(Base, UUIDMixin, TimestampMixin):
     social_identity_links: Mapped[list["SocialIdentityLink"]] = relationship(
         "SocialIdentityLink",
         back_populates="user",
+    )
+    notifications: Mapped[list["Notification"]] = relationship(
+        "Notification",
+        back_populates="user",
+        foreign_keys="Notification.user_id",
+        cascade="all, delete-orphan",
+    )
+    notification_preferences: Mapped[list["NotificationPreference"]] = relationship(
+        "NotificationPreference",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    push_subscriptions: Mapped[list["PushSubscription"]] = relationship(
+        "PushSubscription",
+        back_populates="user",
+        cascade="all, delete-orphan",
     )
     # Feature 033: Payment processing relationships
     payment_profiles: Mapped[list["PaymentProfile"]] = relationship(

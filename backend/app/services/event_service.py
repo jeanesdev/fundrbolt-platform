@@ -208,6 +208,17 @@ class EventService:
         # Increment metrics
         EVENTS_PUBLISHED_TOTAL.inc()
 
+        # Dispatch auction opened notifications asynchronously
+        try:
+            from app.tasks.notification_tasks import send_auction_opened_task
+
+            send_auction_opened_task.delay(str(event_id))
+        except Exception:
+            logger.warning(
+                "Failed to dispatch auction opened notification task",
+                extra={"event_id": str(event_id)},
+            )
+
         logger.info(f"Event published: {event.name} (ID: {event.id})")
         return event
 
@@ -232,6 +243,17 @@ class EventService:
         event.checkout_open = True  # auto-open checkout when event closes
         event.updated_by = current_user.id
 
+        # T052: Dispatch checkout reminders when event closes
+        try:
+            from app.services.notification_scheduler import schedule_checkout_reminders
+
+            schedule_checkout_reminders(str(event_id))
+        except Exception:
+            logger.warning(
+                "Failed to schedule checkout reminders on event close",
+                extra={"event_id": str(event_id)},
+            )
+
         await db.commit()
 
         # Re-query to get fresh data with all relationships loaded
@@ -248,6 +270,17 @@ class EventService:
 
         # Increment metrics
         EVENTS_CLOSED_TOTAL.labels(closure_type="manual").inc()
+
+        # Dispatch auction closed notifications asynchronously
+        try:
+            from app.tasks.notification_tasks import send_auction_closed_task
+
+            send_auction_closed_task.delay(str(event_id))
+        except Exception:
+            logger.warning(
+                "Failed to dispatch auction closed notification task",
+                extra={"event_id": str(event_id)},
+            )
 
         logger.info(f"Event manually closed: {event.name} (ID: {event.id})")
         return event

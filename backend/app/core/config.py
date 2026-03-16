@@ -83,6 +83,20 @@ class Settings(BaseSettings):
     # NPO Onboarding — Admin Notification Email
     admin_notification_email: str | None = None
 
+    # VAPID (Web Push)
+    vapid_private_key: str | None = None
+    vapid_public_key: str | None = None
+    vapid_claims_email: str = "mailto:admin@fundrbolt.com"
+
+    # Twilio SMS
+    twilio_account_sid: str | None = None
+    twilio_auth_token: str | None = None
+    twilio_from_number: str | None = None
+
+    # Celery
+    celery_broker_url: str = "redis://localhost:6379/2"
+    celery_result_backend: str = "redis://localhost:6379/3"
+
     # CORS
     cors_origins: str = (
         "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174"
@@ -97,7 +111,6 @@ class Settings(BaseSettings):
     payment_pending_expiry_hours: int = 24
     receipts_blob_container: str = "payment-receipts"
     stub_hpf_base_url: str = "http://localhost:8000"
-    celery_broker_url: str = "redis://localhost:6379/1"
 
     def get_cors_origins_list(self) -> list[str]:
         """Parse CORS origins from comma-separated string."""

@@ -32,10 +32,15 @@ import { MyBidsDonationsSection } from '@/components/event-home/MyBidsDonationsS
 import { OtherGuestsSection } from '@/components/event-home/OtherGuestsSection'
 import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { ProfileDropdown } from '@/components/profile-dropdown'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { NotificationCenter } from '@/components/notifications/NotificationCenter'
+import { PushOptInPrompt } from '@/components/notifications/PushOptInPrompt'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { usePreviewMode } from '@/contexts/PreviewContext'
 import { useEventBranding } from '@/hooks/use-event-branding'
 import { useEventContext } from '@/hooks/use-event-context'
+import { useNotificationSocket } from '@/hooks/use-notification-socket'
+import { useUnreadCount } from '@/hooks/use-notifications'
 import { useTabSwipe } from '@/hooks/use-tab-swipe'
 import apiClient from '@/lib/axios'
 import auctionItemService from '@/services/auctionItemService'
@@ -922,6 +927,10 @@ export function EventHomePage() {
     onSwipeRight: swipeToPrevTab,
   })
 
+  // ─── Notifications ──────────────────────────────────────────────────────────
+  useUnreadCount(currentEvent?.id ?? '')
+  useNotificationSocket(currentEvent?.id)
+
   // ─── Loading state ───────────────────────────────────────────────────────────
   if (eventsLoading) {
     return (
@@ -1125,7 +1134,12 @@ export function EventHomePage() {
           />
         ) : undefined
       }
-      profileSlot={<ProfileDropdown />}
+      profileSlot={
+        <div className='flex items-center gap-1'>
+          <NotificationBell />
+          <ProfileDropdown />
+        </div>
+      }
     />
   )
 
@@ -1144,6 +1158,9 @@ export function EventHomePage() {
             />
           </div>
         )}
+
+        {/* Push notification opt-in prompt */}
+        <PushOptInPrompt />
 
         {/* CTA for bidding */}
         {eventStatus !== 'past' && (
@@ -1252,6 +1269,7 @@ export function EventHomePage() {
                 LIVE
               </span>
             )}
+            <NotificationBell variant='header' />
             <ProfileDropdown />
           </div>
         </div>
@@ -1292,7 +1310,10 @@ export function EventHomePage() {
           >
             My Event
           </h2>
-          <ProfileDropdown />
+          <div className='flex items-center gap-2'>
+            <NotificationBell variant='header' />
+            <ProfileDropdown />
+          </div>
         </div>
       </div>
 
@@ -1483,6 +1504,9 @@ export function EventHomePage() {
             : (isWatching) => setIsItemWatching(isWatching)
         }
       />
+
+      {/* Notification Center (slide-out panel) */}
+      <NotificationCenter eventId={currentEvent.id} />
     </div>
   )
 }

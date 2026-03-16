@@ -62,6 +62,7 @@ import { Route as AuthenticatedEventsEventIdRegistrationsRouteImport } from './r
 import { Route as AuthenticatedEventsEventIdQuickEntryRouteImport } from './routes/_authenticated/events/$eventId/quick-entry'
 import { Route as AuthenticatedEventsEventIdPreviewRouteImport } from './routes/_authenticated/events/$eventId/preview'
 import { Route as AuthenticatedEventsEventIdPaymentsRouteImport } from './routes/_authenticated/events/$eventId/payments'
+import { Route as AuthenticatedEventsEventIdNotificationsRouteImport } from './routes/_authenticated/events/$eventId/notifications'
 import { Route as AuthenticatedEventsEventIdMediaRouteImport } from './routes/_authenticated/events/$eventId/media'
 import { Route as AuthenticatedEventsEventIdLinksRouteImport } from './routes/_authenticated/events/$eventId/links'
 import { Route as AuthenticatedEventsEventIdFoodRouteImport } from './routes/_authenticated/events/$eventId/food'
@@ -368,6 +369,12 @@ const AuthenticatedEventsEventIdPaymentsRoute =
     path: '/payments',
     getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
+const AuthenticatedEventsEventIdNotificationsRoute =
+  AuthenticatedEventsEventIdNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdMediaRoute =
   AuthenticatedEventsEventIdMediaRouteImport.update({
     id: '/media',
@@ -531,6 +538,7 @@ export interface FileRoutesByFullPath {
   '/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
   '/events/$eventId/media': typeof AuthenticatedEventsEventIdMediaRoute
+  '/events/$eventId/notifications': typeof AuthenticatedEventsEventIdNotificationsRoute
   '/events/$eventId/payments': typeof AuthenticatedEventsEventIdPaymentsRoute
   '/events/$eventId/preview': typeof AuthenticatedEventsEventIdPreviewRoute
   '/events/$eventId/quick-entry': typeof AuthenticatedEventsEventIdQuickEntryRoute
@@ -598,6 +606,7 @@ export interface FileRoutesByTo {
   '/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
   '/events/$eventId/media': typeof AuthenticatedEventsEventIdMediaRoute
+  '/events/$eventId/notifications': typeof AuthenticatedEventsEventIdNotificationsRoute
   '/events/$eventId/payments': typeof AuthenticatedEventsEventIdPaymentsRoute
   '/events/$eventId/preview': typeof AuthenticatedEventsEventIdPreviewRoute
   '/events/$eventId/quick-entry': typeof AuthenticatedEventsEventIdQuickEntryRoute
@@ -672,6 +681,7 @@ export interface FileRoutesById {
   '/_authenticated/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/_authenticated/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
   '/_authenticated/events/$eventId/media': typeof AuthenticatedEventsEventIdMediaRoute
+  '/_authenticated/events/$eventId/notifications': typeof AuthenticatedEventsEventIdNotificationsRoute
   '/_authenticated/events/$eventId/payments': typeof AuthenticatedEventsEventIdPaymentsRoute
   '/_authenticated/events/$eventId/preview': typeof AuthenticatedEventsEventIdPreviewRoute
   '/_authenticated/events/$eventId/quick-entry': typeof AuthenticatedEventsEventIdQuickEntryRoute
@@ -745,6 +755,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/food'
     | '/events/$eventId/links'
     | '/events/$eventId/media'
+    | '/events/$eventId/notifications'
     | '/events/$eventId/payments'
     | '/events/$eventId/preview'
     | '/events/$eventId/quick-entry'
@@ -812,6 +823,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/food'
     | '/events/$eventId/links'
     | '/events/$eventId/media'
+    | '/events/$eventId/notifications'
     | '/events/$eventId/payments'
     | '/events/$eventId/preview'
     | '/events/$eventId/quick-entry'
@@ -885,6 +897,7 @@ export interface FileRouteTypes {
     | '/_authenticated/events/$eventId/food'
     | '/_authenticated/events/$eventId/links'
     | '/_authenticated/events/$eventId/media'
+    | '/_authenticated/events/$eventId/notifications'
     | '/_authenticated/events/$eventId/payments'
     | '/_authenticated/events/$eventId/preview'
     | '/_authenticated/events/$eventId/quick-entry'
@@ -1307,6 +1320,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsEventIdPaymentsRouteImport
       parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
+    '/_authenticated/events/$eventId/notifications': {
+      id: '/_authenticated/events/$eventId/notifications'
+      path: '/notifications'
+      fullPath: '/events/$eventId/notifications'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdNotificationsRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
     '/_authenticated/events/$eventId/media': {
       id: '/_authenticated/events/$eventId/media'
       path: '/media'
@@ -1507,6 +1527,7 @@ interface AuthenticatedEventsEventIdRouteRouteChildren {
   AuthenticatedEventsEventIdFoodRoute: typeof AuthenticatedEventsEventIdFoodRoute
   AuthenticatedEventsEventIdLinksRoute: typeof AuthenticatedEventsEventIdLinksRoute
   AuthenticatedEventsEventIdMediaRoute: typeof AuthenticatedEventsEventIdMediaRoute
+  AuthenticatedEventsEventIdNotificationsRoute: typeof AuthenticatedEventsEventIdNotificationsRoute
   AuthenticatedEventsEventIdPaymentsRoute: typeof AuthenticatedEventsEventIdPaymentsRoute
   AuthenticatedEventsEventIdPreviewRoute: typeof AuthenticatedEventsEventIdPreviewRoute
   AuthenticatedEventsEventIdQuickEntryRoute: typeof AuthenticatedEventsEventIdQuickEntryRoute
@@ -1533,6 +1554,8 @@ const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRo
     AuthenticatedEventsEventIdFoodRoute: AuthenticatedEventsEventIdFoodRoute,
     AuthenticatedEventsEventIdLinksRoute: AuthenticatedEventsEventIdLinksRoute,
     AuthenticatedEventsEventIdMediaRoute: AuthenticatedEventsEventIdMediaRoute,
+    AuthenticatedEventsEventIdNotificationsRoute:
+      AuthenticatedEventsEventIdNotificationsRoute,
     AuthenticatedEventsEventIdPaymentsRoute:
       AuthenticatedEventsEventIdPaymentsRoute,
     AuthenticatedEventsEventIdPreviewRoute:

@@ -24,6 +24,17 @@ from app.models.item_promotion import ItemPromotion
 from app.models.item_view import ItemView
 from app.models.legal_document import LegalDocument
 from app.models.meal_selection import MealSelection
+from app.models.notification import (
+    CampaignStatusEnum,
+    DeliveryChannelEnum,
+    DeliveryStatusEnum,
+    Notification,
+    NotificationPriorityEnum,
+    NotificationTypeEnum,
+)
+from app.models.notification_campaign import NotificationCampaign
+from app.models.notification_delivery_status import NotificationDeliveryStatus
+from app.models.notification_preference import NotificationPreference
 from app.models.npo import NPO
 from app.models.npo_application import NPOApplication
 from app.models.npo_branding import NPOBranding
@@ -37,6 +48,7 @@ from app.models.payment_transaction import (
     TransactionStatus,
     TransactionType,
 )
+from app.models.push_subscription import PushSubscription
 from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
 from app.models.quick_entry_buy_now_bid import QuickEntryBuyNowBid
 from app.models.quick_entry_donation import QuickEntryDonation
@@ -99,9 +111,12 @@ __all__ = [
     "Base",
     "BidActionAudit",
     "BuyNowAvailability",
+    "CampaignStatusEnum",
     "ConsentAuditLog",
     "CookieConsent",
     "CustomTicketOption",
+    "DeliveryChannelEnum",
+    "DeliveryStatusEnum",
     "Donation",
     "DonationLabel",
     "DonationLabelAssignment",
@@ -125,6 +140,12 @@ __all__ = [
     "NPOApplication",
     "NPOBranding",
     "NPOMember",
+    "Notification",
+    "NotificationCampaign",
+    "NotificationDeliveryStatus",
+    "NotificationPreference",
+    "NotificationPriorityEnum",
+    "NotificationTypeEnum",
     "OnboardingSession",
     "OnboardingSessionType",
     "OptionResponse",
@@ -133,6 +154,7 @@ __all__ = [
     "PaymentStatus",
     "PromoCode",
     "PromoCodeApplication",
+    "PushSubscription",
     "QuickEntryBid",
     "QuickEntryBuyNowBid",
     "QuickEntryBidStatus",

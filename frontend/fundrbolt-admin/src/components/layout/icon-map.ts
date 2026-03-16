@@ -1,6 +1,7 @@
 import {
   Award,
   BarChart3,
+  Bell,
   Building2,
   Calendar,
   ClipboardCheck,
@@ -46,4 +47,5 @@ export const iconMap = {
   HandCoins,
   Zap,
   BarChart3,
+  Bell,
 }
