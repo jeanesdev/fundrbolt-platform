@@ -1,5 +1,5 @@
 /**
- * Fundrbolt Typography System
+ * FundrBolt Typography System
  *
  * Defines font families and typographic scale for consistent text display
  * across all applications.

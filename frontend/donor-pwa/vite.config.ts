@@ -30,8 +30,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
       },
       manifest: {
-        name: 'Fundrbolt Donor Portal',
-        short_name: 'Fundrbolt',
+        name: 'FundrBolt Donor Portal',
+        short_name: 'FundrBolt',
         description:
           'Browse events, place bids, and support your favorite causes',
         theme_color: '#0f172a',

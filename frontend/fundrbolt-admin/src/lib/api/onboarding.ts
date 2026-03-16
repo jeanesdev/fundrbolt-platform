@@ -45,6 +45,12 @@ export interface SubmitOnboardingResponse {
   duplicate_name_warning: boolean
 }
 
+export interface SubmitFirstEventPayload {
+  event_name: string
+  event_date: string
+  event_type: string
+}
+
 // ---------------------------------------------------------------------------
 // API functions
 // ---------------------------------------------------------------------------
@@ -114,11 +120,16 @@ export async function updateStep(
  */
 export async function submitOnboarding(
   sessionToken: string,
-  turnstileToken: string
+  turnstileToken: string,
+  firstEventData?: SubmitFirstEventPayload | null
 ): Promise<SubmitOnboardingResponse> {
   const response = await publicClient.post<SubmitOnboardingResponse>(
     '/public/onboarding/submit',
-    { session_token: sessionToken, turnstile_token: turnstileToken }
+    {
+      session_token: sessionToken,
+      turnstile_token: turnstileToken,
+      first_event_data: firstEventData ?? undefined,
+    }
   )
   return response.data
 }

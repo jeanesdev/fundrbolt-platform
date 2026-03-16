@@ -1,7 +1,7 @@
 # Quickstart - Centralized Brand Assets and Theme System
 
 **Feature**: 016-branding
-**Audience**: Developers integrating brand assets into Fundrbolt applications
+**Audience**: Developers integrating brand assets into FundrBolt applications
 
 ## 🚀 Quick Setup (5 minutes)
 
@@ -21,7 +21,7 @@ import { colors, LogoNavyGold, LogoWhiteGold, getLogo } from '@fundrbolt/shared/
 function Header() {
   return (
     <header style={{ backgroundColor: colors.primary.navy }}>
-      <img src={LogoWhiteGold} alt="Fundrbolt" className="h-12" />
+      <img src={LogoWhiteGold} alt="FundrBolt" className="h-12" />
     </header>
   );
 }
@@ -65,7 +65,7 @@ function ThemedHeader({ isDarkMode }: { isDarkMode: boolean }) {
 
   return (
     <header className={isDarkMode ? 'bg-navy-900' : 'bg-white'}>
-      <img src={logoSrc} alt="Fundrbolt" className="h-12" />
+      <img src={logoSrc} alt="FundrBolt" className="h-12" />
     </header>
   );
 }

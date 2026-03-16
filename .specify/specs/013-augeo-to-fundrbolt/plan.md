@@ -1,13 +1,13 @@
-# Implementation Plan: Fundrbolt to Fundrbolt Rename
+# Implementation Plan: FundrBolt to FundrBolt Rename
 
 **Branch**: `013-fundrbolt-to-fundrbolt` | **Date**: 2025-12-17 | **Spec**: [spec.md](spec.md)
 **Input**: Feature specification from `/specs/013-fundrbolt-to-fundrbolt/spec.md`
 
-**Note**: This plan covers the systematic rename of all brand, code, infrastructure, and documentation assets from Fundrbolt to Fundrbolt.
+**Note**: This plan covers the systematic rename of all brand, code, infrastructure, and documentation assets from FundrBolt to FundrBolt.
 
 ## Summary
 
-Complete rebranding from Fundrbolt to Fundrbolt across source code, databases, GitHub repositories, Azure resources, and all customer-facing surfaces. No backward compatibility is required (pre-production state). Immediate cutover with no maintenance window needed. All naming changes are additive to existing codebases or direct replacements where Fundrbolt naming is embedded in identifiers, configs, and infrastructure labels.
+Complete rebranding from FundrBolt to FundrBolt across source code, databases, GitHub repositories, Azure resources, and all customer-facing surfaces. No backward compatibility is required (pre-production state). Immediate cutover with no maintenance window needed. All naming changes are additive to existing codebases or direct replacements where FundrBolt naming is embedded in identifiers, configs, and infrastructure labels.
 
 ## Technical Context
 
@@ -60,8 +60,8 @@ specs/013-fundrbolt-to-fundrbolt/
 backend/
 ├── app/
 │   ├── main.py          # App title, description, contact info
-│   ├── core/            # Config with Fundrbolt refs
-│   ├── middleware/      # Fundrbolt branding in responses
+│   ├── core/            # Config with FundrBolt refs
+│   ├── middleware/      # FundrBolt branding in responses
 │   ├── models/          # Database model docstrings
 │   ├── schemas/         # Pydantic schema descriptions
 │   └── services/        # Service names, logging
@@ -99,12 +99,12 @@ infrastructure/
     └── ...
 
 .github/
-├── workflows/           # Fundrbolt refs in workflow names, job names
+├── workflows/           # FundrBolt refs in workflow names, job names
 └── copilot-instructions.md # Project overview text
 
 docs/
 ├── README.md            # Project description
-├── operations/          # Runbooks with Fundrbolt refs
+├── operations/          # Runbooks with FundrBolt refs
 └── features/            # Feature docs with branding
 
 .specify/
@@ -122,7 +122,7 @@ No Constitution Check violations. Rename is low-risk structurally; highest compl
 
 ## Next Steps
 
-- **Phase 0 (Research)**: Enumerate all Fundrbolt references across repositories, infrastructure, and GitHub to create a rename checklist.
+- **Phase 0 (Research)**: Enumerate all FundrBolt references across repositories, infrastructure, and GitHub to create a rename checklist.
 - **Phase 1 (Design & Contracts)**: Document data model changes (if any), API naming updates, and generate quickstart/execution steps.
 - **Phase 2 (Tasks)**: Generate detailed task list for developers, ops, and QA to execute the rename.
 

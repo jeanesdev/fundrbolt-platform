@@ -1,13 +1,4 @@
-import { useState } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Link, useNavigate } from '@tanstack/react-router'
-import { Loader2, LogIn } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { getErrorMessage } from '@/lib/error-utils'
-import { cn } from '@/lib/utils'
+import { PasswordInput } from '@/components/password-input'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -18,7 +9,16 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { PasswordInput } from '@/components/password-input'
+import { getErrorMessage } from '@/lib/error-utils'
+import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { Loader2, LogIn } from 'lucide-react'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
 
 const formSchema = z.object({
   email: z.email({
@@ -59,44 +59,47 @@ export function UserAuthForm({
       success: (response) => {
         setIsLoading(false)
 
+        // If the user already has an NPO or a privileged role, they've completed
+        // onboarding. Clear any stale session token so they don't get looped back.
+        const privilegedRoles = ['super_admin', 'npo_admin', 'event_coordinator', 'staff']
+        const alreadyOnboarded =
+          privilegedRoles.includes(response.user.role ?? '') ||
+          (Array.isArray(response.user.npo_memberships) && response.user.npo_memberships.length > 0)
+        if (alreadyOnboarded) {
+          localStorage.removeItem('onboarding_session_token')
+        }
+
+        const resolvedOnboardingRedirect =
+          !alreadyOnboarded && localStorage.getItem('onboarding_session_token')
+            ? '/register-npo'
+            : undefined
+
+        if (!response.user.email_verified) {
+          navigate({
+            to: resolvedOnboardingRedirect || '/verify-email',
+            search: resolvedOnboardingRedirect
+              ? undefined
+              : { email: response.user.email },
+            replace: true,
+          })
+
+          return resolvedOnboardingRedirect
+            ? 'Signed in. Return to onboarding after verifying your email.'
+            : 'Signed in. Verify your email to continue.'
+        }
+
         // Redirect to the stored location or default to dashboard
-        const targetPath = redirectTo || '/'
+        const targetPath = redirectTo || resolvedOnboardingRedirect || '/'
         navigate({ to: targetPath, replace: true })
 
         return `Welcome back, ${response.user.first_name || response.user.email}!`
       },
       error: (err) => {
         setIsLoading(false)
-
-        // Extract error details
-        const apiError = err as {
-          response?: { data?: { detail?: { code?: string } } }
-        }
-        const errorCode = apiError?.response?.data?.detail?.code
         const errorMessage = getErrorMessage(
           err,
           'Login failed. Please try again.'
         )
-
-        // Check if email verification is required
-        if (errorCode === 'EMAIL_NOT_VERIFIED') {
-          // Show a more helpful message with action button
-          const email = data.email
-          toast.error(`Email verification required for ${email}`, {
-            description:
-              'Please check your inbox for the verification link, or request a new one.',
-            action: {
-              label: 'Resend Email',
-              onClick: () => {
-                // TODO: Implement resend verification email
-                toast.info('Redirecting to resend verification...')
-                navigate({ to: '/verify-email', search: { email } })
-              },
-            },
-            duration: 10000, // Show for 10 seconds
-          })
-          return // Don't show the error string, the custom toast handles it
-        }
 
         return errorMessage
       },

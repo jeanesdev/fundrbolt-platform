@@ -50,14 +50,14 @@ export const logoAssets: LogoAsset[] = [
     background: 'light',
     svgPath: '/src/assets/logos/fundrbolt-logo-navy-gold.svg',
     pngPath: '/src/assets/logos/fundrbolt-logo-navy-gold.png',
-    altText: 'Fundrbolt - Navy and Gold Logo',
+    altText: 'FundrBolt - Navy and Gold Logo',
   },
   {
     name: 'white-gold',
     background: 'dark',
     svgPath: '/src/assets/logos/fundrbolt-logo-white-gold.svg',
     pngPath: '/src/assets/logos/fundrbolt-logo-white-gold.png',
-    altText: 'Fundrbolt - White and Gold Logo',
+    altText: 'FundrBolt - White and Gold Logo',
   },
 ];
 ```
@@ -229,7 +229,7 @@ class EmailService:
     def _render_email_template(self, template_name: str, context: dict) -> str:
         """Render email template with logo URL"""
         context["logo_url"] = self._get_logo_url()
-        context["logo_alt"] = "Fundrbolt"
+        context["logo_alt"] = "FundrBolt"
         # ... rest of template rendering
 ```
 

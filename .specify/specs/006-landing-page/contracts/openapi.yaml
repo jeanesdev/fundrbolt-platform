@@ -1,10 +1,10 @@
 openapi: 3.1.0
 info:
-  title: Fundrbolt Landing Page API
+  title: FundrBolt Landing Page API
   description: Public API endpoints for landing page contact form and testimonials
   version: 1.0.0
   contact:
-    name: Fundrbolt Platform Team
+    name: FundrBolt Platform Team
     email: engineering@fundrbolt.com
 
 servers:
@@ -136,7 +136,7 @@ paths:
                   $ref: '#/components/schemas/TestimonialResponse'
               example:
                 - id: "660e8400-e29b-41d4-a716-446655440000"
-                  quote_text: "Fundrbolt helped us raise 40% more than last year's gala!"
+                  quote_text: "FundrBolt helped us raise 40% more than last year's gala!"
                   author_name: "Sarah J."
                   author_role: "donor"
                   organization_name: "Community Arts Foundation"
@@ -217,7 +217,7 @@ paths:
             schema:
               $ref: '#/components/schemas/TestimonialCreate'
             example:
-              quote_text: "Fundrbolt transformed our fundraising events!"
+              quote_text: "FundrBolt transformed our fundraising events!"
               author_name: "Emily R."
               author_role: "npo_admin"
               organization_name: "Hope Shelter"

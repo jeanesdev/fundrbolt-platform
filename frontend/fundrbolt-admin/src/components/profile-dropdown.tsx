@@ -67,7 +67,7 @@ export function ProfileDropdown() {
     availableNpos,
     selectNpo,
     canChangeNpo,
-    isFundrboltPlatformView,
+    isFundrBoltPlatformView,
   } = useNpoContext()
   const timeBaseSpoofMs = useDebugSpoofStore((state) => state.timeBaseSpoofMs)
   const getEffectiveNowMs = useDebugSpoofStore(
@@ -194,7 +194,7 @@ export function ProfileDropdown() {
                       <div className='truncate font-medium'>{npo.name}</div>
                       {npo.id === null && (
                         <div className='text-muted-foreground text-xs'>
-                          {isFundrboltPlatformView
+                          {isFundrBoltPlatformView
                             ? 'All organizations'
                             : 'View all organizations'}
                         </div>

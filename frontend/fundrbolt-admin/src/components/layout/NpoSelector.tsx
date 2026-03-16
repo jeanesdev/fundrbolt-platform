@@ -3,7 +3,7 @@
  * Dropdown selector for NPO context with role-based visibility and auto-selection
  *
  * Business Rules:
- * - SuperAdmin: Can select any NPO or "Fundrbolt Platform" (null)
+ * - SuperAdmin: Can select any NPO or "FundrBolt Platform" (null)
  * - NPO Admin/Staff: Shows only their NPO (non-clickable, disabled)
  * - Event Coordinator: Shows NPOs they're registered with
  */
@@ -30,7 +30,7 @@ export function NpoSelector() {
     selectedNpoName,
     availableNpos,
     selectNpo,
-    isFundrboltPlatformView,
+    isFundrBoltPlatformView,
     isSingleNpoUser,
     canChangeNpo,
   } = useNpoContext()
@@ -92,7 +92,7 @@ export function NpoSelector() {
                   {selectedNpoName}
                 </span>
                 <span className='truncate text-xs'>
-                  {isFundrboltPlatformView
+                  {isFundrBoltPlatformView
                     ? 'All Organizations'
                     : 'Organization'}
                 </span>

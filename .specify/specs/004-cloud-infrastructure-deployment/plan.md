@@ -7,7 +7,7 @@
 
 ## Summary
 
-Provision and configure complete Azure cloud infrastructure to host the Fundrbolt Platform in a production-ready environment. Implement automated CI/CD pipelines for backend and frontend deployment across multiple environments (dev, staging, production) with proper security controls, monitoring, and disaster recovery capabilities. This infrastructure foundation enables real email sending, production deployment, and operational excellence for all current and future features.
+Provision and configure complete Azure cloud infrastructure to host the FundrBolt Platform in a production-ready environment. Implement automated CI/CD pipelines for backend and frontend deployment across multiple environments (dev, staging, production) with proper security controls, monitoring, and disaster recovery capabilities. This infrastructure foundation enables real email sending, production deployment, and operational excellence for all current and future features.
 
 ## Technical Context
 

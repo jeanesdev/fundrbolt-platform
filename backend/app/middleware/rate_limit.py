@@ -4,21 +4,15 @@ Provides decorators and dependencies for rate limiting using Redis.
 """
 
 from collections.abc import Awaitable, Callable
+from datetime import datetime
 from functools import wraps
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar
 
 from fastapi import HTTPException, Request, status
+from redis.exceptions import ResponseError
 
 from app.core.redis import get_redis
 from app.services.redis_service import RedisService
-
-if TYPE_CHECKING:
-    from redis.asyncio import Redis as RedisType
-else:
-    from redis.asyncio import Redis
-
-    RedisType = Redis
-
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -85,11 +79,18 @@ class RateLimiter:
             Tuple of (remaining_requests, seconds_until_reset)
         """
         key = self.get_rate_limit_key(identifier)
+        now = datetime.utcnow().timestamp()
+        window_start = now - self.window_seconds
 
-        # Get current count
         redis_client = await get_redis()
-        current_count = await redis_client.get(key)
-        count = int(current_count) if current_count else 0
+
+        # Sliding-window rate limits are stored as sorted sets. Fall back to
+        # string counters if any legacy keys still exist.
+        try:
+            await redis_client.zremrangebyscore(key, 0, window_start)
+            count = await redis_client.zcount(key, window_start, now)
+        except ResponseError:
+            count = await self._get_legacy_or_reset_count(redis_client, key)
 
         # Get TTL
         ttl = await redis_client.ttl(key)
@@ -98,6 +99,43 @@ class RateLimiter:
         remaining = max(0, self.max_requests - count)
 
         return remaining, seconds_until_reset
+
+    async def _get_legacy_or_reset_count(
+        self,
+        redis_client: Any,
+        key: str,
+    ) -> int:
+        """Read legacy string counters or clear malformed keys.
+
+        Older deployments may still have non-zset rate-limit keys in Redis.
+        Treat legacy string counters as valid, but clear any other unexpected
+        key types so requests recover instead of returning a 500.
+        """
+
+        key_type = await redis_client.type(key)
+        if isinstance(key_type, bytes):
+            key_type = key_type.decode()
+
+        if key_type == "string":
+            try:
+                current_count = await redis_client.get(key)
+            except ResponseError:
+                await redis_client.delete(key)
+                return 0
+
+            if current_count is None:
+                return 0
+
+            try:
+                return int(current_count)
+            except (TypeError, ValueError):
+                await redis_client.delete(key)
+                return 0
+
+        if key_type not in {"none", "string", "zset"}:
+            await redis_client.delete(key)
+
+        return 0
 
 
 def rate_limit(
@@ -153,7 +191,7 @@ def rate_limit(
             limiter = RateLimiter(
                 max_requests=max_requests,
                 window_seconds=window_seconds,
-                key_prefix="rate_limit",
+                key_prefix=f"rate_limit:{func.__module__}.{func.__name__}",
             )
 
             if await limiter.is_rate_limited(identifier):

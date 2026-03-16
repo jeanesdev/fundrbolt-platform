@@ -69,19 +69,19 @@ resource emailServiceLink 'Microsoft.Communication/communicationServices/domains
 var senderAddresses = [
   {
     address: 'noreply@${emailDomain}'
-    displayName: 'Fundrbolt Platform'
+    displayName: 'FundrBolt Platform'
   }
   {
     address: 'support@${emailDomain}'
-    displayName: 'Fundrbolt Support'
+    displayName: 'FundrBolt Support'
   }
   {
     address: 'billing@${emailDomain}'
-    displayName: 'Fundrbolt Billing'
+    displayName: 'FundrBolt Billing'
   }
   {
     address: 'notifications@${emailDomain}'
-    displayName: 'Fundrbolt Notifications'
+    displayName: 'FundrBolt Notifications'
   }
 ]
 

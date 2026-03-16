@@ -1,23 +1,23 @@
-# Brand Rename: Augeo → Fundrbolt
+# Brand Rename: Augeo → FundrBolt
 
 **Effective Date**: December 18, 2025
 **Status**: Complete - Phase 1-4 MVP delivered, Phase 5-6 in progress
 
 ## Overview
 
-The Augeo Platform has been rebranded to **Fundrbolt Platform**. This document details the changes and migration path for users, partners, and developers.
+The Augeo Platform has been rebranded to **FundrBolt Platform**. This document details the changes and migration path for users, partners, and developers.
 
 ## What Changed
 
 ### User-Facing Changes
-- **Product Name**: Augeo Platform → Fundrbolt Platform
-- **Dashboard URLs**: URLs remain the same (e.g., `/admin`, `/events`) but branded as Fundrbolt
-- **Email Sender**: `Augeo Support <support@augeo.app>` → `Fundrbolt Support <support@fundrbolt.com>`
-- **OpenAPI Documentation**: Updated to Fundrbolt branding at `https://{your-domain}/docs`
+- **Product Name**: Augeo Platform → FundrBolt Platform
+- **Dashboard URLs**: URLs remain the same (e.g., `/admin`, `/events`) but branded as FundrBolt
+- **Email Sender**: `Augeo Support <support@augeo.app>` → `FundrBolt Support <support@fundrbolt.com>`
+- **OpenAPI Documentation**: Updated to FundrBolt branding at `https://{your-domain}/docs`
 - **PWA Applications**:
-  - Admin Portal: "Augeo Admin" → "Fundrbolt Admin"
-  - Donor Portal: "Augeo Donor" → "Fundrbolt Donor"
-  - Landing Site: "Augeo" → "Fundrbolt"
+  - Admin Portal: "Augeo Admin" → "FundrBolt Admin"
+  - Donor Portal: "Augeo Donor" → "FundrBolt Donor"
+  - Landing Site: "Augeo" → "FundrBolt"
 
 ### Developer/Infrastructure Changes
 - **GitHub Repository**: `jeanesdev/augeo-platform` → `jeanesdev/fundrbolt-platform`
@@ -35,14 +35,14 @@ The Augeo Platform has been rebranded to **Fundrbolt Platform**. This document d
 - **Environment Variables**: Package names and service references updated
 - **Database**: All user-facing strings updated; data retention policies unchanged
 - **API Responses**:
-  - `X-Powered-By: Augeo` header → `X-Powered-By: Fundrbolt Platform`
+  - `X-Powered-By: Augeo` header → `X-Powered-By: FundrBolt Platform`
   - OpenAPI title, description, contact email updated
 - **GitHub Actions Workflows**: Updated to reference new repository name and resource naming conventions
 
 ### Documentation Changes
-- All `/docs` markdown files updated from Augeo → Fundrbolt
+- All `/docs` markdown files updated from Augeo → FundrBolt
 - README files across repository updated
-- `.specify` memory and specifications updated to reference Fundrbolt
+- `.specify` memory and specifications updated to reference FundrBolt
 - Deployment scripts and runbooks updated with new naming conventions
 
 ## What Stayed the Same
@@ -64,19 +64,19 @@ The Augeo Platform has been rebranded to **Fundrbolt Platform**. This document d
 
 ### Webhook Endpoints (if applicable)
 - Webhook URLs remain functional with old paths
-- New content will reference Fundrbolt in email subjects, body content
+- New content will reference FundrBolt in email subjects, body content
 - Update email parsing logic if you relied on "Augeo" text patterns
 
 ### API Integrations
 - No endpoint URL changes
 - No authentication changes
-- Update display logic to show "Fundrbolt" instead of "Augeo" if needed
+- Update display logic to show "FundrBolt" instead of "Augeo" if needed
 - Metrics endpoint (`/metrics`) metrics names changed: `augeo_*` → `fundrbolt_*`
 
 ## Legacy URL Redirects
 
 ### Gradual Transition Period (1-3 months)
-1. All documentation updated to reference Fundrbolt URLs
+1. All documentation updated to reference FundrBolt URLs
 2. Old documentation links will redirect via nginx rules (if applicable)
 3. Internal bookmarks and cached links may return 404s after cutover
 4. Partners notified 2 weeks in advance of any URL changes
@@ -89,7 +89,7 @@ The Augeo Platform has been rebranded to **Fundrbolt Platform**. This document d
 ## Migration Checklist for Users
 
 - [ ] Update email filters: `support@augeo.app` → `support@fundrbolt.com`
-- [ ] Update bookmarks to new Fundrbolt URLs (if domain changes)
+- [ ] Update bookmarks to new FundrBolt URLs (if domain changes)
 - [ ] Review email notifications for new branding
 - [ ] Verify all integrations working post-rebrand
 - [ ] Contact support if issues: `support@fundrbolt.com`

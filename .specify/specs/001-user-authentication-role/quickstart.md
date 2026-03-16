@@ -49,7 +49,7 @@ REFRESH_TOKEN_EXPIRE_DAYS=7
 # Azure Communication Services (Email)
 AZURE_COMMUNICATION_CONNECTION_STRING=your-azure-communication-connection-string
 EMAIL_FROM_ADDRESS=noreply@fundrbolt.com
-EMAIL_FROM_NAME=Fundrbolt Platform
+EMAIL_FROM_NAME=FundrBolt Platform
 
 # Frontend URLs (for email links)
 FRONTEND_ADMIN_URL=http://localhost:5173

@@ -1,4 +1,4 @@
-// PostgreSQL Flexible Server module for Fundrbolt Platform
+// PostgreSQL Flexible Server module for FundrBolt Platform
 
 @description('Name of the PostgreSQL server')
 param postgresServerName string

@@ -35,7 +35,7 @@ def test_password_reset_email():
         print("2. Look for email from: DoNotReply@fundrbolt.com")
         print("3. Verify the following:")
         print("   ✓ Navy background header (#11294c)")
-        print("   ✓ White/gold Fundrbolt logo displays")
+        print("   ✓ White/gold FundrBolt logo displays")
         print("   ✓ Logo loads from: fundrboltdevstor.blob.core.windows.net")
         print("   ✓ Professional appearance in Gmail/Outlook/Apple Mail")
         print("\n4. Test in multiple email clients if possible:")

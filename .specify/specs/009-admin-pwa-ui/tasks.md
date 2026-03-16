@@ -180,7 +180,7 @@
 - [x] T056 [P] [US5] Create NpoSelector component with dropdown UI in frontend/fundrbolt-admin/src/components/layout/NpoSelector.tsx
 - [x] T057 [US5] Add NpoSelector to AppShell top-left corner (replacing Teams icon) in frontend/fundrbolt-admin/src/components/layout/AppShell.tsx
 - [x] T058 [US5] Fetch available NPOs on login based on user role via API in useNpoContext hook
-- [x] T059 [US5] Implement SuperAdmin "Fundrbolt Platform" option (null npoId) in NpoSelector
+- [x] T059 [US5] Implement SuperAdmin "FundrBolt Platform" option (null npoId) in NpoSelector
 - [x] T060 [US5] Implement auto-selection for single-NPO users (NPO Admin, Staff) in useNpoContext
 - [x] T061 [US5] Disable selector for single-NPO users (show name only, not clickable)
 - [x] T062 [US5] Implement query cache invalidation on NPO selection change in useNpoContext

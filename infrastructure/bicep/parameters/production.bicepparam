@@ -1,4 +1,4 @@
-// Production environment parameters for Fundrbolt Platform
+// Production environment parameters for FundrBolt Platform
 using '../main.bicep'
 
 param environment = 'production'

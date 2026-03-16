@@ -4,12 +4,6 @@
  * Displayed to users with npo_admin role.
  * Provides NPO-specific overview and management capabilities.
  */
-import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import { eventApi } from '@/services/event-service'
-import { memberApi } from '@/services/npo-service'
-import { useAuth } from '@/hooks/use-auth'
-import { useNpoContext } from '@/hooks/use-npo-context'
 import {
   Card,
   CardContent,
@@ -19,6 +13,12 @@ import {
 } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { listUsers } from '@/features/users/api/users-api'
+import { useAuth } from '@/hooks/use-auth'
+import { useNpoContext } from '@/hooks/use-npo-context'
+import { eventApi } from '@/services/event-service'
+import { memberApi } from '@/services/npo-service'
+import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 
 export function NpoAdminDashboard() {
   const { user } = useAuth()
@@ -32,7 +32,9 @@ export function NpoAdminDashboard() {
         page: 1,
         page_size: 1,
       }),
-    enabled: !!selectedNpoId,
+    // Always fetch — backend scopes to the user's NPO when npo_id is omitted.
+    // Avoids showing stale "--" when selectedNpoId hasn't been auto-set yet.
+    enabled: true,
   })
 
   const activeEventsQuery = useQuery({
@@ -44,7 +46,7 @@ export function NpoAdminDashboard() {
         page: 1,
         page_size: 1,
       }),
-    enabled: !!selectedNpoId,
+    enabled: true,
   })
 
   const membersQuery = useQuery({
@@ -54,7 +56,7 @@ export function NpoAdminDashboard() {
         npo_id: selectedNpoId ?? undefined,
         status: 'active',
       }),
-    enabled: !!selectedNpoId,
+    enabled: true,
   })
 
   const donorsQuery = useQuery({
@@ -66,7 +68,7 @@ export function NpoAdminDashboard() {
         page: 1,
         page_size: 1,
       }),
-    enabled: !!selectedNpoId,
+    enabled: true,
   })
 
   return (

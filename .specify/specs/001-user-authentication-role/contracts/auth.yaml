@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Fundrbolt Authentication API
+  title: FundrBolt Authentication API
   description: |
     Authentication endpoints for user registration, login, email verification,
     password reset, and session management.
@@ -12,7 +12,7 @@ info:
     - Rate limiting: 5 failed login attempts per 15 minutes per IP
   version: 1.0.0
   contact:
-    name: Fundrbolt Platform Team
+    name: FundrBolt Platform Team
     email: support@fundrbolt.com
 
 servers:

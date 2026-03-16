@@ -1,11 +1,11 @@
-# API Contracts - Fundrbolt to Fundrbolt Rename
+# API Contracts - FundrBolt to FundrBolt Rename
 
 **Date**: 2025-12-17
 **Feature**: 013-fundrbolt-to-fundrbolt
 
 ## Overview
 
-This document specifies all API-level changes required for the Fundrbolt → Fundrbolt rename. Per the specification, there is **no backward compatibility** maintained; APIs cut over entirely to Fundrbolt naming.
+This document specifies all API-level changes required for the FundrBolt → FundrBolt rename. Per the specification, there is **no backward compatibility** maintained; APIs cut over entirely to FundrBolt naming.
 
 ---
 
@@ -17,14 +17,14 @@ All API responses MUST include updated branding headers:
 
 **Before**:
 ```http
-X-Powered-By: Fundrbolt Platform
-X-API-Title: Fundrbolt Fundraising API
+X-Powered-By: FundrBolt Platform
+X-API-Title: FundrBolt Fundraising API
 ```
 
 **After**:
 ```http
-X-Powered-By: Fundrbolt Platform
-X-API-Title: Fundrbolt Fundraising API
+X-Powered-By: FundrBolt Platform
+X-API-Title: FundrBolt Fundraising API
 ```
 
 **Location**: Update in `app/middleware/response_headers.py` or relevant middleware that sets these headers.
@@ -40,11 +40,11 @@ X-API-Title: Fundrbolt Fundraising API
 ```yaml
 openapi: 3.0.2
 info:
-  title: "Fundrbolt Platform API"  # was "Fundrbolt Platform API"
-  description: "Fundrbolt fundraising platform API for nonprofits and auctioneers"  # updated
+  title: "FundrBolt Platform API"  # was "FundrBolt Platform API"
+  description: "FundrBolt fundraising platform API for nonprofits and auctioneers"  # updated
   version: "1.0.0"
   contact:
-    name: "Fundrbolt Support"  # was "Fundrbolt Support"
+    name: "FundrBolt Support"  # was "FundrBolt Support"
     email: "support@fundrbolt.com"  # was "support@fundrbolt.com"
   license:
     name: "Proprietary"
@@ -54,10 +54,10 @@ info:
 
 ```python
 app = FastAPI(
-    title="Fundrbolt Platform API",
-    description="Fundrbolt fundraising platform API for nonprofits and auctioneers",
+    title="FundrBolt Platform API",
+    description="FundrBolt fundraising platform API for nonprofits and auctioneers",
     contact={
-        "name": "Fundrbolt Support",
+        "name": "FundrBolt Support",
         "email": "support@fundrbolt.com",
         "url": "https://fundrbolt.com",
     },
@@ -100,19 +100,19 @@ PUT /api/v1/bids/{bid_id}
 
 **Status codes and error formats unchanged.**
 
-Error messages MAY be updated to reflect Fundrbolt branding:
+Error messages MAY be updated to reflect FundrBolt branding:
 
 **Before**:
 ```json
 {
-  "detail": "Unauthorized. Please log in to Fundrbolt."
+  "detail": "Unauthorized. Please log in to FundrBolt."
 }
 ```
 
 **After**:
 ```json
 {
-  "detail": "Unauthorized. Please log in to Fundrbolt."
+  "detail": "Unauthorized. Please log in to FundrBolt."
 }
 ```
 
@@ -138,7 +138,7 @@ Error messages MAY be updated to reflect Fundrbolt branding:
 **Before**:
 ```json
 {
-  "app": "Fundrbolt",
+  "app": "FundrBolt",
   "version": "1.0.0"
 }
 ```
@@ -146,7 +146,7 @@ Error messages MAY be updated to reflect Fundrbolt branding:
 **After**:
 ```json
 {
-  "app": "Fundrbolt",
+  "app": "FundrBolt",
   "version": "1.0.0"
 }
 ```
@@ -159,7 +159,7 @@ Error messages MAY be updated to reflect Fundrbolt branding:
 
 **No changes** to JWT structure; claims remain unchanged.
 
-However, if JWT includes any `iss` (issuer) or `aud` (audience) claims with Fundrbolt references, update:
+However, if JWT includes any `iss` (issuer) or `aud` (audience) claims with FundrBolt references, update:
 
 **Before**:
 ```json
@@ -207,21 +207,21 @@ Response headers (e.g., `X-RateLimit-Remaining`) remain unchanged in format.
 
 **Before**:
 ```
-From: Fundrbolt Support <noreply@fundrbolt.com>
-Subject: Welcome to Fundrbolt
+From: FundrBolt Support <noreply@fundrbolt.com>
+Subject: Welcome to FundrBolt
 ```
 
 **After**:
 ```
-From: Fundrbolt Support <noreply@fundrbolt.com>
-Subject: Welcome to Fundrbolt
+From: FundrBolt Support <noreply@fundrbolt.com>
+Subject: Welcome to FundrBolt
 ```
 
 **Location**: Update in email templates (e.g., SendGrid, Azure Communication Services).
 
 ### Webhooks
 
-**Webhook payloads MAY be updated** to reflect Fundrbolt branding in metadata:
+**Webhook payloads MAY be updated** to reflect FundrBolt branding in metadata:
 
 **Before**:
 ```json
@@ -247,7 +247,7 @@ Subject: Welcome to Fundrbolt
 
 ## Backward Compatibility Statement
 
-⚠️ **BREAKING CHANGE**: This rename introduces NO backward compatibility. All API consumers MUST update their integrations to reflect Fundrbolt naming and new service endpoints.
+⚠️ **BREAKING CHANGE**: This rename introduces NO backward compatibility. All API consumers MUST update their integrations to reflect FundrBolt naming and new service endpoints.
 
 **Action Required**:
 1. Notify all external API consumers of the rename
@@ -262,19 +262,19 @@ Subject: Welcome to Fundrbolt
 | Phase | Date | Action |
 |-------|------|--------|
 | Announcement | 2025-12-17 | Notify all consumers of rename |
-| Cutover | 2026-01-15 | Production deployment with Fundrbolt APIs |
-| Monitoring | 2026-01-15 – 2026-03-15 | Track stale Fundrbolt client requests |
-| Support | Until 2026-03-15 | Assist clients migrating to Fundrbolt |
+| Cutover | 2026-01-15 | Production deployment with FundrBolt APIs |
+| Monitoring | 2026-01-15 – 2026-03-15 | Track stale FundrBolt client requests |
+| Support | Until 2026-03-15 | Assist clients migrating to FundrBolt |
 
 ---
 
 ## Testing Checklist
 
-- [ ] OpenAPI docs (`/docs`) display Fundrbolt branding
-- [ ] `X-Powered-By` headers include "Fundrbolt"
+- [ ] OpenAPI docs (`/docs`) display FundrBolt branding
+- [ ] `X-Powered-By` headers include "FundrBolt"
 - [ ] JWT tokens (if applicable) updated with new issuer
-- [ ] Email templates tested with Fundrbolt sender name
-- [ ] Webhook payloads tested with Fundrbolt app name
+- [ ] Email templates tested with FundrBolt sender name
+- [ ] Webhook payloads tested with FundrBolt app name
 - [ ] Client SDKs/docs updated with new base URL (if domain changed)
 - [ ] Load tests confirm no performance regression
 - [ ] All integration tests pass
@@ -286,7 +286,7 @@ Subject: Welcome to Fundrbolt
 ### For REST API Clients
 
 1. **No endpoint changes**: All URLs remain the same (unless base domain changed)
-2. **Update branding expectations**: Code checking for "Fundrbolt" in responses should now expect "Fundrbolt"
+2. **Update branding expectations**: Code checking for "FundrBolt" in responses should now expect "FundrBolt"
 3. **Verify headers**: Check that `X-Powered-By` header is received correctly
 4. **Test thoroughly**: Run integration tests against staging environment first
 
@@ -299,7 +299,7 @@ Subject: Welcome to Fundrbolt
 
 ### For Email Recipients
 
-1. **Sender name updated**: Emails now come from "Fundrbolt Support"
+1. **Sender name updated**: Emails now come from "FundrBolt Support"
 2. **Add to whitelist** (if needed): Update email filters to recognize new sender
 3. **Bookmark new support URL** (if domain changed): Update links in bookmarks
 

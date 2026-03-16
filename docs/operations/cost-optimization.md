@@ -1,6 +1,6 @@
 # Cost Optimization Guide
 
-Comprehensive guide for optimizing Azure costs for the Fundrbolt Platform.
+Comprehensive guide for optimizing Azure costs for the FundrBolt Platform.
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ Comprehensive guide for optimizing Azure costs for the Fundrbolt Platform.
 
 ## Overview
 
-The Fundrbolt Platform is designed with cost optimization in mind, implementing multiple strategies to minimize Azure spending while maintaining performance and reliability.
+The FundrBolt Platform is designed with cost optimization in mind, implementing multiple strategies to minimize Azure spending while maintaining performance and reliability.
 
 ### Monthly Budget Targets
 

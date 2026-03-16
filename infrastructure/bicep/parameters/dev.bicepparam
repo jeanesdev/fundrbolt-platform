@@ -1,4 +1,4 @@
-// Development environment parameters for Fundrbolt Platform
+// Development environment parameters for FundrBolt Platform
 using '../main.bicep'
 
 param environment = 'dev'

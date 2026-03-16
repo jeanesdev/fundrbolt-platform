@@ -1,15 +1,17 @@
 /**
  * StepVerifyEmail — Step 2 of the NPO onboarding wizard.
  *
- * Instructs the user to check their inbox. Offers a resend link and
- * polls the backend every 10 s to detect when the email has been verified.
+ * Primary flow: user enters the 6-digit code from their email.
+ * Fallback: clicking the link in the email also works (polling detects it).
  */
-import { useEffect, useRef, useState } from 'react'
-import { CheckCircle2, Loader2, Mail } from 'lucide-react'
-import { toast } from 'sonner'
-import apiClient from '@/lib/axios'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import apiClient from '@/lib/axios'
+import { useAuthStore } from '@/stores/auth-store'
+import { Link } from '@tanstack/react-router'
+import { CheckCircle2, Loader2, Mail } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 // ---------------------------------------------------------------------------
 // Props
@@ -20,50 +22,117 @@ interface StepVerifyEmailProps {
   email: string
   /** Advance to the next step (triggered when verification confirmed). */
   onNext: () => void
+  /** Optional onboarding session token — linked to the verified user on the backend. */
+  sessionToken?: string
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function StepVerifyEmail({ email, onNext }: StepVerifyEmailProps) {
+export function StepVerifyEmail({ email, onNext, sessionToken }: StepVerifyEmailProps) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const setUser = useAuthStore((state) => state.setUser)
+  const setAccessToken = useAuthStore((state) => state.setAccessToken)
+  const setRefreshToken = useAuthStore((state) => state.setRefreshToken)
   const [isResending, setIsResending] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
   const [isVerified, setIsVerified] = useState(false)
+  const [code, setCode] = useState('')
+  const [isSubmittingCode, setIsSubmittingCode] = useState(false)
+  const [codeError, setCodeError] = useState<string | null>(null)
+  const verifiedRef = useRef(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // ------------------------------------------------------------------
-  // Poll for verification
+  // Poll for verification (handles link-click flow)
   // ------------------------------------------------------------------
   const checkVerification = async () => {
+    if (!isAuthenticated || verifiedRef.current) {
+      return
+    }
+
     try {
-      // The /auth/me endpoint returns the current user; it includes email_verified.
       const { data } = await apiClient.get<{ email_verified: boolean }>(
-        '/auth/me'
+        '/users/me'
       )
-      if (data.email_verified) {
+      if (data.email_verified && !verifiedRef.current) {
+        verifiedRef.current = true
         setIsVerified(true)
         if (intervalRef.current) clearInterval(intervalRef.current)
         toast.success('Email verified!')
-        // Short delay so the user sees the success state before advancing
         setTimeout(onNext, 1200)
       }
     } catch {
-      // Silently ignore – user might not be logged in yet (race condition)
+      // Silently ignore
     }
   }
 
   useEffect(() => {
-    // Start polling immediately
-    checkVerification()
-    intervalRef.current = setInterval(checkVerification, 10_000)
+    if (!isAuthenticated) {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      return
+    }
+
+    void checkVerification()
+    intervalRef.current = setInterval(() => {
+      void checkVerification()
+    }, 10_000)
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [isAuthenticated])
+
+  // ------------------------------------------------------------------
+  // OTP code submission
+  // ------------------------------------------------------------------
+  const handleCodeChange = (value: string) => {
+    // Only allow digits, max 6
+    const digits = value.replace(/\D/g, '').slice(0, 6)
+    setCode(digits)
+    setCodeError(null)
+    if (digits.length === 6) {
+      void submitCode(digits)
+    }
+  }
+
+  const submitCode = async (codeValue: string) => {
+    setIsSubmittingCode(true)
+    setCodeError(null)
+    try {
+      const { data } = await apiClient.post<{
+        message: string
+        access_token?: string
+        refresh_token?: string
+        user?: Parameters<typeof setUser>[0]
+      }>('/auth/verify-email/code', {
+        email,
+        code: codeValue,
+        session_token: sessionToken ?? null,
+      })
+      // Auto-login: store returned tokens so the wizard session can be linked
+      verifiedRef.current = true
+      if (data.user) setUser(data.user)
+      if (data.access_token) setAccessToken(data.access_token)
+      if (data.refresh_token) setRefreshToken(data.refresh_token)
+      setIsVerified(true)
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      toast.success('Email verified!')
+      setTimeout(onNext, 1200)
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { detail?: { message?: string } } } })
+          .response?.data?.detail?.message ||
+        'Invalid or expired code. Please try again.'
+      setCodeError(msg)
+      setCode('')
+    } finally {
+      setIsSubmittingCode(false)
+    }
+  }
 
   // ------------------------------------------------------------------
   // Countdown helper for the resend cooldown
@@ -87,9 +156,11 @@ export function StepVerifyEmail({ email, onNext }: StepVerifyEmailProps) {
   // ------------------------------------------------------------------
   const handleResend = async () => {
     setIsResending(true)
+    setCode('')
+    setCodeError(null)
     try {
-      await apiClient.post('/auth/verify-email/resend')
-      toast.success('Verification email sent.')
+      await apiClient.post('/auth/verify-email/resend', { email })
+      toast.success('New verification code sent.')
       startCooldown(60)
     } catch (err: unknown) {
       const msg =
@@ -123,9 +194,8 @@ export function StepVerifyEmail({ email, onNext }: StepVerifyEmailProps) {
               'Taking you to the next step…'
             ) : (
               <>
-                We sent a verification link to{' '}
+                We sent a 6-digit verification code to{' '}
                 <span className='text-foreground font-medium'>{email}</span>.
-                Click the link in that email to continue.
               </>
             )}
           </p>
@@ -134,12 +204,36 @@ export function StepVerifyEmail({ email, onNext }: StepVerifyEmailProps) {
 
       {!isVerified && (
         <>
-          <Alert className='text-left'>
-            <AlertDescription>
-              Can't find the email? Check your spam folder. The link expires in
-              24 hours.
-            </AlertDescription>
-          </Alert>
+          <div className='space-y-3'>
+            <div className='space-y-1'>
+              <Input
+                type='text'
+                inputMode='numeric'
+                placeholder='000000'
+                value={code}
+                onChange={(e) => handleCodeChange(e.target.value)}
+                disabled={isSubmittingCode}
+                maxLength={6}
+                className='h-16 text-center font-mono text-3xl tracking-[0.5em]'
+                aria-label='6-digit verification code'
+                autoFocus
+              />
+              {isSubmittingCode && (
+                <p className='text-muted-foreground flex items-center justify-center gap-1 text-sm'>
+                  <Loader2 className='h-3 w-3 animate-spin' />
+                  Verifying…
+                </p>
+              )}
+              {codeError && (
+                <p className='text-destructive text-sm'>{codeError}</p>
+              )}
+            </div>
+
+            <p className='text-muted-foreground text-xs'>
+              Enter the code from the email — or click the link in the email to
+              verify automatically.
+            </p>
+          </div>
 
           <div className='space-y-2'>
             <Button
@@ -154,24 +248,19 @@ export function StepVerifyEmail({ email, onNext }: StepVerifyEmailProps) {
                   Sending…
                 </>
               ) : resendCooldown > 0 ? (
-                `Resend email (${resendCooldown}s)`
+                `Resend code (${resendCooldown}s)`
               ) : (
-                'Resend verification email'
+                'Resend verification code'
               )}
             </Button>
 
-            <p className='text-muted-foreground text-xs'>
-              Waiting for verification
-              <span className='ml-1 inline-flex gap-0.5'>
-                <span className='animate-bounce [animation-delay:0ms]'>.</span>
-                <span className='animate-bounce [animation-delay:150ms]'>
-                  .
-                </span>
-                <span className='animate-bounce [animation-delay:300ms]'>
-                  .
-                </span>
-              </span>
-            </p>
+            {!isAuthenticated && (
+              <Button asChild className='w-full'>
+                <Link to='/sign-in' search={{ redirect: '/register-npo' }}>
+                  I&apos;ve verified my email, sign in to continue
+                </Link>
+              </Button>
+            )}
           </div>
         </>
       )}

@@ -1,10 +1,4 @@
-import { AuthLayout } from '@/features/auth/auth-layout'
-import { donorSocialAuthApi } from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
-import { useNavigate, useSearch } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import type { SocialAuthProvider } from '@fundrbolt/shared/types'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -12,7 +6,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { AuthLayout } from '@/features/auth/auth-layout'
+import { donorSocialAuthApi } from '@/lib/axios'
+import { useAuthStore } from '@/stores/auth-store'
+import type { SocialAuthProvider } from '@fundrbolt/shared/types'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import { Loader2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 type PendingInfo = {
   reason: string
@@ -34,10 +35,21 @@ export function SocialCallback() {
 
     const handleCallback = async () => {
       try {
-        const provider = state.split(':')[0] as SocialAuthProvider
-        const result = await donorSocialAuthApi.callback(provider, {
+        const pending = JSON.parse(
+          sessionStorage.getItem('social_auth_pending') ?? 'null',
+        ) as { provider: SocialAuthProvider; attempt_id: string } | null
+        sessionStorage.removeItem('social_auth_pending')
+
+        if (!pending?.provider) {
+          setError('Sign-in session expired or invalid. Please try again.')
+          setProcessing(false)
+          return
+        }
+
+        const result = await donorSocialAuthApi.callback(pending.provider, {
           code,
           state,
+          attempt_id: pending.attempt_id,
         })
 
         if (result.status === 'authenticated') {
@@ -47,7 +59,12 @@ export function SocialCallback() {
             user_id: result.user_id,
             app_context: 'donor',
           })
-          navigate({ to: '/' })
+          if (result.is_new_account) {
+            toast.success('Welcome to FundrBolt! Your account has been created.')
+            navigate({ to: '/complete-profile', search: { redirect: '/home' } })
+          } else {
+            navigate({ to: '/' })
+          }
         } else if (result.status === 'pending_verification') {
           setPending({
             reason: result.reason,

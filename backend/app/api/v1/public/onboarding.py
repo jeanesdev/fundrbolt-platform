@@ -164,5 +164,6 @@ async def submit_onboarding(
     return await service.submit_npo_onboarding(
         session_token=data.session_token,
         turnstile_token=data.turnstile_token,
+        first_event_data=data.first_event_data,
         ip_address=ip_address,
     )

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Bulk rename helper for Augeo -> Fundrbolt
+# Bulk rename helper for Augeo -> FundrBolt
 # Usage: ./scripts/rename-to-fundrbolt.sh [--dry-run]
 # - Dry run lists files containing matches
 # - Live mode applies in-place replacements using perl (BSD/GNU compatible)
@@ -34,7 +34,7 @@ replace_token() {
 echo "Running $( (( DRY_RUN )) && echo 'dry run' || echo 'live replacements' )"
 
 # Order matters: case-sensitive replacements first
-replace_token "Augeo" "Fundrbolt"
+replace_token "Augeo" "FundrBolt"
 replace_token "augeo" "fundrbolt"
 
 echo "Done. $( (( DRY_RUN )) && echo 'No files modified (dry run).')"

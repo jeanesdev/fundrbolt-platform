@@ -1,10 +1,14 @@
-import NpoPaymentSettingsPage from '@/pages/npo/payment-settings-npo'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/_authenticated/npos/$npoId/payment-settings')({
-  component: RouteComponent,
+export const Route = createFileRoute(
+  '/_authenticated/npos/$npoId/payment-settings'
+)({
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: '/npos/$npoId/edit',
+      params: { npoId: params.npoId },
+      search: { tab: 'payments' },
+      replace: true,
+    })
+  },
 })
-
-function RouteComponent() {
-  return <NpoPaymentSettingsPage />
-}

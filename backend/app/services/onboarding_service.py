@@ -1,6 +1,8 @@
 """Onboarding session service for NPO wizard state management."""
 
+import asyncio
 import uuid
+from collections.abc import Coroutine
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -30,6 +32,27 @@ settings = get_settings()
 SESSION_EXPIRY_HOURS = 24
 _STEP_ORDER_NPO = ["account", "verify_email", "npo_profile", "first_event", "confirmation"]
 _STEP_ORDER_SIGNUP = ["account", "verify_email"]
+_BACKGROUND_NOTIFICATION_TASKS: set[asyncio.Task[Any]] = set()
+
+
+def _schedule_background_task(task_coro: Coroutine[Any, Any, None]) -> None:
+    """Keep a strong reference to fire-and-forget notification tasks."""
+
+    task = asyncio.create_task(task_coro)
+    _BACKGROUND_NOTIFICATION_TASKS.add(task)
+
+    def _cleanup(completed_task: asyncio.Task[Any]) -> None:
+        _BACKGROUND_NOTIFICATION_TASKS.discard(completed_task)
+
+        try:
+            completed_task.result()
+        except Exception as exc:  # pragma: no cover - defensive logging path
+            logger.error(
+                "Background onboarding notification task failed",
+                extra={"error": str(exc)},
+            )
+
+    task.add_done_callback(_cleanup)
 
 
 class OnboardingService:
@@ -265,6 +288,7 @@ class OnboardingService:
         self,
         session_token: str,
         turnstile_token: str,
+        first_event_data: dict[str, Any] | None = None,
         ip_address: str | None = None,
     ) -> SubmitOnboardingResponse:
         """Submit the NPO onboarding application from a completed wizard session.
@@ -276,6 +300,7 @@ class OnboardingService:
         Args:
             session_token: Onboarding wizard session token.
             turnstile_token: Cloudflare Turnstile token from frontend.
+            first_event_data: Optional first-event payload supplied with final submit.
             ip_address: Client IP address for audit log and Turnstile.
 
         Returns:
@@ -334,6 +359,9 @@ class OnboardingService:
 
         # 5. Extract npo_profile data
         form_data = dict(session.form_data or {})
+        if first_event_data is not None:
+            form_data["first_event"] = dict(first_event_data)
+
         npo_data = dict(form_data.get("npo_profile", {}))
         if not npo_data:
             raise HTTPException(
@@ -377,7 +405,7 @@ class OnboardingService:
             npo.tax_id = npo_data.get("ein")
             npo.website_url = npo_data.get("website_url")
             npo.phone = npo_data.get("phone")
-            npo.mission_statement = npo_data.get("mission_description")
+            npo.mission_statement = npo_data.get("mission") or npo_data.get("mission_description")
             npo.status = NPOStatus.PENDING_APPROVAL
         else:
             npo = NPO(
@@ -385,7 +413,7 @@ class OnboardingService:
                 tax_id=npo_data.get("ein"),
                 website_url=npo_data.get("website_url"),
                 phone=npo_data.get("phone"),
-                mission_statement=npo_data.get("mission_description"),
+                mission_statement=npo_data.get("mission") or npo_data.get("mission_description"),
                 email=user.email,
                 status=NPOStatus.PENDING_APPROVAL,
                 created_by_user_id=user.id,
@@ -403,6 +431,17 @@ class OnboardingService:
                 joined_at=now,
             )
             self.db.add(member)
+
+            # Upgrade user from donor role to npo_admin so they can access the admin PWA
+            from app.models.base import Base  # avoid circular import at module level
+
+            npo_admin_role_stmt = select(Base.metadata.tables["roles"].c.id).where(
+                Base.metadata.tables["roles"].c.name == "npo_admin"
+            )
+            npo_admin_role_result = await self.db.execute(npo_admin_role_stmt)
+            npo_admin_role_id = npo_admin_role_result.scalar_one_or_none()
+            if npo_admin_role_id:
+                user.role_id = npo_admin_role_id
 
         # 9. Create NPOApplication
         review_action = "resubmitted" if is_resubmission else "submitted"
@@ -452,6 +491,8 @@ class OnboardingService:
                 event_datetime=event_dt,
                 timezone="UTC",
                 status=EventStatus.DRAFT,
+                created_by=user.id,
+                updated_by=user.id,
             )
             self.db.add(event)
             await self.db.flush()
@@ -480,11 +521,14 @@ class OnboardingService:
         await self.db.refresh(npo)
         await self.db.refresh(application)
 
-        # 13. Dispatch admin notification email asynchronously
-        import asyncio
-
-        asyncio.create_task(
-            self._send_admin_notification(user=user, npo=npo, application=application)
+        # 13. Dispatch submission notification emails asynchronously.
+        # Keep a strong reference so the task is not garbage-collected mid-send.
+        _schedule_background_task(
+            self._send_submission_notifications(
+                user=user,
+                npo=npo,
+                application=application,
+            )
         )
 
         logger.info(
@@ -548,20 +592,46 @@ class OnboardingService:
         suffix = str(npo_id)[:8]
         return f"{base}-{suffix}"
 
-    async def _send_admin_notification(
+    async def _send_submission_notifications(
         self, user: User, npo: NPO, application: NPOApplication
     ) -> None:
-        """Fire-and-forget admin notification email helper."""
+        """Fire-and-forget applicant and admin submission email helper."""
         try:
+            import asyncio
+
             email_service = EmailService()
-            await email_service.send_npo_application_submitted_admin_notification(
-                applicant_name=f"{user.first_name} {user.last_name}",
-                applicant_email=user.email,
-                npo_name=npo.name,
-                application_id=str(application.id),
+            applicant_name = f"{user.first_name} {user.last_name}".strip() or user.first_name
+
+            notification_results = await asyncio.gather(
+                email_service.send_npo_application_submitted_email(
+                    to_email=user.contact_email,
+                    npo_name=npo.name,
+                    applicant_name=applicant_name,
+                ),
+                email_service.send_npo_application_submitted_admin_notification(
+                    applicant_name=applicant_name,
+                    applicant_email=user.contact_email,
+                    npo_name=npo.name,
+                    application_id=str(application.id),
+                ),
+                return_exceptions=True,
             )
+
+            applicant_result, admin_result = notification_results
+
+            if isinstance(applicant_result, Exception):
+                logger.error(
+                    "Failed to send onboarding applicant acknowledgement email",
+                    extra={"error": str(applicant_result), "npo_id": str(npo.id)},
+                )
+
+            if isinstance(admin_result, Exception):
+                logger.error(
+                    "Failed to send onboarding admin approval notification email",
+                    extra={"error": str(admin_result), "npo_id": str(npo.id)},
+                )
         except Exception as exc:
             logger.error(
-                "Failed to send admin notification email after NPO submission",
+                "Failed to send onboarding submission notification emails",
                 extra={"error": str(exc), "npo_id": str(npo.id)},
             )

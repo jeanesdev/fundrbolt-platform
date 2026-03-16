@@ -1,4 +1,4 @@
-// App Service (Backend API) module for Fundrbolt Platform
+// App Service (Backend API) module for FundrBolt Platform
 
 @description('Name of the App Service')
 param appServiceName string

@@ -1,4 +1,6 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import { isRetryableError, retryWithBackoff } from '@/lib/retry'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import type {
   SocialAuthCallbackRequest,
   SocialAuthCallbackResponse,
@@ -8,9 +10,7 @@ import type {
   SocialAuthStartResponse,
 } from '@fundrbolt/shared/types'
 import { sanitizeRequestPayload } from '@fundrbolt/shared/utils'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { isRetryableError, retryWithBackoff } from '@/lib/retry'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 // Global flag to track if consent modal is already shown
 let consentModalShown = false
@@ -268,7 +268,7 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 429) {
       const retryAfter = error.response.headers['retry-after']
       if (retryAfter) {
-        ;(error as AxiosError & { retryAfter?: number }).retryAfter = parseInt(
+        ; (error as AxiosError & { retryAfter?: number }).retryAfter = parseInt(
           retryAfter,
           10
         )
@@ -284,6 +284,15 @@ export const adminSocialAuthApi = {
     const response = await apiClient.get<SocialAuthProvidersResponse>(
       '/auth/social/providers'
     )
+    return response.data
+  },
+  getAttemptContext: async (
+    state: string
+  ): Promise<{ app_context: string; redirect_uri: string | null }> => {
+    const response = await apiClient.get<{
+      app_context: string
+      redirect_uri: string | null
+    }>(`/auth/social/attempt-context?state=${encodeURIComponent(state)}`)
     return response.data
   },
   start: async (

@@ -1,4 +1,4 @@
-// Staging environment parameters for Fundrbolt Platform
+// Staging environment parameters for FundrBolt Platform
 using '../main.bicep'
 
 param environment = 'staging'

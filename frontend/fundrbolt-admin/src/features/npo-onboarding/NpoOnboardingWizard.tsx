@@ -15,6 +15,7 @@
  * The Turnstile CAPTCHA token is collected silently during the npo_profile
  * and first_event steps and used at submission time.
  */
+import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -25,8 +26,10 @@ import {
   submitOnboarding,
   type SessionResponse,
 } from '@/lib/api/onboarding'
+import apiClient from '@/lib/axios'
 import { npoApi } from '@/services/npo-service'
 import { useAuthStore } from '@/stores/auth-store'
+import LogoWhiteGold from '@fundrbolt/shared/assets/logos/fundrbolt-logo-white-gold.svg'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -37,7 +40,7 @@ import {
 import { StepAccount } from '../auth/sign-up-wizard/StepAccount'
 import { StepVerifyEmail } from '../auth/sign-up-wizard/StepVerifyEmail'
 import { StepConfirmation } from './StepConfirmation'
-import { StepFirstEvent } from './StepFirstEvent'
+import { StepFirstEvent, type FirstEventFormValues } from './StepFirstEvent'
 import { StepNpoProfile } from './StepNpoProfile'
 import { TurnstileWidget, type TurnstileWidgetHandle } from './TurnstileWidget'
 
@@ -46,6 +49,7 @@ import { TurnstileWidget, type TurnstileWidgetHandle } from './TurnstileWidget'
 // ---------------------------------------------------------------------------
 
 const SESSION_TOKEN_KEY = 'onboarding_session_token'
+const NO_PENDING_SUBMISSION = Symbol('no-pending-submission')
 
 // All possible wizard steps in order
 const ALL_WIZARD_STEPS: WizardStep[] = [
@@ -107,6 +111,11 @@ export function NpoOnboardingWizard() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
 
   const turnstileRef = useRef<TurnstileWidgetHandle>(null)
+  const pendingSubmissionRef = useRef<
+    FirstEventFormValues | null | typeof NO_PENDING_SUBMISSION
+  >(NO_PENDING_SUBMISSION)
+  /** Prevents initSession from running again after successful submission. */
+  const submittedRef = useRef(false)
 
   // -------------------------------------------------------------------
   // Resolve which progress steps to show
@@ -119,27 +128,37 @@ export function NpoOnboardingWizard() {
   // Session initialisation
   // -------------------------------------------------------------------
   const initSession = useCallback(async () => {
+    // Don't re-initialize once submission has completed
+    if (submittedRef.current) return
+
     setIsInitialising(true)
     setInitError(null)
 
     try {
       const storedToken = localStorage.getItem(SESSION_TOKEN_KEY)
+      const shouldUpgradeAnonymousSession = Boolean(
+        isAuthenticated && accessToken
+      )
 
       if (storedToken) {
         const existing = await getSession(storedToken)
         if (existing) {
-          setSession(existing)
-          setCurrentStep(existing.current_step as WizardStepId)
+          if (shouldUpgradeAnonymousSession && !existing.user_id) {
+            localStorage.removeItem(SESSION_TOKEN_KEY)
+          } else {
+            setSession(existing)
+            setCurrentStep(existing.current_step as WizardStepId)
 
-          // Pre-fill wizard data from stored session
-          const fd = existing.form_data
-          setWizardData({
-            email: (fd.account?.email as string) ?? '',
-            firstName: (fd.account?.first_name as string) ?? user?.first_name,
-            npoName: (fd.npo_profile?.npo_name as string) ?? '',
-          })
-          setIsInitialising(false)
-          return
+            // Pre-fill wizard data from stored session
+            const fd = existing.form_data
+            setWizardData({
+              email: (fd.account?.email as string) ?? '',
+              firstName: (fd.account?.first_name as string) ?? user?.first_name,
+              npoName: (fd.npo_profile?.npo_name as string) ?? '',
+            })
+            setIsInitialising(false)
+            return
+          }
         }
       }
 
@@ -200,40 +219,72 @@ export function NpoOnboardingWizard() {
   // -------------------------------------------------------------------
   // Submit handler
   // -------------------------------------------------------------------
-  const handleSubmit = useCallback(async () => {
-    if (!session) return
+  const finalizeSubmission = useCallback(
+    async (
+      turnstileToken: string,
+      firstEventValues: FirstEventFormValues | null
+    ) => {
+      if (!session) return
 
-    // Ensure we have a CAPTCHA token
-    const token = captchaToken
-    if (!token) {
-      turnstileRef.current?.execute()
-      toast.error('Security check in progress. Please try again in a moment.')
-      return
-    }
+      pendingSubmissionRef.current = NO_PENDING_SUBMISSION
+      setIsSubmitting(true)
+      setSubmitError(null)
 
-    setIsSubmitting(true)
-    setSubmitError(null)
+      try {
+        await submitOnboarding(session.token, turnstileToken, firstEventValues)
 
-    try {
-      await submitOnboarding(session.token, token)
+        // Block any subsequent initSession re-runs (e.g. triggered by setUser below)
+        submittedRef.current = true
 
-      // Clear persisted session token on success
-      localStorage.removeItem(SESSION_TOKEN_KEY)
+        // Advance immediately after a successful submit. Role refresh is helpful,
+        // but it should not keep the user on a loading state.
+        localStorage.removeItem(SESSION_TOKEN_KEY)
+        setCurrentStep('confirmation')
 
-      setCurrentStep('confirmation')
-    } catch (err: unknown) {
-      const detail =
-        (err as { response?: { data?: { detail?: string } } }).response?.data
-          ?.detail ??
-        (err as { message?: string }).message ??
-        'Submission failed. Please try again.'
-      setSubmitError(detail)
-      turnstileRef.current?.reset()
-      setCaptchaToken(null)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }, [session, captchaToken])
+        // Refresh the auth store so the new npo_admin role is reflected
+        // (backend upgrades the user from donor → npo_admin on submission)
+        void (async () => {
+          try {
+            const { data: freshUser } = await apiClient.get('/users/me', {
+              timeout: 5000,
+            })
+            useAuthStore.getState().setUser(freshUser)
+          } catch {
+            // Non-fatal — user can re-login to pick up the new role
+          }
+        })()
+      } catch (err: unknown) {
+        const detail =
+          (err as { response?: { data?: { detail?: string } } }).response?.data
+            ?.detail ??
+          (err as { message?: string }).message ??
+          'Submission failed. Please try again.'
+        setSubmitError(detail)
+        turnstileRef.current?.reset()
+        setCaptchaToken(null)
+      } finally {
+        setIsSubmitting(false)
+      }
+    },
+    [session]
+  )
+
+  const handleSubmit = useCallback(
+    async (firstEventValues: FirstEventFormValues | null) => {
+      if (!session) return
+
+      const token = captchaToken
+      if (!token) {
+        pendingSubmissionRef.current = firstEventValues
+        turnstileRef.current?.execute()
+        toast.error('Verifying security, please hold.')
+        return
+      }
+
+      await finalizeSubmission(token, firstEventValues)
+    },
+    [session, captchaToken, finalizeSubmission]
+  )
 
   // -------------------------------------------------------------------
   // Navigation helpers
@@ -269,102 +320,120 @@ export function NpoOnboardingWizard() {
   // Render
   // -------------------------------------------------------------------
   return (
-    <div className='mx-auto w-full max-w-lg space-y-6 px-4 py-8'>
-      {/* Invisible Turnstile for submit-time CAPTCHA */}
-      <TurnstileWidget
-        ref={turnstileRef}
-        onVerify={(t) => setCaptchaToken(t)}
-        onExpire={() => setCaptchaToken(null)}
-      />
+    <div className='mx-auto w-full max-w-4xl px-4 py-6 sm:py-8'>
+      <div className='mb-6 flex items-center justify-between gap-4'>
+        <img src={LogoWhiteGold} alt='FundrBolt' className='h-10 sm:h-12' />
+        {isAuthenticated && <ProfileDropdown />}
+      </div>
 
-      {/* Progress wizard shell */}
-      <SignUpWizard
-        steps={visibleSteps}
-        currentStepIndex={currentStepIdx}
-        headingBadge={
-          isRevisionMode ? (
-            <Badge variant='secondary'>Revision Mode</Badge>
-          ) : undefined
-        }
-      >
-        {/* ---- account ---- */}
-        {currentStep === 'account' && session && (
-          <StepAccount
-            sessionToken={session.token}
-            onNext={() => {
-              goToStep('verify_email')
-            }}
-          />
-        )}
+      <div className='mx-auto w-full max-w-lg space-y-6'>
+        {/* Invisible Turnstile for submit-time CAPTCHA */}
+        <TurnstileWidget
+          ref={turnstileRef}
+          onVerify={(token) => {
+            setCaptchaToken(token)
 
-        {/* ---- verify_email ---- */}
-        {currentStep === 'verify_email' && (
-          <StepVerifyEmail
-            email={wizardData.email ?? ''}
-            onNext={() => goToStep('npo_profile')}
-          />
-        )}
-
-        {/* ---- npo_profile ---- */}
-        {currentStep === 'npo_profile' && session && (
-          <StepNpoProfile
-            sessionToken={session.token}
-            initialValues={
-              revisionNpoPrefill ?? { npo_name: wizardData.npoName }
+            if (pendingSubmissionRef.current !== NO_PENDING_SUBMISSION) {
+              const pendingSubmission = pendingSubmissionRef.current
+              void finalizeSubmission(token, pendingSubmission)
             }
-            onNext={(values) => {
-              setWizardData((prev) => ({ ...prev, npoName: values.npo_name }))
-              goToStep('first_event')
-            }}
-            onBack={
-              isAuthenticated ? undefined : () => goToStep('verify_email')
-            }
-          />
-        )}
+          }}
+          onExpire={() => setCaptchaToken(null)}
+        />
 
-        {/* ---- first_event ---- */}
-        {currentStep === 'first_event' && session && (
-          <>
-            {submitError && (
-              <Alert variant='destructive' className='mb-4'>
-                <AlertCircle className='h-4 w-4' />
-                <AlertDescription>{submitError}</AlertDescription>
-              </Alert>
-            )}
-            <StepFirstEvent
+        {/* Progress wizard shell */}
+        <SignUpWizard
+          steps={visibleSteps}
+          currentStepIndex={currentStepIdx}
+          headingBadge={
+            isRevisionMode ? (
+              <Badge variant='secondary'>Revision Mode</Badge>
+            ) : undefined
+          }
+        >
+          {/* ---- account ---- */}
+          {currentStep === 'account' && session && (
+            <StepAccount
               sessionToken={session.token}
-              onNext={async (_values) => {
-                await handleSubmit()
+              onNext={(email) => {
+                setWizardData((prev) => ({ ...prev, email }))
+                goToStep('verify_email')
               }}
-              onBack={() => goToStep('npo_profile')}
             />
-            {isSubmitting && (
-              <div className='flex items-center justify-center py-4'>
-                <Loader2 className='text-primary mr-2 h-5 w-5 animate-spin' />
-                <span className='text-muted-foreground text-sm'>
-                  Submitting your application…
-                </span>
-              </div>
-            )}
-          </>
-        )}
+          )}
 
-        {/* ---- confirmation ---- */}
-        {currentStep === 'confirmation' && (
-          <StepConfirmation
-            firstName={wizardData.firstName ?? user?.first_name ?? 'there'}
-            npoName={wizardData.npoName ?? ''}
-          />
-        )}
-      </SignUpWizard>
+          {/* ---- verify_email ---- */}
+          {currentStep === 'verify_email' && (
+            <StepVerifyEmail
+              email={wizardData.email ?? ''}
+              onNext={() => goToStep('npo_profile')}
+              sessionToken={session?.token}
+            />
+          )}
 
-      {/* Session expiry helper */}
-      <Card className='border-dashed'>
-        <CardContent className='text-muted-foreground py-3 text-center text-xs'>
-          Your progress is saved for 24 hours. You can close this window and
-          return on the same device to continue.
-        </CardContent>
-      </Card>
+          {/* ---- npo_profile ---- */}
+          {currentStep === 'npo_profile' && session && (
+            <StepNpoProfile
+              sessionToken={session.token}
+              initialValues={
+                revisionNpoPrefill ?? { npo_name: wizardData.npoName }
+              }
+              onNext={(values) => {
+                setWizardData((prev) => ({
+                  ...prev,
+                  npoName: values.npo_name,
+                }))
+                goToStep('first_event')
+              }}
+              onBack={
+                isAuthenticated ? undefined : () => goToStep('verify_email')
+              }
+            />
+          )}
+
+          {/* ---- first_event ---- */}
+          {currentStep === 'first_event' && session && (
+            <>
+              {submitError && (
+                <Alert variant='destructive' className='mb-4'>
+                  <AlertCircle className='h-4 w-4' />
+                  <AlertDescription>{submitError}</AlertDescription>
+                </Alert>
+              )}
+              <StepFirstEvent
+                onNext={async (values) => {
+                  await handleSubmit(values)
+                }}
+                onBack={() => goToStep('npo_profile')}
+              />
+              {isSubmitting && (
+                <div className='flex items-center justify-center py-4'>
+                  <Loader2 className='text-primary mr-2 h-5 w-5 animate-spin' />
+                  <span className='text-muted-foreground text-sm'>
+                    Submitting your application…
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ---- confirmation ---- */}
+          {currentStep === 'confirmation' && (
+            <StepConfirmation
+              firstName={wizardData.firstName ?? user?.first_name ?? 'there'}
+              npoName={wizardData.npoName ?? ''}
+            />
+          )}
+        </SignUpWizard>
+
+        {/* Session expiry helper */}
+        <Card className='border-dashed'>
+          <CardContent className='text-muted-foreground py-3 text-center text-xs'>
+            Your progress is saved for 24 hours. You can close this window and
+            return on the same device to continue.
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

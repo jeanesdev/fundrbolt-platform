@@ -78,8 +78,8 @@ Admin users with appropriate permissions need access to NPO management, event ma
 **Acceptance Scenarios**:
 
 1. **Given** a user with admin permissions logs in, **When** the sidebar renders, **Then** an "Admin" navigation group appears containing NPO, Events, and Users links
-2. **Given** "Fundrbolt Platform All Organizations" is NOT selected, **When** the sidebar renders, **Then** the NPO link within the Admin group is hidden
-3. **Given** "Fundrbolt Platform All Organizations" IS selected, **When** the sidebar renders, **Then** the NPO link within the Admin group is visible and navigates to the NPO list page
+2. **Given** "FundrBolt Platform All Organizations" is NOT selected, **When** the sidebar renders, **Then** the NPO link within the Admin group is hidden
+3. **Given** "FundrBolt Platform All Organizations" IS selected, **When** the sidebar renders, **Then** the NPO link within the Admin group is visible and navigates to the NPO list page
 4. **Given** a user without admin permissions logs in, **When** the sidebar renders, **Then** the Admin navigation group only shows items they have permission to access (if any)
 
 ---
@@ -157,7 +157,7 @@ Admin users on the settings pages should see a clean interface without duplicate
 - **FR-006**: Event selector MUST automatically select the most recent event if only past events exist
 - **FR-006a**: Event selector MUST display search/filter functionality when the filtered event list contains 10 or more events
 - **FR-007**: System MUST display a navigation group labeled "Admin" containing NPO, Events, and Users links
-- **FR-008**: NPO link in the Admin group MUST only be visible when "Fundrbolt Platform All Organizations" is selected in the NPO selector
+- **FR-008**: NPO link in the Admin group MUST only be visible when "FundrBolt Platform All Organizations" is selected in the NPO selector
 - **FR-009**: System MUST display a navigation group labeled "Event: [Event Name]" when an event is selected
 - **FR-010**: Event navigation group MUST contain all event-specific sections: Details, Media, Links, Food Options, Registrations, Seating, Tickets, Sponsors, Auction Items
 - **FR-011**: Each event navigation item MUST display an appropriate icon

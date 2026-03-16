@@ -53,7 +53,7 @@ describe('useEventContext', () => {
       error: null,
       selectNpo: vi.fn(),
       setAvailableNpos: vi.fn(),
-      isFundrboltPlatformView: false,
+      isFundrBoltPlatformView: false,
       isSingleNpoUser: false,
       canChangeNpo: true,
     })
@@ -84,13 +84,13 @@ describe('useEventContext', () => {
     it('should not fetch events when NPO is not selected', async () => {
       vi.mocked(useNpoContextModule.useNpoContext).mockReturnValue({
         selectedNpoId: null,
-        selectedNpoName: 'Fundrbolt Platform',
+        selectedNpoName: 'FundrBolt Platform',
         availableNpos: [],
         isLoading: false,
         error: null,
         selectNpo: vi.fn(),
         setAvailableNpos: vi.fn(),
-        isFundrboltPlatformView: true,
+        isFundrBoltPlatformView: true,
         isSingleNpoUser: false,
         canChangeNpo: true,
       })

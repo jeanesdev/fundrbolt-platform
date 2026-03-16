@@ -311,7 +311,18 @@ async def list_events(
 
     # Apply role-based filtering
     permission_service = PermissionService()
-    filtered_npo_id = await permission_service.get_npo_filter_for_user(db, current_user, npo_id)
+    try:
+        filtered_npo_id = await permission_service.get_npo_filter_for_user(db, current_user, npo_id)
+    except PermissionError as exc:
+        if str(exc) == "npo_id is required for non-super_admin users":
+            return EventListResponse(
+                items=[],
+                total=0,
+                page=page,
+                per_page=per_page,
+                total_pages=0,
+            )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
 
     search_query = search.strip() if search and search.strip() else None
 

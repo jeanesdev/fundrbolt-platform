@@ -1,10 +1,10 @@
 # Monitoring Guide
 
-Comprehensive guide for monitoring the Fundrbolt platform using Azure Application Insights and Log Analytics.
+Comprehensive guide for monitoring the FundrBolt platform using Azure Application Insights and Log Analytics.
 
 ## Overview
 
-The Fundrbolt platform uses Azure Application Insights for application performance monitoring (APM) and Azure Log Analytics for centralized log aggregation. This provides:
+The FundrBolt platform uses Azure Application Insights for application performance monitoring (APM) and Azure Log Analytics for centralized log aggregation. This provides:
 
 - **Real-time metrics**: Request rate, response time, error rate, dependencies
 - **Distributed tracing**: End-to-end request tracing across services

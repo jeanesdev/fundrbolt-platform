@@ -590,7 +590,7 @@ export function EventHomePage() {
     const icsContent = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//Fundrbolt//EN',
+      'PRODID:-//FundrBolt//EN',
       'BEGIN:VEVENT',
       `DTSTART:${fmt(eventDate)}`,
       `DTEND:${fmt(new Date(eventDate.getTime() + 3 * 3600000))}`,

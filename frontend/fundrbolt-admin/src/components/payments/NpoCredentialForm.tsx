@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { useMutation } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 import {
   type CredentialCreate,
   type CredentialRead,
@@ -41,6 +42,8 @@ interface NpoCredentialFormProps {
   onSaved?: (cred: CredentialRead) => void
   /** Called after a successful delete */
   onDeleted?: () => void
+  /** Optional skip handler for create mode */
+  onSkip?: () => void
 }
 
 interface FormValues {
@@ -57,7 +60,9 @@ export function NpoCredentialForm({
   existingCredential,
   onSaved,
   onDeleted,
+  onSkip,
 }: NpoCredentialFormProps) {
+  const navigate = useNavigate()
   const isEditing = !!existingCredential
 
   const [testResult, setTestResult] = useState<CredentialTestResponse | null>(
@@ -182,6 +187,15 @@ export function NpoCredentialForm({
   const onSubmit = handleSubmit((values) => {
     saveMutation.mutate(values)
   })
+
+  const handleSkip = () => {
+    toast.message('Payment settings skipped for now')
+    if (onSkip) {
+      onSkip()
+      return
+    }
+    navigate({ to: '/npos/$npoId', params: { npoId } })
+  }
 
   // ── Render ───────────────────────────────────────────────────────────────
 
@@ -369,6 +383,17 @@ export function NpoCredentialForm({
             )}
             {isEditing ? 'Update Credentials' : 'Save Credentials'}
           </Button>
+
+          {!isEditing && (
+            <Button
+              type='button'
+              variant='ghost'
+              onClick={handleSkip}
+              disabled={isSubmitting || saveMutation.isPending}
+            >
+              Skip for now
+            </Button>
+          )}
 
           {/* Test connection button — only shown when credentials already exist */}
           {isEditing && (

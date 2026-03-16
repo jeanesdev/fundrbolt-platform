@@ -1,4 +1,4 @@
-// Static Web App module for Fundrbolt Platform
+// Static Web App module for FundrBolt Platform
 
 @description('Name of the Static Web App')
 param staticWebAppName string

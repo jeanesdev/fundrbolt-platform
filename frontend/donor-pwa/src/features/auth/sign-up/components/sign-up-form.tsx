@@ -403,22 +403,13 @@ export function SignUpForm({
 
       toast.success(`Account created! ${response.message}`)
 
-      // Check if there's a redirect parameter in the URL (from TanStack Router search params)
-      const searchParams = new URLSearchParams(window.location.search)
-      const redirectParam = searchParams.get('redirect')
-
-      // If this is an invitation registration, redirect to sign-in with return URL
+      // For invitation registrations, let the user know they must verify first
       if (invitationContext) {
-        toast.info(`Now sign in to accept your invitation to ${invitationContext.npo_name}`)
-        window.location.href = `/sign-in?redirect=${encodeURIComponent(`/invitations/accept?token=${encodeURIComponent(invitationContext.token)}`)}`
-      } else if (redirectParam) {
-        // If there's a redirect parameter (e.g., from event registration), preserve it
-        toast.info('Please sign in to continue')
-        window.location.href = `/sign-in?redirect=${encodeURIComponent(redirectParam)}`
-      } else {
-        // Default: just go to sign-in page
-        navigate({ to: '/sign-in', replace: true })
+        toast.info(`Please verify your email first, then sign in to accept your invitation to ${invitationContext.npo_name}`)
       }
+
+      // Always send new users to the verify-email page
+      navigate({ to: '/verify-email', search: { email: data.email }, replace: true })
     } catch (err: unknown) {
       const error = err as {
         response?: {

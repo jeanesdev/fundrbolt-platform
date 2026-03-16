@@ -43,11 +43,11 @@ async def seed_legal_documents() -> None:
 
 ## 1. Acceptance of Terms
 
-By accessing and using the Fundrbolt Platform ("Platform"), you accept and agree to be bound by the terms and provisions of this agreement.
+By accessing and using the FundrBolt Platform ("Platform"), you accept and agree to be bound by the terms and provisions of this agreement.
 
 ## 2. Description of Service
 
-Fundrbolt Platform is a nonprofit management and donor engagement system that provides:
+FundrBolt Platform is a nonprofit management and donor engagement system that provides:
 
 - Event management and volunteer coordination
 - Donation tracking and receipt generation
@@ -85,7 +85,7 @@ You agree NOT to:
 
 ## 6. Intellectual Property
 
-- The Platform and its original content are owned by Fundrbolt and protected by copyright
+- The Platform and its original content are owned by FundrBolt and protected by copyright
 - User-generated content remains the property of the respective users
 - By posting content, you grant us a license to use, display, and distribute it
 
@@ -120,7 +120,7 @@ These terms are governed by the laws of South Carolina, without regard to confli
 
 ---
 
-By using the Fundrbolt Platform, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
+By using the FundrBolt Platform, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
 """.format(date=datetime.now().strftime("%B %d, %Y"))
 
         # Privacy Policy
@@ -130,7 +130,7 @@ By using the Fundrbolt Platform, you acknowledge that you have read, understood,
 
 ## 1. Introduction
 
-Fundrbolt Platform ("we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.
+FundrBolt Platform ("we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.
 
 ## 2. Information We Collect
 
@@ -241,11 +241,11 @@ Questions or concerns about privacy?
 ## 13. Regulatory Information
 
 For EU users:
-- **Data Controller**: Fundrbolt Platform
+- **Data Controller**: FundrBolt Platform
 
 ---
 
-By using the Fundrbolt Platform, you acknowledge that you have read and understood this Privacy Policy.
+By using the FundrBolt Platform, you acknowledge that you have read and understood this Privacy Policy.
 """.format(date=datetime.now().strftime("%B %d, %Y"))
 
         # Create Terms of Service

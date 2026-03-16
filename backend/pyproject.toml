@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "fundrbolt-backend"
 version = "0.1.0"
-description = "Fundrbolt Platform - Backend API"
-authors = ["Fundrbolt Team <dev@fundrbolt.com>"]
+description = "FundrBolt Platform - Backend API"
+authors = ["FundrBolt Team <dev@fundrbolt.com>"]
 readme = "README.md"
 packages = [{include = "app"}]
 
@@ -24,7 +24,7 @@ azure-communication-email = "^1.0.0"
 python-dotenv = "^1.0.0"
 prometheus-client = "^0.16.0"
 anyio = "^4.4.0"
-pillow = "^10.0.0"
+pillow = "^12.1.1"
 python-magic = "^0.4.27"
 azure-storage-blob = "^12.19.0"
 pydantic-extra-types = "^2.0.0"

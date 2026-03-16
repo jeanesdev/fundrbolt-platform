@@ -292,3 +292,14 @@ def generate_verification_token() -> str:
         # Store in Redis with TTL
     """
     return secrets.token_urlsafe(32)
+
+
+def generate_verification_otp() -> str:
+    """Generate a 6-digit numeric OTP for email verification.
+
+    Cryptographically secure — uses secrets.randbelow rather than random.
+
+    Returns:
+        str: Zero-padded 6-digit string, e.g. "048213"
+    """
+    return str(secrets.randbelow(1_000_000)).zfill(6)

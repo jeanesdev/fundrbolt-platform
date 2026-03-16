@@ -27,7 +27,7 @@ jobs:
       AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING_TEST }}
       AZURE_STORAGE_ACCOUNT_NAME: ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME_TEST }}
       EMAIL_FROM_ADDRESS: test@fundrbolt.com
-      EMAIL_FROM_NAME: Fundrbolt Test
+      EMAIL_FROM_NAME: FundrBolt Test
       FRONTEND_ADMIN_URL: http://localhost:5173
       FRONTEND_DONOR_URL: http://localhost:5174
       SUPER_ADMIN_EMAIL: admin@fundrbolt.com

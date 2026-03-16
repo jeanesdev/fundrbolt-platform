@@ -47,6 +47,13 @@ class SubmitOnboardingRequest(BaseModel):
     turnstile_token: str = Field(
         ..., description="Cloudflare Turnstile verification token from the frontend widget."
     )
+    first_event_data: dict[str, Any] | None = Field(
+        default=None,
+        description=(
+            "Optional first-event payload sent with the final submit so the client does not need "
+            "a separate save request before submission."
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------

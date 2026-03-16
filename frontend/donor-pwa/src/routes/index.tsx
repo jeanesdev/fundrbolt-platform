@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { hasValidRefreshToken } from '@/lib/storage/tokens'
 import { useAuthStore } from '@/stores/auth-store'
+import LogoNavyGold from '@fundrbolt/shared/assets/logos/fundrbolt-logo-navy-gold.svg'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 
 function HomePage() {
@@ -10,7 +11,10 @@ function HomePage() {
       <div className="container mx-auto px-4 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold mb-4">Welcome to Fundrbolt</h1>
+          <div className="flex justify-center mb-6">
+            <img src={LogoNavyGold} alt="FundrBolt" className="h-16" />
+          </div>
+          <h1 className="text-5xl font-bold mb-4">Welcome to FundrBolt!</h1>
           <p className="text-xl text-muted-foreground mb-8">
             Support nonprofits, attend events, and make a difference
           </p>

@@ -180,7 +180,7 @@ IP Address: {submission.ip_address}
         html_body = _create_email_html_template(
             heading="New Contact Form Submission",
             body_paragraphs=body_paragraphs,
-            footer_text="This is an automated notification from the Fundrbolt Platform.",
+            footer_text="This is an automated notification from the FundrBolt.",
         )
 
         # Send email using existing EmailService method

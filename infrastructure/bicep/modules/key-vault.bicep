@@ -1,4 +1,4 @@
-// Azure Key Vault module for Fundrbolt Platform
+// Azure Key Vault module for FundrBolt Platform
 
 @description('Name of the Key Vault')
 param keyVaultName string

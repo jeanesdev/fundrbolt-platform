@@ -13,7 +13,7 @@ export function LegalFooter() {
       <div className='container mx-auto flex flex-col items-center justify-between gap-4 px-4 py-6 md:flex-row md:py-4'>
         {/* Copyright */}
         <p className='text-muted-foreground text-sm'>
-          © {currentYear} Fundrbolt Platform. All rights reserved.
+          © {currentYear} FundrBolt Platform. All rights reserved.
         </p>
 
         {/* Legal Links */}

@@ -60,6 +60,13 @@ class SocialStartResponse(BaseModel):
     state: str
 
 
+class SocialAttemptContextResponse(BaseModel):
+    """Lightweight response for GET /social/attempt-context."""
+
+    app_context: AppContext
+    redirect_uri: str | None = None
+
+
 class SocialCallbackRequest(BaseModel):
     """Request to complete social auth after provider callback."""
 
@@ -79,6 +86,7 @@ class SocialAuthSuccessResponse(BaseModel):
     user_id: uuid.UUID
     access_token: str
     refresh_token: str
+    is_new_account: bool = False
 
 
 class SocialAuthPendingResponse(BaseModel):

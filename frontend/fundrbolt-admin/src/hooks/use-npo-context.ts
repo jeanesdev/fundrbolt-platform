@@ -3,7 +3,7 @@
  * Manages NPO context state with query invalidation and role-based NPO selection
  *
  * Business Rules:
- * - SuperAdmin: Can select any NPO or "Fundrbolt Platform" (shows all NPOs)
+ * - SuperAdmin: Can select any NPO or "FundrBolt Platform" (shows all NPOs)
  * - NPO Admin: Auto-select their assigned NPO, disable selector
  * - Event Coordinator: Show NPOs they're registered with
  * - Staff: Auto-select their assigned NPO, disable selector
@@ -30,7 +30,7 @@ export interface UseNpoContextReturn {
   setAvailableNpos: (npos: NPOContextOption[]) => void
 
   // Helpers
-  isFundrboltPlatformView: boolean
+  isFundrBoltPlatformView: boolean
   isSingleNpoUser: boolean // True if user has only one NPO (disable selector)
   canChangeNpo: boolean // True if user can change NPO selection
 }
@@ -47,10 +47,10 @@ export function useNpoContext(): UseNpoContextReturn {
     error,
     setSelectedNpo,
     setAvailableNpos: storeSetAvailableNpos,
-    isFundrboltPlatformView: isFundrboltView,
+    isFundrBoltPlatformView: isFundrBoltView,
   } = useNPOContextStore()
 
-  const isFundrboltPlatformView = isFundrboltView()
+  const isFundrBoltPlatformView = isFundrBoltView()
 
   // Single NPO users (NPO Admin and Staff) should have only their NPO
   const isSingleNpoUser =
@@ -122,7 +122,7 @@ export function useNpoContext(): UseNpoContextReturn {
     error,
     selectNpo,
     setAvailableNpos,
-    isFundrboltPlatformView,
+    isFundrBoltPlatformView,
     isSingleNpoUser,
     canChangeNpo,
   }

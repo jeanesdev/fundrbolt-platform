@@ -1,4 +1,4 @@
-# Fundrbolt Platform - API Consumer Migration Guide
+# FundrBolt Platform - API Consumer Migration Guide
 
 **Effective Date**: December 18, 2025
 **Audience**: External API consumers, integrations partners, webhook subscribers
@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-The Augeo Platform has been rebranded to **Fundrbolt Platform**. This document details the minimal changes required for external API consumers. **Good news**: there are NO breaking API changes.
+The Augeo Platform has been rebranded to **FundrBolt Platform**. This document details the minimal changes required for external API consumers. **Good news**: there are NO breaking API changes.
 
 ## API Changes Summary
 
@@ -20,22 +20,22 @@ The Augeo Platform has been rebranded to **Fundrbolt Platform**. This document d
 | **Authentication** | ✅ Unchanged | OAuth2/JWT still work identically |
 | **Data Format** | ✅ Unchanged | JSON structure and types identical |
 | **Rate Limiting** | ✅ Unchanged | Limits remain the same |
-| **Webhooks** | ✅ Backward Compatible | Old URLs work; new content uses Fundrbolt branding |
+| **Webhooks** | ✅ Backward Compatible | Old URLs work; new content uses FundrBolt branding |
 
 ### ⚠️ Minor Changes (Non-Breaking)
 
 | Component | Old Value | New Value | Impact | Action Required |
 |-----------|-----------|-----------|--------|-----------------|
-| **Response Header** | `X-Powered-By: Augeo` | `X-Powered-By: Fundrbolt Platform` | Informational only | Optional: Update log parsing |
+| **Response Header** | `X-Powered-By: Augeo` | `X-Powered-By: FundrBolt Platform` | Informational only | Optional: Update log parsing |
 | **Email Sender** | `support@augeo.app` | `support@fundrbolt.com` | Email notifications | Update email filters |
 | **Metrics Names** | `augeo_http_requests_total` | `fundrbolt_http_requests_total` | Prometheus monitoring | Update metric queries/dashboards |
-| **OpenAPI Docs** | `/docs` title: "Augeo" | `/docs` title: "Fundrbolt" | Documentation reference | Update documentation links |
+| **OpenAPI Docs** | `/docs` title: "Augeo" | `/docs` title: "FundrBolt" | Documentation reference | Update documentation links |
 
 ## Integration Checklist
 
 ### 1. Email Notifications
 
-**If you receive email notifications** from the Fundrbolt API:
+**If you receive email notifications** from the FundrBolt API:
 
 ```bash
 # ❌ OLD (may not work after cutover)
@@ -59,11 +59,11 @@ mail_whitelist += support@fundrbolt.com
 
 ### 2. Webhook Endpoints
 
-**If you have registered webhooks** with Fundrbolt API:
+**If you have registered webhooks** with FundrBolt API:
 
 - ✅ Webhook URLs remain active and functional
 - ✅ Webhook event structure unchanged
-- ⚠️ Event content may reference Fundrbolt branding (e.g., email subjects)
+- ⚠️ Event content may reference FundrBolt branding (e.g., email subjects)
 
 **Recommended Action**:
 ```javascript
@@ -71,7 +71,7 @@ mail_whitelist += support@fundrbolt.com
 if (email.subject.includes("Augeo")) { ... }
 
 // New parsing (required if you used brand name matching)
-if (email.subject.includes("Fundrbolt")) { ... }
+if (email.subject.includes("FundrBolt")) { ... }
 
 // Better: Use more specific patterns
 if (email.subject.includes("event") || email.subject.includes("confirmation")) { ... }
@@ -110,7 +110,7 @@ relabel_configs:
 
 ### 4. API Documentation References
 
-**If you maintain documentation** linking to Fundrbolt API docs:
+**If you maintain documentation** linking to FundrBolt API docs:
 
 ```bash
 # ❌ OLD (may redirect)
@@ -130,7 +130,7 @@ https://api.fundrbolt.com/docs
 
 <!-- If referencing version numbers, update -->
 Old: "Augeo API v1.2.0"
-New: "Fundrbolt API v1.2.0" (same API, only branding changed)
+New: "FundrBolt API v1.2.0" (same API, only branding changed)
 ```
 
 ### 5. User-Facing Display
@@ -142,7 +142,7 @@ New: "Fundrbolt API v1.2.0" (same API, only branding changed)
 const platformName = "Augeo Platform";
 
 // ✅ NEW
-const platformName = "Fundrbolt Platform";
+const platformName = "FundrBolt Platform";
 
 // Update UI, emails, documentation, help text, error messages
 ```
@@ -150,13 +150,13 @@ const platformName = "Fundrbolt Platform";
 **Recommended Action**:
 ```javascript
 // Option 1: Update constant
-export const PLATFORM_NAME = "Fundrbolt Platform";
+export const PLATFORM_NAME = "FundrBolt Platform";
 
 // Option 2: Fetch from API (future-proof)
 const { platform_name } = await fetch('/api/v1/config').then(r => r.json());
 
 // Option 3: Use environment variable
-const platformName = process.env.REACT_APP_PLATFORM_NAME || "Fundrbolt Platform";
+const platformName = process.env.REACT_APP_PLATFORM_NAME || "FundrBolt Platform";
 ```
 
 ## Testing Checklist
@@ -179,7 +179,7 @@ const platformName = process.env.REACT_APP_PLATFORM_NAME || "Fundrbolt Platform"
 | **2025-12-18** | Phase 1-4 complete: Branding updated in code, infrastructure renamed |
 | **2025-12-19** | Phase 5 complete: Documentation updated, this guide published |
 | **2025-12-20** | Phase 6: Staging deployment, full testing |
-| **2025-12-21** | Production deployment: Fundrbolt Platform live |
+| **2025-12-21** | Production deployment: FundrBolt Platform live |
 | **2026-01-21** | Old domain/email sunset (90-day grace period) |
 
 ## Troubleshooting
@@ -226,4 +226,4 @@ A: After the grace period (2026-01-21), old domains/emails may not work.
 
 **Document Version**: 1.0
 **Last Updated**: 2025-12-18
-**Maintainer**: Fundrbolt Platform Team
+**Maintainer**: FundrBolt Platform Team
