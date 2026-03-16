@@ -120,7 +120,7 @@ class PushNotificationService:
         )
         result = await db.execute(stmt)
         await db.flush()
-        deactivated = (result.rowcount or 0) > 0
+        deactivated = (result.rowcount or 0) > 0  # type: ignore[attr-defined]
 
         if deactivated:
             logger.info(
@@ -262,7 +262,7 @@ class PushNotificationService:
 
         # Update delivery status for PUSH channel
         delivery_status = DeliveryStatusEnum.SENT if any_success else DeliveryStatusEnum.FAILED
-        delivery_stmt = (
+        update_delivery_stmt = (
             update(NotificationDeliveryStatus)
             .where(
                 NotificationDeliveryStatus.notification_id == notification_id,
@@ -274,7 +274,7 @@ class PushNotificationService:
                 failure_reason=None if any_success else "all_subscriptions_failed",
             )
         )
-        await db.execute(delivery_stmt)
+        await db.execute(update_delivery_stmt)
         await db.flush()
 
         logger.info(

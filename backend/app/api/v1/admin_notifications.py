@@ -4,6 +4,7 @@ Allows admins to send custom notifications and view campaign history.
 """
 
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -60,8 +61,8 @@ class SendNotificationRequest(BaseModel):
 class CampaignResponse(BaseModel):
     id: str
     message: str
-    recipient_criteria: dict
-    channels: list
+    recipient_criteria: dict[str, Any]
+    channels: list[str]
     recipient_count: int
     delivered_count: int
     failed_count: int
@@ -87,7 +88,7 @@ async def send_notification(
     body: SendNotificationRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> dict:
+) -> dict[str, str]:
     """Send a custom notification to selected recipients."""
     _require_admin(current_user)
 

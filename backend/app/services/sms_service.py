@@ -38,7 +38,7 @@ async def send_sms(to_number: str, message: str) -> bool:
             return False
 
         # Lazy import to avoid hard dependency
-        from twilio.rest import Client  # type: ignore[import-untyped]
+        from twilio.rest import Client  # type: ignore[import-untyped,unused-ignore]
 
         client = Client(twilio_sid, twilio_token)
         sms = client.messages.create(

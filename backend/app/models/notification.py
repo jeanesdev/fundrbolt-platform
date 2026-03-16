@@ -3,7 +3,7 @@
 import enum
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import (
     Boolean,
@@ -116,7 +116,7 @@ class Notification(Base, UUIDMixin):
         default=NotificationPriorityEnum.NORMAL,
         server_default=NotificationPriorityEnum.NORMAL.value,
     )
-    data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    data: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     is_read: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,

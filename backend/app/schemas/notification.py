@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -16,7 +17,7 @@ class NotificationResponse(BaseModel):
     title: str
     body: str
     priority: str
-    data: dict | None = None
+    data: dict[str, Any] | None = None
     is_read: bool
     read_at: datetime | None = None
     created_at: datetime

@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -30,8 +30,8 @@ class NotificationCampaignResponse(BaseModel):
     event_id: uuid.UUID
     sender_id: uuid.UUID
     message: str
-    recipient_criteria: dict
-    channels: list
+    recipient_criteria: dict[str, Any]
+    channels: list[str]
     recipient_count: int
     delivered_count: int
     failed_count: int

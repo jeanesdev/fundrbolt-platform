@@ -269,9 +269,9 @@ class NotificationService:
             )
             .values(is_read=True, read_at=now)
         )
-        result = await db.execute(stmt)
+        cursor_result = await db.execute(stmt)
         await db.flush()
-        return result.rowcount > 0  # type: ignore[union-attr]
+        return (cursor_result.rowcount or 0) > 0  # type: ignore[attr-defined]
 
     @staticmethod
     async def mark_all_read(
@@ -293,6 +293,7 @@ class NotificationService:
             )
             .values(is_read=True, read_at=now)
         )
-        result = await db.execute(stmt)
+        cursor_result = await db.execute(stmt)
         await db.flush()
-        return result.rowcount  # type: ignore[return-value]
+        count: int = cursor_result.rowcount or 0  # type: ignore[attr-defined]
+        return count

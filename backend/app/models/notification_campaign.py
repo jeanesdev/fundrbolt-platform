@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -33,8 +33,8 @@ class NotificationCampaign(Base, UUIDMixin):
         nullable=False,
     )
     message: Mapped[str] = mapped_column(Text, nullable=False)
-    recipient_criteria: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    channels: Mapped[list] = mapped_column(JSONB, nullable=False)
+    recipient_criteria: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    channels: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
     recipient_count: Mapped[int] = mapped_column(
         Integer,
         nullable=False,

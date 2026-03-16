@@ -24,7 +24,7 @@ sio = socketio.AsyncServer(
 )
 
 
-@sio.event
+@sio.event  # type: ignore[misc]
 async def connect(sid: str, environ: dict[str, Any], auth: dict[str, Any] | None = None) -> bool:
     """Authenticate Socket.IO connection using JWT from query param or auth payload."""
     token: str | None = None
@@ -78,13 +78,13 @@ async def connect(sid: str, environ: dict[str, Any], auth: dict[str, Any] | None
         return False
 
 
-@sio.event
+@sio.event  # type: ignore[misc]
 async def disconnect(sid: str) -> None:
     """Handle Socket.IO disconnect."""
     logger.info("Socket.IO disconnected", extra={"sid": sid})
 
 
-@sio.on("notification:join_event")
+@sio.on("notification:join_event")  # type: ignore[misc]
 async def join_event(sid: str, data: dict[str, Any]) -> None:
     """Join a user-scoped notification room for an event.
 
@@ -117,7 +117,7 @@ async def join_event(sid: str, data: dict[str, Any]) -> None:
             )
 
 
-@sio.on("notification:leave_event")
+@sio.on("notification:leave_event")  # type: ignore[misc]
 async def leave_event(sid: str, data: dict[str, Any]) -> None:
     """Leave a user-scoped notification room for an event."""
     session = await sio.get_session(sid)

@@ -46,7 +46,7 @@ def _run_async(coro: Any) -> Any:
         return asyncio.run(coro)
 
 
-@celery_app.task(name="app.tasks.notification_tasks.send_auction_opened_task")
+@celery_app.task(name="app.tasks.notification_tasks.send_auction_opened_task")  # type: ignore[misc]
 def send_auction_opened_task(event_id: str) -> int:
     """Send auction-opened notifications to all registered donors.
 
@@ -57,7 +57,8 @@ def send_auction_opened_task(event_id: str) -> int:
         Number of notifications sent.
     """
     logger.info("Running send_auction_opened_task", extra={"event_id": event_id})
-    return _run_async(_send_auction_opened_async(event_id))
+    count: int = _run_async(_send_auction_opened_async(event_id))
+    return count
 
 
 async def _send_auction_opened_async(event_id: str) -> int:
@@ -74,7 +75,7 @@ async def _send_auction_opened_async(event_id: str) -> int:
             raise
 
 
-@celery_app.task(name="app.tasks.notification_tasks.send_auction_closing_soon_task")
+@celery_app.task(name="app.tasks.notification_tasks.send_auction_closing_soon_task")  # type: ignore[misc]
 def send_auction_closing_soon_task(event_id: str, minutes: int) -> int:
     """Send auction-closing-soon notifications to active bidders.
 
@@ -89,7 +90,8 @@ def send_auction_closing_soon_task(event_id: str, minutes: int) -> int:
         "Running send_auction_closing_soon_task",
         extra={"event_id": event_id, "minutes": minutes},
     )
-    return _run_async(_send_auction_closing_soon_async(event_id, minutes))
+    count: int = _run_async(_send_auction_closing_soon_async(event_id, minutes))
+    return count
 
 
 async def _send_auction_closing_soon_async(event_id: str, minutes: int) -> int:
@@ -106,7 +108,7 @@ async def _send_auction_closing_soon_async(event_id: str, minutes: int) -> int:
             raise
 
 
-@celery_app.task(name="app.tasks.notification_tasks.send_auction_closed_task")
+@celery_app.task(name="app.tasks.notification_tasks.send_auction_closed_task")  # type: ignore[misc]
 def send_auction_closed_task(event_id: str) -> int:
     """Determine winners and losers, send appropriate notifications.
 
@@ -120,7 +122,8 @@ def send_auction_closed_task(event_id: str) -> int:
         Total notifications sent.
     """
     logger.info("Running send_auction_closed_task", extra={"event_id": event_id})
-    return _run_async(_send_auction_closed_async(event_id))
+    count: int = _run_async(_send_auction_closed_async(event_id))
+    return count
 
 
 async def _send_auction_closed_async(event_id: str) -> int:
@@ -234,7 +237,7 @@ async def _send_auction_closed_async(event_id: str) -> int:
             raise
 
 
-@celery_app.task(name="app.tasks.notification_tasks.purge_expired_notifications")
+@celery_app.task(name="app.tasks.notification_tasks.purge_expired_notifications")  # type: ignore[misc]
 def purge_expired_notifications() -> int:
     """Delete expired notifications (daily scheduled task).
 
@@ -242,7 +245,8 @@ def purge_expired_notifications() -> int:
         Number of notifications purged.
     """
     logger.info("Running purge_expired_notifications")
-    return _run_async(_purge_expired_async())
+    count: int = _run_async(_purge_expired_async())
+    return count
 
 
 async def _purge_expired_async() -> int:
@@ -255,7 +259,7 @@ async def _purge_expired_async() -> int:
             )
             result = await db.execute(stmt)
             await db.commit()
-            count = result.rowcount or 0
+            count: int = result.rowcount or 0  # type: ignore[attr-defined]
             logger.info("Purged expired notifications", extra={"count": count})
             return count
         except Exception:
@@ -264,7 +268,7 @@ async def _purge_expired_async() -> int:
             raise
 
 
-@celery_app.task(
+@celery_app.task(  # type: ignore[misc]
     name="app.tasks.notification_tasks.send_push_notification_task",
     bind=True,
     max_retries=1,
@@ -283,7 +287,8 @@ def send_push_notification_task(self: Any, notification_id: str) -> bool:
         extra={"notification_id": notification_id},
     )
     try:
-        return _run_async(_send_push_async(notification_id))
+        success: bool = _run_async(_send_push_async(notification_id))
+        return success
     except Exception as exc:
         logger.exception(
             "send_push_notification_task failed",
@@ -311,7 +316,7 @@ async def _send_push_async(notification_id: str) -> bool:
 # ---------------------------------------------------------------------------
 # T050: Checkout reminder task
 # ---------------------------------------------------------------------------
-@celery_app.task(
+@celery_app.task(  # type: ignore[misc]
     name="app.tasks.notification_tasks.send_checkout_reminders_task",
     bind=True,
     max_retries=1,
@@ -327,7 +332,8 @@ def send_checkout_reminders_task(self: Any, event_id: str) -> int:
     """
     logger.info("Running send_checkout_reminders_task", extra={"event_id": event_id})
     try:
-        return _run_async(_send_checkout_reminders_async(event_id))
+        count: int = _run_async(_send_checkout_reminders_async(event_id))
+        return count
     except Exception as exc:
         logger.exception("send_checkout_reminders_task failed", extra={"event_id": event_id})
         raise self.retry(exc=exc) from exc
@@ -418,7 +424,7 @@ async def _send_checkout_reminders_async(event_id: str) -> int:
 # ---------------------------------------------------------------------------
 # T054: Campaign delivery task
 # ---------------------------------------------------------------------------
-@celery_app.task(
+@celery_app.task(  # type: ignore[misc]
     name="app.tasks.notification_tasks.deliver_campaign_task",
     bind=True,
     max_retries=1,
@@ -434,7 +440,8 @@ def deliver_campaign_task(self: Any, campaign_id: str) -> int:
     """
     logger.info("Running deliver_campaign_task", extra={"campaign_id": campaign_id})
     try:
-        return _run_async(_deliver_campaign_async(campaign_id))
+        count: int = _run_async(_deliver_campaign_async(campaign_id))
+        return count
     except Exception as exc:
         logger.exception("deliver_campaign_task failed", extra={"campaign_id": campaign_id})
         raise self.retry(exc=exc) from exc
@@ -490,7 +497,7 @@ async def _deliver_campaign_async(campaign_id: str) -> int:
 
                 table_number = criteria.get("table_number")
                 if table_number is not None:
-                    stmt = (
+                    table_stmt = (
                         select(RegistrationGuest.user_id)
                         .join(
                             EventRegistration,
@@ -502,7 +509,7 @@ async def _deliver_campaign_async(campaign_id: str) -> int:
                             RegistrationGuest.user_id.isnot(None),
                         )
                     )
-                    result = await db.execute(stmt)
+                    result = await db.execute(table_stmt)
                     user_ids = [row[0] for row in result.all()]
 
             elif recipient_type == "individual":
@@ -577,7 +584,7 @@ async def _deliver_campaign_async(campaign_id: str) -> int:
 # ---------------------------------------------------------------------------
 # T073: Email notification task
 # ---------------------------------------------------------------------------
-@celery_app.task(
+@celery_app.task(  # type: ignore[misc]
     name="app.tasks.notification_tasks.send_email_notification_task",
     bind=True,
     max_retries=1,
@@ -596,7 +603,8 @@ def send_email_notification_task(self: Any, notification_id: str) -> bool:
         extra={"notification_id": notification_id},
     )
     try:
-        return _run_async(_send_email_notification_async(notification_id))
+        success: bool = _run_async(_send_email_notification_async(notification_id))
+        return success
     except Exception as exc:
         logger.exception(
             "send_email_notification_task failed",
@@ -666,7 +674,7 @@ async def _send_email_notification_async(notification_id: str) -> bool:
 # ---------------------------------------------------------------------------
 # T073: SMS notification task
 # ---------------------------------------------------------------------------
-@celery_app.task(
+@celery_app.task(  # type: ignore[misc]
     name="app.tasks.notification_tasks.send_sms_notification_task",
     bind=True,
     max_retries=1,
@@ -685,7 +693,8 @@ def send_sms_notification_task(self: Any, notification_id: str) -> bool:
         extra={"notification_id": notification_id},
     )
     try:
-        return _run_async(_send_sms_notification_async(notification_id))
+        success: bool = _run_async(_send_sms_notification_async(notification_id))
+        return success
     except Exception as exc:
         logger.exception(
             "send_sms_notification_task failed",
