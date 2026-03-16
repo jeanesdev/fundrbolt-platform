@@ -56,10 +56,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  adminCreatePaymentProfile,
-  adminCreatePaymentSession,
-} from '@/lib/api/admin-payments'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useEventWorkspace } from '../useEventWorkspace'
 
