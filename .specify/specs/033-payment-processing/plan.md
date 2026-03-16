@@ -5,8 +5,8 @@
 
 ## Summary
 
-Integrate First American / Deluxe Merchant Services into Fundrbolt so that NPOs can collect
-payments from donors during events. Card data is never handled by Fundrbolt — all card capture
+Integrate First American / Deluxe Merchant Services into FundrBolt so that NPOs can collect
+payments from donors during events. Card data is never handled by FundrBolt — all card capture
 uses Deluxe's Hosted Payment Form (HPF) iframe, keeping the platform at PCI SAQ-A scope. Each
 NPO has its own merchant account; funds settle directly to the NPO's bank.
 
@@ -33,7 +33,7 @@ credentials are available.
 **Target Platform**: Linux server (Azure App Service) + web PWA (mobile-first)
 **Project Type**: web (backend + two frontend PWAs)
 **Performance Goals**: End-of-night checkout — donor completes payment in < 3 min; receipt email delivered within 5 min of successful charge; API p95 < 300 ms
-**Constraints**: PCI SAQ-A compliance (zero raw card data in Fundrbolt systems); idempotent payment requests (no duplicate charges on retry/double-submit); webhook primary + polling fallback for transaction resolution; credentials encrypted at rest (never returned in full from any API)
+**Constraints**: PCI SAQ-A compliance (zero raw card data in FundrBolt systems); idempotent payment requests (no duplicate charges on retry/double-submit); webhook primary + polling fallback for transaction resolution; credentials encrypted at rest (never returned in full from any API)
 **Scale/Scope**: MVP target — 100 concurrent bidders per event, 10 simultaneous events; payment operations are relatively infrequent (< 10 req/s at peak)
 
 ## Constitution Check

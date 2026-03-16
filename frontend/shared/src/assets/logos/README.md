@@ -1,8 +1,8 @@
-# Fundrbolt Logos
+# FundrBolt Logos
 
 ## Logo Variants
 
-Fundrbolt has two primary logo variants designed for different background contexts:
+FundrBolt has two primary logo variants designed for different background contexts:
 
 ### 1. Navy & Gold (for white/light backgrounds)
 - **fundrbolt-logo-navy-gold.svg** - Vector logo with Navy (#11294c) and Gold (#ffc20e) colors
@@ -24,11 +24,11 @@ The easiest way to use logos is through the shared package:
 import { LogoNavyGold, LogoWhiteGold, getLogo } from '@fundrbolt/shared/assets';
 
 // Direct usage
-<img src={LogoNavyGold} alt="Fundrbolt" className="h-12" />
+<img src={LogoNavyGold} alt="FundrBolt" className="h-12" />
 
 // Dynamic selection based on theme
 const isDarkMode = true;
-<img src={getLogo(isDarkMode ? 'dark' : 'light')} alt="Fundrbolt" className="h-12" />
+<img src={getLogo(isDarkMode ? 'dark' : 'light')} alt="FundrBolt" className="h-12" />
 ```
 
 ### Web Applications
@@ -41,7 +41,7 @@ function Header({ isDarkBackground }: { isDarkBackground: boolean }) {
     <header className={isDarkBackground ? 'bg-brand-navy' : 'bg-white'}>
       <img
         src={isDarkBackground ? LogoWhiteGold : LogoNavyGold}
-        alt="Fundrbolt"
+        alt="FundrBolt"
         className="h-16 w-auto"
       />
     </header>
@@ -54,12 +54,12 @@ Use **PNG format** with transparent background:
 ```html
 <!-- For dark header (navy background) -->
 <img src="https://fundrbolt-branding.azureedge.net/logos/fundrbolt-logo-white-gold.png"
-     alt="Fundrbolt"
+     alt="FundrBolt"
      style="height: 60px; display: block;" />
 
 <!-- For light header (white background) -->
 <img src="https://fundrbolt-branding.azureedge.net/logos/fundrbolt-logo-navy-gold.png"
-     alt="Fundrbolt"
+     alt="FundrBolt"
      style="height: 60px; display: block;" />
 ```
 
@@ -169,13 +169,13 @@ If the designer provides new logo files:
 Always include alt text when using logos:
 
 ```typescript
-<img src={LogoNavyGold} alt="Fundrbolt - Fundraising platform" />
+<img src={LogoNavyGold} alt="FundrBolt - Fundraising platform" />
 ```
 
 **Recommended alt text**:
-- Simple: "Fundrbolt"
-- Descriptive: "Fundrbolt - Fundraising platform"
-- Context-aware: "Fundrbolt logo" (if context is clear)
+- Simple: "FundrBolt"
+- Descriptive: "FundrBolt - Fundraising platform"
+- Context-aware: "FundrBolt logo" (if context is clear)
 
 ## Troubleshooting
 

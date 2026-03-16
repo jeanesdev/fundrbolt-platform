@@ -23,8 +23,13 @@ from app.models.auction_bid import (
     TransactionStatus,
 )
 from app.models.auction_item import AuctionItem, AuctionType
+from app.models.event import Event
 from app.models.event_registration import EventRegistration
+from app.models.notification import NotificationPriorityEnum, NotificationTypeEnum
 from app.models.registration_guest import RegistrationGuest
+from app.models.user import User
+from app.services.notification_service import NotificationService
+from app.websocket.notification_ws import sio
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +59,52 @@ class AuctionBidService:
         if not item:
             raise ValueError("Auction item not found")
         return item
+
+    async def _get_user_display_name(self, user_id: UUID) -> str:
+        """Get a display name for a user (first+last or email)."""
+        stmt = select(User.first_name, User.last_name, User.email).where(User.id == user_id)
+        result = await self.db.execute(stmt)
+        row = result.one_or_none()
+        if not row:
+            return "An admin"
+        first_name, last_name, email = row
+        if first_name:
+            return f"{first_name} {last_name}".strip() if last_name else first_name
+        return email or "An admin"
+
+    async def _get_event_slug(self, event_id: UUID) -> str:
+        """Get the slug for an event, falling back to the event ID."""
+        stmt = select(Event.slug).where(Event.id == event_id)
+        result = await self.db.execute(stmt)
+        slug = result.scalar_one_or_none()
+        return slug or str(event_id)
+
+    async def _send_bid_confirmation(self, bid: AuctionBid, item: AuctionItem) -> None:
+        """T075: Send bid confirmation notification to the bidder."""
+        try:
+            event_slug = await self._get_event_slug(bid.event_id)
+            await NotificationService.create_notification(
+                db=self.db,
+                event_id=bid.event_id,
+                user_id=bid.user_id,
+                notification_type=NotificationTypeEnum.BID_CONFIRMATION,
+                priority=NotificationPriorityEnum.LOW,
+                title="You're the high bidder!",
+                body=f"Your bid of ${bid.bid_amount:,.2f} on {item.title} is currently winning.",
+                data={
+                    "item_id": str(item.id),
+                    "bid_amount": str(bid.bid_amount),
+                    "deep_link": f"/events/{event_slug}/auction/{item.id}",
+                    "animation_type": "pulse",
+                },
+                sio=sio,
+            )
+            await self.db.commit()
+        except Exception:
+            logger.warning(
+                "Failed to send bid confirmation notification",
+                extra={"bid_id": str(bid.id), "user_id": str(bid.user_id)},
+            )
 
     async def _get_bidder_number(self, event_id: UUID, user_id: UUID) -> int:
         stmt = (
@@ -154,9 +205,70 @@ class AuctionBidService:
         )
         self.db.add(audit)
 
-    async def _outbid_previous(self, previous_bid: AuctionBid, actor_user_id: UUID) -> None:
+    async def _outbid_previous(
+        self,
+        previous_bid: AuctionBid,
+        actor_user_id: UUID,
+        new_bid_amount: Decimal | None = None,
+        item: AuctionItem | None = None,
+    ) -> None:
         await self._create_status_copy(
             previous_bid, new_status=BidStatus.OUTBID, actor_user_id=actor_user_id
+        )
+
+        # Send outbid notification to the previous high bidder
+        try:
+            await self._send_outbid_notification(
+                previous_bid=previous_bid,
+                new_bid_amount=new_bid_amount,
+                item=item,
+            )
+        except Exception:
+            logger.warning(
+                "Failed to send outbid notification",
+                extra={
+                    "user_id": str(previous_bid.user_id),
+                    "item_id": str(previous_bid.auction_item_id),
+                },
+            )
+
+    async def _send_outbid_notification(
+        self,
+        previous_bid: AuctionBid,
+        new_bid_amount: Decimal | None = None,
+        item: AuctionItem | None = None,
+    ) -> None:
+        """Create an outbid notification for the outbid user."""
+        if item is None:
+            item = await self._get_auction_item(previous_bid.auction_item_id)
+
+        # Fetch event slug for deep link
+        event_result = await self.db.execute(
+            select(Event.slug).where(Event.id == previous_bid.event_id)
+        )
+        event_slug = event_result.scalar_one_or_none() or str(previous_bid.event_id)
+
+        amount_str = f"${new_bid_amount:,.2f}" if new_bid_amount else "a higher amount"
+        old_amount_str = f"${previous_bid.bid_amount:,.2f}"
+
+        await NotificationService.create_notification(
+            db=self.db,
+            event_id=previous_bid.event_id,
+            user_id=previous_bid.user_id,
+            notification_type=NotificationTypeEnum.OUTBID,
+            priority=NotificationPriorityEnum.HIGH,
+            title="You've been outbid!",
+            body=(
+                f"Someone bid {amount_str} on {item.title}. "
+                f"Your bid of {old_amount_str} is no longer the highest."
+            ),
+            data={
+                "item_id": str(item.id),
+                "deep_link": f"/events/{event_slug}/auction/{item.id}",
+                "animation_type": "flash",
+                "bid_amount": str(new_bid_amount) if new_bid_amount else None,
+            },
+            sio=sio,
         )
 
     async def place_bid(
@@ -216,10 +328,19 @@ class AuctionBidService:
             await self.db.flush()
 
             if current_high and current_high.user_id != user_id:
-                await self._outbid_previous(current_high, actor_user_id=user_id)
+                await self._outbid_previous(
+                    current_high,
+                    actor_user_id=user_id,
+                    new_bid_amount=bid_amount,
+                    item=item,
+                )
 
             await self.db.commit()
             await self._publish_bid_update(new_bid)
+
+            # T075: Send bid confirmation for buy-now
+            await self._send_bid_confirmation(new_bid, item)
+
             return new_bid
 
         if bid_type == BidType.PROXY_AUTO and item.auction_type != AuctionType.SILENT.value:
@@ -255,12 +376,21 @@ class AuctionBidService:
             and current_high.user_id != user_id
             and bid_amount > current_high.bid_amount
         ):
-            await self._outbid_previous(current_high, actor_user_id=user_id)
+            await self._outbid_previous(
+                current_high,
+                actor_user_id=user_id,
+                new_bid_amount=bid_amount,
+                item=item,
+            )
 
         await self._apply_proxy_bidding(item, starting_high_bid=new_bid)
 
         await self.db.commit()
         await self._publish_bid_update(new_bid)
+
+        # T075: Send bid confirmation for direct bids
+        await self._send_bid_confirmation(new_bid, item)
+
         return new_bid
 
     async def _apply_proxy_bidding(self, item: AuctionItem, starting_high_bid: AuctionBid) -> None:
@@ -304,7 +434,41 @@ class AuctionBidService:
             self.db.add(auto_bid)
             await self.db.flush()
 
-            await self._outbid_previous(current_high, actor_user_id=best.user_id)
+            await self._outbid_previous(
+                current_high,
+                actor_user_id=best.user_id,
+                new_bid_amount=next_amount,
+                item=item,
+            )
+
+            # T076: Notify user their proxy bid auto-executed
+            try:
+                event_slug = await self._get_event_slug(item.event_id)
+                await NotificationService.create_notification(
+                    db=self.db,
+                    event_id=item.event_id,
+                    user_id=best.user_id,
+                    notification_type=NotificationTypeEnum.PROXY_BID_TRIGGERED,
+                    priority=NotificationPriorityEnum.NORMAL,
+                    title="Proxy bid placed automatically",
+                    body=(
+                        f"Your proxy bid of ${next_amount:,.2f} was automatically "
+                        f"placed on {item.title}."
+                    ),
+                    data={
+                        "item_id": str(item.id),
+                        "bid_amount": str(next_amount),
+                        "max_bid": str(best.max_bid),
+                        "deep_link": f"/events/{event_slug}/auction/{item.id}",
+                    },
+                    sio=sio,
+                )
+            except Exception:
+                logger.warning(
+                    "Failed to send proxy bid triggered notification",
+                    extra={"user_id": str(best.user_id), "item_id": str(item.id)},
+                )
+
             current_high = auto_bid
 
     async def list_item_bids(
@@ -360,6 +524,38 @@ class AuctionBidService:
 
         await self.db.commit()
         await self._publish_bid_update(winning_bid)
+
+        # T048: Notify donor that an admin placed a bid on their behalf
+        try:
+            item = await self._get_auction_item(winning_bid.auction_item_id)
+            admin_name = await self._get_user_display_name(actor_user_id)
+            event_slug = await self._get_event_slug(winning_bid.event_id)
+            await NotificationService.create_notification(
+                db=self.db,
+                event_id=winning_bid.event_id,
+                user_id=winning_bid.user_id,
+                notification_type=NotificationTypeEnum.ADMIN_BID_PLACED,
+                priority=NotificationPriorityEnum.NORMAL,
+                title="Bid placed on your behalf",
+                body=(
+                    f"{admin_name} placed a winning bid of "
+                    f"${winning_bid.bid_amount:,.2f} on {item.title} for you."
+                ),
+                data={
+                    "item_id": str(item.id),
+                    "bid_amount": str(winning_bid.bid_amount),
+                    "admin_name": admin_name,
+                    "deep_link": f"/events/{event_slug}/auction/{item.id}",
+                },
+                sio=sio,
+            )
+            await self.db.commit()
+        except Exception:
+            logger.warning(
+                "Failed to send admin bid notification",
+                extra={"bid_id": str(winning_bid.id), "user_id": str(winning_bid.user_id)},
+            )
+
         return winning_bid
 
     async def adjust_bid_amount(
@@ -456,6 +652,32 @@ class AuctionBidService:
         self.db.add(contribution)
         await self.db.commit()
         await self.db.refresh(contribution)
+
+        # T049: Notify donor about paddle raise recorded
+        try:
+            event_slug = await self._get_event_slug(event_id)
+            await NotificationService.create_notification(
+                db=self.db,
+                event_id=event_id,
+                user_id=user_id,
+                notification_type=NotificationTypeEnum.PADDLE_RAISE,
+                priority=NotificationPriorityEnum.NORMAL,
+                title="Paddle raise recorded! 🎉",
+                body=f"Your ${amount:,.2f} paddle raise for {tier_name} has been recorded. Thank you!",
+                data={
+                    "amount": str(amount),
+                    "donation_label": tier_name,
+                    "deep_link": f"/events/{event_slug}",
+                },
+                sio=sio,
+            )
+            await self.db.commit()
+        except Exception:
+            logger.warning(
+                "Failed to send paddle raise notification",
+                extra={"user_id": str(user_id), "event_id": str(event_id)},
+            )
+
         return contribution
 
     async def _get_bid_by_id(self, bid_id: UUID) -> AuctionBid:

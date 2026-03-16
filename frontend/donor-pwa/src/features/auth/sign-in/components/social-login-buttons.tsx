@@ -36,8 +36,10 @@ export function SocialLoginButtons({ redirectTo: _redirectTo }: { redirectTo?: s
           redirect_uri: callbackUrl,
         })
         if (result.authorization_url) {
-          sessionStorage.setItem('oauth_provider', provider)
-          sessionStorage.setItem('oauth_attempt_id', result.attempt_id)
+          sessionStorage.setItem(
+            'social_auth_pending',
+            JSON.stringify({ provider, attempt_id: result.attempt_id }),
+          )
           window.location.href = result.authorization_url
         }
       } catch (err: unknown) {

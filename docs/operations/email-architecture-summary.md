@@ -6,7 +6,7 @@
 
 ## Overview
 
-The Fundrbolt platform uses a **hybrid email architecture** combining Azure Communication Services for sending and ImprovMX for receiving/forwarding emails.
+The FundrBolt platform uses a **hybrid email architecture** combining Azure Communication Services for sending and ImprovMX for receiving/forwarding emails.
 
 ## Architecture Components
 

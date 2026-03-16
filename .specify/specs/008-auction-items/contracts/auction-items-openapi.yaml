@@ -1,9 +1,9 @@
 openapi: 3.0.3
 
 info:
-  title: Fundrbolt Platform - Auction Items API
+  title: FundrBolt Platform - Auction Items API
   description: |
-    API endpoints for managing auction items (live and silent auctions) in the Fundrbolt fundraising platform.
+    API endpoints for managing auction items (live and silent auctions) in the FundrBolt fundraising platform.
 
     **Features**:
     - CRUD operations for auction items
@@ -15,7 +15,7 @@ info:
 
   version: 1.0.0
   contact:
-    name: Fundrbolt Platform Team
+    name: FundrBolt Platform Team
     email: dev@fundrbolt.com
   license:
     name: Proprietary

@@ -6,7 +6,7 @@
 
 ## Overview
 
-This guide walks through setting up the complete Azure cloud infrastructure for the Fundrbolt Platform from scratch. Follow these steps to provision all required resources and deploy the application to a new environment.
+This guide walks through setting up the complete Azure cloud infrastructure for the FundrBolt Platform from scratch. Follow these steps to provision all required resources and deploy the application to a new environment.
 
 ## Prerequisites
 

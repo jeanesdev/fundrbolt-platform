@@ -1,4 +1,4 @@
-// Log Analytics Workspace module for Fundrbolt Platform
+// Log Analytics Workspace module for FundrBolt Platform
 
 @description('Name of the Log Analytics Workspace')
 param workspaceName string

@@ -185,8 +185,10 @@ class SocialAuthService:
         # Validate attempt
         attempt = await cls._get_valid_attempt(db, attempt_id, state, provider.value)
 
-        # Simulate provider token exchange (in production, call provider APIs)
-        provider_claims = cls._simulate_provider_claims(provider, code)
+        # Exchange code for real provider claims
+        provider_claims = await cls._exchange_code_for_claims(
+            provider, code, attempt.redirect_uri or ""
+        )
         provider_subject = provider_claims.get("sub", "")
         provider_email = provider_claims.get("email")
         email_verified = provider_claims.get("email_verified", False)
@@ -245,7 +247,7 @@ class SocialAuthService:
                 email_verified,
                 attempt.id,
             )
-            return await cls._complete_auth(db, attempt, user)
+            return await cls._complete_auth(db, attempt, user, is_new_account=True)
         else:
             # Admin PWA – deny, no pre-provisioned account
             attempt.result = "denied"
@@ -501,10 +503,23 @@ class SocialAuthService:
         db: AsyncSession,
         attempt: SocialAuthAttempt,
         user: User,
+        is_new_account: bool = False,
     ) -> SocialAuthSuccessResponse:
         """Issue tokens and mark attempt as successful."""
-        access_token = create_access_token(data={"sub": str(user.id)})
-        refresh_token = create_refresh_token(data={"sub": str(user.id)})
+        token_data = {"sub": str(user.id)}
+        access_token = create_access_token(data=token_data)
+        refresh_token = create_refresh_token(data=token_data)
+
+        # Store session in Redis so the refresh token is valid
+        refresh_payload = decode_token(refresh_token)
+        refresh_jti = refresh_payload["jti"]
+        from app.services.session_service import SessionService  # noqa: PLC0415
+
+        await SessionService.create_session(
+            db=db,
+            user_id=user.id,
+            refresh_token_jti=refresh_jti,
+        )
 
         # Create a session in Redis so the refresh token can be used
         refresh_payload = decode_token(refresh_token)
@@ -528,6 +543,7 @@ class SocialAuthService:
                 "user_id": str(user.id),
                 "provider": attempt.provider_key,
                 "app_context": attempt.app_context,
+                "is_new_account": is_new_account,
             },
         )
         SOCIAL_AUTH_SUCCESS_TOTAL.labels(
@@ -540,6 +556,7 @@ class SocialAuthService:
             user_id=user.id,
             access_token=access_token,
             refresh_token=refresh_token,
+            is_new_account=is_new_account,
         )
 
     @classmethod
@@ -672,7 +689,9 @@ class SocialAuthService:
 
         name = provider_claims.get("name", "")
         parts = name.split(" ", 1) if name else ["", ""]
-        first_name = parts[0] or "Social"
+        # Fall back to the part of the email before @ rather than "Social User"
+        email_prefix = email.split("@")[0] if email else ""
+        first_name = parts[0] or email_prefix or "New"
         last_name = parts[1] if len(parts) > 1 else "User"
 
         # Create user with random password (they use social login)
@@ -731,6 +750,21 @@ class SocialAuthService:
         return f"{auth_base}?{urllib.parse.urlencode(params)}"
 
     @staticmethod
+    def _simulate_provider_claims(provider: ProviderKey, code: str) -> dict[str, Any]:
+        """Return minimal simulated provider claims for testing purposes.
+
+        Mirrors the fallback path in _exchange_code_for_claims. Only fields
+        in ALLOWED_PROVIDER_CLAIMS are included; the sub is prefixed with the
+        provider key so different providers produce distinct identifiers.
+        """
+        return {
+            "sub": f"{provider.value}_{code[:8]}",
+            "email": f"social.user.{code[:6]}@example.com",
+            "email_verified": True,
+            "name": "Social User",
+        }
+
+    @staticmethod
     def _get_scopes(provider: ProviderKey) -> str:
         """Return OAuth2 scopes per provider (minimal for data minimization)."""
         scopes = {
@@ -742,13 +776,68 @@ class SocialAuthService:
         return scopes.get(provider, "openid email")
 
     @staticmethod
-    def _simulate_provider_claims(provider: ProviderKey, code: str) -> dict[str, Any]:
-        """Simulate provider token exchange for development.
+    async def _exchange_code_for_claims(
+        provider: ProviderKey,
+        code: str,
+        redirect_uri: str,
+    ) -> dict[str, Any]:
+        """Exchange OAuth2 authorization code for provider user claims."""
+        import base64
+        import json
 
-        In production, this would exchange the authorization code for an
-        ID token and extract claims. For development/testing, returns
-        deterministic claims based on the code.
-        """
+        import httpx
+
+        settings = get_settings()
+        client_id = getattr(settings, f"social_auth_{provider.value}_client_id", "")
+        client_secret = getattr(settings, f"social_auth_{provider.value}_client_secret", "")
+
+        token_urls = {
+            ProviderKey.GOOGLE: "https://oauth2.googleapis.com/token",
+            ProviderKey.MICROSOFT: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        }
+        token_url = token_urls.get(provider)
+
+        if token_url and client_id and client_secret:
+            payload = {
+                "code": code,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code",
+            }
+            async with httpx.AsyncClient(timeout=10.0) as http:
+                resp = await http.post(
+                    token_url,
+                    data=payload,
+                )
+                if resp.status_code != 200:
+                    logger.error(
+                        "Provider token exchange failed",
+                        extra={
+                            "provider": provider.value,
+                            "status": resp.status_code,
+                            "body": resp.text[:200],
+                        },
+                    )
+                    raise ValueError(
+                        f"Token exchange with {provider.value} failed: {resp.status_code}"
+                    )
+                token_data = resp.json()
+
+            # Decode claims from the ID token (JWT payload, no verify needed —
+            # we obtained the token directly from the provider's token endpoint)
+            id_token = token_data.get("id_token", "")
+            parts = id_token.split(".")
+            if len(parts) == 3:
+                padded = parts[1] + "=" * (-len(parts[1]) % 4)
+                claims: dict[str, Any] = json.loads(base64.urlsafe_b64decode(padded))
+                return {k: v for k, v in claims.items() if k in ALLOWED_PROVIDER_CLAIMS}
+
+        # Fallback for providers not yet implemented (Apple, Facebook)
+        logger.warning(
+            "Using simulated claims — provider token exchange not implemented",
+            extra={"provider": provider.value},
+        )
         return {
             "sub": f"{provider.value}_{code[:8]}",
             "email": f"social.user.{code[:6]}@example.com",

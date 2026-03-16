@@ -3,10 +3,10 @@
  *
  * Mobile bottom navigation bar for settings pages in the admin PWA.
  */
-import { SignOutDialog } from '@/components/sign-out-dialog'
-import useDialogState from '@/hooks/use-dialog-state'
 import { Link, useLocation } from '@tanstack/react-router'
 import { KeyRound, LogOut, Shield, UserCog } from 'lucide-react'
+import useDialogState from '@/hooks/use-dialog-state'
+import { SignOutDialog } from '@/components/sign-out-dialog'
 
 function NavTab({
   to,

@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react'
 const SETTINGS_TABS = [
   '/settings',
   '/settings/password',
+  '/settings/notifications',
   '/settings/consent',
   '/settings/payment',
 ] as const

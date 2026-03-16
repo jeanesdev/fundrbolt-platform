@@ -54,10 +54,10 @@ export type { BrandColors } from './themes/colors';
 import { colors, LogoNavyGold, getLogo } from '@fundrbolt/shared/assets';
 
 // Logo usage
-<img src={LogoNavyGold} alt="Fundrbolt" className="h-12" />
+<img src={LogoNavyGold} alt="FundrBolt" className="h-12" />
 
 // Dynamic logo based on theme
-<img src={getLogo(isDarkMode ? 'dark' : 'light')} alt="Fundrbolt" />
+<img src={getLogo(isDarkMode ? 'dark' : 'light')} alt="FundrBolt" />
 
 // Color usage
 <div style={{ backgroundColor: colors.primary.navy }}>
@@ -213,7 +213,7 @@ class Settings(BaseSettings):
         <tr>
             <td align="center" style="padding: 20px 0;">
                 <img src="{{ logo_url }}"
-                     alt="Fundrbolt"
+                     alt="FundrBolt"
                      style="height: 60px; display: block;" />
             </td>
         </tr>
@@ -224,7 +224,7 @@ class Settings(BaseSettings):
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #58595b; margin-top: 40px;">
         <tr>
             <td align="center" style="padding: 20px; color: #ffffff; font-size: 12px;">
-                © 2026 Fundrbolt. All rights reserved.
+                © 2026 FundrBolt. All rights reserved.
             </td>
         </tr>
     </table>
@@ -243,7 +243,7 @@ async def send_verification_email(self, email: str, token: str) -> None:
 
     template_context = {
         "logo_url": logo_url,
-        "logo_alt": "Fundrbolt",
+        "logo_alt": "FundrBolt",
         "verification_link": f"{settings.FRONTEND_URL}/verify-email?token={token}",
     }
 
@@ -251,7 +251,7 @@ async def send_verification_email(self, email: str, token: str) -> None:
 
     await self._send_email(
         to=email,
-        subject="Verify your Fundrbolt account",
+        subject="Verify your FundrBolt account",
         html=html_content,
     )
 ```

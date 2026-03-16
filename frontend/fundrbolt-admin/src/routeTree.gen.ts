@@ -30,6 +30,7 @@ import { Route as authPasswordResetConfirmRouteImport } from './routes/(auth)/pa
 import { Route as authPasswordResetRouteImport } from './routes/(auth)/password-reset'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
+import { Route as authCompleteProfileRouteImport } from './routes/(auth)/complete-profile'
 import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_authenticated/route'
 import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
@@ -61,6 +62,7 @@ import { Route as AuthenticatedEventsEventIdRegistrationsRouteImport } from './r
 import { Route as AuthenticatedEventsEventIdQuickEntryRouteImport } from './routes/_authenticated/events/$eventId/quick-entry'
 import { Route as AuthenticatedEventsEventIdPreviewRouteImport } from './routes/_authenticated/events/$eventId/preview'
 import { Route as AuthenticatedEventsEventIdPaymentsRouteImport } from './routes/_authenticated/events/$eventId/payments'
+import { Route as AuthenticatedEventsEventIdNotificationsRouteImport } from './routes/_authenticated/events/$eventId/notifications'
 import { Route as AuthenticatedEventsEventIdMediaRouteImport } from './routes/_authenticated/events/$eventId/media'
 import { Route as AuthenticatedEventsEventIdLinksRouteImport } from './routes/_authenticated/events/$eventId/links'
 import { Route as AuthenticatedEventsEventIdFoodRouteImport } from './routes/_authenticated/events/$eventId/food'
@@ -184,6 +186,11 @@ const authOtpRoute = authOtpRouteImport.update({
 const authForgotPasswordRoute = authForgotPasswordRouteImport.update({
   id: '/(auth)/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authCompleteProfileRoute = authCompleteProfileRouteImport.update({
+  id: '/(auth)/complete-profile',
+  path: '/complete-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClerkAuthenticatedRouteRoute = ClerkAuthenticatedRouteRouteImport.update({
@@ -362,6 +369,12 @@ const AuthenticatedEventsEventIdPaymentsRoute =
     path: '/payments',
     getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
+const AuthenticatedEventsEventIdNotificationsRoute =
+  AuthenticatedEventsEventIdNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdMediaRoute =
   AuthenticatedEventsEventIdMediaRouteImport.update({
     id: '/media',
@@ -483,6 +496,7 @@ export interface FileRoutesByFullPath {
   '/donor-portal-redirect': typeof DonorPortalRedirectRoute
   '/events': typeof AuthenticatedEventsRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
+  '/complete-profile': typeof authCompleteProfileRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/password-reset': typeof authPasswordResetRoute
@@ -524,6 +538,7 @@ export interface FileRoutesByFullPath {
   '/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
   '/events/$eventId/media': typeof AuthenticatedEventsEventIdMediaRoute
+  '/events/$eventId/notifications': typeof AuthenticatedEventsEventIdNotificationsRoute
   '/events/$eventId/payments': typeof AuthenticatedEventsEventIdPaymentsRoute
   '/events/$eventId/preview': typeof AuthenticatedEventsEventIdPreviewRoute
   '/events/$eventId/quick-entry': typeof AuthenticatedEventsEventIdQuickEntryRoute
@@ -550,6 +565,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
   '/donor-portal-redirect': typeof DonorPortalRedirectRoute
+  '/complete-profile': typeof authCompleteProfileRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/password-reset': typeof authPasswordResetRoute
@@ -590,6 +606,7 @@ export interface FileRoutesByTo {
   '/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
   '/events/$eventId/media': typeof AuthenticatedEventsEventIdMediaRoute
+  '/events/$eventId/notifications': typeof AuthenticatedEventsEventIdNotificationsRoute
   '/events/$eventId/payments': typeof AuthenticatedEventsEventIdPaymentsRoute
   '/events/$eventId/preview': typeof AuthenticatedEventsEventIdPreviewRoute
   '/events/$eventId/quick-entry': typeof AuthenticatedEventsEventIdQuickEntryRoute
@@ -621,6 +638,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/clerk/(auth)': typeof ClerkauthRouteRouteWithChildren
   '/clerk/_authenticated': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/(auth)/complete-profile': typeof authCompleteProfileRoute
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/otp': typeof authOtpRoute
   '/(auth)/password-reset': typeof authPasswordResetRoute
@@ -663,6 +681,7 @@ export interface FileRoutesById {
   '/_authenticated/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/_authenticated/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
   '/_authenticated/events/$eventId/media': typeof AuthenticatedEventsEventIdMediaRoute
+  '/_authenticated/events/$eventId/notifications': typeof AuthenticatedEventsEventIdNotificationsRoute
   '/_authenticated/events/$eventId/payments': typeof AuthenticatedEventsEventIdPaymentsRoute
   '/_authenticated/events/$eventId/preview': typeof AuthenticatedEventsEventIdPreviewRoute
   '/_authenticated/events/$eventId/quick-entry': typeof AuthenticatedEventsEventIdQuickEntryRoute
@@ -694,6 +713,7 @@ export interface FileRouteTypes {
     | '/donor-portal-redirect'
     | '/events'
     | '/settings'
+    | '/complete-profile'
     | '/forgot-password'
     | '/otp'
     | '/password-reset'
@@ -735,6 +755,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/food'
     | '/events/$eventId/links'
     | '/events/$eventId/media'
+    | '/events/$eventId/notifications'
     | '/events/$eventId/payments'
     | '/events/$eventId/preview'
     | '/events/$eventId/quick-entry'
@@ -761,6 +782,7 @@ export interface FileRouteTypes {
   to:
     | '/clerk'
     | '/donor-portal-redirect'
+    | '/complete-profile'
     | '/forgot-password'
     | '/otp'
     | '/password-reset'
@@ -801,6 +823,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/food'
     | '/events/$eventId/links'
     | '/events/$eventId/media'
+    | '/events/$eventId/notifications'
     | '/events/$eventId/payments'
     | '/events/$eventId/preview'
     | '/events/$eventId/quick-entry'
@@ -831,6 +854,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/clerk/(auth)'
     | '/clerk/_authenticated'
+    | '/(auth)/complete-profile'
     | '/(auth)/forgot-password'
     | '/(auth)/otp'
     | '/(auth)/password-reset'
@@ -873,6 +897,7 @@ export interface FileRouteTypes {
     | '/_authenticated/events/$eventId/food'
     | '/_authenticated/events/$eventId/links'
     | '/_authenticated/events/$eventId/media'
+    | '/_authenticated/events/$eventId/notifications'
     | '/_authenticated/events/$eventId/payments'
     | '/_authenticated/events/$eventId/preview'
     | '/_authenticated/events/$eventId/quick-entry'
@@ -901,6 +926,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ClerkRouteRoute: typeof ClerkRouteRouteWithChildren
   DonorPortalRedirectRoute: typeof DonorPortalRedirectRoute
+  authCompleteProfileRoute: typeof authCompleteProfileRoute
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
   authPasswordResetRoute: typeof authPasswordResetRoute
@@ -1068,6 +1094,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof authForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/complete-profile': {
+      id: '/(auth)/complete-profile'
+      path: '/complete-profile'
+      fullPath: '/complete-profile'
+      preLoaderRoute: typeof authCompleteProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clerk/_authenticated': {
@@ -1287,6 +1320,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsEventIdPaymentsRouteImport
       parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
+    '/_authenticated/events/$eventId/notifications': {
+      id: '/_authenticated/events/$eventId/notifications'
+      path: '/notifications'
+      fullPath: '/events/$eventId/notifications'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdNotificationsRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
     '/_authenticated/events/$eventId/media': {
       id: '/_authenticated/events/$eventId/media'
       path: '/media'
@@ -1487,6 +1527,7 @@ interface AuthenticatedEventsEventIdRouteRouteChildren {
   AuthenticatedEventsEventIdFoodRoute: typeof AuthenticatedEventsEventIdFoodRoute
   AuthenticatedEventsEventIdLinksRoute: typeof AuthenticatedEventsEventIdLinksRoute
   AuthenticatedEventsEventIdMediaRoute: typeof AuthenticatedEventsEventIdMediaRoute
+  AuthenticatedEventsEventIdNotificationsRoute: typeof AuthenticatedEventsEventIdNotificationsRoute
   AuthenticatedEventsEventIdPaymentsRoute: typeof AuthenticatedEventsEventIdPaymentsRoute
   AuthenticatedEventsEventIdPreviewRoute: typeof AuthenticatedEventsEventIdPreviewRoute
   AuthenticatedEventsEventIdQuickEntryRoute: typeof AuthenticatedEventsEventIdQuickEntryRoute
@@ -1513,6 +1554,8 @@ const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRo
     AuthenticatedEventsEventIdFoodRoute: AuthenticatedEventsEventIdFoodRoute,
     AuthenticatedEventsEventIdLinksRoute: AuthenticatedEventsEventIdLinksRoute,
     AuthenticatedEventsEventIdMediaRoute: AuthenticatedEventsEventIdMediaRoute,
+    AuthenticatedEventsEventIdNotificationsRoute:
+      AuthenticatedEventsEventIdNotificationsRoute,
     AuthenticatedEventsEventIdPaymentsRoute:
       AuthenticatedEventsEventIdPaymentsRoute,
     AuthenticatedEventsEventIdPreviewRoute:
@@ -1654,6 +1697,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ClerkRouteRoute: ClerkRouteRouteWithChildren,
   DonorPortalRedirectRoute: DonorPortalRedirectRoute,
+  authCompleteProfileRoute: authCompleteProfileRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
   authPasswordResetRoute: authPasswordResetRoute,

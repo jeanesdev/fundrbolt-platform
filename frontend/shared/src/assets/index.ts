@@ -1,5 +1,5 @@
 /**
- * Fundrbolt Shared Assets
+ * FundrBolt Shared Assets
  *
  * Centralized exports for all brand assets including logos, colors, and themes.
  * Import from this file to ensure consistency across all applications.
@@ -12,10 +12,10 @@
  * import { colors, LogoNavyGold, getLogo } from '@fundrbolt/shared/assets';
  *
  * // Use in React component
- * <img src={LogoNavyGold} alt="Fundrbolt" />
+ * <img src={LogoNavyGold} alt="FundrBolt" />
  *
  * // Or use helper to select based on background
- * <img src={getLogo('dark')} alt="Fundrbolt" />
+ * <img src={getLogo('dark')} alt="FundrBolt" />
  * ```
  */
 

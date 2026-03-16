@@ -67,7 +67,7 @@ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica N
 **Email Template Usage**:
 ```html
 <img src="https://fundrbolt-branding.azureedge.net/logos/fundrbolt-logo-white-gold.png"
-     alt="Fundrbolt"
+     alt="FundrBolt"
      style="height: 60px;" />
 ```
 
@@ -261,7 +261,7 @@ declare module '*.png' {
 import { LogoWhiteGold } from '@fundrbolt/shared/assets';
 
 function Header() {
-  return <img src={LogoWhiteGold} alt="Fundrbolt" className="h-12" />;
+  return <img src={LogoWhiteGold} alt="FundrBolt" className="h-12" />;
 }
 ```
 

@@ -1,1 +1,1 @@
-"""Test suite for Fundrbolt backend."""
+"""Test suite for FundrBolt backend."""

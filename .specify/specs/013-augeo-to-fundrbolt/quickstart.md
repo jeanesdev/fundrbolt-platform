@@ -1,4 +1,4 @@
-# Phase 1: Quickstart - Fundrbolt to Fundrbolt Rename Execution
+# Phase 1: Quickstart - FundrBolt to FundrBolt Rename Execution
 
 **Date**: 2025-12-17
 **Feature**: 013-fundrbolt-to-fundrbolt
@@ -6,7 +6,7 @@
 
 ## Quick Reference: Rename Steps
 
-This quickstart provides a step-by-step walkthrough to execute the Fundrbolt → Fundrbolt rename with minimal risk.
+This quickstart provides a step-by-step walkthrough to execute the FundrBolt → FundrBolt rename with minimal risk.
 
 ---
 
@@ -31,12 +31,12 @@ This quickstart provides a step-by-step walkthrough to execute the Fundrbolt →
 # Update pyproject.toml
 sed -i 's/name = "fundrbolt-platform"/name = "fundrbolt-platform"/' pyproject.toml
 
-# Search for Fundrbolt references in Python files
-grep -r "Fundrbolt" app/ | head -20  # Review manually
+# Search for FundrBolt references in Python files
+grep -r "FundrBolt" app/ | head -20  # Review manually
 grep -r "fundrbolt" app/ | head -20  # Review manually
 
 # Replace in app/main.py
-sed -i 's/Fundrbolt Platform/Fundrbolt Platform/g' app/main.py
+sed -i 's/FundrBolt Platform/FundrBolt Platform/g' app/main.py
 sed -i 's/fundrbolt.com/fundrbolt.com/g' app/main.py
 
 # Update app/core/config.py (manual review recommended)
@@ -59,19 +59,19 @@ mv frontend/fundrbolt-admin frontend/fundrbolt-admin
 # Update package.json
 cd frontend/fundrbolt-admin
 sed -i 's/"name": "fundrbolt-admin"/"name": "fundrbolt-admin"/' package.json
-sed -i 's/Fundrbolt Admin/Fundrbolt Admin/g' package.json
+sed -i 's/FundrBolt Admin/FundrBolt Admin/g' package.json
 
-# Search for Fundrbolt in source
-grep -r "Fundrbolt" src/ | head -20  # Review
+# Search for FundrBolt in source
+grep -r "FundrBolt" src/ | head -20  # Review
 grep -r "fundrbolt" src/ | head -20  # Review
 
 # Replace common strings
 find src -type f \( -name "*.tsx" -o -name "*.ts" -o -name "*.jsx" -o -name "*.js" \) \
-  -exec sed -i 's/Fundrbolt/Fundrbolt/g' {} +
+  -exec sed -i 's/FundrBolt/FundrBolt/g' {} +
 
 # Update manifest.json
-sed -i 's/Fundrbolt Admin/Fundrbolt Admin/g' public/manifest.json
-sed -i 's/Fundrbolt/Fundrbolt/g' public/manifest.json
+sed -i 's/FundrBolt Admin/FundrBolt Admin/g' public/manifest.json
+sed -i 's/FundrBolt/FundrBolt/g' public/manifest.json
 ```
 
 ### 1.3 Frontend: PWAs (Donor, Landing)
@@ -83,14 +83,14 @@ sed -i 's/Fundrbolt/Fundrbolt/g' public/manifest.json
 # For each PWA:
 cd frontend/donor-pwa (or landing-site)
 
-sed -i 's/Fundrbolt/Fundrbolt/g' package.json
-sed -i 's/Fundrbolt/Fundrbolt/g' public/manifest.json
+sed -i 's/FundrBolt/FundrBolt/g' package.json
+sed -i 's/FundrBolt/FundrBolt/g' public/manifest.json
 
 find src -type f \( -name "*.tsx" -o -name "*.ts" -o -name "*.jsx" -o -name "*.js" \) \
-  -exec sed -i 's/Fundrbolt/Fundrbolt/g' {} +
+  -exec sed -i 's/FundrBolt/FundrBolt/g' {} +
 
 find public -type f \( -name "*.html" -o -name "*.json" \) \
-  -exec sed -i 's/Fundrbolt/Fundrbolt/g' {} +
+  -exec sed -i 's/FundrBolt/FundrBolt/g' {} +
 ```
 
 ### 1.4 Update Build & Config Files
@@ -106,7 +106,7 @@ find public -type f \( -name "*.html" -o -name "*.json" \) \
 ```bash
 # Root level
 sed -i 's/fundrbolt/fundrbolt/g' docker-compose.yml
-sed -i 's/Fundrbolt/Fundrbolt/g' Makefile
+sed -i 's/FundrBolt/FundrBolt/g' Makefile
 sed -i 's/fundrbolt/fundrbolt/g' .env.example
 
 # Update workspace package names references
@@ -114,7 +114,7 @@ sed -i 's/fundrbolt-admin/fundrbolt-admin/g' pnpm-workspace.yaml
 
 cd backend
 sed -i 's/fundrbolt/fundrbolt/g' pyproject.toml
-sed -i 's/Fundrbolt/Fundrbolt/g' README.md
+sed -i 's/FundrBolt/FundrBolt/g' README.md
 ```
 
 ---
@@ -137,7 +137,7 @@ done
 
 # Update resource names in bicep files
 find bicep -name "*.bicep" -exec sed -i 's/fundrbolt-/fundrbolt-/g' {} +
-find bicep -name "*.bicep" -exec sed -i 's/'Fundrbolt'/'Fundrbolt'/g' {} +
+find bicep -name "*.bicep" -exec sed -i 's/'FundrBolt'/'FundrBolt'/g' {} +
 
 # Verify param files reference new names
 grep -r "fundrbolt" bicep/environments/ | head -5
@@ -150,7 +150,7 @@ grep -r "fundrbolt" bicep/environments/ | head -5
 # List current secrets
 az keyvault secret list --vault-name fundrbolt-kv --query "[].name" -o tsv
 
-# For each secret, create new Fundrbolt version:
+# For each secret, create new FundrBolt version:
 # az keyvault secret set --vault-name fundrbolt-kv --name fundrbolt-db-password --value <value>
 
 # Plan retirement of old secrets (do NOT delete immediately)
@@ -190,7 +190,7 @@ cd .github/workflows
 # Update job names, artifact names, comments
 for file in *.yml *.yaml; do
   sed -i 's/fundrbolt/fundrbolt/g' "$file"
-  sed -i 's/Fundrbolt/Fundrbolt/g' "$file"
+  sed -i 's/FundrBolt/FundrBolt/g' "$file"
 done
 
 # Verify workflow syntax
@@ -210,14 +210,14 @@ gh workflow list
 cd /home/jjeanes/fundrbolt-platform
 
 # Root README
-sed -i 's/Fundrbolt/Fundrbolt/g' README.md
+sed -i 's/FundrBolt/FundrBolt/g' README.md
 sed -i 's/fundrbolt/fundrbolt/g' README.md
 
 # Copilot instructions
-sed -i 's/Fundrbolt/Fundrbolt/g' .github/copilot-instructions.md
+sed -i 's/FundrBolt/FundrBolt/g' .github/copilot-instructions.md
 
 # Project constitution
-sed -i 's/Fundrbolt/Fundrbolt/g' .specify/memory/constitution.md
+sed -i 's/FundrBolt/FundrBolt/g' .specify/memory/constitution.md
 ```
 
 ### 4.2 Docs Directory
@@ -225,7 +225,7 @@ sed -i 's/Fundrbolt/Fundrbolt/g' .specify/memory/constitution.md
 **Commands**:
 ```bash
 find docs -type f -name "*.md" \
-  -exec sed -i 's/Fundrbolt/Fundrbolt/g' {} + \
+  -exec sed -i 's/FundrBolt/FundrBolt/g' {} + \
   -exec sed -i 's/fundrbolt/fundrbolt/g' {} +
 ```
 
@@ -289,7 +289,7 @@ docker-compose down
 curl -X GET http://localhost:8000/api/v1/events -H "Authorization: Bearer <token>"
 
 # Test UI load (if frontend running)
-curl -s http://localhost:3000 | head -20  # Check for Fundrbolt branding
+curl -s http://localhost:3000 | head -20  # Check for FundrBolt branding
 
 # Test WebSocket (if applicable)
 # Manual test with browser dev tools
@@ -345,7 +345,7 @@ git push origin 013-fundrbolt-to-fundrbolt
 
 ```bash
 gh pr create \
-  --title "Rename: Fundrbolt to Fundrbolt" \
+  --title "Rename: FundrBolt to FundrBolt" \
   --body "Comprehensive brand rename across all source, infrastructure, and documentation. No functional changes; pre-production state allows immediate cutover. See spec at .specify/specs/013-fundrbolt-to-fundrbolt/spec.md" \
   --base main \
   --head 013-fundrbolt-to-fundrbolt
@@ -353,11 +353,11 @@ gh pr create \
 
 ### 7.2 Code Review Checklist
 
-- [ ] All Fundrbolt references replaced with Fundrbolt (search both cases)
+- [ ] All FundrBolt references replaced with FundrBolt (search both cases)
 - [ ] Package names, folder names, resource names updated
 - [ ] Tests pass (backend pytest, frontend build)
 - [ ] Docker compose still starts cleanly
-- [ ] OpenAPI docs display Fundrbolt branding
+- [ ] OpenAPI docs display FundrBolt branding
 - [ ] No functional logic changed (diff shows only text/naming)
 - [ ] Commit messages follow Conventional Commits format
 
@@ -391,8 +391,8 @@ curl -s https://staging.fundrbolt.com | grep -i fundrbolt
 
 # Manual browser tests:
 # - Navigate to staging UI
-# - Verify headers, footers show Fundrbolt
-# - Check emails contain Fundrbolt branding
+# - Verify headers, footers show FundrBolt
+# - Check emails contain FundrBolt branding
 # - Verify no 404s or broken links
 ```
 
@@ -403,10 +403,10 @@ curl -s https://staging.fundrbolt.com | grep -i fundrbolt
 ### 9.1 Cutover Approval Checklist
 
 - [ ] All tests pass on staging
-- [ ] No unplanned Fundrbolt references remain
+- [ ] No unplanned FundrBolt references remain
 - [ ] Customer & partner communications sent
 - [ ] Support team trained on new branding
-- [ ] Monitoring dashboards updated (show Fundrbolt resources)
+- [ ] Monitoring dashboards updated (show FundrBolt resources)
 - [ ] Stakeholder sign-off received
 
 ### 9.2 Merge to Main & Deploy to Production
@@ -436,7 +436,7 @@ az containerapp logs show --resource-group fundrbolt-prod --name fundrbolt-api-p
 
 ### 9.4 Post-Launch Monitoring
 
-- [ ] API responds with Fundrbolt branding in headers
+- [ ] API responds with FundrBolt branding in headers
 - [ ] UI loads correctly
 - [ ] No elevated error rates
 - [ ] Customer feedback collected
@@ -462,7 +462,7 @@ az containerapp update --resource-group fundrbolt-prod \
 
 ## Success Criteria
 
-✅ All visible references show "Fundrbolt"
+✅ All visible references show "FundrBolt"
 ✅ API & infrastructure function without errors
 ✅ No unplanned downtime
 ✅ All tests pass
@@ -492,32 +492,32 @@ If you prefer a bulk rename approach, create `/scripts/rename-to-fundrbolt.sh`:
 REPO_ROOT="/home/jjeanes/fundrbolt-platform"
 cd "$REPO_ROOT"
 
-echo "=== Starting Fundrbolt → Fundrbolt Rename ==="
+echo "=== Starting FundrBolt → FundrBolt Rename ==="
 
 # Backend
 echo "Renaming backend..."
 cd backend
-sed -i 's/Fundrbolt/Fundrbolt/g' pyproject.toml
-find app -type f -name "*.py" -exec sed -i 's/Fundrbolt/Fundrbolt/g; s/fundrbolt/fundrbolt/g' {} +
+sed -i 's/FundrBolt/FundrBolt/g' pyproject.toml
+find app -type f -name "*.py" -exec sed -i 's/FundrBolt/FundrBolt/g; s/fundrbolt/fundrbolt/g' {} +
 cd ..
 
 # Frontend
 echo "Renaming frontend..."
 mv frontend/fundrbolt-admin frontend/fundrbolt-admin
 find frontend -type f \( -name "*.tsx" -o -name "*.ts" -o -name "*.json" -o -name "*.md" \) \
-  -exec sed -i 's/Fundrbolt/Fundrbolt/g; s/fundrbolt/fundrbolt/g' {} +
+  -exec sed -i 's/FundrBolt/FundrBolt/g; s/fundrbolt/fundrbolt/g' {} +
 
 # Infrastructure
 echo "Renaming infrastructure..."
 find infrastructure -type f \( -name "*.bicep" -o -name "*.bicepparam" \) \
-  -exec sed -i 's/Fundrbolt/Fundrbolt/g; s/fundrbolt/fundrbolt/g' {} +
+  -exec sed -i 's/FundrBolt/FundrBolt/g; s/fundrbolt/fundrbolt/g' {} +
 
 # Docs
 echo "Renaming documentation..."
-find docs .github -type f -name "*.md" -exec sed -i 's/Fundrbolt/Fundrbolt/g; s/fundrbolt/fundrbolt/g' {} +
+find docs .github -type f -name "*.md" -exec sed -i 's/FundrBolt/FundrBolt/g; s/fundrbolt/fundrbolt/g' {} +
 
 # Root
-sed -i 's/Fundrbolt/Fundrbolt/g' README.md docker-compose.yml
+sed -i 's/FundrBolt/FundrBolt/g' README.md docker-compose.yml
 
 echo "=== Rename Complete ==="
 echo "Next: Review changes, run tests, commit."

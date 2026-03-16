@@ -1,4 +1,4 @@
-# Fundrbolt Architecture Overview
+# FundrBolt Architecture Overview
 
 ## System Components
 

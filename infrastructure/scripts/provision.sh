@@ -1,5 +1,5 @@
 #!/bin/bash
-# Infrastructure provisioning script for Fundrbolt Platform
+# Infrastructure provisioning script for FundrBolt Platform
 set -e
 
 # Colors for output
@@ -39,7 +39,7 @@ if [ -z "$POSTGRES_PASSWORD" ]; then
   echo ""
 fi
 
-echo -e "${GREEN}=== Fundrbolt Platform Infrastructure Provisioning ===${NC}"
+echo -e "${GREEN}=== FundrBolt Platform Infrastructure Provisioning ===${NC}"
 echo "Environment: $ENVIRONMENT"
 echo "Location: $LOCATION"
 echo "Subscription: $SUBSCRIPTION_ID"

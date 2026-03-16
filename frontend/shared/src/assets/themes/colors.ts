@@ -1,5 +1,5 @@
 /**
- * Fundrbolt Brand Colors
+ * FundrBolt Brand Colors
  *
  * IMPORTANT: These are the official brand colors. Do not hardcode colors in components.
  * Always reference these constants to maintain brand consistency across all applications.

@@ -208,7 +208,7 @@ All 11 tasks have been completed, tested, and verified working.
 
 **Implementation**:
 - FastAPI app instance with metadata:
-  - Title: "Fundrbolt Platform API"
+  - Title: "FundrBolt Platform API"
   - Version: "1.0.0"
   - OpenAPI docs at /docs and /redoc
 - Lifespan events:
@@ -263,7 +263,7 @@ All 11 tasks have been completed, tested, and verified working.
 ```
 INFO:     Started server process
 INFO:     Waiting for application startup.
-2025-10-20 21:00:50 - app.main - INFO - Starting Fundrbolt Platform API
+2025-10-20 21:00:50 - app.main - INFO - Starting FundrBolt Platform API
 2025-10-20 21:00:50 - app.main - INFO - Redis connection established
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000

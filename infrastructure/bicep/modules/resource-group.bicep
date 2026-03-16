@@ -1,4 +1,4 @@
-// Resource Group module for Fundrbolt Platform
+// Resource Group module for FundrBolt Platform
 targetScope = 'subscription'
 
 @description('Name of the resource group')

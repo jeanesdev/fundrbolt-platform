@@ -45,11 +45,11 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>
-        {/* Fundrbolt Logo */}
+        {/* FundrBolt Logo */}
         <div className='flex items-center justify-center px-4 py-2'>
           <img
             src={LogoNavyGold}
-            alt='Fundrbolt'
+            alt='FundrBolt'
             className='h-8 w-auto'
           />
         </div>

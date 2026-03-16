@@ -413,7 +413,7 @@ docker exec -it fundrbolt_redis redis-cli KEYS "rate_limit:contact:*"
 
 **Expected Elements**:
 - [ ] Hero section heading: "Get in Touch"
-- [ ] Hero subtitle mentions "questions about Fundrbolt"
+- [ ] Hero subtitle mentions "questions about FundrBolt"
 - [ ] Contact information section heading: "Contact Information"
 - [ ] Support email: support@fundrbolt.com
 - [ ] Response time: "24-48 hours"

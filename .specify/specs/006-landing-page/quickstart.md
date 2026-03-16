@@ -506,7 +506,7 @@ export const LandingPage: React.FC = () => {
   return (
     <div className="landing-page">
       <header className="hero">
-        <h1>Fundrbolt Fundraising Platform</h1>
+        <h1>FundrBolt Fundraising Platform</h1>
         <p>World-class fundraising software that maximizes nonprofit revenue</p>
       </header>
 
@@ -529,7 +529,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       <section className="features">
-        <h2>Why Fundrbolt?</h2>
+        <h2>Why FundrBolt?</h2>
         <div className="feature-grid">
           <div className="feature">
             <h3>Mobile Bidding</h3>

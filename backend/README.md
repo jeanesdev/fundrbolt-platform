@@ -1,6 +1,6 @@
-# Fundrbolt Platform - Backend API
+# FundrBolt Platform - Backend API
 
-FastAPI-based backend API for the Fundrbolt nonprofit auction platform, featuring authentication, role-based access control, and multi-tenant data isolation.
+FastAPI-based backend API for the FundrBolt nonprofit auction platform, featuring authentication, role-based access control, and multi-tenant data isolation.
 
 ## 🚀 Quick Start
 

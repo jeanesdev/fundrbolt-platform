@@ -122,13 +122,13 @@ class TestAuthLoginContract:
         assert data["detail"]["code"] == "INVALID_CREDENTIALS"
 
     @pytest.mark.asyncio
-    async def test_login_unverified_email_returns_400(
+    async def test_login_unverified_email_returns_200_pending_verification(
         self, async_client: AsyncClient, db_session: AsyncSession
     ) -> None:
-        """Test unverified email returns 400 Bad Request.
+        """Test unverified email can sign in and remains pending verification.
 
         Contract: POST /api/v1/auth/login
-        Expected: 400 Bad Request with EMAIL_NOT_VERIFIED error
+        Expected: 200 OK with tokens and user.email_verified=false
         """
         # Register a user (email not verified yet)
         register_payload = {
@@ -143,15 +143,14 @@ class TestAuthLoginContract:
         login_payload = {"email": "unverified@example.com", "password": "SecurePass123"}
         response = await async_client.post("/api/v1/auth/login", json=login_payload)
 
-        # Verify status code
-        assert response.status_code == 400
-
-        # Verify error schema
+        # Verify status code and response schema
+        assert response.status_code == 200
         data = response.json()
-        assert "detail" in data
-        error = data["detail"]
-        assert error["code"] == "EMAIL_NOT_VERIFIED"
-        assert "verify your email" in error["message"].lower()
+        assert data["access_token"].count(".") == 2
+        assert data["refresh_token"].count(".") == 2
+        assert data["user"]["email"] == "unverified@example.com"
+        assert data["user"]["email_verified"] is False
+        assert data["user"]["is_active"] is False
 
     @pytest.mark.asyncio
     async def test_login_deactivated_account_returns_403(

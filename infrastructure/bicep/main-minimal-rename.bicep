@@ -1,4 +1,4 @@
-// Minimal Bicep deployment for Fundrbolt rename
+// Minimal Bicep deployment for FundrBolt rename
 // Only creates: Resource Group, Key Vault, Storage, Log Analytics, App Insights, Communication Services, DNS
 // Excludes: App Service, Static Web Apps, PostgreSQL, Redis
 

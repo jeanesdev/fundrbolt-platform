@@ -16,6 +16,7 @@ export interface EventContextOption {
   id: string
   name: string
   slug: string
+  status?: string // e.g. 'draft', 'published', 'cancelled'
   event_date?: string | null
   npo_name?: string | null
   logo_url?: string | null
@@ -67,7 +68,38 @@ export const useEventContextStore = create<EventContextState>()(
           error: null,
         }),
 
-      setAvailableEvents: (events) => set({ availableEvents: events }),
+      setAvailableEvents: (events) => {
+        const { selectedEventSlug, selectedEventId } = get()
+        // Find the event matching the persisted selection by ID (most stable)
+        // or by slug. If found by ID but slug changed, update the persisted slug
+        // so redirects use the current slug. If not found at all, clear the
+        // stale selection so the user isn't redirected to a 404.
+        if (events.length === 0) {
+          set({ availableEvents: events })
+          return
+        }
+        const matchById = events.find((e) => e.id === selectedEventId)
+        const matchBySlug = events.find((e) => e.slug === selectedEventSlug)
+        if (matchById) {
+          // Event still exists — update slug in case it was renamed
+          set({
+            availableEvents: events,
+            selectedEventSlug: matchById.slug,
+            selectedEventName: matchById.name,
+          })
+        } else if (matchBySlug) {
+          // Found only by slug (no ID stored, or ID changed) — keep as-is
+          set({ availableEvents: events })
+        } else {
+          // Event no longer accessible — clear stale selection
+          set({
+            availableEvents: events,
+            selectedEventId: null,
+            selectedEventName: 'Select Event',
+            selectedEventSlug: null,
+          })
+        }
+      },
 
       setLoading: (loading) => set({ isLoading: loading }),
 

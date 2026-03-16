@@ -2,7 +2,6 @@
  * NPO (Non-Profit Organization) API service
  * Handles all NPO-related API calls including NPO CRUD, applications, members, and branding
  */
-import apiClient from '@/lib/axios'
 import type {
   ApplicationListParams,
   ApplicationListResponse,
@@ -28,6 +27,7 @@ import type {
   NPOUpdateRequest,
   PendingInvitation,
 } from '@/types/npo'
+import apiClient from '@/lib/axios'
 
 // ============================================
 // NPO Management

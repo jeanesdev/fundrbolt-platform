@@ -7,19 +7,19 @@
  * for a specific NPO. Fetches existing credentials on mount and shows the
  * NpoCredentialForm in create or edit mode accordingly.
  */
-import { NpoCredentialForm } from '@/components/payments/NpoCredentialForm'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import apiClient from '@/lib/axios'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link, useParams } from '@tanstack/react-router'
 import {
   type CredentialRead,
   type CredentialResponse,
   isConfigured,
 } from '@/types/payments'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useParams } from '@tanstack/react-router'
 import { ArrowLeft, CreditCard } from 'lucide-react'
+import apiClient from '@/lib/axios'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { NpoCredentialForm } from '@/components/payments/NpoCredentialForm'
 
 export default function NpoPaymentSettingsPage() {
   const { npoId } = useParams({

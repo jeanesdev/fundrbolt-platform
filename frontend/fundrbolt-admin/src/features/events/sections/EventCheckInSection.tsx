@@ -15,6 +15,10 @@ import {
 import { toast } from 'sonner'
 import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
 import {
+  adminCreatePaymentProfile,
+  adminCreatePaymentSession,
+} from '@/lib/api/admin-payments'
+import {
   assignBidderNumber,
   assignRegistrationBidderNumber,
 } from '@/lib/api/admin-seating'
@@ -52,10 +56,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  adminCreatePaymentProfile,
-  adminCreatePaymentSession,
-} from '@/lib/api/admin-payments'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useEventWorkspace } from '../useEventWorkspace'
 
@@ -1268,7 +1268,9 @@ export function EventCheckInSection() {
                   <div className='flex items-center justify-between'>
                     <div className='flex items-center gap-2'>
                       <CreditCard className='text-muted-foreground h-4 w-4' />
-                      <span className='text-sm font-medium'>Payment Method</span>
+                      <span className='text-sm font-medium'>
+                        Payment Method
+                      </span>
                     </div>
                     {editingAttendee.has_payment_profile ? (
                       <span className='flex items-center gap-1 text-sm text-green-600'>

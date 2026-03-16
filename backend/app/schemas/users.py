@@ -165,6 +165,8 @@ class UserPublicWithRole(BaseModel):
 
     id: uuid.UUID
     email: str
+    communications_email: str | None = None
+    communications_email_verified: bool = False
     first_name: str
     last_name: str
     phone: str | None = None
@@ -203,3 +205,32 @@ class UserActivateRequest(BaseModel):
     """Request schema for activating a user account."""
 
     is_active: bool
+
+
+# ================================
+# Communications Email Verification
+# ================================
+
+
+class CommunicationsEmailRequest(BaseModel):
+    """Request to set and verify a new communications email."""
+
+    email: EmailStr
+
+    @field_validator("email")
+    @classmethod
+    def email_must_be_lowercase(cls, v: str) -> str:
+        """Ensure email is lowercase."""
+        return v.lower()
+
+
+class CommunicationsEmailConfirm(BaseModel):
+    """Request to confirm communications email with OTP."""
+
+    otp: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+class CommunicationsEmailResponse(BaseModel):
+    """Response for communications email verification requests."""
+
+    message: str

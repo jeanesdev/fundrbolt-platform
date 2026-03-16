@@ -55,7 +55,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const { role, isSuperAdmin, isNpoAdmin, isEventCoordinator, isStaff } =
     useAuth()
   const { selectedNpoId } = useNpoContext()
-  const { selectedEventId, selectedEventSlug, selectedEventName } =
+  const { selectedEventId, selectedEventName } =
     useEventContext()
   const { data: eventStats } = useEventStats(selectedEventId)
 
@@ -203,7 +203,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
 
     return {
       title: section.title,
-      href: `/events/${selectedEventSlug || selectedEventId}/${section.path}`,
+      href: `/events/${selectedEventId}/${section.path}`,
       icon: section.icon,
       badge: typeof badgeValue === 'number' ? badgeValue : undefined,
     }
@@ -217,9 +217,9 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   // Grouped nav: Event, Guests, Auctions
   const eventNavGroups: EventNavGroup[] = selectedEventId
     ? EVENT_NAV_GROUPS.map((group) => ({
-        title: group.title,
-        items: group.sections.map(buildEventNavItem),
-      }))
+      title: group.title,
+      items: group.sections.map(buildEventNavItem),
+    }))
     : []
 
   const eventNavTitle = selectedEventId
@@ -305,6 +305,11 @@ const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
     icon: 'Zap',
   },
   {
+    title: 'Notifications',
+    path: 'notifications',
+    icon: 'Bell',
+  },
+  {
     title: 'Payments',
     path: 'payments',
     icon: 'CreditCard',
@@ -340,6 +345,7 @@ const EVENT_NAV_GROUPS: Array<{
       sectionByPath('tickets/sales'),
       sectionByPath('tickets/promos'),
       sectionByPath('sponsors'),
+      sectionByPath('notifications'),
     ],
   },
   {
@@ -360,9 +366,7 @@ const EVENT_NAV_GROUPS: Array<{
   },
   {
     title: 'Finance',
-    sections: [
-      sectionByPath('payments'),
-    ],
+    sections: [sectionByPath('payments')],
   },
   {
     title: 'Data',

@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document consolidates technical research and design decisions for implementing table seating assignments and bidder number management in the Fundrbolt fundraising platform. All decisions align with the project constitution and leverage existing infrastructure.
+This document consolidates technical research and design decisions for implementing table seating assignments and bidder number management in the FundrBolt fundraising platform. All decisions align with the project constitution and leverage existing infrastructure.
 
 ---
 

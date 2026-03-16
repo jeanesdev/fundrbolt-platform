@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Fundrbolt User Management API
+  title: FundrBolt User Management API
   description: |
     User management endpoints for listing, creating, updating, and managing users and their roles.
 
@@ -11,7 +11,7 @@ info:
     - Staff/Donor: No access to user management
   version: 1.0.0
   contact:
-    name: Fundrbolt Platform Team
+    name: FundrBolt Platform Team
     email: support@fundrbolt.com
 
 servers:

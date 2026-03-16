@@ -41,6 +41,11 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     match => match.routeId.includes('/settings')
   )
 
+  // Home page has its own layout (sidebar-free with custom header)
+  const isHomePage = matches.some(
+    match => match.routeId === '/_authenticated/home'
+  )
+
   // Restore user from refresh token on mount if needed
   useEffect(() => {
     const restore = async () => {
@@ -114,6 +119,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           id: string
           name: string
           slug: string
+          status?: string
           event_date?: string
           npo?: { name: string }
           logo_url?: string
@@ -122,12 +128,15 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           if (existing) {
             // User is registered AND has admin access
             existing.has_admin_access = true
+            existing.status = event.status
           } else {
-            // User has admin access only
+            // User has admin access only — include all statuses so admins can
+            // see and navigate to their own draft events
             eventMap.set(event.id, {
               id: event.id,
               name: event.name,
               slug: event.slug,
+              status: event.status,
               event_date: event.event_date,
               npo_name: event.npo?.name,
               logo_url: event.logo_url,
@@ -161,9 +170,9 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     )
   }
 
-  // For event detail pages or settings pages, render sidebar-free layout
+  // For event detail pages, settings pages, or home page, render sidebar-free layout
   // The child route handles its own full-page layout
-  if (isEventDetailPage || isSettingsPage) {
+  if (isEventDetailPage || isSettingsPage || isHomePage) {
     return (
       <SearchProvider>
         <SkipToMain />

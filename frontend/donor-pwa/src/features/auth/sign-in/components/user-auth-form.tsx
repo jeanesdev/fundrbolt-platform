@@ -32,11 +32,13 @@ const formSchema = z.object({
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLFormElement> {
   redirectTo?: string
+  initialEmail?: string
 }
 
 export function UserAuthForm({
   className,
   redirectTo,
+  initialEmail,
   ...props
 }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
@@ -46,7 +48,7 @@ export function UserAuthForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
+      email: initialEmail || '',
       password: '',
     },
   })
@@ -58,6 +60,12 @@ export function UserAuthForm({
       loading: 'Signing in...',
       success: (response) => {
         setIsLoading(false)
+
+        // Redirect unverified users to the email verification page
+        if (response.user.email_verified === false) {
+          navigate({ to: '/verify-email', search: { email: response.user.email }, replace: true })
+          return 'Please verify your email to continue.'
+        }
 
         // Navigate using router instead of full page reload
         // The auth state is already set by the login function

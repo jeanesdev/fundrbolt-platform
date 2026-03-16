@@ -1,4 +1,4 @@
-// Application Insights module for Fundrbolt Platform
+// Application Insights module for FundrBolt Platform
 
 @description('Name of the Application Insights instance')
 param appInsightsName string

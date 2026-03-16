@@ -3,11 +3,11 @@
  * Provides convenient access to current user authentication and role information
  *
  * Role hierarchy:
- * - super_admin: Fundrbolt platform staff with full access
+ * - super_admin: FundrBolt platform staff with full access
  * - npo_admin: Full management within assigned NPO(s)
  * - event_coordinator: Event/auction management within NPO
  * - staff: Donor registration/check-in within assigned events
- * - donor: Bidding and profile management only (NOT allowed in admin PWA)
+ * - donor: Default role for brand new users and donor-portal users
  */
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -23,6 +23,7 @@ interface AuthUser {
   email: string
   first_name: string
   last_name: string
+  email_verified: boolean
   role: string
   npo_memberships: {
     npo_id: string
@@ -39,6 +40,7 @@ export interface UseAuthReturn {
   role: UserRole | null
   npoId: string | null
   npoMemberships: AuthUser['npo_memberships']
+  emailVerified: boolean
 
   // Role checks
   isSuperAdmin: boolean
@@ -59,6 +61,7 @@ export function useAuth(): UseAuthReturn {
   const role = user?.role as UserRole | null
   const npoMemberships = user?.npo_memberships || []
   const npoId = npoMemberships.length === 1 ? npoMemberships[0].npo_id : null
+  const emailVerified = user?.email_verified ?? false
 
   // Role checks
   const isSuperAdmin = role === 'super_admin'
@@ -67,8 +70,9 @@ export function useAuth(): UseAuthReturn {
   const isStaff = role === 'staff'
   const isDonor = role === 'donor'
 
-  // Donor role is NOT allowed in admin PWA
-  const canAccessAdminPWA = isAuthenticated && !isDonor
+  // Brand-new users may still be donors until they join or create an NPO.
+  const canAccessAdminPWA =
+    isAuthenticated && (!isDonor || npoMemberships.length === 0)
 
   // Helper methods
   const hasRole = (checkRole: UserRole): boolean => {
@@ -86,6 +90,7 @@ export function useAuth(): UseAuthReturn {
     role,
     npoId,
     npoMemberships,
+    emailVerified,
     isSuperAdmin,
     isNpoAdmin,
     isEventCoordinator,

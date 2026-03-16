@@ -35,6 +35,7 @@ import { Route as authPasswordResetConfirmRouteImport } from './routes/(auth)/pa
 import { Route as authPasswordResetRouteImport } from './routes/(auth)/password-reset'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
+import { Route as authCompleteProfileRouteImport } from './routes/(auth)/complete-profile'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as EventsSlugIndexRouteImport } from './routes/events.$slug.index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
@@ -46,6 +47,7 @@ import { Route as EventsSlugCheckoutRouteImport } from './routes/events.$slug.ch
 import { Route as AuthenticatedTicketsHistoryRouteImport } from './routes/_authenticated/tickets.history'
 import { Route as AuthenticatedSettingsPaymentRouteImport } from './routes/_authenticated/settings/payment'
 import { Route as AuthenticatedSettingsPasswordRouteImport } from './routes/_authenticated/settings/password'
+import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsConsentRouteImport } from './routes/_authenticated/settings/consent'
 import { Route as AuthenticatedNposCreateRouteImport } from './routes/_authenticated/npos/create'
 import { Route as AuthenticatedEventsCreateRouteImport } from './routes/_authenticated/events/create'
@@ -192,6 +194,11 @@ const authForgotPasswordRoute = authForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const authCompleteProfileRoute = authCompleteProfileRouteImport.update({
+  id: '/(auth)/complete-profile',
+  path: '/complete-profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSettingsRouteRoute =
   AuthenticatedSettingsRouteRouteImport.update({
     id: '/settings',
@@ -251,6 +258,12 @@ const AuthenticatedSettingsPasswordRoute =
   AuthenticatedSettingsPasswordRouteImport.update({
     id: '/password',
     path: '/password',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedSettingsNotificationsRoute =
+  AuthenticatedSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
 const AuthenticatedSettingsConsentRoute =
@@ -341,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/preview': typeof PreviewRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
+  '/complete-profile': typeof authCompleteProfileRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/password-reset': typeof authPasswordResetRoute
@@ -369,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/events/create': typeof AuthenticatedEventsCreateRoute
   '/npos/create': typeof AuthenticatedNposCreateRoute
   '/settings/consent': typeof AuthenticatedSettingsConsentRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/password': typeof AuthenticatedSettingsPasswordRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/tickets/history': typeof AuthenticatedTicketsHistoryRoute
@@ -392,6 +407,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/preview': typeof PreviewRouteWithChildren
+  '/complete-profile': typeof authCompleteProfileRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/password-reset': typeof authPasswordResetRoute
@@ -418,6 +434,7 @@ export interface FileRoutesByTo {
   '/events/create': typeof AuthenticatedEventsCreateRoute
   '/npos/create': typeof AuthenticatedNposCreateRoute
   '/settings/consent': typeof AuthenticatedSettingsConsentRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/password': typeof AuthenticatedSettingsPasswordRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/tickets/history': typeof AuthenticatedTicketsHistoryRoute
@@ -444,6 +461,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/preview': typeof PreviewRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
+  '/(auth)/complete-profile': typeof authCompleteProfileRoute
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/otp': typeof authOtpRoute
   '/(auth)/password-reset': typeof authPasswordResetRoute
@@ -472,6 +490,7 @@ export interface FileRoutesById {
   '/_authenticated/events/create': typeof AuthenticatedEventsCreateRoute
   '/_authenticated/npos/create': typeof AuthenticatedNposCreateRoute
   '/_authenticated/settings/consent': typeof AuthenticatedSettingsConsentRoute
+  '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/settings/password': typeof AuthenticatedSettingsPasswordRoute
   '/_authenticated/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/_authenticated/tickets/history': typeof AuthenticatedTicketsHistoryRoute
@@ -498,6 +517,7 @@ export interface FileRouteTypes {
     | '/'
     | '/preview'
     | '/settings'
+    | '/complete-profile'
     | '/forgot-password'
     | '/otp'
     | '/password-reset'
@@ -526,6 +546,7 @@ export interface FileRouteTypes {
     | '/events/create'
     | '/npos/create'
     | '/settings/consent'
+    | '/settings/notifications'
     | '/settings/password'
     | '/settings/payment'
     | '/tickets/history'
@@ -549,6 +570,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/preview'
+    | '/complete-profile'
     | '/forgot-password'
     | '/otp'
     | '/password-reset'
@@ -575,6 +597,7 @@ export interface FileRouteTypes {
     | '/events/create'
     | '/npos/create'
     | '/settings/consent'
+    | '/settings/notifications'
     | '/settings/password'
     | '/settings/payment'
     | '/tickets/history'
@@ -600,6 +623,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/preview'
     | '/_authenticated/settings'
+    | '/(auth)/complete-profile'
     | '/(auth)/forgot-password'
     | '/(auth)/otp'
     | '/(auth)/password-reset'
@@ -628,6 +652,7 @@ export interface FileRouteTypes {
     | '/_authenticated/events/create'
     | '/_authenticated/npos/create'
     | '/_authenticated/settings/consent'
+    | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/password'
     | '/_authenticated/settings/payment'
     | '/_authenticated/tickets/history'
@@ -653,6 +678,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   PreviewRoute: typeof PreviewRouteWithChildren
+  authCompleteProfileRoute: typeof authCompleteProfileRoute
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
   authPasswordResetRoute: typeof authPasswordResetRoute
@@ -858,6 +884,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(auth)/complete-profile': {
+      id: '/(auth)/complete-profile'
+      path: '/complete-profile'
+      fullPath: '/complete-profile'
+      preLoaderRoute: typeof authCompleteProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -933,6 +966,13 @@ declare module '@tanstack/react-router' {
       path: '/password'
       fullPath: '/settings/password'
       preLoaderRoute: typeof AuthenticatedSettingsPasswordRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/settings/notifications': {
+      id: '/_authenticated/settings/notifications'
+      path: '/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
     '/_authenticated/settings/consent': {
@@ -1038,6 +1078,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsConsentRoute: typeof AuthenticatedSettingsConsentRoute
+  AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedSettingsPasswordRoute: typeof AuthenticatedSettingsPasswordRoute
   AuthenticatedSettingsPaymentRoute: typeof AuthenticatedSettingsPaymentRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
@@ -1046,6 +1087,8 @@ interface AuthenticatedSettingsRouteRouteChildren {
 const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
   {
     AuthenticatedSettingsConsentRoute: AuthenticatedSettingsConsentRoute,
+    AuthenticatedSettingsNotificationsRoute:
+      AuthenticatedSettingsNotificationsRoute,
     AuthenticatedSettingsPasswordRoute: AuthenticatedSettingsPasswordRoute,
     AuthenticatedSettingsPaymentRoute: AuthenticatedSettingsPaymentRoute,
     AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
@@ -1175,6 +1218,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   PreviewRoute: PreviewRouteWithChildren,
+  authCompleteProfileRoute: authCompleteProfileRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
   authPasswordResetRoute: authPasswordResetRoute,

@@ -1,4 +1,4 @@
-# Fundrbolt User Personas
+# FundrBolt User Personas
 
 ## Event Coordinator
 **Who:** Nonprofit staff/volunteer organizing fundraising galas

@@ -89,10 +89,10 @@ import { colors } from '@fundrbolt/shared/assets';
 import { LogoWhiteGold, getLogo } from '@fundrbolt/shared/assets';
 
 // On navy background
-<img src={LogoWhiteGold} alt="Fundrbolt" />
+<img src={LogoWhiteGold} alt="FundrBolt" />
 
 // Auto-select based on background
-<img src={getLogo('dark')} alt="Fundrbolt" />
+<img src={getLogo('dark')} alt="FundrBolt" />
 ```
 
 ### Favicons are already in place:

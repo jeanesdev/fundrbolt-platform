@@ -9,7 +9,7 @@
 
 ## Overview
 
-Integrate First American / Deluxe Merchant Services into Fundrbolt to handle all payment flows:
+Integrate First American / Deluxe Merchant Services into FundrBolt to handle all payment flows:
 ticket purchases, end-of-night auction/donation checkout, and admin-initiated charges. Deluxe
 provides a **Hosted Payment Form (HPF)** that renders in an iframe so card data never touches our
 servers — PCI scope is dramatically reduced.
@@ -53,7 +53,7 @@ are still being set up, and the full target architecture once credentials are in
 ### Deluxe HPF flow  (target)
 
 ```
-Donor browser                 Fundrbolt backend              Deluxe Gateway
+Donor browser                 FundrBolt backend              Deluxe Gateway
      │                              │                              │
      │  POST /payments/session      │                              │
      │ ─────────────────────────► │                              │
@@ -74,7 +74,7 @@ Donor browser                 Fundrbolt backend              Deluxe Gateway
      │                              │  verify sig, update DB       │
      │◄─  HPF posts message/redirect│                              │
      │   (JS postMessage or redirect)                              │
-     │   Fundrbolt shows result     │                              │
+     │   FundrBolt shows result     │                              │
 ```
 
 ### Deluxe Stub  (while credentials are not yet available)
@@ -320,7 +320,7 @@ Receipt content:
 - Subtotal, processing fee (if passed through), total
 - Payment method (card brand + last 4)
 - Transaction ID + timestamp
-- Fundrbolt footer
+- FundrBolt footer
 
 Add `WeasyPrint` to `pyproject.toml`:
 ```
@@ -593,7 +593,7 @@ _Requires active Deluxe merchant account_
 
 ## Key Questions / Open Items
 
-1. **NPO per-merchant or shared merchant?** Does each NPO get their own Deluxe merchant account, or does Fundrbolt run a single merchant and distribute funds? This affects the credential model above (currently assumes per-NPO).
+1. **NPO per-merchant or shared merchant?** Does each NPO get their own Deluxe merchant account, or does FundrBolt run a single merchant and distribute funds? This affects the credential model above (currently assumes per-NPO).
 
 2. **Processing fee pass-through?** Are processing fees absorbed by the NPO or passed to the donor? Affects the `PaymentSummary` display and receipt line items.
 

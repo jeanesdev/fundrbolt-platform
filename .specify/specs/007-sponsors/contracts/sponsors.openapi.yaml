@@ -1,11 +1,11 @@
 openapi: 3.1.0
 info:
-  title: Fundrbolt Platform - Event Sponsors API
+  title: FundrBolt Platform - Event Sponsors API
   version: 1.0.0
   description: |
     API endpoints for managing event sponsors including logo uploads, contact information, and display ordering.
   contact:
-    name: Fundrbolt Platform Support
+    name: FundrBolt Platform Support
     email: support@fundrbolt.com
 
 servers:

@@ -33,7 +33,7 @@ export interface UseInitialAvatarProps {
  * Takes first letter of first two words
  *
  * Examples:
- * - "Fundrbolt Platform" -> "FP"
+ * - "FundrBolt Platform" -> "FP"
  * - "St. Mary's Church" -> "SM"
  * - "NPO" -> "NP" (single word, uses first two letters)
  * - "The Community Foundation" -> "TC"

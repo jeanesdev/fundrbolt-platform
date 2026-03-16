@@ -1,4 +1,4 @@
-# Phase 0: Research - Fundrbolt to Fundrbolt Rename
+# Phase 0: Research - FundrBolt to FundrBolt Rename
 
 **Date**: 2025-12-17
 **Feature**: 013-fundrbolt-to-fundrbolt
@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document consolidates findings on Fundrbolt references across the codebase, infrastructure, GitHub, and Azure resources. It identifies where renaming is required and any migration strategies needed.
+This document consolidates findings on FundrBolt references across the codebase, infrastructure, GitHub, and Azure resources. It identifies where renaming is required and any migration strategies needed.
 
 ---
 
@@ -25,14 +25,14 @@ This document consolidates findings on Fundrbolt references across the codebase,
 
 **File**: `app/main.py`
 
-- **Current**: Application title/description contains "Fundrbolt", contact email references Fundrbolt
-- **Decision**: Replace with Fundrbolt equivalents
+- **Current**: Application title/description contains "FundrBolt", contact email references FundrBolt
+- **Decision**: Replace with FundrBolt equivalents
 - **Impact**: OpenAPI documentation, API responses
 - **Rationale**: User-facing documentation and support continuity
 
 **Files**: `app/core/config.py`, `app/middleware/`.
 
-- **Current**: Configuration variables, logging, response headers may reference Fundrbolt
+- **Current**: Configuration variables, logging, response headers may reference FundrBolt
 - **Decision**: Search and replace all brand names
 - **Impact**: Runtime configuration, API responses, logs
 - **Rationale**: Full branding consistency
@@ -48,22 +48,22 @@ This document consolidates findings on Fundrbolt references across the codebase,
 
 **Files**: `package.json` across all frontends
 
-- **Current**: `"name": "fundrbolt-admin"`, `"description": "..."` with Fundrbolt branding
+- **Current**: `"name": "fundrbolt-admin"`, `"description": "..."` with FundrBolt branding
 - **Decision**: Rename to `fundrbolt-admin`, update description
 - **Impact**: Package registry, builds, dependencies
 - **Rationale**: Consistency with backend package name strategy
 
 **Files**: UI components, pages, assets
 
-- **Current**: Strings like "Fundrbolt Platform", logos, comments
-- **Decision**: Replace with Fundrbolt equivalents
+- **Current**: Strings like "FundrBolt Platform", logos, comments
+- **Decision**: Replace with FundrBolt equivalents
 - **Impact**: User-visible UI, documentation strings
 - **Rationale**: User-facing consistency
 
 **File**: `frontend/*/public/manifest.json`
 
-- **Current**: App name, description with Fundrbolt branding
-- **Decision**: Update to Fundrbolt
+- **Current**: App name, description with FundrBolt branding
+- **Decision**: Update to FundrBolt
 - **Impact**: PWA metadata, browser install prompts
 - **Rationale**: User installation experience
 
@@ -73,12 +73,12 @@ This document consolidates findings on Fundrbolt references across the codebase,
 
 **Scope**: No schema changes required.
 
-- **Current State**: No tables or fields storing the product name "Fundrbolt"
+- **Current State**: No tables or fields storing the product name "FundrBolt"
 - **Decision**: No migrations needed for data; only config/metadata updates
 - **Impact**: Zero data migration risk
 - **Rationale**: Product name is external branding, not data
 
-**If applicable**: Configuration tables (if any) containing "Fundrbolt"
+**If applicable**: Configuration tables (if any) containing "FundrBolt"
 
 - **Decision**: Update config values directly or via migration script
 - **Impact**: Minimal; likely 1-5 rows
@@ -115,8 +115,8 @@ This document consolidates findings on Fundrbolt references across the codebase,
 
 **Workflow Files** (`.github/workflows/`)
 
-- **Current**: Job names, step descriptions, artifact names may reference Fundrbolt
-- **Decision**: Replace with Fundrbolt equivalents
+- **Current**: Job names, step descriptions, artifact names may reference FundrBolt
+- **Decision**: Replace with FundrBolt equivalents
 - **Impact**: Build logs, artifact naming, clarity
 - **Rationale**: Consistency in automation
 
@@ -127,7 +127,7 @@ This document consolidates findings on Fundrbolt references across the codebase,
 **Current Repositories**:
 
 - Primary: `jeanesdev/fundrbolt-platform`
-- Potential related: May have forks or reference Fundrbolt
+- Potential related: May have forks or reference FundrBolt
 
 **Decision Strategy**:
 
@@ -154,13 +154,13 @@ This document consolidates findings on Fundrbolt references across the codebase,
 - Copilot instructions (`.github/copilot-instructions.md`)
 - All `.md` files in `.specify/memory/`
 
-**Current**: Extensive references to Fundrbolt as project name/description
+**Current**: Extensive references to FundrBolt as project name/description
 
 **Decision**: Full text search and replace
 
-- Replace "Fundrbolt" → "Fundrbolt"
+- Replace "FundrBolt" → "FundrBolt"
 - Replace "fundrbolt" → "fundrbolt"
-- Review context to preserve intent (e.g., "from Fundrbolt to Fundrbolt" explanations)
+- Review context to preserve intent (e.g., "from FundrBolt to FundrBolt" explanations)
 
 **Impact**: Clarity for new developers, user-facing guides
 
@@ -195,14 +195,14 @@ This document consolidates findings on Fundrbolt references across the codebase,
 - Stripe (metadata, naming)
 - Third-party webhooks
 
-**Current**: App/sender name may be "Fundrbolt" in external systems
+**Current**: App/sender name may be "FundrBolt" in external systems
 
 **Decision**:
 
 - Update sender name in email templates
 - Update Stripe metadata/descriptions (if applicable)
 - Notify webhook subscribers of potential changes
-- No API endpoint changes required (already planned as Fundrbolt-only)
+- No API endpoint changes required (already planned as FundrBolt-only)
 
 **Impact**: Minimal; mostly text updates
 
@@ -218,7 +218,7 @@ This document consolidates findings on Fundrbolt references across the codebase,
 - [ ] Frontend admin: Rename folder `fundrbolt-admin` → `fundrbolt-admin`, update `package.json`
 - [ ] Frontend PWAs: Update `package.json`, manifest files, UI strings
 - [ ] Shared: Update any shared package names/descriptions
-- [ ] Search & replace across all source files for "Fundrbolt" → "Fundrbolt", "fundrbolt" → "fundrbolt"
+- [ ] Search & replace across all source files for "FundrBolt" → "FundrBolt", "fundrbolt" → "fundrbolt"
 
 ### Phase 2: Infrastructure
 
@@ -264,10 +264,10 @@ This document consolidates findings on Fundrbolt references across the codebase,
 
 ## Best Practices Applied
 
-1. **No Backward Compatibility**: Direct cutover; no Fundrbolt aliases maintained (per spec clarification)
+1. **No Backward Compatibility**: Direct cutover; no FundrBolt aliases maintained (per spec clarification)
 2. **Atomic Commits**: Each rename phase packaged as logical commit(s)
 3. **Minimal Data Risk**: No schema changes; only string/config updates
-4. **Safe Infrastructure**: New Bicep resources with Fundrbolt names; old resources can be retired post-launch
+4. **Safe Infrastructure**: New Bicep resources with FundrBolt names; old resources can be retired post-launch
 5. **Testing First**: Dry run on dev/staging before production deployment
 
 ---
@@ -286,4 +286,4 @@ This document consolidates findings on Fundrbolt references across the codebase,
 
 ## Conclusion
 
-All Fundrbolt references are textual/configurational; no algorithmic logic depends on the name. Rename is straightforward and low-risk. Execution can proceed in phases (code → infrastructure → docs → testing) with dry runs at each stage.
+All FundrBolt references are textual/configurational; no algorithmic logic depends on the name. Rename is straightforward and low-risk. Execution can proceed in phases (code → infrastructure → docs → testing) with dry runs at each stage.

@@ -19,10 +19,10 @@ export const Navigation = () => {
       <div className="container">
         <div className="nav-wrapper">
           {/* Logo */}
-          <Link to="/" className="nav-logo" aria-label="Fundrbolt Home">
+          <Link to="/" className="nav-logo" aria-label="FundrBolt Home">
             <img
               src={LogoNavyGold}
-              alt="Fundrbolt"
+              alt="FundrBolt"
               className="logo-image"
               style={{ height: '32px', width: 'auto' }}
             />

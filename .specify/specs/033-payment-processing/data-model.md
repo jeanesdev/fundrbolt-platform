@@ -42,7 +42,7 @@ class PaymentGatewayCredential(Base, UUIDMixin, TimestampMixin):
 
 ### 1.2 `payment_profiles`
 
-Tokenized saved card references ("vault tokens") held by Deluxe. Fundrbolt stores only display
+Tokenized saved card references ("vault tokens") held by Deluxe. FundrBolt stores only display
 metadata (last4, brand, expiry) and the opaque `gateway_profile_id`. Scoped per donor per NPO
 (one NPO's vault is distinct from another's — FR-005).
 

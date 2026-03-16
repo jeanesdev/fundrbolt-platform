@@ -1,4 +1,4 @@
-# Phase 1: Data Model & Entity Changes - Fundrbolt to Fundrbolt Rename
+# Phase 1: Data Model & Entity Changes - FundrBolt to FundrBolt Rename
 
 **Date**: 2025-12-17
 **Feature**: 013-fundrbolt-to-fundrbolt
@@ -14,7 +14,7 @@ This document captures any changes to data entities, database schemas, and confi
 
 ### No Schema Changes
 
-**Rationale**: The PostgreSQL database does not store the product name "Fundrbolt" or "Fundrbolt" in any data rows or schema. The product name is external branding applied to UI, documentation, and configuration only.
+**Rationale**: The PostgreSQL database does not store the product name "FundrBolt" or "FundrBolt" in any data rows or schema. The product name is external branding applied to UI, documentation, and configuration only.
 
 **Impact**: Zero risk of data corruption or loss.
 
@@ -28,10 +28,10 @@ This document captures any changes to data entities, database schemas, and confi
 
 | Field | Current | Updated | Notes |
 |-------|---------|---------|-------|
-| `PROJECT_NAME` | `"Fundrbolt Platform"` | `"Fundrbolt Platform"` | Used in OpenAPI docs and email templates |
-| `PROJECT_DESCRIPTION` | `"Fundrbolt Fundraising..."` | `"Fundrbolt Fundraising..."` | OpenAPI, API responses |
+| `PROJECT_NAME` | `"FundrBolt Platform"` | `"FundrBolt Platform"` | Used in OpenAPI docs and email templates |
+| `PROJECT_DESCRIPTION` | `"FundrBolt Fundraising..."` | `"FundrBolt Fundraising..."` | OpenAPI, API responses |
 | `CONTACT_EMAIL` | `support@fundrbolt.com` | `support@fundrbolt.com` | Support contact in API docs |
-| `APP_NAME` | (if exists) | Updated to `"Fundrbolt"` | Used in logging, notifications |
+| `APP_NAME` | (if exists) | Updated to `"FundrBolt"` | Used in logging, notifications |
 
 **Handling**: Direct string replacement in config file; no migration needed.
 
@@ -44,9 +44,9 @@ This document captures any changes to data entities, database schemas, and confi
 **Location**: Auto-generated from FastAPI `FastAPI(title=..., description=...)`
 
 **Changes**:
-- Update `title` parameter: `"Fundrbolt Platform API"` → `"Fundrbolt Platform API"`
-- Update `description`: Replace Fundrbolt branding
-- Update `contact.name`, `contact.email` to Fundrbolt support
+- Update `title` parameter: `"FundrBolt Platform API"` → `"FundrBolt Platform API"`
+- Update `description`: Replace FundrBolt branding
+- Update `contact.name`, `contact.email` to FundrBolt support
 
 **Handling**: Update `app/main.py` FastAPI instantiation.
 
@@ -60,9 +60,9 @@ This document captures any changes to data entities, database schemas, and confi
 
 ```json
 {
-  "name": "Fundrbolt Admin",              // was "Fundrbolt Admin"
-  "short_name": "Fundrbolt",              // was "Fundrbolt"
-  "description": "Fundrbolt fundraising...", // update branding
+  "name": "FundrBolt Admin",              // was "FundrBolt Admin"
+  "short_name": "FundrBolt",              // was "FundrBolt"
+  "description": "FundrBolt fundraising...", // update branding
   "start_url": "/",
   "icons": [...]                          // logos updated separately
 }
@@ -77,10 +77,10 @@ This document captures any changes to data entities, database schemas, and confi
 **Location**: Backend email service templates (SendGrid, Azure Communication Services)
 
 **Changes**:
-- Sender name: `"Fundrbolt Support"` → `"Fundrbolt Support"`
-- Subject lines: Remove Fundrbolt branding, add Fundrbolt
+- Sender name: `"FundrBolt Support"` → `"FundrBolt Support"`
+- Subject lines: Remove FundrBolt branding, add FundrBolt
 - Body text: Brand name updates
-- Logo/branding assets: Point to Fundrbolt logos (URL updates)
+- Logo/branding assets: Point to FundrBolt logos (URL updates)
 
 **Handling**: Update template text and image references; no schema changes.
 
@@ -93,7 +93,7 @@ This document captures any changes to data entities, database schemas, and confi
 **If future changes needed**: Would create Alembic migration to update config tables, e.g.:
 ```python
 def upgrade():
-    # UPDATE config SET value = 'Fundrbolt' WHERE key = 'project_name'
+    # UPDATE config SET value = 'FundrBolt' WHERE key = 'project_name'
     pass
 ```
 
@@ -108,7 +108,7 @@ def upgrade():
 **Examples**:
 - `GET /api/v1/events` — unchanged
 - `POST /api/v1/auth/login` — unchanged
-- Response headers: `X-Powered-By: Fundrbolt` → `X-Powered-By: Fundrbolt`
+- Response headers: `X-Powered-By: FundrBolt` → `X-Powered-By: FundrBolt`
 
 **Handling**: Update any hardcoded response headers or metadata in middleware.
 
@@ -118,13 +118,13 @@ def upgrade():
 
 **Current**:
 ```
-X-Powered-By: Fundrbolt Platform
+X-Powered-By: FundrBolt Platform
 X-API-Version: 1.0
 ```
 
 **Updated**:
 ```
-X-Powered-By: Fundrbolt Platform
+X-Powered-By: FundrBolt Platform
 X-API-Version: 1.0
 ```
 
@@ -152,9 +152,9 @@ These entities remain structurally unchanged; only human-readable metadata updat
 ### Environment Variables
 
 **Updated**:
-- `PROJECT_NAME=Fundrbolt`
+- `PROJECT_NAME=FundrBolt`
 - `SUPPORT_EMAIL=support@fundrbolt.com`
-- `APP_DESCRIPTION=Fundrbolt fundraising platform...`
+- `APP_DESCRIPTION=FundrBolt fundraising platform...`
 
 **Handling**: Update `.env.example` and deployment configs.
 

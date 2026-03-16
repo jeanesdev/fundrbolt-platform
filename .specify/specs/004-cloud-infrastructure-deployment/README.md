@@ -8,7 +8,7 @@
 
 ## Overview
 
-Complete cloud infrastructure setup and deployment strategy for the Fundrbolt Platform, including:
+Complete cloud infrastructure setup and deployment strategy for the FundrBolt Platform, including:
 
 - ✅ Azure resource provisioning and configuration (14 Bicep modules)
 - ✅ Domain acquisition and DNS setup (fundrbolt.com purchased and configured)

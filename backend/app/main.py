@@ -4,6 +4,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import socketio as socketio_lib
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,6 +34,7 @@ from app.middleware.metrics import MetricsMiddleware
 from app.middleware.powered_by import PoweredByMiddleware
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.slug_validator import SlugValidationMiddleware
+from app.websocket.notification_ws import sio
 
 # Setup logging
 setup_logging()
@@ -57,7 +59,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     # Startup
     logger.info(
-        "Starting Fundrbolt Platform API",
+        "Starting FundrBolt Platform API",
         extra={
             "environment": settings.environment,
             "debug": settings.debug,
@@ -75,7 +77,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
     # Shutdown
-    logger.info("Shutting down Fundrbolt Platform API")
+    logger.info("Shutting down FundrBolt Platform API")
 
     # Close database engine
     await async_engine.dispose()
@@ -92,14 +94,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 # Create FastAPI app
 app = FastAPI(
     title=settings.project_name,
-    description="Fundrbolt Platform API for nonprofit auction management",
+    description="FundrBolt Platform API for nonprofit auction management",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
     lifespan=lifespan,
     contact={
-        "name": "Fundrbolt Platform Support",
+        "name": "FundrBolt Platform Support",
         "email": "support@fundrbolt.com",
     },
     license_info={
@@ -121,6 +123,12 @@ app = FastAPI(
             "description": "Public NPO onboarding wizard (no auth required)",
         },
         {"name": "admin-seating", "description": "Admin seating management and configuration"},
+        {"name": "notifications", "description": "Donor notification management and delivery"},
+        {"name": "push-notifications", "description": "Web Push subscription management"},
+        {
+            "name": "admin-notifications",
+            "description": "Admin custom notification campaigns",
+        },
         {"name": "health", "description": "Health check and monitoring"},
         {"name": "metrics", "description": "Prometheus metrics for monitoring"},
         {"name": "root", "description": "Root API information"},
@@ -183,9 +191,13 @@ async def root() -> JSONResponse:
     """
     return JSONResponse(
         content={
-            "message": "Fundrbolt Platform API",
+            "message": "FundrBolt Platform API",
             "version": "1.0.0",
             "docs": "/docs",
             "health": "/health",
         }
     )
+
+
+# Wrap FastAPI with Socket.IO ASGI app for WebSocket support
+combined_app = socketio_lib.ASGIApp(sio, other_asgi_app=app)

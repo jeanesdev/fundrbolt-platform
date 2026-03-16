@@ -10,7 +10,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { updateStep } from '@/lib/api/onboarding'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -64,16 +63,15 @@ const formSchema = z.object({
   event_type: z.string().min(1, 'Please select an event type'),
 })
 
-type FormValues = z.infer<typeof formSchema>
+export type FirstEventFormValues = z.infer<typeof formSchema>
 
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
 interface StepFirstEventProps {
-  sessionToken: string
-  initialValues?: Partial<FormValues>
-  onNext: (values: FormValues | null) => void
+  initialValues?: Partial<FirstEventFormValues>
+  onNext: (values: FirstEventFormValues | null) => Promise<void> | void
   onBack?: () => void
 }
 
@@ -82,7 +80,6 @@ interface StepFirstEventProps {
 // ---------------------------------------------------------------------------
 
 export function StepFirstEvent({
-  sessionToken,
   initialValues,
   onNext,
   onBack,
@@ -90,7 +87,7 @@ export function StepFirstEvent({
   const [isLoading, setIsLoading] = useState(false)
   const [isSkipping, setIsSkipping] = useState(false)
 
-  const form = useForm<FormValues>({
+  const form = useForm<FirstEventFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       event_name: initialValues?.event_name ?? '',
@@ -99,16 +96,16 @@ export function StepFirstEvent({
     },
   })
 
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (values: FirstEventFormValues) => {
     setIsLoading(true)
     try {
-      await updateStep(sessionToken, 'first_event', values)
-      onNext(values)
+      await onNext(values)
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { detail?: string } } }).response?.data
-          ?.detail ?? 'Failed to save. Please try again.'
+          ?.detail ?? 'Failed to submit. Please try again.'
       toast.error(msg)
+    } finally {
       setIsLoading(false)
     }
   }
@@ -116,13 +113,14 @@ export function StepFirstEvent({
   const handleSkip = async () => {
     setIsSkipping(true)
     try {
-      // Mark step as skipped (empty payload)
-      await updateStep(sessionToken, 'first_event', { skipped: true })
-    } catch {
-      // Non-fatal; proceed anyway
+      await onNext(null)
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { detail?: string } } }).response?.data
+          ?.detail ?? 'Failed to submit. Please try again.'
+      toast.error(msg)
     } finally {
       setIsSkipping(false)
-      onNext(null)
     }
   }
 
@@ -217,7 +215,7 @@ export function StepFirstEvent({
               {isLoading ? (
                 <>
                   <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                  Saving…
+                  Submitting…
                 </>
               ) : (
                 'Continue'

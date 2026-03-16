@@ -1,4 +1,4 @@
-// Main Bicep orchestration template for Fundrbolt Platform
+// Main Bicep orchestration template for FundrBolt Platform
 targetScope = 'subscription'
 
 @description('Environment name')

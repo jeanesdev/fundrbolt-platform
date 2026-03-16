@@ -228,13 +228,13 @@ def decode_token(token: str, verify_expiration: bool = True) -> dict[str, Any]:
         except JWTError:
             # Handle invalid token
     """
-    options: jwt.types.Options | None = {"verify_exp": False} if not verify_expiration else None
+    options: dict[str, Any] = {"verify_exp": verify_expiration} if not verify_expiration else {}
 
     return jwt.decode(
         token,
         settings.jwt_secret_key,
         algorithms=[settings.jwt_algorithm],
-        options=options,
+        options=options,  # type: ignore[arg-type]
     )
 
 
@@ -289,3 +289,14 @@ def generate_verification_token() -> str:
         # Store in Redis with TTL
     """
     return secrets.token_urlsafe(32)
+
+
+def generate_verification_otp() -> str:
+    """Generate a 6-digit numeric OTP for email verification.
+
+    Cryptographically secure — uses secrets.randbelow rather than random.
+
+    Returns:
+        str: Zero-padded 6-digit string, e.g. "048213"
+    """
+    return str(secrets.randbelow(1_000_000)).zfill(6)

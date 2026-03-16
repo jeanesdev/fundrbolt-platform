@@ -4,7 +4,7 @@ info:
   description: API endpoints for the donor PWA event homepage feature
   version: 1.0.0
   contact:
-    name: Fundrbolt Platform
+    name: FundrBolt Platform
     email: dev@fundrbolt.com
 
 servers:

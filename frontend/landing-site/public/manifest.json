@@ -1,12 +1,12 @@
 {
-  "name": "Fundrbolt",
-  "short_name": "Fundrbolt",
+  "name": "FundrBolt",
+  "short_name": "FundrBolt",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0f172a",
-  "description": "Fundrbolt - Fundraising platform for nonprofits, donors, and events.",
+  "description": "FundrBolt - Fundraising platform for nonprofits, donors, and events.",
   "icons": [
     {
       "src": "/icon.svg",

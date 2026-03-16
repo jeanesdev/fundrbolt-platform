@@ -15,8 +15,11 @@ if TYPE_CHECKING:
     from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
     from app.models.donation import Donation
     from app.models.event_registration import EventRegistration
+    from app.models.notification import Notification
+    from app.models.notification_preference import NotificationPreference
     from app.models.payment_profile import PaymentProfile
     from app.models.payment_transaction import PaymentTransaction
+    from app.models.push_subscription import PushSubscription
     from app.models.registration_guest import RegistrationGuest
     from app.models.role import Role
     from app.models.session import Session
@@ -27,7 +30,7 @@ class User(Base, UUIDMixin, TimestampMixin):
     """User model representing any person using the platform.
 
     Supports five role types:
-    - super_admin: Fundrbolt platform staff with full access
+    - super_admin: FundrBolt platform staff with full access
     - npo_admin: Full management within assigned NPO(s)
     - event_coordinator: Event/auction management within NPO
     - staff: Donor registration/check-in within assigned events
@@ -70,6 +73,21 @@ class User(Base, UUIDMixin, TimestampMixin):
     state: Mapped[str | None] = mapped_column(String(100), nullable=True)
     postal_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
     country: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    # Communications Email (optional second email for outbound mail)
+    # When set AND verified, all non-auth emails (event notifications, receipts)
+    # are sent here instead of `email`.  Login always uses `email`.
+    communications_email: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        index=True,
+    )
+    communications_email_verified: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+    )
 
     # Profile Picture
     profile_picture_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -167,6 +185,22 @@ class User(Base, UUIDMixin, TimestampMixin):
         "SocialIdentityLink",
         back_populates="user",
     )
+    notifications: Mapped[list["Notification"]] = relationship(
+        "Notification",
+        back_populates="user",
+        foreign_keys="Notification.user_id",
+        cascade="all, delete-orphan",
+    )
+    notification_preferences: Mapped[list["NotificationPreference"]] = relationship(
+        "NotificationPreference",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    push_subscriptions: Mapped[list["PushSubscription"]] = relationship(
+        "PushSubscription",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
     # Feature 033: Payment processing relationships
     payment_profiles: Mapped[list["PaymentProfile"]] = relationship(
         "PaymentProfile",
@@ -216,6 +250,17 @@ class User(Base, UUIDMixin, TimestampMixin):
             First name and last name concatenated
         """
         return f"{self.first_name} {self.last_name}"
+
+    @property
+    def contact_email(self) -> str:
+        """Email address to use for outbound communications.
+
+        Returns communications_email if set AND verified, otherwise falls back
+        to the sign-in email.  Use this for event notifications, receipts, etc.
+        """
+        if self.communications_email and self.communications_email_verified:
+            return self.communications_email
+        return self.email
 
     def __repr__(self) -> str:
         """Return string representation of user."""

@@ -176,7 +176,7 @@ DELETE https://api.deluxe.com/v1/profiles/{profile_id}
 Authorization: Basic base64(merchant_id:api_key)
 ```
 
-**List profiles for a customer** (optional — Fundrbolt keeps its own `payment_profiles` table, so
+**List profiles for a customer** (optional — FundrBolt keeps its own `payment_profiles` table, so
 this call is only needed for reconciliation or audit):
 ```
 GET https://api.deluxe.com/v1/profiles?customer_reference=user_{user_id}

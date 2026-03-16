@@ -403,7 +403,7 @@ async def submit_npo_application(
     try:
         # Send confirmation to NPO creator
         await email_service.send_application_submitted_email(
-            to_email=current_user.email,
+            to_email=current_user.contact_email,
             npo_name=npo.name,
             applicant_name=creator_name,
         )

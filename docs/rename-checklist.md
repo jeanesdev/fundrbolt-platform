@@ -1,9 +1,9 @@
-# Fundrbolt Rename Checklist
+# FundrBolt Rename Checklist
 
 Generated: 2025-12-18
-Source: Derived from research.md plus fresh grep counts of "Fundrbolt" across the monorepo.
+Source: Derived from research.md plus fresh grep counts of "FundrBolt" across the monorepo.
 
-## Current Fundrbolt Reference Counts (pre-rename)
+## Current FundrBolt Reference Counts (pre-rename)
 - Code: 2,867 (backend 2,715; frontend/fundrbolt-admin 48; frontend/donor-pwa 62; frontend/landing-site 39; frontend/shared 3)
 - Infrastructure: 247 (infrastructure/*)
 - Documentation: 1,456 (docs 560; .specify 896)
@@ -18,8 +18,8 @@ grep -R -i "fundrbolt" <path> --exclude-dir=.git --exclude-dir=node_modules --ex
 ```
 
 ## Hotspots
-- backend/: High density of Fundrbolt strings in config, API responses, middleware, tests.
-- infrastructure/: Resource names, parameters, and scripts carry Fundrbolt identifiers.
+- backend/: High density of FundrBolt strings in config, API responses, middleware, tests.
+- infrastructure/: Resource names, parameters, and scripts carry FundrBolt identifiers.
 - docs/ and .specify/: Specification and documentation contain legacy brand text; update after implementation.
 - .github/: Workflow names, artifact labels, and repository references.
 

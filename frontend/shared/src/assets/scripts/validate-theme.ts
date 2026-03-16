@@ -3,7 +3,7 @@
 /**
  * Theme Validation Script
  *
- * Validates the Fundrbolt theme configuration to ensure:
+ * Validates the FundrBolt theme configuration to ensure:
  * - All color values are valid hex codes
  * - Required color fields are present
  * - Typography scale is complete
@@ -239,7 +239,7 @@ function validateConstAssertions() {
 // Main validation
 
 function main() {
-  log('\n' + COLORS.bold + '🎨 Fundrbolt Theme Validation' + COLORS.reset);
+  log('\n' + COLORS.bold + '🎨 FundrBolt Theme Validation' + COLORS.reset);
   log('═'.repeat(40));
 
   validateColors();
