@@ -81,5 +81,5 @@ async def test_send_npo_application_submitted_admin_notification_uses_new_fallba
     service._send_email_with_retry.assert_awaited_once()  # type: ignore[attr-defined]
     kwargs = service._send_email_with_retry.await_args.kwargs  # type: ignore[attr-defined]
 
-    assert kwargs["to_email"] == "npo_approvals@fundrbolt.com"
+    assert kwargs["to_email"] == "npo_applications@fundrbolt.com"
     assert kwargs["email_type"] == "npo_onboarding_admin_notification"

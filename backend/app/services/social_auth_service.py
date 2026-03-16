@@ -739,6 +739,21 @@ class SocialAuthService:
         return f"{auth_base}?{urllib.parse.urlencode(params)}"
 
     @staticmethod
+    def _simulate_provider_claims(provider: ProviderKey, code: str) -> dict[str, Any]:
+        """Return minimal simulated provider claims for testing purposes.
+
+        Mirrors the fallback path in _exchange_code_for_claims. Only fields
+        in ALLOWED_PROVIDER_CLAIMS are included; the sub is prefixed with the
+        provider key so different providers produce distinct identifiers.
+        """
+        return {
+            "sub": f"{provider.value}_{code[:8]}",
+            "email": f"social.user.{code[:6]}@example.com",
+            "email_verified": True,
+            "name": "Social User",
+        }
+
+    @staticmethod
     def _get_scopes(provider: ProviderKey) -> str:
         """Return OAuth2 scopes per provider (minimal for data minimization)."""
         scopes = {
