@@ -2,7 +2,7 @@
 
 import secrets
 from datetime import datetime, timedelta
-from typing import Any, cast
+from typing import Any
 
 import bcrypt
 import jwt
@@ -228,16 +228,13 @@ def decode_token(token: str, verify_expiration: bool = True) -> dict[str, Any]:
         except JWTError:
             # Handle invalid token
     """
-    options = {"verify_exp": verify_expiration} if not verify_expiration else {}
+    options: jwt.types.Options | None = {"verify_exp": False} if not verify_expiration else None
 
-    return cast(
-        dict[str, Any],
-        jwt.decode(
-            token,
-            settings.jwt_secret_key,
-            algorithms=[settings.jwt_algorithm],
-            options=options,
-        ),
+    return jwt.decode(
+        token,
+        settings.jwt_secret_key,
+        algorithms=[settings.jwt_algorithm],
+        options=options,
     )
 
 

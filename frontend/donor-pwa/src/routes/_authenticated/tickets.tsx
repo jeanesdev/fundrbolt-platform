@@ -33,6 +33,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { TicketAssignmentCard } from '@/components/tickets/TicketAssignmentCard'
 import { TicketAssignmentForm } from '@/components/tickets/TicketAssignmentForm'
+import { SelfRegistrationFlow } from '@/features/tickets/SelfRegistrationFlow'
 
 export const Route = createFileRoute('/_authenticated/tickets')({
   component: TicketInventoryPage,
@@ -46,6 +47,10 @@ function TicketInventoryPage() {
     null
   )
   const [openSections, setOpenSections] = useState<Set<string>>(new Set())
+  const [selfRegTicket, setSelfRegTicket] = useState<{
+    id: string
+    ticketNumber: number
+  } | null>(null)
 
   const {
     data: inventory,
@@ -151,11 +156,16 @@ function TicketInventoryPage() {
           <TicketCheck className='h-6 w-6' />
           My Tickets
         </h1>
-        <div className='text-muted-foreground flex gap-2 text-sm'>
-          <Badge variant='outline'>{inventory.total_tickets} total</Badge>
-          <Badge variant='secondary'>
-            {inventory.total_unassigned} unassigned
-          </Badge>
+        <div className='flex items-center gap-2'>
+          <div className='text-muted-foreground flex gap-2 text-sm'>
+            <Badge variant='outline'>{inventory.total_tickets} total</Badge>
+            <Badge variant='secondary'>
+              {inventory.total_unassigned} unassigned
+            </Badge>
+          </div>
+          <Button asChild variant='outline' size='sm'>
+            <Link to='/tickets/history'>History</Link>
+          </Button>
         </div>
       </div>
 
@@ -241,6 +251,18 @@ function TicketInventoryPage() {
                                 <div className='flex gap-2'>
                                   <Button
                                     size='sm'
+                                    variant='default'
+                                    onClick={() => {
+                                      setSelfRegTicket({
+                                        id: ticket.id,
+                                        ticketNumber: ticket.ticket_number,
+                                      })
+                                    }}
+                                  >
+                                    Register Myself
+                                  </Button>
+                                  <Button
+                                    size='sm'
                                     variant='outline'
                                     onClick={() => {
                                       if (!user) return
@@ -248,7 +270,7 @@ function TicketInventoryPage() {
                                     }}
                                   >
                                     <UserPlus className='mr-1 h-3 w-3' />
-                                    Assign
+                                    Assign Guest
                                   </Button>
                                 </div>
                               </CardContent>
@@ -283,6 +305,19 @@ function TicketInventoryPage() {
           </Card>
         </Collapsible>
       ))}
+
+      {selfRegTicket && user && (
+        <SelfRegistrationFlow
+          ticketId={selfRegTicket.id}
+          ticketNumber={selfRegTicket.ticketNumber}
+          userName={`${user.first_name} ${user.last_name}`.trim()}
+          userEmail={user.email}
+          open={!!selfRegTicket}
+          onOpenChange={(open) => {
+            if (!open) setSelfRegTicket(null)
+          }}
+        />
+      )}
     </div>
   )
 }
