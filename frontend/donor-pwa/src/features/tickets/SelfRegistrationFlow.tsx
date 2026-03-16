@@ -2,11 +2,6 @@
  * SelfRegistrationFlow component — assigns a ticket to self and registers
  * the current user as an attendee. Multi-step inline flow.
  */
-import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2, UserCheck } from 'lucide-react'
-import { toast } from 'sonner'
-import { assignTicket, selfRegister } from '@/lib/api/ticket-assignments'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,6 +14,11 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { assignTicket, selfRegister } from '@/lib/api/ticket-assignments'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Loader2, UserCheck } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface SelfRegistrationFlowProps {
   ticketId: string

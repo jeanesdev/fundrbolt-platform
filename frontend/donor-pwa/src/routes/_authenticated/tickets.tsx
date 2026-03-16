@@ -2,7 +2,26 @@
  * Ticket Inventory Page — /_authenticated/tickets
  * Shows all tickets the user has purchased across events.
  */
-import { useState } from 'react'
+import { TicketAssignmentCard } from '@/components/tickets/TicketAssignmentCard'
+import { TicketAssignmentForm } from '@/components/tickets/TicketAssignmentForm'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import { Skeleton } from '@/components/ui/skeleton'
+import { SelfRegistrationFlow } from '@/features/tickets/SelfRegistrationFlow'
+import { cancelAssignment } from '@/lib/api/ticket-assignments'
+import { resendInvitation, sendInvitation } from '@/lib/api/ticket-invitations'
+import {
+  getMyInventory,
+  type EventTicketSummary,
+  type TicketDetail,
+} from '@/lib/api/ticket-purchases'
+import { useAuthStore } from '@/stores/auth-store'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
@@ -13,27 +32,8 @@ import {
   TicketCheck,
   UserPlus,
 } from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { cancelAssignment } from '@/lib/api/ticket-assignments'
-import { sendInvitation, resendInvitation } from '@/lib/api/ticket-invitations'
-import {
-  getMyInventory,
-  type EventTicketSummary,
-  type TicketDetail,
-} from '@/lib/api/ticket-purchases'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
-import { Skeleton } from '@/components/ui/skeleton'
-import { TicketAssignmentCard } from '@/components/tickets/TicketAssignmentCard'
-import { TicketAssignmentForm } from '@/components/tickets/TicketAssignmentForm'
-import { SelfRegistrationFlow } from '@/features/tickets/SelfRegistrationFlow'
 
 export const Route = createFileRoute('/_authenticated/tickets')({
   component: TicketInventoryPage,
@@ -193,9 +193,8 @@ function TicketInventoryPage() {
                   <div className='flex items-center gap-2'>
                     <Badge variant='outline'>{evt.total_tickets} tickets</Badge>
                     <ChevronDown
-                      className={`h-5 w-5 transition-transform ${
-                        openSections.has(evt.event_id) ? 'rotate-180' : ''
-                      }`}
+                      className={`h-5 w-5 transition-transform ${openSections.has(evt.event_id) ? 'rotate-180' : ''
+                        }`}
                     />
                   </div>
                 </div>

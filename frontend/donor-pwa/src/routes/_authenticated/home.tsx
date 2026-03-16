@@ -1,7 +1,7 @@
+import { useEventContext } from '@/hooks/use-event-context'
+import { getMyInventory } from '@/lib/api/ticket-purchases'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, Navigate } from '@tanstack/react-router'
-import { getMyInventory } from '@/lib/api/ticket-purchases'
-import { useEventContext } from '@/hooks/use-event-context'
 
 /**
  * Donor PWA Home Page
