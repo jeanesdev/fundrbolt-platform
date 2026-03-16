@@ -1,10 +1,4 @@
-import { AuthLayout } from '@/features/auth/auth-layout'
-import { donorSocialAuthApi } from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
-import { useNavigate, useSearch } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import type { SocialAuthProvider } from '@fundrbolt/shared/types'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -12,7 +6,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { AuthLayout } from '@/features/auth/auth-layout'
+import { donorSocialAuthApi } from '@/lib/axios'
+import { useAuthStore } from '@/stores/auth-store'
+import type { SocialAuthProvider } from '@fundrbolt/shared/types'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import { Loader2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 type PendingInfo = {
   reason: string
@@ -34,10 +34,14 @@ export function SocialCallback() {
 
     const handleCallback = async () => {
       try {
-        const provider = state.split(':')[0] as SocialAuthProvider
+        const provider = (sessionStorage.getItem('oauth_provider') ?? state.split(':')[0]) as SocialAuthProvider
+        const attemptId = sessionStorage.getItem('oauth_attempt_id') ?? undefined
+        sessionStorage.removeItem('oauth_provider')
+        sessionStorage.removeItem('oauth_attempt_id')
         const result = await donorSocialAuthApi.callback(provider, {
           code,
           state,
+          attempt_id: attemptId,
         })
 
         if (result.status === 'authenticated') {

@@ -21,7 +21,7 @@ from app.core.metrics import (
     SOCIAL_AUTH_STARTS_TOTAL,
     SOCIAL_AUTH_SUCCESS_TOTAL,
 )
-from app.core.security import create_access_token, create_refresh_token
+from app.core.security import create_access_token, create_refresh_token, decode_token
 from app.models.social_auth_attempt import SocialAuthAttempt
 from app.models.social_auth_challenge import (
     AdminStepUpChallenge,
@@ -40,6 +40,7 @@ from app.schemas.social_auth import (
     SocialProviderListResponse,
     SocialStartResponse,
 )
+from app.services.session_service import SessionService
 
 logger = get_logger(__name__)
 
@@ -504,6 +505,16 @@ class SocialAuthService:
         """Issue tokens and mark attempt as successful."""
         access_token = create_access_token(data={"sub": str(user.id)})
         refresh_token = create_refresh_token(data={"sub": str(user.id)})
+
+        # Create a session in Redis so the refresh token can be used
+        refresh_payload = decode_token(refresh_token)
+        refresh_jti = refresh_payload["jti"]
+        await SessionService.create_session(
+            db=db,
+            user_id=user.id,
+            refresh_token_jti=refresh_jti,
+            device_info="social_auth",
+        )
 
         attempt.result = "success"
         attempt.user_id = user.id

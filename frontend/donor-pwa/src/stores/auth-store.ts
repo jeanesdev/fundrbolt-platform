@@ -303,7 +303,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       isAuthenticated: true,
       isLoading: false,
     })
-    // Restore full user data via refresh
-    get().restoreUserFromRefreshToken()
+    // User data will be restored by AuthenticatedLayout on mount via restoreUserFromRefreshToken()
   },
 }))
