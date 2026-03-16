@@ -1,4 +1,3 @@
-import { SessionExpiryWarning } from '@/components/SessionExpiryWarning'
 import { handleServerError } from '@/lib/handle-server-error'
 import { useAuthStore } from '@/stores/auth-store'
 import { useGlobalInputSanitizer } from '@fundrbolt/shared/hooks'
@@ -98,12 +97,7 @@ function AutoLogin({ children }: { children: React.ReactNode }) {
     initializeFromStorage()
   }, [initializeFromStorage])
 
-  return (
-    <>
-      {children}
-      <SessionExpiryWarning />
-    </>
-  )
+  return <>{children}</>
 }
 
 // Render the app

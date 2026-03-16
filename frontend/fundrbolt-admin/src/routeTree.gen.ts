@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as DonorPortalRedirectRouteImport } from './routes/donor-portal-redirect'
 import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
@@ -29,6 +30,7 @@ import { Route as authPasswordResetConfirmRouteImport } from './routes/(auth)/pa
 import { Route as authPasswordResetRouteImport } from './routes/(auth)/password-reset'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
+import { Route as authCompleteProfileRouteImport } from './routes/(auth)/complete-profile'
 import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_authenticated/route'
 import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
@@ -80,6 +82,11 @@ import { Route as AuthenticatedEventsEventIdTicketsPackageIdEditRouteImport } fr
 import { Route as AuthenticatedEventsEventIdAuctionItemsItemIdEngagementRouteImport } from './routes/_authenticated/events/$eventId/auction-items/$itemId/engagement'
 import { Route as AuthenticatedEventsEventIdAuctionItemsItemIdEditRouteImport } from './routes/_authenticated/events/$eventId/auction-items/$itemId/edit'
 
+const DonorPortalRedirectRoute = DonorPortalRedirectRouteImport.update({
+  id: '/donor-portal-redirect',
+  path: '/donor-portal-redirect',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
   id: '/clerk',
   path: '/clerk',
@@ -178,6 +185,11 @@ const authOtpRoute = authOtpRouteImport.update({
 const authForgotPasswordRoute = authForgotPasswordRouteImport.update({
   id: '/(auth)/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authCompleteProfileRoute = authCompleteProfileRouteImport.update({
+  id: '/(auth)/complete-profile',
+  path: '/complete-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClerkAuthenticatedRouteRoute = ClerkAuthenticatedRouteRouteImport.update({
@@ -474,8 +486,10 @@ const AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/donor-portal-redirect': typeof DonorPortalRedirectRoute
   '/events': typeof AuthenticatedEventsRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
+  '/complete-profile': typeof authCompleteProfileRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/password-reset': typeof authPasswordResetRoute
@@ -542,6 +556,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/donor-portal-redirect': typeof DonorPortalRedirectRoute
+  '/complete-profile': typeof authCompleteProfileRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/password-reset': typeof authPasswordResetRoute
@@ -608,10 +624,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/clerk': typeof ClerkRouteRouteWithChildren
+  '/donor-portal-redirect': typeof DonorPortalRedirectRoute
   '/_authenticated/events': typeof AuthenticatedEventsRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/clerk/(auth)': typeof ClerkauthRouteRouteWithChildren
   '/clerk/_authenticated': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/(auth)/complete-profile': typeof authCompleteProfileRoute
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/otp': typeof authOtpRoute
   '/(auth)/password-reset': typeof authPasswordResetRoute
@@ -682,8 +700,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/clerk'
+    | '/donor-portal-redirect'
     | '/events'
     | '/settings'
+    | '/complete-profile'
     | '/forgot-password'
     | '/otp'
     | '/password-reset'
@@ -750,6 +770,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/clerk'
+    | '/donor-portal-redirect'
+    | '/complete-profile'
     | '/forgot-password'
     | '/otp'
     | '/password-reset'
@@ -815,10 +837,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/clerk'
+    | '/donor-portal-redirect'
     | '/_authenticated/events'
     | '/_authenticated/settings'
     | '/clerk/(auth)'
     | '/clerk/_authenticated'
+    | '/(auth)/complete-profile'
     | '/(auth)/forgot-password'
     | '/(auth)/otp'
     | '/(auth)/password-reset'
@@ -888,6 +912,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ClerkRouteRoute: typeof ClerkRouteRouteWithChildren
+  DonorPortalRedirectRoute: typeof DonorPortalRedirectRoute
+  authCompleteProfileRoute: typeof authCompleteProfileRoute
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
   authPasswordResetRoute: typeof authPasswordResetRoute
@@ -910,6 +936,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/donor-portal-redirect': {
+      id: '/donor-portal-redirect'
+      path: '/donor-portal-redirect'
+      fullPath: '/donor-portal-redirect'
+      preLoaderRoute: typeof DonorPortalRedirectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/clerk': {
       id: '/clerk'
       path: '/clerk'
@@ -1048,6 +1081,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof authForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/complete-profile': {
+      id: '/(auth)/complete-profile'
+      path: '/complete-profile'
+      fullPath: '/complete-profile'
+      preLoaderRoute: typeof authCompleteProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clerk/_authenticated': {
@@ -1633,6 +1673,8 @@ const ClerkRouteRouteWithChildren = ClerkRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ClerkRouteRoute: ClerkRouteRouteWithChildren,
+  DonorPortalRedirectRoute: DonorPortalRedirectRoute,
+  authCompleteProfileRoute: authCompleteProfileRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
   authPasswordResetRoute: authPasswordResetRoute,

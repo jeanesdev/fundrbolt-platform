@@ -1,6 +1,6 @@
 # Security Checklist
 
-Comprehensive security checklist for production deployments of the Fundrbolt platform.
+Comprehensive security checklist for production deployments of the FundrBolt platform.
 
 ## 1. Secrets Management
 

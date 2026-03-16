@@ -158,10 +158,41 @@ class EmailVerifyRequest(BaseModel):
     token: str = Field(..., description="Email verification token from registration email")
 
 
+class EmailVerifyCodeRequest(BaseModel):
+    """Schema for OTP-based email verification.
+
+    Business Rules:
+    - email must match an unverified account
+    - code must be exactly 6 digits
+    - Code expires after 24h (same TTL as the link token)
+    - session_token, if provided, will have its user_id linked to the verified user
+    """
+
+    email: EmailStr = Field(..., description="Email address of the account to verify")
+    code: str = Field(
+        ...,
+        description="6-digit verification code from the verification email",
+        pattern=r"^\d{6}$",
+    )
+    session_token: str | None = Field(
+        None,
+        description="Optional onboarding session token to link to the verified user",
+    )
+
+
 class EmailVerifyResponse(BaseModel):
-    """Schema for email verification response."""
+    """Schema for email verification response.
+
+    When responding to an OTP code verification, also includes JWT tokens
+    so the caller is automatically authenticated.
+    """
 
     message: str = Field(..., description="Success or error message")
+    access_token: str | None = None
+    refresh_token: str | None = None
+    token_type: str = "bearer"
+    expires_in: int | None = None
+    user: UserPublic | None = None
 
 
 class EmailResendRequest(BaseModel):

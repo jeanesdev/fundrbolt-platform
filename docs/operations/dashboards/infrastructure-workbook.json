@@ -8,7 +8,7 @@
     }
   },
   "metadata": {
-    "name": "Fundrbolt Infrastructure Health Workbook",
+    "name": "FundrBolt Infrastructure Health Workbook",
     "description": "Comprehensive infrastructure metrics for App Service, PostgreSQL, Redis, and Azure resources",
     "version": "1.0.0",
     "sections": [

@@ -43,7 +43,7 @@ Create `frontend/donor-pwa/public/offline.html`:
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Offline - Fundrbolt</title>
+  <title>Offline - FundrBolt</title>
   <style>
     /* Inline all styles — no external CSS allowed */
     body { font-family: system-ui; text-align: center; padding: 2rem; background: #f8fafc; }
@@ -119,8 +119,8 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: 'Fundrbolt Donor Portal',
-        short_name: 'Fundrbolt',
+        name: 'FundrBolt Donor Portal',
+        short_name: 'FundrBolt',
         description: 'Support nonprofits, attend events, and make a difference.',
         theme_color: '#0f172a',
         background_color: '#ffffff',
@@ -156,7 +156,7 @@ Add these to the `<head>` of both `index.html` files:
 ```html
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Fundrbolt" />
+<meta name="apple-mobile-web-app-title" content="FundrBolt" />
 <link rel="apple-touch-icon" href="/images/pwa-192x192.png" />
 ```
 

@@ -1,10 +1,10 @@
 # CI/CD Pipeline Guide
 
-This guide explains the automated CI/CD pipelines for the Fundrbolt platform.
+This guide explains the automated CI/CD pipelines for the FundrBolt platform.
 
 ## Overview
 
-The Fundrbolt platform uses GitHub Actions for continuous integration and deployment across three environments:
+The FundrBolt platform uses GitHub Actions for continuous integration and deployment across three environments:
 
 - **Development**: Automatic deployment on every merge to `main`
 - **Staging**: Automatic deployment after successful dev deployment

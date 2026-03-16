@@ -1,5 +1,5 @@
 #!/bin/bash
-# Infrastructure validation script for Fundrbolt Platform
+# Infrastructure validation script for FundrBolt Platform
 set -e
 
 # Colors
@@ -12,7 +12,7 @@ ENVIRONMENT=${1:-dev}
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BICEP_DIR="$(dirname "$SCRIPT_DIR")/bicep"
 
-echo -e "${GREEN}=== Fundrbolt Platform Infrastructure Validation ===${NC}"
+echo -e "${GREEN}=== FundrBolt Platform Infrastructure Validation ===${NC}"
 echo "Environment: $ENVIRONMENT"
 echo ""
 

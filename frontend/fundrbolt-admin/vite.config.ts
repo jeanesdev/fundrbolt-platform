@@ -68,8 +68,8 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: 'Fundrbolt Admin',
-        short_name: 'Fundrbolt Admin',
+        name: 'FundrBolt Admin',
+        short_name: 'FundrBolt Admin',
         description: 'Manage events, auctions, and nonprofit fundraising',
         theme_color: '#0f172a', // eslint-disable-line no-restricted-syntax
         background_color: '#ffffff', // eslint-disable-line no-restricted-syntax

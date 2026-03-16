@@ -1,13 +1,16 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useAuthStore } from '@/stores/auth-store'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import { hasSeenProfileSetup } from '@/features/auth/complete-profile/utils'
 
 /**
  * Authenticated route wrapper with role-based access control
  *
  * Access Rules:
- * - Donor role: BLOCKED from admin PWA (redirected to 403)
- * - All other roles: Allowed (super_admin, npo_admin, event_coordinator, staff)
+ * - Unverified users: sent to verify-email
+ * - Users with no NPO memberships: allowed into admin for onboarding/getting started
+ * - Assigned admin/staff roles: allowed
+ * - First login: Redirected to /complete-profile if profile setup not yet seen
  */
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: async ({ location }) => {
@@ -23,13 +26,21 @@ export const Route = createFileRoute('/_authenticated')({
       })
     }
 
-    // Block Donor role from accessing admin PWA
-    if (user?.role === 'donor') {
+    if (user && !user.email_verified) {
       throw redirect({
-        to: '/403',
+        to: '/verify-email',
         search: {
-          message:
-            'This area is for administrators only. Donors should use the donor portal.',
+          email: user.email,
+        },
+      })
+    }
+
+    // First-login profile prompt: redirect to complete-profile if not yet seen
+    if (user && !hasSeenProfileSetup(user.id)) {
+      throw redirect({
+        to: '/complete-profile',
+        search: {
+          redirect: location.href,
         },
       })
     }

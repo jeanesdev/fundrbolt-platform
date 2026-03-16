@@ -34,7 +34,7 @@
 
 ### User Story 1 - Platform Operations Team Deploys Application (Priority: P1)
 
-The operations team needs to provision and configure all required Azure cloud resources to host the Fundrbolt Platform backend and frontend applications in a production-ready environment with proper monitoring and security controls.
+The operations team needs to provision and configure all required Azure cloud resources to host the FundrBolt Platform backend and frontend applications in a production-ready environment with proper monitoring and security controls.
 
 **Why this priority**: Without cloud infrastructure, the application cannot be deployed to production or accessed by real users. This is the foundation for all other deployment activities.
 
@@ -245,7 +245,7 @@ The development and operations teams need comprehensive monitoring dashboards sh
 
 ### Key Entities
 
-- **Azure Resource Group**: Logical container grouping all Azure resources for the Fundrbolt Platform in a specific environment (dev, staging, production). Contains: name, location (region), tags for cost tracking and organization
+- **Azure Resource Group**: Logical container grouping all Azure resources for the FundrBolt Platform in a specific environment (dev, staging, production). Contains: name, location (region), tags for cost tracking and organization
 
 - **App Service Plan**: Compute resource pool providing CPU, memory, and scaling capabilities for backend API. Contains: SKU/pricing tier, operating system (Linux), scaling rules, deployment slots configuration
 

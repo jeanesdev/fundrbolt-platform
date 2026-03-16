@@ -10,11 +10,14 @@ import { create } from 'zustand'
 interface AuthUser {
   id: string
   email: string
+  communications_email?: string | null
+  communications_email_verified?: boolean
   first_name: string
   last_name: string
   role: string
   npo_id: string | null
   profile_picture_url?: string | null
+  email_verified?: boolean
 }
 
 interface LoginRequest {
@@ -28,6 +31,7 @@ interface RegisterRequest {
   first_name: string
   last_name: string
   phone?: string
+  organization_name?: string
 }
 
 interface LoginResponse {

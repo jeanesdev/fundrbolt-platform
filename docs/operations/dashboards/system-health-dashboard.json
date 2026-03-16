@@ -25,7 +25,7 @@
     }
   },
   "metadata": {
-    "name": "Fundrbolt System Health Dashboard",
+    "name": "FundrBolt System Health Dashboard",
     "description": "Real-time system health metrics including request rate, response time, error rate, and availability",
     "version": "1.0.0",
     "tiles": [

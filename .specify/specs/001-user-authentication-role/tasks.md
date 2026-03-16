@@ -506,7 +506,7 @@ Based on plan.md: Web application structure with `backend/` and `frontend/` dire
 - Error handling: All external services (DB, Redis, email) have retry logic with exponential backoff
 - Request ID middleware: Distributed tracing with X-Request-ID header in all responses
 - Backend README: 400+ lines with complete setup, API docs, troubleshooting
-- Frontend README: Completely rewritten from template to Fundrbolt-specific content
+- Frontend README: Completely rewritten from template to FundrBolt-specific content
 - Rate limiting (T166): Already implemented for login endpoint, needs expansion to all public endpoints
 - Code cleanup (T162): Ongoing as part of each commit
 - Metrics (T161): Prometheus endpoint TODO

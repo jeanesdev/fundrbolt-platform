@@ -1,10 +1,10 @@
-# Fundrbolt Favicons
+# FundrBolt Favicons
 
 **STATUS**: Favicon HTML links updated in all 3 frontend apps. Awaiting favicon file generation from design team.
 
 ## Overview
 
-Fundrbolt uses a comprehensive favicon setup to ensure brand consistency across all browsers, devices, and platforms. Each app includes 7 favicon variants for optimal display across different contexts.
+FundrBolt uses a comprehensive favicon setup to ensure brand consistency across all browsers, devices, and platforms. Each app includes 7 favicon variants for optimal display across different contexts.
 
 ## Required Favicon Files
 

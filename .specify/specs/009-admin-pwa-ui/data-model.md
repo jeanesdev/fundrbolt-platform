@@ -85,7 +85,7 @@ This feature primarily uses existing database entities (User, Role, NPO, Event) 
 - `users`: One-to-Many with `User`
 
 **Enum: Role Names** (fixed, seeded in database):
-- `SuperAdmin` (scope: platform) - Full platform access, can select any NPO or "Fundrbolt Platform"
+- `SuperAdmin` (scope: platform) - Full platform access, can select any NPO or "FundrBolt Platform"
 - `NPO Admin` (scope: npo) - Full access within assigned NPO(s)
 - `Event Coordinator` (scope: event) - Event/auction management, read-only NPO access
 - `Staff` (scope: event) - Event check-in/registration, read-only NPO access
@@ -178,7 +178,7 @@ This feature primarily uses existing database entities (User, Role, NPO, Event) 
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `selectedNpoId` | UUID \| null | No | ID of currently selected NPO (null = "Fundrbolt Platform" for SuperAdmin) |
+| `selectedNpoId` | UUID \| null | No | ID of currently selected NPO (null = "FundrBolt Platform" for SuperAdmin) |
 | `availableNpos` | Array<{ id: UUID, name: string }> | Yes | NPOs user has access to (role-dependent) |
 
 **State Management**:
@@ -190,7 +190,7 @@ This feature primarily uses existing database entities (User, Role, NPO, Event) 
 **State Transitions**:
 1. **Initial state** (on login): `selectedNpoId = null`, `availableNpos = []`
 2. **Load available NPOs**: Fetch from backend based on role → populate `availableNpos`
-3. **SuperAdmin auto-select**: Set `selectedNpoId = null` ("Fundrbolt Platform" view)
+3. **SuperAdmin auto-select**: Set `selectedNpoId = null` ("FundrBolt Platform" view)
 4. **NPO Admin/Staff auto-select**: Set `selectedNpoId = availableNpos[0].id` (only one NPO)
 5. **User selects NPO**: Update `selectedNpoId` → invalidate TanStack Query cache → refetch all data
 6. **Logout**: Clear store and localStorage

@@ -1,10 +1,10 @@
 # DNS Configuration Guide
 
-This guide explains how to configure custom domains for the Fundrbolt platform using Azure DNS.
+This guide explains how to configure custom domains for the FundrBolt platform using Azure DNS.
 
 ## Overview
 
-The Fundrbolt platform uses Azure DNS to manage custom domain records for:
+The FundrBolt platform uses Azure DNS to manage custom domain records for:
 - **Frontend**: `admin.fundrbolt.com` (Static Web App)
 - **Backend API**: `api.fundrbolt.com` (App Service)
 - **Root domain**: `fundrbolt.com` (redirects to admin)

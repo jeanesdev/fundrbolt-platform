@@ -495,7 +495,7 @@ def seed_testimonials():
 
     testimonials = [
         {
-            "quote_text": "Fundrbolt helped us raise 40% more than last year's gala. The digital bid paddles were a huge hit with our donors!",
+            "quote_text": "FundrBolt helped us raise 40% more than last year's gala. The digital bid paddles were a huge hit with our donors!",
             "author_name": "Sarah J.",
             "author_role": AuthorRole.DONOR,
             "organization_name": "Community Arts Foundation",
@@ -503,7 +503,7 @@ def seed_testimonials():
             "is_published": True,
         },
         {
-            "quote_text": "As an auctioneer, Fundrbolt's real-time controls gave me confidence. The bid tracking is flawless.",
+            "quote_text": "As an auctioneer, FundrBolt's real-time controls gave me confidence. The bid tracking is flawless.",
             "author_name": "Michael Chen",
             "author_role": AuthorRole.AUCTIONEER,
             "organization_name": "Elite Auctioneers",

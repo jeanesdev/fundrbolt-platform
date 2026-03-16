@@ -2,7 +2,7 @@
 
 # Default target
 help:
-	@echo "Fundrbolt Platform - Available Commands"
+	@echo "FundrBolt Platform - Available Commands"
 	@echo ""
 	@echo "Development:"
 	@echo "  make install          - Install all dependencies (backend + frontend)"

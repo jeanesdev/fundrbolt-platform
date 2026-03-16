@@ -193,7 +193,7 @@
 **Consider adding**:
 - **react-cookie-consent**: Pre-built cookie banner component (MIT license)
   - **Alternative**: Build custom component for full control over UX
-  - **Decision**: Build custom component to match Fundrbolt branding and UX requirements
+  - **Decision**: Build custom component to match FundrBolt branding and UX requirements
 
 ### Testing Dependencies
 

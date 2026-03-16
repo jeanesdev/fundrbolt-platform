@@ -3,7 +3,7 @@
  * Manages NPO context state with query invalidation and role-based NPO selection
  *
  * Business Rules:
- * - SuperAdmin: Can select any NPO or "Fundrbolt Platform" (shows all NPOs)
+ * - SuperAdmin: Can select any NPO or "FundrBolt Platform" (shows all NPOs)
  * - NPO Admin: Auto-select their assigned NPO, disable selector
  * - Event Coordinator: Show NPOs they're registered with
  * - Staff: Auto-select their assigned NPO, disable selector

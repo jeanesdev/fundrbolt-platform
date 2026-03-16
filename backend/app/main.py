@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     # Startup
     logger.info(
-        "Starting Fundrbolt Platform API",
+        "Starting FundrBolt Platform API",
         extra={
             "environment": settings.environment,
             "debug": settings.debug,
@@ -75,7 +75,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
     # Shutdown
-    logger.info("Shutting down Fundrbolt Platform API")
+    logger.info("Shutting down FundrBolt Platform API")
 
     # Close database engine
     await async_engine.dispose()
@@ -92,14 +92,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 # Create FastAPI app
 app = FastAPI(
     title=settings.project_name,
-    description="Fundrbolt Platform API for nonprofit auction management",
+    description="FundrBolt Platform API for nonprofit auction management",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
     lifespan=lifespan,
     contact={
-        "name": "Fundrbolt Platform Support",
+        "name": "FundrBolt Platform Support",
         "email": "support@fundrbolt.com",
     },
     license_info={
@@ -183,7 +183,7 @@ async def root() -> JSONResponse:
     """
     return JSONResponse(
         content={
-            "message": "Fundrbolt Platform API",
+            "message": "FundrBolt Platform API",
             "version": "1.0.0",
             "docs": "/docs",
             "health": "/health",

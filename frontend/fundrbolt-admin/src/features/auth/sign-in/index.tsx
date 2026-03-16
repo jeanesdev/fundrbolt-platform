@@ -1,4 +1,5 @@
 import { Link, useSearch } from '@tanstack/react-router'
+import { buildDonorPortalSignInUrl } from '@/lib/donor-portal'
 import {
   Card,
   CardContent,
@@ -37,6 +38,23 @@ export function SignIn() {
             >
               Sign up
             </Link>
+          </p>
+          <p className='text-muted-foreground text-center text-sm'>
+            Creating an organization?{' '}
+            <Link
+              to='/register-npo'
+              className='hover:text-primary underline underline-offset-4'
+            >
+              Start NPO onboarding
+            </Link>{' '}
+            or{' '}
+            <a
+              href={buildDonorPortalSignInUrl()}
+              className='hover:text-primary underline underline-offset-4'
+            >
+              use the donor portal
+            </a>{' '}
+            for donor sign-ins.
           </p>
           <p className='text-muted-foreground px-8 text-center text-sm'>
             By clicking sign in, you agree to our{' '}

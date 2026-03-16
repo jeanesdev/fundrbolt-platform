@@ -1,4 +1,4 @@
-// Shared components, hooks, and utilities for Fundrbolt Platform
+// Shared components, hooks, and utilities for FundrBolt Platform
 export {
   AppleIcon,
   FacebookIcon, GoogleIcon, MicrosoftIcon

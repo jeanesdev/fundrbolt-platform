@@ -50,6 +50,7 @@ export function EmailVerificationForm({
     'idle' | 'auto_verifying' | 'expired' | 'success'
   >(token ? 'auto_verifying' : 'idle')
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const autoVerifiedTokenRef = useRef<string | null>(null)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -58,9 +59,10 @@ export function EmailVerificationForm({
 
   // Auto-submit when a token arrives via URL (clicked verification link)
   useEffect(() => {
-    if (token) {
+    if (token && autoVerifiedTokenRef.current !== token) {
+      autoVerifiedTokenRef.current = token
       setLinkState('auto_verifying')
-      handleVerify(token)
+      void handleVerify(token)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
@@ -76,13 +78,20 @@ export function EmailVerificationForm({
       const err = error as {
         response?: {
           data?: {
-            detail?: { code?: string; message?: string }
+            detail?: {
+              code?: string
+              message?: string
+              error?: { code?: string; message?: string }
+            }
             error?: { message?: string }
           }
         }
       }
-      const code = err.response?.data?.detail?.code
+      const code =
+        err.response?.data?.detail?.code ||
+        err.response?.data?.detail?.error?.code
       const msg =
+        err.response?.data?.detail?.error?.message ||
         err.response?.data?.detail?.message ||
         err.response?.data?.error?.message ||
         'Verification failed. The link may have expired.'
@@ -94,6 +103,9 @@ export function EmailVerificationForm({
       } else if (code === 'INVALID_TOKEN' || code === 'EXPIRED_TOKEN') {
         // FR-015: friendly expired-link state with one-click resend
         setLinkState('expired')
+      } else if (code === 'RATE_LIMIT_EXCEEDED') {
+        setLinkState('idle')
+        toast.error('Too many verification attempts', { description: msg })
       } else {
         setLinkState('idle')
         toast.error('Verification failed', { description: msg })
@@ -138,12 +150,71 @@ export function EmailVerificationForm({
         response?: { data?: { detail?: { message?: string } } }
       }
       const errorMessage =
+        (
+          err.response?.data?.detail as
+            | { error?: { message?: string } }
+            | undefined
+        )?.error?.message ||
         err.response?.data?.detail?.message ||
         'Failed to resend verification email.'
       toast.error('Resend failed', { description: errorMessage })
     } finally {
       setIsResending(false)
     }
+  }
+
+  // ── Waiting-for-verification state ───────────────────────────────────
+  if (!token && email) {
+    return (
+      <div className='space-y-5'>
+        <div className='flex flex-col items-center gap-4 py-4 text-center'>
+          <Mail className='text-muted-foreground h-12 w-12' />
+          <div className='space-y-1'>
+            <p className='text-lg font-medium'>Check your inbox</p>
+            <p className='text-muted-foreground text-sm'>
+              We sent a verification link to <strong>{email}</strong>. Verify
+              your email, then sign in to continue.
+            </p>
+          </div>
+        </div>
+
+        <Alert className='text-left'>
+          <AlertDescription>
+            Can&apos;t find the email? Check your spam folder. The link expires
+            in 24 hours.
+          </AlertDescription>
+        </Alert>
+
+        <div className='space-y-3'>
+          <Button
+            type='button'
+            variant='outline'
+            className='w-full'
+            disabled={isResending || resendCooldown > 0}
+            onClick={() => handleResend(email)}
+          >
+            {isResending ? (
+              <>
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                Resending…
+              </>
+            ) : resendCooldown > 0 ? (
+              `Resend email (${resendCooldown}s)`
+            ) : (
+              'Resend verification email'
+            )}
+          </Button>
+
+          <Button
+            type='button'
+            className='w-full'
+            onClick={() => navigate({ to: '/sign-in' })}
+          >
+            I&apos;ve verified my email
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   // ── Expired link state (FR-015) ──────────────────────────────────────

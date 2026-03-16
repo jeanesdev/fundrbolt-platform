@@ -1,6 +1,6 @@
-# Fundrbolt Theme Changelog
+# FundrBolt Theme Changelog
 
-All notable changes to the Fundrbolt theme system will be documented in this file.
+All notable changes to the FundrBolt theme system will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2025-01
 
 ### Added
-- Initial Fundrbolt brand color system
+- Initial FundrBolt brand color system
 - Primary colors: Navy (#11294c), Gold (#ffc20e)
 - Secondary colors: White (#ffffff), Gray (#58595b)
 - Background colors: Default (Navy), Light (White), Dark (Black)
@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Version Numbering
 
-Fundrbolt theme follows [Semantic Versioning](https://semver.org/):
+FundrBolt theme follows [Semantic Versioning](https://semver.org/):
 
 - **MAJOR** version (1.0.0 → 2.0.0): Incompatible API changes
   - Renaming color keys (breaks imports)
@@ -115,5 +115,5 @@ Not applicable - 1.0.0 is the initial release of the centralized theme system.
 ---
 
 **Last Updated**: January 2025
-**Maintained By**: Fundrbolt Engineering Team
+**Maintained By**: FundrBolt Engineering Team
 **Questions**: Contact engineering@fundrbolt.com

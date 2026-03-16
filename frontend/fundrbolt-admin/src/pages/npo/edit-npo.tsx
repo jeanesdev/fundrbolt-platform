@@ -3,11 +3,20 @@
  * Page for editing an existing non-profit organization (details + branding)
  */
 import { useEffect } from 'react'
-import { Link, useNavigate, useParams } from '@tanstack/react-router'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import type { NPOCreateRequest } from '@/types/npo'
-import { AlertCircle, ArrowLeft, Building2 } from 'lucide-react'
+import {
+  type CredentialRead,
+  type CredentialResponse,
+  isConfigured,
+} from '@/types/payments'
+import { AlertCircle, ArrowLeft, Building2, CreditCard } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
 import { useNPOStore } from '@/stores/npo-store'
+import apiClient from '@/lib/axios'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -20,12 +29,39 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { NPOBrandingSection } from '@/components/npo/npo-branding-section'
 import { NPOCreationForm } from '@/components/npo/npo-creation-form'
+import { NpoCredentialForm } from '@/components/payments/NpoCredentialForm'
 
 export default function EditNPOPage() {
   const { npoId } = useParams({ from: '/_authenticated/npos/$npoId/edit' })
+  const search = useSearch({ from: '/_authenticated/npos/$npoId/edit' })
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const user = useAuthStore((state) => state.user)
   const { currentNPO, nposLoading, nposError, loadNPOById, updateNPO } =
     useNPOStore()
+  const showPaymentSettings = user?.role === 'super_admin'
+  const activeTab =
+    showPaymentSettings && search.tab === 'payments' ? 'payments' : search.tab
+
+  const {
+    data: credentialResponse,
+    isLoading: paymentSettingsLoading,
+    error: paymentSettingsError,
+  } = useQuery({
+    queryKey: ['npo-payment-credentials', npoId],
+    queryFn: async () => {
+      const res = await apiClient.get<CredentialResponse>(
+        `/admin/npos/${npoId}/payment-credentials`
+      )
+      return res.data
+    },
+    enabled: showPaymentSettings,
+  })
+
+  const existingCredential: CredentialRead | null =
+    credentialResponse && isConfigured(credentialResponse)
+      ? credentialResponse
+      : null
 
   useEffect(() => {
     if (npoId) {
@@ -50,6 +86,32 @@ export default function EditNPOPage() {
   const handleBrandingSave = () => {
     // Reload NPO data to reflect branding changes
     loadNPOById(npoId)
+  }
+
+  const handleTabChange = (tab: string) => {
+    navigate({
+      to: '/npos/$npoId/edit',
+      params: { npoId },
+      search: {
+        tab: tab === 'branding' || tab === 'payments' ? tab : 'details',
+      },
+      replace: true,
+    })
+  }
+
+  const handlePaymentSaved = (updated: CredentialRead) => {
+    queryClient.setQueryData(['npo-payment-credentials', npoId], updated)
+  }
+
+  const handlePaymentDeleted = () => {
+    queryClient.setQueryData(['npo-payment-credentials', npoId], {
+      npo_id: npoId,
+      configured: false,
+    })
+  }
+
+  const handlePaymentSkip = () => {
+    handleTabChange('details')
   }
 
   // Loading state
@@ -143,7 +205,7 @@ export default function EditNPOPage() {
             Edit Organization
           </h1>
           <p className='text-muted-foreground text-sm sm:text-base'>
-            Update your organization's information and branding
+            Update your organization's information, branding, and settings
           </p>
         </div>
       </div>
@@ -163,10 +225,19 @@ export default function EditNPOPage() {
       )}
 
       {/* Tabs for Details and Branding */}
-      <Tabs defaultValue='details' className='w-full'>
-        <TabsList className='grid w-full grid-cols-2'>
+      <Tabs
+        value={activeTab}
+        onValueChange={handleTabChange}
+        className='w-full'
+      >
+        <TabsList
+          className={`grid w-full ${showPaymentSettings ? 'grid-cols-3' : 'grid-cols-2'}`}
+        >
           <TabsTrigger value='details'>Details</TabsTrigger>
           <TabsTrigger value='branding'>Branding</TabsTrigger>
+          {showPaymentSettings && (
+            <TabsTrigger value='payments'>Payment Settings</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value='details' className='mt-6'>
@@ -181,6 +252,104 @@ export default function EditNPOPage() {
         <TabsContent value='branding' className='mt-6'>
           <NPOBrandingSection npoId={npoId} onSave={handleBrandingSave} />
         </TabsContent>
+
+        {showPaymentSettings && (
+          <TabsContent value='payments' className='mt-6 space-y-6'>
+            <div className='flex items-center gap-3'>
+              <div className='bg-primary/10 rounded-lg p-2'>
+                <CreditCard className='text-primary h-5 w-5' />
+              </div>
+              <div>
+                <h2 className='text-xl font-semibold'>Payment Settings</h2>
+                <p className='text-muted-foreground text-sm'>
+                  Configure payment gateway credentials for this organization.
+                </p>
+              </div>
+              {existingCredential && (
+                <Badge
+                  variant={
+                    existingCredential.is_active ? 'default' : 'secondary'
+                  }
+                  className='ml-auto'
+                >
+                  {existingCredential.is_live_mode ? '🔴 Live' : '🟡 Sandbox'}
+                </Badge>
+              )}
+            </div>
+
+            {!paymentSettingsLoading && credentialResponse && (
+              <Card className='bg-muted/50'>
+                <CardContent className='pt-4'>
+                  {isConfigured(credentialResponse) ? (
+                    <div className='space-y-1 text-sm'>
+                      <p>
+                        <span className='font-medium'>Gateway:</span>{' '}
+                        {credentialResponse.gateway_name === 'deluxe'
+                          ? 'Deluxe (First American)'
+                          : 'Stub'}
+                      </p>
+                      <p>
+                        <span className='font-medium'>Merchant ID:</span>{' '}
+                        <code className='bg-background rounded px-1 py-0.5 font-mono text-xs'>
+                          {credentialResponse.merchant_id_masked}
+                        </code>
+                      </p>
+                      <p>
+                        <span className='font-medium'>API Key:</span>{' '}
+                        <code className='bg-background rounded px-1 py-0.5 font-mono text-xs'>
+                          {credentialResponse.api_key_masked}
+                        </code>
+                      </p>
+                      {credentialResponse.gateway_id && (
+                        <p>
+                          <span className='font-medium'>Gateway ID:</span>{' '}
+                          {credentialResponse.gateway_id}
+                        </p>
+                      )}
+                      <p className='text-muted-foreground text-xs'>
+                        Last updated:{' '}
+                        {new Date(
+                          credentialResponse.updated_at
+                        ).toLocaleString()}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className='text-muted-foreground text-sm'>
+                      No payment credentials configured for this NPO.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {paymentSettingsLoading && (
+              <div className='space-y-3'>
+                <Skeleton className='h-8 w-48' />
+                <Skeleton className='h-32 w-full' />
+              </div>
+            )}
+
+            {paymentSettingsError && (
+              <Card className='border-destructive'>
+                <CardContent className='pt-4'>
+                  <p className='text-destructive text-sm'>
+                    Failed to load payment credentials. Please try refreshing.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {!paymentSettingsLoading && !paymentSettingsError && (
+              <NpoCredentialForm
+                npoId={npoId}
+                existingCredential={existingCredential}
+                onSaved={handlePaymentSaved}
+                onDeleted={handlePaymentDeleted}
+                onSkip={handlePaymentSkip}
+              />
+            )}
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   )

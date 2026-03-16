@@ -2,7 +2,7 @@
   "name": "fundrbolt-platform",
   "version": "1.0.0",
   "private": true,
-  "description": "Fundrbolt monorepo workspace",
+  "description": "FundrBolt monorepo workspace",
   "scripts": {
     "prepare": "husky install",
     "lint": "pnpm -r run lint",

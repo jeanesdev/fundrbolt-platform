@@ -137,7 +137,7 @@ class AuthService:
 
         Flow:
         1. Validate email/password
-        2. Check email verified and account active
+        2. Check account status
         3. Generate access + refresh tokens
         4. Create session in PostgreSQL + Redis
         5. Update last_login_at
@@ -155,7 +155,6 @@ class AuthService:
         Raises:
             ValueError: With specific error codes:
                 - INVALID_CREDENTIALS: Wrong email/password
-                - EMAIL_NOT_VERIFIED: Email not verified
                 - ACCOUNT_DEACTIVATED: Account is inactive
         """
         # Fetch user by email
@@ -167,12 +166,9 @@ class AuthService:
         if not user or not user.verify_password(password):
             raise ValueError("Invalid email or password")
 
-        # Check email verification
-        if not user.email_verified:
-            raise ValueError("Email not verified")
-
-        # Check account active
-        if not user.is_active:
+        # Allow unverified users to sign in so they can complete email verification,
+        # but still block verified accounts that have been explicitly deactivated.
+        if user.email_verified and not user.is_active:
             raise ValueError("Account deactivated")
 
         # Create JWT tokens

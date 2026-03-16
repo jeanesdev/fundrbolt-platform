@@ -5,6 +5,13 @@
  * Optional: mission / description.
  * Shows a duplicate-name warning banner when the server flags a similar name.
  */
+import { useState } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { AlertTriangle, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { updateStep } from '@/lib/api/onboarding'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,13 +25,19 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { updateStep } from '@/lib/api/onboarding'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { AlertTriangle, Loader2 } from 'lucide-react'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
+
+function formatPhoneNumber(value: string): string {
+  const digits = value.replace(/\D/g, '')
+
+  if (digits.length === 0) return ''
+  if (digits.length <= 3) return `(${digits}`
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+  if (digits.length <= 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+  }
+
+  return `+${digits.slice(0, digits.length - 10)} (${digits.slice(-10, -7)}) ${digits.slice(-7, -4)}-${digits.slice(-4)}`
+}
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -207,7 +220,16 @@ export function StepNpoProfile({
               <FormItem>
                 <FormLabel>Organization phone number *</FormLabel>
                 <FormControl>
-                  <Input type='tel' placeholder='(555) 000-0000' {...field} />
+                  <Input
+                    type='tel'
+                    inputMode='tel'
+                    placeholder='(555) 000-0000'
+                    {...field}
+                    value={field.value ? formatPhoneNumber(field.value) : ''}
+                    onChange={(e) => {
+                      field.onChange(e.target.value.replace(/\D/g, ''))
+                    }}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

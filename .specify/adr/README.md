@@ -1,6 +1,6 @@
 # Architecture Decision Records (ADR)
 
-This directory contains records of architectural decisions made during the development of the Fundrbolt Platform.
+This directory contains records of architectural decisions made during the development of the FundrBolt Platform.
 
 ## What is an ADR?
 

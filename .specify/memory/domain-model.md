@@ -1,4 +1,4 @@
-# Fundrbolt Domain Model
+# FundrBolt Domain Model
 
 ## Core Entities
 

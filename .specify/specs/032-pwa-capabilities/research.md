@@ -26,8 +26,8 @@ VitePWA({
     runtimeCaching: [/* see Section 2 */],
   },
   manifest: {
-    name: 'Fundrbolt Donor Portal',
-    short_name: 'Fundrbolt',
+    name: 'FundrBolt Donor Portal',
+    short_name: 'FundrBolt',
     // ... full manifest config replaces manifest.json
   },
 })
@@ -153,7 +153,7 @@ Required for proper iOS PWA behavior:
 ```html
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Fundrbolt" />
+<meta name="apple-mobile-web-app-title" content="FundrBolt" />
 <link rel="apple-touch-icon" href="/images/pwa-192x192.png" />
 ```
 
@@ -206,7 +206,7 @@ const isStandalone = window.matchMedia('(display-mode: standalone)').matches
 - Position: Bottom of viewport, above any existing bottom nav
 - Non-intrusive: Small, dismissable, doesn't block content
 - Appears after a short delay (e.g., 3 seconds after first load) to let user orient
-- Shows app icon + "Add Fundrbolt to your home screen" + Install button + dismiss X
+- Shows app icon + "Add FundrBolt to your home screen" + Install button + dismiss X
 
 ## 5. Service Worker Update Strategy
 

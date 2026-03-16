@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Deploy minimal Fundrbolt resources (rename from Augeo)
+# Deploy minimal FundrBolt resources (rename from Augeo)
 # Only creates: Resource Group, Key Vault, Storage, Logs, Insights, Communication, DNS
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,7 +17,7 @@ NC='\033[0m'
 # Environment parameter (default: dev)
 ENV="${1:-dev}"
 
-echo -e "${BLUE}=== Fundrbolt Minimal Deployment (Rename) ===${NC}"
+echo -e "${BLUE}=== FundrBolt Minimal Deployment (Rename) ===${NC}"
 echo -e "${YELLOW}Environment: ${ENV}${NC}"
 echo ""
 

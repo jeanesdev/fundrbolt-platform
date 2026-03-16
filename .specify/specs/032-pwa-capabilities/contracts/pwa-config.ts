@@ -15,8 +15,8 @@ type VitePWAOptions = Record<string, any>
  * App-specific manifest values that differ between Donor PWA and Admin PWA.
  */
 export interface AppManifestConfig {
-  name: string // e.g., "Fundrbolt Donor Portal"
-  short_name: string // e.g., "Fundrbolt"
+  name: string // e.g., "FundrBolt Donor Portal"
+  short_name: string // e.g., "FundrBolt"
   description: string
   theme_color: string // "#0f172a"
   background_color: string // "#ffffff"

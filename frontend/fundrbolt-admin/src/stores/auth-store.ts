@@ -8,6 +8,7 @@ interface AuthUser {
   email: string
   first_name: string
   last_name: string
+  email_verified: boolean
   role: string
   npo_memberships: {
     npo_id: string

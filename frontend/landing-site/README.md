@@ -1,6 +1,6 @@
-# Fundrbolt Landing Site
+# FundrBolt Landing Site
 
-Public-facing landing page for the Fundrbolt platform.
+Public-facing landing page for the FundrBolt platform.
 
 ## Features
 
@@ -108,4 +108,4 @@ The app proxies API requests to the backend server:
 
 ## License
 
-Private - Fundrbolt Platform
+Private - FundrBolt Platform

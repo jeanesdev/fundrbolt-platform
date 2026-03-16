@@ -74,7 +74,7 @@ pnpm dev --host
 
 1. Open your phone's browser
 2. Navigate to the **frontend ngrok URL**: `https://abcd-ef-gh-ij-kl.ngrok-free.app`
-3. You should see the Fundrbolt admin portal!
+3. You should see the FundrBolt admin portal!
 
 ## Testing Session Management Features
 

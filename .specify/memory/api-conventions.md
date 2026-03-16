@@ -1,4 +1,4 @@
-# Fundrbolt API Conventions
+# FundrBolt API Conventions
 
 ## REST Endpoints
 

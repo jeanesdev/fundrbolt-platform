@@ -1,8 +1,8 @@
-# Fundrbolt Platform Constitution
+# FundrBolt Platform Constitution
 
 ## Project Identity
 
-**Name:** Fundrbolt Fundraising Platform
+**Name:** FundrBolt Fundraising Platform
 **Vision:** World-class fundraising software that maximizes nonprofit revenue by optimizing the donor experience, driving engagement, and inspiring action
 **Delivery Model:** SaaS (multi-tenant, cloud-hosted)
 **Target Market:** Nonprofit organizations, professional auctioneers, event coordinators hosting galas with 50-500+ attendees
@@ -177,7 +177,7 @@ test(websocket): add connection drop recovery tests
 - **Encryption in Transit:** TLS 1.3 everywhere, HTTPS only, HSTS headers
 - **Encryption at Rest:** Azure-managed encryption for Postgres, Redis, Blob Storage
 - **PII Handling:** Never log passwords, emails, phone numbers in plain text
-- **Payment Security:** Payment processor (Deluxe HPF) handles all card capture; Fundrbolt stores only opaque vault tokens and masked display metadata (brand, last 4 digits, expiry month/year) — never raw card numbers, never full PANs
+- **Payment Security:** Payment processor (Deluxe HPF) handles all card capture; FundrBolt stores only opaque vault tokens and masked display metadata (brand, last 4 digits, expiry month/year) — never raw card numbers, never full PANs
 - **Secrets:** Never commit secrets, use Azure Key Vault, rotate keys quarterly
 
 ### Privacy & Compliance

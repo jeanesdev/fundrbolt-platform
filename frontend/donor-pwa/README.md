@@ -1,4 +1,4 @@
-# Fundrbolt Donor PWA
+# FundrBolt Donor PWA
 
 Progressive Web App (PWA) for donors to browse events, register as guests, manage profiles, and participate in nonprofit auctions.
 
@@ -656,7 +656,7 @@ frontend/fundrbolt-admin/
 
 1. **NPO Selector** (top-left corner):
    - Role-based NPO list (SuperAdmin sees all, others see assigned NPOs)
-   - "Fundrbolt Platform" option for SuperAdmin (view all data)
+   - "FundrBolt Platform" option for SuperAdmin (view all data)
    - Auto-selection for single-NPO users
    - Disabled for users with only one NPO (shows name only)
    - LocalStorage persistence across sessions
@@ -930,7 +930,7 @@ VITE_DEBUG=true
 
 Custom theme in `tailwind.config.js`:
 
-- Primary color: Fundrbolt brand blue
+- Primary color: FundrBolt brand blue
 - Dark mode support
 - Custom spacing and typography
 - Component utilities

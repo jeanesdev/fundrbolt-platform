@@ -16,7 +16,7 @@ export const sidebarData: SidebarData = {
   },
   teams: [
     {
-      name: 'Fundrbolt Platform',
+      name: 'FundrBolt Platform',
       logo: Logo,
       plan: 'Admin Portal',
     },

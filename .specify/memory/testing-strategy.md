@@ -1,4 +1,4 @@
-# Fundrbolt Testing Strategy
+# FundrBolt Testing Strategy
 
 ## Test Pyramid
 

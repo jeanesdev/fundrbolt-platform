@@ -1,6 +1,6 @@
 # Infrastructure Contracts
 
-This directory contains Infrastructure as Code templates and CI/CD workflow definitions for the Fundrbolt Platform.
+This directory contains Infrastructure as Code templates and CI/CD workflow definitions for the FundrBolt Platform.
 
 ## Contents
 

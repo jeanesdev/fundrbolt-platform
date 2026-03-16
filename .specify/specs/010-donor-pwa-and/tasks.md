@@ -145,11 +145,11 @@
 - [x] T072 [US2] Create EventDetails component with date/time/venue/description in `frontend/donor-pwa/src/components/EventDetails.tsx` - **DONE**
 - [x] T073 [US2] Apply primary color to page headers using `bg-[rgb(var(--event-primary))]` in EventHeader - **DONE**
 - [x] T074 [US2] Apply primary color to buttons and accents using CSS variables in EventDetails - **DONE**
-- [x] T075 [US2] Add default Fundrbolt branding fallback when event branding null in useEventBranding hook - **DONE**
+- [x] T075 [US2] Add default FundrBolt branding fallback when event branding null in useEventBranding hook - **DONE**
 - [x] T076 [US2] Create EventBrandingProvider context in `frontend/donor-pwa/src/contexts/EventBrandingContext.tsx` - **DONE**
 - [x] T077 [US2] Wrap event routes with EventBrandingProvider in root layout - **DONE**
 
-**Status**: ✅ **PHASE 4 COMPLETE** - All 11 tasks finished. Event detail route (`/events/$slug`) displays dynamic branding from API (logo, banner, primary/secondary colors). EventHeader and EventDetails components created. EventBrandingContext manages dynamic CSS variables. Default Fundrbolt branding used as fallback when event has no custom branding.
+**Status**: ✅ **PHASE 4 COMPLETE** - All 11 tasks finished. Event detail route (`/events/$slug`) displays dynamic branding from API (logo, banner, primary/secondary colors). EventHeader and EventDetails components created. EventBrandingContext manages dynamic CSS variables. Default FundrBolt branding used as fallback when event has no custom branding.
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - registration flow + branded event pages
 

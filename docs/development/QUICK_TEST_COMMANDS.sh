@@ -4,7 +4,7 @@
 
 set -e
 
-echo "=== Fundrbolt Testimonials Feature - Manual Testing Commands ==="
+echo "=== FundrBolt Testimonials Feature - Manual Testing Commands ==="
 echo ""
 
 # Colors

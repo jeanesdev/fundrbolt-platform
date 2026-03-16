@@ -1,6 +1,6 @@
 # Rollback Procedures
 
-This document provides step-by-step instructions for rolling back failed deployments in the Fundrbolt platform.
+This document provides step-by-step instructions for rolling back failed deployments in the FundrBolt platform.
 
 ## Quick Reference
 

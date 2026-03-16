@@ -1,10 +1,10 @@
 # Email Configuration Guide
 
-This guide explains how to set up email sending using Azure Communication Services (ACS) with custom domain authentication for the Fundrbolt platform.
+This guide explains how to set up email sending using Azure Communication Services (ACS) with custom domain authentication for the FundrBolt platform.
 
 ## Overview
 
-The Fundrbolt platform uses a hybrid email architecture:
+The FundrBolt platform uses a hybrid email architecture:
 - **Email Sending**: Azure Communication Services (ACS)
 - **Email Receiving**: ImprovMX (free email forwarding service)
 - **Custom domain**: `fundrbolt.com`
@@ -277,11 +277,11 @@ The following sender addresses are configured in Azure Communication Services:
 
 | Address | Purpose | Display Name | Can Receive? |
 |---------|---------|--------------|--------------|
-| DoNotReply@fundrbolt.com | System notifications, automated emails | Fundrbolt Platform | ❌ No (by design) |
-| admin@fundrbolt.com | Administrative communications | Fundrbolt Admin | ✅ Yes (forwards to Gmail) |
-| Legal@fundrbolt.com | Legal inquiries, terms updates | Fundrbolt Legal | ✅ Yes (forwards to Gmail) |
-| Privacy@fundrbolt.com | Privacy requests, GDPR inquiries | Fundrbolt Privacy | ✅ Yes (forwards to Gmail) |
-| DPO@fundrbolt.com | Data Protection Officer communications | Fundrbolt DPO | ✅ Yes (forwards to Gmail) |
+| DoNotReply@fundrbolt.com | System notifications, automated emails | FundrBolt Platform | ❌ No (by design) |
+| admin@fundrbolt.com | Administrative communications | FundrBolt Admin | ✅ Yes (forwards to Gmail) |
+| Legal@fundrbolt.com | Legal inquiries, terms updates | FundrBolt Legal | ✅ Yes (forwards to Gmail) |
+| Privacy@fundrbolt.com | Privacy requests, GDPR inquiries | FundrBolt Privacy | ✅ Yes (forwards to Gmail) |
+| DPO@fundrbolt.com | Data Protection Officer communications | FundrBolt DPO | ✅ Yes (forwards to Gmail) |
 
 ### Creating Sender Usernames in ACS
 
@@ -294,7 +294,7 @@ az communication email domain sender-username create \
   --domain-name fundrbolt.com \
   --sender-username admin \
   --username admin \
-  --display-name "Fundrbolt Admin" \
+  --display-name "FundrBolt Admin" \
   --resource-group fundrbolt-production-rg
 ```
 
@@ -380,7 +380,7 @@ class EmailService:
 ```bash
 az communication email send \
   --sender "noreply@fundrbolt.com" \
-  --subject "Test Email from Fundrbolt Platform" \
+  --subject "Test Email from FundrBolt Platform" \
   --text "This is a test email to verify email configuration." \
   --to "your-email@example.com" \
   --connection-string "$ACS_CONNECTION_STRING"
@@ -401,7 +401,7 @@ async def test():
     service = EmailService()
     result = await service.send_email(
         to='your-email@example.com',
-        subject='Test from Fundrbolt',
+        subject='Test from FundrBolt',
         body='Testing email configuration'
     )
     print(f'Message ID: {result.message_id}')
@@ -564,11 +564,11 @@ Recommended email templates for common scenarios:
 
 ### Welcome Email
 ```python
-subject = "Welcome to Fundrbolt Platform"
+subject = "Welcome to FundrBolt Platform"
 body = """
 Hello {name},
 
-Welcome to Fundrbolt! Your account has been successfully created.
+Welcome to FundrBolt! Your account has been successfully created.
 
 Get started:
 - Complete your profile
@@ -576,13 +576,13 @@ Get started:
 - Contact support: support@fundrbolt.com
 
 Best regards,
-The Fundrbolt Team
+The FundrBolt Team
 """
 ```
 
 ### Password Reset
 ```python
-subject = "Reset Your Fundrbolt Password"
+subject = "Reset Your FundrBolt Password"
 body = """
 Hello {name},
 
@@ -595,7 +595,7 @@ This link expires in 1 hour.
 If you didn't request this, please ignore this email.
 
 Best regards,
-The Fundrbolt Team
+The FundrBolt Team
 """
 ```
 
@@ -612,7 +612,7 @@ Please verify your email address by clicking:
 This link expires in 24 hours.
 
 Best regards,
-The Fundrbolt Team
+The FundrBolt Team
 """
 ```
 

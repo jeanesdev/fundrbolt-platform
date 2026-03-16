@@ -3,8 +3,14 @@
  * Displays detailed information about a specific NPO with edit and delete actions
  */
 import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import type { NPOApplication } from '@/types/npo'
+import {
+  type CredentialRead,
+  type CredentialResponse,
+  isConfigured,
+} from '@/types/payments'
 import { colors as brandColors } from '@fundrbolt/shared/assets'
 import {
   ArrowLeft,
@@ -23,6 +29,7 @@ import {
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { useNPOStore } from '@/stores/npo-store'
+import apiClient from '@/lib/axios'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -95,6 +102,27 @@ export default function NpoDetailPage() {
     useNPOStore()
   const user = useAuthStore((state) => state.user)
   const [showReviewDialog, setShowReviewDialog] = useState(false)
+  const showPaymentSettings = user?.role === 'super_admin'
+
+  const {
+    data: credentialResponse,
+    isLoading: paymentSettingsLoading,
+    error: paymentSettingsError,
+  } = useQuery({
+    queryKey: ['npo-payment-credentials', npoId],
+    queryFn: async () => {
+      const res = await apiClient.get<CredentialResponse>(
+        `/admin/npos/${npoId}/payment-credentials`
+      )
+      return res.data
+    },
+    enabled: showPaymentSettings,
+  })
+
+  const existingCredential: CredentialRead | null =
+    credentialResponse && isConfigured(credentialResponse)
+      ? credentialResponse
+      : null
 
   useEffect(() => {
     if (npoId) {
@@ -221,21 +249,10 @@ export default function NpoDetailPage() {
                 <span>Review Application</span>
               </Button>
             )}
-          {user?.role === 'super_admin' && (
-            <Link
-              to='/npos/$npoId/payment-settings'
-              params={{ npoId }}
-              className='flex-1 md:flex-none'
-            >
-              <Button variant='outline' className='w-full'>
-                <CreditCard className='mr-2 h-4 w-4' />
-                <span>Payment Settings</span>
-              </Button>
-            </Link>
-          )}
           <Link
             to='/npos/$npoId/edit'
             params={{ npoId }}
+            search={{ tab: 'details' }}
             className='flex-1 md:flex-none'
           >
             <Button variant='outline' className='w-full'>
@@ -375,6 +392,120 @@ export default function NpoDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {showPaymentSettings && (
+        <Card>
+          <CardHeader>
+            <div className='flex items-start justify-between gap-4'>
+              <div>
+                <CardTitle className='flex items-center gap-2'>
+                  <CreditCard className='h-5 w-5' />
+                  Payment Settings
+                </CardTitle>
+                <CardDescription>
+                  Current payment gateway configuration for this organization
+                </CardDescription>
+              </div>
+              <Link
+                to='/npos/$npoId/edit'
+                params={{ npoId }}
+                search={{ tab: 'payments' }}
+              >
+                <Button variant='outline' size='sm'>
+                  Manage
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {paymentSettingsLoading && (
+              <div className='space-y-3'>
+                <Skeleton className='h-5 w-40' />
+                <Skeleton className='h-16 w-full' />
+              </div>
+            )}
+
+            {!paymentSettingsLoading && paymentSettingsError && (
+              <p className='text-destructive text-sm'>
+                Failed to load payment settings.
+              </p>
+            )}
+
+            {!paymentSettingsLoading &&
+              !paymentSettingsError &&
+              credentialResponse &&
+              (isConfigured(credentialResponse) ? (
+                <div className='space-y-4'>
+                  <div className='flex flex-wrap items-center gap-2'>
+                    <Badge
+                      variant={
+                        existingCredential?.is_active ? 'default' : 'secondary'
+                      }
+                    >
+                      {existingCredential?.is_live_mode ? 'Live' : 'Sandbox'}
+                    </Badge>
+                    <Badge variant='outline'>Configured</Badge>
+                  </div>
+
+                  <div className='grid gap-4 md:grid-cols-2'>
+                    <div className='space-y-2'>
+                      <p className='text-muted-foreground text-sm font-medium'>
+                        Gateway
+                      </p>
+                      <p className='text-sm'>
+                        {credentialResponse.gateway_name === 'deluxe'
+                          ? 'Deluxe (First American)'
+                          : 'Stub'}
+                      </p>
+                    </div>
+
+                    <div className='space-y-2'>
+                      <p className='text-muted-foreground text-sm font-medium'>
+                        Merchant ID
+                      </p>
+                      <code className='bg-muted rounded px-2 py-1 font-mono text-xs'>
+                        {credentialResponse.merchant_id_masked}
+                      </code>
+                    </div>
+
+                    <div className='space-y-2'>
+                      <p className='text-muted-foreground text-sm font-medium'>
+                        API Key
+                      </p>
+                      <code className='bg-muted rounded px-2 py-1 font-mono text-xs'>
+                        {credentialResponse.api_key_masked}
+                      </code>
+                    </div>
+
+                    {credentialResponse.gateway_id && (
+                      <div className='space-y-2'>
+                        <p className='text-muted-foreground text-sm font-medium'>
+                          Gateway ID
+                        </p>
+                        <p className='text-sm'>
+                          {credentialResponse.gateway_id}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className='text-muted-foreground text-xs'>
+                    Last updated{' '}
+                    {new Date(credentialResponse.updated_at).toLocaleString()}
+                  </p>
+                </div>
+              ) : (
+                <div className='space-y-3'>
+                  <Badge variant='secondary'>Not Configured</Badge>
+                  <p className='text-muted-foreground text-sm'>
+                    No payment credentials are configured for this organization
+                    yet.
+                  </p>
+                </div>
+              ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Team Management */}
       <Card>

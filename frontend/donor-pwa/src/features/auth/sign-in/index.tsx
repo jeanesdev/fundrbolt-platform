@@ -12,7 +12,7 @@ import { UserAuthForm } from './components/user-auth-form'
 import { SocialLoginButtons } from './components/social-login-buttons'
 
 export function SignIn() {
-  const { redirect } = useSearch({ from: '/(auth)/sign-in' })
+  const { redirect, email } = useSearch({ from: '/(auth)/sign-in' })
 
   return (
     <AuthLayout>
@@ -25,7 +25,7 @@ export function SignIn() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <UserAuthForm redirectTo={redirect} />
+          <UserAuthForm redirectTo={redirect} initialEmail={email} />
           <SocialLoginButtons redirectTo={redirect} />
         </CardContent>
         <CardFooter className='flex-col gap-4'>
