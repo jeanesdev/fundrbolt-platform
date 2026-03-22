@@ -489,14 +489,12 @@ The FundrBolt Team
             "Click the button below to claim your ticket and complete your registration."
         )
 
-        # Build the HTML template, optionally showing the event logo
+        # Render the logo as an inline image so the template's paragraph wrapper stays valid.
         event_logo_html = ""
         if event_logo_url:
             event_logo_html = (
-                f'<div style="text-align: center; margin-bottom: 24px;">'
                 f'<img src="{event_logo_url}" alt="{event_name}" '
-                f'style="max-height: 100px; max-width: 300px; width: auto; display: inline-block;" />'
-                f"</div>"
+                f'style="display: block; max-height: 100px; max-width: 300px; width: auto; margin: 0 auto 24px;" />'
             )
 
         html_body = _create_email_html_template(
@@ -571,10 +569,8 @@ The FundrBolt Team
         event_logo_html = ""
         if event_logo_url:
             event_logo_html = (
-                f'<div style="text-align: center; margin-bottom: 24px;">'
                 f'<img src="{event_logo_url}" alt="{event_name}" '
-                f'style="max-height: 100px; max-width: 300px; width: auto; display: inline-block;" />'
-                f"</div>"
+                f'style="display: block; max-height: 100px; max-width: 300px; width: auto; margin: 0 auto 24px;" />'
             )
 
         html_body = _create_email_html_template(

@@ -393,7 +393,7 @@ export function PublicDirectoryExplorer({
           venue_city: event.venue_city,
           venue_state: event.venue_state,
           status: event.status,
-          logo_url: event.logo_url,
+          logo_url: event.logo_url ?? null,
           hero_transition_style: event.hero_transition_style,
           created_at: event.created_at,
           updated_at: event.updated_at,

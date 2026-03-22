@@ -12,6 +12,7 @@ import {
   getTicketPackages,
   type PublicTicketPackage,
 } from '@/lib/api/events'
+import { hasValidRefreshToken } from '@/lib/storage/tokens'
 import { useAuthStore } from '@/stores/auth-store'
 import { useTicketCartStore } from '@/stores/ticket-cart-store'
 import { useQuery } from '@tanstack/react-query'
@@ -40,6 +41,10 @@ function fmtCurrency(cents: number): string {
 function TicketListingPage() {
   const { slug } = Route.useParams()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const restoreUserFromRefreshToken = useAuthStore(
+    (s) => s.restoreUserFromRefreshToken
+  )
+  const hasRefreshToken = hasValidRefreshToken()
 
   const cartItems = useTicketCartStore((s) => s.items)
   const addItem = useTicketCartStore((s) => s.addItem)
@@ -47,6 +52,15 @@ function TicketListingPage() {
   const setEvent = useTicketCartStore((s) => s.setEvent)
   const totalItems = useTicketCartStore((s) => s.totalItems)
   const subtotal = useTicketCartStore((s) => s.subtotal)
+
+  useQuery({
+    queryKey: ['auth', 'restore-user', 'tickets'],
+    queryFn: async () => restoreUserFromRefreshToken(),
+    enabled: !isAuthenticated && hasRefreshToken,
+    retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  })
 
   const {
     data: event,

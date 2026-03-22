@@ -15,7 +15,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CheckinIndexRouteImport } from './routes/checkin.index'
 import { Route as PreviewEventIdRouteImport } from './routes/preview.$eventId'
 import { Route as InvitationsAcceptRouteImport } from './routes/invitations/accept'
-import { Route as EventsTicketsRouteImport } from './routes/events..tickets'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as AuthenticatedRegistrationsRouteImport } from './routes/_authenticated/registrations'
@@ -92,11 +91,6 @@ const PreviewEventIdRoute = PreviewEventIdRouteImport.update({
 const InvitationsAcceptRoute = InvitationsAcceptRouteImport.update({
   id: '/invitations/accept',
   path: '/invitations/accept',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EventsTicketsRoute = EventsTicketsRouteImport.update({
-  id: '/events/tickets',
-  path: '/events/tickets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EventsSlugRoute = EventsSlugRouteImport.update({
@@ -387,7 +381,6 @@ export interface FileRoutesByFullPath {
   '/registrations': typeof AuthenticatedRegistrationsRoute
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/events/$slug': typeof EventsSlugRouteWithChildren
-  '/events/tickets': typeof EventsTicketsRoute
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/preview/$eventId': typeof PreviewEventIdRoute
   '/checkin/': typeof CheckinIndexRoute
@@ -441,7 +434,6 @@ export interface FileRoutesByTo {
   '/home': typeof AuthenticatedHomeRoute
   '/registrations': typeof AuthenticatedRegistrationsRoute
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
-  '/events/tickets': typeof EventsTicketsRoute
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/preview/$eventId': typeof PreviewEventIdRoute
   '/checkin': typeof CheckinIndexRoute
@@ -497,7 +489,6 @@ export interface FileRoutesById {
   '/_authenticated/registrations': typeof AuthenticatedRegistrationsRoute
   '/_authenticated/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/events/$slug': typeof EventsSlugRouteWithChildren
-  '/events/tickets': typeof EventsTicketsRoute
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/preview/$eventId': typeof PreviewEventIdRoute
   '/checkin/': typeof CheckinIndexRoute
@@ -555,7 +546,6 @@ export interface FileRouteTypes {
     | '/registrations'
     | '/tickets'
     | '/events/$slug'
-    | '/events/tickets'
     | '/invitations/accept'
     | '/preview/$eventId'
     | '/checkin/'
@@ -609,7 +599,6 @@ export interface FileRouteTypes {
     | '/home'
     | '/registrations'
     | '/tickets'
-    | '/events/tickets'
     | '/invitations/accept'
     | '/preview/$eventId'
     | '/checkin'
@@ -664,7 +653,6 @@ export interface FileRouteTypes {
     | '/_authenticated/registrations'
     | '/_authenticated/tickets'
     | '/events/$slug'
-    | '/events/tickets'
     | '/invitations/accept'
     | '/preview/$eventId'
     | '/checkin/'
@@ -718,7 +706,6 @@ export interface RootRouteChildren {
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
   EventsSlugRoute: typeof EventsSlugRouteWithChildren
-  EventsTicketsRoute: typeof EventsTicketsRoute
   InvitationsAcceptRoute: typeof InvitationsAcceptRoute
   CheckinIndexRoute: typeof CheckinIndexRoute
 }
@@ -765,13 +752,6 @@ declare module '@tanstack/react-router' {
       path: '/invitations/accept'
       fullPath: '/invitations/accept'
       preLoaderRoute: typeof InvitationsAcceptRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/events/tickets': {
-      id: '/events/tickets'
-      path: '/events/tickets'
-      fullPath: '/events/tickets'
-      preLoaderRoute: typeof EventsTicketsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/events/$slug': {
@@ -1275,7 +1255,6 @@ const rootRouteChildren: RootRouteChildren = {
   errors500Route: errors500Route,
   errors503Route: errors503Route,
   EventsSlugRoute: EventsSlugRouteWithChildren,
-  EventsTicketsRoute: EventsTicketsRoute,
   InvitationsAcceptRoute: InvitationsAcceptRoute,
   CheckinIndexRoute: CheckinIndexRoute,
 }

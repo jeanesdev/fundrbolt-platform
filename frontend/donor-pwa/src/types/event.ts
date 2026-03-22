@@ -36,15 +36,21 @@ export interface Event {
   description: string | null
   event_datetime: string
   timezone: string
+  location_name?: string | null
+  location_address?: string | null
   venue_name: string | null
   venue_address: string | null
   venue_city: string | null
   venue_state: string | null
   venue_zip: string | null
+  venue_capacity?: number | null
   attire: string | null
   primary_contact_name: string | null
   primary_contact_email: string | null
   primary_contact_phone: string | null
+  checkout_open?: boolean
+  logo_url?: string | null
+  banner_url?: string | null
   primary_color: string | null
   secondary_color: string | null
   background_color: string | null

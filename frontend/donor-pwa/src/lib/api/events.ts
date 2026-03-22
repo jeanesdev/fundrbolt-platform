@@ -17,13 +17,25 @@ export interface EventResponse {
   slug: string
   name: string
   tagline: string | null
+  description?: string | null
   event_datetime: string
   timezone: string
+  location_name?: string | null
+  location_address?: string | null
   venue_name: string | null
+  venue_address?: string | null
   venue_city: string | null
   venue_state: string | null
+  venue_zip?: string | null
+  venue_capacity?: number | null
   status: 'draft' | 'active' | 'closed'
+  checkout_open?: boolean
   logo_url: string | null
+  primary_color?: string | null
+  secondary_color?: string | null
+  background_color?: string | null
+  accent_color?: string | null
+  banner_url?: string | null
   hero_transition_style: string
   created_at: string
   updated_at: string
@@ -87,16 +99,24 @@ export interface PublicTicketCustomOption {
 export interface EventDetailResponse extends EventResponse {
   npo_name: string | null
   timezone: string
+  location_name?: string | null
+  location_address: string | null
   venue_address: string | null
   venue_city: string | null
   venue_state: string | null
   venue_zip: string | null
+  venue_capacity?: number | null
   attire: string | null
+  fundraising_goal?: number | null
   primary_contact_name: string | null
   primary_contact_email: string | null
   primary_contact_phone: string | null
+  description: string | null
+  primary_color: string | null
+  secondary_color: string | null
   background_color: string | null
   accent_color: string | null
+  banner_url?: string | null
   hero_transition_style: string
   food_options: FoodOption[]
   media: EventMedia[]
@@ -147,7 +167,7 @@ export async function getEventBranding(slug: string): Promise<{
     primary_color: event.primary_color,
     secondary_color: event.secondary_color,
     logo_url: event.logo_url,
-    banner_url: event.banner_url,
+    banner_url: event.banner_url ?? null,
   }
 }
 
