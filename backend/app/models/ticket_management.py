@@ -168,22 +168,30 @@ class TicketPackage(Base, UUIDMixin):
 
 
 class CustomTicketOption(Base, UUIDMixin):
-    """Custom option/question attached to a ticket package.
+    """Custom option/question attached to a ticket package or an event.
 
     Business Rules:
     - option_type determines validation rules
     - multi_select requires JSONB choices array
     - display_order controls ordering in UI
     - Maximum 4 custom options per ticket package (enforced in service layer)
+    - Event-level options (event_id set, ticket_package_id NULL) apply to all registrations
+    - Exactly one of ticket_package_id or event_id must be set
     """
 
     __tablename__ = "custom_ticket_options"
 
     # Foreign Keys
-    ticket_package_id: Mapped[uuid.UUID] = mapped_column(
+    ticket_package_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("ticket_packages.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
+        index=True,
+    )
+    event_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("events.id", ondelete="CASCADE"),
+        nullable=True,
         index=True,
     )
 
@@ -210,9 +218,10 @@ class CustomTicketOption(Base, UUIDMixin):
     )
 
     # Relationships
-    ticket_package: Mapped["TicketPackage"] = relationship(
+    ticket_package: Mapped["TicketPackage | None"] = relationship(
         "TicketPackage", back_populates="custom_options"
     )
+    event: Mapped["Event | None"] = relationship("Event", back_populates="custom_options")
     responses: Mapped[list["OptionResponse"]] = relationship(
         "OptionResponse",
         back_populates="custom_option",
@@ -224,6 +233,10 @@ class CustomTicketOption(Base, UUIDMixin):
         CheckConstraint(
             "option_type IN ('boolean', 'text_input') OR (option_type = 'multi_select' AND choices IS NOT NULL)",
             name="check_multi_select_has_choices",
+        ),
+        CheckConstraint(
+            "(ticket_package_id IS NOT NULL AND event_id IS NULL) OR (ticket_package_id IS NULL AND event_id IS NOT NULL)",
+            name="check_custom_option_owner",
         ),
     )
 

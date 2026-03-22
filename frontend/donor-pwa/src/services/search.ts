@@ -39,6 +39,7 @@ export interface NPOSearchResult {
 
 export interface EventSearchResult {
   id: string
+  slug: string
   name: string
   npo_id: string
   npo_name: string
@@ -53,6 +54,7 @@ export interface AuctionItemSearchResult {
   id: string
   name: string
   event_id: string
+  event_slug: string | null
   event_name: string
   category: string
   status: string

@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import decode_token
 from app.middleware.rate_limit import api_rate_limit, rate_limit, strict_rate_limit
+from app.models.user import User
 from app.schemas.auth import (
     EmailResendRequest,
     EmailVerifyCodeRequest,
@@ -53,6 +54,18 @@ from app.services.social_auth_service import SocialAuthService
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+def _sync_verified_contact_email(user: User) -> None:
+    communications_email = user.communications_email
+    email = user.email
+    if not communications_email:
+        user.communications_email = email
+        user.communications_email_verified = True
+        return
+
+    if communications_email.lower() == email.lower():
+        user.communications_email_verified = True
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED, response_model=UserRegisterResponse)
@@ -121,6 +134,9 @@ async def register(
         user_public = UserPublic(
             id=user.id,
             email=user.email,
+            has_local_password=user.has_local_password,
+            communications_email=user.communications_email,
+            communications_email_verified=user.communications_email_verified,
             first_name=user.first_name,
             last_name=user.last_name,
             phone=user.phone,
@@ -311,6 +327,9 @@ async def refresh_token(
         user_public = UserPublic(
             id=user.id,
             email=user.email,
+            has_local_password=user.has_local_password,
+            communications_email=user.communications_email,
+            communications_email_verified=user.communications_email_verified,
             first_name=user.first_name,
             last_name=user.last_name,
             phone=user.phone,
@@ -506,6 +525,7 @@ async def verify_email(
     # Update user verification status
     user.email_verified = True
     user.is_active = True
+    _sync_verified_contact_email(user)
     await db.commit()
     await db.refresh(user)
 
@@ -706,6 +726,7 @@ async def verify_email_with_code(
     # Update user verification status
     user.email_verified = True
     user.is_active = True
+    _sync_verified_contact_email(user)
     await db.commit()
     await db.refresh(user)
 
@@ -787,6 +808,9 @@ async def verify_email_with_code(
     user_public = UserPublic(
         id=user.id,
         email=user.email,
+        has_local_password=user.has_local_password,
+        communications_email=user.communications_email,
+        communications_email_verified=user.communications_email_verified,
         first_name=user.first_name,
         last_name=user.last_name,
         phone=user.phone,
@@ -1005,6 +1029,15 @@ async def change_password(
                 detail={
                     "code": "INVALID_PASSWORD",
                     "message": "Current password is incorrect",
+                },
+            ) from e
+
+        if "required" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "code": "CURRENT_PASSWORD_REQUIRED",
+                    "message": "Current password is required",
                 },
             ) from e
 

@@ -4,17 +4,33 @@
  * Shows an inline banner (not a modal) that can be dismissed.
  * Dismissal is persisted in localStorage.
  */
-import { useCallback, useState } from 'react'
-import { Bell, X } from 'lucide-react'
 import { usePushNotifications } from '@/hooks/use-push-notifications'
+import { Bell, X } from 'lucide-react'
+import { useCallback, useState } from 'react'
 
 const DISMISS_KEY = 'push-notification-prompt-dismissed'
 
 function isDismissed(): boolean {
   try {
-    return localStorage.getItem(DISMISS_KEY) === 'true'
+    if (localStorage.getItem(DISMISS_KEY) === 'true') {
+      return true
+    }
+
+    if ('Notification' in window && Notification.permission !== 'default') {
+      return true
+    }
+
+    return false
   } catch {
     return false
+  }
+}
+
+function persistDismissed() {
+  try {
+    localStorage.setItem(DISMISS_KEY, 'true')
+  } catch {
+    // Ignore storage errors
   }
 }
 
@@ -24,16 +40,16 @@ export function PushOptInPrompt() {
   const [dismissed, setDismissed] = useState(isDismissed)
 
   const handleDismiss = useCallback(() => {
-    try {
-      localStorage.setItem(DISMISS_KEY, 'true')
-    } catch {
-      // Ignore storage errors
-    }
+    persistDismissed()
     setDismissed(true)
   }, [])
 
   const handleEnable = useCallback(async () => {
     await subscribe()
+    if ('Notification' in window && Notification.permission !== 'default') {
+      persistDismissed()
+      setDismissed(true)
+    }
   }, [subscribe])
 
   // Don't show if not supported, already subscribed, or dismissed
@@ -57,7 +73,7 @@ export function PushOptInPrompt() {
           <Bell className='text-primary h-5 w-5' />
         </div>
         <div className='flex-1'>
-          <p className='text-foreground text-sm font-semibold'>
+          <p className='text-foreground text-base font-bold leading-tight'>
             Stay in the loop!
           </p>
           <p className='text-muted-foreground mt-0.5 text-xs'>

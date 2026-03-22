@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from app.models.npo import NPO
     from app.models.payment_transaction import PaymentTransaction
     from app.models.sponsor import Sponsor
+    from app.models.ticket_management import CustomTicketOption as CustomTicketOption
     from app.models.ticket_management import PromoCode, TicketPurchase
     from app.models.ticket_management import TicketAssignment as TicketAssignment
     from app.models.ticket_package import TicketPackage
@@ -357,6 +358,13 @@ class Event(Base, UUIDMixin, TimestampMixin):
     payment_transactions: Mapped[list["PaymentTransaction"]] = relationship(
         "PaymentTransaction",
         back_populates="event",
+    )
+    # Universal custom options (event-level, not tied to a specific package)
+    custom_options: Mapped[list["CustomTicketOption"]] = relationship(
+        "CustomTicketOption",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        order_by="CustomTicketOption.display_order",
     )
 
     # Computed Properties (Feature 012)

@@ -21,7 +21,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "036_tp_001"
-down_revision: str | Sequence[str] | None = None
+down_revision: str | Sequence[str] | None = "pay033_001"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

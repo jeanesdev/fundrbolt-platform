@@ -39,9 +39,8 @@ export function CheckInLookup({ onRegistrationFound }: CheckInLookupProps) {
       } else {
         onRegistrationFound(data)
       }
-    } catch (err) {
+    } catch {
       setError('Error looking up registration. Please try again.')
-      console.error('Lookup error:', err)
     } finally {
       setLoading(false)
     }
@@ -65,9 +64,8 @@ export function CheckInLookup({ onRegistrationFound }: CheckInLookupProps) {
       } else {
         onRegistrationFound(data)
       }
-    } catch (err) {
+    } catch {
       setError('Error looking up registration. Please try again.')
-      console.error('Lookup error:', err)
     } finally {
       setLoading(false)
     }

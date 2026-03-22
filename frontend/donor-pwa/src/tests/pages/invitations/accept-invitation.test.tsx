@@ -2,41 +2,41 @@
  * Tests for AcceptInvitationPage component
  * Focus: Email mismatch detection and UI display
  */
-
-import { render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import AcceptInvitationPage from '@/pages/invitations/accept-invitation'
+import { render, screen, waitFor } from '@testing-library/react'
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { useAuthStore } from '@/stores/auth-store'
 
 // Create a mock JWT token with email
 const createMockToken = (email: string) => {
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-  const payload = btoa(JSON.stringify({
-    email,
-    npo_name: 'Test NPO',
-    role: 'staff',
-    inviter_name: 'John Doe',
-  }))
+  const payload = btoa(
+    JSON.stringify({
+      email,
+      npo_name: 'Test NPO',
+      role: 'staff',
+      inviter_name: 'John Doe',
+    })
+  )
   const signature = 'mock-signature'
   return `${header}.${payload}.${signature}`
 }
 
 // Create query client for tests
-const createTestQueryClient = () => new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false,
+const createTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
     },
-  },
-})
+  })
 
 const renderWithProviders = (component: React.ReactElement) => {
   const queryClient = createTestQueryClient()
   return render(
-    <QueryClientProvider client={queryClient}>
-      {component}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{component}</QueryClientProvider>
   )
 }
 
@@ -90,14 +90,19 @@ describe('AcceptInvitationPage - Email Mismatch Detection', () => {
     renderWithProviders(<AcceptInvitationPage />)
 
     // Wait for the component to process the token
-    await waitFor(() => {
-      expect(screen.getByText('Email Mismatch')).toBeInTheDocument()
-    }, { timeout: 3000 })
+    await waitFor(
+      () => {
+        expect(screen.getByText('Email Mismatch')).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
 
     // Check warning message content
     expect(screen.getAllByText(/different@example.com/)[0]).toBeInTheDocument()
     expect(screen.getAllByText(/invited@example.com/)[0]).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /switch account/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /switch account/i })
+    ).toBeInTheDocument()
   })
 
   it('shows accept button when logged-in user email matches invitation email', async () => {
@@ -121,9 +126,14 @@ describe('AcceptInvitationPage - Email Mismatch Detection', () => {
     renderWithProviders(<AcceptInvitationPage />)
 
     // Wait for the component to process the token
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /accept invitation/i })).toBeInTheDocument()
-    }, { timeout: 3000 })
+    await waitFor(
+      () => {
+        expect(
+          screen.getByRole('button', { name: /accept invitation/i })
+        ).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
 
     // Should not show email mismatch warning
     expect(screen.queryByText('Email Mismatch')).not.toBeInTheDocument()
@@ -143,9 +153,14 @@ describe('AcceptInvitationPage - Email Mismatch Detection', () => {
     renderWithProviders(<AcceptInvitationPage />)
 
     // Wait for the component to process the token
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /register and accept/i })).toBeInTheDocument()
-    }, { timeout: 3000 })
+    await waitFor(
+      () => {
+        expect(
+          screen.getByRole('button', { name: /register and accept/i })
+        ).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
 
     // Should show login link
     expect(screen.getByText(/log in to accept/i)).toBeInTheDocument()
@@ -158,9 +173,12 @@ describe('AcceptInvitationPage - Email Mismatch Detection', () => {
     renderWithProviders(<AcceptInvitationPage />)
 
     // Wait for error message
-    await waitFor(() => {
-      expect(screen.getByText(/no token provided/i)).toBeInTheDocument()
-    }, { timeout: 3000 })
+    await waitFor(
+      () => {
+        expect(screen.getByText(/no token provided/i)).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
   })
 
   it('displays invitation details correctly', async () => {
@@ -184,9 +202,12 @@ describe('AcceptInvitationPage - Email Mismatch Detection', () => {
     renderWithProviders(<AcceptInvitationPage />)
 
     // Wait for the component to process the token
-    await waitFor(() => {
-      expect(screen.getByText('Test NPO')).toBeInTheDocument()
-    }, { timeout: 3000 })
+    await waitFor(
+      () => {
+        expect(screen.getByText('Test NPO')).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
 
     // Check other invitation details
     expect(screen.getByText('STAFF')).toBeInTheDocument()

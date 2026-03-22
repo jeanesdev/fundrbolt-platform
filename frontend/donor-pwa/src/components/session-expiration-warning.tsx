@@ -20,12 +20,19 @@ export function SessionExpirationWarning({
   inactivityTimeoutSeconds = 900,
   autoRefreshThresholdSeconds = 300,
 }: SessionExpirationWarningProps) {
-  const lastActivityAtRef = useRef<number>(Date.now())
+  const lastActivityAtRef = useRef<number>(0)
   const lastTrackedActivityAtRef = useRef<number>(0)
   const lastRefreshAttemptRef = useRef<number>(0)
 
   const router = useRouter()
   const { accessToken, refreshToken, reset } = useAuthStore()
+
+  useEffect(() => {
+    if (!accessToken || !refreshToken) return
+
+    lastActivityAtRef.current = Date.now()
+    lastTrackedActivityAtRef.current = 0
+  }, [accessToken, refreshToken])
 
   // Parse JWT to get expiration time
   const getTokenExpiry = useCallback((token: string): number | null => {

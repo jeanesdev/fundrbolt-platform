@@ -23,8 +23,7 @@ export function GuestCheckInList({ guests, onGuestUpdated }: GuestCheckInListPro
     try {
       await checkinApi.checkInGuest(guestId)
       onGuestUpdated()
-    } catch (error) {
-      console.error('Error checking in guest:', error)
+    } catch {
     } finally {
       setLoading(null)
     }
@@ -35,8 +34,7 @@ export function GuestCheckInList({ guests, onGuestUpdated }: GuestCheckInListPro
     try {
       await checkinApi.undoCheckInGuest(guestId)
       onGuestUpdated()
-    } catch (error) {
-      console.error('Error undoing check-in:', error)
+    } catch {
     } finally {
       setLoading(null)
     }

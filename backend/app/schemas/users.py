@@ -165,6 +165,7 @@ class UserPublicWithRole(BaseModel):
 
     id: uuid.UUID
     email: str
+    has_local_password: bool = True
     communications_email: str | None = None
     communications_email_verified: bool = False
     first_name: str

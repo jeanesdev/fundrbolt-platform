@@ -218,3 +218,40 @@ class TestPasswordChange:
         )
 
         assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_set_backup_password_for_social_user_without_current_password(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+        test_social_user_no_local_password: User,
+    ) -> None:
+        """OAuth-only users can set a first backup password without a current password."""
+        from app.core.security import create_access_token
+
+        access_token = create_access_token({"sub": str(test_social_user_no_local_password.id)})
+        response = await async_client.post(
+            "/api/v1/auth/password/change",
+            json={"new_password": "BackupPass456"},
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+
+        assert response.status_code == 200
+
+        await db_session.refresh(test_social_user_no_local_password)
+        assert test_social_user_no_local_password.has_local_password is True
+        assert test_social_user_no_local_password.verify_password("BackupPass456") is True
+
+    @pytest.mark.asyncio
+    async def test_change_password_requires_current_for_existing_local_password(
+        self,
+        authenticated_client: AsyncClient,
+    ) -> None:
+        """Users with an existing local password still need to provide it."""
+        response = await authenticated_client.post(
+            "/api/v1/auth/password/change",
+            json={"new_password": "NewPassword456"},
+        )
+
+        assert response.status_code == 400
+        assert response.json()["detail"]["code"] == "CURRENT_PASSWORD_REQUIRED"

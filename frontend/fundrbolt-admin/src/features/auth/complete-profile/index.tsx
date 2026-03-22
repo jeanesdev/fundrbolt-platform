@@ -8,16 +8,7 @@
  * Detection: localStorage flag `profile_setup_seen_<userId>` is
  * absent on first login; set when user completes or skips the prompt.
  */
-import { useState } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
-import { useNavigate, useSearch } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import apiClient from '@/lib/axios'
+import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -35,12 +26,22 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
 import { AuthLayout } from '@/features/auth/auth-layout'
 import {
   SignUpWizard,
   type WizardStep,
 } from '@/features/auth/sign-up-wizard/SignUpWizard'
+import { PasswordChangeForm } from '@/features/settings/account/components/password-change-form'
+import apiClient from '@/lib/axios'
+import { useAuthStore } from '@/stores/auth-store'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation } from '@tanstack/react-query'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import { Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
 import { markProfileSetupSeen } from './utils'
 
 // ---------------------------------------------------------------------------
@@ -331,6 +332,13 @@ export function CompleteProfile() {
                       )}
                     />
                   </div>
+
+                  <PasswordChangeForm
+                    collapsible
+                    defaultOpen={false}
+                    title='Recovery Password'
+                    description='Optional. Save a password as an alternate login in addition to OAuth.'
+                  />
 
                   {/* Actions */}
                   <div className='flex flex-col gap-3 pt-2'>

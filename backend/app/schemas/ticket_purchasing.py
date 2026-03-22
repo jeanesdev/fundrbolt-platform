@@ -117,7 +117,10 @@ class TicketDetail(BaseModel):
     id: uuid.UUID
     ticket_number: int
     qr_code: str
-    assignment_status: str = Field(..., description="unassigned | assigned | registered")
+    assignment_status: str = Field(
+        ...,
+        description="unassigned | assigned | invited | registered",
+    )
     assignment: AssignmentSummary | None = None
 
     model_config = ConfigDict(from_attributes=True)

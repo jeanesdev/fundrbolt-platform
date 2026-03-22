@@ -191,7 +191,8 @@
     {
       "name": "Full Stack (Backend + Frontend)",
       "configurations": [
-        "Backend: FastAPI"
+        "Backend: FastAPI",
+        "Frontend: Donor PWA (Chrome)"
       ],
       "preLaunchTask": "start-fullstack-with-cleanup",
       "presentation": {

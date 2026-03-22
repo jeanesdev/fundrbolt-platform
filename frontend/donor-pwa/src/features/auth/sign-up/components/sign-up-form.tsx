@@ -272,9 +272,8 @@ export function SignUpForm({
             }
           }
         }
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to parse invitation token:', err)
+      } catch {
+        // Ignore malformed invitation tokens and fall back to normal sign up.
       }
     }
   }, [form])
@@ -284,49 +283,41 @@ export function SignUpForm({
     const initAutocomplete = async () => {
       // Check if feature is enabled
       const isEnabled = import.meta.env.VITE_ENABLE_ADDRESS_AUTOCOMPLETE === 'true'
-      console.log('🗺️ Google Places - Feature enabled:', isEnabled)
       if (!isEnabled) {
-        console.log('❌ Google Places disabled in .env')
         return
       }
 
       // Wait for input to be ready
       if (!addressInputRef.current) {
-        console.log('⏳ Waiting for address input to mount...')
         // Retry after a short delay
-        setTimeout(() => setIsAddressInputReady(!isAddressInputReady), 100)
+        window.setTimeout(() => {
+          setIsAddressInputReady((ready) => !ready)
+        }, 100)
         return
       }
 
       if (isGoogleMapsInitialized.current) {
-        console.log('✅ Google Places already initialized')
         return
       }
 
       const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-      console.log('🔑 API Key present:', !!apiKey)
       if (!apiKey) {
-        console.log('❌ No Google Maps API key found')
         return
       }
 
       try {
-        console.log('🚀 Initializing Google Places Autocomplete...')
-
         // Set options for Google Maps (only once)
         setOptions({ key: apiKey })
         isGoogleMapsInitialized.current = true
 
         // Import places library
         const { Autocomplete } = (await importLibrary('places')) as any // eslint-disable-line @typescript-eslint/no-explicit-any
-        console.log('✅ Google Places library loaded')
 
         const autocomplete = new Autocomplete(addressInputRef.current, {
           types: ['address'],
           componentRestrictions: { country: 'us' },
           fields: ['address_components', 'formatted_address', 'geometry', 'name'],
         })
-        console.log('✅ Autocomplete widget created')
 
         autocomplete.addListener('place_changed', () => {
           const place = autocomplete.getPlace()
@@ -369,9 +360,8 @@ export function SignUpForm({
         })
 
         autocompleteRef.current = autocomplete
-        console.log('✅ Google Places Autocomplete fully initialized and ready')
-      } catch (error) {
-        console.error('❌ Error loading Google Places:', error)
+      } catch {
+        isGoogleMapsInitialized.current = false
       }
     }
 
@@ -394,9 +384,7 @@ export function SignUpForm({
             tos_document_id: legalDocumentIds.tosId,
             privacy_document_id: legalDocumentIds.privacyId,
           })
-        } catch (consentError) {
-          // eslint-disable-next-line no-console
-          console.error('Failed to record consent:', consentError)
+        } catch {
           // Don't fail registration if consent recording fails
         }
       }

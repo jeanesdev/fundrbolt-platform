@@ -6,7 +6,7 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import { useLayout } from '@/context/layout-provider'
-import { LogoNavyGold } from '@fundrbolt/shared/assets'
+import { LogoWhiteGold } from '@fundrbolt/shared/assets'
 import { Settings, User } from 'lucide-react'
 import { sidebarData } from './data/sidebar-data'
 import { EventSelector } from './EventSelector'
@@ -48,7 +48,7 @@ export function AppSidebar() {
         {/* FundrBolt Logo */}
         <div className='flex items-center justify-center px-4 py-2'>
           <img
-            src={LogoNavyGold}
+            src={LogoWhiteGold}
             alt='FundrBolt'
             className='h-8 w-auto'
           />

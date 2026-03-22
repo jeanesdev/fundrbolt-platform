@@ -668,6 +668,7 @@ class EventService:
             select(Event)
             .where(and_(Event.slug == slug, Event.status == EventStatus.ACTIVE))
             .options(
+                selectinload(Event.npo),
                 selectinload(Event.media),
                 selectinload(Event.links),
                 selectinload(Event.food_options),
@@ -684,11 +685,12 @@ class EventService:
         page: int = 1,
         per_page: int = 20,
         search_query: str | None = None,
+        include_media: bool = False,
     ) -> tuple[list[Event], int]:
         """List events with filtering, pagination, and optional search."""
-        from sqlalchemy.orm import selectinload
-
         query = select(Event).options(selectinload(Event.npo))
+        if include_media:
+            query = query.options(selectinload(Event.media))
 
         if npo_id:
             query = query.where(Event.npo_id == npo_id)

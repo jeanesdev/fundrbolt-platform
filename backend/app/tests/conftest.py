@@ -453,6 +453,35 @@ async def test_super_admin_user(db_session: AsyncSession) -> Any:
 
 
 @pytest_asyncio.fixture
+async def test_social_user_no_local_password(db_session: AsyncSession) -> Any:
+    """Create an active donor-style OAuth user without a local password."""
+    from sqlalchemy import text
+
+    from app.core.security import hash_password
+    from app.models.user import User
+
+    role_result = await db_session.execute(text("SELECT id FROM roles WHERE name = 'donor'"))
+    donor_role_id = role_result.scalar_one()
+
+    user = User(
+        email="oauth-only@example.com",
+        first_name="OAuth",
+        last_name="User",
+        password_hash=hash_password("temporary-unusable-password"),
+        email_verified=True,
+        has_local_password=False,
+        is_active=True,
+        role_id=donor_role_id,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+
+    user.role_name = "donor"  # type: ignore[attr-defined]
+    return user
+
+
+@pytest_asyncio.fixture
 async def test_npo_admin_user(db_session: AsyncSession) -> Any:
     """
     Create a test npo_admin user.

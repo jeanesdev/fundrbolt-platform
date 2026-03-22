@@ -156,6 +156,33 @@ class NPOListResponse(BaseModel):
     total_pages: int
 
 
+class PublicNPOResponse(BaseModel):
+    """Public-facing summary schema for approved organizations."""
+
+    id: uuid.UUID
+    name: str
+    tagline: str | None
+    description: str | None
+    mission_statement: str | None
+    website_url: str | None
+    phone: str | None
+    email: str
+    address: dict[str, str] | None
+    logo_url: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class PublicNPOListResponse(BaseModel):
+    """Paginated response schema for public organization browsing."""
+
+    items: list[PublicNPOResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
 class NPOCreateResponse(BaseModel):
     """Response schema after creating NPO."""
 

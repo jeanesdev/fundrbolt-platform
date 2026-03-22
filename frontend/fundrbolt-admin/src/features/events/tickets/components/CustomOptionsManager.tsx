@@ -2,8 +2,17 @@
  * CustomOptionsManager
  * Component for managing custom ticket options (create, edit, delete, reorder)
  */
-import { useEffect, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import apiClient from '@/lib/axios'
+import { getErrorMessage } from '@/lib/error-utils'
 import {
   closestCenter,
   DndContext,
@@ -21,18 +30,10 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import apiClient from '@/lib/axios'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { CustomOptionFormDialog } from './CustomOptionFormDialog'
 
 interface CustomOption {
@@ -58,7 +59,7 @@ export function CustomOptionsManager({ packageId }: CustomOptionsManagerProps) {
   const [localOptions, setLocalOptions] = useState<CustomOption[]>([])
 
   // Fetch options
-  const { data, isLoading } = useQuery({
+  const { data, error, isError, isLoading, refetch } = useQuery({
     queryKey: ['custom-options', packageId],
     queryFn: async () => {
       const response = await apiClient.get(
@@ -172,6 +173,27 @@ export function CustomOptionsManager({ packageId }: CustomOptionsManagerProps) {
             <div className='h-4 w-1/4 rounded bg-gray-200'></div>
             <div className='h-20 rounded bg-gray-200'></div>
           </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Custom Options</CardTitle>
+          <CardDescription>
+            Failed to load custom options for this package.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='flex items-center justify-between gap-4'>
+          <p className='text-sm text-red-600'>
+            {getErrorMessage(error, 'Failed to load custom options')}
+          </p>
+          <Button variant='outline' onClick={() => void refetch()}>
+            Retry
+          </Button>
         </CardContent>
       </Card>
     )

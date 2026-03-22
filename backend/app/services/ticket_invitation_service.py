@@ -36,6 +36,7 @@ from app.schemas.ticket_purchasing import (
     InvitationSendResponse,
     InvitationValidateResponse,
 )
+from app.services.email_service import get_email_service
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -59,6 +60,7 @@ class TicketInvitationService:
         guest_email: str,
         event_id: uuid.UUID,
         expires_at: datetime,
+        nonce: str,
     ) -> str:
         """Generate an HMAC-signed invitation token."""
         payload = json.dumps(
@@ -67,6 +69,7 @@ class TicketInvitationService:
                 "email": guest_email,
                 "eid": str(event_id),
                 "exp": expires_at.isoformat(),
+                "nonce": nonce,
             }
         )
         encoded = base64.urlsafe_b64encode(payload.encode()).decode()
@@ -179,6 +182,7 @@ class TicketInvitationService:
             guest_email=assignment.guest_email,
             event_id=event.id,
             expires_at=expires_at,
+            nonce=uuid.uuid4().hex,
         )
 
         now = datetime.now(UTC)
@@ -201,8 +205,41 @@ class TicketInvitationService:
         await db.flush()
         await db.refresh(invitation)
 
-        # Placeholder: log the invitation URL instead of sending email
-        invitation_url = f"{settings.frontend_donor_url}/invitations/{token}"
+        invitation_url = f"{settings.frontend_donor_url}/invitations/accept?token={token}"
+        event_datetime_text = event.event_datetime.strftime("%B %d, %Y at %I:%M %p")
+        if event.timezone:
+            event_datetime_text = f"{event_datetime_text} ({event.timezone})"
+
+        # Resolve the event logo URL for the email
+        event_logo_url: str | None = None
+        if event.logo_url:
+            from app.api.v1.event_media_urls import get_signed_asset_url
+
+            event_logo_url = get_signed_asset_url(event.logo_url)
+
+        # Fetch the purchaser's name and email for the invitation email
+        purchaser_result = await db.execute(select(User).where(User.id == user_id))
+        purchaser: User | None = purchaser_result.scalar_one_or_none()
+        inviter_name = (
+            f"{purchaser.first_name} {purchaser.last_name}".strip() if purchaser else None
+        )
+        inviter_email = purchaser.email if purchaser else None
+
+        email_service = get_email_service()
+        await email_service.send_ticket_assignment_invitation_email(
+            to_email=assignment.guest_email,
+            guest_name=assignment.guest_name,
+            event_name=event.name,
+            event_datetime_text=event_datetime_text,
+            venue_name=event.venue_name,
+            venue_address=event.venue_address,
+            invitation_url=invitation_url,
+            personal_message=personal_message,
+            inviter_name=inviter_name,
+            inviter_email=inviter_email,
+            event_logo_url=event_logo_url,
+        )
+
         logger.info(
             "Ticket invitation sent",
             extra={
@@ -324,6 +361,9 @@ class TicketInvitationService:
                 guest_email=assignment.guest_email,
                 assignment_id=assignment.id,
             )
+
+        if assignment.status == AssignmentStatus.CANCELLED.value:
+            return InvitationValidateResponse(valid=False)
 
         return InvitationValidateResponse(
             valid=True,

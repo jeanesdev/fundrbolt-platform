@@ -104,9 +104,11 @@ export interface SocialAuthCallbackRequest {
 
 export interface SocialAuthPendingResponse {
   status: 'pending_verification';
-  reason: 'link_confirmation_required' | 'email_verification_required' | 'admin_step_up_required';
+  reason: 'link_confirmation_required' | 'email_verification_required' | 'admin_step_up_required' | 'needs_registration';
   attempt_id: string;
   message?: string;
+  prefill_email?: string;
+  prefill_name?: string;
 }
 
 export interface SocialAuthSuccessResponse {

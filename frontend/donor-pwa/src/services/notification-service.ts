@@ -4,6 +4,7 @@
  */
 
 import apiClient from '@/lib/axios'
+import { AxiosError } from 'axios'
 
 export interface NotificationData {
   id: string
@@ -44,26 +45,52 @@ class NotificationService {
     eventId: string,
     options?: ListNotificationsOptions,
   ): Promise<NotificationListResponse> {
-    const response = await apiClient.get<NotificationListResponse>(
-      '/notifications',
-      {
-        params: {
-          event_id: eventId,
-          limit: options?.limit ?? 20,
-          cursor: options?.cursor ?? undefined,
-          unread_only: options?.unread_only ?? false,
+    try {
+      const response = await apiClient.get<NotificationListResponse>(
+        '/notifications',
+        {
+          params: {
+            event_id: eventId,
+            limit: options?.limit ?? 20,
+            cursor: options?.cursor ?? undefined,
+            unread_only: options?.unread_only ?? false,
+          },
         },
-      },
-    )
-    return response.data
+      )
+      return response.data
+    } catch (error) {
+      if (
+        error instanceof AxiosError &&
+        [404, 500].includes(error.response?.status ?? 0)
+      ) {
+        return {
+          notifications: [],
+          next_cursor: null,
+          unread_count: 0,
+        }
+      }
+
+      throw error
+    }
   }
 
   async getUnreadCount(eventId: string): Promise<UnreadCountResponse> {
-    const response = await apiClient.get<UnreadCountResponse>(
-      '/notifications/unread-count',
-      { params: { event_id: eventId } },
-    )
-    return response.data
+    try {
+      const response = await apiClient.get<UnreadCountResponse>(
+        '/notifications/unread-count',
+        { params: { event_id: eventId } },
+      )
+      return response.data
+    } catch (error) {
+      if (
+        error instanceof AxiosError &&
+        [404, 500].includes(error.response?.status ?? 0)
+      ) {
+        return { unread_count: 0 }
+      }
+
+      throw error
+    }
   }
 
   async markRead(notificationId: string): Promise<{ success: boolean }> {

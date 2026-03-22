@@ -10,10 +10,20 @@ import { create } from 'zustand'
 interface AuthUser {
   id: string
   email: string
+  has_local_password?: boolean
+  phone?: string | null
   communications_email?: string | null
   communications_email_verified?: boolean
   first_name: string
   last_name: string
+  organization_name?: string | null
+  address_line1?: string | null
+  address_line2?: string | null
+  city?: string | null
+  state?: string | null
+  postal_code?: string | null
+  country?: string | null
+  social_media_links?: Record<string, string> | null
   role: string
   npo_id: string | null
   profile_picture_url?: string | null
@@ -286,9 +296,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       })
 
       return true
-    } catch (error) {
+    } catch {
       // Refresh token is invalid or expired
-      console.error('Failed to restore user from refresh token:', error)
       get().reset()
       set({ isLoading: false })
       return false
@@ -307,7 +316,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       isAuthenticated: true,
       isLoading: false,
     })
-    // Restore full user data via refresh
-    get().restoreUserFromRefreshToken()
+    // User data will be restored by AuthenticatedLayout on mount via restoreUserFromRefreshToken()
   },
 }))

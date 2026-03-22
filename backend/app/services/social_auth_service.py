@@ -40,6 +40,7 @@ from app.schemas.social_auth import (
     SocialProviderListResponse,
     SocialStartResponse,
 )
+from app.services.session_service import SessionService
 
 logger = get_logger(__name__)
 
@@ -248,16 +249,26 @@ class SocialAuthService:
             )
             return await cls._complete_auth(db, attempt, user, is_new_account=True)
         else:
-            # Admin PWA – deny, no pre-provisioned account
-            attempt.result = "denied"
-            attempt.failure_code = "admin_not_provisioned"
-            attempt.completed_at = datetime.now(UTC)
-            SOCIAL_AUTH_FAILURES_TOTAL.labels(
-                provider=provider.value, failure_code="admin_not_provisioned"
-            ).inc()
-            raise ValueError(
-                "No pre-provisioned admin account found. "
-                "Please contact your organization administrator."
+            # Admin PWA – no pre-provisioned account; prompt the user to register
+            attempt.result = "needs_registration"
+            await db.flush()
+
+            logger.info(
+                "Social auth requires registration",
+                extra={
+                    "attempt_id": str(attempt.id),
+                    "provider": provider.value,
+                    "email": _mask_value(provider_email or ""),
+                },
+            )
+
+            return SocialAuthPendingResponse(
+                status="pending_verification",
+                reason=PendingReason.NEEDS_REGISTRATION,
+                attempt_id=attempt.id,
+                message="No account found for this identity. Please create an account to continue.",
+                prefill_email=provider_email,
+                prefill_name=provider_claims.get("name"),
             )
 
     @classmethod
@@ -365,10 +376,25 @@ class SocialAuthService:
             )
             return await cls._complete_auth(db, attempt, user)
         else:
-            attempt.result = "denied"
-            attempt.failure_code = "admin_not_provisioned"
-            attempt.completed_at = datetime.now(UTC)
-            raise ValueError("No pre-provisioned admin account found.")
+            # Admin PWA – no pre-provisioned account; prompt the user to register
+            attempt.result = "needs_registration"
+            await db.flush()
+
+            logger.info(
+                "Social auth requires registration (email verification path)",
+                extra={
+                    "attempt_id": str(attempt_id),
+                    "email": _mask_value(email or ""),
+                },
+            )
+
+            return SocialAuthPendingResponse(
+                status="pending_verification",
+                reason=PendingReason.NEEDS_REGISTRATION,
+                attempt_id=attempt_id,
+                message="No account found for this identity. Please create an account to continue.",
+                prefill_email=email,
+            )
 
     @classmethod
     async def complete_admin_step_up(
@@ -509,15 +535,15 @@ class SocialAuthService:
         access_token = create_access_token(data=token_data)
         refresh_token = create_refresh_token(data=token_data)
 
-        # Store session in Redis so the refresh token is valid
+        # Store session so the refresh token is valid
         refresh_payload = decode_token(refresh_token)
         refresh_jti = refresh_payload["jti"]
-        from app.services.session_service import SessionService  # noqa: PLC0415
 
         await SessionService.create_session(
             db=db,
             user_id=user.id,
             refresh_token_jti=refresh_jti,
+            device_info="social_auth",
         )
 
         attempt.result = "success"
@@ -690,6 +716,7 @@ class SocialAuthService:
             first_name=first_name,
             last_name=last_name,
             email_verified=True,
+            has_local_password=False,
             is_active=True,
             role_id=role.id,
         )

@@ -25,12 +25,45 @@ from app.schemas.npo import (
     NPOResponse,
     NPOStatusUpdateRequest,
     NPOUpdateRequest,
+    PublicNPOListResponse,
+    PublicNPOResponse,
 )
 from app.services.audit_service import AuditService
 from app.services.npo_permission_service import NPOPermissionService
 from app.services.npo_service import NPOService
 
 router = APIRouter(prefix="/npos", tags=["NPOs"])
+
+
+@router.get("/public", response_model=PublicNPOListResponse)
+async def list_public_npos(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    search: Annotated[str | None, Query()] = None,
+) -> PublicNPOListResponse:
+    """List approved organizations for public browsing."""
+    npos, total = await NPOService.list_public_npos(
+        db,
+        page=page,
+        page_size=page_size,
+        search=search,
+    )
+
+    public_items = []
+    for npo in npos:
+        payload = PublicNPOResponse.model_validate(npo).model_dump()
+        if npo.branding and npo.branding.logo_url:
+            payload["logo_url"] = npo.branding.logo_url
+        public_items.append(PublicNPOResponse.model_validate(payload))
+
+    return PublicNPOListResponse(
+        items=public_items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=(total + page_size - 1) // page_size,
+    )
 
 
 @router.post(

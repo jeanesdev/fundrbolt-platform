@@ -59,6 +59,9 @@ class UserPublic(BaseModel):
 
     id: uuid.UUID
     email: EmailStr
+    has_local_password: bool = True
+    communications_email: EmailStr | None = None
+    communications_email_verified: bool = False
     first_name: str
     last_name: str
     phone: str | None = None

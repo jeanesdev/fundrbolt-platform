@@ -102,11 +102,11 @@ function RouteComponent() {
     URL.revokeObjectURL(url)
   }, [event])
 
-  // Authenticated users should stay on the canonical /events/:slug URL
-  // and render the immersive donor event experience directly — but only
-  // if they are registered for this event.
+  // Authenticated users should stay on the canonical /events/:slug URL.
+  // Only registered donors should enter the immersive donor event experience.
+  // Ticket holders who have not completed registration should remain on the
+  // public event page so the page is still reachable without protected-event access.
   if (isAuthenticated) {
-    // While registered-events list is still loading, show spinner
     if (eventsLoading) {
       return (
         <div className="flex items-center justify-center min-h-screen">
@@ -114,11 +114,16 @@ function RouteComponent() {
         </div>
       )
     }
-    const isRegistered = availableEvents.some((e) => e.slug === slug)
+
+    const isRegistered = availableEvents.some(
+      (eventOption) => eventOption.slug === slug && eventOption.is_registered
+    )
+
     if (isRegistered) {
       return <EventHomePage />
     }
-    // Fall through to render the "Our Cause" page for unregistered users
+    // Fall through to render the public event page for authenticated but
+    // unregistered donors, including ticket holders coming from My Tickets.
   }
 
   if (isRestoringAuth) {
@@ -303,21 +308,18 @@ function RouteComponent() {
             <p className='text-sm font-medium' style={{ color: 'var(--event-text-on-background, #374151)' }}>
               You are not yet registered for this event.
             </p>
-            {/* TODO: Replace with real ticket purchase route when feature is implemented */}
-            <button
-              disabled
-              className='w-full rounded-2xl p-4 flex items-center justify-center gap-3 transition-all opacity-80 cursor-not-allowed'
-              style={{
-                background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
-              }}
-              title='Ticket purchasing coming soon'
-            >
-              <Ticket className='h-5 w-5 text-white' />
-              <span className='text-lg font-black text-white'>Purchase Tickets</span>
-            </button>
-            <p className='text-xs' style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}>
-              Ticket purchasing will be available soon.
-            </p>
+            {/* Link to ticket purchase page */}
+            <Link to='/events/$slug/tickets' params={{ slug }}>
+              <button
+                className='w-full rounded-2xl p-4 flex items-center justify-center gap-3 transition-all active:scale-[0.98] hover:shadow-md'
+                style={{
+                  background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
+                }}
+              >
+                <Ticket className='h-5 w-5 text-white' />
+                <span className='text-lg font-black text-white'>Purchase Tickets</span>
+              </button>
+            </Link>
           </div>
         ) : (
           <div className='space-y-3'>

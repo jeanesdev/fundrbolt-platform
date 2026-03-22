@@ -1,7 +1,7 @@
 """Admin API endpoints for custom ticket option management."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import and_, func, select
@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.logging import get_logger
 from app.middleware.auth import get_current_active_user
+from app.models.event import Event
 from app.models.ticket_management import CustomTicketOption, TicketPackage
 from app.models.user import User
 from app.schemas.ticket_management import (
@@ -29,14 +30,19 @@ async def _get_package_with_access(
     package_id: uuid.UUID,
 ) -> TicketPackage:
     result = await db.execute(
-        select(TicketPackage).join(TicketPackage.event).where(TicketPackage.id == package_id)
+        select(TicketPackage, Event.npo_id)
+        .join(Event, TicketPackage.event_id == Event.id)
+        .where(TicketPackage.id == package_id)
     )
-    package = result.scalar_one_or_none()
-    if not package:
+    row = result.one_or_none()
+    if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
 
+    package = cast(TicketPackage, row[0])
+    npo_id = row[1]
+
     permission_service = PermissionService()
-    has_access = await permission_service.can_view_event(current_user, package.event.npo_id, db=db)
+    has_access = await permission_service.can_view_event(current_user, npo_id, db=db)
     if not has_access:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Package not found")
 

@@ -2,12 +2,12 @@
 
 import logging
 import uuid
-from typing import Annotated, Any
-from urllib.parse import unquote, urlparse
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.event_media_urls import add_sas_urls_to_event_media
 from app.core.database import get_db
 from app.middleware.auth import get_current_active_user
 from app.models.user import User
@@ -28,43 +28,6 @@ from app.services.sponsor_service import SponsorService
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/events", tags=["events"])
-
-
-def _add_sas_urls_to_media(response_dict: dict[str, Any]) -> None:
-    """Replace media file URLs with read SAS URLs in-place."""
-    from app.services.media_service import MediaService
-
-    # Refresh SAS URLs for event media
-    if response_dict.get("media"):
-        for media_item in response_dict["media"]:
-            file_url = media_item.get("file_url", "")
-            if not file_url:
-                continue
-
-            parsed_url = urlparse(file_url)
-            path = parsed_url.path.lstrip("/")
-            if not path:
-                continue
-
-            path_parts = path.split("/", 1)
-            if len(path_parts) < 2:
-                continue
-
-            blob_name = unquote(path_parts[1])
-            media_item["file_url"] = MediaService.generate_read_sas_url(blob_name)
-
-    # Refresh SAS URL for seating layout image
-    layout_url = response_dict.get("seating_layout_image_url")
-    if layout_url and "blob.core.windows.net" in layout_url:
-        parsed_url = urlparse(layout_url)
-        path = parsed_url.path.lstrip("/")
-        if path:
-            path_parts = path.split("/", 1)
-            if len(path_parts) >= 2:
-                blob_name = unquote(path_parts[1])
-                response_dict["seating_layout_image_url"] = MediaService.generate_read_sas_url(
-                    blob_name
-                )
 
 
 @router.post("", response_model=EventDetailResponse, status_code=status.HTTP_201_CREATED)
@@ -95,7 +58,7 @@ async def create_event(
         event_with_npo, from_attributes=True
     ).model_dump()
     response_dict["npo_name"] = event_with_npo.npo.name if event_with_npo.npo else None
-    _add_sas_urls_to_media(response_dict)
+    add_sas_urls_to_event_media(response_dict, list(event_with_npo.media or []))
     return EventDetailResponse(**response_dict)
 
 
@@ -117,7 +80,7 @@ async def get_event(
     response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
     response_dict["npo_name"] = event.npo.name if event.npo else None
 
-    _add_sas_urls_to_media(response_dict)
+    add_sas_urls_to_event_media(response_dict, list(event.media or []))
 
     return EventDetailResponse(**response_dict)
 
@@ -148,7 +111,7 @@ async def update_event(
 
     response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
     response_dict["npo_name"] = event.npo.name if event.npo else None
-    _add_sas_urls_to_media(response_dict)
+    add_sas_urls_to_event_media(response_dict, list(event.media or []))
     return EventDetailResponse(**response_dict)
 
 
@@ -172,7 +135,7 @@ async def publish_event(
 
     response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
     response_dict["npo_name"] = event.npo.name if event.npo else None
-    _add_sas_urls_to_media(response_dict)
+    add_sas_urls_to_event_media(response_dict, list(event.media or []))
     return EventDetailResponse(**response_dict)
 
 
@@ -196,7 +159,7 @@ async def close_event(
 
     response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
     response_dict["npo_name"] = event.npo.name if event.npo else None
-    _add_sas_urls_to_media(response_dict)
+    add_sas_urls_to_event_media(response_dict)
     return EventDetailResponse(**response_dict)
 
 
@@ -251,7 +214,7 @@ async def duplicate_event(
 
     response_dict = EventDetailResponse.model_validate(reloaded, from_attributes=True).model_dump()
     response_dict["npo_name"] = reloaded.npo.name if reloaded.npo else None
-    _add_sas_urls_to_media(response_dict)
+    add_sas_urls_to_event_media(response_dict, list(reloaded.media or []))
     return EventDetailResponse(**response_dict)
 
 
@@ -416,7 +379,7 @@ async def get_public_event(
             detail=f"Event with slug '{slug}' not found or not active",
         )
     response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
-    _add_sas_urls_to_media(response_dict)
+    add_sas_urls_to_event_media(response_dict, list(event.media or []))
     return EventDetailResponse(**response_dict)
 
 
