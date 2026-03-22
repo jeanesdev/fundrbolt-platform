@@ -30,10 +30,13 @@ type NavUserProps = {
 export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar()
   const [open, setOpen] = useDialogState()
-  const getProfilePictureUrl = useAuthStore((state) => state.getProfilePictureUrl)
+  const getProfilePictureUrl = useAuthStore(
+    (state) => state.getProfilePictureUrl
+  )
   const authUser = useAuthStore((state) => state.user)
 
   const profilePictureUrl = getProfilePictureUrl()
+  const displayEmail = authUser?.communications_email?.trim() || user.email
   const initials = authUser
     ? `${authUser.first_name?.[0] || ''}${authUser.last_name?.[0] || ''}`.toUpperCase()
     : 'SN'
@@ -49,12 +52,17 @@ export function NavUser({ user }: NavUserProps) {
                 className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
               >
                 <Avatar className='h-8 w-8 rounded-lg'>
-                  <AvatarImage src={profilePictureUrl || undefined} alt={user.name} />
-                  <AvatarFallback className='rounded-lg'>{initials}</AvatarFallback>
+                  <AvatarImage
+                    src={profilePictureUrl || undefined}
+                    alt={user.name}
+                  />
+                  <AvatarFallback className='rounded-lg'>
+                    {initials}
+                  </AvatarFallback>
                 </Avatar>
                 <div className='grid flex-1 text-start text-sm leading-tight'>
                   <span className='truncate font-semibold'>{user.name}</span>
-                  <span className='truncate text-xs'>{user.email}</span>
+                  <span className='truncate text-xs'>{displayEmail}</span>
                 </div>
                 <ChevronsUpDown className='ms-auto size-4' />
               </SidebarMenuButton>
@@ -68,12 +76,17 @@ export function NavUser({ user }: NavUserProps) {
               <DropdownMenuLabel className='p-0 font-normal'>
                 <div className='flex items-center gap-2 px-1 py-1.5 text-start text-sm'>
                   <Avatar className='h-8 w-8 rounded-lg'>
-                    <AvatarImage src={profilePictureUrl || undefined} alt={user.name} />
-                    <AvatarFallback className='rounded-lg'>{initials}</AvatarFallback>
+                    <AvatarImage
+                      src={profilePictureUrl || undefined}
+                      alt={user.name}
+                    />
+                    <AvatarFallback className='rounded-lg'>
+                      {initials}
+                    </AvatarFallback>
                   </Avatar>
                   <div className='grid flex-1 text-start text-sm leading-tight'>
                     <span className='truncate font-semibold'>{user.name}</span>
-                    <span className='truncate text-xs'>{user.email}</span>
+                    <span className='truncate text-xs'>{displayEmail}</span>
                   </div>
                 </div>
               </DropdownMenuLabel>

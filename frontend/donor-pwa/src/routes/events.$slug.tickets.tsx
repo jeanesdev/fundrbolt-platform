@@ -1,10 +1,23 @@
 /**
  * Ticket Listing Page — /events/$slug/tickets
- * Public page showing available ticket packages for an event.
+ * Also acts as a layout for child routes (checkout).
+ * When on /tickets/checkout the page hands off to the child via <Outlet />.
  */
-import { useEffect, useMemo } from 'react'
+import { TicketPackageCard } from '@/components/tickets/TicketPackageCard'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  getEventBySlug,
+  getTicketPackages,
+  type PublicTicketPackage,
+} from '@/lib/api/events'
+import { hasValidRefreshToken } from '@/lib/storage/tokens'
+import { useAuthStore } from '@/stores/auth-store'
+import { useTicketCartStore } from '@/stores/ticket-cart-store'
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, Outlet, useLocation } from '@tanstack/react-router'
 import {
   AlertCircle,
   CalendarDays,
@@ -13,18 +26,7 @@ import {
   ShoppingCart,
   Ticket,
 } from 'lucide-react'
-import { useAuthStore } from '@/stores/auth-store'
-import { useTicketCartStore } from '@/stores/ticket-cart-store'
-import {
-  getEventBySlug,
-  getTicketPackages,
-  type PublicTicketPackage,
-} from '@/lib/api/events'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { TicketPackageCard } from '@/components/tickets/TicketPackageCard'
+import { useEffect, useMemo } from 'react'
 
 export const Route = createFileRoute('/events/$slug/tickets')({
   component: TicketListingPage,
@@ -39,8 +41,37 @@ function fmtCurrency(cents: number): string {
 
 function TicketListingPage() {
   const { slug } = Route.useParams()
+  const { pathname } = useLocation()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const restoreUserFromRefreshToken = useAuthStore(
+    (s) => s.restoreUserFromRefreshToken
+  )
+  const hasRefreshToken = hasValidRefreshToken()
 
+  // Restore auth session from refresh token if not currently authenticated
+  useQuery({
+    queryKey: ['auth', 'restore-user', 'tickets'],
+    queryFn: async () => restoreUserFromRefreshToken(),
+    enabled: !isAuthenticated && hasRefreshToken,
+    retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  })
+
+  // When on a child route (e.g. /tickets/checkout), render only the child
+  if (!pathname.endsWith('/tickets') && !pathname.endsWith('/tickets/')) {
+    return <Outlet />
+  }
+
+  return <TicketListingContent slug={slug} isAuthenticated={isAuthenticated} />
+}
+
+interface TicketListingContentProps {
+  slug: string
+  isAuthenticated: boolean
+}
+
+function TicketListingContent({ slug, isAuthenticated }: TicketListingContentProps) {
   const cartItems = useTicketCartStore((s) => s.items)
   const addItem = useTicketCartStore((s) => s.addItem)
   const updateQuantity = useTicketCartStore((s) => s.updateQuantity)

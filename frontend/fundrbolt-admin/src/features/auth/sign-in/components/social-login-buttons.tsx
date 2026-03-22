@@ -1,4 +1,6 @@
-import { useCallback, useState, type ComponentType, type SVGProps } from 'react'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import { adminSocialAuthApi } from '@/lib/axios'
 import {
   AppleIcon,
   FacebookIcon,
@@ -7,19 +9,17 @@ import {
 } from '@fundrbolt/shared'
 import type { SocialAuthProvider } from '@fundrbolt/shared/types'
 import { Loader2 } from 'lucide-react'
-import { adminSocialAuthApi } from '@/lib/axios'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
+import { useCallback, useState, type ComponentType, type SVGProps } from 'react'
 
 const DEFAULT_PROVIDERS: {
   provider: SocialAuthProvider
   display_name: string
 }[] = [
-  { provider: 'google', display_name: 'Google' },
-  { provider: 'apple', display_name: 'Apple' },
-  { provider: 'facebook', display_name: 'Facebook' },
-  { provider: 'microsoft', display_name: 'Microsoft' },
-]
+    { provider: 'google', display_name: 'Google' },
+    { provider: 'apple', display_name: 'Apple' },
+    { provider: 'facebook', display_name: 'Facebook' },
+    { provider: 'microsoft', display_name: 'Microsoft' },
+  ]
 
 const providerIcons: Record<
   SocialAuthProvider,
@@ -50,6 +50,10 @@ export function SocialLoginButtons({
           redirect_uri: callbackUrl,
         })
         if (result.authorization_url) {
+          sessionStorage.setItem(
+            'social_auth_pending',
+            JSON.stringify({ provider, attempt_id: result.attempt_id })
+          )
           window.location.href = result.authorization_url
         }
       } catch (err: unknown) {

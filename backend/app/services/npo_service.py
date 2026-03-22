@@ -27,6 +27,45 @@ class NPOService:
     """Service for NPO management operations."""
 
     @staticmethod
+    async def list_public_npos(
+        db: AsyncSession,
+        *,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+    ) -> tuple[list[NPO], int]:
+        """List approved organizations for public browsing."""
+        query = (
+            select(NPO)
+            .options(selectinload(NPO.branding))
+            .where(
+                NPO.deleted_at.is_(None),
+                NPO.status == NPOStatus.APPROVED,
+            )
+        )
+
+        if search:
+            search_term = f"%{search}%"
+            query = query.where(
+                or_(
+                    NPO.name.ilike(search_term),
+                    NPO.description.ilike(search_term),
+                    NPO.mission_statement.ilike(search_term),
+                )
+            )
+
+        count_query = select(func.count()).select_from(query.subquery())
+        total_result = await db.execute(count_query)
+        total = total_result.scalar_one()
+
+        query = query.order_by(NPO.name.asc())
+        query = query.limit(page_size)
+        query = query.offset((page - 1) * page_size)
+
+        result = await db.execute(query)
+        return list(result.scalars().all()), total
+
+    @staticmethod
     async def create_npo(
         db: AsyncSession,
         npo_data: NPOCreateRequest,

@@ -2,37 +2,6 @@
  * Ticket Package Management - Index Page
  * Lists all ticket packages for an event with CRUD operations
  */
-import { useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import {
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import {
-  Eye,
-  EyeOff,
-  GripVertical,
-  Pencil,
-  Plus,
-  Trash2,
-  Upload,
-} from 'lucide-react'
-import apiClient from '@/lib/axios'
-import { getErrorMessage } from '@/lib/error-utils'
-import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -49,6 +18,38 @@ import {
 } from '@/components/ui/collapsible'
 import { Progress } from '@/components/ui/progress'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
+import { useToast } from '@/hooks/use-toast'
+import apiClient from '@/lib/axios'
+import { getErrorMessage } from '@/lib/error-utils'
+import {
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import {
+  Eye,
+  EyeOff,
+  GripVertical,
+  Pencil,
+  Plus,
+  Trash2,
+  Upload,
+} from 'lucide-react'
+import { useState } from 'react'
+import { EventCustomOptionsManager } from './components/EventCustomOptionsManager'
 import { PurchasersList } from './components/PurchasersList'
 import { SalesExportButton } from './components/SalesExportButton'
 import { TicketSalesImportDialog } from './components/TicketSalesImportDialog'
@@ -271,6 +272,9 @@ export function TicketPackagesIndexPage({
           </Button>
         </div>
       </div>
+
+      {/* Universal Registration Questions */}
+      <EventCustomOptionsManager eventId={eventId} />
 
       {!packages || packages.length === 0 ? (
         <Card>

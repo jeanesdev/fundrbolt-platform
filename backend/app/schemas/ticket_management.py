@@ -187,7 +187,8 @@ class CustomTicketOptionRead(CustomTicketOptionBase):
     """Schema for reading a custom option."""
 
     id: uuid.UUID
-    ticket_package_id: uuid.UUID
+    ticket_package_id: uuid.UUID | None = None
+    event_id: uuid.UUID | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

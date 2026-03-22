@@ -20,6 +20,8 @@ export interface EventContextOption {
   event_date?: string | null
   npo_name?: string | null
   logo_url?: string | null
+  is_registered?: boolean // True only when donor registration is complete
+  has_ticket_access?: boolean // True when donor owns tickets but is not registered
   has_admin_access?: boolean // True if user is admin/staff for this event
 }
 

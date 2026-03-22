@@ -115,6 +115,7 @@ async def get_current_user_profile(
     return UserPublicWithRole(
         id=current_user.id,
         email=current_user.email,
+        has_local_password=current_user.has_local_password,
         communications_email=current_user.communications_email,
         communications_email_verified=current_user.communications_email_verified,
         first_name=current_user.first_name,
@@ -226,6 +227,7 @@ async def update_current_user_profile(
         return UserPublicWithRole(
             id=updated_user.id,
             email=updated_user.email,
+            has_local_password=updated_user.has_local_password,
             communications_email=updated_user.communications_email,
             communications_email_verified=updated_user.communications_email_verified,
             first_name=updated_user.first_name,

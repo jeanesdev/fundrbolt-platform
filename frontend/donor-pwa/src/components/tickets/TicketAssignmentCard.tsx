@@ -1,17 +1,28 @@
 /**
  * TicketAssignmentCard — shows an assigned ticket with status and actions.
  */
-import { CheckCircle, Mail, MailPlus, Ticket, UserX } from 'lucide-react'
-import type { TicketDetail } from '@/lib/api/ticket-purchases'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import type { TicketDetail } from '@/lib/api/ticket-purchases'
+import { CheckCircle, Mail, MailPlus, Ticket, UserX } from 'lucide-react'
 
 interface TicketAssignmentCardProps {
   ticket: TicketDetail
   onSendInvite: (assignmentId: string) => void
   onCancelAssignment: (assignmentId: string) => void
   onResendInvite: (assignmentId: string) => void
+  canSelfRegister?: boolean
+  onCancelRegistration?: (assignmentId: string) => void
+  onSelfRegister?: (
+    ticketId: string,
+    ticketNumber: number,
+    assignmentId: string
+  ) => void
+  isSendingInvite?: boolean
+  isResendingInvite?: boolean
+  isCancellingAssignment?: boolean
+  isCancellingRegistration?: boolean
 }
 
 function getStatusBadge(status: string) {
@@ -52,9 +63,18 @@ export function TicketAssignmentCard({
   onSendInvite,
   onCancelAssignment,
   onResendInvite,
+  canSelfRegister = false,
+  onCancelRegistration,
+  onSelfRegister,
+  isSendingInvite = false,
+  isResendingInvite = false,
+  isCancellingAssignment = false,
+  isCancellingRegistration = false,
 }: TicketAssignmentCardProps) {
   const { assignment } = ticket
   const status = ticket.assignment_status
+  const hasActiveAssignment =
+    assignment !== undefined && assignment !== null && status !== 'cancelled'
 
   return (
     <Card>
@@ -67,7 +87,7 @@ export function TicketAssignmentCard({
             {getStatusBadge(status)}
           </div>
 
-          {assignment && (
+          {hasActiveAssignment && (
             <div className='text-muted-foreground text-sm'>
               <span>{assignment.guest_name}</span>
               <span className='mx-1'>·</span>
@@ -76,37 +96,78 @@ export function TicketAssignmentCard({
           )}
         </div>
 
-        {assignment && status !== 'registered' && (
+        {hasActiveAssignment && (
           <div className='flex gap-2'>
-            {status === 'assigned' && (
+            {status === 'registered' && onCancelRegistration && (
+              <Button
+                size='sm'
+                variant='destructive'
+                disabled={isCancellingRegistration}
+                onClick={() => onCancelRegistration(assignment.id)}
+              >
+                <UserX className='mr-1 h-3 w-3' />
+                {isCancellingRegistration
+                  ? 'Revoking…'
+                  : canSelfRegister
+                    ? 'Unregister'
+                    : 'Revoke Ticket'}
+              </Button>
+            )}
+            {status === 'assigned' && canSelfRegister && onSelfRegister && (
+              <Button
+                size='sm'
+                variant='default'
+                onClick={() =>
+                  onSelfRegister(ticket.id, ticket.ticket_number, assignment.id)
+                }
+              >
+                Register Myself
+              </Button>
+            )}
+            {status === 'assigned' && !canSelfRegister && (
               <Button
                 size='sm'
                 variant='outline'
+                disabled={isSendingInvite}
                 onClick={() => onSendInvite(assignment.id)}
               >
                 <MailPlus className='mr-1 h-3 w-3' />
-                Send Invite
+                {isSendingInvite ? 'Sending…' : 'Send Invitation'}
               </Button>
             )}
-            {status === 'invited' && (
+            {status === 'invited' && !canSelfRegister && (
               <Button
                 size='sm'
                 variant='outline'
+                disabled={isResendingInvite}
                 onClick={() => onResendInvite(assignment.id)}
               >
                 <Mail className='mr-1 h-3 w-3' />
-                Resend
+                {isResendingInvite ? 'Sending…' : 'Resend Invitation'}
               </Button>
             )}
-            <Button
-              size='sm'
-              variant='ghost'
-              className='text-destructive'
-              onClick={() => onCancelAssignment(assignment.id)}
-            >
-              <UserX className='mr-1 h-3 w-3' />
-              Cancel
-            </Button>
+            {status === 'invited' && canSelfRegister && onSelfRegister && (
+              <Button
+                size='sm'
+                variant='default'
+                onClick={() =>
+                  onSelfRegister(ticket.id, ticket.ticket_number, assignment.id)
+                }
+              >
+                Complete Registration
+              </Button>
+            )}
+            {(status === 'assigned' || status === 'invited') && (
+              <Button
+                size='sm'
+                variant='destructive'
+                disabled={isCancellingAssignment}
+                onClick={() => onCancelAssignment(assignment.id)}
+              >
+                <UserX className='mr-1 h-3 w-3' />
+                {isCancellingAssignment ? 'Revoking…' : 'Revoke Ticket'}
+              </Button>
+            )}
           </div>
         )}
       </CardContent>

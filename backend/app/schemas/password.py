@@ -47,8 +47,8 @@ class PasswordResetConfirm(BaseModel):
 class PasswordChangeRequest(BaseModel):
     """Schema for changing password (authenticated user)."""
 
-    current_password: str = Field(
-        ...,
+    current_password: str | None = Field(
+        None,
         description="Current password for verification",
         examples=["SecurePass123"],
     )

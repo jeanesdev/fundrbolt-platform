@@ -10,7 +10,11 @@
 export type EventStatus = 'draft' | 'active' | 'closed'
 
 export type EventMediaStatus = 'uploaded' | 'scanning' | 'approved' | 'rejected'
-export type HeroTransitionStyle = 'documentary_style' | 'fade' | 'swipe' | 'simple'
+export type HeroTransitionStyle =
+  | 'documentary_style'
+  | 'fade'
+  | 'swipe'
+  | 'simple'
 export type EventMediaUsageTag =
   | 'main_event_page_hero'
   | 'event_layout_map'
@@ -118,14 +122,14 @@ export interface EventListParams {
   status?: EventStatus
   search?: string
   page?: number
-  page_size?: number
+  per_page?: number
 }
 
 export interface EventListResponse {
   items: Event[]
   total: number
   page: number
-  page_size: number
+  per_page: number
   total_pages: number
 }
 

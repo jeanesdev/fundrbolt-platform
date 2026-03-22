@@ -211,6 +211,7 @@ async def search(
             events_results = [
                 EventSearchResult(
                     id=event.id,
+                    slug=event.slug,
                     name=event.name,
                     npo_id=event.npo_id,  # npo_id is non-nullable in Event model
                     npo_name=event.npo.name if event.npo else "Unknown",
@@ -260,6 +261,7 @@ async def search(
                     id=item.id,
                     name=item.title,
                     event_id=item.event_id,
+                    event_slug=getattr(item.event, "slug", None) if item.event else None,
                     event_name=getattr(item.event, "name", "Unknown") if item.event else "Unknown",
                     category=item.auction_type,
                     status=item.status,

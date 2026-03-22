@@ -17,7 +17,7 @@ from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.middleware.auth import get_current_active_user
 from app.models.event import Event
-from app.models.ticket_management import TicketPackage
+from app.models.ticket_management import CustomTicketOption, TicketPackage
 from app.models.user import User
 from app.schemas.ticket_purchasing import (
     CartValidationRequest,
@@ -90,6 +90,49 @@ async def get_available_tickets(
             ],
         }
         for pkg in packages
+    ]
+
+
+@router.get("/events/{event_slug}/custom-options")
+async def get_event_custom_options(
+    event_slug: str,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> list[dict[str, object]]:
+    """Get event-level custom options (public, no auth required).
+
+    Returns universal custom options that apply to all registrations
+    for this event regardless of ticket package.
+    """
+    result = await db.execute(select(Event).where(Event.slug == event_slug))
+    event = result.scalar_one_or_none()
+    if event is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with slug '{event_slug}' not found",
+        )
+
+    options_result = await db.execute(
+        select(CustomTicketOption)
+        .where(
+            CustomTicketOption.event_id == event.id,
+            CustomTicketOption.ticket_package_id.is_(None),
+        )
+        .order_by(CustomTicketOption.display_order, CustomTicketOption.created_at)
+    )
+    options = options_result.scalars().all()
+
+    return [
+        {
+            "id": str(opt.id),
+            "label": opt.option_label,
+            "type": opt.option_type.value
+            if hasattr(opt.option_type, "value")
+            else str(opt.option_type),
+            "choices": opt.choices,
+            "is_required": opt.is_required,
+            "display_order": opt.display_order,
+        }
+        for opt in options
     ]
 
 

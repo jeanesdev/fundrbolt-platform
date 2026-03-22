@@ -38,6 +38,21 @@ interface GuestData extends GuestFormData {
   index: number
 }
 
+function getApiErrorMessage(error: unknown, fallback: string): string {
+  const detail = (error as { response?: { data?: { detail?: string | { message?: string } } } })
+    ?.response?.data?.detail
+
+  if (typeof detail === 'string') {
+    return detail
+  }
+
+  if (detail && typeof detail === 'object' && 'message' in detail && typeof detail.message === 'string') {
+    return detail.message
+  }
+
+  return fallback
+}
+
 function EventRegistration() {
   const { slug } = Route.useParams()
   const navigate = useNavigate()
@@ -94,17 +109,8 @@ function EventRegistration() {
         setStep('complete')
       }
     },
-    onError: (error: any) => {
-      const detail = error.response?.data?.detail
-      let errorMessage = 'Failed to create registration'
-
-      if (typeof detail === 'string') {
-        errorMessage = detail
-      } else if (detail?.message) {
-        errorMessage = detail.message
-      }
-
-      toast.error(errorMessage)
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Failed to create registration'))
     },
   })
 
@@ -128,8 +134,8 @@ function EventRegistration() {
         setStep('complete')
       }
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Failed to add guest')
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Failed to add guest'))
     },
   })
 
@@ -161,8 +167,8 @@ function EventRegistration() {
         setStep('complete')
       }
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Failed to save meal selection')
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Failed to save meal selection'))
     },
   })
 
@@ -186,8 +192,7 @@ function EventRegistration() {
         if (mounted) {
           setIsRestoring(false)
         }
-      } catch (error) {
-        console.error('Error during user restoration:', error)
+      } catch {
         if (mounted) {
           setIsRestoring(false)
         }
@@ -319,7 +324,6 @@ function EventRegistration() {
 
   // Show loading while restoring user
   if (isRestoring) {
-    console.log('🔄 Auth restoring...')
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -330,12 +334,8 @@ function EventRegistration() {
     )
   }
 
-  console.log('🔍 Auth state:', { isAuthenticated, hasUser: !!user, isRestoring })
-
   // Show auth prompt if user is not authenticated
   if (!isAuthenticated || !user) {
-    console.log('🔐 Showing auth prompt')
-
     // Build the full redirect URL with query params
     const searchParams = new URLSearchParams()
     Object.entries(location.search).forEach(([key, value]) => {
@@ -387,8 +387,6 @@ function EventRegistration() {
       </div>
     )
   }
-
-  console.log('✅ User authenticated, showing registration form')
 
   // Loading state
   if (isLoadingEvent || isCheckingRegistration) {

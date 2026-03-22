@@ -70,7 +70,7 @@ export function useEventContext(): UseEventContextReturn {
       queryClient.invalidateQueries()
 
       // Navigate to the event page using slug
-      navigate({ to: '/events/$eventSlug', params: { eventSlug: event.slug } })
+      navigate({ to: '/events/$slug', params: { slug: event.slug } })
     },
     [setSelectedEvent, queryClient, navigate]
   )

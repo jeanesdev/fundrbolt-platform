@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.event_media_urls import get_signed_asset_url
 from app.core.database import get_db
 from app.core.logging import get_logger
 from app.middleware.auth import get_current_active_user
@@ -25,6 +26,13 @@ from app.services.ticket_image_service import ImageService
 
 logger = get_logger(__name__)
 router = APIRouter()
+
+
+def _serialize_ticket_package(package: TicketPackage) -> TicketPackageRead:
+    ticket_package = TicketPackageRead.from_orm_with_availability(package)
+    return ticket_package.model_copy(
+        update={"image_url": get_signed_asset_url(ticket_package.image_url)}
+    )
 
 
 async def _require_event_access(
@@ -117,7 +125,7 @@ async def create_ticket_package(
     await db.refresh(new_package)
 
     logger.info(f"Created package {new_package.id}")
-    return TicketPackageRead.from_orm_with_availability(new_package)
+    return _serialize_ticket_package(new_package)
 
 
 @router.get("/events/{event_id}/packages", response_model=list[TicketPackageRead])
@@ -139,7 +147,7 @@ async def list_ticket_packages(
     packages = result.scalars().all()
 
     # Return packages with computed availability
-    return [TicketPackageRead.from_orm_with_availability(pkg) for pkg in packages]
+    return [_serialize_ticket_package(pkg) for pkg in packages]
 
 
 @router.get("/events/{event_id}/packages/{package_id}", response_model=TicketPackageRead)
@@ -161,7 +169,7 @@ async def get_ticket_package(
 
     await _require_event_access(db, current_user, event_id, not_found_on_forbidden=False)
 
-    return TicketPackageRead.from_orm_with_availability(package)
+    return _serialize_ticket_package(package)
 
 
 @router.patch("/events/{event_id}/packages/{package_id}", response_model=TicketPackageRead)
@@ -229,7 +237,7 @@ async def update_ticket_package(
     await db.refresh(package)
 
     logger.info(f"Updated package {package_id}")
-    return TicketPackageRead.from_orm_with_availability(package)
+    return _serialize_ticket_package(package)
 
 
 @router.delete("/events/{event_id}/packages/{package_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -313,7 +321,7 @@ async def upload_package_image(
         await db.refresh(package)
 
         logger.info(f"Uploaded image for package {package_id}: {image_url}")
-        return TicketPackageRead.from_orm_with_availability(package)
+        return _serialize_ticket_package(package)
 
     except ValueError as e:
         logger.error(f"Image validation failed for package {package_id}: {e}")
@@ -363,7 +371,7 @@ async def delete_package_image(
         await db.refresh(package)
 
         logger.info(f"Deleted image for package {package_id}")
-        return TicketPackageRead.from_orm_with_availability(package)
+        return _serialize_ticket_package(package)
 
     except Exception as e:
         logger.error(f"Image deletion failed for package {package_id}: {e}")

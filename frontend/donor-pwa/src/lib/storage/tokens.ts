@@ -23,8 +23,8 @@ export function saveRefreshToken(token: string, expiryTimestamp: number): void {
   try {
     localStorage.setItem(REFRESH_TOKEN_KEY, token)
     localStorage.setItem(TOKEN_EXPIRY_KEY, expiryTimestamp.toString())
-  } catch (error) {
-    console.error('Failed to save refresh token:', error)
+  } catch {
+    // Ignore storage failures so auth flows can fall back gracefully.
   }
 }
 
@@ -51,8 +51,7 @@ export function getRefreshToken(): string | null {
     }
 
     return token
-  } catch (error) {
-    console.error('Failed to get refresh token:', error)
+  } catch {
     return null
   }
 }
@@ -66,8 +65,7 @@ export function getTokenExpiry(): number | null {
   try {
     const expiryStr = localStorage.getItem(TOKEN_EXPIRY_KEY)
     return expiryStr ? parseInt(expiryStr, 10) : null
-  } catch (error) {
-    console.error('Failed to get token expiry:', error)
+  } catch {
     return null
   }
 }
@@ -79,8 +77,8 @@ export function clearRefreshToken(): void {
   try {
     localStorage.removeItem(REFRESH_TOKEN_KEY)
     localStorage.removeItem(TOKEN_EXPIRY_KEY)
-  } catch (error) {
-    console.error('Failed to clear refresh token:', error)
+  } catch {
+    // Ignore storage failures so logout/reset can continue.
   }
 }
 

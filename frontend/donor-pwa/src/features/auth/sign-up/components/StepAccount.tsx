@@ -49,9 +49,10 @@ export interface AccountData {
 
 interface StepAccountProps {
   onNext: (data: AccountData) => void
+  redirectTo?: string
 }
 
-export function StepAccount({ onNext }: StepAccountProps) {
+export function StepAccount({ onNext, redirectTo }: StepAccountProps) {
   const [showLegalModal, setShowLegalModal] = useState(false)
   const [legalDocumentIds, setLegalDocumentIds] = useState<{
     tosId: string
@@ -127,7 +128,11 @@ export function StepAccount({ onNext }: StepAccountProps) {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type='email' placeholder='jane@example.com' {...field} />
+                  <Input
+                    type='email'
+                    placeholder='jane@example.com'
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -141,7 +146,10 @@ export function StepAccount({ onNext }: StepAccountProps) {
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <PasswordInput placeholder='At least 8 characters' {...field} />
+                  <PasswordInput
+                    placeholder='At least 8 characters'
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -155,7 +163,10 @@ export function StepAccount({ onNext }: StepAccountProps) {
               <FormItem>
                 <FormLabel>Confirm password</FormLabel>
                 <FormControl>
-                  <PasswordInput placeholder='Repeat your password' {...field} />
+                  <PasswordInput
+                    placeholder='Repeat your password'
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -168,7 +179,10 @@ export function StepAccount({ onNext }: StepAccountProps) {
             render={({ field }) => (
               <FormItem className='flex flex-row items-start space-y-0 space-x-3'>
                 <FormControl>
-                  <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
                 </FormControl>
                 <div className='space-y-1 leading-none'>
                   <FormLabel className='text-sm font-normal'>
@@ -196,7 +210,11 @@ export function StepAccount({ onNext }: StepAccountProps) {
 
       <p className='text-muted-foreground text-center text-xs'>
         Already have an account?{' '}
-        <Link to='/sign-in' className='underline underline-offset-2'>
+        <Link
+          to='/sign-in'
+          search={{ redirect: redirectTo }}
+          className='underline underline-offset-2'
+        >
           Sign in
         </Link>
       </p>

@@ -4,6 +4,7 @@ from typing import Any
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @pytest.mark.asyncio
@@ -81,6 +82,82 @@ class TestEventRetrieval:
 class TestPublicEventRetrieval:
     """Test GET /api/v1/events/public/{slug} endpoint contract."""
 
+    async def test_list_public_events_success(
+        self,
+        client: AsyncClient,
+        test_active_event: Any,
+    ) -> None:
+        """Test public event list returns active events without authentication."""
+        response = await client.get("/api/v1/events/public", params={"page": 1, "per_page": 10})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "items" in data
+        assert data["page"] == 1
+        assert data["per_page"] == 10
+        assert any(item["id"] == str(test_active_event.id) for item in data["items"])
+
+    async def test_list_public_events_prefers_tagged_logo_media(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        test_active_event: Any,
+        test_npo_admin_user: Any,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test public event list uses tagged media for logo_url when available."""
+        from app.models.event import (
+            EventMedia,
+            EventMediaStatus,
+            EventMediaType,
+            EventMediaUsageTag,
+        )
+        from app.services.media_service import MediaService
+
+        monkeypatch.setattr(
+            MediaService,
+            "generate_read_sas_url",
+            staticmethod(
+                lambda blob_name, expiry_hours=24: (
+                    f"https://teststorage.blob.core.windows.net/test-container/{blob_name}"
+                    "?mock_sas_token=test"
+                )
+            ),
+        )
+
+        test_active_event.logo_url = None
+        media = EventMedia(
+            event_id=test_active_event.id,
+            media_type=EventMediaType.IMAGE,
+            usage_tag=EventMediaUsageTag.EVENT_LOGO,
+            file_url=(
+                "https://teststorage.blob.core.windows.net/npo-assets/"
+                "events/test-event/test-logo.png"
+            ),
+            file_name="test-logo.png",
+            file_type="image/png",
+            mime_type="image/png",
+            blob_name="events/test-event/test-logo.png",
+            file_size=1024,
+            display_order=0,
+            status=EventMediaStatus.SCANNED,
+            uploaded_by=test_npo_admin_user.id,
+        )
+        db_session.add(media)
+        await db_session.commit()
+
+        response = await client.get("/api/v1/events/public", params={"page": 1, "per_page": 10})
+
+        assert response.status_code == 200
+        data = response.json()
+        event_summary = next(
+            item for item in data["items"] if item["id"] == str(test_active_event.id)
+        )
+        assert event_summary["logo_url"] == (
+            "https://teststorage.blob.core.windows.net/test-container/"
+            "events/test-event/test-logo.png?mock_sas_token=test"
+        )
+
     async def test_get_public_event_success(
         self,
         client: AsyncClient,
@@ -100,6 +177,66 @@ class TestPublicEventRetrieval:
         assert "media" in data
         assert "links" in data
         assert "food_options" in data
+
+    async def test_get_public_event_signs_media_urls(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        test_active_event: Any,
+        test_npo_admin_user: Any,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test public event media URLs are returned as signed SAS URLs."""
+        from app.models.event import (
+            EventMedia,
+            EventMediaStatus,
+            EventMediaType,
+            EventMediaUsageTag,
+        )
+        from app.services.media_service import MediaService
+
+        monkeypatch.setattr(
+            MediaService,
+            "generate_read_sas_url",
+            staticmethod(
+                lambda blob_name, expiry_hours=24: (
+                    f"https://teststorage.blob.core.windows.net/test-container/{blob_name}"
+                    "?mock_sas_token=test"
+                )
+            ),
+        )
+
+        media = EventMedia(
+            event_id=test_active_event.id,
+            media_type=EventMediaType.IMAGE,
+            usage_tag=EventMediaUsageTag.MAIN_EVENT_PAGE_HERO,
+            file_url=(
+                "https://teststorage.blob.core.windows.net/npo-assets/"
+                "events/test-event/test-hero.jpg"
+            ),
+            file_name="test-hero.jpg",
+            file_type="image/jpeg",
+            mime_type="image/jpeg",
+            blob_name="events/test-event/test-hero.jpg",
+            file_size=1024,
+            display_order=0,
+            status=EventMediaStatus.SCANNED,
+            uploaded_by=test_npo_admin_user.id,
+        )
+        db_session.add(media)
+        await db_session.commit()
+
+        response = await client.get(f"/api/v1/events/public/{test_active_event.slug}")
+
+        assert response.status_code == 200
+        data = response.json()
+        hero_media = next(
+            item for item in data["media"] if item["usage_tag"] == "main_event_page_hero"
+        )
+        assert hero_media["file_url"].startswith(
+            "https://teststorage.blob.core.windows.net/test-container/events/test-event/test-hero.jpg?"
+        )
+        assert "mock_sas_token=test" in hero_media["file_url"]
 
     async def test_get_public_event_draft_not_accessible(
         self,

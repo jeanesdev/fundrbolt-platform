@@ -106,11 +106,9 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       // Don't retry refresh endpoint to avoid infinite loops
       if (originalRequest.url?.includes('/auth/refresh')) {
-        // Refresh token itself is invalid, logout user
+        // Explicit session-restore probes can fail on public routes.
+        // Reset local auth state, but let the caller decide whether to redirect.
         useAuthStore.getState().reset();
-        if (!window.location.pathname.startsWith('/sign-in')) {
-          window.location.href = '/sign-in';
-        }
         return Promise.reject(error);
       }
 

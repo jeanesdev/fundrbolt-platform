@@ -419,6 +419,179 @@ The FundrBolt Team
             to_email, subject, body, "npo_invitation", html_body
         )
 
+    async def send_ticket_assignment_invitation_email(
+        self,
+        to_email: str,
+        guest_name: str,
+        event_name: str,
+        event_datetime_text: str,
+        venue_name: str | None,
+        venue_address: str | None,
+        invitation_url: str,
+        personal_message: str | None = None,
+        inviter_name: str | None = None,
+        inviter_email: str | None = None,
+        event_logo_url: str | None = None,
+    ) -> bool:
+        """Send a donor ticket-assignment invitation email."""
+        inviter_display = inviter_name or "Someone"
+        subject = f"{inviter_display} has assigned you a ticket to {event_name}"
+
+        body_lines = [
+            f"Hello {guest_name},",
+            "",
+            f"{inviter_display} has assigned you a ticket to {event_name} and needs you to claim it.",
+        ]
+        if inviter_email:
+            body_lines.append(f"Invited by: {inviter_display} ({inviter_email})")
+        body_lines.extend(
+            [
+                "",
+                f"Date: {event_datetime_text}",
+            ]
+        )
+        if venue_name:
+            body_lines.append(f"Venue: {venue_name}")
+        if venue_address:
+            body_lines.append(venue_address)
+        if personal_message:
+            body_lines.extend(["", f"Message from {inviter_display}:", personal_message])
+        body_lines.extend(
+            [
+                "",
+                "Click the link below to claim your ticket and complete your registration:",
+                invitation_url,
+                "",
+                "Best regards,",
+                "The FundrBolt Team",
+            ]
+        )
+        body = "\n".join(body_lines)
+
+        body_paragraphs = [
+            f"Hello {guest_name},",
+            f"<strong>{inviter_display}</strong> has assigned you a ticket to <strong>{event_name}</strong> and needs you to claim it.",
+        ]
+        if inviter_email:
+            body_paragraphs.append(
+                f"<strong>Invited by:</strong> {inviter_display} ({inviter_email})"
+            )
+        body_paragraphs.append(f"<strong>Date:</strong> {event_datetime_text}")
+        if venue_name:
+            body_paragraphs.append(f"<strong>Venue:</strong> {venue_name}")
+        if venue_address:
+            body_paragraphs.append(venue_address)
+        if personal_message:
+            body_paragraphs.append(
+                f"<strong>Message from {inviter_display}:</strong><br>{personal_message}"
+            )
+        body_paragraphs.append(
+            "Click the button below to claim your ticket and complete your registration."
+        )
+
+        # Build the HTML template, optionally showing the event logo
+        event_logo_html = ""
+        if event_logo_url:
+            event_logo_html = (
+                f'<div style="text-align: center; margin-bottom: 24px;">'
+                f'<img src="{event_logo_url}" alt="{event_name}" '
+                f'style="max-height: 100px; max-width: 300px; width: auto; display: inline-block;" />'
+                f"</div>"
+            )
+
+        html_body = _create_email_html_template(
+            heading=f"You've been assigned a ticket to {event_name}!",
+            body_paragraphs=([event_logo_html] if event_logo_html else []) + body_paragraphs,
+            cta_text="Claim Your Ticket and Register",
+            cta_url=invitation_url,
+            footer_text="This invitation link will take you to the donor event experience to claim your ticket and finish registration.",
+            logo_url=self._get_logo_url("dark"),
+        )
+
+        return await self._send_email_with_retry(
+            to_email,
+            subject,
+            body,
+            "ticket_assignment_invitation",
+            html_body,
+        )
+
+    async def send_ticket_registration_cancelled_email(
+        self,
+        to_email: str,
+        guest_name: str,
+        event_name: str,
+        event_datetime_text: str,
+        venue_name: str | None,
+        venue_address: str | None,
+        revoked_by_name: str,
+        revoked_by_email: str,
+        event_logo_url: str | None = None,
+    ) -> bool:
+        """Notify a guest that their registration and ticket were revoked."""
+        subject = f"Your registration for {event_name} has been cancelled"
+
+        body_lines = [
+            f"Hello {guest_name},",
+            "",
+            f"Your registration for {event_name} has been cancelled and your ticket has been revoked.",
+            "",
+            f"Revoked by: {revoked_by_name} ({revoked_by_email})",
+            f"Date: {event_datetime_text}",
+        ]
+        if venue_name:
+            body_lines.append(f"Venue: {venue_name}")
+        if venue_address:
+            body_lines.append(venue_address)
+        body_lines.extend(
+            [
+                "",
+                "If you believe this was done in error, please contact the person listed above.",
+                "",
+                "Best regards,",
+                "The FundrBolt Team",
+            ]
+        )
+        body = "\n".join(body_lines)
+
+        body_paragraphs = [
+            f"Hello {guest_name},",
+            f"Your registration for <strong>{event_name}</strong> has been cancelled and your ticket has been revoked.",
+            f"<strong>Revoked by:</strong> {revoked_by_name} ({revoked_by_email})",
+            f"<strong>Date:</strong> {event_datetime_text}",
+        ]
+        if venue_name:
+            body_paragraphs.append(f"<strong>Venue:</strong> {venue_name}")
+        if venue_address:
+            body_paragraphs.append(venue_address)
+        body_paragraphs.append(
+            "If you believe this was done in error, please contact the person listed above."
+        )
+
+        event_logo_html = ""
+        if event_logo_url:
+            event_logo_html = (
+                f'<div style="text-align: center; margin-bottom: 24px;">'
+                f'<img src="{event_logo_url}" alt="{event_name}" '
+                f'style="max-height: 100px; max-width: 300px; width: auto; display: inline-block;" />'
+                f"</div>"
+            )
+
+        html_body = _create_email_html_template(
+            heading=f"Your registration for {event_name} has been cancelled",
+            body_paragraphs=([event_logo_html] if event_logo_html else []) + body_paragraphs,
+            footer_text="This confirms that your ticket is no longer active for this event.",
+            logo_url=self._get_logo_url("dark"),
+        )
+
+        return await self._send_email_with_retry(
+            to_email,
+            subject,
+            body,
+            "ticket_registration_cancelled",
+            html_body,
+        )
+
     async def send_npo_invitation_accepted_email(
         self,
         to_email: str,

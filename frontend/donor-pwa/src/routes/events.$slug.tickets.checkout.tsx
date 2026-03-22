@@ -2,7 +2,27 @@
  * Multi-package Cart Checkout Route — /events/$slug/tickets/checkout
  * 4-step flow: Cart Review → Sponsorship Info (conditional) → Payment → Success
  */
-import { useEffect, useState } from 'react'
+import { SponsorshipInfoForm } from '@/components/tickets/SponsorshipInfoForm'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { getEventBySlug } from '@/lib/api/events'
+import {
+  checkout,
+  validateCart,
+  type CartValidationResponse,
+  type CheckoutResponse,
+  type SponsorshipDetails,
+} from '@/lib/api/ticket-purchases'
+import { useAuthStore } from '@/stores/auth-store'
+import { useTicketCartStore } from '@/stores/ticket-cart-store'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import {
@@ -18,28 +38,8 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { useTicketCartStore } from '@/stores/ticket-cart-store'
-import { getEventBySlug } from '@/lib/api/events'
-import {
-  checkout,
-  validateCart,
-  type CartValidationResponse,
-  type CheckoutResponse,
-  type SponsorshipDetails,
-} from '@/lib/api/ticket-purchases'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { SponsorshipInfoForm } from '@/components/tickets/SponsorshipInfoForm'
 
 export const Route = createFileRoute('/events/$slug/tickets/checkout')({
   component: TicketsCheckoutPage,
@@ -169,11 +169,11 @@ function TicketsCheckoutPage() {
   }
 
   const displaySubtotal = validationResult
-    ? validationResult.subtotal
+    ? Math.round(validationResult.subtotal * 100)
     : cartSubtotal()
-  const displayDiscount = validationResult ? validationResult.discount : 0
+  const displayDiscount = validationResult ? Math.round(validationResult.discount * 100) : 0
   const displayTotal = validationResult
-    ? validationResult.total
+    ? Math.round(validationResult.total * 100)
     : displaySubtotal
 
   if (!isAuthenticated) return null
@@ -486,13 +486,13 @@ function TicketsCheckoutPage() {
                       {p.package_name} × {p.quantity}
                     </span>
                     <span className='font-medium'>
-                      {fmtCurrency(p.total_price)}
+                      {fmtCurrency(Math.round(p.total_price * 100))}
                     </span>
                   </div>
                 ))}
                 <div className='flex justify-between border-t pt-2 font-bold'>
                   <span>Total Charged</span>
-                  <span>{fmtCurrency(checkoutResult.total_charged)}</span>
+                  <span>{fmtCurrency(Math.round(checkoutResult.total_charged * 100))}</span>
                 </div>
               </div>
             )}

@@ -12,7 +12,6 @@
 import {
   AuctionGallery,
   EventDetails,
-  EventSwitcher,
   MySeatingSection,
 } from '@/components/event-home'
 import { AuctionCountdownTimer } from '@/components/event-home/AuctionCountdownTimer'
@@ -26,15 +25,17 @@ import {
   EventHeroSection,
   type EventStatus,
 } from '@/components/event-home/EventHeroSection'
-import type { GuestProfileData } from '@/components/event-home/GuestProfileModal'
-import { GuestProfileModal } from '@/components/event-home/GuestProfileModal'
+import {
+  GuestProfileModal,
+  type GuestProfileData,
+} from '@/components/event-home/GuestProfileModal'
 import { MyBidsDonationsSection } from '@/components/event-home/MyBidsDonationsSection'
 import { OtherGuestsSection } from '@/components/event-home/OtherGuestsSection'
 import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
-import { ProfileDropdown } from '@/components/profile-dropdown'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 import { PushOptInPrompt } from '@/components/notifications/PushOptInPrompt'
+import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { usePreviewMode } from '@/contexts/PreviewContext'
 import { useEventBranding } from '@/hooks/use-event-branding'
@@ -42,6 +43,7 @@ import { useEventContext } from '@/hooks/use-event-context'
 import { useNotificationSocket } from '@/hooks/use-notification-socket'
 import { useUnreadCount } from '@/hooks/use-notifications'
 import { useTabSwipe } from '@/hooks/use-tab-swipe'
+import { getMyInventory } from '@/lib/api/ticket-purchases'
 import apiClient from '@/lib/axios'
 import auctionItemService from '@/services/auctionItemService'
 import {
@@ -81,8 +83,13 @@ export function EventHomePage() {
     slug?: string
   }
   const eventSlug = params.eventSlug ?? params.slug
-  const { currentEvent, eventsLoading, eventsError, loadEventBySlug } =
-    useEventStore()
+  const {
+    currentEvent,
+    eventsLoading,
+    eventsError,
+    loadEventById,
+    loadEventBySlug,
+  } = useEventStore()
   const { applyBranding, clearBranding } = useEventBranding()
   const { setSelectedEvent } = useEventContextStore()
   const { availableEvents } = useEventContext()
@@ -107,6 +114,13 @@ export function EventHomePage() {
   const tabOrder = useMemo<DonorTab[]>(() => ['home', 'auction', 'seat'], [])
   const isOnline = useOnlineStatus()
   const prevOnlineRef = useRef(isOnline)
+
+  const { data: ticketInventoryData } = useQuery({
+    queryKey: ['ticket-inventory', 'event-home-access'],
+    queryFn: getMyInventory,
+    enabled: !!eventSlug && !isPreviewMode,
+    staleTime: 5 * 60 * 1000,
+  })
 
   // Refetch auction data when connectivity is restored (FR-017)
   useEffect(() => {
@@ -405,49 +419,15 @@ export function EventHomePage() {
   })
 
   // Guest profile modal state
-  const [selectedGuest, setSelectedGuest] = useState<GuestProfileData | null>(null)
+  const [selectedGuest, setSelectedGuest] = useState<GuestProfileData | null>(
+    null
+  )
   const [guestProfileOpen, setGuestProfileOpen] = useState(false)
 
   const handleGuestClick = useCallback((guest: GuestProfileData) => {
     setSelectedGuest(guest)
     setGuestProfileOpen(true)
   }, [])
-
-  // Events for switcher
-  const eventsForSwitcher = useMemo((): RegisteredEventWithBranding[] => {
-    return availableEvents.map((event) => {
-      const eventDate = event.event_date ? new Date(event.event_date) : null
-      const now = getEffectiveNow()
-      const is_past = eventDate ? eventDate <= now : false
-      const is_upcoming =
-        eventDate && !is_past
-          ? eventDate <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-          : false
-      return {
-        id: event.id,
-        name: event.name,
-        slug: event.slug,
-        event_datetime: event.event_date || '',
-        timezone: '',
-        is_past,
-        is_upcoming,
-        thumbnail_url: event.logo_url || null,
-        primary_color: '#3B82F6',
-        secondary_color: '#9333EA',
-        background_color: '#FFFFFF',
-        accent_color: '#3B82F6',
-        npo_name: event.npo_name || 'Organization',
-        npo_logo_url: null,
-      }
-    })
-  }, [availableEvents, timeBaseRealMs, timeBaseSpoofMs])
-
-  const handleEventSelect = useCallback(
-    (event: RegisteredEventWithBranding) => {
-      navigate({ to: '/events/$eventSlug', params: { eventSlug: event.slug } })
-    },
-    [navigate]
-  )
 
   // Current event for switcher
   const currentEventForSwitcher =
@@ -503,13 +483,49 @@ export function EventHomePage() {
     // In preview mode, event data is seeded by the preview route — skip fetching
     if (isPreviewMode) return
     if (eventSlug) {
-      loadEventBySlug(eventSlug).catch(() => {
+      const accessibleEvent = availableEvents.find(
+        (event) => event.slug === eventSlug
+      )
+      const purchasedEvent = ticketInventoryData?.events.find(
+        (event) => event.event_slug === eventSlug
+      )
+
+      const loadPromise = accessibleEvent?.id
+        ? loadEventById(accessibleEvent.id)
+        : purchasedEvent?.event_id
+          ? loadEventById(purchasedEvent.event_id)
+          : loadEventBySlug(eventSlug)
+
+      if (accessibleEvent) {
+        setSelectedEvent(
+          accessibleEvent.id,
+          accessibleEvent.name,
+          accessibleEvent.slug
+        )
+      } else if (purchasedEvent?.event_id) {
+        setSelectedEvent(
+          purchasedEvent.event_id,
+          purchasedEvent.event_name,
+          purchasedEvent.event_slug
+        )
+      }
+
+      loadPromise.catch(() => {
         toast.error('Failed to load event')
         setSelectedEvent(null, 'Select Event', null)
         navigate({ to: '/home' })
       })
     }
-  }, [eventSlug, loadEventBySlug, navigate, setSelectedEvent, isPreviewMode])
+  }, [
+    eventSlug,
+    loadEventById,
+    loadEventBySlug,
+    navigate,
+    setSelectedEvent,
+    isPreviewMode,
+    availableEvents,
+    ticketInventoryData,
+  ])
 
   useEffect(() => {
     loadEvent()
@@ -1123,17 +1139,6 @@ export function EventHomePage() {
       status={eventStatus}
       onAddToCalendar={generateICSFile}
       venueMapLink={venueMapLink}
-      switcherSlot={
-        !isPreviewMode &&
-          currentEventForSwitcher &&
-          eventsForSwitcher.length > 0 ? (
-          <EventSwitcher
-            currentEvent={currentEventForSwitcher}
-            events={eventsForSwitcher}
-            onEventSelect={handleEventSelect}
-          />
-        ) : undefined
-      }
       profileSlot={
         <div className='flex items-center gap-1'>
           <NotificationBell />
@@ -1386,12 +1391,13 @@ export function EventHomePage() {
         )}
 
         {/* My Bids & Donations */}
-        {myActivity && (myActivity.bids.length > 0 || myActivity.donations.length > 0) && (
-          <MyBidsDonationsSection
-            activity={myActivity}
-            isAuctionClosed={currentEvent?.status === 'closed'}
-          />
-        )}
+        {myActivity &&
+          (myActivity.bids.length > 0 || myActivity.donations.length > 0) && (
+            <MyBidsDonationsSection
+              activity={myActivity}
+              isAuctionClosed={currentEvent?.status === 'closed'}
+            />
+          )}
 
         {/* Other Guests Directory */}
         {guestsData && guestsData.guests.length > 0 && (

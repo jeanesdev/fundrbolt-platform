@@ -3,7 +3,6 @@
  *
  * Provides functions for accessing public event data (no authentication required).
  */
-
 import apiClient from '@/lib/axios'
 import type { AxiosResponse } from 'axios'
 
@@ -14,21 +13,18 @@ import type { AxiosResponse } from 'axios'
 export interface EventResponse {
   id: string
   npo_id: string
+  npo_name: string | null
   slug: string
   name: string
   tagline: string | null
-  description: string | null
   event_datetime: string
-  location_name: string | null
-  location_address: string | null
+  timezone: string
   venue_name: string | null
-  venue_capacity: number | null
+  venue_city: string | null
+  venue_state: string | null
   status: 'draft' | 'active' | 'closed'
-  checkout_open: boolean
-  primary_color: string | null
-  secondary_color: string | null
   logo_url: string | null
-  banner_url: string | null
+  hero_transition_style: string
   created_at: string
   updated_at: string
 }
@@ -79,6 +75,15 @@ export interface EventLink {
   display_order: number
 }
 
+export interface PublicTicketCustomOption {
+  id: string
+  label: string
+  type: 'boolean' | 'multi_select' | 'text_input'
+  choices: string[] | null
+  is_required: boolean
+  display_order: number
+}
+
 export interface EventDetailResponse extends EventResponse {
   npo_name: string | null
   timezone: string
@@ -105,7 +110,9 @@ export interface EventDetailResponse extends EventResponse {
 /**
  * Get public event by slug
  */
-export async function getEventBySlug(slug: string): Promise<EventDetailResponse> {
+export async function getEventBySlug(
+  slug: string
+): Promise<EventDetailResponse> {
   const response: AxiosResponse<EventDetailResponse> = await apiClient.get(
     `/events/public/${slug}`
   )
@@ -157,14 +164,64 @@ export interface PublicTicketPackage {
   quantity_remaining: number | null
   sold_out: boolean
   image_url: string | null
+  custom_options: PublicTicketCustomOption[]
 }
 
 /**
  * Get publicly visible ticket packages for an event (no auth required).
  */
-export async function getTicketPackages(slug: string): Promise<PublicTicketPackage[]> {
-  const response: AxiosResponse<PublicTicketPackage[]> = await apiClient.get(
-    `/events/public/${slug}/ticket-packages`
-  )
+export async function getTicketPackages(
+  slug: string
+): Promise<PublicTicketPackage[]> {
+  const response = await apiClient.get<
+    Array<{
+      id: string
+      name: string
+      description: string | null
+      price: string
+      seats_per_package: number
+      quantity_limit: number | null
+      sold_count: number
+      is_sponsorship: boolean
+      custom_options?: PublicTicketCustomOption[]
+    }>
+  >(`/events/${slug}/tickets`)
+
+  return response.data.map((pkg) => {
+    const qtyRemaining =
+      pkg.quantity_limit != null
+        ? Math.max(0, pkg.quantity_limit - pkg.sold_count)
+        : null
+    return {
+      id: pkg.id,
+      name: pkg.name,
+      description: pkg.description,
+      price: Math.round(parseFloat(pkg.price) * 100),
+      seats_per_package: pkg.seats_per_package,
+      quantity_remaining: qtyRemaining,
+      sold_out: qtyRemaining !== null && qtyRemaining <= 0,
+      image_url: null,
+      custom_options: pkg.custom_options ?? [],
+    }
+  })
+}
+
+/**
+ * Get event-level (universal) custom options that apply to all registrations.
+ */
+export async function getEventCustomOptions(
+  slug: string
+): Promise<PublicTicketCustomOption[]> {
+  const response = await apiClient.get<
+    Array<{
+      id: string
+      label: string
+      type: 'boolean' | 'multi_select' | 'text_input'
+      choices: string[] | null
+      is_required: boolean
+      display_order: number
+    }>
+  >(`/events/${slug}/custom-options`)
+
   return response.data
 }

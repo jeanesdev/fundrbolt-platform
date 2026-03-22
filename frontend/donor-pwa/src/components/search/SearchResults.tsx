@@ -115,8 +115,8 @@ export function SearchResults({ results, isLoading, onClose }: SearchResultsProp
           {results.events.map((event) => (
             <Link
               key={event.id}
-              to='/events/$eventSlug'
-              params={{ eventSlug: event.id }}
+              to='/events/$slug'
+              params={{ slug: event.slug }}
               onClick={onClose}
               className='hover:bg-accent flex items-center gap-3 rounded p-2 transition-colors'
             >
@@ -144,7 +144,7 @@ export function SearchResults({ results, isLoading, onClose }: SearchResultsProp
             <Link
               key={item.id}
               to='/events/$eventSlug/auction-items/$itemId'
-              params={{ eventSlug: item.event_id, itemId: item.id }}
+              params={{ eventSlug: item.event_slug ?? item.event_id, itemId: item.id }}
               onClick={onClose}
               className='hover:bg-accent flex items-center gap-3 rounded p-2 transition-colors'
             >

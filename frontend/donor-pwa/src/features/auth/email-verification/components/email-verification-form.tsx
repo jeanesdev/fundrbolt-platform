@@ -1,18 +1,3 @@
-import { useEffect, useRef, useState } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate } from '@tanstack/react-router'
-import {
-  AlertCircle,
-  ArrowRight,
-  CheckCircle2,
-  Loader2,
-  Mail,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import apiClient from '@/lib/axios'
-import { cn } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,20 +10,36 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import apiClient from '@/lib/axios'
+import { cn } from '@/lib/utils'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate } from '@tanstack/react-router'
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  Loader2,
+  Mail,
+} from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
 
 const formSchema = z.object({
   token: z.string().min(1, 'Verification token is required'),
 })
 
-interface EmailVerificationFormProps
-  extends React.HTMLAttributes<HTMLFormElement> {
+interface EmailVerificationFormProps extends React.HTMLAttributes<HTMLFormElement> {
   token?: string
   email?: string
+  redirectTo?: string
 }
 
 export function EmailVerificationForm({
   token = '',
   email,
+  redirectTo,
   className,
   ...props
 }: EmailVerificationFormProps) {
@@ -81,7 +82,10 @@ export function EmailVerificationForm({
         description: 'You can now sign in to your account.',
       })
 
-      setTimeout(() => navigate({ to: '/sign-in' }), 1500)
+      setTimeout(
+        () => navigate({ to: '/sign-in', search: { redirect: redirectTo } }),
+        1500
+      )
     } catch (error) {
       const err = error as {
         response?: {
@@ -109,8 +113,14 @@ export function EmailVerificationForm({
       if (errorCode === 'ALREADY_VERIFIED') {
         setLinkState('success')
         toast.success('Your email is already verified. Redirecting to sign in…')
-        setTimeout(() => navigate({ to: '/sign-in' }), 1500)
-      } else if (errorCode === 'INVALID_TOKEN' || errorCode === 'EXPIRED_TOKEN') {
+        setTimeout(
+          () => navigate({ to: '/sign-in', search: { redirect: redirectTo } }),
+          1500
+        )
+      } else if (
+        errorCode === 'INVALID_TOKEN' ||
+        errorCode === 'EXPIRED_TOKEN'
+      ) {
         setLinkState('expired')
         toast.error('Verification link is no longer valid', {
           description:
@@ -242,7 +252,9 @@ export function EmailVerificationForm({
 
           <Button
             type='button'
-            onClick={() => navigate({ to: '/sign-in' })}
+            onClick={() =>
+              navigate({ to: '/sign-in', search: { redirect: redirectTo } })
+            }
           >
             I&apos;ve verified my email
           </Button>

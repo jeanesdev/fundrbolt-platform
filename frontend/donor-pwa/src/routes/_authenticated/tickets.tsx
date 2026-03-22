@@ -4,6 +4,16 @@
  */
 import { TicketAssignmentCard } from '@/components/tickets/TicketAssignmentCard'
 import { TicketAssignmentForm } from '@/components/tickets/TicketAssignmentForm'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,13 +24,17 @@ import {
 } from '@/components/ui/collapsible'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SelfRegistrationFlow } from '@/features/tickets/SelfRegistrationFlow'
-import { cancelAssignment } from '@/lib/api/ticket-assignments'
+import {
+  cancelAssignment,
+  cancelRegistration,
+} from '@/lib/api/ticket-assignments'
 import { resendInvitation, sendInvitation } from '@/lib/api/ticket-invitations'
 import {
   getMyInventory,
   type EventTicketSummary,
   type TicketDetail,
 } from '@/lib/api/ticket-purchases'
+import apiClient from '@/lib/axios'
 import { useAuthStore } from '@/stores/auth-store'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
@@ -32,7 +46,7 @@ import {
   TicketCheck,
   UserPlus,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 export const Route = createFileRoute('/_authenticated/tickets')({
@@ -41,6 +55,7 @@ export const Route = createFileRoute('/_authenticated/tickets')({
 
 function TicketInventoryPage() {
   const user = useAuthStore((s) => s.user)
+  const updateUser = useAuthStore((s) => s.updateUser)
   const queryClient = useQueryClient()
 
   const [assigningTicketId, setAssigningTicketId] = useState<string | null>(
@@ -50,6 +65,24 @@ function TicketInventoryPage() {
   const [selfRegTicket, setSelfRegTicket] = useState<{
     id: string
     ticketNumber: number
+    eventSlug: string
+    packageId: string
+    assignmentId?: string | null
+  } | null>(null)
+  const [pendingAssignmentCancel, setPendingAssignmentCancel] = useState<{
+    assignmentId: string
+    ticketNumber: number
+    eventName: string
+    guestName: string
+    guestEmail: string
+  } | null>(null)
+  const [pendingRegistrationCancel, setPendingRegistrationCancel] = useState<{
+    assignmentId: string
+    ticketNumber: number
+    eventName: string
+    guestName: string
+    guestEmail: string
+    isSelfRegistration: boolean
   } | null>(null)
 
   const {
@@ -60,6 +93,30 @@ function TicketInventoryPage() {
     queryKey: ['ticket-inventory'],
     queryFn: getMyInventory,
   })
+
+  const { data: currentUserData } = useQuery({
+    queryKey: ['user', 'me', 'tickets'],
+    queryFn: async () => {
+      const response = await apiClient.get('/users/me')
+      return response.data as {
+        communications_email?: string | null
+        communications_email_verified?: boolean
+        phone?: string | null
+      }
+    },
+    enabled: !!user,
+  })
+
+  useEffect(() => {
+    if (!currentUserData) return
+
+    updateUser({
+      communications_email: currentUserData.communications_email,
+      communications_email_verified:
+        currentUserData.communications_email_verified,
+      phone: currentUserData.phone,
+    })
+  }, [currentUserData, updateUser])
 
   const sendInviteMutation = useMutation({
     mutationFn: (assignmentId: string) => sendInvitation(assignmentId),
@@ -86,11 +143,35 @@ function TicketInventoryPage() {
   const cancelMutation = useMutation({
     mutationFn: (assignmentId: string) => cancelAssignment(assignmentId),
     onSuccess: () => {
-      toast.success('Assignment cancelled')
+      toast.success('Ticket revoked')
+      setPendingAssignmentCancel(null)
       void queryClient.invalidateQueries({ queryKey: ['ticket-inventory'] })
     },
     onError: () => {
-      toast.error('Failed to cancel assignment')
+      toast.error('Failed to revoke ticket')
+    },
+  })
+
+  const cancelRegistrationMutation = useMutation({
+    mutationFn: (assignmentId: string) => cancelRegistration(assignmentId),
+    onSuccess: async () => {
+      toast.success('Registration cancelled and ticket revoked')
+      setPendingRegistrationCancel(null)
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['ticket-inventory'] }),
+        queryClient.invalidateQueries({
+          queryKey: ['ticket-inventory', 'event-context'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['registrations', 'events-with-branding'],
+        }),
+      ])
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to cancel registration'
+      toast.error(message)
     },
   })
 
@@ -104,6 +185,18 @@ function TicketInventoryPage() {
       }
       return next
     })
+  }
+
+  const currentUserEmails = [
+    currentUserData?.communications_email?.trim().toLowerCase(),
+    user?.communications_email?.trim().toLowerCase(),
+    user?.email?.trim().toLowerCase(),
+  ].filter((value): value is string => Boolean(value))
+
+  const ticketBelongsToCurrentUser = (ticket: TicketDetail) => {
+    const guestEmail = ticket.assignment?.guest_email?.trim().toLowerCase()
+    if (!guestEmail) return false
+    return currentUserEmails.includes(guestEmail)
   }
 
   if (isLoading) {
@@ -255,6 +348,9 @@ function TicketInventoryPage() {
                                       setSelfRegTicket({
                                         id: ticket.id,
                                         ticketNumber: ticket.ticket_number,
+                                        eventSlug: evt.event_slug,
+                                        packageId: purchase.package_id,
+                                        assignmentId: null,
                                       })
                                     }}
                                   >
@@ -277,14 +373,61 @@ function TicketInventoryPage() {
                           ) : (
                             <TicketAssignmentCard
                               ticket={ticket}
+                              canSelfRegister={ticketBelongsToCurrentUser(
+                                ticket
+                              )}
+                              onSelfRegister={(
+                                ticketId,
+                                ticketNumber,
+                                assignmentId
+                              ) => {
+                                setSelfRegTicket({
+                                  id: ticketId,
+                                  ticketNumber,
+                                  eventSlug: evt.event_slug,
+                                  packageId: purchase.package_id,
+                                  assignmentId,
+                                })
+                              }}
                               onSendInvite={(id) =>
                                 sendInviteMutation.mutate(id)
+                              }
+                              isSendingInvite={sendInviteMutation.isPending}
+                              onCancelRegistration={(assignmentId) =>
+                                setPendingRegistrationCancel({
+                                  assignmentId,
+                                  ticketNumber: ticket.ticket_number,
+                                  eventName: evt.event_name,
+                                  guestName:
+                                    ticket.assignment?.guest_name ?? 'This guest',
+                                  guestEmail:
+                                    ticket.assignment?.guest_email ?? '',
+                                  isSelfRegistration:
+                                    ticketBelongsToCurrentUser(ticket),
+                                })
                               }
                               onResendInvite={(id) =>
                                 resendInviteMutation.mutate(id)
                               }
+                              isResendingInvite={
+                                resendInviteMutation.isPending
+                              }
                               onCancelAssignment={(id) =>
-                                cancelMutation.mutate(id)
+                                setPendingAssignmentCancel({
+                                  assignmentId: id,
+                                  ticketNumber: ticket.ticket_number,
+                                  eventName: evt.event_name,
+                                  guestName:
+                                    ticket.assignment?.guest_name ?? 'This guest',
+                                  guestEmail:
+                                    ticket.assignment?.guest_email ?? '',
+                                })
+                              }
+                              isCancellingAssignment={
+                                cancelMutation.isPending
+                              }
+                              isCancellingRegistration={
+                                cancelRegistrationMutation.isPending
                               }
                             />
                           )}
@@ -308,15 +451,129 @@ function TicketInventoryPage() {
       {selfRegTicket && user && (
         <SelfRegistrationFlow
           ticketId={selfRegTicket.id}
+          assignmentId={selfRegTicket.assignmentId}
+          eventSlug={selfRegTicket.eventSlug}
+          packageId={selfRegTicket.packageId}
           ticketNumber={selfRegTicket.ticketNumber}
           userName={`${user.first_name} ${user.last_name}`.trim()}
-          userEmail={user.email}
+          userEmail={
+            currentUserData?.communications_email?.trim() ||
+            user.communications_email?.trim() ||
+            user.email
+          }
+          userPhone={currentUserData?.phone ?? user.phone}
           open={!!selfRegTicket}
           onOpenChange={(open) => {
             if (!open) setSelfRegTicket(null)
           }}
         />
       )}
+
+      <AlertDialog
+        open={pendingAssignmentCancel !== null}
+        onOpenChange={(open) => {
+          if (!open && !cancelMutation.isPending) {
+            setPendingAssignmentCancel(null)
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke this guest ticket?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingAssignmentCancel
+                ? `This will revoke ticket #${pendingAssignmentCancel.ticketNumber} in ${pendingAssignmentCancel.eventName} from ${pendingAssignmentCancel.guestName}${pendingAssignmentCancel.guestEmail ? ` (${pendingAssignmentCancel.guestEmail})` : ''}. They will not be able to register unless you assign the ticket again.`
+                : 'This will revoke the ticket and prevent that guest from registering.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className='rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm'>
+            <p className='font-medium text-destructive'>Important</p>
+            <p className='text-muted-foreground mt-1'>
+              Any invitation link already sent for this ticket will stop
+              working after you revoke it.
+            </p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelMutation.isPending}>
+              Keep Ticket Assigned
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+              onClick={(event) => {
+                event.preventDefault()
+                if (!pendingAssignmentCancel) {
+                  return
+                }
+                cancelMutation.mutate(pendingAssignmentCancel.assignmentId)
+              }}
+              disabled={cancelMutation.isPending}
+            >
+              {cancelMutation.isPending ? 'Revoking...' : 'Revoke Ticket'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={pendingRegistrationCancel !== null}
+        onOpenChange={(open) => {
+          if (!open && !cancelRegistrationMutation.isPending) {
+            setPendingRegistrationCancel(null)
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingRegistrationCancel?.isSelfRegistration
+                ? 'Unregister from event?'
+                : 'Revoke this registered ticket?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingRegistrationCancel
+                ? pendingRegistrationCancel.isSelfRegistration
+                  ? `This will cancel your registration for ticket #${pendingRegistrationCancel.ticketNumber} in ${pendingRegistrationCancel.eventName} and make the ticket unassigned again.`
+                  : `This will cancel ${pendingRegistrationCancel.guestName}'s registration for ticket #${pendingRegistrationCancel.ticketNumber} in ${pendingRegistrationCancel.eventName}, revoke their ticket, and make the ticket unassigned again.`
+                : 'This will cancel the registration and free the ticket.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {!pendingRegistrationCancel?.isSelfRegistration && (
+            <div className='rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm'>
+              <p className='font-medium text-destructive'>Important</p>
+              <p className='text-muted-foreground mt-1'>
+                The guest will receive an email confirming that their
+                registration was cancelled and their ticket was revoked.
+              </p>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelRegistrationMutation.isPending}>
+              {pendingRegistrationCancel?.isSelfRegistration
+                ? 'Keep Registration'
+                : 'Keep Ticket Active'}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+              onClick={(event) => {
+                event.preventDefault()
+                if (!pendingRegistrationCancel) {
+                  return
+                }
+                cancelRegistrationMutation.mutate(
+                  pendingRegistrationCancel.assignmentId
+                )
+              }}
+              disabled={cancelRegistrationMutation.isPending}
+            >
+              {cancelRegistrationMutation.isPending
+                ? 'Revoking...'
+                : pendingRegistrationCancel?.isSelfRegistration
+                  ? 'Unregister'
+                  : 'Revoke Ticket'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CheckinIndexRouteImport } from './routes/checkin.index'
 import { Route as PreviewEventIdRouteImport } from './routes/preview.$eventId'
 import { Route as InvitationsAcceptRouteImport } from './routes/invitations/accept'
+import { Route as EventsTicketsRouteImport } from './routes/events..tickets'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as AuthenticatedRegistrationsRouteImport } from './routes/_authenticated/registrations'
@@ -53,6 +54,7 @@ import { Route as AuthenticatedNposCreateRouteImport } from './routes/_authentic
 import { Route as AuthenticatedEventsCreateRouteImport } from './routes/_authenticated/events/create'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedEventsEventSlugRouteRouteImport } from './routes/_authenticated/events/$eventSlug/route'
+import { Route as EventsSlugTicketsIndexRouteImport } from './routes/events.$slug.tickets.index'
 import { Route as AuthenticatedNposNpoIdIndexRouteImport } from './routes/_authenticated/npos/$npoId.index'
 import { Route as AuthenticatedEventsEventSlugIndexRouteImport } from './routes/_authenticated/events/$eventSlug/index'
 import { Route as EventsSlugTicketsCheckoutRouteImport } from './routes/events.$slug.tickets.checkout'
@@ -90,6 +92,11 @@ const PreviewEventIdRoute = PreviewEventIdRouteImport.update({
 const InvitationsAcceptRoute = InvitationsAcceptRouteImport.update({
   id: '/invitations/accept',
   path: '/invitations/accept',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventsTicketsRoute = EventsTicketsRouteImport.update({
+  id: '/events/tickets',
+  path: '/events/tickets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EventsSlugRoute = EventsSlugRouteImport.update({
@@ -295,6 +302,11 @@ const AuthenticatedEventsEventSlugRouteRoute =
     path: '/events/$eventSlug',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const EventsSlugTicketsIndexRoute = EventsSlugTicketsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EventsSlugTicketsRoute,
+} as any)
 const AuthenticatedNposNpoIdIndexRoute =
   AuthenticatedNposNpoIdIndexRouteImport.update({
     id: '/npos/$npoId/',
@@ -375,6 +387,7 @@ export interface FileRoutesByFullPath {
   '/registrations': typeof AuthenticatedRegistrationsRoute
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/events/$slug': typeof EventsSlugRouteWithChildren
+  '/events/tickets': typeof EventsTicketsRoute
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/preview/$eventId': typeof PreviewEventIdRoute
   '/checkin/': typeof CheckinIndexRoute
@@ -399,6 +412,7 @@ export interface FileRoutesByFullPath {
   '/events/$slug/tickets/checkout': typeof EventsSlugTicketsCheckoutRoute
   '/events/$eventSlug/': typeof AuthenticatedEventsEventSlugIndexRoute
   '/npos/$npoId/': typeof AuthenticatedNposNpoIdIndexRoute
+  '/events/$slug/tickets/': typeof EventsSlugTicketsIndexRoute
   '/events/$eventSlug/auction-items/create': typeof AuthenticatedEventsEventSlugAuctionItemsCreateRoute
   '/events/$eventSlug/auction-items/': typeof AuthenticatedEventsEventSlugAuctionItemsIndexRoute
   '/events/$eventSlug/auction-items/$itemId/edit': typeof AuthenticatedEventsEventSlugAuctionItemsItemIdEditRoute
@@ -427,6 +441,7 @@ export interface FileRoutesByTo {
   '/home': typeof AuthenticatedHomeRoute
   '/registrations': typeof AuthenticatedRegistrationsRoute
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
+  '/events/tickets': typeof EventsTicketsRoute
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/preview/$eventId': typeof PreviewEventIdRoute
   '/checkin': typeof CheckinIndexRoute
@@ -440,7 +455,6 @@ export interface FileRoutesByTo {
   '/tickets/history': typeof AuthenticatedTicketsHistoryRoute
   '/events/$slug/checkout': typeof EventsSlugCheckoutRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
-  '/events/$slug/tickets': typeof EventsSlugTicketsRouteWithChildren
   '/events': typeof AuthenticatedEventsIndexRoute
   '/npos': typeof AuthenticatedNposIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -450,6 +464,7 @@ export interface FileRoutesByTo {
   '/events/$slug/tickets/checkout': typeof EventsSlugTicketsCheckoutRoute
   '/events/$eventSlug': typeof AuthenticatedEventsEventSlugIndexRoute
   '/npos/$npoId': typeof AuthenticatedNposNpoIdIndexRoute
+  '/events/$slug/tickets': typeof EventsSlugTicketsIndexRoute
   '/events/$eventSlug/auction-items/create': typeof AuthenticatedEventsEventSlugAuctionItemsCreateRoute
   '/events/$eventSlug/auction-items': typeof AuthenticatedEventsEventSlugAuctionItemsIndexRoute
   '/events/$eventSlug/auction-items/$itemId/edit': typeof AuthenticatedEventsEventSlugAuctionItemsItemIdEditRoute
@@ -482,6 +497,7 @@ export interface FileRoutesById {
   '/_authenticated/registrations': typeof AuthenticatedRegistrationsRoute
   '/_authenticated/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/events/$slug': typeof EventsSlugRouteWithChildren
+  '/events/tickets': typeof EventsTicketsRoute
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/preview/$eventId': typeof PreviewEventIdRoute
   '/checkin/': typeof CheckinIndexRoute
@@ -506,6 +522,7 @@ export interface FileRoutesById {
   '/events/$slug/tickets/checkout': typeof EventsSlugTicketsCheckoutRoute
   '/_authenticated/events/$eventSlug/': typeof AuthenticatedEventsEventSlugIndexRoute
   '/_authenticated/npos/$npoId/': typeof AuthenticatedNposNpoIdIndexRoute
+  '/events/$slug/tickets/': typeof EventsSlugTicketsIndexRoute
   '/_authenticated/events/$eventSlug/auction-items/create': typeof AuthenticatedEventsEventSlugAuctionItemsCreateRoute
   '/_authenticated/events/$eventSlug/auction-items/': typeof AuthenticatedEventsEventSlugAuctionItemsIndexRoute
   '/_authenticated/events/$eventSlug/auction-items/$itemId/edit': typeof AuthenticatedEventsEventSlugAuctionItemsItemIdEditRoute
@@ -538,6 +555,7 @@ export interface FileRouteTypes {
     | '/registrations'
     | '/tickets'
     | '/events/$slug'
+    | '/events/tickets'
     | '/invitations/accept'
     | '/preview/$eventId'
     | '/checkin/'
@@ -562,6 +580,7 @@ export interface FileRouteTypes {
     | '/events/$slug/tickets/checkout'
     | '/events/$eventSlug/'
     | '/npos/$npoId/'
+    | '/events/$slug/tickets/'
     | '/events/$eventSlug/auction-items/create'
     | '/events/$eventSlug/auction-items/'
     | '/events/$eventSlug/auction-items/$itemId/edit'
@@ -590,6 +609,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/registrations'
     | '/tickets'
+    | '/events/tickets'
     | '/invitations/accept'
     | '/preview/$eventId'
     | '/checkin'
@@ -603,7 +623,6 @@ export interface FileRouteTypes {
     | '/tickets/history'
     | '/events/$slug/checkout'
     | '/events/$slug/register'
-    | '/events/$slug/tickets'
     | '/events'
     | '/npos'
     | '/settings'
@@ -613,6 +632,7 @@ export interface FileRouteTypes {
     | '/events/$slug/tickets/checkout'
     | '/events/$eventSlug'
     | '/npos/$npoId'
+    | '/events/$slug/tickets'
     | '/events/$eventSlug/auction-items/create'
     | '/events/$eventSlug/auction-items'
     | '/events/$eventSlug/auction-items/$itemId/edit'
@@ -644,6 +664,7 @@ export interface FileRouteTypes {
     | '/_authenticated/registrations'
     | '/_authenticated/tickets'
     | '/events/$slug'
+    | '/events/tickets'
     | '/invitations/accept'
     | '/preview/$eventId'
     | '/checkin/'
@@ -668,6 +689,7 @@ export interface FileRouteTypes {
     | '/events/$slug/tickets/checkout'
     | '/_authenticated/events/$eventSlug/'
     | '/_authenticated/npos/$npoId/'
+    | '/events/$slug/tickets/'
     | '/_authenticated/events/$eventSlug/auction-items/create'
     | '/_authenticated/events/$eventSlug/auction-items/'
     | '/_authenticated/events/$eventSlug/auction-items/$itemId/edit'
@@ -696,6 +718,7 @@ export interface RootRouteChildren {
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
   EventsSlugRoute: typeof EventsSlugRouteWithChildren
+  EventsTicketsRoute: typeof EventsTicketsRoute
   InvitationsAcceptRoute: typeof InvitationsAcceptRoute
   CheckinIndexRoute: typeof CheckinIndexRoute
 }
@@ -742,6 +765,13 @@ declare module '@tanstack/react-router' {
       path: '/invitations/accept'
       fullPath: '/invitations/accept'
       preLoaderRoute: typeof InvitationsAcceptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/events/tickets': {
+      id: '/events/tickets'
+      path: '/events/tickets'
+      fullPath: '/events/tickets'
+      preLoaderRoute: typeof EventsTicketsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/events/$slug': {
@@ -1010,6 +1040,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsEventSlugRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/events/$slug/tickets/': {
+      id: '/events/$slug/tickets/'
+      path: '/'
+      fullPath: '/events/$slug/tickets/'
+      preLoaderRoute: typeof EventsSlugTicketsIndexRouteImport
+      parentRoute: typeof EventsSlugTicketsRoute
+    }
     '/_authenticated/npos/$npoId/': {
       id: '/_authenticated/npos/$npoId/'
       path: '/npos/$npoId'
@@ -1187,10 +1224,12 @@ const PreviewRouteWithChildren =
 
 interface EventsSlugTicketsRouteChildren {
   EventsSlugTicketsCheckoutRoute: typeof EventsSlugTicketsCheckoutRoute
+  EventsSlugTicketsIndexRoute: typeof EventsSlugTicketsIndexRoute
 }
 
 const EventsSlugTicketsRouteChildren: EventsSlugTicketsRouteChildren = {
   EventsSlugTicketsCheckoutRoute: EventsSlugTicketsCheckoutRoute,
+  EventsSlugTicketsIndexRoute: EventsSlugTicketsIndexRoute,
 }
 
 const EventsSlugTicketsRouteWithChildren =
@@ -1236,6 +1275,7 @@ const rootRouteChildren: RootRouteChildren = {
   errors500Route: errors500Route,
   errors503Route: errors503Route,
   EventsSlugRoute: EventsSlugRouteWithChildren,
+  EventsTicketsRoute: EventsTicketsRoute,
   InvitationsAcceptRoute: InvitationsAcceptRoute,
   CheckinIndexRoute: CheckinIndexRoute,
 }

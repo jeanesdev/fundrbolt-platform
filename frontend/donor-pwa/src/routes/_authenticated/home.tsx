@@ -1,14 +1,23 @@
+import { PublicDirectoryExplorer } from '@/components/home/public-directory-explorer'
 import { LegalFooter } from '@/components/legal/legal-footer'
 import { ProfileDropdown } from '@/components/profile-dropdown'
+import { Button } from '@/components/ui/button'
 import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { getMyInventory } from '@/lib/api/ticket-purchases'
 import { useAuthStore } from '@/stores/auth-store'
 import { useEventContextStore } from '@/stores/event-context-store'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
 import { colors, LogoWhiteGold } from '@fundrbolt/shared/assets'
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Calendar, ChevronRight, Loader2, Shield } from 'lucide-react'
-import { useEffect } from 'react'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import {
+  Calendar,
+  ChevronRight,
+  Loader2,
+  Shield,
+  TicketCheck,
+  Users,
+} from 'lucide-react'
 
 // Unified display type — registered events plus admin-only events mapped to same shape
 type DisplayEvent = RegisteredEventWithBranding & { has_admin_access?: boolean }
@@ -29,7 +38,8 @@ function getStatus(event: DisplayEvent): { label: string; bg: string } {
   const now = new Date()
   const start = new Date(event.event_datetime)
   const hoursUntil = (start.getTime() - now.getTime()) / (1000 * 60 * 60)
-  if (hoursUntil <= 0 && hoursUntil > -24) return { label: 'Live', bg: colors.status.error }
+  if (hoursUntil <= 0 && hoursUntil > -24)
+    return { label: 'Live', bg: colors.status.error }
   return { label: 'Upcoming', bg: colors.status.success }
 }
 
@@ -38,8 +48,8 @@ function EventCard({ event }: { event: DisplayEvent }) {
   const thumbnail = event.thumbnail_url || event.npo_logo_url
 
   return (
-    <Link to='/events/$eventSlug' params={{ eventSlug: event.slug }} className='block'>
-      <div className='bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 transition-transform active:scale-[0.98]'>
+    <Link to='/events/$slug' params={{ slug: event.slug }} className='block'>
+      <div className='overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-transform active:scale-[0.98]'>
         {/* Hero: thumbnail image or branding gradient */}
         <div
           className='relative h-28'
@@ -53,14 +63,14 @@ function EventCard({ event }: { event: DisplayEvent }) {
             <img
               src={thumbnail}
               alt=''
-              className='w-full h-full object-cover'
+              className='h-full w-full object-cover'
             />
           )}
           {/* Bottom-fade overlay so text above info row pops */}
           <div className='absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent' />
           {/* Status badge */}
           <span
-            className='absolute top-3 left-3 text-xs font-semibold text-white px-2.5 py-1 rounded-full'
+            className='absolute top-3 left-3 rounded-full px-2.5 py-1 text-xs font-semibold text-white'
             style={{ backgroundColor: status.bg }}
           >
             {status.label}
@@ -68,8 +78,11 @@ function EventCard({ event }: { event: DisplayEvent }) {
           {/* Admin badge */}
           {event.has_admin_access && (
             <span
-              className='absolute top-3 right-3 flex items-center gap-1 text-xs font-semibold text-white px-2.5 py-1 rounded-full'
-              style={{ backgroundColor: colors.primary.gold, color: colors.primary.navy }}
+              className='absolute top-3 right-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-white'
+              style={{
+                backgroundColor: colors.primary.gold,
+                color: colors.primary.navy,
+              }}
             >
               <Shield className='h-3 w-3' />
               Admin
@@ -78,22 +91,110 @@ function EventCard({ event }: { event: DisplayEvent }) {
         </div>
         {/* Info row */}
         <div className='flex items-center gap-3 px-4 py-3'>
-          <div className='flex-1 min-w-0'>
-            <p className='font-bold text-gray-900 truncate'>{event.name}</p>
+          <div className='min-w-0 flex-1'>
+            <p className='truncate font-bold text-gray-900'>{event.name}</p>
             {event.event_datetime && (
-              <p className='flex items-center gap-1.5 text-sm text-gray-500 mt-0.5'>
+              <p className='mt-0.5 flex items-center gap-1.5 text-sm text-gray-500'>
                 <Calendar className='h-3.5 w-3.5 flex-shrink-0' />
-                <span className='truncate'>{formatEventDate(event.event_datetime)}</span>
+                <span className='truncate'>
+                  {formatEventDate(event.event_datetime)}
+                </span>
               </p>
             )}
             {event.npo_name && (
-              <p className='text-xs text-gray-400 truncate mt-0.5'>{event.npo_name}</p>
+              <p className='mt-0.5 truncate text-xs text-gray-400'>
+                {event.npo_name}
+              </p>
             )}
           </div>
-          <ChevronRight className='h-5 w-5 text-gray-300 flex-shrink-0' />
+          <ChevronRight className='h-5 w-5 flex-shrink-0 text-gray-300' />
         </div>
       </div>
     </Link>
+  )
+}
+
+function TicketSummaryCard({
+  event,
+}: {
+  event: {
+    event_id: string
+    event_name: string
+    event_slug: string
+    event_date: string
+    total_tickets: number
+    assigned_count: number
+    registered_count: number
+    unassigned_count: number
+  }
+}) {
+  return (
+    <div className='rounded-2xl border border-white/10 bg-white p-4 shadow-sm'>
+      <div className='flex items-start justify-between gap-4'>
+        <div className='min-w-0 flex-1'>
+          <p className='truncate font-bold text-gray-900'>{event.event_name}</p>
+          <p className='mt-1 flex items-center gap-1.5 text-sm text-gray-500'>
+            <Calendar className='h-3.5 w-3.5 flex-shrink-0' />
+            <span className='truncate'>
+              {formatEventDate(event.event_date)}
+            </span>
+          </p>
+        </div>
+        <div className='flex flex-shrink-0 flex-col gap-2'>
+          <Button
+            asChild
+            size='sm'
+            className='bg-slate-900 text-white hover:bg-slate-800'
+          >
+            <Link to='/tickets'>Assign Tickets</Link>
+          </Button>
+          <Button
+            asChild
+            size='sm'
+            variant='outline'
+            className='border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+          >
+            <Link to='/events/$slug' params={{ slug: event.event_slug }}>
+              View Event
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      <div className='mt-4 grid grid-cols-3 gap-2'>
+        <div className='rounded-xl bg-gray-50 px-3 py-2'>
+          <p className='text-xs font-semibold tracking-wider text-gray-400 uppercase'>
+            Tickets
+          </p>
+          <p className='mt-1 text-lg font-bold text-gray-900'>
+            {event.total_tickets}
+          </p>
+        </div>
+        <div className='rounded-xl bg-emerald-50 px-3 py-2'>
+          <p className='text-xs font-semibold tracking-wider text-emerald-600 uppercase'>
+            Registered
+          </p>
+          <p className='mt-1 text-lg font-bold text-emerald-700'>
+            {event.registered_count}
+          </p>
+        </div>
+        <div className='rounded-xl bg-amber-50 px-3 py-2'>
+          <p className='text-xs font-semibold tracking-wider text-amber-600 uppercase'>
+            Unassigned
+          </p>
+          <p className='mt-1 text-lg font-bold text-amber-700'>
+            {event.unassigned_count}
+          </p>
+        </div>
+      </div>
+
+      {event.assigned_count > 0 && (
+        <div className='mt-3 flex items-center gap-2 text-sm text-gray-500'>
+          <Users className='h-4 w-4' />
+          <span>{event.assigned_count} assigned to attendees</span>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -105,7 +206,6 @@ function EventCard({ event }: { event: DisplayEvent }) {
  */
 function DonorHomePage() {
   const user = useAuthStore((state) => state.user)
-  const navigate = useNavigate()
   // availableEvents includes both registered + admin-only events (merged by layout)
   const availableEvents = useEventContextStore((state) => state.availableEvents)
 
@@ -114,6 +214,13 @@ function DonorHomePage() {
     queryKey: ['registrations', 'events-with-branding'],
     queryFn: getRegisteredEventsWithBranding,
     staleTime: 5 * 60 * 1000,
+    enabled: !!user,
+  })
+
+  const { data: ticketInventory, isLoading: ticketsLoading } = useQuery({
+    queryKey: ['ticket-inventory'],
+    queryFn: getMyInventory,
+    staleTime: 60 * 1000,
     enabled: !!user,
   })
 
@@ -144,21 +251,8 @@ function DonorHomePage() {
 
   const allEvents = [...registeredEvents, ...adminOnlyEvents]
 
-  // Only auto-redirect to published events — draft events require admin knowledge
-  // to navigate to, so never silently send a regular donor to a draft.
-  const publishedEvents = allEvents.filter(
-    (e) => !e.has_admin_access || availableEvents.find((a) => a.id === e.id)?.status === 'published'
-  )
-
-  // Auto-redirect when the user only has one published event
-  useEffect(() => {
-    if (!isLoading && publishedEvents.length === 1) {
-      void navigate({ to: '/events/$eventSlug', params: { eventSlug: publishedEvents[0].slug } })
-    }
-  }, [isLoading, publishedEvents.length, publishedEvents[0]?.slug, navigate])
-
   return (
-    <div className='min-h-screen flex flex-col bg-gray-50'>
+    <div className='flex min-h-screen flex-col bg-slate-950 text-white'>
       {/* Navy header with white/gold logo */}
       <header
         className='sticky top-0 z-50'
@@ -173,30 +267,71 @@ function DonorHomePage() {
       </header>
 
       {/* Main content */}
-      <main id='content' className='flex-1 px-4 py-6'>
+      <main
+        id='content'
+        className='flex-1 bg-[radial-gradient(circle_at_top,_rgba(212,175,55,0.14),_transparent_32%),linear-gradient(180deg,_#0f172a_0%,_#020617_100%)] px-4 py-6'
+      >
         {isLoading ? (
-          <div className='flex flex-col items-center justify-center py-20 gap-3'>
-            <Loader2 className='h-8 w-8 animate-spin text-gray-400' />
-            <p className='text-sm text-gray-500'>Loading your events…</p>
-          </div>
-        ) : allEvents.length === 0 ? (
-          <div className='flex flex-col items-center justify-center py-20 text-center gap-3'>
-            <div className='h-16 w-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-2'>
-              <Calendar className='h-8 w-8 text-gray-400' />
-            </div>
-            <h2 className='text-lg font-semibold text-gray-900'>No events yet</h2>
-            <p className='text-sm text-gray-500 max-w-xs'>
-              You haven't been registered for any events. Check back soon!
-            </p>
+          <div className='flex flex-col items-center justify-center gap-3 py-20'>
+            <Loader2 className='h-8 w-8 animate-spin text-slate-300' />
+            <p className='text-sm text-slate-300'>Loading your events…</p>
           </div>
         ) : (
-          <div className='space-y-3'>
-            <h2 className='text-sm font-semibold uppercase tracking-wider text-gray-400 mb-4'>
-              My Events
-            </h2>
-            {allEvents.map((event) => (
-              <EventCard key={event.id} event={event} />
-            ))}
+          <div className='space-y-8'>
+            {Boolean(ticketsLoading || ticketInventory?.events?.length) && (
+              <section className='space-y-4'>
+                <div className='flex items-center justify-between gap-3'>
+                  <div>
+                    <h2 className='flex items-center gap-2 text-lg font-semibold text-white'>
+                      <TicketCheck className='h-5 w-5 text-slate-300' />
+                      My Tickets
+                    </h2>
+                    <p className='mt-1 text-sm text-slate-300'>
+                      Manage your tickets, assign guests, and register yourself
+                      from one place.
+                    </p>
+                  </div>
+                  <Button
+                    asChild
+                    size='sm'
+                    className='bg-slate-900 text-white hover:bg-slate-800'
+                  >
+                    <Link to='/tickets'>Manage Tickets</Link>
+                  </Button>
+                </div>
+
+                {ticketsLoading ? (
+                  <div className='space-y-3'>
+                    <div className='h-28 rounded-2xl border border-white/10 bg-white/5 shadow-sm' />
+                    <div className='h-28 rounded-2xl border border-white/10 bg-white/5 shadow-sm' />
+                  </div>
+                ) : (
+                  <div className='space-y-3'>
+                    {ticketInventory?.events?.map((event) => (
+                      <TicketSummaryCard key={event.event_id} event={event} />
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {allEvents.length > 0 && (
+              <section className='space-y-3'>
+                <h2 className='text-sm font-semibold tracking-wider text-slate-400 uppercase'>
+                  My Events
+                </h2>
+                {allEvents.map((event) => (
+                  <EventCard key={event.id} event={event} />
+                ))}
+              </section>
+            )}
+
+            {allEvents.length === 0 && (
+              <PublicDirectoryExplorer
+                title='Browse Events and Organizations'
+                description="You aren't registered for an event yet. Explore participating organizations and upcoming events here."
+              />
+            )}
           </div>
         )}
       </main>
