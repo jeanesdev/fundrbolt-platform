@@ -161,18 +161,17 @@ async def list_auction_items(
 
     # Only event-side admin/staff roles can see unpublished items.
     include_drafts = False
-    if current_user is not None and current_user.role_name in {
+    role_name = getattr(current_user, "role_name", None)
+    if role_name in {
         "super_admin",
         "npo_admin",
         "event_coordinator",
         "staff",
     }:
-        if current_user.role_name == "super_admin":
+        if role_name == "super_admin":
             include_drafts = True
         else:
-            event_npo_id = await db.scalar(
-                select(Event.npo_id).where(Event.id == event_id)
-            )
+            event_npo_id = await db.scalar(select(Event.npo_id).where(Event.id == event_id))
             if event_npo_id is not None:
                 permission_service = PermissionService()
                 include_drafts = await permission_service.can_view_event(

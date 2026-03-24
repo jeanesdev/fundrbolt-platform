@@ -500,11 +500,7 @@ class TestAuctionItemList:
             .values(status=ItemStatus.PUBLISHED)
         )
         await db_session.execute(stmt)
-        stmt = (
-            update(AuctionItem)
-            .where(AuctionItem.id == draft_id)
-            .values(status=ItemStatus.DRAFT)
-        )
+        stmt = update(AuctionItem).where(AuctionItem.id == draft_id).values(status=ItemStatus.DRAFT)
         await db_session.execute(stmt)
         await db_session.commit()
 
@@ -559,17 +555,11 @@ class TestAuctionItemList:
             .values(status=ItemStatus.PUBLISHED)
         )
         await db_session.execute(stmt)
-        stmt = (
-            update(AuctionItem)
-            .where(AuctionItem.id == draft_id)
-            .values(status=ItemStatus.DRAFT)
-        )
+        stmt = update(AuctionItem).where(AuctionItem.id == draft_id).values(status=ItemStatus.DRAFT)
         await db_session.execute(stmt)
         await db_session.commit()
 
-        response = await npo_admin_client.get(
-            f"/api/v1/events/{test_event.id}/auction-items"
-        )
+        response = await npo_admin_client.get(f"/api/v1/events/{test_event.id}/auction-items")
 
         assert response.status_code == 200
         data = response.json()
