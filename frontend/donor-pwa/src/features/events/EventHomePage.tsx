@@ -69,9 +69,9 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { useNavigate, useParams } from '@tanstack/react-router'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import type { AxiosError } from 'axios'
-import { AlertCircle, Loader2 } from 'lucide-react'
+import { AlertCircle, Loader2, Ticket } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -1169,7 +1169,32 @@ export function EventHomePage() {
 
         {/* CTA for bidding */}
         {eventStatus !== 'past' && (
-          <div>
+          <div className='space-y-4'>
+            <Link
+              to='/events/$slug/tickets'
+              params={{ slug: currentEvent.slug }}
+              className='block'
+            >
+              <button
+                className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'
+                style={{
+                  background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
+                }}
+              >
+                <div className='flex items-center gap-3'>
+                  <Ticket className='h-5 w-5 text-white' />
+                  <div>
+                    <p className='text-lg font-black text-white'>
+                      Purchase Additional Tickets
+                    </p>
+                    <p className='text-sm text-white/80'>
+                      Buy more tickets for guests or sponsorships →
+                    </p>
+                  </div>
+                </div>
+              </button>
+            </Link>
+
             <button
               onClick={() => setActiveTab('auction')}
               className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'

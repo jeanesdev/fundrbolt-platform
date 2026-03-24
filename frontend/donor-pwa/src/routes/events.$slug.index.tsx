@@ -9,13 +9,32 @@ import { EventHomePage } from '@/features/events/EventHomePage'
 import { useEventBranding } from '@/hooks/use-event-branding'
 import { useEventContext } from '@/hooks/use-event-context'
 import { getEventBySlug, type EventMediaUsageTag } from '@/lib/api/events'
+import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { getMyInventory } from '@/lib/api/ticket-purchases'
+import apiClient from '@/lib/axios'
 import { hasValidRefreshToken } from '@/lib/storage/tokens'
 import { useAuthStore } from '@/stores/auth-store'
 import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, CalendarPlus, Loader2, Ticket } from 'lucide-react'
+import { ArrowLeft, CalendarPlus, ImageOff, Loader2, Ticket } from 'lucide-react'
 import { useCallback, useEffect } from 'react'
+
+interface PublicAuctionPreviewItem {
+  id: string
+  title: string
+  primary_image_url?: string | null
+}
+
+interface PublicAuctionPreviewResponse {
+  items: PublicAuctionPreviewItem[]
+  pagination?: {
+    page?: number
+    total_pages?: number
+    pages?: number
+    has_more?: boolean
+  }
+}
 
 export const Route = createFileRoute('/events/$slug/')({
   component: RouteComponent,
@@ -47,6 +66,49 @@ function RouteComponent() {
     retry: false,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
+  })
+
+  const { data: registrationsData, isLoading: isLoadingRegistrations } = useQuery({
+    queryKey: ['registrations', 'events-with-branding'],
+    queryFn: getRegisteredEventsWithBranding,
+    staleTime: 5 * 60 * 1000,
+    enabled: isAuthenticated && !isRestoringAuth,
+  })
+
+  const { data: ticketInventoryData, isLoading: isLoadingTicketInventory } = useQuery({
+    queryKey: ['ticket-inventory', 'event-context'],
+    queryFn: getMyInventory,
+    staleTime: 5 * 60 * 1000,
+    enabled: isAuthenticated && !isRestoringAuth,
+  })
+
+  const { data: auctionPreviewItems } = useQuery({
+    queryKey: ['event', event?.id, 'auction-preview'],
+    queryFn: async () => {
+      const collectedItems: PublicAuctionPreviewItem[] = []
+      let page = 1
+      let totalPages = 1
+
+      do {
+        const response = await apiClient.get<PublicAuctionPreviewResponse>(
+          `/events/${event!.id}/auction-items`,
+          {
+            params: { page, limit: 24 },
+          }
+        )
+
+        collectedItems.push(...response.data.items)
+        totalPages =
+          response.data.pagination?.total_pages ??
+          response.data.pagination?.pages ??
+          page
+        page += 1
+      } while (page <= totalPages)
+
+      return collectedItems
+    },
+    enabled: Boolean(event?.id),
+    staleTime: 5 * 60 * 1000,
   })
 
   // Apply event branding colors when event loads
@@ -106,8 +168,18 @@ function RouteComponent() {
   // Only registered donors should enter the immersive donor event experience.
   // Ticket holders who have not completed registration should remain on the
   // public event page so the page is still reachable without protected-event access.
+  const isRegisteredInContext = availableEvents.some(
+    (eventOption) => eventOption.slug === slug && eventOption.is_registered
+  )
+  const isRegisteredFromQuery =
+    registrationsData?.events?.some((registeredEvent) => registeredEvent.slug === slug) ??
+    false
+  const hasTicketAccessFromQuery =
+    ticketInventoryData?.events?.some((inventoryEvent) => inventoryEvent.event_slug === slug) ??
+    false
+
   if (isAuthenticated) {
-    if (eventsLoading) {
+    if (eventsLoading || isLoadingRegistrations || isLoadingTicketInventory) {
       return (
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -115,9 +187,7 @@ function RouteComponent() {
       )
     }
 
-    const isRegistered = availableEvents.some(
-      (eventOption) => eventOption.slug === slug && eventOption.is_registered
-    )
+    const isRegistered = isRegisteredInContext || isRegisteredFromQuery
 
     if (isRegistered) {
       return <EventHomePage />
@@ -239,6 +309,15 @@ function RouteComponent() {
   })()
 
   const aboutEventHtml = renderMarkdownToSafeHtml(event.description ?? '')
+  const matchingEventAccess = availableEvents.find(
+    (eventOption) => eventOption.slug === slug
+  )
+  const canPurchaseAdditionalTickets = Boolean(
+    matchingEventAccess?.is_registered ||
+    matchingEventAccess?.has_ticket_access ||
+    isRegisteredFromQuery ||
+    hasTicketAccessFromQuery
+  )
 
   return (
     <div className='min-h-screen' style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}>
@@ -306,7 +385,9 @@ function RouteComponent() {
             }}
           >
             <p className='text-sm font-medium' style={{ color: 'var(--event-text-on-background, #374151)' }}>
-              You are not yet registered for this event.
+              {canPurchaseAdditionalTickets
+                ? 'You can purchase more tickets for this event.'
+                : 'You are not yet registered for this event.'}
             </p>
             {/* Link to ticket purchase page */}
             <Link to='/events/$slug/tickets' params={{ slug }}>
@@ -317,13 +398,17 @@ function RouteComponent() {
                 }}
               >
                 <Ticket className='h-5 w-5 text-white' />
-                <span className='text-lg font-black text-white'>Purchase Tickets</span>
+                <span className='text-lg font-black text-white'>
+                  {canPurchaseAdditionalTickets
+                    ? 'Purchase Additional Tickets'
+                    : 'Purchase Tickets'}
+                </span>
               </button>
             </Link>
           </div>
         ) : (
-          <div className='space-y-3'>
-            <Link to='/sign-in'>
+          <div className='space-y-4'>
+            <Link to='/sign-in' className='block'>
               <button
                 className='w-full rounded-2xl p-4 text-left transition-all active:scale-[0.98] hover:shadow-md'
                 style={{
@@ -334,7 +419,7 @@ function RouteComponent() {
                 <p className='text-sm text-white/80'>Already have an account? Sign in to register →</p>
               </button>
             </Link>
-            <Link to='/sign-up'>
+            <Link to='/sign-up' className='block'>
               <button
                 className='w-full rounded-2xl border-2 border-gray-300 bg-white p-4 text-left transition-all active:scale-[0.98] hover:shadow-md'
               >
@@ -346,6 +431,66 @@ function RouteComponent() {
                 </p>
               </button>
             </Link>
+          </div>
+        )}
+
+        {auctionPreviewItems && auctionPreviewItems.length > 0 && (
+          <div
+            className='rounded-2xl border p-4'
+            style={{
+              backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.08)',
+              borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
+            }}
+          >
+            <div className='mb-3'>
+              <h3
+                className='text-xs font-bold uppercase tracking-widest'
+                style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+              >
+                Auction Preview
+              </h3>
+              <p
+                className='mt-1 text-sm'
+                style={{ color: 'var(--event-text-on-background, #374151)' }}
+              >
+                Preview a few items available at this event.
+              </p>
+            </div>
+
+            <div className='-mx-1 flex gap-3 overflow-x-auto px-1 pb-1'>
+              {auctionPreviewItems.map((item) => (
+                <div
+                  key={item.id}
+                  className='w-44 shrink-0 overflow-hidden rounded-2xl border bg-white/90 shadow-sm'
+                  style={{
+                    borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.16)',
+                  }}
+                >
+                  <div className='bg-muted relative aspect-[4/3] overflow-hidden'>
+                    {item.primary_image_url ? (
+                      <img
+                        src={item.primary_image_url}
+                        alt={item.title}
+                        className='h-full w-full object-cover'
+                        loading='lazy'
+                      />
+                    ) : (
+                      <div className='flex h-full w-full items-center justify-center'>
+                        <ImageOff className='text-muted-foreground h-6 w-6' />
+                      </div>
+                    )}
+                  </div>
+                  <div className='p-3'>
+                    <p
+                      className='line-clamp-2 text-sm font-semibold'
+                      style={{ color: 'var(--event-text-on-background, #111827)' }}
+                    >
+                      {item.title}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

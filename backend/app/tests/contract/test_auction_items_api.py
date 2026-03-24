@@ -456,6 +456,127 @@ class TestAuctionItemList:
         assert "items" in data
         assert "pagination" in data
 
+    async def test_list_auction_items_hides_drafts_from_authenticated_donor(
+        self,
+        donor_client: AsyncClient,
+        npo_admin_client: AsyncClient,
+        test_event: Any,
+        db_session: AsyncSession,
+    ) -> None:
+        """Authenticated donors should still see published items only."""
+        from sqlalchemy import update
+
+        from app.models.auction_item import AuctionItem, ItemStatus
+
+        published_response = await npo_admin_client.post(
+            f"/api/v1/events/{test_event.id}/auction-items",
+            json={
+                "title": "Published Preview Item",
+                "description": "Shown to donors",
+                "auction_type": "silent",
+                "starting_bid": 100.00,
+                "buy_now_enabled": False,
+                "quantity_available": 1,
+            },
+        )
+        published_id = published_response.json()["id"]
+
+        draft_response = await npo_admin_client.post(
+            f"/api/v1/events/{test_event.id}/auction-items",
+            json={
+                "title": "Draft Backstage Item",
+                "description": "Hidden from donors",
+                "auction_type": "silent",
+                "starting_bid": 200.00,
+                "buy_now_enabled": False,
+                "quantity_available": 1,
+            },
+        )
+        draft_id = draft_response.json()["id"]
+
+        stmt = (
+            update(AuctionItem)
+            .where(AuctionItem.id == published_id)
+            .values(status=ItemStatus.PUBLISHED)
+        )
+        await db_session.execute(stmt)
+        stmt = (
+            update(AuctionItem)
+            .where(AuctionItem.id == draft_id)
+            .values(status=ItemStatus.DRAFT)
+        )
+        await db_session.execute(stmt)
+        await db_session.commit()
+
+        response = await donor_client.get(f"/api/v1/events/{test_event.id}/auction-items")
+
+        assert response.status_code == 200
+        data = response.json()
+        titles = {item["title"] for item in data["items"]}
+        assert "Published Preview Item" in titles
+        assert "Draft Backstage Item" not in titles
+
+    async def test_list_auction_items_allows_event_admin_to_see_drafts(
+        self,
+        npo_admin_client: AsyncClient,
+        test_event: Any,
+        db_session: AsyncSession,
+    ) -> None:
+        """Event admins should still be able to see unpublished auction items."""
+        from sqlalchemy import update
+
+        from app.models.auction_item import AuctionItem, ItemStatus
+
+        published_response = await npo_admin_client.post(
+            f"/api/v1/events/{test_event.id}/auction-items",
+            json={
+                "title": "Published Admin Item",
+                "description": "Visible to everyone",
+                "auction_type": "silent",
+                "starting_bid": 100.00,
+                "buy_now_enabled": False,
+                "quantity_available": 1,
+            },
+        )
+        published_id = published_response.json()["id"]
+
+        draft_response = await npo_admin_client.post(
+            f"/api/v1/events/{test_event.id}/auction-items",
+            json={
+                "title": "Draft Admin Item",
+                "description": "Visible to admins only",
+                "auction_type": "silent",
+                "starting_bid": 200.00,
+                "buy_now_enabled": False,
+                "quantity_available": 1,
+            },
+        )
+        draft_id = draft_response.json()["id"]
+
+        stmt = (
+            update(AuctionItem)
+            .where(AuctionItem.id == published_id)
+            .values(status=ItemStatus.PUBLISHED)
+        )
+        await db_session.execute(stmt)
+        stmt = (
+            update(AuctionItem)
+            .where(AuctionItem.id == draft_id)
+            .values(status=ItemStatus.DRAFT)
+        )
+        await db_session.execute(stmt)
+        await db_session.commit()
+
+        response = await npo_admin_client.get(
+            f"/api/v1/events/{test_event.id}/auction-items"
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        titles = {item["title"] for item in data["items"]}
+        assert "Published Admin Item" in titles
+        assert "Draft Admin Item" in titles
+
     async def test_list_auction_items_sort_by_highest_bid(
         self,
         npo_admin_client: AsyncClient,

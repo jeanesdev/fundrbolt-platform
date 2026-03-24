@@ -50,6 +50,25 @@ import { toast } from 'sonner'
 
 type CustomResponseValue = string | string[] | boolean
 
+function formatPhoneDisplay(value: string): string {
+  const digits = value.replace(/\D/g, '')
+  if (digits.length === 0) return ''
+  if (digits.length <= 3) return `(${digits}`
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+  if (digits.length <= 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+  }
+  return `+${digits.slice(0, digits.length - 10)} (${digits.slice(-10, -7)}) ${digits.slice(-7, -4)}-${digits.slice(-4)}`
+}
+
+function phoneDisplayToE164(display: string): string {
+  const digits = display.replace(/\D/g, '')
+  if (!digits) return ''
+  if (digits.length === 10) return `+1${digits}`
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`
+  return display
+}
+
 export default function AcceptInvitationPage() {
   const navigate = useNavigate()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -119,7 +138,7 @@ export default function AcceptInvitationPage() {
   const registerMutation = useMutation({
     mutationFn: () =>
       registerViaInvitation(token, {
-        phone: phone.trim() || undefined,
+        phone: phoneDisplayToE164(phone),
         meal_selection_id: mealSelectionId || undefined,
         custom_responses: buildCustomResponsePayload(),
       }),
@@ -432,7 +451,7 @@ export default function AcceptInvitationPage() {
                     id='inv-phone'
                     type='tel'
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => setPhone(formatPhoneDisplay(e.target.value))}
                     placeholder='(555) 123-4567'
                   />
                 </div>

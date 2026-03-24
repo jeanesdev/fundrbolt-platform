@@ -88,9 +88,8 @@ export function TicketAssignmentCard({
           </div>
 
           {hasActiveAssignment && (
-            <div className='text-muted-foreground text-sm'>
+            <div className='text-muted-foreground flex flex-col text-sm'>
               <span>{assignment.guest_name}</span>
-              <span className='mx-1'>·</span>
               <span>{assignment.guest_email}</span>
             </div>
           )}
