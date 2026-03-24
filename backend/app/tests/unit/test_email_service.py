@@ -39,6 +39,25 @@ async def test_send_welcome_email_includes_logo_in_html_body() -> None:
 
 
 @pytest.mark.asyncio
+async def test_send_password_reset_email_uses_confirm_route() -> None:
+    """Password reset emails should link to the confirm route that exists in the frontend."""
+    service = EmailService()
+    service._send_email_with_retry = AsyncMock(return_value=True)  # type: ignore[method-assign]
+
+    await service.send_password_reset_email(
+        to_email="test@example.com",
+        reset_token="abc123",
+        user_name="Taylor",
+    )
+
+    service._send_email_with_retry.assert_awaited_once()  # type: ignore[attr-defined]
+    html_body = service._send_email_with_retry.await_args.args[4]  # type: ignore[attr-defined]
+
+    assert "/password-reset-confirm?token=abc123" in html_body
+    assert "/reset-password?token=abc123" not in html_body
+
+
+@pytest.mark.asyncio
 async def test_send_npo_application_submitted_email_includes_review_acknowledgement() -> None:
     """Applicant acknowledgement should clearly say the organisation is under review."""
     service = EmailService()

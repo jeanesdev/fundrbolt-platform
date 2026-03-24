@@ -53,14 +53,14 @@ class PasswordService:
         Request password reset for user.
 
         Sends email with reset link if user exists.
-        Always returns True (don't reveal if email exists).
+        Returns False when the email does not match a user.
 
         Args:
             email: User's email address
             db: Database session
 
         Returns:
-            Always True (prevent email enumeration)
+            True when a reset email is queued for a matching user, otherwise False
         """
         # Look up user by email
         result = await db.execute(select(User).where(User.email == email.lower()))
@@ -69,7 +69,7 @@ class PasswordService:
         if not user:
             # Don't reveal that email doesn't exist
             logger.info(f"Password reset requested for non-existent email: {email}")
-            return True
+            return False
 
         # Generate reset token
         token = PasswordService.generate_reset_token()

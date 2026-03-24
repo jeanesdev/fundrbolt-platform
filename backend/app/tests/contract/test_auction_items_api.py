@@ -458,14 +458,16 @@ class TestAuctionItemList:
 
     async def test_list_auction_items_hides_drafts_from_authenticated_donor(
         self,
-        donor_client: AsyncClient,
+        async_client: AsyncClient,
         npo_admin_client: AsyncClient,
         test_event: Any,
         db_session: AsyncSession,
+        test_donor_user: Any,
     ) -> None:
         """Authenticated donors should still see published items only."""
         from sqlalchemy import update
 
+        from app.core.redis import get_redis
         from app.models.auction_item import AuctionItem, ItemStatus
 
         published_response = await npo_admin_client.post(
@@ -504,7 +506,21 @@ class TestAuctionItemList:
         await db_session.execute(stmt)
         await db_session.commit()
 
-        response = await donor_client.get(f"/api/v1/events/{test_event.id}/auction-items")
+        redis_client = await get_redis()
+        await redis_client.flushdb()
+
+        login_response = await async_client.post(
+            "/api/v1/auth/login",
+            json={
+                "email": test_donor_user.email,
+                "password": "TestPass123",
+            },
+        )
+        assert login_response.status_code == 200
+        access_token = login_response.json()["access_token"]
+        async_client.headers["Authorization"] = f"Bearer {access_token}"
+
+        response = await async_client.get(f"/api/v1/events/{test_event.id}/auction-items")
 
         assert response.status_code == 200
         data = response.json()

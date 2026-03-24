@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.security import decode_token
 from app.middleware.rate_limit import api_rate_limit, rate_limit, strict_rate_limit
@@ -48,6 +49,7 @@ from app.schemas.social_auth import (
 )
 from app.services.audit_service import AuditService
 from app.services.auth_service import AuthService
+from app.services.email_service import EmailSendError
 from app.services.password_service import PasswordService
 from app.services.redis_service import RedisService
 from app.services.social_auth_service import SocialAuthService
@@ -858,10 +860,12 @@ async def request_password_reset(
     6. Always returns success (prevent email enumeration)
 
     Business Rules:
-    - Always returns 200 OK, even if email doesn't exist (security)
+    - Returns 200 OK for unknown emails to prevent enumeration
+    - In development and test, email delivery failures return a 503 for debugging
+    - In production, email delivery failures still return a generic 200 response
     - Token is URL-safe, one-time use, expires in 1 hour
     - Previous reset tokens are invalidated
-    - Email contains reset link: {frontend_url}/reset-password?token=xxx
+    - Email contains reset link: {frontend_url}/password-reset-confirm?token=xxx
 
     Args:
         reset_data: Contains email address
@@ -869,20 +873,40 @@ async def request_password_reset(
         db: Database session
 
     Returns:
-        MessageResponse confirming email sent (always success)
+        MessageResponse confirming email sent
     """
     # Get client IP address for audit logging
     ip_address = request.client.host if request.client else None
+    settings = get_settings()
+    expose_failures = settings.environment in {"development", "test"}
 
     try:
         await PasswordService.request_reset(reset_data.email, db)
-        # Log password reset request (even if email doesn't exist, for security monitoring)
         AuditService.log_password_reset_request(reset_data.email, ip_address)
         return MessageResponse(message="If that email exists, a password reset link has been sent.")
-    except Exception:
-        # Always return success to prevent email enumeration
-        # Still log the request for security monitoring
+    except EmailSendError as exc:
         AuditService.log_password_reset_request(reset_data.email, ip_address)
+        logger.exception("Password reset email delivery failed", extra={"email": reset_data.email})
+        if expose_failures:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "code": "PASSWORD_RESET_EMAIL_FAILED",
+                    "message": "Password reset email could not be sent. Check email delivery configuration and logs.",
+                },
+            ) from exc
+        return MessageResponse(message="If that email exists, a password reset link has been sent.")
+    except Exception as exc:
+        AuditService.log_password_reset_request(reset_data.email, ip_address)
+        logger.exception("Password reset request failed", extra={"email": reset_data.email})
+        if expose_failures:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail={
+                    "code": "PASSWORD_RESET_REQUEST_FAILED",
+                    "message": "Password reset request failed unexpectedly.",
+                },
+            ) from exc
         return MessageResponse(message="If that email exists, a password reset link has been sent.")
 
 

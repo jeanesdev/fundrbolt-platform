@@ -237,8 +237,8 @@ class EmailService:
         Raises:
             EmailSendError: If email fails to send after all retries
         """
-        # Construct reset link (admin portal)
-        reset_url = f"{settings.frontend_admin_url}/reset-password?token={reset_token}"
+        # Construct reset link for the shared password reset confirmation route.
+        reset_url = f"{settings.frontend_admin_url}/password-reset-confirm?token={reset_token}"
 
         # Email content
         subject = "Reset Your Password - FundrBolt"

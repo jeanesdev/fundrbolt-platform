@@ -5,11 +5,14 @@ and POST /api/v1/auth/password/reset/confirm
 Tests verify API contract compliance per contracts/auth.yaml
 """
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
+from app.services.email_service import EmailSendError
 
 
 class TestPasswordResetRequest:
@@ -65,6 +68,24 @@ class TestPasswordResetRequest:
         )
 
         assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_request_password_reset_email_failure_returns_503_in_test(
+        self, async_client: AsyncClient, test_user: User
+    ) -> None:
+        """Should surface delivery failures in test mode for easier debugging."""
+        with patch(
+            "app.api.v1.auth.PasswordService.request_reset",
+            new=AsyncMock(side_effect=EmailSendError("delivery failed")),
+        ):
+            response = await async_client.post(
+                "/api/v1/auth/password/reset/request",
+                json={"email": test_user.email},
+            )
+
+        assert response.status_code == 503
+        data = response.json()
+        assert data["detail"]["code"] == "PASSWORD_RESET_EMAIL_FAILED"
 
 
 class TestPasswordResetConfirm:
