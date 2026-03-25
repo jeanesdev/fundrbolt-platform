@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router'
 import {
   Card,
   CardContent,
@@ -7,7 +6,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { useAuthStore } from '@/stores/auth-store'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { AuthLayout } from '../auth-layout'
+import { StepVerifyEmail } from '../sign-up-wizard/StepVerifyEmail'
 import { EmailVerificationForm } from './components/email-verification-form'
 
 interface EmailVerificationPageProps {
@@ -19,6 +21,15 @@ export function EmailVerificationPage({
   token,
   email,
 }: EmailVerificationPageProps) {
+  const navigate = useNavigate()
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+
+  const handleVerificationComplete = () => {
+    navigate({ to: isAuthenticated ? '/' : '/sign-in' })
+  }
+
+  const isCodeVerificationFlow = Boolean(email && !token)
+
   return (
     <AuthLayout>
       <Card className='gap-4'>
@@ -27,12 +38,27 @@ export function EmailVerificationPage({
             Verify Your Email
           </CardTitle>
           <CardDescription>
-            Enter the verification token from your <br /> email to activate your
-            account.
+            {isCodeVerificationFlow ? (
+              <>
+                Enter the 6-digit code from your email to activate your account.
+              </>
+            ) : (
+              <>
+                Enter the verification token from your <br /> email to activate
+                your account.
+              </>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <EmailVerificationForm token={token} email={email} />
+          {isCodeVerificationFlow && email ? (
+            <StepVerifyEmail
+              email={email}
+              onNext={handleVerificationComplete}
+            />
+          ) : (
+            <EmailVerificationForm token={token} email={email} />
+          )}
         </CardContent>
         <CardFooter>
           <p className='text-muted-foreground mx-auto px-8 text-center text-sm text-balance'>

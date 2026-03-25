@@ -106,6 +106,12 @@ class User(Base, UUIDMixin, TimestampMixin):
         default=False,
         server_default="false",
     )
+    has_local_password: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default="true",
+    )
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
@@ -228,6 +234,7 @@ class User(Base, UUIDMixin, TimestampMixin):
         from app.core.security import hash_password
 
         self.password_hash = hash_password(plain_password)
+        self.has_local_password = True
 
     def verify_password(self, plain_password: str) -> bool:
         """Verify a plain text password against the stored hash.

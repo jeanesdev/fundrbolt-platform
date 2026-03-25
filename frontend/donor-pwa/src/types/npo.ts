@@ -7,9 +7,18 @@
 // Enums
 // ============================================
 
-export type NPOStatus = 'draft' | 'pending_approval' | 'approved' | 'suspended' | 'rejected'
+export type NPOStatus =
+  | 'draft'
+  | 'pending_approval'
+  | 'approved'
+  | 'suspended'
+  | 'rejected'
 
-export type ApplicationStatus = 'submitted' | 'under_review' | 'approved' | 'rejected'
+export type ApplicationStatus =
+  | 'submitted'
+  | 'under_review'
+  | 'approved'
+  | 'rejected'
 
 export type MemberRole = 'admin' | 'co_admin' | 'staff'
 
@@ -46,6 +55,7 @@ export interface NPO {
   updated_at: string
   member_count?: number
   active_member_count?: number
+  logo_url?: string | null
 }
 
 export interface NPODetail extends NPO {

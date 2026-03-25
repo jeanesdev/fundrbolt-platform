@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils'
-import { consentService } from '@/services/consent-service'
 import { useAuthStore } from '@/stores/auth-store'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -13,7 +12,11 @@ const STEPS = [
   { id: 'verify', label: 'Verify Email' },
 ] as const
 
-export function DonorSignUpWizard() {
+interface DonorSignUpWizardProps {
+  redirectTo?: string
+}
+
+export function DonorSignUpWizard({ redirectTo }: DonorSignUpWizardProps) {
   const [stepIndex, setStepIndex] = useState(0)
   const [accountData, setAccountData] = useState<AccountData | null>(null)
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null)
@@ -46,23 +49,14 @@ export function DonorSignUpWizard() {
           : {}),
       })
 
-      // Record legal consent (non-fatal)
-      if (accountData.legalDocumentIds) {
-        try {
-          await consentService.acceptConsent({
-            tos_document_id: accountData.legalDocumentIds.tosId,
-            privacy_document_id: accountData.legalDocumentIds.privacyId,
-          })
-        } catch {
-          // Non-fatal — don't block sign-up if consent recording fails
-        }
-      }
-
       setRegisteredEmail(accountData.email)
-      toast.success('Account created! Check your email for a verification code.')
+      toast.success(
+        'Account created! Check your email for a verification code.'
+      )
       setStepIndex(2)
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } }).response?.status
+      const status = (err as { response?: { status?: number } }).response
+        ?.status
       const detail =
         (err as { response?: { data?: { error?: { message?: string } } } })
           .response?.data?.error?.message ||
@@ -102,7 +96,10 @@ export function DonorSignUpWizard() {
         aria-valuemax={STEPS.length}
       >
         {STEPS.map((step, idx) => (
-          <div key={step.id} className='flex flex-1 flex-col items-center gap-1'>
+          <div
+            key={step.id}
+            className='flex flex-1 flex-col items-center gap-1'
+          >
             <div
               className={cn(
                 'h-2 w-full rounded-full transition-colors',
@@ -126,7 +123,9 @@ export function DonorSignUpWizard() {
       </div>
 
       {/* Step content */}
-      {stepIndex === 0 && <StepAccount onNext={handleAccountNext} />}
+      {stepIndex === 0 && (
+        <StepAccount onNext={handleAccountNext} redirectTo={redirectTo} />
+      )}
 
       {stepIndex === 1 && (
         <StepDetails
@@ -142,7 +141,11 @@ export function DonorSignUpWizard() {
       )}
 
       {stepIndex === 2 && registeredEmail && (
-        <StepVerifyEmail email={registeredEmail} />
+        <StepVerifyEmail
+          email={registeredEmail}
+          legalDocumentIds={accountData?.legalDocumentIds ?? null}
+          redirectTo={redirectTo}
+        />
       )}
     </div>
   )

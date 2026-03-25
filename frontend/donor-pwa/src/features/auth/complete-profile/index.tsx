@@ -17,13 +17,14 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { AuthLayout } from '@/features/auth/auth-layout'
+import { PasswordChangeForm } from '@/features/settings/account/components/password-change-form'
 import apiClient from '@/lib/axios'
 import { useAuthStore } from '@/stores/auth-store'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { CheckCircle2, Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -38,6 +39,28 @@ const phoneRegex = /^\+[1-9]\d{1,14}$/
 const completeProfileSchema = z.object({
   first_name: z.string().min(1, 'First name is required').max(100),
   last_name: z.string().min(1, 'Last name is required').max(100),
+  organization_name: z
+    .string()
+    .max(255, 'Company must be 255 characters or less')
+    .optional(),
+  address_line1: z
+    .string()
+    .max(255, 'Address line 1 must be 255 characters or less')
+    .optional(),
+  address_line2: z
+    .string()
+    .max(255, 'Address line 2 must be 255 characters or less')
+    .optional(),
+  city: z.string().max(100, 'City must be 100 characters or less').optional(),
+  state: z.string().max(100, 'State must be 100 characters or less').optional(),
+  postal_code: z
+    .string()
+    .max(20, 'Postal code must be 20 characters or less')
+    .optional(),
+  country: z
+    .string()
+    .max(100, 'Country must be 100 characters or less')
+    .optional(),
   linkedin: z
     .string()
     .regex(/^([a-zA-Z0-9\-_.]+)?$/, 'Enter only your LinkedIn username')
@@ -104,10 +127,11 @@ function CommunicationsEmailSection({
       ? user.communications_email
       : null
 
-  const [state, setState] = useState<CommsEmailState>({
-    step: initialVerified ? 'verified' : 'idle',
-    verifiedEmail: initialVerified,
-  })
+  const [state, setState] = useState<CommsEmailState>(
+    initialVerified
+      ? { step: 'verified', email: initialVerified }
+      : { step: 'idle', verifiedEmail: null }
+  )
   const [inputEmail, setInputEmail] = useState(
     user?.communications_email || user?.email || ''
   )
@@ -154,7 +178,7 @@ function CommunicationsEmailSection({
   if (state.step === 'verified') {
     return (
       <div className='space-y-1.5'>
-        <label className='text-sm font-medium'>Communications Email</label>
+        <label className='text-sm font-medium'>Email</label>
         <div className='flex items-center gap-2'>
           <Input
             value={state.email}
@@ -226,7 +250,7 @@ function CommunicationsEmailSection({
   // idle or entering
   return (
     <div className='space-y-1.5'>
-      <label className='text-sm font-medium'>Communications Email</label>
+      <label className='text-sm font-medium'>Email</label>
       <div className='flex gap-2'>
         <Input
           type='email'
@@ -238,10 +262,7 @@ function CommunicationsEmailSection({
         <Button
           type='button'
           size='sm'
-          disabled={
-            !inputEmail ||
-            requestMutation.isPending
-          }
+          disabled={!inputEmail || requestMutation.isPending}
           onClick={() => requestMutation.mutate(inputEmail)}
         >
           {requestMutation.isPending ? (
@@ -268,13 +289,24 @@ export function CompleteProfile() {
   const redirectTo = (search as { redirect?: string }).redirect ?? '/home'
   const user = useAuthStore((state) => state.user)
   const setUser = useAuthStore((state) => state.setUser)
+  const isLoading = useAuthStore((state) => state.isLoading)
+  const restoreUserFromRefreshToken = useAuthStore(
+    (state) => state.restoreUserFromRefreshToken
+  )
   const [pictureUploaded, setPictureUploaded] = useState(false)
+
+  // Load user data if arriving from social auth (tokens set but user not yet fetched)
+  useEffect(() => {
+    if (!user && !isLoading) {
+      restoreUserFromRefreshToken()
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Start at step 2 if email already verified
   const alreadyVerified =
     !!user?.communications_email_verified && !!user?.communications_email
   const [profileStep, setProfileStep] = useState<'email' | 'profile'>(
-    alreadyVerified ? 'profile' : 'email',
+    alreadyVerified ? 'profile' : 'email'
   )
 
   const form = useForm<FormValues>({
@@ -282,21 +314,63 @@ export function CompleteProfile() {
     defaultValues: {
       first_name: user?.first_name ?? '',
       last_name: user?.last_name ?? '',
-      linkedin: '',
-      twitter: '',
-      website: '',
-      phone: '',
+      organization_name: user?.organization_name ?? '',
+      address_line1: user?.address_line1 ?? '',
+      address_line2: user?.address_line2 ?? '',
+      city: user?.city ?? '',
+      state: user?.state ?? '',
+      postal_code: user?.postal_code ?? '',
+      country: user?.country ?? '',
+      linkedin:
+        user?.social_media_links?.linkedin?.replace(
+          /^https?:\/\/linkedin\.com\/in\//,
+          ''
+        ) ?? '',
+      twitter:
+        user?.social_media_links?.twitter?.replace(
+          /^https?:\/\/x\.com\//,
+          ''
+        ) ?? '',
+      website:
+        user?.social_media_links?.website?.replace(/^https?:\/\//, '') ?? '',
+      phone: user?.phone ?? '',
     },
     mode: 'onBlur',
   })
+
+  useEffect(() => {
+    if (!user) return
+
+    form.reset({
+      first_name: user.first_name ?? '',
+      last_name: user.last_name ?? '',
+      organization_name: user.organization_name ?? '',
+      address_line1: user.address_line1 ?? '',
+      address_line2: user.address_line2 ?? '',
+      city: user.city ?? '',
+      state: user.state ?? '',
+      postal_code: user.postal_code ?? '',
+      country: user.country ?? '',
+      linkedin:
+        user.social_media_links?.linkedin?.replace(
+          /^https?:\/\/linkedin\.com\/in\//,
+          ''
+        ) ?? '',
+      twitter:
+        user.social_media_links?.twitter?.replace(/^https?:\/\/x\.com\//, '') ??
+        '',
+      website:
+        user.social_media_links?.website?.replace(/^https?:\/\//, '') ?? '',
+      phone: user.phone ?? '',
+    })
+  }, [form, user])
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: FormValues) => {
       const socialLinks: Record<string, string> = {}
       if (data.linkedin)
         socialLinks['linkedin'] = `https://linkedin.com/in/${data.linkedin}`
-      if (data.twitter)
-        socialLinks['twitter'] = `https://x.com/${data.twitter}`
+      if (data.twitter) socialLinks['twitter'] = `https://x.com/${data.twitter}`
       if (data.website)
         socialLinks['website'] = data.website.includes('://')
           ? data.website
@@ -307,6 +381,21 @@ export function CompleteProfile() {
         last_name: data.last_name,
       }
       if (data.phone) payload['phone'] = data.phone
+      if (data.organization_name !== undefined) {
+        payload['organization_name'] = data.organization_name || ''
+      }
+      if (data.address_line1 !== undefined) {
+        payload['address_line1'] = data.address_line1 || ''
+      }
+      if (data.address_line2 !== undefined) {
+        payload['address_line2'] = data.address_line2 || ''
+      }
+      if (data.city !== undefined) payload['city'] = data.city || ''
+      if (data.state !== undefined) payload['state'] = data.state || ''
+      if (data.postal_code !== undefined) {
+        payload['postal_code'] = data.postal_code || ''
+      }
+      if (data.country !== undefined) payload['country'] = data.country || ''
       if (Object.keys(socialLinks).length > 0) {
         payload['social_media_links'] = socialLinks
       }
@@ -330,7 +419,20 @@ export function CompleteProfile() {
     navigate({ to: redirectTo as string })
   }
 
-  if (!user) return null
+  if (!user) {
+    return (
+      <AuthLayout>
+        <Card className='gap-4'>
+          <CardContent className='flex flex-col items-center justify-center py-8'>
+            <Loader2 className='h-8 w-8 animate-spin' />
+            <p className='text-muted-foreground mt-4 text-sm'>
+              Loading your profile...
+            </p>
+          </CardContent>
+        </Card>
+      </AuthLayout>
+    )
+  }
 
   const userInitials =
     `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase()
@@ -461,6 +563,152 @@ export function CompleteProfile() {
                   )}
                 />
 
+                <div className='space-y-3'>
+                  <p className='text-sm font-medium'>Company and address</p>
+
+                  <FormField
+                    control={form.control}
+                    name='organization_name'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className='text-muted-foreground text-xs font-normal'>
+                          Company or organization
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder='Acme Foundation'
+                            {...field}
+                            value={field.value ?? ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='address_line1'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className='text-muted-foreground text-xs font-normal'>
+                          Address line 1
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder='123 Main St'
+                            {...field}
+                            value={field.value ?? ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name='address_line2'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className='text-muted-foreground text-xs font-normal'>
+                          Address line 2
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder='Suite 200'
+                            {...field}
+                            value={field.value ?? ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className='grid grid-cols-2 gap-3'>
+                    <FormField
+                      control={form.control}
+                      name='city'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className='text-muted-foreground text-xs font-normal'>
+                            City
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder='Nashville'
+                              {...field}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='state'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className='text-muted-foreground text-xs font-normal'>
+                            State
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder='TN'
+                              {...field}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className='grid grid-cols-2 gap-3'>
+                    <FormField
+                      control={form.control}
+                      name='postal_code'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className='text-muted-foreground text-xs font-normal'>
+                            Postal code
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder='37203'
+                              {...field}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name='country'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className='text-muted-foreground text-xs font-normal'>
+                            Country
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder='United States'
+                              {...field}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
                 {/* Social profiles */}
                 <div className='space-y-3'>
                   <p className='text-sm font-medium'>Social profiles</p>
@@ -525,6 +773,13 @@ export function CompleteProfile() {
                     )}
                   />
                 </div>
+
+                <PasswordChangeForm
+                  collapsible
+                  defaultOpen={false}
+                  title='Recovery Password'
+                  description='Optional. Save a password as an alternate login in addition to OAuth.'
+                />
 
                 {/* Actions */}
                 <div className='flex flex-col gap-3 pt-2'>

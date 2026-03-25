@@ -96,6 +96,53 @@ class TestEmailVerificationContract:
         assert "verified" in data["message"].lower()
 
     @pytest.mark.asyncio
+    async def test_verify_email_code_defaults_verified_comms_email(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+    ) -> None:
+        """OTP verification should not force a second verification for the same email."""
+        register_payload = {
+            "email": "verify.otp.contract@example.com",
+            "password": "SecurePass123",
+            "first_name": "Verify",
+            "last_name": "OtpContract",
+        }
+        register_response = await async_client.post("/api/v1/auth/register", json=register_payload)
+        assert register_response.status_code == 201
+        user_id = register_response.json()["user"]["id"]
+
+        from app.services.redis_service import RedisService
+
+        otp = await RedisService.get_email_verification_otp(user_id)
+        assert otp is not None
+
+        response = await async_client.post(
+            "/api/v1/auth/verify-email/code",
+            json={
+                "email": register_payload["email"],
+                "code": otp,
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["user"]["email_verified"] is True
+        assert data["user"]["communications_email"] == register_payload["email"]
+        assert data["user"]["communications_email_verified"] is True
+
+        result = await db_session.execute(
+            text(
+                "SELECT communications_email, communications_email_verified "
+                "FROM users WHERE id = :id"
+            ),
+            {"id": user_id},
+        )
+        communications_email, communications_email_verified = result.one()
+        assert communications_email == register_payload["email"]
+        assert communications_email_verified is True
+
+    @pytest.mark.asyncio
     async def test_verify_email_invalid_token_returns_400(
         self,
         async_client: AsyncClient,

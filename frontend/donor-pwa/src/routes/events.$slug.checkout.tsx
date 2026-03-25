@@ -9,22 +9,10 @@
  *   5. Pay screen — balance summary, cover-fee toggle, card selector
  *   6. Success / declined result screen
  */
-
-import { CheckoutSummary } from '@/components/payments/CheckoutSummary'
-import { PaymentMethodSelector } from '@/components/payments/PaymentMethodSelector'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
-import { getEventBySlug } from '@/lib/api/events'
-import { getCheckoutBalance, submitCheckout } from '@/lib/api/payments'
-import { hasValidRefreshToken } from '@/lib/storage/tokens'
-import { useAuthStore } from '@/stores/auth-store'
-import type { CheckoutResponse } from '@/types/payment'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import type { CheckoutResponse } from '@/types/payment'
 import {
   AlertCircle,
   ArrowLeft,
@@ -34,7 +22,24 @@ import {
   Mail,
   XCircle,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useAuthStore } from '@/stores/auth-store'
+import { getEventBySlug } from '@/lib/api/events'
+import { getCheckoutBalance, submitCheckout } from '@/lib/api/payments'
+import { hasValidRefreshToken } from '@/lib/storage/tokens'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
+import { CheckoutSummary } from '@/components/payments/CheckoutSummary'
+import { PaymentMethodSelector } from '@/components/payments/PaymentMethodSelector'
 
 // ── Route definition ──────────────────────────────────────────────────────────
 
@@ -54,7 +59,10 @@ export const Route = createFileRoute('/events/$slug/checkout')({
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtCurrency(amount: number): string {
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(amount)
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount)
 }
 
 function genIdempotencyKey(): string {
@@ -106,7 +114,9 @@ function EventCheckoutPage() {
   // ── Local state ───────────────────────────────────────────────────────────
 
   const [coverFee, setCoverFee] = useState(false)
-  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null)
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
+    null
+  )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [result, setResult] = useState<CheckoutResponse | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -124,7 +134,11 @@ function EventCheckoutPage() {
     ? coverFee
       ? [
           ...balance.line_items,
-          { type: 'fee_coverage', label: 'Processing Fee', amount: processingFee },
+          {
+            type: 'fee_coverage',
+            label: 'Processing Fee',
+            amount: processingFee,
+          },
         ]
       : balance.line_items
     : []
@@ -162,23 +176,27 @@ function EventCheckoutPage() {
 
   if (eventLoading || balanceLoading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+      <div className='flex min-h-dvh items-center justify-center'>
+        <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
       </div>
     )
   }
 
   if (eventError || !event) {
     return (
-      <div className="container mx-auto max-w-lg px-4 py-12">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
+      <div className='container mx-auto max-w-lg px-4 py-12'>
+        <Alert variant='destructive'>
+          <AlertCircle className='h-4 w-4' />
           <AlertDescription>
             Unable to load event details. Please go back and try again.
           </AlertDescription>
         </Alert>
-        <Button variant="ghost" className="mt-4" onClick={() => void navigate({ to: '/' })}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
+        <Button
+          variant='ghost'
+          className='mt-4'
+          onClick={() => void navigate({ to: '/' })}
+        >
+          <ArrowLeft className='mr-2 h-4 w-4' />
           Back to home
         </Button>
       </div>
@@ -188,22 +206,24 @@ function EventCheckoutPage() {
   // Checkout not yet open
   if (!event.checkout_open) {
     return (
-      <div className="container mx-auto max-w-lg px-4 py-12">
+      <div className='container mx-auto max-w-lg px-4 py-12'>
         <Card>
-          <CardHeader className="text-center">
-            <CreditCard className="text-muted-foreground mx-auto mb-3 h-12 w-12" />
+          <CardHeader className='text-center'>
+            <CreditCard className='text-muted-foreground mx-auto mb-3 h-12 w-12' />
             <CardTitle>Checkout Not Open Yet</CardTitle>
           </CardHeader>
-          <CardContent className="text-muted-foreground text-center text-sm">
+          <CardContent className='text-muted-foreground text-center text-sm'>
             <p>The event coordinator has not opened checkout yet.</p>
-            <p className="mt-1">Check back in a little while!</p>
+            <p className='mt-1'>Check back in a little while!</p>
           </CardContent>
-          <CardFooter className="justify-center">
+          <CardFooter className='justify-center'>
             <Button
-              variant="outline"
-              onClick={() => void navigate({ to: '/events/$slug', params: { slug } })}
+              variant='outline'
+              onClick={() =>
+                void navigate({ to: '/events/$slug', params: { slug } })
+              }
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
+              <ArrowLeft className='mr-2 h-4 w-4' />
               Back to event
             </Button>
           </CardFooter>
@@ -215,12 +235,18 @@ function EventCheckoutPage() {
   // Balance error
   if (balanceError) {
     return (
-      <div className="container mx-auto max-w-lg px-4 py-12">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Unable to load your balance. Please try again.</AlertDescription>
+      <div className='container mx-auto max-w-lg px-4 py-12'>
+        <Alert variant='destructive'>
+          <AlertCircle className='h-4 w-4' />
+          <AlertDescription>
+            Unable to load your balance. Please try again.
+          </AlertDescription>
         </Alert>
-        <Button variant="ghost" className="mt-4" onClick={() => void refetchBalance()}>
+        <Button
+          variant='ghost'
+          className='mt-4'
+          onClick={() => void refetchBalance()}
+        >
           Retry
         </Button>
       </div>
@@ -230,24 +256,28 @@ function EventCheckoutPage() {
   // Nothing owed
   if (balance && subtotal === 0) {
     return (
-      <div className="container mx-auto max-w-lg px-4 py-12">
+      <div className='container mx-auto max-w-lg px-4 py-12'>
         <Card>
-          <CardHeader className="text-center">
-            <CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-green-500" />
+          <CardHeader className='text-center'>
+            <CheckCircle2 className='mx-auto mb-3 h-12 w-12 text-green-500' />
             <CardTitle>All Paid Up!</CardTitle>
           </CardHeader>
-          <CardContent className="text-muted-foreground text-center text-sm">
+          <CardContent className='text-muted-foreground text-center text-sm'>
             <p>There is nothing outstanding on your account for this event.</p>
             {user?.first_name && (
-              <p className="mt-1">Thanks, {user.first_name}! Enjoy the rest of the evening.</p>
+              <p className='mt-1'>
+                Thanks, {user.first_name}! Enjoy the rest of the evening.
+              </p>
             )}
           </CardContent>
-          <CardFooter className="justify-center">
+          <CardFooter className='justify-center'>
             <Button
-              variant="outline"
-              onClick={() => void navigate({ to: '/events/$slug', params: { slug } })}
+              variant='outline'
+              onClick={() =>
+                void navigate({ to: '/events/$slug', params: { slug } })
+              }
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
+              <ArrowLeft className='mr-2 h-4 w-4' />
               Back to event
             </Button>
           </CardFooter>
@@ -262,36 +292,39 @@ function EventCheckoutPage() {
     const approved = result.status === 'approved'
 
     return (
-      <div className="container mx-auto max-w-lg px-4 py-12">
+      <div className='container mx-auto max-w-lg px-4 py-12'>
         <Card>
-          <CardHeader className="text-center">
+          <CardHeader className='text-center'>
             {approved ? (
-              <CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-green-500" />
+              <CheckCircle2 className='mx-auto mb-3 h-12 w-12 text-green-500' />
             ) : (
-              <XCircle className="mx-auto mb-3 h-12 w-12 text-red-500" />
+              <XCircle className='mx-auto mb-3 h-12 w-12 text-red-500' />
             )}
-            <CardTitle>{approved ? 'Payment Successful!' : 'Payment Declined'}</CardTitle>
+            <CardTitle>
+              {approved ? 'Payment Successful!' : 'Payment Declined'}
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-center text-sm">
+          <CardContent className='space-y-3 text-center text-sm'>
             {approved ? (
               <>
-                <p className="text-muted-foreground">
+                <p className='text-muted-foreground'>
                   {fmtCurrency(result.amount_charged)} charged to your card.
                 </p>
                 {result.receipt_pending && (
-                  <div className="flex items-center justify-center gap-2 text-blue-600">
-                    <Mail className="h-4 w-4 shrink-0" />
+                  <div className='flex items-center justify-center gap-2 text-blue-600'>
+                    <Mail className='h-4 w-4 shrink-0' />
                     <span>A receipt is on its way to your email inbox.</span>
                   </div>
                 )}
               </>
             ) : (
               <>
-                <p className="text-muted-foreground">
-                  {result.decline_reason ?? 'Your card was declined. Please try another card.'}
+                <p className='text-muted-foreground'>
+                  {result.decline_reason ??
+                    'Your card was declined. Please try another card.'}
                 </p>
                 <Button
-                  variant="outline"
+                  variant='outline'
                   onClick={() => {
                     setResult(null)
                     setSubmitError(null)
@@ -303,12 +336,14 @@ function EventCheckoutPage() {
             )}
           </CardContent>
           {approved && (
-            <CardFooter className="justify-center">
+            <CardFooter className='justify-center'>
               <Button
-                variant="outline"
-                onClick={() => void navigate({ to: '/events/$slug', params: { slug } })}
+                variant='outline'
+                onClick={() =>
+                  void navigate({ to: '/events/$slug', params: { slug } })
+                }
               >
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <ArrowLeft className='mr-2 h-4 w-4' />
                 Back to event
               </Button>
             </CardFooter>
@@ -323,49 +358,61 @@ function EventCheckoutPage() {
   const canSubmit = !!selectedProfileId && !isSubmitting && subtotal > 0
 
   return (
-    <div className="container mx-auto max-w-lg space-y-6 px-4 py-8">
+    <div className='container mx-auto max-w-lg space-y-6 px-4 py-8'>
       {/* Header */}
       <div>
         <Button
-          variant="ghost"
-          size="sm"
-          className="mb-2 -ml-2"
-          onClick={() => void navigate({ to: '/events/$slug', params: { slug } })}
+          variant='ghost'
+          size='sm'
+          className='mb-2 -ml-2'
+          onClick={() =>
+            void navigate({ to: '/events/$slug', params: { slug } })
+          }
         >
-          <ArrowLeft className="mr-1 h-4 w-4" />
+          <ArrowLeft className='mr-1 h-4 w-4' />
           Back to event
         </Button>
-        <h1 className="text-2xl font-bold">Checkout</h1>
-        {event.name && <p className="text-muted-foreground text-sm">{event.name}</p>}
+        <h1 className='text-2xl font-bold'>Checkout</h1>
+        {event.name && (
+          <p className='text-muted-foreground text-sm'>{event.name}</p>
+        )}
       </div>
 
       {/* Balance summary */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Your Balance</CardTitle>
+          <CardTitle className='text-base'>Your Balance</CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
-          <CheckoutSummary lineItems={displayLineItems} total={total} isLoading={balanceLoading} />
+        <CardContent className='pt-0'>
+          <CheckoutSummary
+            lineItems={displayLineItems}
+            total={total}
+            isLoading={balanceLoading}
+          />
         </CardContent>
       </Card>
 
       {/* Cover processing fee toggle */}
       {processingFee > 0 && (
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-3">
+          <CardContent className='pt-6'>
+            <div className='flex items-start gap-3'>
               <Checkbox
-                id="cover-fee"
+                id='cover-fee'
                 checked={coverFee}
                 onCheckedChange={(checked) => setCoverFee(checked === true)}
-                className="mt-0.5"
+                className='mt-0.5'
               />
-              <div className="space-y-1">
-                <Label htmlFor="cover-fee" className="cursor-pointer font-medium leading-none">
+              <div className='space-y-1'>
+                <Label
+                  htmlFor='cover-fee'
+                  className='cursor-pointer leading-none font-medium'
+                >
                   Cover processing fee ({fmtCurrency(processingFee)})
                 </Label>
-                <p className="text-muted-foreground text-xs">
-                  Adding {fmtCurrency(processingFee)} helps 100% of your contribution go directly to the cause.
+                <p className='text-muted-foreground text-xs'>
+                  Adding {fmtCurrency(processingFee)} helps 100% of your
+                  contribution go directly to the cause.
                 </p>
               </div>
             </div>
@@ -377,9 +424,9 @@ function EventCheckoutPage() {
       {event.npo_id && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Payment Method</CardTitle>
+            <CardTitle className='text-base'>Payment Method</CardTitle>
           </CardHeader>
-          <CardContent className="pt-0">
+          <CardContent className='pt-0'>
             <PaymentMethodSelector
               npoId={event.npo_id}
               selectedProfileId={selectedProfileId}
@@ -393,41 +440,41 @@ function EventCheckoutPage() {
 
       {/* Total + submit */}
       <Card>
-        <CardContent className="pt-6">
-          <Separator className="mb-4" />
-          <div className="mb-4 flex items-center justify-between">
-            <span className="font-semibold">Total</span>
-            <span className="text-lg font-bold">{fmtCurrency(total)}</span>
+        <CardContent className='pt-6'>
+          <Separator className='mb-4' />
+          <div className='mb-4 flex items-center justify-between'>
+            <span className='font-semibold'>Total</span>
+            <span className='text-lg font-bold'>{fmtCurrency(total)}</span>
           </div>
 
           {submitError && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
+            <Alert variant='destructive' className='mb-4'>
+              <AlertCircle className='h-4 w-4' />
               <AlertDescription>{submitError}</AlertDescription>
             </Alert>
           )}
 
           <Button
-            className="w-full"
-            size="lg"
+            className='w-full'
+            size='lg'
             disabled={!canSubmit}
             onClick={() => void handleSubmit()}
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                 Processing...
               </>
             ) : (
               <>
-                <CreditCard className="mr-2 h-4 w-4" />
+                <CreditCard className='mr-2 h-4 w-4' />
                 Pay {fmtCurrency(total)}
               </>
             )}
           </Button>
 
           {!selectedProfileId && subtotal > 0 && (
-            <p className="text-muted-foreground mt-2 text-center text-xs">
+            <p className='text-muted-foreground mt-2 text-center text-xs'>
               Select a payment method above to continue.
             </p>
           )}

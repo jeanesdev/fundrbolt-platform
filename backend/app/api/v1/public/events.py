@@ -3,13 +3,14 @@
 import logging
 import uuid
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.event_media_urls import add_sas_urls_to_event_media, resolve_event_logo_url
 from app.core.database import get_db
 from app.models.event import EventStatus
 from app.models.ticket_management import TicketPackage
@@ -19,6 +20,28 @@ from app.services.event_service import EventService
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/events/public", tags=["public-events"])
+
+
+def _build_event_summary_response(event: Any) -> EventSummaryResponse:
+    return EventSummaryResponse(
+        id=event.id,
+        npo_id=event.npo_id,
+        npo_name=getattr(getattr(event, "npo", None), "name", None),
+        name=event.name,
+        slug=event.slug,
+        tagline=event.tagline,
+        status=event.status,
+        event_datetime=event.event_datetime,
+        timezone=event.timezone,
+        venue_name=event.venue_name,
+        venue_city=event.venue_city,
+        venue_state=event.venue_state,
+        venue_zip=event.venue_zip,
+        logo_url=resolve_event_logo_url(event),
+        hero_transition_style=event.hero_transition_style,
+        created_at=event.created_at,
+        updated_at=event.updated_at,
+    )
 
 
 @router.get("", response_model=EventListResponse)
@@ -40,14 +63,13 @@ async def list_public_events(
         per_page=per_page,
         npo_id=npo_id,
         status_filter=EventStatus.ACTIVE,
+        include_media=True,
     )
 
     total_pages = (total + per_page - 1) // per_page
 
     return EventListResponse(
-        items=[
-            EventSummaryResponse.model_validate(event, from_attributes=True) for event in events
-        ],
+        items=[_build_event_summary_response(event) for event in events],
         total=total,
         page=page,
         per_page=per_page,
@@ -80,7 +102,10 @@ async def get_public_event_by_slug(
             detail=f"Event with slug '{slug}' is not available for registration",
         )
 
-    return EventDetailResponse.model_validate(event, from_attributes=True)
+    response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
+    response_dict["npo_name"] = event.npo.name if event.npo else None
+    add_sas_urls_to_event_media(response_dict, list(event.media or []))
+    return EventDetailResponse(**response_dict)
 
 
 # ── Ticket Packages (public) ──────────────────────────────────────────────────

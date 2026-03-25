@@ -14,6 +14,7 @@ from app.core.database import get_db
 from app.middleware.auth import get_current_active_user, get_current_user_optional
 from app.models.auction_bid import AuctionBid, BidStatus
 from app.models.auction_item import AuctionItemMedia, AuctionType, ItemStatus
+from app.models.event import Event
 from app.models.user import User
 from app.schemas.auction_item import (
     AuctionItemCreate,
@@ -28,6 +29,7 @@ from app.schemas.item_view import ItemViewCreate, ItemViewResponse
 from app.services.auction_item_media_service import AuctionItemMediaService
 from app.services.auction_item_service import AuctionItemService
 from app.services.item_view_service import ItemViewService
+from app.services.permission_service import PermissionService
 
 logger = logging.getLogger(__name__)
 
@@ -157,8 +159,26 @@ async def list_auction_items(
     """
     service = AuctionItemService(db)
 
-    # Determine if user can see drafts (service will handle authorization)
-    include_drafts = current_user is not None
+    # Only event-side admin/staff roles can see unpublished items.
+    include_drafts = False
+    role_name = getattr(current_user, "role_name", None)
+    if role_name in {
+        "super_admin",
+        "npo_admin",
+        "event_coordinator",
+        "staff",
+    }:
+        if role_name == "super_admin":
+            include_drafts = True
+        else:
+            event_npo_id = await db.scalar(select(Event.npo_id).where(Event.id == event_id))
+            if event_npo_id is not None:
+                permission_service = PermissionService()
+                include_drafts = await permission_service.can_view_event(
+                    current_user,
+                    event_npo_id,
+                    db=db,
+                )
 
     # Handle 'all' auction_type - pass None to service to get both types
     actual_auction_type: AuctionType | None = None

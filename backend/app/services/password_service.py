@@ -53,14 +53,14 @@ class PasswordService:
         Request password reset for user.
 
         Sends email with reset link if user exists.
-        Always returns True (don't reveal if email exists).
+        Returns False when the email does not match a user.
 
         Args:
             email: User's email address
             db: Database session
 
         Returns:
-            Always True (prevent email enumeration)
+            True when a reset email is queued for a matching user, otherwise False
         """
         # Look up user by email
         result = await db.execute(select(User).where(User.email == email.lower()))
@@ -69,7 +69,7 @@ class PasswordService:
         if not user:
             # Don't reveal that email doesn't exist
             logger.info(f"Password reset requested for non-existent email: {email}")
-            return True
+            return False
 
         # Generate reset token
         token = PasswordService.generate_reset_token()
@@ -134,7 +134,7 @@ class PasswordService:
     @staticmethod
     async def change_password(
         user_id: UUID,
-        current_password: str,
+        current_password: str | None,
         new_password: str,
         current_jti: str,
         db: AsyncSession,
@@ -147,7 +147,8 @@ class PasswordService:
 
         Args:
             user_id: User's UUID
-            current_password: Current password for verification
+            current_password: Current password for verification when the user
+                already has a local password
             new_password: New password (already validated by Pydantic)
             current_jti: JTI of current session (to preserve)
             db: Database session
@@ -156,7 +157,7 @@ class PasswordService:
             User object
 
         Raises:
-            ValueError: If current password is incorrect
+            ValueError: If current password is missing or incorrect
         """
         # Get user from database
         result = await db.execute(select(User).where(User.id == user_id))
@@ -165,9 +166,11 @@ class PasswordService:
         if not user:
             raise ValueError("User not found")
 
-        # Verify current password
-        if not user.verify_password(current_password):
-            raise ValueError("Current password is incorrect")
+        if user.has_local_password:
+            if not current_password:
+                raise ValueError("Current password is required")
+            if not user.verify_password(current_password):
+                raise ValueError("Current password is incorrect")
 
         # Update password
         user.set_password(new_password)

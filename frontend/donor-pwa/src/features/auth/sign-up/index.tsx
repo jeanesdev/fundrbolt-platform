@@ -17,7 +17,7 @@ import { AuthLayout } from '../auth-layout'
 import { DonorSignUpWizard } from './components/DonorSignUpWizard'
 
 export function SignUp() {
-  const { intent } = useSearch({ from: '/(auth)/sign-up' })
+  const { intent, redirect } = useSearch({ from: '/(auth)/sign-up' })
 
   if (intent !== 'donor') {
     return (
@@ -87,7 +87,7 @@ export function SignUp() {
                 </div>
               </div>
               <Button asChild variant='outline' className='w-full'>
-                <Link to='/sign-up' search={{ intent: 'donor' }}>
+                <Link to='/sign-up' search={{ intent: 'donor', redirect }}>
                   Create donor account
                 </Link>
               </Button>
@@ -98,6 +98,7 @@ export function SignUp() {
               Already have an account?{' '}
               <Link
                 to='/sign-in'
+                search={{ redirect }}
                 className='hover:text-primary underline underline-offset-4'
               >
                 Sign in
@@ -113,13 +114,14 @@ export function SignUp() {
     <AuthLayout>
       <Card className='gap-4'>
         <CardContent className='pt-6'>
-          <DonorSignUpWizard />
+          <DonorSignUpWizard redirectTo={redirect} />
         </CardContent>
         <CardFooter className='justify-center pt-0'>
           <p className='text-muted-foreground text-center text-sm'>
             Need a different account type?{' '}
             <Link
               to='/sign-up'
+              search={{ redirect }}
               className='hover:text-primary underline underline-offset-4'
             >
               Go back

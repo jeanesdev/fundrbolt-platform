@@ -38,6 +38,10 @@ export function SocialCallback() {
 
     const handleCallback = async () => {
       try {
+        const pending = JSON.parse(
+          sessionStorage.getItem('social_auth_pending') ?? 'null'
+        ) as { provider: SocialAuthProvider; attempt_id: string } | null
+
         // First, look up which app initiated this OAuth attempt by the state token.
         // Since Google only allows localhost:5173 as the redirect URI, donor PWA flows
         // always land here — we need to forward them to the correct app.
@@ -57,10 +61,18 @@ export function SocialCallback() {
           return
         }
 
-        const provider = state.split(':')[0] as SocialAuthProvider
-        const result = await adminSocialAuthApi.callback(provider, {
+        sessionStorage.removeItem('social_auth_pending')
+
+        if (!pending?.provider) {
+          setError('Sign-in session expired or invalid. Please try again.')
+          setProcessing(false)
+          return
+        }
+
+        const result = await adminSocialAuthApi.callback(pending.provider, {
           code,
           state,
+          attempt_id: pending.attempt_id,
         })
 
         if (result.status === 'authenticated') {
@@ -72,6 +84,11 @@ export function SocialCallback() {
           })
           navigate({ to: '/' })
         } else if (result.status === 'pending_verification') {
+          if (result.reason === 'needs_registration') {
+            // No account exists — redirect to account-type selection page
+            navigate({ to: '/sign-up' })
+            return
+          }
           setPending({
             reason: result.reason,
             message: result.message || 'Additional verification required.',

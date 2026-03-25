@@ -1,17 +1,28 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import apiClient from '@/lib/axios'
+import { consentService } from '@/services/consent-service'
 import { useAuthStore } from '@/stores/auth-store'
 import { useNavigate } from '@tanstack/react-router'
 import { CheckCircle2, Loader2, Mail } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { navigateToInternalRedirect } from '../../utils/internal-redirect'
 
 interface StepVerifyEmailProps {
   email: string
+  legalDocumentIds?: {
+    tosId: string
+    privacyId: string
+  } | null
+  redirectTo?: string
 }
 
-export function StepVerifyEmail({ email }: StepVerifyEmailProps) {
+export function StepVerifyEmail({
+  email,
+  legalDocumentIds = null,
+  redirectTo,
+}: StepVerifyEmailProps) {
   const navigate = useNavigate()
   const setUser = useAuthStore((state) => state.setUser)
   const setAccessToken = useAuthStore((state) => state.setAccessToken)
@@ -60,9 +71,27 @@ export function StepVerifyEmail({ email }: StepVerifyEmailProps) {
       if (data.user) setUser(data.user)
       if (data.access_token) setAccessToken(data.access_token)
       if (data.refresh_token) setRefreshToken(data.refresh_token)
+
+      if (legalDocumentIds && data.access_token) {
+        try {
+          await consentService.acceptConsent({
+            tos_document_id: legalDocumentIds.tosId,
+            privacy_document_id: legalDocumentIds.privacyId,
+          })
+        } catch {
+          // Consent recording should not block verified sign-in.
+        }
+      }
+
       setIsVerified(true)
       toast.success('Email verified! Welcome to FundrBolt.')
-      setTimeout(() => navigate({ to: '/home', replace: true }), 1200)
+      setTimeout(() => {
+        if (redirectTo) {
+          navigateToInternalRedirect(navigate, redirectTo)
+          return
+        }
+        navigate({ to: '/home', replace: true })
+      }, 1200)
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { detail?: { message?: string } } } })
@@ -100,7 +129,8 @@ export function StepVerifyEmail({ email }: StepVerifyEmailProps) {
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { error?: { message?: string } } } })
-          .response?.data?.error?.message || 'Failed to resend verification email.'
+          .response?.data?.error?.message ||
+        'Failed to resend verification email.'
       toast.error(msg)
     } finally {
       setIsResending(false)

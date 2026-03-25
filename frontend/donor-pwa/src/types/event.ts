@@ -10,7 +10,11 @@
 export type EventStatus = 'draft' | 'active' | 'closed'
 
 export type EventMediaStatus = 'uploaded' | 'scanning' | 'approved' | 'rejected'
-export type HeroTransitionStyle = 'documentary_style' | 'fade' | 'swipe' | 'simple'
+export type HeroTransitionStyle =
+  | 'documentary_style'
+  | 'fade'
+  | 'swipe'
+  | 'simple'
 export type EventMediaUsageTag =
   | 'main_event_page_hero'
   | 'event_layout_map'
@@ -32,15 +36,21 @@ export interface Event {
   description: string | null
   event_datetime: string
   timezone: string
+  location_name?: string | null
+  location_address?: string | null
   venue_name: string | null
   venue_address: string | null
   venue_city: string | null
   venue_state: string | null
   venue_zip: string | null
+  venue_capacity?: number | null
   attire: string | null
   primary_contact_name: string | null
   primary_contact_email: string | null
   primary_contact_phone: string | null
+  checkout_open?: boolean
+  logo_url?: string | null
+  banner_url?: string | null
   primary_color: string | null
   secondary_color: string | null
   background_color: string | null
@@ -118,14 +128,14 @@ export interface EventListParams {
   status?: EventStatus
   search?: string
   page?: number
-  page_size?: number
+  per_page?: number
 }
 
 export interface EventListResponse {
   items: Event[]
   total: number
   page: number
-  page_size: number
+  per_page: number
   total_pages: number
 }
 

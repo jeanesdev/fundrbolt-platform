@@ -5,11 +5,14 @@ and POST /api/v1/auth/password/reset/confirm
 Tests verify API contract compliance per contracts/auth.yaml
 """
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
+from app.services.email_service import EmailSendError
 
 
 class TestPasswordResetRequest:
@@ -65,6 +68,24 @@ class TestPasswordResetRequest:
         )
 
         assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_request_password_reset_email_failure_returns_503_in_test(
+        self, async_client: AsyncClient, test_user: User
+    ) -> None:
+        """Should surface delivery failures in test mode for easier debugging."""
+        with patch(
+            "app.api.v1.auth.PasswordService.request_reset",
+            new=AsyncMock(side_effect=EmailSendError("delivery failed")),
+        ):
+            response = await async_client.post(
+                "/api/v1/auth/password/reset/request",
+                json={"email": test_user.email},
+            )
+
+        assert response.status_code == 503
+        data = response.json()
+        assert data["detail"]["code"] == "PASSWORD_RESET_EMAIL_FAILED"
 
 
 class TestPasswordResetConfirm:
@@ -218,3 +239,40 @@ class TestPasswordChange:
         )
 
         assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_set_backup_password_for_social_user_without_current_password(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+        test_social_user_no_local_password: User,
+    ) -> None:
+        """OAuth-only users can set a first backup password without a current password."""
+        from app.core.security import create_access_token
+
+        access_token = create_access_token({"sub": str(test_social_user_no_local_password.id)})
+        response = await async_client.post(
+            "/api/v1/auth/password/change",
+            json={"new_password": "BackupPass456"},
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+
+        assert response.status_code == 200
+
+        await db_session.refresh(test_social_user_no_local_password)
+        assert test_social_user_no_local_password.has_local_password is True
+        assert test_social_user_no_local_password.verify_password("BackupPass456") is True
+
+    @pytest.mark.asyncio
+    async def test_change_password_requires_current_for_existing_local_password(
+        self,
+        authenticated_client: AsyncClient,
+    ) -> None:
+        """Users with an existing local password still need to provide it."""
+        response = await authenticated_client.post(
+            "/api/v1/auth/password/change",
+            json={"new_password": "NewPassword456"},
+        )
+
+        assert response.status_code == 400
+        assert response.json()["detail"]["code"] == "CURRENT_PASSWORD_REQUIRED"

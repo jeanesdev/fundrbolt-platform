@@ -190,19 +190,27 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
 
   // Initialise time input when sheet opens
   useEffect(() => {
-    if (open && timeBaseSpoofMs !== null) {
+    if (!open || timeBaseSpoofMs === null) return
+
+    const timeoutId = window.setTimeout(() => {
       setSpoofTimeInput(
         toDateTimeLocalInputValue(new Date(getEffectiveNowMs())),
       )
-    }
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
   }, [open, timeBaseSpoofMs, getEffectiveNowMs])
 
   // Reset page when sheet opens
   useEffect(() => {
-    if (open) {
+    if (!open) return
+
+    const timeoutId = window.setTimeout(() => {
       setPage('time')
       setUserSearch('')
-    }
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
   }, [open])
 
   // Filtered users

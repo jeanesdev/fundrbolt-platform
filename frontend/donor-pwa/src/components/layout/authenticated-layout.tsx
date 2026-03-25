@@ -1,5 +1,6 @@
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { Header } from '@/components/layout/header'
+import { SidebarFreeLayout } from '@/components/layout/sidebar-free-layout'
 import { LegalFooter } from '@/components/legal/legal-footer'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
@@ -10,6 +11,7 @@ import { SearchProvider } from '@/context/search-provider'
 import { useAuth } from '@/hooks/use-auth'
 import { useEventContext } from '@/hooks/use-event-context'
 import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { getMyInventory } from '@/lib/api/ticket-purchases'
 import apiClient from '@/lib/axios'
 import { getCookie } from '@/lib/cookies'
 import { cn } from '@/lib/utils'
@@ -27,23 +29,31 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const defaultOpen = getCookie('sidebar_state') !== 'false'
   const { user } = useAuth()
   const { setAvailableEvents } = useEventContext()
-  const restoreUserFromRefreshToken = useAuthStore(state => state.restoreUserFromRefreshToken)
+  const restoreUserFromRefreshToken = useAuthStore(
+    (state) => state.restoreUserFromRefreshToken
+  )
   const [isRestoring, setIsRestoring] = useState(true)
   const matches = useMatches()
 
   // Check if we're on an event detail page (should use sidebar-free layout)
-  const isEventDetailPage = matches.some(
-    match => match.routeId.includes('/events/$eventSlug')
+  const isEventDetailPage = matches.some((match) =>
+    match.routeId.includes('/events/$eventSlug')
   )
 
   // Check if we're on a settings page (should use sidebar-free layout)
-  const isSettingsPage = matches.some(
-    match => match.routeId.includes('/settings')
+  const isSettingsPage = matches.some((match) =>
+    match.routeId.includes('/settings')
   )
 
   // Home page has its own layout (sidebar-free with custom header)
   const isHomePage = matches.some(
-    match => match.routeId === '/_authenticated/home'
+    (match) => match.routeId === '/_authenticated/home'
+  )
+
+  const isTicketsPage = matches.some(
+    (match) =>
+      match.routeId === '/_authenticated/tickets' ||
+      match.routeId === '/_authenticated/tickets/history'
   )
 
   // Restore user from refresh token on mount if needed
@@ -53,8 +63,8 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       if (!currentUser) {
         try {
           await restoreUserFromRefreshToken()
-        } catch (error) {
-          console.error('Failed to restore user:', error)
+        } catch {
+          // Auth guards handle unauthenticated state if refresh restoration fails.
         }
       }
       setIsRestoring(false)
@@ -84,6 +94,13 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     enabled: !!user && !isRestoring,
   })
 
+  const { data: ticketInventoryData } = useQuery({
+    queryKey: ['ticket-inventory', 'event-context'],
+    queryFn: getMyInventory,
+    staleTime: 5 * 60 * 1000,
+    enabled: !!user && !isRestoring,
+  })
+
   // Populate available events from registrations and admin access
   useEffect(() => {
     const eventMap = new Map<string, EventContextOption>()
@@ -106,6 +123,8 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
             event_date: event.event_datetime,
             npo_name: event.npo_name,
             logo_url: event.thumbnail_url,
+            is_registered: true,
+            has_ticket_access: false,
             has_admin_access: false,
           })
         }
@@ -140,9 +159,36 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
               event_date: event.event_date,
               npo_name: event.npo?.name,
               logo_url: event.logo_url,
+              is_registered: false,
+              has_ticket_access: false,
               has_admin_access: true,
             })
           }
+        }
+      )
+    }
+
+    if (ticketInventoryData?.events) {
+      ticketInventoryData.events.forEach(
+        (event: {
+          event_id: string
+          event_name: string
+          event_slug: string
+          event_date: string
+        }) => {
+          if (eventMap.has(event.event_id)) {
+            return
+          }
+
+          eventMap.set(event.event_id, {
+            id: event.event_id,
+            name: event.event_name,
+            slug: event.event_slug,
+            event_date: event.event_date,
+            is_registered: false,
+            has_ticket_access: true,
+            has_admin_access: false,
+          })
         }
       )
     }
@@ -156,15 +202,15 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     })
 
     setAvailableEvents(events)
-  }, [registrationsData, adminEventsData, setAvailableEvents])
+  }, [registrationsData, adminEventsData, ticketInventoryData, setAvailableEvents])
 
   // Show loading while restoring user
   if (isRestoring) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
+      <div className='flex h-screen items-center justify-center'>
+        <div className='text-center'>
+          <div className='border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2'></div>
+          <p className='text-muted-foreground'>Loading...</p>
         </div>
       </div>
     )
@@ -178,6 +224,14 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
         <SkipToMain />
         {children ?? <Outlet />}
       </SearchProvider>
+    )
+  }
+
+  if (isTicketsPage) {
+    return (
+      <SidebarFreeLayout headerVariant='brand'>
+        {children ?? <Outlet />}
+      </SidebarFreeLayout>
     )
   }
 

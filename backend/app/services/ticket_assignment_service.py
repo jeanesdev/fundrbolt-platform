@@ -3,6 +3,7 @@
 import json
 import logging
 import uuid
+from collections.abc import Sequence
 from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
@@ -16,6 +17,7 @@ from app.models.meal_selection import MealSelection
 from app.models.registration_guest import RegistrationGuest
 from app.models.ticket_management import (
     AssignedTicket,
+    AssignmentStatus,
     OptionResponse,
     TicketAssignment,
     TicketAuditLog,
@@ -32,6 +34,7 @@ from app.schemas.ticket_purchasing import (
     TicketDetail,
     TicketInventoryResponse,
 )
+from app.services.email_service import get_email_service
 
 logger = logging.getLogger(__name__)
 
@@ -76,21 +79,54 @@ class TicketAssignmentService:
                 detail="Ticket is already assigned",
             )
 
-        # Detect self-assignment
+        # Detect self-assignment using the donor's preferred contact email.
         user = await _load_user(db, user_id)
-        is_self = guest_email.lower() == user.email.lower()
+        guest_email_normalized = guest_email.strip().lower()
+        is_self = guest_email_normalized in {
+            user.email.lower(),
+            user.contact_email.lower(),
+        }
 
-        assignment = TicketAssignment(
-            assigned_ticket_id=assigned_ticket_id,
-            ticket_purchase_id=ticket.ticket_purchase_id,
-            event_id=ticket.ticket_purchase.event_id,
-            assigned_by_user_id=user_id,
-            guest_name=guest_name,
-            guest_email=guest_email,
-            status="assigned",
-            is_self_assignment=is_self,
+        existing_assignment_result = await db.execute(
+            select(TicketAssignment).where(
+                TicketAssignment.assigned_ticket_id == assigned_ticket_id
+            )
         )
-        db.add(assignment)
+        assignment = existing_assignment_result.scalar_one_or_none()
+
+        if assignment is not None:
+            if assignment.status != "cancelled":
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Ticket is already assigned",
+                )
+
+            assignment.ticket_purchase_id = ticket.ticket_purchase_id
+            assignment.event_id = ticket.ticket_purchase.event_id
+            assignment.assigned_by_user_id = user_id
+            assignment.guest_name = guest_name
+            assignment.guest_email = guest_email
+            assignment.status = "assigned"
+            assignment.is_self_assignment = is_self
+            assignment.assignee_user_id = None
+            assignment.registration_id = None
+            assignment.invitation_sent_at = None
+            assignment.invitation_count = 0
+            assignment.registered_at = None
+            assignment.cancelled_at = None
+            assignment.cancelled_by = None
+        else:
+            assignment = TicketAssignment(
+                assigned_ticket_id=assigned_ticket_id,
+                ticket_purchase_id=ticket.ticket_purchase_id,
+                event_id=ticket.ticket_purchase.event_id,
+                assigned_by_user_id=user_id,
+                guest_name=guest_name,
+                guest_email=guest_email,
+                status="assigned",
+                is_self_assignment=is_self,
+            )
+            db.add(assignment)
 
         ticket.assignment_status = "assigned"
 
@@ -171,7 +207,11 @@ class TicketAssignmentService:
 
             # Re-check self-assignment when email changes
             user = await _load_user(db, user_id)
-            assignment.is_self_assignment = guest_email.lower() == user.email.lower()
+            guest_email_normalized = guest_email.strip().lower()
+            assignment.is_self_assignment = guest_email_normalized in {
+                user.email.lower(),
+                user.contact_email.lower(),
+            }
 
         await db.flush()
         await db.refresh(assignment)
@@ -273,6 +313,12 @@ class TicketAssignmentService:
         """
         assignment = await _load_assignment(db, assignment_id)
 
+        user = await _load_user(db, user_id)
+        if not assignment.is_self_assignment and _assignment_matches_user_identity(
+            assignment, user
+        ):
+            assignment.is_self_assignment = True
+
         if not assignment.is_self_assignment:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -308,7 +354,6 @@ class TicketAssignmentService:
             registration.status = "confirmed"
             db.add(registration)
             await db.flush()
-            await db.refresh(registration)
             logger.info(
                 "Created EventRegistration %s for user %s event %s",
                 registration.id,
@@ -316,17 +361,32 @@ class TicketAssignmentService:
                 event_id,
             )
 
-        # Create RegistrationGuest
-        guest = RegistrationGuest(
-            registration_id=registration.id,
-            user_id=user_id,
-            name=assignment.guest_name,
-            email=assignment.guest_email,
-            phone=request.phone,
-            status="confirmed",
-            is_primary=False,
+        primary_guest_result = await db.execute(
+            select(RegistrationGuest).where(
+                RegistrationGuest.registration_id == registration.id,
+                RegistrationGuest.is_primary.is_(True),
+            )
         )
-        db.add(guest)
+        primary_guest = primary_guest_result.scalar_one_or_none()
+
+        if primary_guest is not None and primary_guest.name is None and primary_guest.email is None:
+            guest = primary_guest
+            guest.user_id = user_id
+            guest.name = assignment.guest_name
+            guest.email = assignment.guest_email
+            guest.phone = request.phone
+            guest.status = "confirmed"
+        else:
+            guest = RegistrationGuest(
+                registration_id=registration.id,
+                user_id=user_id,
+                name=assignment.guest_name,
+                email=assignment.guest_email,
+                phone=request.phone,
+                status="confirmed",
+                is_primary=False,
+            )
+            db.add(guest)
         await db.flush()
 
         # Meal selection
@@ -434,6 +494,12 @@ class TicketAssignmentService:
                 detail="Only the guest or the purchaser can cancel this registration",
             )
 
+        revoked_guest_email = assignment.guest_email
+        revoked_guest_name = assignment.guest_name
+        registered_user_id = assignment.assignee_user_id
+        event_result = await db.execute(select(Event).where(Event.id == assignment.event_id))
+        event = event_result.scalar_one()
+
         # Soft-delete the RegistrationGuest (if linked)
         if assignment.registration_id is not None:
             guest_result = await db.execute(
@@ -442,9 +508,25 @@ class TicketAssignmentService:
                     RegistrationGuest.user_id == assignment.assignee_user_id,
                 )
             )
-            guest = guest_result.scalar_one_or_none()
+            guest_candidates = guest_result.scalars().all()
+            guest = _select_registration_guest_for_cancellation(assignment, guest_candidates)
             if guest is not None:
                 guest.status = "cancelled"
+
+                active_non_primary_remaining = any(
+                    candidate.id != guest.id
+                    and not candidate.is_primary
+                    and candidate.status != "cancelled"
+                    for candidate in guest_candidates
+                )
+                if not active_non_primary_remaining:
+                    primary_guest = next(
+                        (candidate for candidate in guest_candidates if candidate.is_primary),
+                        None,
+                    )
+                    if primary_guest is not None and primary_guest.id != guest.id:
+                        primary_guest.status = "cancelled"
+
                 logger.info(
                     "RegistrationGuest %s soft-deleted for assignment %s",
                     guest.id,
@@ -466,6 +548,52 @@ class TicketAssignmentService:
         ticket.assignment_status = "unassigned"
 
         await db.flush()
+
+        if actor_type == "purchaser":
+            revoked_by_user = await _load_user(db, user_id)
+            revoked_by_email = _preferred_contact_email(revoked_by_user)
+
+            if registered_user_id is not None:
+                registered_user_result = await db.execute(
+                    select(User).where(User.id == registered_user_id)
+                )
+                registered_user = registered_user_result.scalar_one_or_none()
+                if registered_user is not None:
+                    revoked_guest_email = _preferred_contact_email(registered_user)
+
+            if revoked_guest_email.lower() != revoked_by_email.lower():
+                event_datetime_text = event.event_datetime.strftime("%B %d, %Y at %I:%M %p")
+                if event.timezone:
+                    event_datetime_text = f"{event_datetime_text} ({event.timezone})"
+
+                event_logo_url: str | None = None
+                if event.logo_url:
+                    from app.api.v1.event_media_urls import get_signed_asset_url
+
+                    event_logo_url = get_signed_asset_url(event.logo_url)
+
+                email_service = get_email_service()
+                try:
+                    await email_service.send_ticket_registration_cancelled_email(
+                        to_email=revoked_guest_email,
+                        guest_name=revoked_guest_name,
+                        event_name=event.name,
+                        event_datetime_text=event_datetime_text,
+                        venue_name=event.venue_name,
+                        venue_address=event.venue_address,
+                        revoked_by_name=revoked_by_user.full_name,
+                        revoked_by_email=revoked_by_email,
+                        event_logo_url=event_logo_url,
+                    )
+                except Exception:
+                    logger.exception(
+                        "Failed to send ticket registration cancellation email",
+                        extra={
+                            "assignment_id": str(assignment_id),
+                            "recipient_email": revoked_guest_email,
+                            "revoked_by_user_id": str(user_id),
+                        },
+                    )
 
         logger.info(
             "Registration cancelled for assignment %s by %s (user %s)",
@@ -572,7 +700,7 @@ class TicketAssignmentService:
                     ev_total += 1
                     if t.assignment_status == "registered":
                         ev_registered += 1
-                    elif t.assignment_status == "assigned":
+                    elif t.assignment_status in {"assigned", "invited"}:
                         ev_assigned += 1
                     else:
                         ev_unassigned += 1
@@ -660,6 +788,55 @@ async def _load_user(db: AsyncSession, user_id: uuid.UUID) -> User:
     return user
 
 
+def _assignment_matches_user_identity(assignment: TicketAssignment, user: User) -> bool:
+    """Return True when an assignment email belongs to the purchaser's own identity."""
+    assignment_email = assignment.guest_email.strip().lower()
+    return assignment_email in {
+        user.email.strip().lower(),
+        user.contact_email.strip().lower(),
+    }
+
+
+def _select_registration_guest_for_cancellation(
+    assignment: TicketAssignment,
+    guest_candidates: Sequence[RegistrationGuest],
+) -> RegistrationGuest | None:
+    """Pick the guest row that belongs to the assignment being cancelled.
+
+    Older self-registration records can contain both a primary guest row and a
+    non-primary guest row for the same user. Prefer the non-primary row that
+    matches the assignment identity, then fall back to any active non-primary
+    row, then finally the primary guest.
+    """
+
+    active_candidates = [guest for guest in guest_candidates if guest.status != "cancelled"]
+    if not active_candidates:
+        return None
+
+    normalized_email = assignment.guest_email.strip().lower()
+    matching_non_primary = next(
+        (
+            guest
+            for guest in active_candidates
+            if not guest.is_primary
+            and (guest.email or "").strip().lower() == normalized_email
+            and guest.name == assignment.guest_name
+        ),
+        None,
+    )
+    if matching_non_primary is not None:
+        return matching_non_primary
+
+    fallback_non_primary = next(
+        (guest for guest in active_candidates if not guest.is_primary),
+        None,
+    )
+    if fallback_non_primary is not None:
+        return fallback_non_primary
+
+    return next((guest for guest in active_candidates if guest.is_primary), None)
+
+
 def _verify_ticket_ownership(ticket: AssignedTicket, user_id: uuid.UUID) -> None:
     """Raise 404 if the ticket's purchase does not belong to the given user."""
     if ticket.ticket_purchase.user_id != user_id:
@@ -678,26 +855,38 @@ def _verify_assignment_ownership(assignment: TicketAssignment, user_id: uuid.UUI
         )
 
 
+def _preferred_contact_email(user: User) -> str:
+    """Return the user's preferred outbound email address."""
+    if user.communications_email and user.communications_email_verified:
+        return user.communications_email
+    return user.email
+
+
 def _ticket_to_detail(ticket: AssignedTicket) -> TicketDetail:
     """Map an AssignedTicket ORM instance to a TicketDetail schema."""
+    assignment_status = ticket.assignment_status
     assignment_summary: AssignmentSummary | None = None
     if ticket.assignment is not None:
-        assignment_summary = AssignmentSummary(
-            id=ticket.assignment.id,
-            guest_name=ticket.assignment.guest_name,
-            guest_email=ticket.assignment.guest_email,
-            status=ticket.assignment.status,
-            is_self_assignment=ticket.assignment.is_self_assignment,
-            invitation_sent_at=ticket.assignment.invitation_sent_at,
-            invitation_count=ticket.assignment.invitation_count,
-            registered_at=ticket.assignment.registered_at,
-        )
+        assignment_status = ticket.assignment.status
+        if assignment_status != AssignmentStatus.CANCELLED.value:
+            assignment_summary = AssignmentSummary(
+                id=ticket.assignment.id,
+                guest_name=ticket.assignment.guest_name,
+                guest_email=ticket.assignment.guest_email,
+                status=ticket.assignment.status,
+                is_self_assignment=ticket.assignment.is_self_assignment,
+                invitation_sent_at=ticket.assignment.invitation_sent_at,
+                invitation_count=ticket.assignment.invitation_count,
+                registered_at=ticket.assignment.registered_at,
+            )
+        else:
+            assignment_status = "unassigned"
 
     return TicketDetail(
         id=ticket.id,
         ticket_number=ticket.ticket_number,
         qr_code=ticket.qr_code,
-        assignment_status=ticket.assignment_status,
+        assignment_status=assignment_status,
         assignment=assignment_summary,
     )
 

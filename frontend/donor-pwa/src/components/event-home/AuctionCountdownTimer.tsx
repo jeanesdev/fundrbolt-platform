@@ -38,37 +38,34 @@ export function AuctionCountdownTimer({
   className = '',
 }: AuctionCountdownTimerProps) {
   const getEffectiveNowMs = useDebugSpoofStore((s) => s.getEffectiveNowMs)
+  const closeTimeMs = new Date(closeDateTime).getTime()
 
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(() => {
-    const diff = Math.floor(
-      (new Date(closeDateTime).getTime() - getEffectiveNowMs()) / 1000,
-    )
-    return Math.max(0, diff)
-  })
+  const [tick, setTick] = useState(0)
+
+  const secondsRemaining = Math.max(
+    0,
+    Math.floor((closeTimeMs - getEffectiveNowMs()) / 1000),
+  )
 
   useEffect(() => {
-    // Recalculate in case closeDateTime prop changed
-    const diff = Math.floor(
-      (new Date(closeDateTime).getTime() - getEffectiveNowMs()) / 1000,
-    )
-    setSecondsRemaining(Math.max(0, diff))
-
-    if (diff <= 0) return
+    if (secondsRemaining <= 0) return
 
     const interval = setInterval(() => {
       const remaining = Math.floor(
-        (new Date(closeDateTime).getTime() - getEffectiveNowMs()) / 1000,
+        (closeTimeMs - getEffectiveNowMs()) / 1000,
       )
       if (remaining <= 0) {
-        setSecondsRemaining(0)
+        setTick((value) => value + 1)
         clearInterval(interval)
       } else {
-        setSecondsRemaining(remaining)
+        setTick((value) => value + 1)
       }
     }, 1_000)
 
     return () => clearInterval(interval)
-  }, [closeDateTime, getEffectiveNowMs])
+  }, [closeTimeMs, getEffectiveNowMs, secondsRemaining])
+
+  void tick
 
   const isClosed = secondsRemaining <= 0
   const isFlashing = !isClosed && secondsRemaining <= 900 // ≤ 15 min

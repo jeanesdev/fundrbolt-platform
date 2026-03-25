@@ -25,9 +25,10 @@ class AppContext(str, Enum):
 class PendingReason(str, Enum):
     """Reasons why social auth requires additional verification."""
 
-    NEEDS_LINK_CONFIRMATION = "needs_link_confirmation"
-    NEEDS_EMAIL_VERIFICATION = "needs_email_verification"
-    NEEDS_ADMIN_STEP_UP = "needs_admin_step_up"
+    NEEDS_LINK_CONFIRMATION = "link_confirmation_required"
+    NEEDS_EMAIL_VERIFICATION = "email_verification_required"
+    NEEDS_ADMIN_STEP_UP = "admin_step_up_required"
+    NEEDS_REGISTRATION = "needs_registration"
 
 
 class SocialProviderItem(BaseModel):
@@ -96,6 +97,8 @@ class SocialAuthPendingResponse(BaseModel):
     reason: PendingReason
     attempt_id: uuid.UUID
     message: str | None = None
+    prefill_email: str | None = None
+    prefill_name: str | None = None
 
 
 class LinkConfirmationRequest(BaseModel):

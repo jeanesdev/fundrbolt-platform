@@ -19,6 +19,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
+import { navigateToInternalRedirect } from '../../utils/internal-redirect'
 
 const formSchema = z.object({
   email: z.email({
@@ -63,14 +64,18 @@ export function UserAuthForm({
 
         // Redirect unverified users to the email verification page
         if (response.user.email_verified === false) {
-          navigate({ to: '/verify-email', search: { email: response.user.email }, replace: true })
+          navigate({
+            to: '/verify-email',
+            search: { email: response.user.email, redirect: redirectTo },
+            replace: true,
+          })
           return 'Please verify your email to continue.'
         }
 
         // Navigate using router instead of full page reload
         // The auth state is already set by the login function
         if (redirectTo && typeof redirectTo === 'string') {
-          navigate({ to: redirectTo as any, replace: true })
+          navigateToInternalRedirect(navigate, redirectTo)
         } else {
           navigate({ to: '/home', replace: true })
         }
@@ -81,29 +86,35 @@ export function UserAuthForm({
         setIsLoading(false)
 
         // Extract error details
-        const apiError = err as { response?: { data?: { detail?: { code?: string } } } }
+        const apiError = err as {
+          response?: { data?: { detail?: { code?: string } } }
+        }
         const errorCode = apiError?.response?.data?.detail?.code
-        const errorMessage = getErrorMessage(err, 'Login failed. Please try again.')
+        const errorMessage = getErrorMessage(
+          err,
+          'Login failed. Please try again.'
+        )
 
         // Check if email verification is required
         if (errorCode === 'EMAIL_NOT_VERIFIED') {
           // Show a more helpful message with action button
           const email = data.email
-          toast.error(
-            `Email verification required for ${email}`,
-            {
-              description: 'Please check your inbox for the verification link, or request a new one.',
-              action: {
-                label: 'Resend Email',
-                onClick: () => {
-                  // TODO: Implement resend verification email
-                  toast.info('Redirecting to resend verification...')
-                  navigate({ to: '/verify-email', search: { email } })
-                },
+          toast.error(`Email verification required for ${email}`, {
+            description:
+              'Please check your inbox for the verification link, or request a new one.',
+            action: {
+              label: 'Resend Email',
+              onClick: () => {
+                // TODO: Implement resend verification email
+                toast.info('Redirecting to resend verification...')
+                navigate({
+                  to: '/verify-email',
+                  search: { email, redirect: redirectTo },
+                })
               },
-              duration: 10000, // Show for 10 seconds
-            }
-          )
+            },
+            duration: 10000, // Show for 10 seconds
+          })
           return // Don't show the error string, the custom toast handles it
         }
 

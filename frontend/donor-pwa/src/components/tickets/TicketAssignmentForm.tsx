@@ -1,14 +1,15 @@
 /**
  * TicketAssignmentForm — form for assigning a ticket to a guest.
  */
-import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { assignTicket } from '@/lib/api/ticket-assignments'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { assignTicket } from '@/lib/api/ticket-assignments'
+import { sendInvitation } from '@/lib/api/ticket-invitations'
+import { useMutation } from '@tanstack/react-query'
+import { Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface TicketAssignmentFormProps {
   ticketId: string
@@ -17,6 +18,10 @@ interface TicketAssignmentFormProps {
   isSelfAssignment?: boolean
   defaultName?: string
   defaultEmail?: string
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback
 }
 
 export function TicketAssignmentForm({
@@ -31,14 +36,55 @@ export function TicketAssignmentForm({
   const [email, setEmail] = useState(defaultEmail)
 
   const assignMutation = useMutation({
-    mutationFn: () => assignTicket(ticketId, name.trim(), email.trim()),
-    onSuccess: () => {
-      toast.success('Ticket assigned successfully')
+    mutationFn: async () => {
+      const assignment = await assignTicket(ticketId, name.trim(), email.trim())
+
+      if (isSelfAssignment) {
+        return {
+          assignment,
+          invitationSent: false,
+          inviteErrorMessage: null,
+        }
+      }
+
+      try {
+        await sendInvitation(assignment.id)
+        return {
+          assignment,
+          invitationSent: true,
+          inviteErrorMessage: null,
+        }
+      } catch (error) {
+        return {
+          assignment,
+          invitationSent: false,
+          inviteErrorMessage: getErrorMessage(
+            error,
+            'Invitation could not be sent automatically'
+          ),
+        }
+      }
+    },
+    onSuccess: ({ invitationSent, inviteErrorMessage }) => {
+      if (isSelfAssignment) {
+        toast.success('Ticket assigned successfully')
+      } else if (invitationSent) {
+        toast.success('Guest assigned and invitation sent')
+      } else {
+        toast.error(
+          inviteErrorMessage ?? 'Guest assigned, but invitation failed to send'
+        )
+      }
+
       onAssigned()
     },
     onError: (err: unknown) => {
-      const message =
-        err instanceof Error ? err.message : 'Failed to assign ticket'
+      const message = getErrorMessage(
+        err,
+        isSelfAssignment
+          ? 'Failed to assign ticket'
+          : 'Failed to assign guest'
+      )
       toast.error(message)
     },
   })
@@ -90,7 +136,7 @@ export function TicketAssignmentForm({
           ) : isSelfAssignment ? (
             'Assign to Me'
           ) : (
-            'Assign Ticket'
+            'Assign Guest & Send Invitation'
           )}
         </Button>
         <Button

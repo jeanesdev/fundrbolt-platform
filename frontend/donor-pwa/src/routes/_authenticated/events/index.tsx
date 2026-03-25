@@ -10,7 +10,7 @@ function EventsIndexPage() {
 
   // Redirect to selected event
   if (selectedEventSlug) {
-    return <Navigate to="/events/$eventSlug" params={{ eventSlug: selectedEventSlug }} />
+    return <Navigate to="/events/$slug" params={{ slug: selectedEventSlug }} />
   }
 
   // No events - redirect to home

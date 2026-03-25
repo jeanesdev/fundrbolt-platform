@@ -79,6 +79,7 @@ class EventSearchResult(BaseModel):
     """Search result for an event."""
 
     id: uuid.UUID
+    slug: str
     name: str
     npo_id: uuid.UUID
     npo_name: str  # Denormalized for display
@@ -97,6 +98,7 @@ class AuctionItemSearchResult(BaseModel):
     id: uuid.UUID
     name: str
     event_id: uuid.UUID
+    event_slug: str | None = None
     event_name: str  # Denormalized for display
     category: str
     status: str

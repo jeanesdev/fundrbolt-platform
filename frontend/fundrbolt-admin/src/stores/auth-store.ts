@@ -1,11 +1,12 @@
+import apiClient from '@/lib/axios'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import apiClient from '@/lib/axios'
 
 interface AuthUser {
   id: string
   email: string
+  has_local_password?: boolean
   first_name: string
   last_name: string
   email_verified: boolean

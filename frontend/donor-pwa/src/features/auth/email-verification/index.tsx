@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router'
 import {
   Card,
   CardContent,
@@ -7,17 +6,20 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Link } from '@tanstack/react-router'
 import { AuthLayout } from '../auth-layout'
 import { EmailVerificationForm } from './components/email-verification-form'
 
 interface EmailVerificationPageProps {
   token?: string
   email?: string
+  redirect?: string
 }
 
 export function EmailVerificationPage({
   token,
   email,
+  redirect,
 }: EmailVerificationPageProps) {
   const description = token
     ? 'We are verifying your email automatically.'
@@ -35,13 +37,18 @@ export function EmailVerificationPage({
           <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent>
-          <EmailVerificationForm token={token} email={email} />
+          <EmailVerificationForm
+            token={token}
+            email={email}
+            redirectTo={redirect}
+          />
         </CardContent>
         <CardFooter>
           <p className='text-muted-foreground mx-auto px-8 text-center text-sm text-balance'>
             Already verified?{' '}
             <Link
               to='/sign-in'
+              search={{ redirect }}
               className='hover:text-primary underline underline-offset-4'
             >
               Sign in

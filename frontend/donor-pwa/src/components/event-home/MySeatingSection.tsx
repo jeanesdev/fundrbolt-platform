@@ -179,7 +179,9 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
     }
 
     return loadedMapImageUrls.has(venueMapLink)
-  }, [mapWarmCache, venueMapLink])
+  }, [venueMapLink])
+
+  const isMapImageReady = mapImageLoaded || isPreloadedMapImage
 
   useEffect(() => {
     if (!venueMapLink || isGoogleMapsUrl(venueMapLink)) {
@@ -187,7 +189,6 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
     }
 
     if (loadedMapImageUrls.has(venueMapLink)) {
-      setMapImageLoaded(true)
       return
     }
 
@@ -377,7 +378,7 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
     if (!mapImageFailed || isImageMapUrl(mapUrl)) {
       return (
         <div className='relative flex h-full w-full items-center justify-center'>
-          {!mapImageLoaded && (
+          {!isMapImageReady && (
             <div className='absolute inset-0 flex items-center justify-center bg-black/20'>
               <Loader2 className='h-8 w-8 animate-spin text-white/90' />
             </div>
@@ -422,7 +423,7 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
         </a>
       </div>
     )
-  }, [mapImageFailed, mapImageLoaded, venueMapLink])
+  }, [isMapImageReady, mapImageFailed, venueMapLink])
 
   return (
     <div className='space-y-4'>
