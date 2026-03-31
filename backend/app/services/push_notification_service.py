@@ -274,6 +274,10 @@ class PushNotificationService:
                     data=payload,
                     vapid_private_key=vapid_key,
                     vapid_claims=vapid_claims,
+                    headers={
+                        "TTL": "86400",
+                        "Urgency": "high",
+                    },
                 )
                 any_success = True
             except WebPushException as e:

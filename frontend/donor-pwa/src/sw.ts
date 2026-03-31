@@ -10,6 +10,20 @@ import {
 
 declare const self: ServiceWorkerGlobalScope
 
+// Claim clients immediately on activation so push subscriptions
+// are associated with the active SW that will receive push events.
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim())
+})
+
+// Handle SKIP_WAITING from the main thread (VitePWA update prompt).
+// Required for injectManifest strategy with registerType: 'prompt'.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
+})
+
 // Precache static assets injected by vite-plugin-pwa
 precacheAndRoute(self.__WB_MANIFEST)
 
@@ -63,7 +77,14 @@ registerRoute(
 
 // Push notification handler
 self.addEventListener('push', (event: PushEvent) => {
-  if (!event.data) return
+  // eslint-disable-next-line no-console
+  console.log('[SW] Push event received')
+
+  if (!event.data) {
+    // eslint-disable-next-line no-console
+    console.warn('[SW] Push event has no data, ignoring')
+    return
+  }
 
   let payload: {
     title?: string
@@ -75,8 +96,12 @@ self.addEventListener('push', (event: PushEvent) => {
 
   try {
     payload = event.data.json()
+    // eslint-disable-next-line no-console
+    console.log('[SW] Push payload parsed:', JSON.stringify(payload))
   } catch {
     payload = { title: 'Fundrbolt', body: event.data.text() }
+    // eslint-disable-next-line no-console
+    console.log('[SW] Push payload fell back to text:', payload.body)
   }
 
   const title = payload.title ?? 'Fundrbolt'
@@ -88,7 +113,19 @@ self.addEventListener('push', (event: PushEvent) => {
     tag: `fundrbolt-${Date.now()}`,
   }
 
-  event.waitUntil(self.registration.showNotification(title, options))
+  // eslint-disable-next-line no-console
+  console.log('[SW] Calling showNotification:', title, JSON.stringify(options))
+
+  event.waitUntil(
+    self.registration
+      .showNotification(title, options)
+      // eslint-disable-next-line no-console
+      .then(() => console.log('[SW] showNotification resolved'))
+      .catch((err: unknown) =>
+        // eslint-disable-next-line no-console
+        console.error('[SW] showNotification failed:', err)
+      )
+  )
 })
 
 // Notification click handler
