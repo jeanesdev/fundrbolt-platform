@@ -54,7 +54,7 @@ export function BottomTabNav({
           background: 'linear-gradient(to top, rgb(0 0 0 / 0.16), rgb(0 0 0 / 0))',
         }}
       />
-      <div className='flex items-stretch h-16'>
+      <div className='flex items-stretch h-20'>
         {TABS.map((tab) => {
           const isActive = tab.id === activeTab
           const badgeCount = badges[tab.id] ?? 0
@@ -68,7 +68,7 @@ export function BottomTabNav({
               onFocus={() => onTabIntent?.(tab.id)}
               onTouchStart={() => onTabIntent?.(tab.id)}
               className={cn(
-                'flex flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2',
+                'flex flex-1 flex-col items-center justify-center gap-1 px-1 py-3',
                 'transition-all duration-200 active:scale-95',
                 'relative focus:outline-none',
                 isActive ? 'scale-105' : 'opacity-60 hover:opacity-80'
@@ -91,7 +91,7 @@ export function BottomTabNav({
                 <Icon
                   className={cn(
                     'transition-all duration-200',
-                    isActive ? 'h-6 w-6' : 'h-5 w-5'
+                    isActive ? 'h-7 w-7' : 'h-6 w-6'
                   )}
                   style={{
                     color: isActive
@@ -114,7 +114,7 @@ export function BottomTabNav({
               {/* Label */}
               <span
                 className={cn(
-                  'text-[10px] font-medium transition-all duration-200',
+                  'text-xs font-medium transition-all duration-200',
                   isActive ? 'font-semibold' : ''
                 )}
                 style={{

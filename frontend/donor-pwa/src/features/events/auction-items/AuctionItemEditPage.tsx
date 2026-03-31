@@ -14,6 +14,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { AuctionItemForm } from '@/features/events/components/AuctionItemForm';
 import { useAuctionItemStore } from '@/stores/auctionItemStore';
+import { useEventStore } from '@/stores/event-store';
 import type { AuctionItemUpdate } from '@/types/auction-item';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
@@ -26,6 +27,7 @@ export function AuctionItemEditPage() {
     from: '/_authenticated/events/$eventSlug/auction-items/$itemId/edit',
   });
 
+  const { currentEvent, loadEventBySlug } = useEventStore();
   const {
     selectedItem,
     isLoading,
@@ -36,9 +38,19 @@ export function AuctionItemEditPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Resolve slug to event UUID if not already loaded
+  useEffect(() => {
+    if (eventSlug && currentEvent?.slug !== eventSlug) {
+      loadEventBySlug(eventSlug).catch(() => { });
+    }
+  }, [eventSlug, currentEvent?.slug, loadEventBySlug]);
+
+  const eventId = currentEvent?.id ?? eventSlug;
+
   // Load item on mount
   useEffect(() => {
-    getAuctionItem(eventSlug, itemId).catch((err) => {
+    if (!currentEvent?.id) return;
+    getAuctionItem(currentEvent.id, itemId).catch((err) => {
       toast.error(
         err instanceof Error ? err.message : 'Failed to load auction item'
       );
@@ -49,12 +61,12 @@ export function AuctionItemEditPage() {
     return () => {
       clearSelectedItem();
     };
-  }, [eventSlug, itemId, getAuctionItem, clearSelectedItem, navigate]);
+  }, [currentEvent?.id, itemId, getAuctionItem, clearSelectedItem, navigate, eventSlug]);
 
   const handleSubmit = async (data: AuctionItemUpdate) => {
     setIsSubmitting(true);
     try {
-      await updateAuctionItem(eventSlug, itemId, data);
+      await updateAuctionItem(eventId, itemId, data);
       toast.success('Auction item updated successfully!');
       navigate({
         to: '/events/$eventSlug/auction-items',
@@ -126,7 +138,7 @@ export function AuctionItemEditPage() {
         <CardContent>
           <AuctionItemForm
             item={selectedItem}
-            eventId={eventSlug}
+            eventId={eventId}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             isSubmitting={isSubmitting}

@@ -60,20 +60,26 @@ apiClient.interceptors.request.use(
   (config) => {
     // Get access token from auth store
     const token = useAuthStore.getState().accessToken;
-    const spoofedUser = useDebugSpoofStore.getState().spoofedUser;
-    const spoofedNowIso = useDebugSpoofStore.getState().getEffectiveNowIso();
 
     // Add Authorization header if token exists
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    if (spoofedUser?.id) {
-      config.headers['X-Spoof-User-Id'] = spoofedUser.id;
-    }
+    // Only send spoof headers for super_admin users
+    const currentUser = useAuthStore.getState().user;
+    if (currentUser?.role === 'super_admin') {
+      const spoofedUser = useDebugSpoofStore.getState().spoofedUser;
+      const spoofedNowIso =
+        useDebugSpoofStore.getState().getEffectiveNowIso();
 
-    if (spoofedNowIso) {
-      config.headers['X-Debug-Now'] = spoofedNowIso;
+      if (spoofedUser?.id) {
+        config.headers['X-Spoof-User-Id'] = spoofedUser.id;
+      }
+
+      if (spoofedNowIso) {
+        config.headers['X-Debug-Now'] = spoofedNowIso;
+      }
     }
 
     if (config.params) {

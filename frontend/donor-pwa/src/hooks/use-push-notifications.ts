@@ -3,8 +3,14 @@
  *
  * Provides subscribe/unsubscribe functionality and subscription state.
  */
-import { useCallback, useEffect, useState } from 'react'
 import apiClient from '@/lib/axios'
+import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
+
+interface UsePushNotificationsOptions {
+  /** Whether the hook should run (defaults to true). Set false for unauthenticated contexts. */
+  enabled?: boolean
+}
 
 interface UsePushNotificationsResult {
   /** Whether the browser supports push notifications */
@@ -37,7 +43,10 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   return outputArray
 }
 
-export function usePushNotifications(): UsePushNotificationsResult {
+export function usePushNotifications(
+  options?: UsePushNotificationsOptions
+): UsePushNotificationsResult {
+  const { enabled = true } = options ?? {}
   const [isSupported] = useState(
     () =>
       'serviceWorker' in navigator &&
@@ -47,22 +56,58 @@ export function usePushNotifications(): UsePushNotificationsResult {
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Check current subscription status on mount
+  // Check current subscription status on mount and auto-restore if needed
+  // (e.g. after PWA reinstall: permission was granted but subscription is gone)
   useEffect(() => {
-    if (!isSupported) return
+    if (!isSupported || !enabled) return
 
-    const checkSubscription = async () => {
+    const checkAndRestore = async () => {
       try {
         const registration = await navigator.serviceWorker.ready
         const subscription = await registration.pushManager.getSubscription()
-        setIsSubscribed(!!subscription)
+
+        if (subscription) {
+          setIsSubscribed(true)
+          return
+        }
+
+        // No active subscription — if permission was previously granted,
+        // silently re-subscribe (covers PWA reinstall / SW replacement).
+        if (Notification.permission === 'granted') {
+          try {
+            const vapidKey = await fetchVapidKey()
+            if (!vapidKey) return
+
+            const newSub = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(vapidKey),
+            })
+
+            const subJson = newSub.toJSON()
+            await apiClient.post('/notifications/push/subscribe', {
+              endpoint: subJson.endpoint,
+              keys: {
+                p256dh: subJson.keys?.p256dh ?? '',
+                auth: subJson.keys?.auth ?? '',
+              },
+              platform: 'web',
+            })
+
+            setIsSubscribed(true)
+          } catch {
+            // Silent failure — user can still manually re-enable via settings
+            setIsSubscribed(false)
+          }
+        } else {
+          setIsSubscribed(false)
+        }
       } catch {
         setIsSubscribed(false)
       }
     }
 
-    void checkSubscription()
-  }, [isSupported])
+    void checkAndRestore()
+  }, [isSupported, enabled])
 
   const subscribe = useCallback(async () => {
     if (!isSupported || isLoading) return
@@ -72,17 +117,31 @@ export function usePushNotifications(): UsePushNotificationsResult {
       // Request notification permission
       const permission = await Notification.requestPermission()
       if (permission !== 'granted') {
+        toast.error(
+          permission === 'denied'
+            ? 'Notifications blocked. Enable them in your browser/device settings.'
+            : 'Notification permission was not granted.'
+        )
         return
       }
 
       // Get VAPID public key
       const vapidKey = await fetchVapidKey()
       if (!vapidKey) {
+        toast.error('Push notifications are not configured on the server.')
         return
       }
 
       // Subscribe to push
-      const registration = await navigator.serviceWorker.ready
+      const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error('Service worker not available')),
+            5000
+          )
+        ),
+      ])
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
@@ -100,8 +159,9 @@ export function usePushNotifications(): UsePushNotificationsResult {
       })
 
       setIsSubscribed(true)
-    } catch {
-      // Subscription failed - permission denied or VAPID error
+    } catch (err) {
+      console.error('Push subscribe failed:', err)
+      toast.error('Failed to enable push notifications. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -125,8 +185,9 @@ export function usePushNotifications(): UsePushNotificationsResult {
       }
 
       setIsSubscribed(false)
-    } catch {
-      // Unsubscribe failed
+    } catch (err) {
+      console.error('Push unsubscribe failed:', err)
+      toast.error('Failed to disable push notifications.')
     } finally {
       setIsLoading(false)
     }

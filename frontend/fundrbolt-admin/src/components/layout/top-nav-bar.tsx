@@ -107,7 +107,7 @@ function DesktopNav() {
               {group.title}
             </NavigationMenuTrigger>
             <NavigationMenuContent>
-              <ul className='grid w-48 gap-0.5 p-1'>
+              <ul className='grid w-48 gap-0.5 p-1 max-h-[70vh] overflow-y-auto'>
                 {group.items.map((item) => {
                   const Icon = item.icon
                     ? iconMap[item.icon as keyof typeof iconMap]

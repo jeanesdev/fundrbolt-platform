@@ -50,6 +50,16 @@ import {
 } from '@/lib/color-utils'
 import { useEffect } from 'react'
 
+/**
+ * Update the theme-color meta tag so iOS Safari chrome matches the page background.
+ */
+function updateThemeColorMeta(color: string) {
+  const meta = document.querySelector('meta[name="theme-color"]')
+  if (meta) {
+    meta.setAttribute('content', color)
+  }
+}
+
 export interface EventBranding {
   primary_color?: string | null
   secondary_color?: string | null
@@ -65,7 +75,7 @@ export interface EventBranding {
 const DEFAULT_COLORS = {
   primary: '#3B82F6', // blue-500
   secondary: '#9333EA', // purple-600
-  background: '#FFFFFF', // white
+  background: '#111827', // dark default (matches --background in dark mode)
   accent: '#3B82F6', // blue-500
 }
 
@@ -117,6 +127,11 @@ export function useEventBranding() {
     root.style.setProperty('--event-card-bg', hexToRgbTuple(secondaryColor))
     root.style.setProperty('--event-card-text', getContrastingTextColor(secondaryColor))
     root.style.setProperty('--event-card-text-muted', getContrastingTextColors(secondaryColor).muted)
+
+    // Update theme-color meta tag and body to match event background
+    // This prevents the iOS Safari chrome (top/bottom bars) from being a different color
+    updateThemeColorMeta(backgroundColor)
+    document.body.style.backgroundColor = backgroundColor
   }
 
   /**
@@ -131,6 +146,10 @@ export function useEventBranding() {
     root.style.setProperty('--event-text-on-secondary', DEFAULT_BRANDING.textOnSecondary)
     root.style.setProperty('--event-text-on-background', DEFAULT_BRANDING.textOnBackground)
     root.style.setProperty('--event-text-muted-on-background', DEFAULT_BRANDING.textMutedOnBackground)
+
+    // Reset theme-color to dark default and clear inline body background
+    updateThemeColorMeta(DEFAULT_COLORS.background)
+    document.body.style.backgroundColor = ''
   }
 
   /**

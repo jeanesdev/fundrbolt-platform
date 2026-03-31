@@ -208,6 +208,9 @@ class AuthService:
         user_public = UserPublic(
             id=user.id,
             email=user.email,
+            has_local_password=user.has_local_password,
+            communications_email=user.communications_email,
+            communications_email_verified=user.communications_email_verified,
             first_name=user.first_name,
             last_name=user.last_name,
             phone=user.phone,

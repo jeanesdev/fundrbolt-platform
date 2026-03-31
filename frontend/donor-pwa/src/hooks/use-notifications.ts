@@ -29,10 +29,6 @@ export function useNotifications(
   eventId: string,
   options?: Omit<ListNotificationsOptions, 'cursor'>,
 ) {
-  const setNotifications = useNotificationStore(
-    (state) => state.setNotifications,
-  )
-
   return useInfiniteQuery({
     queryKey: [...NOTIFICATION_KEYS.list(eventId), options] as const,
     queryFn: async ({ pageParam }) => {
@@ -45,17 +41,14 @@ export function useNotifications(
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor,
     enabled: !!eventId,
-    select: (data) => {
-      const allNotifications = data.pages.flatMap(
-        (page) => page.notifications,
-      )
-      // Sync to store for real-time updates
-      setNotifications(allNotifications)
-      return {
-        ...data,
-        notifications: allNotifications,
-      }
-    },
+    // Always refetch when panel remounts or regains focus so new
+    // notifications are visible immediately.
+    refetchOnMount: 'always',
+    staleTime: 0,
+    select: (data) => ({
+      ...data,
+      notifications: data.pages.flatMap((page) => page.notifications),
+    }),
   })
 }
 

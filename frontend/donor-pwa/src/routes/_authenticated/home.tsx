@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
 import { getMyInventory } from '@/lib/api/ticket-purchases'
 import { useAuthStore } from '@/stores/auth-store'
+import { getEffectiveNow } from '@/stores/debug-spoof-store'
 import { useEventContextStore } from '@/stores/event-context-store'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
 import { colors, LogoWhiteGold } from '@fundrbolt/shared/assets'
@@ -34,11 +35,11 @@ function formatEventDate(dateStr: string): string {
 }
 
 function getStatus(event: DisplayEvent): { label: string; bg: string } {
-  if (event.is_past) return { label: 'Past', bg: colors.secondary.gray }
-  const now = new Date()
+  const now = getEffectiveNow()
   const start = new Date(event.event_datetime)
   const hoursUntil = (start.getTime() - now.getTime()) / (1000 * 60 * 60)
-  if (hoursUntil <= 0 && hoursUntil > -24)
+  if (hoursUntil <= -24) return { label: 'Past', bg: colors.secondary.gray }
+  if (hoursUntil <= 0)
     return { label: 'Live', bg: colors.status.error }
   return { label: 'Upcoming', bg: colors.status.success }
 }
@@ -255,7 +256,7 @@ function DonorHomePage() {
     <div className='flex min-h-screen flex-col bg-slate-950 text-white'>
       {/* Navy header with white/gold logo */}
       <header
-        className='sticky top-0 z-50'
+        className='sticky top-0 z-50 pt-safe-top'
         style={{ backgroundColor: colors.primary.navy }}
       >
         <div className='relative flex h-16 items-center justify-center px-5'>

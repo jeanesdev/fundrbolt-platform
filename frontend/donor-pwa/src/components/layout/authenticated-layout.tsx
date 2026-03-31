@@ -10,6 +10,8 @@ import { LayoutProvider } from '@/context/layout-provider'
 import { SearchProvider } from '@/context/search-provider'
 import { useAuth } from '@/hooks/use-auth'
 import { useEventContext } from '@/hooks/use-event-context'
+import { useNotificationSocket } from '@/hooks/use-notification-socket'
+import { usePushNotifications } from '@/hooks/use-push-notifications'
 import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
 import { getMyInventory } from '@/lib/api/ticket-purchases'
 import apiClient from '@/lib/axios'
@@ -28,7 +30,7 @@ type AuthenticatedLayoutProps = {
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const defaultOpen = getCookie('sidebar_state') !== 'false'
   const { user } = useAuth()
-  const { setAvailableEvents } = useEventContext()
+  const { setAvailableEvents, selectedEventId } = useEventContext()
   const restoreUserFromRefreshToken = useAuthStore(
     (state) => state.restoreUserFromRefreshToken
   )
@@ -55,6 +57,12 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       match.routeId === '/_authenticated/tickets' ||
       match.routeId === '/_authenticated/tickets/history'
   )
+
+  // Keep Socket.IO connected across all authenticated pages for real-time toasts
+  useNotificationSocket(selectedEventId ?? undefined)
+
+  // Auto-restore push subscription if permission was previously granted (e.g. after PWA reinstall)
+  usePushNotifications()
 
   // Restore user from refresh token on mount if needed
   useEffect(() => {

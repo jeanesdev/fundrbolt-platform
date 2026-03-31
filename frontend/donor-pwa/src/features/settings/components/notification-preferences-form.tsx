@@ -5,11 +5,11 @@
  * Loads preferences from GET /api/v1/notifications/preferences
  * Saves on each toggle change with PUT /api/v1/notifications/preferences
  */
-import { useCallback, useEffect, useState } from 'react'
-import { AlertTriangle } from 'lucide-react'
-import { toast } from 'sonner'
-import apiClient from '@/lib/axios'
 import { Switch } from '@/components/ui/switch'
+import apiClient from '@/lib/axios'
+import { AlertTriangle } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 interface Preference {
   notification_type: string
@@ -47,6 +47,14 @@ const CHANNEL_LABELS: Record<string, string> = {
 }
 
 const CHANNELS = ['inapp', 'push', 'email', 'sms'] as const
+
+/** Convert snake_case to Title Case for any types not in our label map */
+function toTitleCase(s: string): string {
+  return s
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+}
 
 export function NotificationPreferencesForm() {
   const [preferences, setPreferences] = useState<Preference[]>([])
@@ -112,6 +120,43 @@ export function NotificationPreferencesForm() {
     }
   }
 
+  const isAllEnabled = (channel: string): boolean => {
+    return allTypes.every((type) => isEnabled(type, channel))
+  }
+
+  const toggleAllForChannel = async (channel: string) => {
+    if (channel === 'inapp') return
+
+    const allOn = isAllEnabled(channel)
+    const newVal = !allOn
+    const snapshot = preferences
+    const changes = allTypes
+      .filter((type) => isEnabled(type, channel) !== newVal)
+      .map((type) => ({ notification_type: type, channel, enabled: newVal }))
+
+    if (changes.length === 0) return
+
+    const updated = preferences.map((p) => {
+      if (p.channel === channel && allTypes.includes(p.notification_type)) {
+        return { ...p, enabled: newVal }
+      }
+      return p
+    })
+    setPreferences(updated)
+
+    setSaving(true)
+    try {
+      await apiClient.put('/notifications/preferences', {
+        preferences: changes,
+      })
+    } catch {
+      setPreferences(snapshot)
+      toast.error('Failed to save preferences')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const notificationTypes = NOTIFICATION_TYPE_ORDER.filter((type) =>
     preferences.some((p) => p.notification_type === type)
   )
@@ -162,8 +207,23 @@ export function NotificationPreferencesForm() {
             <tr className='border-b'>
               <th className='py-3 pr-4 text-left font-medium'>Type</th>
               {CHANNELS.map((ch) => (
-                <th key={ch} className='px-3 py-3 text-center font-medium'>
-                  {CHANNEL_LABELS[ch]}
+                <th key={ch} className='px-3 py-2 text-center font-medium'>
+                  <div className='flex flex-col items-center gap-1'>
+                    <span>{CHANNEL_LABELS[ch]}</span>
+                    {ch !== 'inapp' && (
+                      <Switch
+                        checked={allTypes.length > 0 && isAllEnabled(ch)}
+                        onCheckedChange={() => void toggleAllForChannel(ch)}
+                        disabled={
+                          saving ||
+                          allTypes.length === 0 ||
+                          (ch === 'sms' && hasPhone === false)
+                        }
+                        className='mx-auto scale-75'
+                        aria-label={`Toggle all ${CHANNEL_LABELS[ch]}`}
+                      />
+                    )}
+                  </div>
                 </th>
               ))}
             </tr>
@@ -172,7 +232,7 @@ export function NotificationPreferencesForm() {
             {allTypes.map((type) => (
               <tr key={type} className='border-b last:border-b-0'>
                 <td className='py-3 pr-4'>
-                  {NOTIFICATION_TYPE_LABELS[type] ?? type}
+                  {NOTIFICATION_TYPE_LABELS[type] ?? toTitleCase(type)}
                 </td>
                 {CHANNELS.map((ch) => (
                   <td key={ch} className='px-3 py-3 text-center'>

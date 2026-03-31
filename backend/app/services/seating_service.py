@@ -405,10 +405,11 @@ class SeatingService:
             has_table_assignment = my_guest.table_number is not None
 
             if has_table_assignment and my_guest.table_number is not None:
-                # Get all guests at the same table (excluding self)
+                # Get all guests at the same table (excluding self), eager-load user for profile pics
                 tablemates_query = (
                     select(RegistrationGuest)
                     .join(EventRegistration)
+                    .options(selectinload(RegistrationGuest.user))
                     .where(
                         EventRegistration.event_id == event_id,
                         RegistrationGuest.table_number == my_guest.table_number,
@@ -432,7 +433,9 @@ class SeatingService:
                             name=tm_guest.name,
                             bidder_number=tm_guest.bidder_number if tm_show_bidder_number else None,
                             company=None,  # TODO: Add company field to guest model if needed
-                            profile_image_url=None,  # TODO: Add profile image URL if available
+                            profile_image_url=tm_guest.user.profile_picture_url
+                            if tm_guest.user
+                            else None,
                         )
                     )
 

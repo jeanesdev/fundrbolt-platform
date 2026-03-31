@@ -4,14 +4,15 @@
  * Connects to the backend Socket.IO server and listens for new notifications.
  * Manages room joining, reconnection, and store/query cache syncing.
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { NotificationToast } from '@/components/notifications/NotificationToast'
 import type { NotificationData } from '@/services/notification-service'
-import { io, type Socket } from 'socket.io-client'
-import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
 import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { useNotificationStore } from '@/stores/notification-store'
-import { NotificationToast } from '@/components/notifications/NotificationToast'
+import { useQueryClient } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
+import { io, type Socket } from 'socket.io-client'
+import { toast } from 'sonner'
 
 /** Derive Socket.IO URL from API URL (strip /api/v1 suffix) */
 function getSocketUrl(): string {
@@ -50,31 +51,19 @@ export function useNotificationSocket(
   // Respect spoofed user ID for debug purposes
   const spoofedUserId = useDebugSpoofStore((s) => s.spoofedUser?.id)
 
-  const getToken = useCallback((): string | null => {
-    try {
-      const raw = localStorage.getItem('fundrbolt-auth-storage')
-      if (!raw) return null
-      const parsed = JSON.parse(raw) as {
-        state?: { accessToken?: string }
-      }
-      return parsed?.state?.accessToken ?? null
-    } catch {
-      return null
-    }
-  }, [])
+  // Subscribe to accessToken so the effect re-runs when auth completes
+  const accessToken = useAuthStore((s) => s.accessToken)
 
   useEffect(() => {
     if (!eventId || !enabled) return
-
-    const token = getToken()
-    if (!token) return
+    if (!accessToken) return
 
     const socketUrl = getSocketUrl()
 
     const socket = io(socketUrl, {
       path: '/ws/socket.io',
       transports: ['websocket', 'polling'],
-      auth: { token },
+      auth: { token: accessToken },
       query: spoofedUserId ? { spoof_user_id: spoofedUserId } : undefined,
       reconnection: true,
       reconnectionAttempts: Infinity,
@@ -147,8 +136,8 @@ export function useNotificationSocket(
   }, [
     eventId,
     enabled,
+    accessToken,
     spoofedUserId,
-    getToken,
     addNotification,
     incrementUnreadCount,
     setUnreadCount,

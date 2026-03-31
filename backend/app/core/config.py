@@ -96,6 +96,7 @@ class Settings(BaseSettings):
     # Celery
     celery_broker_url: str = "redis://localhost:6379/2"
     celery_result_backend: str = "redis://localhost:6379/3"
+    celery_task_always_eager: bool = True
 
     # CORS
     cors_origins: str = (

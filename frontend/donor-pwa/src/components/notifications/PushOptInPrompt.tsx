@@ -58,25 +58,46 @@ export function PushOptInPrompt() {
   }
 
   return (
-    <div className='border-primary/20 bg-primary/5 relative mx-4 mb-4 rounded-xl border p-4'>
+    <div
+      className='relative mx-4 mb-4 rounded-xl border p-4'
+      style={{
+        borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
+        backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.08)',
+      }}
+    >
       <button
         type='button'
         onClick={handleDismiss}
-        className='text-muted-foreground hover:bg-muted absolute top-2 right-2 rounded-full p-1'
+        className='text-muted-foreground hover:bg-muted absolute top-1 right-1 flex h-10 w-10 items-center justify-center rounded-full'
+        style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
         aria-label='Dismiss'
       >
         <X className='h-4 w-4' />
       </button>
 
       <div className='flex items-start gap-3'>
-        <div className='bg-primary/10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full'>
-          <Bell className='text-primary h-5 w-5' />
+        <div
+          className='flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full'
+          style={{
+            backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.14)',
+          }}
+        >
+          <Bell
+            className='h-5 w-5'
+            style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+          />
         </div>
         <div className='flex-1'>
-          <p className='text-foreground text-base font-bold leading-tight'>
+          <p
+            className='text-base leading-tight font-bold'
+            style={{ color: 'var(--event-text-on-background, #111827)' }}
+          >
             Stay in the loop!
           </p>
-          <p className='text-muted-foreground mt-0.5 text-xs'>
+          <p
+            className='mt-0.5 text-xs'
+            style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+          >
             Enable notifications for outbid alerts and auction updates.
           </p>
           <div className='mt-3 flex gap-2'>

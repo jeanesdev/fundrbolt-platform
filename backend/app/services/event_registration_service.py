@@ -9,6 +9,7 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.api.v1.event_media_urls import resolve_event_card_thumbnail_url
 from app.models.event import Event, EventStatus
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.npo import NPO
@@ -288,13 +289,9 @@ class EventRegistrationService:
             npo = event.npo
             npo_branding = npo.branding if npo else None
 
-            # Resolve thumbnail: first event media, then NPO logo
-            thumbnail_url: str | None = None
-            if event.media and len(event.media) > 0:
-                thumbnail_url = event.media[0].file_url
-            elif event.logo_url:
-                thumbnail_url = event.logo_url
-            elif npo_branding and npo_branding.logo_url:
+            # Resolve thumbnail with logo-first priority so layout maps never win.
+            thumbnail_url = resolve_event_card_thumbnail_url(event)
+            if not thumbnail_url and npo_branding and npo_branding.logo_url:
                 thumbnail_url = npo_branding.logo_url
 
             # Resolve colors with fallback chain: event → NPO → defaults

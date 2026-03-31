@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card';
 import { AuctionItemList } from '@/features/events/components/AuctionItemList';
 import { useAuctionItemStore } from '@/stores/auctionItemStore';
+import { useEventStore } from '@/stores/event-store';
 import type { AuctionItem } from '@/types/auction-item';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { ArrowLeft, Plus } from 'lucide-react';
@@ -25,18 +26,26 @@ export function AuctionItemsIndexPage() {
     from: '/_authenticated/events/$eventSlug/auction-items/',
   });
 
+  const { currentEvent, loadEventBySlug } = useEventStore();
   const { items, isLoading, error, fetchAuctionItems, deleteAuctionItem } =
     useAuctionItemStore();
 
+  // Resolve slug to event UUID if not already loaded
   useEffect(() => {
-    if (eventSlug) {
-      fetchAuctionItems(eventSlug).catch((err) => {
+    if (eventSlug && currentEvent?.slug !== eventSlug) {
+      loadEventBySlug(eventSlug).catch(() => { });
+    }
+  }, [eventSlug, currentEvent?.slug, loadEventBySlug]);
+
+  useEffect(() => {
+    if (currentEvent?.id) {
+      fetchAuctionItems(currentEvent.id).catch((err) => {
         toast.error(
           err instanceof Error ? err.message : 'Failed to load auction items'
         );
       });
     }
-  }, [eventSlug, fetchAuctionItems]);
+  }, [currentEvent?.id, fetchAuctionItems]);
 
   const handleAdd = () => {
     navigate({
@@ -69,7 +78,7 @@ export function AuctionItemsIndexPage() {
     }
 
     try {
-      await deleteAuctionItem(eventSlug, item.id);
+      await deleteAuctionItem(currentEvent?.id ?? eventSlug, item.id);
       toast.success('Auction item deleted successfully');
     } catch (err) {
       toast.error(

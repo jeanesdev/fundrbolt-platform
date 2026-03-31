@@ -103,10 +103,14 @@ interface AuthState {
 // 7 days in milliseconds (refresh token expiry)
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
 
+// Read refresh token synchronously at store creation so the axios 401
+// interceptor can use it before any React useEffect fires.
+const storedRefreshToken = getRefreshToken() || ''
+
 export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   accessToken: '',
-  refreshToken: '',
+  refreshToken: storedRefreshToken,
   isAuthenticated: false,
   isLoading: false,
   error: null,
@@ -159,6 +163,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       )
 
       const { access_token, refresh_token, user } = response.data
+
+      // Clear spoof state if user is not super_admin
+      if (user.role !== 'super_admin') {
+        useDebugSpoofStore.getState().reset()
+      }
 
       // Update store (setRefreshToken will handle localStorage)
       get().setRefreshToken(refresh_token)
@@ -286,6 +295,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       })
 
       const { access_token, user: userData } = response.data
+
+      // Clear spoof state if user is not super_admin
+      if (userData.role !== 'super_admin') {
+        useDebugSpoofStore.getState().reset()
+      }
 
       // Update store with new access token and user
       set({

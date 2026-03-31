@@ -61,6 +61,8 @@ class NotificationService:
         created_by: uuid.UUID | None = None,
         expires_at: datetime | None = None,
         sio: Any | None = None,
+        override_channels: list[DeliveryChannelEnum] | None = None,
+        dispatch_tasks: bool = True,
     ) -> Notification:
         """Create a notification with per-channel delivery status rows.
 
@@ -77,6 +79,13 @@ class NotificationService:
             created_by: Optional admin user who triggered this
             expires_at: Optional explicit expiry; defaults to +30 days
             sio: Optional Socket.IO server for real-time emit
+            override_channels: When provided (e.g. from an admin campaign),
+                use these channels instead of the user's notification preferences.
+            dispatch_tasks: When True (default), dispatch Celery tasks for
+                push/email/SMS delivery immediately.  Set to False when the
+                caller will commit and dispatch tasks itself (e.g. campaign
+                delivery) to avoid transaction-isolation issues with eager
+                Celery tasks.
 
         Returns:
             The created Notification instance.
@@ -99,18 +108,31 @@ class NotificationService:
         db.add(notification)
         await db.flush()
 
-        # Determine which channels the user wants
-        channels = await NotificationService._get_enabled_channels(db, user_id, notification_type)
+        # Use admin-specified channels if provided, otherwise check user prefs
+        if override_channels is not None:
+            channels = override_channels
+        else:
+            channels = await NotificationService._get_enabled_channels(
+                db, user_id, notification_type
+            )
 
         for channel in channels:
+            # INAPP is "delivered" the moment the row exists in the DB
+            is_inapp = channel == DeliveryChannelEnum.INAPP
             delivery = NotificationDeliveryStatus(
                 notification_id=notification.id,
                 channel=channel,
-                status=DeliveryStatusEnum.PENDING,
+                status=DeliveryStatusEnum.SENT if is_inapp else DeliveryStatusEnum.PENDING,
+                sent_at=datetime.now(UTC) if is_inapp else None,
             )
             db.add(delivery)
 
         await db.flush()
+
+        # Store resolved channels on the notification object so the caller
+        # can dispatch delivery tasks after committing (avoids transaction-
+        # isolation issues when Celery runs tasks eagerly).
+        notification._resolved_channels = channels  # type: ignore[attr-defined]
 
         # Emit via Socket.IO if available
         if sio is not None:
@@ -137,41 +159,11 @@ class NotificationService:
                     extra={"notification_id": str(notification.id), "room": room},
                 )
 
-        # Dispatch Celery task for push delivery if PUSH channel is enabled
-        if DeliveryChannelEnum.PUSH in channels:
-            try:
-                from app.tasks.notification_tasks import send_push_notification_task
-
-                send_push_notification_task.delay(str(notification.id))
-            except Exception:
-                logger.warning(
-                    "Failed to dispatch push notification task",
-                    extra={"notification_id": str(notification.id)},
-                )
-
-        # T074: Dispatch email notification task if EMAIL channel is enabled
-        if DeliveryChannelEnum.EMAIL in channels:
-            try:
-                from app.tasks.notification_tasks import send_email_notification_task
-
-                send_email_notification_task.delay(str(notification.id))
-            except Exception:
-                logger.warning(
-                    "Failed to dispatch email notification task",
-                    extra={"notification_id": str(notification.id)},
-                )
-
-        # T074: Dispatch SMS notification task if SMS channel is enabled
-        if DeliveryChannelEnum.SMS in channels:
-            try:
-                from app.tasks.notification_tasks import send_sms_notification_task
-
-                send_sms_notification_task.delay(str(notification.id))
-            except Exception:
-                logger.warning(
-                    "Failed to dispatch SMS notification task",
-                    extra={"notification_id": str(notification.id)},
-                )
+        # Dispatch Celery tasks for delivery channels.
+        # When dispatch_tasks=False the caller is responsible for dispatching
+        # after it commits the transaction (see dispatch_delivery_tasks).
+        if dispatch_tasks:
+            NotificationService.dispatch_delivery_tasks(str(notification.id), channels)
 
         logger.info(
             "Notification created",
@@ -184,6 +176,50 @@ class NotificationService:
         )
 
         return notification
+
+    @staticmethod
+    def dispatch_delivery_tasks(
+        notification_id: str,
+        channels: list[DeliveryChannelEnum],
+    ) -> None:
+        """Dispatch Celery delivery tasks for the given channels.
+
+        Call this AFTER the transaction containing the notification has been
+        committed so that the Celery workers (or eager-mode inline execution)
+        can see the rows.
+        """
+        if DeliveryChannelEnum.PUSH in channels:
+            try:
+                from app.tasks.notification_tasks import send_push_notification_task
+
+                send_push_notification_task.delay(notification_id)
+            except Exception:
+                logger.warning(
+                    "Failed to dispatch push notification task",
+                    extra={"notification_id": notification_id},
+                )
+
+        if DeliveryChannelEnum.EMAIL in channels:
+            try:
+                from app.tasks.notification_tasks import send_email_notification_task
+
+                send_email_notification_task.delay(notification_id)
+            except Exception:
+                logger.warning(
+                    "Failed to dispatch email notification task",
+                    extra={"notification_id": notification_id},
+                )
+
+        if DeliveryChannelEnum.SMS in channels:
+            try:
+                from app.tasks.notification_tasks import send_sms_notification_task
+
+                send_sms_notification_task.delay(notification_id)
+            except Exception:
+                logger.warning(
+                    "Failed to dispatch SMS notification task",
+                    extra={"notification_id": notification_id},
+                )
 
     @staticmethod
     async def list_notifications(

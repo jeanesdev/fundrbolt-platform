@@ -15,7 +15,7 @@ from sqlalchemy.pool import NullPool
 from app import models as app_models  # noqa: F401
 from app.core.config import get_settings
 from app.core.database import get_db
-from app.main import app
+from app.main import fastapi_app as app
 from app.models.base import Base
 from app.models.user import User
 

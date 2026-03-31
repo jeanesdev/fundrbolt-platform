@@ -3,6 +3,7 @@
 Manages push subscriptions and sends push notifications via the Web Push protocol.
 """
 
+import base64
 import json
 import uuid
 from datetime import UTC, datetime
@@ -19,6 +20,30 @@ from app.models.push_subscription import PushSubscription
 
 logger = get_logger(__name__)
 settings = get_settings()
+
+
+def _get_vapid_private_key_raw() -> str | None:
+    """Extract raw base64url-encoded VAPID private key.
+
+    pywebpush expects a raw 32-byte EC private key in base64url encoding,
+    but the key may be stored in PEM format. Detect and convert as needed.
+    """
+    key = settings.vapid_private_key
+    if not key:
+        return None
+
+    if key.strip().startswith("-----BEGIN"):
+        from cryptography.hazmat.primitives.serialization import load_pem_private_key
+
+        # Handle escaped newlines from env vars (\\n → \n)
+        pem_str = key.replace("\\n", "\n")
+        pem_key = load_pem_private_key(pem_str.encode(), password=None)
+        # Extract the raw 32-byte private scalar from the EC key
+        private_numbers = pem_key.private_numbers()  # type: ignore[union-attr]
+        raw_bytes = private_numbers.private_value.to_bytes(32, byteorder="big")  # type: ignore[union-attr]
+        return base64.urlsafe_b64encode(raw_bytes).rstrip(b"=").decode()
+
+    return key
 
 
 class PushNotificationService:
@@ -147,6 +172,11 @@ class PushNotificationService:
             logger.warning("VAPID keys not configured, skipping push notification")
             return False
 
+        vapid_key = _get_vapid_private_key_raw()
+        if not vapid_key:
+            logger.warning("Could not extract VAPID private key, skipping push notification")
+            return False
+
         # Load notification
         notif_stmt = select(Notification).where(Notification.id == notification_id)
         notif_result = await db.execute(notif_stmt)
@@ -191,6 +221,20 @@ class PushNotificationService:
                 "No active push subscriptions for user",
                 extra={"user_id": str(notification.user_id)},
             )
+            # Mark delivery as skipped so it doesn't stay pending forever
+            update_delivery_stmt = (
+                update(NotificationDeliveryStatus)
+                .where(
+                    NotificationDeliveryStatus.notification_id == notification_id,
+                    NotificationDeliveryStatus.channel == DeliveryChannelEnum.PUSH,
+                )
+                .values(
+                    status=DeliveryStatusEnum.SKIPPED,
+                    failure_reason="no_active_subscriptions",
+                )
+            )
+            await db.execute(update_delivery_stmt)
+            await db.commit()
             return False
 
         # Build push payload
@@ -228,7 +272,7 @@ class PushNotificationService:
                         },
                     },
                     data=payload,
-                    vapid_private_key=settings.vapid_private_key,
+                    vapid_private_key=vapid_key,
                     vapid_claims=vapid_claims,
                 )
                 any_success = True

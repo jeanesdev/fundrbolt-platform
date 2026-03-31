@@ -2,14 +2,20 @@
  * EngagementPanel Component
  * Displays auction item engagement data with tabs for Watchers, Views, and Bids
  */
-import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { auctionEngagementService } from '@/services/auctionEngagementService'
-import type { AdminEngagementResponse } from '@/types/auction-engagement'
-import { Clock, DollarSign, Eye, Heart, TrendingUp, Users } from 'lucide-react'
-import { useViewPreference } from '@/hooks/use-view-preference'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
@@ -20,7 +26,24 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { Textarea } from '@/components/ui/textarea'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import { auctionEngagementService } from '@/services/auctionEngagementService'
+import { eventNotificationService } from '@/services/eventNotificationService'
+import type { AdminEngagementResponse } from '@/types/auction-engagement'
+import { useQuery } from '@tanstack/react-query'
+import {
+  Bell,
+  Clock,
+  DollarSign,
+  Eye,
+  Heart,
+  Loader2,
+  TrendingUp,
+  Users,
+} from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 interface EngagementPanelProps {
   eventId: string
@@ -65,11 +88,51 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
   const [sortField, setSortField] = useState<SortField>('date')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [viewMode, setViewMode] = useViewPreference('engagement-watchers')
+  const [notifyDialogOpen, setNotifyDialogOpen] = useState(false)
+  const [notifyMessage, setNotifyMessage] = useState('')
+  const [notifyChannels, setNotifyChannels] = useState<Set<string>>(
+    new Set(['in_app'])
+  )
+  const [isSendingNotify, setIsSendingNotify] = useState(false)
 
   const { data, isLoading, error } = useQuery<AdminEngagementResponse>({
     queryKey: ['auction-engagement', eventId, itemId],
     queryFn: () => auctionEngagementService.getEngagement(eventId, itemId),
   })
+
+  const handleNotifyWatchers = async () => {
+    if (!notifyMessage.trim()) {
+      toast.error('Please enter a message')
+      return
+    }
+    setIsSendingNotify(true)
+    try {
+      await eventNotificationService.sendNotification(eventId, {
+        message: notifyMessage.trim(),
+        recipient_criteria: { type: 'item_watchers', item_id: itemId },
+        channels: Array.from(notifyChannels),
+      })
+      toast.success(
+        `Notification sent to ${data?.summary.total_watchers ?? 0} watcher(s)`
+      )
+      setNotifyMessage('')
+      setNotifyChannels(new Set(['in_app']))
+      setNotifyDialogOpen(false)
+    } catch {
+      toast.error('Failed to send notification')
+    } finally {
+      setIsSendingNotify(false)
+    }
+  }
+
+  const toggleNotifyChannel = (channel: string) => {
+    setNotifyChannels((prev) => {
+      const next = new Set(prev)
+      if (next.has(channel)) next.delete(channel)
+      else next.add(channel)
+      return next
+    })
+  }
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -257,6 +320,18 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
 
             {/* Watchers Tab */}
             <TabsContent value='watchers' className='mt-4'>
+              {sortedWatchers.length > 0 && (
+                <div className='mb-3 flex justify-end'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => setNotifyDialogOpen(true)}
+                  >
+                    <Bell className='mr-2 h-4 w-4' />
+                    Notify Watchers ({data.summary.total_watchers})
+                  </Button>
+                </div>
+              )}
               {sortedWatchers.length === 0 ? (
                 <div className='text-muted-foreground py-8 text-center'>
                   <Heart className='mx-auto mb-2 h-12 w-12 opacity-20' />
@@ -543,6 +618,78 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Notify Watchers Dialog */}
+      <Dialog open={notifyDialogOpen} onOpenChange={setNotifyDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Notify Watchers</DialogTitle>
+            <DialogDescription>
+              Send a notification to all {data.summary.total_watchers} user(s)
+              watching this item.
+            </DialogDescription>
+          </DialogHeader>
+          <div className='space-y-4'>
+            <div className='space-y-2'>
+              <Label htmlFor='watcher-message'>Message</Label>
+              <Textarea
+                id='watcher-message'
+                placeholder='Enter your message...'
+                value={notifyMessage}
+                onChange={(e) => setNotifyMessage(e.target.value.slice(0, 500))}
+                rows={4}
+              />
+              <p className='text-muted-foreground text-sm'>
+                {notifyMessage.length}/500 characters
+              </p>
+            </div>
+            <div className='space-y-2'>
+              <Label>Channels</Label>
+              <div className='flex flex-wrap gap-4'>
+                <div className='flex items-center gap-2'>
+                  <Checkbox id='wch-in_app' checked disabled />
+                  <Label htmlFor='wch-in_app' className='text-muted-foreground'>
+                    In-app
+                  </Label>
+                </div>
+                {['push', 'email', 'sms'].map((ch) => (
+                  <div key={ch} className='flex items-center gap-2'>
+                    <Checkbox
+                      id={`wch-${ch}`}
+                      checked={notifyChannels.has(ch)}
+                      onCheckedChange={() => toggleNotifyChannel(ch)}
+                    />
+                    <Label htmlFor={`wch-${ch}`} className='capitalize'>
+                      {ch === 'sms' ? 'SMS' : ch}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => setNotifyDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleNotifyWatchers}
+              disabled={isSendingNotify || !notifyMessage.trim()}
+            >
+              {isSendingNotify ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Sending...
+                </>
+              ) : (
+                'Send Notification'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

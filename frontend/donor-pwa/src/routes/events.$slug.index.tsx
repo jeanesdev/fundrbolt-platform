@@ -1,6 +1,10 @@
 import { CountdownTimer } from '@/components/event-home/CountdownTimer'
 import { EventDetails } from '@/components/event-home/EventDetails'
-import { EventHeroSection, type EventStatus, type HeroTransitionStyle } from '@/components/event-home/EventHeroSection'
+import {
+  EventHeroSection,
+  type EventStatus,
+  type HeroTransitionStyle,
+} from '@/components/event-home/EventHeroSection'
 import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Button } from '@/components/ui/button'
@@ -14,10 +18,18 @@ import { getMyInventory } from '@/lib/api/ticket-purchases'
 import apiClient from '@/lib/axios'
 import { hasValidRefreshToken } from '@/lib/storage/tokens'
 import { useAuthStore } from '@/stores/auth-store'
+import { type EventContextOption } from '@/stores/event-context-store'
 import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, CalendarPlus, ImageOff, Loader2, Ticket } from 'lucide-react'
+import {
+  ArrowLeft,
+  CalendarPlus,
+  Home,
+  ImageOff,
+  Loader2,
+  Ticket,
+} from 'lucide-react'
 import { useCallback, useEffect } from 'react'
 
 interface PublicAuctionPreviewItem {
@@ -49,11 +61,19 @@ function RouteComponent() {
   const hasRefreshToken = hasValidRefreshToken()
   const { applyBranding } = useEventBranding()
   const { slug } = Route.useParams()
-  const { availableEvents, isLoading: eventsLoading } = useEventContext()
+  const {
+    availableEvents,
+    isLoading: eventsLoading,
+    setAvailableEvents,
+  } = useEventContext()
 
   // Always fetch public event data — needed for both unauthenticated and
   // the "not registered" authenticated view.
-  const { data: event, isLoading, error } = useQuery({
+  const {
+    data: event,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['event', slug],
     queryFn: () => getEventBySlug(slug),
     enabled: !!slug,
@@ -68,19 +88,21 @@ function RouteComponent() {
     refetchOnWindowFocus: false,
   })
 
-  const { data: registrationsData, isLoading: isLoadingRegistrations } = useQuery({
-    queryKey: ['registrations', 'events-with-branding'],
-    queryFn: getRegisteredEventsWithBranding,
-    staleTime: 5 * 60 * 1000,
-    enabled: isAuthenticated && !isRestoringAuth,
-  })
+  const { data: registrationsData, isLoading: isLoadingRegistrations } =
+    useQuery({
+      queryKey: ['registrations', 'events-with-branding'],
+      queryFn: getRegisteredEventsWithBranding,
+      staleTime: 5 * 60 * 1000,
+      enabled: isAuthenticated && !isRestoringAuth,
+    })
 
-  const { data: ticketInventoryData, isLoading: isLoadingTicketInventory } = useQuery({
-    queryKey: ['ticket-inventory', 'event-context'],
-    queryFn: getMyInventory,
-    staleTime: 5 * 60 * 1000,
-    enabled: isAuthenticated && !isRestoringAuth,
-  })
+  const { data: ticketInventoryData, isLoading: isLoadingTicketInventory } =
+    useQuery({
+      queryKey: ['ticket-inventory', 'event-context'],
+      queryFn: getMyInventory,
+      staleTime: 5 * 60 * 1000,
+      enabled: isAuthenticated && !isRestoringAuth,
+    })
 
   const { data: auctionPreviewItems } = useQuery({
     queryKey: ['event', event?.id, 'auction-preview'],
@@ -122,6 +144,95 @@ function RouteComponent() {
     }
   }, [event, applyBranding])
 
+  // Populate the event context store from registration/ticket data when this
+  // route is rendered outside the authenticated layout (e.g. direct URL
+  // navigation). This ensures EventHomePage and ProfileDropdown have access
+  // to the full available events list.
+  useEffect(() => {
+    if (!isAuthenticated) return
+    if (!registrationsData?.events && !ticketInventoryData?.events) return
+
+    // Skip if the store already has the current event as registered
+    if (availableEvents.some((e) => e.slug === slug && e.is_registered)) return
+
+    const eventMap = new Map<string, EventContextOption>()
+
+    // Preserve existing entries (e.g. admin-access data from authenticated layout)
+    availableEvents.forEach((ev) => eventMap.set(ev.id, { ...ev }))
+
+    if (registrationsData?.events) {
+      registrationsData.events.forEach(
+        (ev: {
+          id: string
+          name: string
+          slug: string
+          event_datetime: string
+          npo_name?: string
+          thumbnail_url?: string | null
+        }) => {
+          const existing = eventMap.get(ev.id)
+          if (existing) {
+            existing.is_registered = true
+          } else {
+            eventMap.set(ev.id, {
+              id: ev.id,
+              name: ev.name,
+              slug: ev.slug,
+              event_date: ev.event_datetime,
+              npo_name: ev.npo_name,
+              logo_url: ev.thumbnail_url,
+              is_registered: true,
+              has_ticket_access: false,
+              has_admin_access: false,
+            })
+          }
+        }
+      )
+    }
+
+    if (ticketInventoryData?.events) {
+      ticketInventoryData.events.forEach(
+        (ev: {
+          event_id: string
+          event_name: string
+          event_slug: string
+          event_date?: string
+        }) => {
+          const existing = eventMap.get(ev.event_id)
+          if (existing) {
+            existing.has_ticket_access = true
+          } else {
+            eventMap.set(ev.event_id, {
+              id: ev.event_id,
+              name: ev.event_name,
+              slug: ev.event_slug,
+              event_date: ev.event_date,
+              is_registered: false,
+              has_ticket_access: true,
+              has_admin_access: false,
+            })
+          }
+        }
+      )
+    }
+
+    const events = Array.from(eventMap.values()).sort((a, b) => {
+      if (!a.event_date && !b.event_date) return 0
+      if (!a.event_date) return 1
+      if (!b.event_date) return -1
+      return new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
+    })
+
+    setAvailableEvents(events)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isAuthenticated,
+    registrationsData,
+    ticketInventoryData,
+    slug,
+    setAvailableEvents,
+  ])
+
   // Must be declared before any conditional returns to satisfy Rules of Hooks.
   // Uses optional chaining on `event` since it may be undefined during loading.
   const handleAddToCalendar = useCallback(() => {
@@ -134,9 +245,17 @@ function RouteComponent() {
         .toISOString()
         .replace(/[-:]/g, '')
         .replace(/\.\d{3}/, '')
-    const locationParts = [event.venue_name, event.venue_address, event.venue_city, event.venue_state, event.venue_zip].filter(Boolean)
+    const locationParts = [
+      event.venue_name,
+      event.venue_address,
+      event.venue_city,
+      event.venue_state,
+      event.venue_zip,
+    ].filter(Boolean)
     const location = locationParts.join(', ')
-    const description = (event.description ?? '').replace(/[#*_~`>\-|]/g, '').slice(0, 500)
+    const description = (event.description ?? '')
+      .replace(/[#*_~`>\-|]/g, '')
+      .slice(0, 500)
     const ics = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
@@ -172,17 +291,19 @@ function RouteComponent() {
     (eventOption) => eventOption.slug === slug && eventOption.is_registered
   )
   const isRegisteredFromQuery =
-    registrationsData?.events?.some((registeredEvent) => registeredEvent.slug === slug) ??
-    false
+    registrationsData?.events?.some(
+      (registeredEvent) => registeredEvent.slug === slug
+    ) ?? false
   const hasTicketAccessFromQuery =
-    ticketInventoryData?.events?.some((inventoryEvent) => inventoryEvent.event_slug === slug) ??
-    false
+    ticketInventoryData?.events?.some(
+      (inventoryEvent) => inventoryEvent.event_slug === slug
+    ) ?? false
 
   if (isAuthenticated) {
     if (eventsLoading || isLoadingRegistrations || isLoadingTicketInventory) {
       return (
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className='flex min-h-screen items-center justify-center'>
+          <Loader2 className='text-primary h-8 w-8 animate-spin' />
         </div>
       )
     }
@@ -198,39 +319,45 @@ function RouteComponent() {
 
   if (isRestoringAuth) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className='flex min-h-screen items-center justify-center'>
+        <Loader2 className='text-primary h-8 w-8 animate-spin' />
       </div>
     )
   }
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className='flex min-h-screen items-center justify-center'>
+        <Loader2 className='text-primary h-8 w-8 animate-spin' />
       </div>
     )
   }
 
   if (error || !event) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+      <div className='flex min-h-screen flex-col items-center justify-center p-4'>
+        {isAuthenticated && (
+          <div className='fixed top-3 right-3 z-50'>
+            <ProfileDropdown />
+          </div>
+        )}
+        <Card className='w-full max-w-md'>
           <CardHeader>
-            <CardTitle className="text-destructive">Event Not Found</CardTitle>
+            <CardTitle className='text-destructive'>Event Not Found</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              We couldn't find the event you're looking for. It may have been removed or the link may be invalid.
+          <CardContent className='space-y-4'>
+            <p className='text-muted-foreground text-sm'>
+              We couldn't find the event you're looking for. It may have been
+              removed or the link may be invalid.
             </p>
             {import.meta.env.DEV && error && (
-              <div className="mt-4 p-3 bg-muted rounded text-xs font-mono break-words">
-                <p className="font-semibold mb-1">Error Details (Dev Only):</p>
+              <div className='bg-muted mt-4 rounded p-3 font-mono text-xs break-words'>
+                <p className='mb-1 font-semibold'>Error Details (Dev Only):</p>
                 <p>{String(error)}</p>
               </div>
             )}
-            <Button onClick={() => navigate({ to: '/' })} className="w-full">
-              <ArrowLeft className="w-4 h-4 mr-2" />
+            <Button onClick={() => navigate({ to: '/' })} className='w-full'>
+              <ArrowLeft className='mr-2 h-4 w-4' />
               Go Back Home
             </Button>
           </CardContent>
@@ -243,11 +370,14 @@ function RouteComponent() {
   const getTaggedImageUrls = (tag: EventMediaUsageTag) => {
     if (!event.media?.length) return []
     return event.media
-      .filter((m) => m.media_type === 'image' && m.usage_tag === tag && !!m.file_url)
+      .filter(
+        (m) => m.media_type === 'image' && m.usage_tag === tag && !!m.file_url
+      )
       .map((m) => m.file_url)
   }
 
-  const getTaggedImageUrl = (tag: EventMediaUsageTag) => getTaggedImageUrls(tag)[0] ?? null
+  const getTaggedImageUrl = (tag: EventMediaUsageTag) =>
+    getTaggedImageUrls(tag)[0] ?? null
 
   const getHeroImageUrls = () => {
     const tagged = getTaggedImageUrls('main_event_page_hero')
@@ -279,7 +409,8 @@ function RouteComponent() {
     if (taggedNpo) return taggedNpo
     if (!event.media?.length) return null
     const logo = event.media.find(
-      (m) => m.media_type === 'image' && m.file_name.toLowerCase().includes('logo')
+      (m) =>
+        m.media_type === 'image' && m.file_name.toLowerCase().includes('logo')
     )
     return logo?.file_url || null
   }
@@ -290,7 +421,8 @@ function RouteComponent() {
 
   const getEventStatus = (): EventStatus => {
     if (isPast) return 'past'
-    if (event.status === 'active' && eventDate && eventDate <= now) return 'live'
+    if (event.status === 'active' && eventDate && eventDate <= now)
+      return 'live'
     return 'upcoming'
   }
   const eventStatus = getEventStatus()
@@ -320,12 +452,22 @@ function RouteComponent() {
   )
 
   return (
-    <div className='min-h-screen' style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}>
-      {/* Profile menu overlay for authenticated users (not registered for this event) */}
-      {isAuthenticated && (
+    <div
+      className='min-h-screen'
+      style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}
+    >
+      {/* Profile menu overlay for authenticated users; Home button for anonymous visitors */}
+      {isAuthenticated ? (
         <div className='fixed top-3 right-3 z-50'>
           <ProfileDropdown />
         </div>
+      ) : (
+        <Link
+          to='/'
+          className='fixed top-3 right-3 z-50 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md'
+        >
+          <Home className='size-4' />
+        </Link>
       )}
       <EventHeroSection
         eventName={event.name}
@@ -340,7 +482,7 @@ function RouteComponent() {
         venueMapLink={venueMapLink}
       />
 
-      <div className='px-4 py-4 space-y-5'>
+      <div className='space-y-5 px-4 py-4'>
         {/* Countdown — show if event is in the future */}
         {countdownTargetDate && !isPast && (
           <div className='space-y-3'>
@@ -351,7 +493,7 @@ function RouteComponent() {
             />
             <button
               onClick={handleAddToCalendar}
-              className='flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white/80 px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm backdrop-blur-sm transition-all active:scale-[0.98] hover:bg-white hover:shadow-md'
+              className='flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white/80 px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm backdrop-blur-sm transition-all hover:bg-white hover:shadow-md active:scale-[0.98]'
             >
               <CalendarPlus className='h-4 w-4' />
               Add to Calendar
@@ -378,13 +520,16 @@ function RouteComponent() {
         ) : isAuthenticated ? (
           // Authenticated but not registered — show ticket purchase CTA
           <div
-            className='rounded-2xl p-5 text-center space-y-3'
+            className='space-y-3 rounded-2xl p-5 text-center'
             style={{
               background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246) / 0.08) 0%, rgb(var(--event-secondary, 147, 51, 234) / 0.08) 100%)`,
               borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
             }}
           >
-            <p className='text-sm font-medium' style={{ color: 'var(--event-text-on-background, #374151)' }}>
+            <p
+              className='text-sm font-medium'
+              style={{ color: 'var(--event-text-on-background, #374151)' }}
+            >
               {canPurchaseAdditionalTickets
                 ? 'You can purchase more tickets for this event.'
                 : 'You are not yet registered for this event.'}
@@ -392,7 +537,7 @@ function RouteComponent() {
             {/* Link to ticket purchase page */}
             <Link to='/events/$slug/tickets' params={{ slug }}>
               <button
-                className='w-full rounded-2xl p-4 flex items-center justify-center gap-3 transition-all active:scale-[0.98] hover:shadow-md'
+                className='flex w-full items-center justify-center gap-3 rounded-2xl p-4 transition-all hover:shadow-md active:scale-[0.98]'
                 style={{
                   background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
                 }}
@@ -410,19 +555,21 @@ function RouteComponent() {
           <div className='space-y-4'>
             <Link to='/sign-in' className='block'>
               <button
-                className='w-full rounded-2xl p-4 text-left transition-all active:scale-[0.98] hover:shadow-md'
+                className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'
                 style={{
                   background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
                 }}
               >
-                <p className='text-lg font-black text-white'>Login to Register</p>
-                <p className='text-sm text-white/80'>Already have an account? Sign in to register →</p>
+                <p className='text-lg font-black text-white'>
+                  Login to Register
+                </p>
+                <p className='text-sm text-white/80'>
+                  Already have an account? Sign in to register →
+                </p>
               </button>
             </Link>
             <Link to='/sign-up' className='block'>
-              <button
-                className='w-full rounded-2xl border-2 border-gray-300 bg-white p-4 text-left transition-all active:scale-[0.98] hover:shadow-md'
-              >
+              <button className='w-full rounded-2xl border-2 border-gray-300 bg-white p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'>
                 <p className='text-lg font-black text-gray-900'>
                   Create Account
                 </p>
@@ -444,16 +591,18 @@ function RouteComponent() {
           >
             <div className='mb-3'>
               <h3
-                className='text-xs font-bold uppercase tracking-widest'
+                className='text-xs font-bold tracking-widest uppercase'
                 style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
               >
-                Auction Preview
+                {isPast ? 'Auction Review' : 'Auction Preview'}
               </h3>
               <p
                 className='mt-1 text-sm'
                 style={{ color: 'var(--event-text-on-background, #374151)' }}
               >
-                Preview a few items available at this event.
+                {isPast
+                  ? 'A look back at items from this event.'
+                  : 'Preview a few items available at this event.'}
               </p>
             </div>
 
@@ -463,7 +612,8 @@ function RouteComponent() {
                   key={item.id}
                   className='w-44 shrink-0 overflow-hidden rounded-2xl border bg-white/90 shadow-sm'
                   style={{
-                    borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.16)',
+                    borderColor:
+                      'rgb(var(--event-primary, 59, 130, 246) / 0.16)',
                   }}
                 >
                   <div className='bg-muted relative aspect-[4/3] overflow-hidden'>
@@ -483,7 +633,9 @@ function RouteComponent() {
                   <div className='p-3'>
                     <p
                       className='line-clamp-2 text-sm font-semibold'
-                      style={{ color: 'var(--event-text-on-background, #111827)' }}
+                      style={{
+                        color: 'var(--event-text-on-background, #111827)',
+                      }}
                     >
                       {item.title}
                     </p>
@@ -507,7 +659,9 @@ function RouteComponent() {
             attire={event.attire}
             contactEmail={event.primary_contact_email}
             contactPhone={event.primary_contact_phone}
-            eventWebsite={event.links?.find((l) => l.link_type === 'website')?.url}
+            eventWebsite={
+              event.links?.find((l) => l.link_type === 'website')?.url
+            }
             isPast={isPast}
             isUpcoming={!isPast}
           />
@@ -523,7 +677,7 @@ function RouteComponent() {
             }}
           >
             <h3
-              className='mb-2 text-xs font-bold uppercase tracking-widest'
+              className='mb-2 text-xs font-bold tracking-widest uppercase'
               style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
             >
               About This Event

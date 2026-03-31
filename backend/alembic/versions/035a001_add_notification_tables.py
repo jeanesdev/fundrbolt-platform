@@ -36,7 +36,7 @@ def upgrade() -> None:
         "welcome",
         "custom",
         name="notification_type_enum",
-        create_type=True,
+        create_type=False,
     )
     notification_type_enum.create(op.get_bind(), checkfirst=True)
 
@@ -46,7 +46,7 @@ def upgrade() -> None:
         "high",
         "urgent",
         name="notification_priority_enum",
-        create_type=True,
+        create_type=False,
     )
     notification_priority_enum.create(op.get_bind(), checkfirst=True)
 
@@ -56,7 +56,7 @@ def upgrade() -> None:
         "email",
         "sms",
         name="delivery_channel_enum",
-        create_type=True,
+        create_type=False,
     )
     delivery_channel_enum.create(op.get_bind(), checkfirst=True)
 
@@ -67,7 +67,7 @@ def upgrade() -> None:
         "failed",
         "skipped",
         name="delivery_status_enum",
-        create_type=True,
+        create_type=False,
     )
     delivery_status_enum.create(op.get_bind(), checkfirst=True)
 
@@ -77,7 +77,7 @@ def upgrade() -> None:
         "sent",
         "failed",
         name="campaign_status_enum",
-        create_type=True,
+        create_type=False,
     )
     campaign_status_enum.create(op.get_bind(), checkfirst=True)
 

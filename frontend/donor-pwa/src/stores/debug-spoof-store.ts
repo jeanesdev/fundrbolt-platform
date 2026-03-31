@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+import { useAuthStore } from './auth-store'
+
 const STORAGE_KEY = 'fundrbolt-debug-spoof-storage'
 
 interface SpoofedUser {
@@ -41,6 +43,11 @@ export const useDebugSpoofStore = create<DebugSpoofState>()(
         }),
 
       getEffectiveNowMs: () => {
+        // Only super_admin users should ever see spoofed time
+        const user = useAuthStore.getState().user
+        if (user?.role !== 'super_admin') {
+          return Date.now()
+        }
         const { timeBaseRealMs, timeBaseSpoofMs } = get()
         if (timeBaseRealMs === null || timeBaseSpoofMs === null) {
           return Date.now()
@@ -50,6 +57,10 @@ export const useDebugSpoofStore = create<DebugSpoofState>()(
       },
 
       getEffectiveNowIso: () => {
+        const user = useAuthStore.getState().user
+        if (user?.role !== 'super_admin') {
+          return null
+        }
         const { timeBaseSpoofMs } = get()
         if (timeBaseSpoofMs === null) {
           return null

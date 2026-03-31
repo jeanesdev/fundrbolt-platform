@@ -8,7 +8,7 @@
 import { SignOutDialog } from '@/components/sign-out-dialog'
 import useDialogState from '@/hooks/use-dialog-state'
 import { Link, useLocation } from '@tanstack/react-router'
-import { CreditCard, KeyRound, LogOut, Shield, UserCog } from 'lucide-react'
+import { Bell, CreditCard, KeyRound, LogOut, Shield, UserCog } from 'lucide-react'
 
 function NavTab({
   to,
@@ -27,7 +27,7 @@ function NavTab({
       className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'
         }`}
     >
-      <Icon className='h-5 w-5' />
+      <Icon className='h-6 w-6' />
       <span>{label}</span>
     </Link>
   )
@@ -39,7 +39,12 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className='fixed bottom-0 left-0 right-0 z-50 flex h-16 items-stretch border-t bg-background safe-area-bottom'>
+      <nav
+        className='bg-background fixed bottom-0 left-0 right-0 z-50 flex h-20 items-stretch border-t'
+        style={{
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+      >
         <NavTab
           to='/settings'
           icon={UserCog}
@@ -51,6 +56,12 @@ export function BottomNav() {
           icon={KeyRound}
           label='Password'
           isActive={pathname === '/settings/password'}
+        />
+        <NavTab
+          to='/settings/notifications'
+          icon={Bell}
+          label='Alerts'
+          isActive={pathname === '/settings/notifications'}
         />
         <NavTab
           to='/settings/consent'

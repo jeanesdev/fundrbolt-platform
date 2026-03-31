@@ -30,6 +30,23 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 import { markProfileSetupSeen } from './utils'
 
+const PENDING_COMMS_EMAIL_STORAGE_KEY = 'pending_comms_email_verification'
+
+function getPendingCommsEmail(): string | null {
+  if (typeof window === 'undefined') return null
+  return window.sessionStorage.getItem(PENDING_COMMS_EMAIL_STORAGE_KEY)
+}
+
+function setPendingCommsEmail(email: string): void {
+  if (typeof window === 'undefined') return
+  window.sessionStorage.setItem(PENDING_COMMS_EMAIL_STORAGE_KEY, email)
+}
+
+function clearPendingCommsEmail(): void {
+  if (typeof window === 'undefined') return
+  window.sessionStorage.removeItem(PENDING_COMMS_EMAIL_STORAGE_KEY)
+}
+
 // ---------------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------------
@@ -115,8 +132,10 @@ type CommsEmailState =
   | { step: 'verified'; email: string }
 
 function CommunicationsEmailSection({
+  initialPendingEmail,
   onVerified,
 }: {
+  initialPendingEmail?: string | null
   onVerified?: () => void
 }) {
   const user = useAuthStore((state) => state.user)
@@ -126,14 +145,17 @@ function CommunicationsEmailSection({
     user?.communications_email_verified && user.communications_email
       ? user.communications_email
       : null
+  const restoredPendingEmail = initialPendingEmail || getPendingCommsEmail()
 
   const [state, setState] = useState<CommsEmailState>(
     initialVerified
       ? { step: 'verified', email: initialVerified }
-      : { step: 'idle', verifiedEmail: null }
+      : restoredPendingEmail
+        ? { step: 'otp', email: restoredPendingEmail }
+        : { step: 'idle', verifiedEmail: null }
   )
   const [inputEmail, setInputEmail] = useState(
-    user?.communications_email || user?.email || ''
+    restoredPendingEmail || user?.communications_email || user?.email || ''
   )
   const [otp, setOtp] = useState('')
   const [otpError, setOtpError] = useState('')
@@ -143,9 +165,11 @@ function CommunicationsEmailSection({
       apiClient.post('/users/me/communications-email/request-verification', {
         email,
       }),
-    onSuccess: () => {
-      setState({ step: 'otp', email: inputEmail })
-      toast.success(`Verification code sent to ${inputEmail}`)
+    onSuccess: (_response, email) => {
+      setPendingCommsEmail(email)
+      setState({ step: 'otp', email })
+      setInputEmail(email)
+      toast.success(`Verification code sent to ${email}`)
     },
     onError: () =>
       toast.error('Failed to send verification code. Please try again.'),
@@ -156,6 +180,7 @@ function CommunicationsEmailSection({
       apiClient.post('/users/me/communications-email/confirm', { otp: code }),
     onSuccess: () => {
       if (state.step === 'otp') {
+        clearPendingCommsEmail()
         setState({ step: 'verified', email: state.email })
         setUser(
           user
@@ -192,8 +217,11 @@ function CommunicationsEmailSection({
           type='button'
           className='text-primary text-xs underline'
           onClick={() => {
+            clearPendingCommsEmail()
             setState({ step: 'entering', email: state.email })
             setInputEmail(state.email)
+            setOtp('')
+            setOtpError('')
           }}
         >
           Change
@@ -235,10 +263,17 @@ function CommunicationsEmailSection({
           </Button>
         </div>
         {otpError && <p className='text-destructive text-xs'>{otpError}</p>}
+        <p className='text-muted-foreground text-xs'>
+          You can enter the code here now, or come back later from the link in
+          the email.
+        </p>
         <button
           type='button'
           className='text-primary text-xs underline'
-          onClick={() => requestMutation.mutate(state.email)}
+          onClick={() => {
+            setPendingCommsEmail(state.email)
+            requestMutation.mutate(state.email)
+          }}
           disabled={requestMutation.isPending}
         >
           Resend code
@@ -286,7 +321,14 @@ function CommunicationsEmailSection({
 export function CompleteProfile() {
   const navigate = useNavigate()
   const search = useSearch({ from: '/(auth)/complete-profile' })
-  const redirectTo = (search as { redirect?: string }).redirect ?? '/home'
+  const completeProfileSearch = search as {
+    redirect?: string
+    step?: 'otp'
+    email?: string
+  }
+  const redirectTo = completeProfileSearch.redirect ?? '/home'
+  const pendingCommsEmailFromSearch =
+    completeProfileSearch.step === 'otp' ? completeProfileSearch.email : null
   const user = useAuthStore((state) => state.user)
   const setUser = useAuthStore((state) => state.setUser)
   const isLoading = useAuthStore((state) => state.isLoading)
@@ -438,7 +480,9 @@ export function CompleteProfile() {
     `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase()
 
   // ── Step 1: verify communications email ──────────────────────────────────
-  if (profileStep === 'email') {
+  // Skip the email step if the user's email was already verified (handles the
+  // case where `user` was null at mount so `useState` defaulted to 'email').
+  if (profileStep === 'email' && !alreadyVerified) {
     return (
       <AuthLayout>
         <Card className='gap-4'>
@@ -454,6 +498,7 @@ export function CompleteProfile() {
           <CardContent>
             <div className='space-y-4'>
               <CommunicationsEmailSection
+                initialPendingEmail={pendingCommsEmailFromSearch}
                 onVerified={() => setProfileStep('profile')}
               />
             </div>

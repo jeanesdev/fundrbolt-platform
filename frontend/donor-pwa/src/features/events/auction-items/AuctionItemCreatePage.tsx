@@ -13,13 +13,14 @@ import {
 } from '@/components/ui/card';
 import { AuctionItemForm } from '@/features/events/components/AuctionItemForm';
 import { useAuctionItemStore } from '@/stores/auctionItemStore';
+import { useEventStore } from '@/stores/event-store';
 import type {
   AuctionItemCreate,
   AuctionItemUpdate,
 } from '@/types/auction-item';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 export function AuctionItemCreatePage() {
@@ -29,7 +30,17 @@ export function AuctionItemCreatePage() {
   });
 
   const { createAuctionItem } = useAuctionItemStore();
+  const { currentEvent, loadEventBySlug } = useEventStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Resolve slug to event UUID if not already loaded
+  useEffect(() => {
+    if (eventSlug && currentEvent?.slug !== eventSlug) {
+      loadEventBySlug(eventSlug).catch(() => { });
+    }
+  }, [eventSlug, currentEvent?.slug, loadEventBySlug]);
+
+  const eventId = currentEvent?.id ?? eventSlug;
 
   const handleSubmit = async (
     data: AuctionItemCreate | AuctionItemUpdate
@@ -37,7 +48,7 @@ export function AuctionItemCreatePage() {
     setIsSubmitting(true);
     try {
       const createdItem = await createAuctionItem(
-        eventSlug,
+        eventId,
         data as AuctionItemCreate
       );
 
@@ -94,7 +105,7 @@ export function AuctionItemCreatePage() {
         </CardHeader>
         <CardContent>
           <AuctionItemForm
-            eventId={eventSlug}
+            eventId={eventId}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             isSubmitting={isSubmitting}
