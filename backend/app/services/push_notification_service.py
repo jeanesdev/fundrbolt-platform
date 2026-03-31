@@ -262,8 +262,17 @@ class PushNotificationService:
         any_success = False
 
         for subscription in subscriptions:
+            endpoint_domain = subscription.endpoint.split("/")[2] if "/" in subscription.endpoint else "unknown"
+            logger.info(
+                "Sending push to subscription",
+                extra={
+                    "subscription_id": str(subscription.id),
+                    "endpoint_domain": endpoint_domain,
+                    "notification_id": str(notification_id),
+                },
+            )
             try:
-                webpush(
+                resp = webpush(
                     subscription_info={
                         "endpoint": subscription.endpoint,
                         "keys": {
@@ -277,6 +286,15 @@ class PushNotificationService:
                     headers={
                         "TTL": "86400",
                         "Urgency": "high",
+                    },
+                )
+                resp_status = resp.status_code if resp else "no-response"
+                logger.info(
+                    "Push sent successfully",
+                    extra={
+                        "subscription_id": str(subscription.id),
+                        "endpoint_domain": endpoint_domain,
+                        "status_code": resp_status,
                     },
                 )
                 any_success = True

@@ -1,14 +1,16 @@
 /// <reference lib="webworker" />
-import { ExpirationPlugin } from 'workbox-expiration'
-import { precacheAndRoute } from 'workbox-precaching'
-import { registerRoute } from 'workbox-routing'
-import {
-  CacheFirst,
-  NetworkFirst,
-  StaleWhileRevalidate,
-} from 'workbox-strategies'
+// NOTE: Workbox modules are loaded via dynamic import() below so that when iOS
+// cold-starts this service worker to handle a push event, the push listener is
+// available immediately — no static imports need to resolve first.  Static ES
+// imports would block ALL code execution until every module (fetched through
+// ngrok in dev) is loaded, causing iOS to time-out and silently drop the push.
 
 declare const self: ServiceWorkerGlobalScope
+
+// ──────────────────────────────────────────────────────────────
+// Push / notification handlers — MUST be registered synchronously
+// before any async work so iOS can dispatch events immediately.
+// ──────────────────────────────────────────────────────────────
 
 // Claim clients immediately on activation so push subscriptions
 // are associated with the active SW that will receive push events.
@@ -24,61 +26,18 @@ self.addEventListener('message', (event) => {
   }
 })
 
-// Precache static assets injected by vite-plugin-pwa
-precacheAndRoute(self.__WB_MANIFEST)
-
-// Runtime caching strategies
-
-// Images: CacheFirst (30 days)
-registerRoute(
-  ({ request }) => request.destination === 'image',
-  new CacheFirst({
-    cacheName: 'images-cache',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 200,
-        maxAgeSeconds: 30 * 24 * 60 * 60,
-        purgeOnQuotaError: true,
-      }),
-    ],
-  })
-)
-
-// API: NetworkFirst (5s timeout, 24h cache)
-registerRoute(
-  ({ url }) => url.pathname.startsWith('/api/'),
-  new NetworkFirst({
-    cacheName: 'api-cache',
-    networkTimeoutSeconds: 5,
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 100,
-        maxAgeSeconds: 24 * 60 * 60,
-        purgeOnQuotaError: true,
-      }),
-    ],
-  })
-)
-
-// Google Fonts: StaleWhileRevalidate
-registerRoute(
-  ({ url }) =>
-    url.origin === 'https://fonts.googleapis.com' ||
-    url.origin === 'https://fonts.gstatic.com',
-  new StaleWhileRevalidate({
-    cacheName: 'google-fonts-cache',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 30,
-      }),
-    ],
-  })
-)
-
 // Push notification handler
 self.addEventListener('push', (event: PushEvent) => {
   // eslint-disable-next-line no-console
   console.log('[SW] Push event received')
+
+  // Beacon to backend so we can confirm push events fire on any device
+  fetch('/api/v1/notifications/push/beacon?source=sw-push', {
+    method: 'POST',
+    keepalive: true,
+  }).catch(() => {
+    /* ignore — best-effort diagnostic */
+  })
 
   if (!event.data) {
     // eslint-disable-next-line no-console
@@ -153,4 +112,73 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
         return self.clients.openWindow(deepLink)
       })
   )
+})
+
+// ──────────────────────────────────────────────────────────────
+// Workbox caching — loaded asynchronously via dynamic import so
+// it never blocks push event handling.
+// ──────────────────────────────────────────────────────────────
+
+async function setupWorkboxCaching() {
+  const { precacheAndRoute } = await import('workbox-precaching')
+  const { registerRoute } = await import('workbox-routing')
+  const { CacheFirst, NetworkFirst, StaleWhileRevalidate } = await import(
+    'workbox-strategies'
+  )
+  const { ExpirationPlugin } = await import('workbox-expiration')
+
+  // Precache static assets injected by vite-plugin-pwa
+  precacheAndRoute(self.__WB_MANIFEST)
+
+  // Images: CacheFirst (30 days)
+  registerRoute(
+    ({ request }) => request.destination === 'image',
+    new CacheFirst({
+      cacheName: 'images-cache',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 200,
+          maxAgeSeconds: 30 * 24 * 60 * 60,
+          purgeOnQuotaError: true,
+        }),
+      ],
+    })
+  )
+
+  // API: NetworkFirst (5s timeout, 24h cache)
+  registerRoute(
+    ({ url }) => url.pathname.startsWith('/api/'),
+    new NetworkFirst({
+      cacheName: 'api-cache',
+      networkTimeoutSeconds: 5,
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 100,
+          maxAgeSeconds: 24 * 60 * 60,
+          purgeOnQuotaError: true,
+        }),
+      ],
+    })
+  )
+
+  // Google Fonts: StaleWhileRevalidate
+  registerRoute(
+    ({ url }) =>
+      url.origin === 'https://fonts.googleapis.com' ||
+      url.origin === 'https://fonts.gstatic.com',
+    new StaleWhileRevalidate({
+      cacheName: 'google-fonts-cache',
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 30,
+        }),
+      ],
+    })
+  )
+}
+
+// Fire-and-forget — caching is non-critical
+setupWorkboxCaching().catch((err) => {
+  // eslint-disable-next-line no-console
+  console.warn('[SW] Workbox caching setup failed (non-fatal):', err)
 })

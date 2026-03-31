@@ -1,6 +1,7 @@
 """Push subscription API endpoints for Web Push notifications."""
 
 from fastapi import APIRouter, Depends, Request
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -12,6 +13,7 @@ from app.models.notification import (
     NotificationPriorityEnum,
     NotificationTypeEnum,
 )
+from app.models.push_subscription import PushSubscription
 from app.models.user import User
 from app.schemas.push_subscription import (
     PushSubscribeRequest,
@@ -25,6 +27,21 @@ from app.websocket.notification_ws import sio
 router = APIRouter(prefix="/notifications/push", tags=["push-notifications"])
 settings = get_settings()
 logger = get_logger(__name__)
+
+
+@router.post("/beacon")
+async def push_beacon(request: Request) -> dict[str, str]:
+    """Diagnostic: SW sends this when a push event fires.
+
+    No auth required — the SW may not have a token.
+    """
+    source = request.query_params.get("source", "unknown")
+    ua = request.headers.get("user-agent", "")[:80]
+    logger.warning(
+        "PUSH_BEACON received — push event fired in SW",
+        extra={"source": source, "user_agent": ua, "client_ip": request.client.host if request.client else None},
+    )
+    return {"ok": "beacon received"}
 
 
 @router.post("/subscribe", status_code=201)
@@ -130,3 +147,71 @@ async def send_test_notification(
         "push_sent": push_result,
         "message": "Test notification sent. Check your device for push and in-app toast.",
     }
+
+
+@router.post("/test-raw")
+async def send_test_raw_push(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> dict[str, object]:
+    """Send a minimal raw push to every active subscription and return per-sub results.
+
+    For debugging push delivery issues — bypasses notification system entirely.
+    """
+    import json
+
+    from pywebpush import WebPushException, webpush
+
+    from app.services.push_notification_service import _get_vapid_private_key_raw
+
+    vapid_key = _get_vapid_private_key_raw()
+    if not vapid_key:
+        return {"error": "VAPID key not configured"}
+
+    subs_result = await db.execute(
+        select(PushSubscription).where(
+            PushSubscription.user_id == current_user.id,
+            PushSubscription.is_active.is_(True),
+        )
+    )
+    subscriptions = list(subs_result.scalars().all())
+
+    payload = json.dumps({
+        "title": "Raw Push Test",
+        "body": f"Direct push to {len(subscriptions)} subscription(s)",
+    })
+
+    results = []
+    for sub in subscriptions:
+        endpoint_domain = sub.endpoint.split("/")[2] if "/" in sub.endpoint else "unknown"
+        entry: dict[str, object] = {
+            "id": str(sub.id),
+            "endpoint_domain": endpoint_domain,
+            "platform": sub.platform,
+            "user_agent_short": (sub.user_agent or "")[:40],
+        }
+        try:
+            resp = webpush(
+                subscription_info={
+                    "endpoint": sub.endpoint,
+                    "keys": {"p256dh": sub.p256dh_key, "auth": sub.auth_key},
+                },
+                data=payload,
+                vapid_private_key=vapid_key,
+                vapid_claims={"sub": settings.vapid_claims_email},
+                headers={"TTL": "86400", "Urgency": "high"},
+            )
+            entry["status"] = resp.status_code if resp else "no-response"
+            entry["success"] = True
+        except WebPushException as e:
+            resp_obj = getattr(e, "response", None)
+            entry["status"] = resp_obj.status_code if resp_obj else None
+            entry["error"] = str(e)[:200]
+            entry["success"] = False
+        except Exception as e:
+            entry["status"] = None
+            entry["error"] = str(e)[:200]
+            entry["success"] = False
+        results.append(entry)
+
+    return {"subscriptions_count": len(subscriptions), "results": results}
