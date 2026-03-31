@@ -3,7 +3,7 @@
 from typing import Any
 from urllib.parse import unquote, urlparse
 
-from app.models.event import EventMediaUsageTag
+from app.models.event import EventMediaType, EventMediaUsageTag
 
 
 def extract_blob_name(file_url: str) -> str | None:
@@ -125,7 +125,11 @@ def resolve_event_card_thumbnail_url(event: Any) -> str | None:
         (
             item
             for item in media_items
-            if getattr(item, "usage_tag", None) == EventMediaUsageTag.MAIN_EVENT_PAGE_HERO.value
+            if getattr(item, "usage_tag", None)
+            in (
+                EventMediaUsageTag.MAIN_EVENT_PAGE_HERO,
+                EventMediaUsageTag.MAIN_EVENT_PAGE_HERO.value,
+            )
         ),
         None,
     )
@@ -138,8 +142,10 @@ def resolve_event_card_thumbnail_url(event: Any) -> str | None:
         (
             item
             for item in media_items
-            if getattr(item, "usage_tag", None) != EventMediaUsageTag.EVENT_LAYOUT_MAP.value
-            and getattr(item, "media_type", None) == "image"
+            if getattr(item, "usage_tag", None)
+            not in (EventMediaUsageTag.EVENT_LAYOUT_MAP, EventMediaUsageTag.EVENT_LAYOUT_MAP.value)
+            and getattr(item, "media_type", None)
+            in (EventMediaType.IMAGE, EventMediaType.IMAGE.value, "image")
         ),
         None,
     )

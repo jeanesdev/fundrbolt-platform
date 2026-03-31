@@ -1551,12 +1551,15 @@ If you have any questions about this decision, please contact us by replying to 
         if notification_type == "outbid":
             item_name = (data or {}).get("item_name", "an item")
             bid_amount = (data or {}).get("bid_amount")
-            amount_str = f"${bid_amount:,.2f}" if bid_amount else ""
+            try:
+                amount_str = f"${float(bid_amount):,.2f}" if bid_amount else ""
+            except (TypeError, ValueError):
+                amount_str = f"${bid_amount}" if bid_amount else ""
             subject = f"You've been outbid on {item_name}"
             heading = "You've Been Outbid!"
             paragraphs = [
                 f"{greeting}",
-                f"Someone placed a higher bid{f' of {amount_str}' if amount_str else ''} on <strong>{item_name}</strong>.",
+                f"Someone placed a higher bid{f' of {amount_str}' if amount_str else ''} on {item_name}.",
                 "Don't let it go — place a new bid now!",
             ]
             cta_text = "Bid Again"

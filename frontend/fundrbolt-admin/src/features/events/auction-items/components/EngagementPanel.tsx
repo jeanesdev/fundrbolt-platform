@@ -254,7 +254,7 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              {data.summary.total_watchers}
+              {data?.summary.total_watchers}
             </div>
           </CardContent>
         </Card>
@@ -328,7 +328,7 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
                     onClick={() => setNotifyDialogOpen(true)}
                   >
                     <Bell className='mr-2 h-4 w-4' />
-                    Notify Watchers ({data.summary.total_watchers})
+                    Notify Watchers ({data?.summary.total_watchers ?? 0})
                   </Button>
                 </div>
               )}
@@ -625,7 +625,7 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
           <DialogHeader>
             <DialogTitle>Notify Watchers</DialogTitle>
             <DialogDescription>
-              Send a notification to all {data.summary.total_watchers} user(s)
+              Send a notification to all {data?.summary.total_watchers ?? 0} user(s)
               watching this item.
             </DialogDescription>
           </DialogHeader>
