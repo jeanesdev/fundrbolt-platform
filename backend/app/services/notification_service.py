@@ -333,3 +333,25 @@ class NotificationService:
         await db.flush()
         count: int = cursor_result.rowcount or 0  # type: ignore[attr-defined]
         return count
+
+    @staticmethod
+    async def delete_notification(
+        db: AsyncSession,
+        notification_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> bool:
+        """Delete a notification owned by the given user.
+
+        Returns True if deleted, False if not found.
+        """
+        stmt = select(Notification).where(
+            Notification.id == notification_id,
+            Notification.user_id == user_id,
+        )
+        result = await db.execute(stmt)
+        notification = result.scalar_one_or_none()
+        if notification is None:
+            return False
+        await db.delete(notification)
+        await db.flush()
+        return True

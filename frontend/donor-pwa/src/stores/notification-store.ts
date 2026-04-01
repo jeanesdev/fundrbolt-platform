@@ -24,6 +24,7 @@ interface NotificationState {
   closePanel: () => void
   togglePanel: () => void
   addNotification: (notification: NotificationData) => void
+  removeNotification: (notificationId: string) => void
   markAsRead: (notificationId: string) => void
   markAllAsRead: () => void
   setNotifications: (notifications: NotificationData[]) => void
@@ -46,6 +47,11 @@ export const useNotificationStore = create<NotificationState>((set) => ({
   addNotification: (notification) =>
     set((state) => ({
       notifications: [notification, ...state.notifications],
+    })),
+
+  removeNotification: (notificationId) =>
+    set((state) => ({
+      notifications: state.notifications.filter((n) => n.id !== notificationId),
     })),
 
   markAsRead: (notificationId) =>

@@ -103,3 +103,24 @@ export function useMarkAllRead() {
     },
   })
 }
+
+/**
+ * Delete a notification with optimistic removal
+ */
+export function useDeleteNotification() {
+  const queryClient = useQueryClient()
+  const removeNotification = useNotificationStore(
+    (state) => state.removeNotification,
+  )
+
+  return useMutation({
+    mutationFn: ({ notificationId, eventId }: { notificationId: string; eventId?: string }) =>
+      notificationService.deleteNotification(notificationId, eventId),
+    onMutate: async ({ notificationId }) => {
+      removeNotification(notificationId)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: NOTIFICATION_KEYS.all })
+    },
+  })
+}

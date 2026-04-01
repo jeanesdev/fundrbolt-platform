@@ -13,6 +13,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import {
+  useDeleteNotification,
   useMarkAllRead,
   useMarkRead,
   useNotifications,
@@ -42,6 +43,7 @@ export function NotificationCenter({ eventId }: NotificationCenterProps) {
   const queryClient = useQueryClient()
   const markReadMutation = useMarkRead()
   const markAllReadMutation = useMarkAllRead()
+  const deleteNotificationMutation = useDeleteNotification()
 
   const notifications = data?.notifications ?? []
 
@@ -62,6 +64,13 @@ export function NotificationCenter({ eventId }: NotificationCenterProps) {
   const handleMarkAllRead = useCallback(() => {
     markAllReadMutation.mutate(eventId)
   }, [markAllReadMutation, eventId])
+
+  const handleDelete = useCallback(
+    (notificationId: string) => {
+      deleteNotificationMutation.mutate({ notificationId, eventId })
+    },
+    [deleteNotificationMutation, eventId],
+  )
 
   // Swipe-right-to-close
   const touchStartX = useRef(0)
@@ -123,6 +132,7 @@ export function NotificationCenter({ eventId }: NotificationCenterProps) {
                   key={notification.id}
                   notification={notification}
                   onRead={handleMarkRead}
+                  onDelete={handleDelete}
                 />
               ))}
 

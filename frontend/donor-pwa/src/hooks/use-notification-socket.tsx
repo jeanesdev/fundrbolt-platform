@@ -82,7 +82,7 @@ export function useNotificationSocket(
     socketRef.current = socket
 
       // Expose for debugging
-      ; (window as Record<string, unknown>).__debugSocket = socket
+      ; (window as unknown as Record<string, unknown>).__debugSocket = socket
 
     socket.on('connect', () => {
       console.log('[SIO] connected, id=', socket.id)
