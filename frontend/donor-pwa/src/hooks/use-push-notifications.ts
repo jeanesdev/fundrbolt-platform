@@ -67,6 +67,21 @@ export function usePushNotifications(
         const subscription = await registration.pushManager.getSubscription()
 
         if (subscription) {
+          // Re-register with backend to ensure ownership matches the
+          // currently logged-in user (covers login-as-different-user).
+          try {
+            const subJson = subscription.toJSON()
+            await apiClient.post('/notifications/push/subscribe', {
+              endpoint: subJson.endpoint,
+              keys: {
+                p256dh: subJson.keys?.p256dh ?? '',
+                auth: subJson.keys?.auth ?? '',
+              },
+              platform: 'web',
+            })
+          } catch {
+            // Best effort — the subscription may still work
+          }
           setIsSubscribed(true)
           return
         }

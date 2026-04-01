@@ -58,8 +58,8 @@ If you need to regenerate keys (e.g., for a new environment):
 
 ```bash
 cd backend && poetry run python -c "
-from py_vapid import Vapid
-v = Vapid()
+
+yesyesv = Vapid()
 v.generate_keys()
 print('VAPID_PRIVATE_KEY (paste as single line with literal \\\\n):')
 print(v.private_pem().decode().replace(chr(10), '\\\\n'))

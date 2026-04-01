@@ -99,7 +99,7 @@ async def join_event(sid: str, data: dict[str, Any]) -> None:
         return
 
     room = f"user:{user_id}:event:{event_id}"
-    sio.enter_room(sid, room)
+    await sio.enter_room(sid, room)
     logger.info(
         "Socket.IO joined room",
         extra={"sid": sid, "user_id": user_id, "room": room},
@@ -128,7 +128,7 @@ async def leave_event(sid: str, data: dict[str, Any]) -> None:
         return
 
     room = f"user:{user_id}:event:{event_id}"
-    sio.leave_room(sid, room)
+    await sio.leave_room(sid, room)
     logger.info(
         "Socket.IO left room",
         extra={"sid": sid, "user_id": user_id, "room": room},

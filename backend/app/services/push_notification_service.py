@@ -258,11 +258,12 @@ class PushNotificationService:
             }
         )
 
-        vapid_claims = {"sub": settings.vapid_claims_email}
         any_success = False
 
         for subscription in subscriptions:
-            endpoint_domain = subscription.endpoint.split("/")[2] if "/" in subscription.endpoint else "unknown"
+            endpoint_domain = (
+                subscription.endpoint.split("/")[2] if "/" in subscription.endpoint else "unknown"
+            )
             logger.info(
                 "Sending push to subscription",
                 extra={
@@ -272,6 +273,11 @@ class PushNotificationService:
                 },
             )
             try:
+                # Fresh claims dict per subscription — pywebpush mutates it
+                # (sets 'aud' from the endpoint URL), so reusing a single dict
+                # causes subsequent calls to different push services (e.g.
+                # Apple after FCM) to send a JWT with the wrong audience.
+                vapid_claims = {"sub": settings.vapid_claims_email}
                 resp = webpush(
                     subscription_info={
                         "endpoint": subscription.endpoint,

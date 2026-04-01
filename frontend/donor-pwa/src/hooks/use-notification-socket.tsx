@@ -14,8 +14,16 @@ import { useEffect, useRef, useState } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { toast } from 'sonner'
 
-/** Derive Socket.IO URL from API URL (strip /api/v1 suffix) */
+/** Derive Socket.IO URL.
+ *  In development the Vite proxy forwards /ws to the backend on the same
+ *  origin, avoiding cross-tunnel WebSocket failures through ngrok.
+ *  In production Socket.IO connects directly to the backend origin.
+ */
 function getSocketUrl(): string {
+  if (import.meta.env.DEV) {
+    // Same origin — Vite proxy handles /ws → backend
+    return ''
+  }
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
   return apiUrl.replace(/\/api\/v1\/?$/, '')
 }
@@ -62,7 +70,7 @@ export function useNotificationSocket(
 
     const socket = io(socketUrl, {
       path: '/ws/socket.io',
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       auth: { token: accessToken },
       query: spoofedUserId ? { spoof_user_id: spoofedUserId } : undefined,
       reconnection: true,
@@ -73,10 +81,15 @@ export function useNotificationSocket(
 
     socketRef.current = socket
 
+      // Expose for debugging
+      ; (window as Record<string, unknown>).__debugSocket = socket
+
     socket.on('connect', () => {
+      console.log('[SIO] connected, id=', socket.id)
       setStatus('connected')
       setConnectionStatus('connected')
       // Join the event notification room with last_seen_at for catch-up
+      console.log('[SIO] joining event room', eventId)
       socket.emit('notification:join_event', {
         event_id: eventId,
         last_seen_at: lastSeenRef.current ?? undefined,
@@ -97,6 +110,7 @@ export function useNotificationSocket(
 
     // Handle new notification from server
     socket.on('notification:new', (data: NotificationData) => {
+      console.log('[SIO] notification:new received', data)
       addNotification(data)
       incrementUnreadCount()
       // Track latest notification timestamp for catch-up on reconnect
