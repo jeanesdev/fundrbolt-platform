@@ -72,8 +72,14 @@ class TestAdminAuctionEngagementAPI:
         assert "watchers" in data
         assert "views" in data
         assert "bids" in data
-        assert "total_views" in data
+        assert "summary" in data
+        assert "auction_item_id" in data
         assert len(data["watchers"]) >= 1
+        # Verify nested user object structure
+        watcher = data["watchers"][0]
+        assert "user" in watcher
+        assert "id" in watcher["user"]
+        assert "name" in watcher["user"]
 
     async def test_get_engagement_unauthenticated(
         self,

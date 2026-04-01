@@ -39,7 +39,11 @@ async def push_beacon(request: Request) -> dict[str, str]:
     ua = request.headers.get("user-agent", "")[:80]
     logger.warning(
         "PUSH_BEACON received — push event fired in SW",
-        extra={"source": source, "user_agent": ua, "client_ip": request.client.host if request.client else None},
+        extra={
+            "source": source,
+            "user_agent": ua,
+            "client_ip": request.client.host if request.client else None,
+        },
     )
     return {"ok": "beacon received"}
 
@@ -176,10 +180,12 @@ async def send_test_raw_push(
     )
     subscriptions = list(subs_result.scalars().all())
 
-    payload = json.dumps({
-        "title": "Raw Push Test",
-        "body": f"Direct push to {len(subscriptions)} subscription(s)",
-    })
+    payload = json.dumps(
+        {
+            "title": "Raw Push Test",
+            "body": f"Direct push to {len(subscriptions)} subscription(s)",
+        }
+    )
 
     results = []
     for sub in subscriptions:

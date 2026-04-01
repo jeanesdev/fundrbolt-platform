@@ -31,9 +31,13 @@ class ItemViewResponse(BaseModel):
 class ItemViewSummary(BaseModel):
     """Summary of a user's view of an item (for admin)."""
 
-    user_id: UUID
-    user_name: str
-    view_duration_seconds: int
+    user: "UserSummary"
+    total_duration_seconds: int
     last_viewed_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+from app.schemas.auction_engagement import UserSummary  # noqa: E402
+
+ItemViewSummary.model_rebuild()
