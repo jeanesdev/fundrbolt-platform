@@ -7,6 +7,7 @@ from app.api.v1 import (
     admin_auction_bid_import,
     admin_auction_engagement,
     admin_auction_item_import,
+    admin_checklist,
     admin_donations,
     admin_event_dashboard,
     admin_notifications,
@@ -93,6 +94,7 @@ api_router.include_router(public_onboarding.router, prefix="/public", tags=["pub
 api_router.include_router(public_testimonials.router, tags=["public-testimonials"])
 api_router.include_router(admin_testimonials.router, tags=["admin-testimonials"])
 api_router.include_router(admin_seating.router, tags=["admin-seating"])
+api_router.include_router(admin_checklist.router, tags=["admin-checklist"])
 api_router.include_router(admin_auction_bid_import.router)
 api_router.include_router(admin_auction_item_import.router)
 api_router.include_router(admin_registration_import.router)

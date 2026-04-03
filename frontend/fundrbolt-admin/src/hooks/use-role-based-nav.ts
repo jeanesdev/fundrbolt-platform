@@ -253,6 +253,7 @@ type EventSectionConfig = {
 const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
   { title: 'NPO Dashboard', path: 'dashboard', icon: 'BarChart3' },
   { title: 'Details', path: 'details', icon: 'FileText' },
+  { title: 'Planning Checklist', path: 'checklist', icon: 'ClipboardList' },
   { title: 'Preview', path: 'preview', icon: 'Eye' },
   { title: 'Media', path: 'media', icon: 'Image', statKey: 'media_count' },
   { title: 'Links', path: 'links', icon: 'Link2', statKey: 'links_count' },
@@ -333,43 +334,44 @@ const EVENT_NAV_GROUPS: Array<{
   title: string
   sections: EventSectionConfig[]
 }> = [
-  {
-    title: 'Event',
-    sections: [
-      sectionByPath('details'),
-      sectionByPath('preview'),
-      sectionByPath('media'),
-      sectionByPath('links'),
-      sectionByPath('food'),
-      sectionByPath('tickets'),
-      sectionByPath('tickets/sales'),
-      sectionByPath('tickets/promos'),
-      sectionByPath('sponsors'),
-      sectionByPath('notifications'),
-    ],
-  },
-  {
-    title: 'Guests',
-    sections: [
-      sectionByPath('registrations'),
-      sectionByPath('checkin'),
-      sectionByPath('seating'),
-    ],
-  },
-  {
-    title: 'Auctions',
-    sections: [
-      sectionByPath('auction-items'),
-      sectionByPath('auction-bids'),
-      sectionByPath('quick-entry'),
-    ],
-  },
-  {
-    title: 'Finance',
-    sections: [sectionByPath('payments')],
-  },
-  {
-    title: 'Data',
-    sections: [sectionByPath('dashboard')],
-  },
-]
+    {
+      title: 'Event',
+      sections: [
+        sectionByPath('details'),
+        sectionByPath('checklist'),
+        sectionByPath('preview'),
+        sectionByPath('media'),
+        sectionByPath('links'),
+        sectionByPath('food'),
+        sectionByPath('tickets'),
+        sectionByPath('tickets/sales'),
+        sectionByPath('tickets/promos'),
+        sectionByPath('sponsors'),
+        sectionByPath('notifications'),
+      ],
+    },
+    {
+      title: 'Guests',
+      sections: [
+        sectionByPath('registrations'),
+        sectionByPath('checkin'),
+        sectionByPath('seating'),
+      ],
+    },
+    {
+      title: 'Auctions',
+      sections: [
+        sectionByPath('auction-items'),
+        sectionByPath('auction-bids'),
+        sectionByPath('quick-entry'),
+      ],
+    },
+    {
+      title: 'Finance',
+      sections: [sectionByPath('payments')],
+    },
+    {
+      title: 'Data',
+      sections: [sectionByPath('dashboard')],
+    },
+  ]

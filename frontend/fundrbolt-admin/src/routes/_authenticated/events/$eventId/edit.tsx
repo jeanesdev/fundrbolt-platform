@@ -3,7 +3,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 export const Route = createFileRoute('/_authenticated/events/$eventId/edit')({
   beforeLoad: ({ params }) => {
     throw redirect({
-      to: '/events/$eventId/details',
+      to: '/events/$eventId/dashboard',
       params,
     })
   },

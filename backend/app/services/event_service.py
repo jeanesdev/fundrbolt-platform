@@ -99,6 +99,21 @@ class EventService:
         # Increment metrics
         EVENTS_CREATED_TOTAL.labels(npo_id=str(event.npo_id)).inc()
 
+        # Auto-populate checklist from default template
+        try:
+            from app.services.checklist_service import ChecklistService
+
+            template = await ChecklistService.resolve_default_template(db, event.npo_id)
+            if template:
+                await ChecklistService.populate_from_template(db, event, template, current_user.id)
+                await db.commit()
+        except Exception:
+            logger.warning(
+                "Failed to auto-populate checklist for event %s",
+                event.id,
+                exc_info=True,
+            )
+
         logger.info(f"Event created: {event.name} (ID: {event.id}) by user {current_user.id}")
         return event
 
@@ -146,6 +161,10 @@ class EventService:
         if event_data.timezone:
             EventService._validate_timezone(event_data.timezone)
 
+        # Snapshot event_datetime for checklist recalculation
+        old_event_datetime = event.event_datetime
+        old_timezone = event.timezone
+
         # Update fields
         update_dict = event_data.model_dump(exclude_unset=True, exclude={"version"})
         for key, value in update_dict.items():
@@ -155,6 +174,24 @@ class EventService:
         event.version += 1
 
         await db.commit()
+
+        # Recalculate template-derived checklist dates if event_datetime or timezone changed
+        datetime_changed = event.event_datetime != old_event_datetime
+        timezone_changed = event.timezone != old_timezone
+        if datetime_changed or timezone_changed:
+            try:
+                from app.services.checklist_service import ChecklistService
+
+                count = await ChecklistService.recalculate_template_dates(db, event)
+                if count > 0:
+                    await db.commit()
+                    logger.info(f"Recalculated {count} checklist due dates after event date change")
+            except Exception:
+                logger.warning(
+                    "Failed to recalculate checklist dates for event %s",
+                    event_id,
+                    exc_info=True,
+                )
 
         # Re-query to get fresh data with all relationships loaded
         result = await db.execute(

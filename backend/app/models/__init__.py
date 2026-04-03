@@ -12,6 +12,12 @@ from app.models.auction_item import AuctionItem
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin, UUIDMixin
 from app.models.buy_now_availability import BuyNowAvailability
+from app.models.checklist import (
+    ChecklistItem,
+    ChecklistItemStatus,
+    ChecklistTemplate,
+    ChecklistTemplateItem,
+)
 from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
 from app.models.donation import Donation, DonationStatus
 from app.models.donation_label import DonationLabel
@@ -112,6 +118,10 @@ __all__ = [
     "BidActionAudit",
     "BuyNowAvailability",
     "CampaignStatusEnum",
+    "ChecklistItem",
+    "ChecklistItemStatus",
+    "ChecklistTemplate",
+    "ChecklistTemplateItem",
     "ConsentAuditLog",
     "CookieConsent",
     "CustomTicketOption",

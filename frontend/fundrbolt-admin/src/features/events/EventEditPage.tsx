@@ -303,10 +303,10 @@ export function EventEditPage() {
                 <span className='text-muted-foreground text-sm'>Status:</span>
                 <span
                   className={`rounded px-2 py-1 text-xs whitespace-nowrap ${currentEvent.status === 'draft'
-                      ? 'bg-gray-100 text-gray-800'
-                      : currentEvent.status === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
+                    ? 'bg-gray-100 text-gray-800'
+                    : currentEvent.status === 'active'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
                     }`}
                 >
                   {currentEvent.status.charAt(0).toUpperCase() +
