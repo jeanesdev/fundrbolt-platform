@@ -121,9 +121,6 @@ export function NotificationItem({
 
       if (!swiping.current) return
 
-      // Prevent vertical scroll while swiping
-      e.preventDefault()
-
       if (revealed) {
         // Already revealed — allow swiping back right
         const newOffset = Math.min(0, Math.max(-DELETE_WIDTH, dx - DELETE_WIDTH))
@@ -182,6 +179,7 @@ export function NotificationItem({
         style={{
           transform: `translateX(${offsetX}px)`,
           transitionDuration: animating ? '150ms' : '0ms',
+          touchAction: swiping.current ? 'none' : 'pan-y',
         }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}

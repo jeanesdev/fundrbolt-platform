@@ -52,7 +52,7 @@ export function ComposeNotification({
     useState<RecipientCriteria['type']>('all_attendees')
   const [tableNumber, setTableNumber] = useState('')
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set())
-  const [channels, setChannels] = useState<Set<string>>(new Set(['in_app', 'push', 'email']))
+  const [channels, setChannels] = useState<Set<string>>(new Set(['in_app']))
   const [isSending, setIsSending] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortKey, setSortKey] = useState<'name' | 'email' | 'table'>('name')
@@ -197,7 +197,7 @@ export function ComposeNotification({
       setTableNumber('')
       setSelectedUserIds(new Set())
       setRecipientType('all_attendees')
-      setChannels(new Set(['in_app', 'push', 'email']))
+      setChannels(new Set(['in_app']))
       onSent()
     } catch {
       toast.error('Failed to send notification')

@@ -41,11 +41,14 @@ export function AuctionItemEditPage() {
   // Resolve slug to event UUID if not already loaded
   useEffect(() => {
     if (eventSlug && currentEvent?.slug !== eventSlug) {
-      loadEventBySlug(eventSlug).catch(() => { });
+      loadEventBySlug(eventSlug).catch(() => {
+        toast.error('Failed to load event');
+        navigate({ to: '/events/$eventSlug/auction-items', params: { eventSlug } });
+      });
     }
-  }, [eventSlug, currentEvent?.slug, loadEventBySlug]);
+  }, [eventSlug, currentEvent?.slug, loadEventBySlug, navigate]);
 
-  const eventId = currentEvent?.id ?? eventSlug;
+  const eventId = currentEvent?.id;
 
   // Load item on mount
   useEffect(() => {
@@ -64,6 +67,10 @@ export function AuctionItemEditPage() {
   }, [currentEvent?.id, itemId, getAuctionItem, clearSelectedItem, navigate, eventSlug]);
 
   const handleSubmit = async (data: AuctionItemUpdate) => {
+    if (!eventId) {
+      toast.error('Event not loaded yet');
+      return;
+    }
     setIsSubmitting(true);
     try {
       await updateAuctionItem(eventId, itemId, data);

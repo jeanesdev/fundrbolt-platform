@@ -36,15 +36,21 @@ export function AuctionItemCreatePage() {
   // Resolve slug to event UUID if not already loaded
   useEffect(() => {
     if (eventSlug && currentEvent?.slug !== eventSlug) {
-      loadEventBySlug(eventSlug).catch(() => { });
+      loadEventBySlug(eventSlug).catch(() => {
+        toast.error('Failed to load event');
+      });
     }
   }, [eventSlug, currentEvent?.slug, loadEventBySlug]);
 
-  const eventId = currentEvent?.id ?? eventSlug;
+  const eventId = currentEvent?.id;
 
   const handleSubmit = async (
     data: AuctionItemCreate | AuctionItemUpdate
   ) => {
+    if (!eventId) {
+      toast.error('Event not loaded yet');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const createdItem = await createAuctionItem(

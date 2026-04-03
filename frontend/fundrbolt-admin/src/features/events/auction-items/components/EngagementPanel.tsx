@@ -255,7 +255,7 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
           </CardHeader>
           <CardContent className='px-3 pb-3'>
             <div className='text-xl font-bold'>
-              {data?.summary.total_watchers}
+              {data?.summary.total_watchers ?? 0}
             </div>
           </CardContent>
         </Card>

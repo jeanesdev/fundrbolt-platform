@@ -28,20 +28,7 @@ self.addEventListener('message', (event) => {
 
 // Push notification handler
 self.addEventListener('push', (event: PushEvent) => {
-  // eslint-disable-next-line no-console
-  console.log('[SW] Push event received')
-
-  // Beacon to backend so we can confirm push events fire on any device
-  fetch('/api/v1/notifications/push/beacon?source=sw-push', {
-    method: 'POST',
-    keepalive: true,
-  }).catch(() => {
-    /* ignore — best-effort diagnostic */
-  })
-
   if (!event.data) {
-    // eslint-disable-next-line no-console
-    console.warn('[SW] Push event has no data, ignoring')
     return
   }
 
@@ -55,12 +42,8 @@ self.addEventListener('push', (event: PushEvent) => {
 
   try {
     payload = event.data.json()
-    // eslint-disable-next-line no-console
-    console.log('[SW] Push payload parsed:', JSON.stringify(payload))
   } catch {
     payload = { title: 'Fundrbolt', body: event.data.text() }
-    // eslint-disable-next-line no-console
-    console.log('[SW] Push payload fell back to text:', payload.body)
   }
 
   const title = payload.title ?? 'Fundrbolt'
@@ -71,9 +54,6 @@ self.addEventListener('push', (event: PushEvent) => {
     data: payload.data ?? {},
     tag: `fundrbolt-${Date.now()}`,
   }
-
-  // eslint-disable-next-line no-console
-  console.log('[SW] Calling showNotification:', title, JSON.stringify(options))
 
   event.waitUntil(
     self.registration

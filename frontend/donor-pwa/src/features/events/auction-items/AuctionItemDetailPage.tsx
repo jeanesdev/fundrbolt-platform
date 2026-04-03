@@ -41,9 +41,12 @@ export function AuctionItemDetailPage() {
   // Resolve slug to event UUID if not already loaded
   useEffect(() => {
     if (eventSlug && currentEvent?.slug !== eventSlug) {
-      loadEventBySlug(eventSlug).catch(() => { });
+      loadEventBySlug(eventSlug).catch(() => {
+        toast.error('Failed to load event');
+        navigate({ to: '/events/$eventSlug/auction-items', params: { eventSlug } });
+      });
     }
-  }, [eventSlug, currentEvent?.slug, loadEventBySlug]);
+  }, [eventSlug, currentEvent?.slug, loadEventBySlug, navigate]);
 
   useEffect(() => {
     if (currentEvent?.id) {

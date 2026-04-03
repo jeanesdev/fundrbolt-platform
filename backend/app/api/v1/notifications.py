@@ -17,49 +17,12 @@ from app.schemas.notification import (
     UnreadCountResponse,
 )
 from app.services.notification_service import NotificationService
-from app.websocket.notification_ws import emit_notification, emit_unread_count
+from app.websocket.notification_ws import emit_unread_count
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 SUPER_ADMIN_ROLE = "super_admin"
-
-
-@router.post("/debug-emit")
-async def debug_emit_notification(
-    current_user: User = Depends(get_current_active_user),
-) -> dict[str, object]:
-    """Temporary debug endpoint to test Socket.IO emission from within Uvicorn."""
-    from app.websocket.notification_ws import sio
-
-    user_id = str(current_user.id)
-    event_id = "10adb96b-75b8-4a43-8a44-c593cb853e3c"
-    room = f"user:{user_id}:event:{event_id}"
-
-    # Debug: check what rooms/sids exist locally
-    rooms_info: dict[str, object] = {}
-    try:
-        if hasattr(sio.manager, "rooms"):
-            ns_rooms = sio.manager.rooms.get("/", {})
-            rooms_info = {k: list(v) for k, v in ns_rooms.items()}
-        logger.info("[DEBUG] rooms: %s", rooms_info)
-    except Exception as e:
-        logger.info("[DEBUG] rooms error: %s", e)
-        rooms_info = {"error": str(e)}
-
-    await emit_notification(
-        user_id=user_id,
-        event_id=event_id,
-        notification_data={
-            "id": str(uuid.uuid4()),
-            "title": "Debug In-Process Toast",
-            "body": "Emitted from within Uvicorn!",
-            "notification_type": "custom",
-            "created_at": "2026-03-31T18:28:00Z",
-            "read": False,
-        },
-    )
-    return {"status": "emitted", "room": room, "debug_rooms": rooms_info}
 
 
 def _resolve_effective_user_id(

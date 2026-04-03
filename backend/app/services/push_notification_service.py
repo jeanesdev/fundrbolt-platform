@@ -37,11 +37,18 @@ def _get_vapid_private_key_raw() -> str | None:
 
         # Handle escaped newlines from env vars (\\n → \n)
         pem_str = key.replace("\\n", "\n")
-        pem_key = load_pem_private_key(pem_str.encode(), password=None)
-        # Extract the raw 32-byte private scalar from the EC key
-        private_numbers = pem_key.private_numbers()  # type: ignore[union-attr]
-        raw_bytes = private_numbers.private_value.to_bytes(32, byteorder="big")  # type: ignore[union-attr]
-        return base64.urlsafe_b64encode(raw_bytes).rstrip(b"=").decode()
+        try:
+            pem_key = load_pem_private_key(pem_str.encode(), password=None)
+            # Extract the raw 32-byte private scalar from the EC key
+            private_numbers = pem_key.private_numbers()  # type: ignore[union-attr]
+            raw_bytes = private_numbers.private_value.to_bytes(32, byteorder="big")  # type: ignore[union-attr]
+            return base64.urlsafe_b64encode(raw_bytes).rstrip(b"=").decode()
+        except Exception as exc:
+            logger.warning(
+                "Failed to parse VAPID private key from PEM; push notifications disabled.",
+                extra={"error": str(exc)},
+            )
+            return None
 
     return key
 
@@ -261,9 +268,10 @@ class PushNotificationService:
         any_success = False
 
         for subscription in subscriptions:
-            endpoint_domain = (
-                subscription.endpoint.split("/")[2] if "/" in subscription.endpoint else "unknown"
-            )
+            try:
+                endpoint_domain = subscription.endpoint.split("/")[2]
+            except IndexError:
+                endpoint_domain = "unknown"
             logger.info(
                 "Sending push to subscription",
                 extra={

@@ -96,7 +96,7 @@ class Settings(BaseSettings):
     # Celery
     celery_broker_url: str = "redis://localhost:6379/2"
     celery_result_backend: str = "redis://localhost:6379/3"
-    celery_task_always_eager: bool = True  # Set False in production with a Celery worker
+    celery_task_always_eager: bool = False  # Set True only for local dev / tests
 
     # CORS
     cors_origins: str = (

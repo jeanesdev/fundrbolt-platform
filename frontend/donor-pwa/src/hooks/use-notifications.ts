@@ -105,21 +105,50 @@ export function useMarkAllRead() {
 }
 
 /**
- * Delete a notification with optimistic removal
+ * Delete a notification with optimistic removal from React Query cache
  */
 export function useDeleteNotification() {
   const queryClient = useQueryClient()
-  const removeNotification = useNotificationStore(
-    (state) => state.removeNotification,
-  )
 
   return useMutation({
     mutationFn: ({ notificationId, eventId }: { notificationId: string; eventId?: string }) =>
       notificationService.deleteNotification(notificationId, eventId),
     onMutate: async ({ notificationId }) => {
-      removeNotification(notificationId)
+      // Cancel in-flight fetches so they don't overwrite optimistic update
+      await queryClient.cancelQueries({ queryKey: NOTIFICATION_KEYS.all })
+
+      // Snapshot previous cache for rollback
+      const previousData = queryClient.getQueriesData({ queryKey: NOTIFICATION_KEYS.all })
+
+      // Optimistically remove from all notification query caches
+      queryClient.setQueriesData(
+        { queryKey: NOTIFICATION_KEYS.all },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (old: any) => {
+          if (!old?.pages) return old
+          return {
+            ...old,
+            pages: old.pages.map((page: { notifications: Array<{ id: string }> }) => ({
+              ...page,
+              notifications: page.notifications.filter(
+                (n: { id: string }) => n.id !== notificationId,
+              ),
+            })),
+          }
+        },
+      )
+
+      return { previousData }
     },
-    onSuccess: () => {
+    onError: (_err, _vars, context) => {
+      // Rollback on failure
+      if (context?.previousData) {
+        for (const [key, data] of context.previousData) {
+          queryClient.setQueryData(key, data)
+        }
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: NOTIFICATION_KEYS.all })
     },
   })

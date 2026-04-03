@@ -1611,6 +1611,11 @@ If you have any questions about this decision, please contact us by replying to 
                 cta_url = deep_link
 
         plain_text = "\n\n".join(paragraphs)
+
+        # Ensure cta_url is absolute for email links
+        if cta_url and cta_url.startswith("/"):
+            cta_url = f"{donor_url.rstrip('/')}{cta_url}"
+
         return subject, heading, plain_text, cta_text, cta_url
 
     async def send_notification_email(

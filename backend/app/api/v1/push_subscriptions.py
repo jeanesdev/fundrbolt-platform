@@ -37,7 +37,7 @@ async def push_beacon(request: Request) -> dict[str, str]:
     """
     source = request.query_params.get("source", "unknown")
     ua = request.headers.get("user-agent", "")[:80]
-    logger.warning(
+    logger.debug(
         "PUSH_BEACON received — push event fired in SW",
         extra={
             "source": source,
@@ -103,8 +103,13 @@ async def send_test_notification(
     """Send a test push + in-app notification to the current user.
 
     Requires the user to have an active event registration.
-    Bypasses Celery to test push delivery directly.
+    Restricted to super_admin users.
     """
+    if getattr(current_user, "role_name", None) != "super_admin":
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=403, detail="Super admin access required")
+
     from sqlalchemy import select
 
     from app.models.event_registration import EventRegistration
@@ -117,7 +122,9 @@ async def send_test_notification(
     )
     event_row = reg_result.scalar_one_or_none()
     if not event_row:
-        return {"error": "No event registration found for this user"}
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="No event registration found for this user")
 
     event_id = event_row
 
@@ -160,8 +167,12 @@ async def send_test_raw_push(
 ) -> dict[str, object]:
     """Send a minimal raw push to every active subscription and return per-sub results.
 
-    For debugging push delivery issues — bypasses notification system entirely.
+    Restricted to super_admin users.
     """
+    if getattr(current_user, "role_name", None) != "super_admin":
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=403, detail="Super admin access required")
     import json
 
     from pywebpush import WebPushException, webpush
@@ -189,7 +200,11 @@ async def send_test_raw_push(
 
     results = []
     for sub in subscriptions:
-        endpoint_domain = sub.endpoint.split("/")[2] if "/" in sub.endpoint else "unknown"
+        endpoint_domain = "unknown"
+        try:
+            endpoint_domain = sub.endpoint.split("/")[2]
+        except IndexError:
+            pass
         entry: dict[str, object] = {
             "id": str(sub.id),
             "endpoint_domain": endpoint_domain,

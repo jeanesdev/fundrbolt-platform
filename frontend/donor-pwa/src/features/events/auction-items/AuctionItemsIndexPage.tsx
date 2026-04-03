@@ -45,7 +45,9 @@ export function AuctionItemsIndexPage() {
   // Resolve slug to event UUID if not already loaded
   useEffect(() => {
     if (eventSlug && currentEvent?.slug !== eventSlug) {
-      loadEventBySlug(eventSlug).catch(() => { });
+      loadEventBySlug(eventSlug).catch(() => {
+        toast.error('Failed to load event');
+      });
     }
   }, [eventSlug, currentEvent?.slug, loadEventBySlug]);
 
@@ -90,7 +92,11 @@ export function AuctionItemsIndexPage() {
     }
 
     try {
-      await deleteAuctionItem(currentEvent?.id ?? eventSlug, item.id);
+      if (!currentEvent?.id) {
+        toast.error('Event not loaded yet');
+        return;
+      }
+      await deleteAuctionItem(currentEvent.id, item.id);
       toast.success('Auction item deleted successfully');
     } catch (err) {
       toast.error(
