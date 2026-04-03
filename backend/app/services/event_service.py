@@ -108,6 +108,7 @@ class EventService:
                 await ChecklistService.populate_from_template(db, event, template, current_user.id)
                 await db.commit()
         except Exception:
+            await db.rollback()
             logger.warning(
                 "Failed to auto-populate checklist for event %s",
                 event.id,
@@ -187,6 +188,7 @@ class EventService:
                     await db.commit()
                     logger.info(f"Recalculated {count} checklist due dates after event date change")
             except Exception:
+                await db.rollback()
                 logger.warning(
                     "Failed to recalculate checklist dates for event %s",
                     event_id,

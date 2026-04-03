@@ -6,7 +6,7 @@ from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException, status
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -359,10 +359,25 @@ class ChecklistService:
         current_user: User,
     ) -> None:
         """Apply a template to an event checklist (replace or append)."""
-        # Load template with items
+        # Load event for date calculation and NPO ownership check
+        event_result = await db.execute(select(Event).where(Event.id == event_id))
+        event = event_result.scalar_one_or_none()
+        if not event:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Event not found",
+            )
+
+        # Load template with items — only allow system defaults or templates owned by the event's NPO
         result = await db.execute(
             select(ChecklistTemplate)
-            .where(ChecklistTemplate.id == template_id)
+            .where(
+                ChecklistTemplate.id == template_id,
+                or_(
+                    ChecklistTemplate.is_system_default.is_(True),
+                    ChecklistTemplate.npo_id == event.npo_id,
+                ),
+            )
             .options(selectinload(ChecklistTemplate.items))
         )
         template = result.scalar_one_or_none()
@@ -370,15 +385,6 @@ class ChecklistService:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Template not found",
-            )
-
-        # Load event for date calculation
-        event_result = await db.execute(select(Event).where(Event.id == event_id))
-        event = event_result.scalar_one_or_none()
-        if not event:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Event not found",
             )
 
         if mode == "replace":

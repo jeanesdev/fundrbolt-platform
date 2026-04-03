@@ -421,8 +421,6 @@ components:
           type: string
           format: date
           nullable: true
-        status:
-          $ref: "#/components/schemas/ChecklistItemStatus"
 
     ChecklistItemStatusUpdate:
       type: object
@@ -477,8 +475,13 @@ components:
           type: integer
         completed_count:
           type: integer
+        in_progress_count:
+          type: integer
         overdue_count:
           type: integer
+        progress_percentage:
+          type: number
+          format: float
 
     ChecklistReorderRequest:
       type: object

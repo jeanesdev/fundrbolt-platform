@@ -30,7 +30,11 @@ This creates 3 new tables:
 - `checklist_template_items` — Task definitions within templates
 - `checklist_items` — Concrete checklist items per event
 
-The migration also seeds the system default template with 26 items covering the fundraising gala lifecycle.
+To seed the system default template (26 items for the fundraising gala lifecycle), run:
+
+```bash
+cd backend && poetry run python seed_checklist_template.py
+```
 
 ### 3. Start Backend
 
@@ -85,19 +89,19 @@ curl -s http://localhost:8000/api/v1/admin/npos/{npo_id}/checklist-templates \
 | Schema | `backend/app/schemas/checklist.py` | Pydantic request/response schemas |
 | Service | `backend/app/services/checklist_service.py` | Business logic (CRUD, templates, reorder) |
 | API | `backend/app/api/v1/admin_checklist.py` | FastAPI router (~14 endpoints) |
-| Migration | `backend/alembic/versions/xxxx_add_checklist_tables.py` | DB migration + seed data |
+| Migration | `backend/alembic/versions/xxxx_add_checklist_tables.py` | DB migration |
 | Types | `frontend/fundrbolt-admin/src/types/checklist.ts` | TypeScript interfaces |
 | Service | `frontend/fundrbolt-admin/src/services/checklistService.ts` | API client |
 | Store | `frontend/fundrbolt-admin/src/stores/checklistStore.ts` | Zustand state |
 | UI | `frontend/fundrbolt-admin/src/features/events/components/ChecklistPanel.tsx` | Main panel component |
-| Tests | `backend/app/tests/test_checklist_service.py` | Service unit tests |
-| Tests | `backend/app/tests/test_admin_checklist.py` | API integration tests |
+| Tests | `backend/app/tests/unit/test_checklist_service.py` | Service unit tests |
+| Tests | `backend/app/tests/contract/test_checklist_api.py` | API contract tests |
 
 ## Running Tests
 
 ```bash
 # Backend tests
-cd backend && poetry run pytest app/tests/test_checklist_service.py app/tests/test_admin_checklist.py -v
+cd backend && poetry run pytest app/tests/unit/test_checklist_service.py app/tests/contract/test_checklist_api.py -v
 
 # Frontend lint + build
 cd frontend/fundrbolt-admin && pnpm lint && pnpm build

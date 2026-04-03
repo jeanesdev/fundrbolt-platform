@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { useChecklistStore } from '@/stores/checklistStore'
-import { useNavigate, useParams } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import {
   AlertTriangle,
   CheckCircle2,
@@ -22,7 +22,6 @@ interface ChecklistSummaryCardProps {
 export function ChecklistSummaryCard({ eventId }: ChecklistSummaryCardProps) {
   const { checklist, isLoading, fetchChecklist } = useChecklistStore()
   const navigate = useNavigate()
-  const params = useParams({ strict: false })
 
   useEffect(() => {
     fetchChecklist(eventId).catch(() => { })
@@ -47,7 +46,7 @@ export function ChecklistSummaryCard({ eventId }: ChecklistSummaryCardProps) {
           onClick={() =>
             navigate({
               to: '/events/$eventId/checklist',
-              params: { eventId: params.eventId! },
+              params: { eventId },
             })
           }
         >
