@@ -72,84 +72,93 @@ export function ChecklistItemRow({
   return (
     <div
       className={cn(
-        'flex items-center gap-3 rounded-lg border px-3 py-2 transition-colors',
+        'rounded-lg border px-3 py-2 transition-colors',
         item.status === 'complete' && 'bg-muted/50 opacity-75',
         item.is_overdue &&
         item.status !== 'complete' &&
         'border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-950'
       )}
     >
-      {dragHandleProps && (
-        <span
-          {...dragHandleProps}
-          className='text-muted-foreground hover:text-foreground cursor-grab'
-        >
-          ⠿
-        </span>
-      )}
+      {/* Top row: drag handle + status badge + title */}
+      <div className='flex items-start gap-2'>
+        {dragHandleProps && (
+          <span
+            {...dragHandleProps}
+            className='text-muted-foreground hover:text-foreground mt-0.5 shrink-0 cursor-grab'
+          >
+            ⠿
+          </span>
+        )}
 
-      <button
-        onClick={handleStatusClick}
-        className='shrink-0'
-        title={`Click to change status to ${STATUS_CYCLE[item.status].replace('_', ' ')}`}
-      >
-        <Badge
-          className={cn(
-            'cursor-pointer gap-1 transition-colors',
-            config.className
-          )}
+        <button
+          onClick={handleStatusClick}
+          className='mt-0.5 shrink-0'
+          title={`Click to change status to ${STATUS_CYCLE[item.status].replace('_', ' ')}`}
         >
-          <Icon className='h-3 w-3' />
-          {config.label}
-        </Badge>
-      </button>
+          <Badge
+            className={cn(
+              'cursor-pointer gap-1 transition-colors',
+              config.className
+            )}
+          >
+            <Icon className='h-3 w-3' />
+            <span className='hidden sm:inline'>{config.label}</span>
+          </Badge>
+        </button>
 
-      <div className='min-w-0 flex-1'>
-        <span
-          className={cn(
-            'text-sm',
-            item.status === 'complete' && 'text-muted-foreground line-through'
-          )}
-        >
-          {item.title}
-        </span>
+        <div className='min-w-0 flex-1'>
+          <span
+            className={cn(
+              'text-sm leading-relaxed',
+              item.status === 'complete' && 'text-muted-foreground line-through'
+            )}
+          >
+            {item.title}
+          </span>
+        </div>
       </div>
 
-      {formattedDueDate && (
-        <span
-          className={cn(
-            'shrink-0 text-xs',
-            item.is_overdue && item.status !== 'complete'
-              ? 'font-medium text-orange-600 dark:text-orange-400'
-              : 'text-muted-foreground'
-          )}
-        >
-          {item.is_overdue && item.status !== 'complete' && (
-            <AlertTriangle className='mr-1 inline h-3 w-3' />
-          )}
-          {formattedDueDate}
-        </span>
-      )}
-
-      {(onEdit || onDelete) && (
-        <div className='flex shrink-0 gap-1'>
-          {onEdit && (
-            <button
-              onClick={() => onEdit(item)}
-              className='text-muted-foreground hover:text-foreground rounded p-1 text-xs'
-              title='Edit item'
-            >
-              Edit
-            </button>
-          )}
-          {onDelete && (
-            <button
-              onClick={() => onDelete(item.id)}
-              className='rounded p-1 text-xs text-red-500 hover:text-red-700'
-              title='Delete item'
-            >
-              Delete
-            </button>
+      {/* Bottom row: due date + actions */}
+      {(formattedDueDate || onEdit || onDelete) && (
+        <div className='mt-1 flex items-center justify-between pl-6 sm:pl-0'>
+          <div>
+            {formattedDueDate && (
+              <span
+                className={cn(
+                  'text-xs',
+                  item.is_overdue && item.status !== 'complete'
+                    ? 'font-medium text-orange-600 dark:text-orange-400'
+                    : 'text-muted-foreground'
+                )}
+              >
+                {item.is_overdue && item.status !== 'complete' && (
+                  <AlertTriangle className='mr-1 inline h-3 w-3' />
+                )}
+                {formattedDueDate}
+              </span>
+            )}
+          </div>
+          {(onEdit || onDelete) && (
+            <div className='flex shrink-0 gap-1'>
+              {onEdit && (
+                <button
+                  onClick={() => onEdit(item)}
+                  className='text-muted-foreground hover:text-foreground rounded p-1 text-xs'
+                  title='Edit item'
+                >
+                  Edit
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  onClick={() => onDelete(item.id)}
+                  className='rounded p-1 text-xs text-red-500 hover:text-red-700'
+                  title='Delete item'
+                >
+                  Delete
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}

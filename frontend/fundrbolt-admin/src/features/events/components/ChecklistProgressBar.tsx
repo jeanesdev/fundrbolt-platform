@@ -23,22 +23,22 @@ export function ChecklistProgressBar({
 
   return (
     <div className='space-y-2'>
-      <div className='flex items-center justify-between text-sm'>
-        <div className='flex items-center gap-3'>
+      <div className='flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm'>
+        <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
           <span className='flex items-center gap-1'>
             <CheckCircle2 className='h-4 w-4 text-green-600' />
             <span className='font-medium'>
-              {completedCount} of {totalCount}
+              {completedCount}/{totalCount}
             </span>{' '}
             complete
           </span>
           {inProgressCount > 0 && (
-            <span className='text-muted-foreground'>
+            <span className='text-muted-foreground text-xs'>
               {inProgressCount} in progress
             </span>
           )}
           {overdueCount > 0 && (
-            <span className='flex items-center gap-1 text-orange-600 dark:text-orange-400'>
+            <span className='flex items-center gap-1 text-xs text-orange-600 dark:text-orange-400'>
               <AlertTriangle className='h-3.5 w-3.5' />
               {overdueCount} overdue
             </span>
