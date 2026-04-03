@@ -103,15 +103,41 @@ interface AuthState {
 // 7 days in milliseconds (refresh token expiry)
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
 
+const CACHED_USER_KEY = 'fundrbolt_cached_user'
+
+function cacheUser(user: AuthUser): void {
+  try {
+    localStorage.setItem(CACHED_USER_KEY, JSON.stringify(user))
+  } catch { /* ignore */ }
+}
+
+function loadCachedUser(): AuthUser | null {
+  try {
+    const raw = localStorage.getItem(CACHED_USER_KEY)
+    return raw ? (JSON.parse(raw) as AuthUser) : null
+  } catch {
+    return null
+  }
+}
+
+function clearCachedUser(): void {
+  try {
+    localStorage.removeItem(CACHED_USER_KEY)
+  } catch { /* ignore */ }
+}
+
 // Read refresh token synchronously at store creation so the axios 401
 // interceptor can use it before any React useEffect fires.
 const storedRefreshToken = getRefreshToken() || ''
+// Restore cached user instantly when a valid refresh token exists.
+// This lets the authenticated layout render without a blocking spinner.
+const cachedUser = storedRefreshToken ? loadCachedUser() : null
 
 export const useAuthStore = create<AuthState>()((set, get) => ({
-  user: null,
+  user: cachedUser,
   accessToken: '',
   refreshToken: storedRefreshToken,
-  isAuthenticated: false,
+  isAuthenticated: !!cachedUser,
   isLoading: false,
   error: null,
 
@@ -149,6 +175,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     })
     // Clear refresh token from localStorage
     clearRefreshToken()
+    clearCachedUser()
     useDebugSpoofStore.getState().reset()
   },
 
@@ -171,6 +198,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       // Update store (setRefreshToken will handle localStorage)
       get().setRefreshToken(refresh_token)
+      cacheUser(user)
       set({
         accessToken: access_token,
         user,
@@ -302,6 +330,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       }
 
       // Update store with new access token and user
+      cacheUser(userData)
       set({
         accessToken: access_token,
         user: userData,
@@ -311,8 +340,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       return true
     } catch {
-      // Refresh token is invalid or expired
-      get().reset()
+      // If the refresh token was rejected (401), the axios interceptor
+      // already called reset() clearing localStorage.  For transient
+      // errors (network failures, server 500, etc.) we intentionally
+      // keep the refresh token so a retry can succeed later.
       set({ isLoading: false })
       return false
     }

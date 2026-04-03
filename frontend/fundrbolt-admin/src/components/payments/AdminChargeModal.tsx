@@ -4,11 +4,7 @@
  * Presents a confirmation + charge UI when an admin clicks "Charge" next to a
  * donor in the DonorBalancePanel. Calls POST /admin/payments/charge.
  */
-import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
-import type { AdminChargeResponse, DonorBalanceSummary } from '@/types/payments'
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
-import { adminChargeDonor } from '@/lib/api/admin-payments'
+import { BidderAvatar } from '@/components/bidder-avatar'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -20,6 +16,11 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { adminChargeDonor } from '@/lib/api/admin-payments'
+import type { AdminChargeResponse, DonorBalanceSummary } from '@/types/payments'
+import { useMutation } from '@tanstack/react-query'
+import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import { useState } from 'react'
 
 interface AdminChargeModalProps {
   open: boolean
@@ -159,7 +160,10 @@ export function AdminChargeModal({
               <div className='rounded-md border p-3'>
                 <div className='flex justify-between text-sm'>
                   <span className='text-muted-foreground'>Donor</span>
-                  <span className='font-medium'>{fullName}</span>
+                  <span className='flex items-center gap-2 font-medium'>
+                    <BidderAvatar name={fullName} />
+                    {fullName}
+                  </span>
                 </div>
                 <div className='flex justify-between text-sm'>
                   <span className='text-muted-foreground'>Email</span>

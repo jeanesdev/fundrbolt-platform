@@ -11,13 +11,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { AuctionItemList } from '@/features/events/components/AuctionItemList';
 import { useAuctionItemStore } from '@/stores/auctionItemStore';
 import { useEventStore } from '@/stores/event-store';
 import type { AuctionItem } from '@/types/auction-item';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { ArrowLeft, Plus } from 'lucide-react';
-import { useEffect } from 'react';
+import { ArrowLeft, Plus, Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 export function AuctionItemsIndexPage() {
@@ -29,6 +30,17 @@ export function AuctionItemsIndexPage() {
   const { currentEvent, loadEventBySlug } = useEventStore();
   const { items, isLoading, error, fetchAuctionItems, deleteAuctionItem } =
     useAuctionItemStore();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredItems = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter(
+      (item) =>
+        item.title.toLowerCase().includes(q) ||
+        String(item.bid_number).includes(q)
+    );
+  }, [items, searchQuery]);
 
   // Resolve slug to event UUID if not already loaded
   useEffect(() => {
@@ -119,14 +131,27 @@ export function AuctionItemsIndexPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Auction Items</CardTitle>
-          <CardDescription>
-            Live and silent auction items available for bidding
-          </CardDescription>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle>All Auction Items</CardTitle>
+              <CardDescription>
+                Live and silent auction items available for bidding
+              </CardDescription>
+            </div>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or item #"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <AuctionItemList
-            items={items}
+            items={filteredItems}
             isLoading={isLoading}
             error={error}
             onAdd={handleAdd}

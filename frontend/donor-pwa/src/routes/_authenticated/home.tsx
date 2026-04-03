@@ -218,7 +218,7 @@ function DonorHomePage() {
     enabled: !!user,
   })
 
-  const { data: ticketInventory, isLoading: ticketsLoading } = useQuery({
+  const { data: ticketInventory } = useQuery({
     queryKey: ['ticket-inventory'],
     queryFn: getMyInventory,
     staleTime: 60 * 1000,
@@ -279,7 +279,7 @@ function DonorHomePage() {
           </div>
         ) : (
           <div className='space-y-8'>
-            {Boolean(ticketsLoading || ticketInventory?.events?.length) && (
+            {(ticketInventory?.events?.length ?? 0) > 0 && (
               <section className='space-y-4'>
                 <div className='flex items-center justify-between gap-3'>
                   <div>
@@ -301,18 +301,11 @@ function DonorHomePage() {
                   </Button>
                 </div>
 
-                {ticketsLoading ? (
-                  <div className='space-y-3'>
-                    <div className='h-28 rounded-2xl border border-white/10 bg-white/5 shadow-sm' />
-                    <div className='h-28 rounded-2xl border border-white/10 bg-white/5 shadow-sm' />
-                  </div>
-                ) : (
-                  <div className='space-y-3'>
-                    {ticketInventory?.events?.map((event) => (
-                      <TicketSummaryCard key={event.event_id} event={event} />
-                    ))}
-                  </div>
-                )}
+                <div className='space-y-3'>
+                  {ticketInventory?.events?.map((event) => (
+                    <TicketSummaryCard key={event.event_id} event={event} />
+                  ))}
+                </div>
               </section>
             )}
 

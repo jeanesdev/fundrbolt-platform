@@ -2,12 +2,6 @@
  * AuctionItemsIndexPage
  * Page for listing all auction items for an event
  */
-import { useEffect } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import type { AuctionItem } from '@/types/auction-item'
-import { Plus } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuctionItemStore } from '@/stores/auctionItemStore'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -16,8 +10,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { AuctionItemList } from '@/features/events/components/AuctionItemList'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import type { AuctionItem } from '@/types/auction-item'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import { Plus, Search, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 export function AuctionItemsIndexPage() {
   const navigate = useNavigate()
@@ -31,6 +32,19 @@ export function AuctionItemsIndexPage() {
 
   const { items, isLoading, error, fetchAuctionItems, deleteAuctionItem } =
     useAuctionItemStore()
+
+  const [search, setSearch] = useState('')
+
+  const filteredItems = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return items
+    return items.filter(
+      (item) =>
+        item.title.toLowerCase().includes(q) ||
+        item.bid_number?.toString().includes(q) ||
+        item.description?.toLowerCase().includes(q)
+    )
+  }, [items, search])
 
   useEffect(() => {
     if (eventId) {
@@ -101,14 +115,36 @@ export function AuctionItemsIndexPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Auction Items</CardTitle>
-          <CardDescription>
-            Live and silent auction items available for bidding
-          </CardDescription>
+          <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+            <div>
+              <CardTitle>All Auction Items</CardTitle>
+              <CardDescription>
+                Live and silent auction items available for bidding
+              </CardDescription>
+            </div>
+            <div className='relative w-full sm:w-64'>
+              <Search className='text-muted-foreground absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2' />
+              <Input
+                placeholder='Search by name, bid # …'
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className='pl-8 pr-8'
+              />
+              {search && (
+                <button
+                  type='button'
+                  onClick={() => setSearch('')}
+                  className='text-muted-foreground hover:text-foreground absolute right-2.5 top-1/2 -translate-y-1/2'
+                >
+                  <X className='h-4 w-4' />
+                </button>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <AuctionItemList
-            items={items}
+            items={filteredItems}
             isLoading={isLoading}
             error={error}
             onAdd={handleAdd}

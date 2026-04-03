@@ -190,14 +190,21 @@ export function NotificationItem({
         <button
           type='button'
           onClick={handleClick}
-          className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 ${
-            !notification.is_read ? 'bg-primary/5' : ''
-          }`}
+          className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 ${!notification.is_read ? 'bg-primary/5' : ''
+            }`}
         >
-          {/* Icon */}
-          <div className='mt-0.5 flex-shrink-0'>
-            <NotificationIcon type={notification.notification_type} />
-          </div>
+          {/* Leading visual: thumbnail or icon */}
+          {notification.data?.image_url ? (
+            <img
+              src={notification.data.image_url as string}
+              alt={(notification.data?.item_title as string) || 'Item'}
+              className='mt-0.5 h-10 w-10 flex-shrink-0 rounded-lg object-cover'
+            />
+          ) : (
+            <div className='mt-0.5 flex-shrink-0'>
+              <NotificationIcon type={notification.notification_type} />
+            </div>
+          )}
 
           {/* Content */}
           <div className='min-w-0 flex-1'>

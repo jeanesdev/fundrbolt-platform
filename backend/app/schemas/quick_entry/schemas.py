@@ -197,3 +197,55 @@ class QuickEntryLiveAuctionOverviewResponse(BaseModel):
 
     items_with_winner: int
     total_items: int
+
+
+# ---------------------------------------------------------------------------
+# Silent Auction quick-entry schemas
+# ---------------------------------------------------------------------------
+
+
+class QuickEntrySilentBidCreateRequest(BaseModel):
+    """Request payload for placing a silent auction bid on behalf of a donor."""
+
+    item_id: UUID
+    amount: int = Field(..., ge=1)
+    bidder_number: int = Field(..., ge=1)
+
+
+class QuickEntrySilentBidResponse(BaseModel):
+    """Response for a silent auction bid placed via quick entry."""
+
+    id: UUID
+    event_id: UUID
+    item_id: UUID
+    bidder_number: int
+    donor_name: str | None = None
+    amount: float
+    bid_status: str
+    placed_at: datetime
+
+
+class QuickEntrySilentBidListResponse(BaseModel):
+    """List response for silent auction bids on an item."""
+
+    items: list[QuickEntrySilentBidResponse]
+
+
+class QuickEntrySilentItemResponse(BaseModel):
+    """Silent auction item for quick-entry item picker."""
+
+    id: UUID
+    bid_number: int
+    title: str
+    starting_bid: float
+    bid_increment: float
+    current_bid_amount: float | None = None
+    min_next_bid_amount: float | None = None
+    bid_count: int = 0
+    primary_image_url: str | None = None
+
+
+class QuickEntrySilentItemListResponse(BaseModel):
+    """List response for silent auction items."""
+
+    items: list[QuickEntrySilentItemResponse]

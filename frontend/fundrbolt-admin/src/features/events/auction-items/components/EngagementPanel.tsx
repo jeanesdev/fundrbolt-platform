@@ -2,6 +2,7 @@
  * EngagementPanel Component
  * Displays auction item engagement data with tabs for Watchers, Views, and Bids
  */
+import { BidderAvatar } from '@/components/bidder-avatar'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -244,59 +245,59 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
   return (
     <div className='space-y-6'>
       {/* Summary Stats */}
-      <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4'>
-        <Card>
-          <CardHeader className='pb-2'>
-            <CardTitle className='text-muted-foreground flex items-center gap-2 text-sm font-medium'>
-              <Heart className='h-4 w-4' />
+      <div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
+        <Card className='py-0'>
+          <CardHeader className='px-3 pb-1 pt-3'>
+            <CardTitle className='text-muted-foreground flex items-center gap-1.5 text-xs font-medium'>
+              <Heart className='h-3.5 w-3.5' />
               Watchers
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>
+          <CardContent className='px-3 pb-3'>
+            <div className='text-xl font-bold'>
               {data?.summary.total_watchers}
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className='pb-2'>
-            <CardTitle className='text-muted-foreground flex items-center gap-2 text-sm font-medium'>
-              <Eye className='h-4 w-4' />
+        <Card className='py-0'>
+          <CardHeader className='px-3 pb-1 pt-3'>
+            <CardTitle className='text-muted-foreground flex items-center gap-1.5 text-xs font-medium'>
+              <Eye className='h-3.5 w-3.5' />
               Total Views
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>{data.summary.total_views}</div>
-            <p className='text-muted-foreground mt-1 text-xs'>
-              {data.summary.unique_viewers} unique viewers
+          <CardContent className='px-3 pb-3'>
+            <div className='text-xl font-bold'>{data.summary.total_views}</div>
+            <p className='text-muted-foreground text-[10px]'>
+              {data.summary.unique_viewers} unique
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className='pb-2'>
-            <CardTitle className='text-muted-foreground flex items-center gap-2 text-sm font-medium'>
-              <Clock className='h-4 w-4' />
+        <Card className='py-0'>
+          <CardHeader className='px-3 pb-1 pt-3'>
+            <CardTitle className='text-muted-foreground flex items-center gap-1.5 text-xs font-medium'>
+              <Clock className='h-3.5 w-3.5' />
               View Time
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>
+          <CardContent className='px-3 pb-3'>
+            <div className='text-xl font-bold'>
               {formatDuration(data.summary.total_view_duration_seconds)}
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className='pb-2'>
-            <CardTitle className='text-muted-foreground flex items-center gap-2 text-sm font-medium'>
-              <TrendingUp className='h-4 w-4' />
+        <Card className='py-0'>
+          <CardHeader className='px-3 pb-1 pt-3'>
+            <CardTitle className='text-muted-foreground flex items-center gap-1.5 text-xs font-medium'>
+              <TrendingUp className='h-3.5 w-3.5' />
               Total Bids
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>{data.summary.total_bids}</div>
+          <CardContent className='px-3 pb-3'>
+            <div className='text-xl font-bold'>{data.summary.total_bids}</div>
           </CardContent>
         </Card>
       </div>
@@ -344,7 +345,10 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
                       key={watcher.user.id}
                       className='space-y-1 rounded-md border p-3'
                     >
-                      <p className='font-medium'>{watcher.user.name}</p>
+                      <div className='flex items-center gap-2'>
+                        <BidderAvatar name={watcher.user.name} />
+                        <p className='font-medium'>{watcher.user.name}</p>
+                      </div>
                       <p className='text-muted-foreground truncate text-sm'>
                         {watcher.user.email}
                       </p>
@@ -393,7 +397,10 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
                       {sortedWatchers.map((watcher) => (
                         <TableRow key={watcher.user.id}>
                           <TableCell className='font-medium'>
-                            {watcher.user.name}
+                            <div className='flex items-center gap-2'>
+                              <BidderAvatar name={watcher.user.name} />
+                              {watcher.user.name}
+                            </div>
                           </TableCell>
                           <TableCell className='text-muted-foreground'>
                             {watcher.user.email}
@@ -423,7 +430,10 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
                       key={view.user.id}
                       className='space-y-1 rounded-md border p-3'
                     >
-                      <p className='font-medium'>{view.user.name}</p>
+                      <div className='flex items-center gap-2'>
+                        <BidderAvatar name={view.user.name} />
+                        <p className='font-medium'>{view.user.name}</p>
+                      </div>
                       <dl className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
                         <dt className='text-muted-foreground'>Duration</dt>
                         <dd>{formatDuration(view.total_duration_seconds)}</dd>
@@ -485,7 +495,10 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
                       {sortedViews.map((view) => (
                         <TableRow key={view.user.id}>
                           <TableCell className='font-medium'>
-                            {view.user.name}
+                            <div className='flex items-center gap-2'>
+                              <BidderAvatar name={view.user.name} />
+                              {view.user.name}
+                            </div>
                           </TableCell>
                           <TableCell>
                             {formatDuration(view.total_duration_seconds)}
@@ -516,7 +529,10 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
                       className='space-y-1 rounded-md border p-3'
                     >
                       <div className='flex items-center justify-between'>
-                        <span className='font-medium'>{bid.user.name}</span>
+                        <span className='flex items-center gap-2 font-medium'>
+                          <BidderAvatar name={bid.user.name} />
+                          {bid.user.name}
+                        </span>
                         <span className='font-semibold'>
                           {formatCurrency(bid.amount)}
                         </span>
@@ -589,7 +605,10 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
                       {sortedBids.map((bid) => (
                         <TableRow key={bid.id}>
                           <TableCell className='font-medium'>
-                            {bid.user.name}
+                            <div className='flex items-center gap-2'>
+                              <BidderAvatar name={bid.user.name} />
+                              {bid.user.name}
+                            </div>
                           </TableCell>
                           <TableCell className='font-semibold'>
                             {formatCurrency(bid.amount)}

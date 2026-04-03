@@ -53,6 +53,7 @@ export interface EventSearchResult {
 export interface AuctionItemSearchResult {
   id: string
   name: string
+  bid_number: number | null
   event_id: string
   event_slug: string | null
   event_name: string

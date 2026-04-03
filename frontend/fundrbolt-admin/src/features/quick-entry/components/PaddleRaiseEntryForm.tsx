@@ -1,3 +1,6 @@
+import { BidderAvatar } from '@/components/bidder-avatar'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import {
   type FormEvent,
   type KeyboardEvent,
@@ -6,8 +9,6 @@ import {
   useRef,
   useState,
 } from 'react'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import type {
   QuickEntryDonationLabel,
   QuickEntryPaddleDonationResponse,
@@ -349,7 +350,10 @@ export function PaddleRaiseEntryForm({
                     #{donation.bidder_number}
                   </span>
                 </div>
-                <p className='text-sm'>{donation.donor_name ?? '—'}</p>
+                <p className='flex items-center gap-2 text-sm'>
+                  {donation.donor_name ? <BidderAvatar name={donation.donor_name} /> : null}
+                  {donation.donor_name ?? '—'}
+                </p>
                 <div className='flex flex-wrap gap-1'>
                   {donation.labels.length ? (
                     donation.labels.map((label, idx) => (
@@ -447,7 +451,12 @@ export function PaddleRaiseEntryForm({
                     ${donation.amount.toLocaleString('en-US')}
                   </td>
                   <td className='px-3 py-2'>{donation.bidder_number}</td>
-                  <td className='px-3 py-2'>{donation.donor_name ?? '—'}</td>
+                  <td className='px-3 py-2'>
+                    <div className='flex items-center gap-2'>
+                      {donation.donor_name ? <BidderAvatar name={donation.donor_name} /> : null}
+                      {donation.donor_name ?? '—'}
+                    </div>
+                  </td>
                   <td className='px-3 py-2'>
                     {donation.labels.length
                       ? donation.labels.map((label) => label.label).join(', ')

@@ -1,5 +1,6 @@
 import { CookieConsentWrapper } from '@/components/legal/cookie-consent-wrapper'
 import { NavigationProgress } from '@/components/navigation-progress'
+import { NotificationToastOverlay } from '@/components/notifications/NotificationToastOverlay'
 import { OfflineStatusBar } from '@/components/pwa/offline-status-bar'
 import { SessionExpirationWarning } from '@/components/session-expiration-warning'
 import { Toaster } from '@/components/ui/sonner'
@@ -48,7 +49,8 @@ function RootComponent() {
         onDismiss={dismissUpdate}
       />
       <Outlet />
-      <Toaster duration={5000} />
+      <Toaster duration={5000} position="top-center" />
+      <NotificationToastOverlay />
       <InstallPromptBanner appId="donor" />
     </>
   )

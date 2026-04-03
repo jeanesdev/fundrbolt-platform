@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
-import { Crown } from 'lucide-react'
-import { useViewPreference } from '@/hooks/use-view-preference'
+import { BidderAvatar } from '@/components/bidder-avatar'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import { Crown } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import type { QuickEntryLiveSummary } from '../api/quickEntryApi'
 import { FilterableColumnHeader, type SortDir } from './FilterableColumnHeader'
 
@@ -245,7 +246,10 @@ export function LiveBidLogAndMetrics({
                       #{bid.bidder_number}
                     </span>
                   </div>
-                  <p className='text-sm'>{bid.donor_name ?? '—'}</p>
+                  <p className='flex items-center gap-2 text-sm'>
+                    {bid.donor_name ? <BidderAvatar name={bid.donor_name} /> : null}
+                    {bid.donor_name ?? '—'}
+                  </p>
                   <div className='text-muted-foreground flex items-center justify-between text-xs'>
                     <span>
                       {bid.table_number ?? '—'} ·{' '}
@@ -366,7 +370,12 @@ export function LiveBidLogAndMetrics({
                       </span>
                     </td>
                     <td className='px-3 py-2'>{bid.bidder_number}</td>
-                    <td className='px-3 py-2'>{bid.donor_name ?? '—'}</td>
+                    <td className='px-3 py-2'>
+                      <div className='flex items-center gap-2'>
+                        {bid.donor_name ? <BidderAvatar name={bid.donor_name} /> : null}
+                        {bid.donor_name ?? '—'}
+                      </div>
+                    </td>
                     <td className='px-3 py-2'>{bid.table_number ?? '—'}</td>
                     <td className='px-3 py-2'>
                       {new Date(bid.accepted_at).toLocaleTimeString()}

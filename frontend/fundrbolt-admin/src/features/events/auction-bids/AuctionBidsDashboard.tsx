@@ -1,8 +1,5 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
-import { Link } from '@tanstack/react-router'
-import type { AuctionBidDashboardResponse } from '@/types/auctionBidImport'
-import { ArrowUpDown, Filter, Loader2, X } from 'lucide-react'
-import { useViewPreference } from '@/hooks/use-view-preference'
+import { BidderAvatar } from '@/components/bidder-avatar'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -30,7 +27,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import type { AuctionBidDashboardResponse } from '@/types/auctionBidImport'
+import { Link } from '@tanstack/react-router'
+import { ArrowUpDown, Filter, Loader2, X } from 'lucide-react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 
 interface AuctionBidsDashboardProps {
   data: AuctionBidDashboardResponse | undefined
@@ -612,7 +613,8 @@ export function AuctionBidsDashboard({
                           </span>
                         </div>
                         <p className='text-sm'>{bid.auction_item_title}</p>
-                        <p className='text-muted-foreground text-sm'>
+                        <p className='text-muted-foreground flex items-center gap-2 text-sm'>
+                          <BidderAvatar name={bid.bidder_name || bid.bidder_email} />
                           {bid.bidder_name || bid.bidder_email}
                         </p>
                       </div>
@@ -704,7 +706,10 @@ export function AuctionBidsDashboard({
                         </TableCell>
                         <TableCell>{bid.auction_item_title}</TableCell>
                         <TableCell>
-                          {bid.bidder_name || bid.bidder_email}
+                          <div className='flex items-center gap-2'>
+                            <BidderAvatar name={bid.bidder_name || bid.bidder_email} />
+                            {bid.bidder_name || bid.bidder_email}
+                          </div>
                         </TableCell>
                         <TableCell className='text-right'>
                           {formatCurrency(bid.bid_amount)}
@@ -866,7 +871,8 @@ export function AuctionBidsDashboard({
                           </span>
                         </div>
                         <p className='text-sm'>{bid.auction_item_title}</p>
-                        <p className='text-muted-foreground text-sm'>
+                        <p className='text-muted-foreground flex items-center gap-2 text-sm'>
+                          <BidderAvatar name={bid.bidder_name || bid.bidder_email} />
                           {bid.bidder_name || bid.bidder_email}
                         </p>
                         <p className='text-muted-foreground text-xs'>
@@ -975,7 +981,10 @@ export function AuctionBidsDashboard({
                         </TableCell>
                         <TableCell>{bid.auction_item_title}</TableCell>
                         <TableCell>
-                          {bid.bidder_name || bid.bidder_email}
+                          <div className='flex items-center gap-2'>
+                            <BidderAvatar name={bid.bidder_name || bid.bidder_email} />
+                            {bid.bidder_name || bid.bidder_email}
+                          </div>
                         </TableCell>
                         <TableCell>{formatDateTime(bid.bid_time)}</TableCell>
                         <TableCell className='text-right'>

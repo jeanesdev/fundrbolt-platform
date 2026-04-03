@@ -45,12 +45,13 @@ export function useItemViewTracking({
 
         // Only track if viewed for at least 1 second
         if (durationSeconds >= 1) {
-          // Fire and forget - don't wait for response
-          void auctionItemService.trackItemView(
+          auctionItemService.trackItemView(
             eventId,
             trackedItemId,
             durationSeconds,
-          )
+          ).catch((err) => {
+            console.error('[ViewTracking] Failed to record view:', err)
+          })
         }
 
         // Reset refs

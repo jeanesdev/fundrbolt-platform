@@ -42,7 +42,18 @@ class NotificationService:
         prefs = list(result.scalars().all())
 
         if not prefs:
-            # No preferences stored → default to in-app only
+            # No preferences stored → high-priority types default to all
+            # channels; everything else defaults to in-app only.
+            _MULTI_CHANNEL_DEFAULTS = {
+                NotificationTypeEnum.OUTBID,
+                NotificationTypeEnum.ITEM_WON,
+            }
+            if notification_type in _MULTI_CHANNEL_DEFAULTS:
+                return [
+                    DeliveryChannelEnum.INAPP,
+                    DeliveryChannelEnum.PUSH,
+                    DeliveryChannelEnum.EMAIL,
+                ]
             return [DeliveryChannelEnum.INAPP]
 
         return [p.channel for p in prefs if p.enabled]

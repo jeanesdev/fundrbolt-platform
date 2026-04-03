@@ -152,7 +152,12 @@ export function SearchResults({ results, isLoading, onClose }: SearchResultsProp
                 <Gavel className='h-4 w-4' />
               </div>
               <div className='flex-1 min-w-0'>
-                <p className='font-medium truncate'>{item.name}</p>
+                <p className='font-medium truncate'>
+                  {item.bid_number != null && (
+                    <span className='text-muted-foreground font-normal'>#{item.bid_number} </span>
+                  )}
+                  {item.name}
+                </p>
                 <p className='text-muted-foreground text-xs truncate'>
                   {item.event_name} • {item.category}
                   {item.starting_bid && ` • $${item.starting_bid.toLocaleString()}`}

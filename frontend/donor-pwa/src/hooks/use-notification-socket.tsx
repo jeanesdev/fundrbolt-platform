@@ -4,7 +4,7 @@
  * Connects to the backend Socket.IO server and listens for new notifications.
  * Manages room joining, reconnection, and store/query cache syncing.
  */
-import { NotificationToast } from '@/components/notifications/NotificationToast'
+import { triggerNotificationToast } from '@/components/notifications/NotificationToastOverlay'
 import type { NotificationData } from '@/services/notification-service'
 import { useAuthStore } from '@/stores/auth-store'
 import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
@@ -12,7 +12,6 @@ import { useNotificationStore } from '@/stores/notification-store'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { io, type Socket } from 'socket.io-client'
-import { toast } from 'sonner'
 
 /** Derive Socket.IO URL.
  *  In development the Vite proxy forwards /ws to the backend on the same
@@ -26,6 +25,24 @@ function getSocketUrl(): string {
   }
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
   return apiUrl.replace(/\/api\/v1\/?$/, '')
+}
+
+const LAST_SEEN_KEY = 'fundrbolt_notification_last_seen'
+
+function loadLastSeen(): string | null {
+  try {
+    return localStorage.getItem(LAST_SEEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+function saveLastSeen(ts: string): void {
+  try {
+    localStorage.setItem(LAST_SEEN_KEY, ts)
+  } catch {
+    // Ignore storage failures.
+  }
 }
 
 export type SocketStatus =
@@ -46,7 +63,7 @@ export function useNotificationSocket(
   const [status, setStatus] = useState<SocketStatus>('disconnected')
   const socketRef = useRef<Socket | null>(null)
   const queryClient = useQueryClient()
-  const lastSeenRef = useRef<string | null>(null)
+  const lastSeenRef = useRef<string | null>(loadLastSeen())
 
   const addNotification = useNotificationStore((s) => s.addNotification)
   const incrementUnreadCount = useNotificationStore(
@@ -54,7 +71,6 @@ export function useNotificationSocket(
   )
   const setUnreadCount = useNotificationStore((s) => s.setUnreadCount)
   const setConnectionStatus = useNotificationStore((s) => s.setConnectionStatus)
-  const isOpen = useNotificationStore((s) => s.isOpen)
 
   // Respect spoofed user ID for debug purposes
   const spoofedUserId = useDebugSpoofStore((s) => s.spoofedUser?.id)
@@ -116,23 +132,28 @@ export function useNotificationSocket(
       // Track latest notification timestamp for catch-up on reconnect
       if (data.created_at) {
         lastSeenRef.current = data.created_at
+        saveLastSeen(data.created_at)
       }
       // Invalidate React Query caches so lists refetch
       void queryClient.invalidateQueries({
         queryKey: ['notifications'],
       })
 
+      // Bid-related notifications should refresh auction item data
+      if (
+        data.notification_type === 'outbid' ||
+        data.notification_type === 'bid_confirmed' ||
+        data.notification_type === 'item_won'
+      ) {
+        void queryClient.invalidateQueries({ queryKey: ['auction-items'] })
+        void queryClient.invalidateQueries({ queryKey: ['auction-item-detail'] })
+        void queryClient.invalidateQueries({ queryKey: ['auction-item-bids'] })
+      }
+
       // Show toast if notification center is not open
-      if (!useNotificationStore.getState().isOpen) {
-        toast.custom(
-          (t) => (
-            <NotificationToast
-              notification={data}
-              onDismiss={() => toast.dismiss(t)}
-            />
-          ),
-          { duration: 5000 }
-        )
+      const isOpen = useNotificationStore.getState().isOpen
+      if (!isOpen) {
+        triggerNotificationToast(data)
       }
     })
 
@@ -156,7 +177,6 @@ export function useNotificationSocket(
     incrementUnreadCount,
     setUnreadCount,
     setConnectionStatus,
-    isOpen,
     queryClient,
   ])
 

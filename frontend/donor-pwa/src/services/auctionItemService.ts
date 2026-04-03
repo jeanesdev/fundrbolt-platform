@@ -149,13 +149,17 @@ class AuctionItemService {
    * Track item view duration
    */
   async trackItemView(
-    eventId: string,
+    _eventId: string,
     itemId: string,
     durationSeconds: number
   ): Promise<void> {
     await apiClient.post(
-      `/events/${eventId}/auction-items/${itemId}/views`,
-      { duration_seconds: durationSeconds }
+      `/auction/items/${itemId}/views`,
+      {
+        item_id: itemId,
+        view_started_at: new Date(Date.now() - durationSeconds * 1000).toISOString(),
+        view_duration_seconds: durationSeconds,
+      }
     );
   }
 }

@@ -147,7 +147,10 @@ export function NotificationHistory({
             ) : (
               campaigns.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className='max-w-[200px]' title={c.message}>
+                  <TableCell
+                    className='max-w-[200px] truncate'
+                    title={c.message}
+                  >
                     {truncate(c.message, 60)}
                   </TableCell>
                   <TableCell>

@@ -95,7 +95,7 @@ class AuctionBidService:
                     data={
                         "item_id": str(item.id),
                         "bid_amount": str(bid.bid_amount),
-                        "deep_link": f"/events/{event_slug}/auction/{item.id}",
+                        "deep_link": f"/events/{event_slug}?item={item.id}",
                         "animation_type": "pulse",
                     },
                     sio=sio,
@@ -271,7 +271,7 @@ class AuctionBidService:
                 ),
                 data={
                     "item_id": str(item.id),
-                    "deep_link": f"/events/{event_slug}/auction/{item.id}",
+                    "deep_link": f"/events/{event_slug}?item={item.id}",
                     "animation_type": "flash",
                     "bid_amount": str(new_bid_amount) if new_bid_amount else None,
                 },
@@ -467,7 +467,7 @@ class AuctionBidService:
                             "item_id": str(item.id),
                             "bid_amount": str(next_amount),
                             "max_bid": str(best.max_bid),
-                            "deep_link": f"/events/{event_slug}/auction/{item.id}",
+                            "deep_link": f"/events/{event_slug}?item={item.id}",
                         },
                         sio=sio,
                     )
@@ -553,7 +553,7 @@ class AuctionBidService:
                     "item_id": str(item.id),
                     "bid_amount": str(winning_bid.bid_amount),
                     "admin_name": admin_name,
-                    "deep_link": f"/events/{event_slug}/auction/{item.id}",
+                    "deep_link": f"/events/{event_slug}?item={item.id}",
                 },
                 sio=sio,
             )

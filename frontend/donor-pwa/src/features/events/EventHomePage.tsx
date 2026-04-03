@@ -143,6 +143,24 @@ export function EventHomePage() {
     prevOnlineRef.current = isOnline
   }, [isOnline, queryClient])
 
+  // Handle deep-link search params (e.g. ?item=<uuid> or ?tab=auction)
+  const deepLinkHandled = useRef(false)
+  useEffect(() => {
+    if (deepLinkHandled.current) return
+    const params = new URLSearchParams(window.location.search)
+    const itemParam = params.get('item')
+    const tabParam = params.get('tab')
+    if (itemParam) {
+      deepLinkHandled.current = true
+      setSelectedAuctionItemId(itemParam)
+    }
+    if (tabParam === 'auction') {
+      deepLinkHandled.current = true
+      setDisplayedTab('auction')
+      setUserSelectedTab('auction')
+    }
+  }, [])
+
   const getTaggedImageUrls = useCallback(
     (tag: EventMediaUsageTag) => {
       if (!currentEvent?.media?.length) return []
@@ -1446,6 +1464,7 @@ export function EventHomePage() {
             <MyBidsDonationsSection
               activity={myActivity}
               isAuctionClosed={currentEvent?.status === 'closed'}
+              onViewItem={(itemId) => setSelectedAuctionItemId(itemId)}
             />
           )}
 
