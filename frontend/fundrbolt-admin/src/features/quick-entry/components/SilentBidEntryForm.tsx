@@ -18,9 +18,8 @@ import { cn } from '@/lib/utils'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
 import type {
-  QuickEntryBuyNowBidResponse,
-  QuickEntryBuyNowItem,
-  QuickEntryBuyNowSummary,
+  QuickEntrySilentBidResponse,
+  QuickEntrySilentItem,
 } from '../api/quickEntryApi'
 
 function parseToWholeDollar(value: string): string {
@@ -29,28 +28,25 @@ function parseToWholeDollar(value: string): string {
   return Number.parseInt(digits, 10).toLocaleString('en-US')
 }
 
-interface BuyNowEntryFormProps {
-  items: QuickEntryBuyNowItem[]
+interface SilentBidEntryFormProps {
+  items: QuickEntrySilentItem[]
   isLoadingItems: boolean
   isItemsError: boolean
   selectedItemId: string
-  selectedItem: QuickEntryBuyNowItem | undefined
+  selectedItem: QuickEntrySilentItem | undefined
   onSelectItem: (id: string) => void
   amount: string
   bidderNumber: string
   bidderRef: React.RefObject<HTMLInputElement | null>
-  recentBids: QuickEntryBuyNowBidResponse[]
+  recentBids: QuickEntrySilentBidResponse[]
   isSubmitting: boolean
-  isDeleting: boolean
   onAmountChange: (v: string) => void
   onBidderNumberChange: (v: string) => void
   onBidderKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void
   onSubmit: () => void
-  onDeleteBid: (id: string) => void
-  summary?: QuickEntryBuyNowSummary
 }
 
-export function BuyNowEntryForm({
+export function SilentBidEntryForm({
   items,
   isLoadingItems,
   isItemsError,
@@ -62,18 +58,15 @@ export function BuyNowEntryForm({
   bidderRef,
   recentBids,
   isSubmitting,
-  isDeleting,
   onAmountChange,
   onBidderNumberChange,
   onBidderKeyDown,
   onSubmit,
-  onDeleteBid,
-  summary,
-}: BuyNowEntryFormProps) {
+}: SilentBidEntryFormProps) {
   const [itemMenuOpen, setItemMenuOpen] = useState(false)
   const [itemSearch, setItemSearch] = useState('')
   const amountRef = useRef<HTMLInputElement>(null)
-  const [viewMode, setViewMode] = useViewPreference('buy-now-log')
+  const [viewMode, setViewMode] = useViewPreference('silent-bid-log')
 
   const handleItemSelect = (id: string) => {
     onSelectItem(id)
@@ -114,31 +107,15 @@ export function BuyNowEntryForm({
 
   return (
     <div className='space-y-3'>
-      {/* Event-level summary metrics */}
-      {summary && (
-        <div className='grid grid-cols-2 gap-3'>
-          <div className='bg-muted/20 rounded-md border p-3'>
-            <p className='text-muted-foreground text-xs'>Total Raised</p>
-            <p className='text-xl font-semibold'>
-              ${Number(summary.total_raised).toLocaleString('en-US')}
-            </p>
-          </div>
-          <div className='bg-muted/20 rounded-md border p-3'>
-            <p className='text-muted-foreground text-xs'>Number of Bids</p>
-            <p className='text-xl font-semibold'>{summary.bid_count}</p>
-          </div>
-        </div>
-      )}
-
       {/* Item selector */}
       <div className='space-y-1'>
-        <label className='text-sm font-medium' htmlFor='buy-now-item'>
-          Buy It Now Item
+        <label className='text-sm font-medium' htmlFor='silent-item'>
+          Silent Auction Item
         </label>
         <Popover open={itemMenuOpen} onOpenChange={setItemMenuOpen}>
           <PopoverTrigger asChild>
             <button
-              id='buy-now-item'
+              id='silent-item'
               type='button'
               role='combobox'
               aria-expanded={itemMenuOpen}
@@ -152,7 +129,7 @@ export function BuyNowEntryForm({
                     : isItemsError
                       ? 'Failed to load items'
                       : items.length === 0
-                        ? 'No buy-it-now items configured'
+                        ? 'No silent auction items'
                         : 'Select item'}
               </span>
               <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
@@ -197,11 +174,23 @@ export function BuyNowEntryForm({
                           #{item.bid_number} · {item.title}
                         </p>
                         <p className='text-muted-foreground text-xs'>
-                          Buy It Now: $
-                          {Math.round(item.buy_now_price).toLocaleString(
+                          Start: $
+                          {Math.round(item.starting_bid).toLocaleString(
+                            'en-US'
+                          )}
+                          {' · '}Increment: $
+                          {Math.round(item.bid_increment).toLocaleString(
                             'en-US'
                           )}
                         </p>
+                        {item.current_bid_amount != null && (
+                          <p className='text-xs font-medium text-green-600 dark:text-green-400'>
+                            Current: $
+                            {Math.round(item.current_bid_amount).toLocaleString(
+                              'en-US'
+                            )}
+                          </p>
+                        )}
                       </div>
                       <Check
                         className={cn(
@@ -239,24 +228,60 @@ export function BuyNowEntryForm({
               <p className='text-sm font-medium'>
                 #{selectedItem.bid_number} · {selectedItem.title}
               </p>
-              <p className='text-muted-foreground text-sm'>
-                Buy It Now: $
-                {Math.round(selectedItem.buy_now_price).toLocaleString('en-US')}
-              </p>
+              <div className='flex flex-wrap gap-x-4 gap-y-0.5 text-sm'>
+                <span className='text-muted-foreground'>
+                  Starting: $
+                  {Math.round(selectedItem.starting_bid).toLocaleString(
+                    'en-US'
+                  )}
+                </span>
+                <span className='text-muted-foreground'>
+                  Increment: $
+                  {Math.round(selectedItem.bid_increment).toLocaleString(
+                    'en-US'
+                  )}
+                </span>
+              </div>
+              <div className='flex flex-wrap gap-x-4 gap-y-0.5 text-sm'>
+                {selectedItem.current_bid_amount != null ? (
+                  <span className='font-medium text-green-600 dark:text-green-400'>
+                    Current High: $
+                    {Math.round(selectedItem.current_bid_amount).toLocaleString(
+                      'en-US'
+                    )}
+                  </span>
+                ) : (
+                  <span className='text-muted-foreground'>No bids yet</span>
+                )}
+                {selectedItem.min_next_bid_amount != null && (
+                  <span className='text-muted-foreground'>
+                    Min Next: $
+                    {Math.round(
+                      selectedItem.min_next_bid_amount
+                    ).toLocaleString('en-US')}
+                  </span>
+                )}
+              </div>
+              {selectedItem.bid_count > 0 && (
+                <p className='text-muted-foreground text-xs'>
+                  {selectedItem.bid_count} bid
+                  {selectedItem.bid_count !== 1 ? 's' : ''}
+                </p>
+              )}
             </div>
           </div>
         </section>
       ) : null}
 
-      {/* Entry form — only shown when item is selected */}
+      {/* Entry form */}
       {selectedItem ? (
         <form className='grid grid-cols-2 gap-3' onSubmit={handleSubmit}>
           <div className='space-y-1'>
-            <label className='text-sm font-medium' htmlFor='buy-now-amount'>
-              Amount
+            <label className='text-sm font-medium' htmlFor='silent-amount'>
+              Bid Amount
             </label>
             <input
-              id='buy-now-amount'
+              id='silent-amount'
               ref={amountRef}
               className='h-12 w-full rounded-md border px-3 py-2 text-lg'
               inputMode='numeric'
@@ -265,17 +290,25 @@ export function BuyNowEntryForm({
                 onAmountChange(parseToWholeDollar(e.target.value))
               }
               onKeyDown={handleAmountKeyDown}
-              placeholder='500'
+              placeholder={
+                selectedItem.min_next_bid_amount
+                  ? Math.round(selectedItem.min_next_bid_amount).toLocaleString(
+                    'en-US'
+                  )
+                  : Math.round(selectedItem.starting_bid).toLocaleString(
+                    'en-US'
+                  )
+              }
               disabled={isSubmitting}
             />
           </div>
 
           <div className='space-y-1'>
-            <label className='text-sm font-medium' htmlFor='buy-now-bidder'>
+            <label className='text-sm font-medium' htmlFor='silent-bidder'>
               Bidder Number
             </label>
             <input
-              id='buy-now-bidder'
+              id='silent-bidder'
               ref={bidderRef}
               className='h-12 w-full rounded-md border px-3 py-2 text-lg'
               inputMode='numeric'
@@ -295,7 +328,7 @@ export function BuyNowEntryForm({
               className='bg-primary text-primary-foreground h-12 w-full rounded-md px-4 py-3 text-base font-medium disabled:cursor-not-allowed disabled:opacity-60'
               disabled={isSubmitting || !amount || !bidderNumber}
             >
-              {isSubmitting ? 'Recording…' : 'Record Buy It Now'}
+              {isSubmitting ? 'Placing Bid…' : 'Place Silent Bid'}
             </button>
           </div>
         </form>
@@ -304,7 +337,8 @@ export function BuyNowEntryForm({
       {/* Recent bids log */}
       {selectedItem && recentBids.length > 0 ? (
         <>
-          <div className='flex justify-end'>
+          <div className='flex items-center justify-between'>
+            <h3 className='text-sm font-medium'>Bid History</h3>
             <DataTableViewToggle value={viewMode} onChange={setViewMode} />
           </div>
           {viewMode === 'card' ? (
@@ -314,25 +348,29 @@ export function BuyNowEntryForm({
                   <div className='flex items-center justify-between'>
                     <span className='font-medium'>#{bid.bidder_number}</span>
                     <span className='font-semibold'>
-                      ${bid.amount.toLocaleString('en-US')}
+                      ${Math.round(bid.amount).toLocaleString('en-US')}
                     </span>
                   </div>
                   <p className='flex items-center gap-2 text-sm'>
-                    {bid.donor_name ? <BidderAvatar name={bid.donor_name} /> : null}
+                    {bid.donor_name ? (
+                      <BidderAvatar name={bid.donor_name} />
+                    ) : null}
                     {bid.donor_name ?? '—'}
                   </p>
                   <div className='flex items-center justify-between'>
                     <span className='text-muted-foreground text-xs'>
-                      {new Date(bid.entered_at).toLocaleTimeString()}
+                      {new Date(bid.placed_at).toLocaleTimeString()}
                     </span>
-                    <button
-                      type='button'
-                      className='rounded border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60'
-                      onClick={() => onDeleteBid(bid.id)}
-                      disabled={isDeleting}
+                    <span
+                      className={cn(
+                        'rounded px-1.5 py-0.5 text-xs font-medium',
+                        bid.bid_status === 'active'
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-muted text-muted-foreground'
+                      )}
                     >
-                      Delete
-                    </button>
+                      {bid.bid_status}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -345,8 +383,8 @@ export function BuyNowEntryForm({
                     <th className='px-3 py-2'>Bidder</th>
                     <th className='px-3 py-2'>Donor</th>
                     <th className='px-3 py-2'>Amount</th>
+                    <th className='px-3 py-2'>Status</th>
                     <th className='px-3 py-2'>Time</th>
-                    <th className='px-3 py-2'>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -355,25 +393,29 @@ export function BuyNowEntryForm({
                       <td className='px-3 py-2'>{bid.bidder_number}</td>
                       <td className='px-3 py-2'>
                         <div className='flex items-center gap-2'>
-                          {bid.donor_name ? <BidderAvatar name={bid.donor_name} /> : null}
+                          {bid.donor_name ? (
+                            <BidderAvatar name={bid.donor_name} />
+                          ) : null}
                           {bid.donor_name ?? '—'}
                         </div>
                       </td>
                       <td className='px-3 py-2'>
-                        ${bid.amount.toLocaleString('en-US')}
+                        ${Math.round(bid.amount).toLocaleString('en-US')}
                       </td>
                       <td className='px-3 py-2'>
-                        {new Date(bid.entered_at).toLocaleTimeString()}
-                      </td>
-                      <td className='px-3 py-2'>
-                        <button
-                          type='button'
-                          className='rounded border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60'
-                          onClick={() => onDeleteBid(bid.id)}
-                          disabled={isDeleting}
+                        <span
+                          className={cn(
+                            'rounded px-1.5 py-0.5 text-xs font-medium',
+                            bid.bid_status === 'active'
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                              : 'bg-muted text-muted-foreground'
+                          )}
                         >
-                          Delete
-                        </button>
+                          {bid.bid_status}
+                        </span>
+                      </td>
+                      <td className='px-3 py-2'>
+                        {new Date(bid.placed_at).toLocaleTimeString()}
                       </td>
                     </tr>
                   ))}
@@ -384,7 +426,7 @@ export function BuyNowEntryForm({
         </>
       ) : selectedItem ? (
         <p className='text-muted-foreground text-sm'>
-          No buy-it-now bids recorded for this item yet.
+          No bids placed for this item yet.
         </p>
       ) : null}
     </div>

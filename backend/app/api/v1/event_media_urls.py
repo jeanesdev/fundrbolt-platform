@@ -3,7 +3,7 @@
 from typing import Any
 from urllib.parse import unquote, urlparse
 
-from app.models.event import EventMediaUsageTag
+from app.models.event import EventMediaType, EventMediaUsageTag
 
 
 def extract_blob_name(file_url: str) -> str | None:
@@ -101,3 +101,58 @@ def resolve_event_logo_url(event: Any) -> str | None:
         )
 
     return get_signed_asset_url(getattr(event, "logo_url", None))
+
+
+def resolve_event_card_thumbnail_url(event: Any) -> str | None:
+    """Resolve the preferred donor home-page card thumbnail for an event.
+
+    Priority:
+    1. Tagged event/NPO logo assets
+    2. Legacy event.logo_url
+    3. Tagged main hero image
+    4. First non-map image fallback
+
+    Layout-map assets are intentionally excluded so seating maps never appear
+    as the event card image.
+    """
+    logo_url = resolve_event_logo_url(event)
+    if logo_url:
+        return logo_url
+
+    media_items = list(getattr(event, "media", []) or [])
+
+    hero_match = next(
+        (
+            item
+            for item in media_items
+            if getattr(item, "usage_tag", None)
+            in (
+                EventMediaUsageTag.MAIN_EVENT_PAGE_HERO,
+                EventMediaUsageTag.MAIN_EVENT_PAGE_HERO.value,
+            )
+        ),
+        None,
+    )
+    if hero_match:
+        return get_signed_asset_url(
+            getattr(hero_match, "file_url", None), getattr(hero_match, "blob_name", None)
+        )
+
+    fallback_image = next(
+        (
+            item
+            for item in media_items
+            if getattr(item, "usage_tag", None)
+            not in (EventMediaUsageTag.EVENT_LAYOUT_MAP, EventMediaUsageTag.EVENT_LAYOUT_MAP.value)
+            and getattr(item, "media_type", None)
+            in (EventMediaType.IMAGE, EventMediaType.IMAGE.value, "image")
+        ),
+        None,
+    )
+    if fallback_image:
+        return get_signed_asset_url(
+            getattr(fallback_image, "file_url", None),
+            getattr(fallback_image, "blob_name", None),
+        )
+
+    return None

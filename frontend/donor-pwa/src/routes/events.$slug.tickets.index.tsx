@@ -242,7 +242,7 @@ function TicketListingPage() {
 
       {/* Sticky Cart Bar */}
       {itemCount > 0 && (
-        <div className='bg-background/95 supports-[backdrop-filter]:bg-background/80 fixed inset-x-0 bottom-0 z-50 border-t p-4 shadow-lg backdrop-blur'>
+        <div className='fixed inset-x-0 bottom-0 z-50 border-t p-4 shadow-lg backdrop-blur' style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.95)' }}>
           <div className='container mx-auto flex max-w-2xl items-center justify-between'>
             <div className='flex items-center gap-3'>
               <Badge variant='secondary' className='text-sm'>

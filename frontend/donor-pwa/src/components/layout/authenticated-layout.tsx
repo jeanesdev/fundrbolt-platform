@@ -2,6 +2,7 @@ import { AppSidebar } from '@/components/layout/app-sidebar'
 import { Header } from '@/components/layout/header'
 import { SidebarFreeLayout } from '@/components/layout/sidebar-free-layout'
 import { LegalFooter } from '@/components/legal/legal-footer'
+import { triggerNotificationToast } from '@/components/notifications/NotificationToastOverlay'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { SkipToMain } from '@/components/skip-to-main'
@@ -10,16 +11,19 @@ import { LayoutProvider } from '@/context/layout-provider'
 import { SearchProvider } from '@/context/search-provider'
 import { useAuth } from '@/hooks/use-auth'
 import { useEventContext } from '@/hooks/use-event-context'
+import { useNotificationSocket } from '@/hooks/use-notification-socket'
+import { usePushNotifications } from '@/hooks/use-push-notifications'
 import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
 import { getMyInventory } from '@/lib/api/ticket-purchases'
 import apiClient from '@/lib/axios'
 import { getCookie } from '@/lib/cookies'
 import { cn } from '@/lib/utils'
+import { notificationService } from '@/services/notification-service'
 import { useAuthStore } from '@/stores/auth-store'
 import type { EventContextOption } from '@/stores/event-context-store'
 import { useQuery } from '@tanstack/react-query'
 import { Outlet, useMatches } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -28,7 +32,7 @@ type AuthenticatedLayoutProps = {
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const defaultOpen = getCookie('sidebar_state') !== 'false'
   const { user } = useAuth()
-  const { setAvailableEvents } = useEventContext()
+  const { setAvailableEvents, selectedEventId } = useEventContext()
   const restoreUserFromRefreshToken = useAuthStore(
     (state) => state.restoreUserFromRefreshToken
   )
@@ -55,6 +59,36 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       match.routeId === '/_authenticated/tickets' ||
       match.routeId === '/_authenticated/tickets/history'
   )
+
+  // Keep Socket.IO connected across all authenticated pages for real-time toasts
+  useNotificationSocket(selectedEventId ?? undefined)
+
+  // Auto-restore push subscription if permission was previously granted (e.g. after PWA reinstall)
+  usePushNotifications()
+
+  // Show toast popups for unread notifications on app open / login.
+  // After showing them, mark all as read so they don't re-appear next time.
+  const shownMissedRef = useRef(false)
+  useEffect(() => {
+    if (shownMissedRef.current || isRestoring || !user || !selectedEventId) return
+    shownMissedRef.current = true
+
+    const eventId = selectedEventId
+    notificationService
+      .listNotifications(eventId, { limit: 5, unread_only: true })
+      .then(({ notifications }) => {
+        if (notifications.length === 0) return
+        // Small stagger so toasts don't all appear at once
+        notifications.forEach((n, i) => {
+          setTimeout(() => triggerNotificationToast(n), i * 600)
+        })
+        // Mark them as read so reopening the app won't show the same ones
+        notificationService.markAllRead(eventId).catch(() => { })
+      })
+      .catch(() => {
+        // Non-critical — socket will deliver future notifications anyway
+      })
+  }, [isRestoring, user, selectedEventId])
 
   // Restore user from refresh token on mount if needed
   useEffect(() => {
@@ -229,7 +263,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
   if (isTicketsPage) {
     return (
-      <SidebarFreeLayout headerVariant='brand'>
+      <SidebarFreeLayout headerVariant='brand' showBackButton>
         {children ?? <Outlet />}
       </SidebarFreeLayout>
     )

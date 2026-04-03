@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuctionItemStore } from '@/stores/auctionItemStore';
+import { useEventStore } from '@/stores/event-store';
 import { AuctionType, ItemStatus } from '@/types/auction-item';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { ArrowLeft, ExternalLink, Pencil } from 'lucide-react';
@@ -33,21 +34,34 @@ export function AuctionItemDetailPage() {
     from: '/_authenticated/events/$eventSlug/auction-items/$itemId/',
   });
 
+  const { currentEvent, loadEventBySlug } = useEventStore();
   const { selectedItem, isLoading, getAuctionItem, clearSelectedItem } =
     useAuctionItemStore();
 
+  // Resolve slug to event UUID if not already loaded
   useEffect(() => {
-    getAuctionItem(eventSlug, itemId).catch((err) => {
-      toast.error(
-        err instanceof Error ? err.message : 'Failed to load auction item'
-      );
-      navigate({ to: '/events/$eventSlug/auction-items', params: { eventSlug } });
-    });
+    if (eventSlug && currentEvent?.slug !== eventSlug) {
+      loadEventBySlug(eventSlug).catch(() => {
+        toast.error('Failed to load event');
+        navigate({ to: '/events/$eventSlug/auction-items', params: { eventSlug } });
+      });
+    }
+  }, [eventSlug, currentEvent?.slug, loadEventBySlug, navigate]);
+
+  useEffect(() => {
+    if (currentEvent?.id) {
+      getAuctionItem(currentEvent.id, itemId).catch((err) => {
+        toast.error(
+          err instanceof Error ? err.message : 'Failed to load auction item'
+        );
+        navigate({ to: '/events/$eventSlug/auction-items', params: { eventSlug } });
+      });
+    }
 
     return () => {
       clearSelectedItem();
     };
-  }, [eventSlug, itemId, getAuctionItem, clearSelectedItem, navigate]);
+  }, [currentEvent?.id, itemId, getAuctionItem, clearSelectedItem, navigate, eventSlug]);
 
   const handleEdit = () => {
     navigate({

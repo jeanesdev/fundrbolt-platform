@@ -97,6 +97,7 @@ class AuctionItemSearchResult(BaseModel):
 
     id: uuid.UUID
     name: str
+    bid_number: int | None = None
     event_id: uuid.UUID
     event_slug: str | None = None
     event_name: str  # Denormalized for display

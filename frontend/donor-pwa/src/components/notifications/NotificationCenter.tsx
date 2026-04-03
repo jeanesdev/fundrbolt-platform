@@ -13,13 +13,15 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import {
+  useDeleteNotification,
   useMarkAllRead,
   useMarkRead,
   useNotifications,
 } from '@/hooks/use-notifications'
 import { useNotificationStore } from '@/stores/notification-store'
+import { useQueryClient } from '@tanstack/react-query'
 import { CheckCheck, Loader2 } from 'lucide-react'
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 interface NotificationCenterProps {
   eventId: string
@@ -38,10 +40,19 @@ export function NotificationCenter({ eventId }: NotificationCenterProps) {
     isFetchingNextPage,
   } = useNotifications(eventId)
 
+  const queryClient = useQueryClient()
   const markReadMutation = useMarkRead()
   const markAllReadMutation = useMarkAllRead()
+  const deleteNotificationMutation = useDeleteNotification()
 
   const notifications = data?.notifications ?? []
+
+  // Refetch notifications every time the panel opens
+  useEffect(() => {
+    if (isOpen) {
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] })
+    }
+  }, [isOpen, queryClient])
 
   const handleMarkRead = useCallback(
     (id: string) => {
@@ -54,10 +65,43 @@ export function NotificationCenter({ eventId }: NotificationCenterProps) {
     markAllReadMutation.mutate(eventId)
   }, [markAllReadMutation, eventId])
 
+  const handleDelete = useCallback(
+    (notificationId: string) => {
+      deleteNotificationMutation.mutate({ notificationId, eventId })
+    },
+    [deleteNotificationMutation, eventId],
+  )
+
+  // Swipe-right-to-close
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }, [])
+
+  const onTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      const dx = e.changedTouches[0].clientX - touchStartX.current
+      const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
+      // Close if horizontal swipe right > 80px and mostly horizontal
+      if (dx > 80 && dy < dx) {
+        closePanel()
+      }
+    },
+    [closePanel],
+  )
+
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && closePanel()}>
-      <SheetContent side='right' className='flex w-full flex-col p-0 sm:max-w-md'>
-        <SheetHeader className='flex-row items-center justify-between border-b px-4 py-3'>
+      <SheetContent
+        side='right'
+        className='flex w-full flex-col p-0 sm:max-w-md'
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        <SheetHeader className='flex-row items-center justify-between border-b px-4 py-3 pr-14'>
           <SheetTitle className='text-base'>Notifications</SheetTitle>
           {unreadCount > 0 && (
             <Button
@@ -88,6 +132,7 @@ export function NotificationCenter({ eventId }: NotificationCenterProps) {
                   key={notification.id}
                   notification={notification}
                   onRead={handleMarkRead}
+                  onDelete={handleDelete}
                 />
               ))}
 

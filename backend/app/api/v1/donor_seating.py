@@ -325,10 +325,11 @@ async def get_event_guests(
                 detail="No registration found for this event",
             )
 
-    # Load all guests for the event, with their event_table for table_name
+    # Load all guests for the event, eager-loading linked user for profile pics
     result = await db.execute(
         select(RegistrationGuest)
         .join(EventRegistration, RegistrationGuest.registration_id == EventRegistration.id)
+        .options(selectinload(RegistrationGuest.user))
         .where(EventRegistration.event_id == event_id)
         .order_by(RegistrationGuest.table_number, RegistrationGuest.bidder_number)
     )
@@ -347,7 +348,7 @@ async def get_event_guests(
             bidder_number=g.bidder_number,
             table_number=g.table_number,
             table_name=table_map.get(g.table_number) if g.table_number is not None else None,
-            profile_image_url=None,  # No profile images in current schema
+            profile_image_url=g.user.profile_picture_url if g.user else None,
             is_table_captain=bool(g.is_table_captain),
         )
         for g in guests

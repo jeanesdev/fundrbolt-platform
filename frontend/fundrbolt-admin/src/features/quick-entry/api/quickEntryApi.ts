@@ -1,5 +1,5 @@
-import type { AuctionItem } from '@/types/auction-item'
 import apiClient from '@/lib/axios'
+import type { AuctionItem } from '@/types/auction-item'
 
 export async function getQuickEntryStatus(
   eventId: string
@@ -311,4 +311,69 @@ export async function deleteBuyNowBid(
   await apiClient.delete(
     `/admin/events/${eventId}/quick-entry/buy-now/bids/${bidId}`
   )
+}
+
+// ---------------------------------------------------------------------------
+// Silent Auction
+// ---------------------------------------------------------------------------
+
+export interface QuickEntrySilentItem {
+  id: string
+  bid_number: number
+  title: string
+  starting_bid: number
+  bid_increment: number
+  current_bid_amount: number | null
+  min_next_bid_amount: number | null
+  bid_count: number
+  primary_image_url: string | null
+}
+
+export interface QuickEntrySilentBidResponse {
+  id: string
+  event_id: string
+  item_id: string
+  bidder_number: number
+  donor_name: string | null
+  amount: number
+  bid_status: string
+  placed_at: string
+}
+
+export interface CreateSilentBidPayload {
+  item_id: string
+  amount: number
+  bidder_number: number
+}
+
+export async function getSilentAuctionItems(
+  eventId: string
+): Promise<QuickEntrySilentItem[]> {
+  const response = await apiClient.get<{ items: QuickEntrySilentItem[] }>(
+    `/admin/events/${eventId}/quick-entry/silent-auction/items`
+  )
+  return response.data.items
+}
+
+export async function createSilentBid(
+  eventId: string,
+  payload: CreateSilentBidPayload
+): Promise<QuickEntrySilentBidResponse> {
+  const response = await apiClient.post(
+    `/admin/events/${eventId}/quick-entry/silent-auction/bids`,
+    payload
+  )
+  return response.data
+}
+
+export async function getSilentAuctionBids(
+  eventId: string,
+  itemId: string
+): Promise<QuickEntrySilentBidResponse[]> {
+  const response = await apiClient.get<{
+    items: QuickEntrySilentBidResponse[]
+  }>(`/admin/events/${eventId}/quick-entry/silent-auction/bids`, {
+    params: { item_id: itemId },
+  })
+  return response.data.items
 }

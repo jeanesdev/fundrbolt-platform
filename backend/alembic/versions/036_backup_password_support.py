@@ -23,15 +23,23 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "users",
-        sa.Column(
-            "has_local_password",
-            sa.Boolean(),
-            nullable=False,
-            server_default=sa.text("true"),
-        ),
+    bind = op.get_bind()
+    result = bind.execute(
+        sa.text(
+            "SELECT EXISTS(SELECT 1 FROM information_schema.columns "
+            "WHERE table_name='users' AND column_name='has_local_password')"
+        )
     )
+    if not result.scalar():
+        op.add_column(
+            "users",
+            sa.Column(
+                "has_local_password",
+                sa.Boolean(),
+                nullable=False,
+                server_default=sa.text("true"),
+            ),
+        )
 
 
 def downgrade() -> None:

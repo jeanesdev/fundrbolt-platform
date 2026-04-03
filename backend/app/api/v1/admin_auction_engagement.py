@@ -18,6 +18,8 @@ from app.models.watch_list_entry import WatchListEntry
 from app.schemas.auction_engagement import (
     AdminEngagementResponse,
     BidSummary,
+    EngagementSummary,
+    UserSummary,
     WatcherSummary,
 )
 from app.schemas.buy_now_availability import (
@@ -90,9 +92,11 @@ async def get_item_engagement(
 
     watchers = [
         WatcherSummary(
-            user_id=entry.user_id,
-            user_name=f"{user.first_name} {user.last_name}".strip() or user.email,
-            email=user.email,
+            user=UserSummary(
+                id=entry.user_id,
+                name=f"{user.first_name} {user.last_name}".strip() or user.email,
+                email=user.email,
+            ),
             watching_since=entry.created_at,
         )
         for entry, user in watchers_data
@@ -118,9 +122,12 @@ async def get_item_engagement(
 
     views = [
         ItemViewSummary(
-            user_id=row.user_id,
-            user_name=f"{row.first_name} {row.last_name}".strip() or row.email,
-            view_duration_seconds=int(row.total_duration or 0),
+            user=UserSummary(
+                id=row.user_id,
+                name=f"{row.first_name} {row.last_name}".strip() or row.email,
+                email=row.email,
+            ),
+            total_duration_seconds=int(row.total_duration or 0),
             last_viewed_at=row.last_viewed,
         )
         for row in views_data
@@ -138,13 +145,15 @@ async def get_item_engagement(
 
     bids = [
         BidSummary(
-            bid_id=bid.id,
-            user_id=bid.user_id,
-            user_name=f"{user.first_name} {user.last_name}".strip() or user.email,
-            bidder_number=bid.bidder_number,
+            id=bid.id,
+            user=UserSummary(
+                id=bid.user_id,
+                name=f"{user.first_name} {user.last_name}".strip() or user.email,
+                email=user.email,
+            ),
             amount=bid.bid_amount,
-            is_max_bid=(bid.bid_type == "max"),
-            created_at=bid.created_at,
+            bid_type="max_bid" if bid.bid_type == "max" else "regular",
+            placed_at=bid.created_at,
         )
         for bid, user in bids_data
     ]
@@ -172,12 +181,17 @@ async def get_item_engagement(
     )
 
     return AdminEngagementResponse(
+        auction_item_id=item_id,
         watchers=watchers,
         views=views,
         bids=bids,
-        total_views=total_views,
-        total_view_duration_seconds=total_duration,
-        unique_viewers=unique_viewers,
+        summary=EngagementSummary(
+            total_watchers=len(watchers),
+            total_views=total_views,
+            unique_viewers=unique_viewers,
+            total_view_duration_seconds=total_duration,
+            total_bids=len(bids),
+        ),
     )
 
 

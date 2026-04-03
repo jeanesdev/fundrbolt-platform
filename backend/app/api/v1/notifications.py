@@ -134,3 +134,33 @@ async def mark_all_notifications_read(
     await emit_unread_count(str(effective_id), str(body.event_id), 0)
 
     return MarkAllReadResponse(updated_count=updated_count)
+
+
+@router.delete("/{notification_id}", status_code=status.HTTP_200_OK)
+async def delete_notification(
+    notification_id: uuid.UUID,
+    event_id: uuid.UUID | None = Query(None, description="Event ID for count sync"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+    x_spoof_user_id: str | None = Header(None, alias="X-Spoof-User-Id"),
+) -> dict[str, bool]:
+    """Delete a single notification."""
+    effective_id = _resolve_effective_user_id(current_user, x_spoof_user_id)
+    deleted = await NotificationService.delete_notification(
+        db=db, notification_id=notification_id, user_id=effective_id
+    )
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Notification not found",
+        )
+    await db.commit()
+
+    # Emit updated unread count to client via Socket.IO
+    if event_id:
+        unread = await NotificationService.get_unread_count(
+            db=db, user_id=effective_id, event_id=event_id
+        )
+        await emit_unread_count(str(effective_id), str(event_id), unread)
+
+    return {"success": True}

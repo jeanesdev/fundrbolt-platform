@@ -20,6 +20,8 @@ celery_app.conf.update(
     enable_utc=True,
     task_track_started=True,
     task_acks_late=True,
+    task_always_eager=settings.celery_task_always_eager,
+    task_eager_propagates=settings.celery_task_always_eager,
     worker_prefetch_multiplier=1,
     task_routes={
         "app.tasks.notification_tasks.*": {"queue": "notifications"},

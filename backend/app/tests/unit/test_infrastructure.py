@@ -57,7 +57,7 @@ class TestInfrastructure:
 
     def test_fastapi_app_imports(self) -> None:
         """Test that FastAPI app can be imported."""
-        from app.main import app
+        from app.main import fastapi_app
 
-        assert app is not None
-        assert app.title == "FundrBolt Platform API"
+        assert fastapi_app is not None
+        assert fastapi_app.title == "FundrBolt Platform API"

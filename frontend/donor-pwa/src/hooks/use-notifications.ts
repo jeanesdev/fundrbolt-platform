@@ -29,10 +29,6 @@ export function useNotifications(
   eventId: string,
   options?: Omit<ListNotificationsOptions, 'cursor'>,
 ) {
-  const setNotifications = useNotificationStore(
-    (state) => state.setNotifications,
-  )
-
   return useInfiniteQuery({
     queryKey: [...NOTIFICATION_KEYS.list(eventId), options] as const,
     queryFn: async ({ pageParam }) => {
@@ -45,17 +41,14 @@ export function useNotifications(
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor,
     enabled: !!eventId,
-    select: (data) => {
-      const allNotifications = data.pages.flatMap(
-        (page) => page.notifications,
-      )
-      // Sync to store for real-time updates
-      setNotifications(allNotifications)
-      return {
-        ...data,
-        notifications: allNotifications,
-      }
-    },
+    // Always refetch when panel remounts or regains focus so new
+    // notifications are visible immediately.
+    refetchOnMount: 'always',
+    staleTime: 0,
+    select: (data) => ({
+      ...data,
+      notifications: data.pages.flatMap((page) => page.notifications),
+    }),
   })
 }
 
@@ -106,6 +99,56 @@ export function useMarkAllRead() {
       notificationService.markAllRead(eventId),
     onSuccess: () => {
       markAllAsRead()
+      queryClient.invalidateQueries({ queryKey: NOTIFICATION_KEYS.all })
+    },
+  })
+}
+
+/**
+ * Delete a notification with optimistic removal from React Query cache
+ */
+export function useDeleteNotification() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ notificationId, eventId }: { notificationId: string; eventId?: string }) =>
+      notificationService.deleteNotification(notificationId, eventId),
+    onMutate: async ({ notificationId }) => {
+      // Cancel in-flight fetches so they don't overwrite optimistic update
+      await queryClient.cancelQueries({ queryKey: NOTIFICATION_KEYS.all })
+
+      // Snapshot previous cache for rollback
+      const previousData = queryClient.getQueriesData({ queryKey: NOTIFICATION_KEYS.all })
+
+      // Optimistically remove from all notification query caches
+      queryClient.setQueriesData(
+        { queryKey: NOTIFICATION_KEYS.all },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (old: any) => {
+          if (!old?.pages) return old
+          return {
+            ...old,
+            pages: old.pages.map((page: { notifications: Array<{ id: string }> }) => ({
+              ...page,
+              notifications: page.notifications.filter(
+                (n: { id: string }) => n.id !== notificationId,
+              ),
+            })),
+          }
+        },
+      )
+
+      return { previousData }
+    },
+    onError: (_err, _vars, context) => {
+      // Rollback on failure
+      if (context?.previousData) {
+        for (const [key, data] of context.previousData) {
+          queryClient.setQueryData(key, data)
+        }
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: NOTIFICATION_KEYS.all })
     },
   })

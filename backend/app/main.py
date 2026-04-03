@@ -199,5 +199,9 @@ async def root() -> JSONResponse:
     )
 
 
-# Wrap FastAPI with Socket.IO ASGI app for WebSocket support
-combined_app = socketio_lib.ASGIApp(sio, other_asgi_app=app)
+# Keep reference to bare FastAPI instance (used by tests for dependency_overrides)
+fastapi_app = app
+
+# Wrap FastAPI with Socket.IO ASGI app for WebSocket support.
+# Reassign `app` so `uvicorn app.main:app` serves both HTTP and Socket.IO.
+app = socketio_lib.ASGIApp(sio, other_asgi_app=fastapi_app, socketio_path="ws/socket.io")

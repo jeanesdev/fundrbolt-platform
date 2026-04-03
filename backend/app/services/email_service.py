@@ -6,6 +6,8 @@ T159: Error handling and retry logic for email service failures
 
 import asyncio
 import os
+from typing import Any
+from urllib.parse import urlencode
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -13,6 +15,12 @@ from app.core.metrics import EMAIL_FAILURES_TOTAL
 
 logger = get_logger(__name__)
 settings = get_settings()
+
+
+def _build_communications_email_verification_url(email: str) -> str:
+    """Build a donor-PWA deep link back into the communications email OTP step."""
+    query = urlencode({"step": "otp", "email": email})
+    return f"{settings.frontend_donor_url}/complete-profile?{query}"
 
 
 def _create_email_html_template(
@@ -1134,6 +1142,7 @@ This is an automated notification from the FundrBolt.
         to_email: str,
         otp: str,
         user_name: str | None = None,
+        verification_url: str | None = None,
     ) -> bool:
         """Send a 6-digit OTP to a new communications email address for verification.
 
@@ -1147,6 +1156,7 @@ This is an automated notification from the FundrBolt.
         """
         greeting = f"Hi {user_name}," if user_name else "Hi,"
         subject = f"Verify your communications email — {otp}"
+        verify_url = verification_url or _build_communications_email_verification_url(to_email)
 
         plain_body = f"""
 {greeting}
@@ -1155,7 +1165,12 @@ Enter this 6-digit code to verify your communications email address on FundrBolt
 
   {otp}
 
-This code expires in 1 hour. If you didn't request this, you can safely ignore it.
+    You can also return to the verification screen here:
+    {verify_url}
+
+    This code expires in 1 hour. If you're asked to sign in first, use your existing FundrBolt login and we'll take you straight to the verification screen.
+
+    If you didn't request this, you can safely ignore it.
 
 —The FundrBolt Team
         """.strip()
@@ -1166,8 +1181,12 @@ This code expires in 1 hour. If you didn't request this, you can safely ignore i
                 f"{greeting}",
                 "Use the code below to verify this address as your FundrBolt communications email. "
                 "Event notifications and updates will be sent here once confirmed.",
+                "Prefer to finish later? Use the button below to return to the verification screen. "
+                "If you're prompted to sign in first, use your existing FundrBolt account and we'll take you back there.",
                 "The code expires in <strong>1 hour</strong>.",
             ],
+            cta_text="Open Verification Screen",
+            cta_url=verify_url,
             footer_text="If you didn't request this, you can safely ignore this email.",
             logo_url=self._get_logo_url("dark"),
             otp_code=otp,
@@ -1509,6 +1528,145 @@ If you have any questions about this decision, please contact us by replying to 
                     delay *= 2
 
         raise EmailSendError("Failed to send receipt email after 3 attempts") from last_exc
+
+    # ------------------------------------------------------------------
+    # T072: Notification email templates
+    # ------------------------------------------------------------------
+
+    def _notification_email_content(
+        self,
+        notification_type: str,
+        title: str,
+        body: str,
+        data: dict[str, Any] | None,
+        donor_name: str | None,
+        donor_url: str,
+    ) -> tuple[str, str, str, str | None, str | None]:
+        """Return (subject, heading, paragraphs_text, cta_text, cta_url) for a notification type."""
+        greeting = f"Hi {donor_name}," if donor_name else "Hi,"
+        cta_text: str | None = None
+        cta_url: str | None = None
+        deep_link: str | None = (data or {}).get("deep_link")
+
+        if notification_type == "outbid":
+            item_name = (data or {}).get("item_name", "an item")
+            bid_amount = (data or {}).get("bid_amount")
+            try:
+                amount_str = f"${float(bid_amount):,.2f}" if bid_amount else ""
+            except (TypeError, ValueError):
+                amount_str = f"${bid_amount}" if bid_amount else ""
+            subject = f"You've been outbid on {item_name}"
+            heading = "You've Been Outbid!"
+            paragraphs = [
+                f"{greeting}",
+                f"Someone placed a higher bid{f' of {amount_str}' if amount_str else ''} on {item_name}.",
+                "Don't let it go — place a new bid now!",
+            ]
+            cta_text = "Bid Again"
+            cta_url = deep_link or donor_url
+        elif notification_type == "item_won":
+            subject = "Congratulations — You won!"
+            heading = "You Won! 🎉"
+            paragraphs = [
+                f"{greeting}",
+                body,
+                "Head to checkout to complete your purchase.",
+            ]
+            cta_text = "Go to Checkout"
+            cta_url = deep_link or donor_url
+        elif notification_type == "checkout_reminder":
+            subject = "Don't forget to check out"
+            heading = "Checkout Reminder"
+            paragraphs = [
+                f"{greeting}",
+                body,
+                "Complete your checkout before the event wraps up.",
+            ]
+            cta_text = "Complete Checkout"
+            cta_url = deep_link or donor_url
+        elif notification_type == "custom":
+            subject = title
+            heading = title
+            paragraphs = [f"{greeting}", body]
+            if deep_link:
+                cta_text = "View Details"
+                cta_url = deep_link
+        elif notification_type == "admin_bid_placed":
+            subject = title
+            heading = "Bid Placed on Your Behalf"
+            paragraphs = [f"{greeting}", body]
+            cta_text = "View Item"
+            cta_url = deep_link or donor_url
+        elif notification_type == "paddle_raise":
+            subject = title
+            heading = "Paddle Raise Recorded"
+            paragraphs = [f"{greeting}", body]
+        else:
+            # Generic fallback for any other enabled type
+            subject = title
+            heading = title
+            paragraphs = [f"{greeting}", body]
+            if deep_link:
+                cta_text = "View Details"
+                cta_url = deep_link
+
+        plain_text = "\n\n".join(paragraphs)
+
+        # Ensure cta_url is absolute for email links
+        if cta_url and cta_url.startswith("/"):
+            cta_url = f"{donor_url.rstrip('/')}{cta_url}"
+
+        return subject, heading, plain_text, cta_text, cta_url
+
+    async def send_notification_email(
+        self,
+        to_email: str,
+        notification_type: str,
+        title: str,
+        body: str,
+        donor_name: str | None = None,
+        data: dict[str, Any] | None = None,
+    ) -> bool:
+        """Send a branded notification email.
+
+        Args:
+            to_email: Recipient email address.
+            notification_type: Notification type string (e.g. "outbid", "item_won").
+            title: Notification title.
+            body: Notification body text.
+            donor_name: Donor's first name for personalisation.
+            data: Optional notification JSONB data (item_name, bid_amount, deep_link, etc.).
+
+        Returns:
+            True if sent successfully.
+        """
+        donor_url = getattr(settings, "frontend_donor_url", "https://app.fundrbolt.com")
+        subject, heading, plain_text, cta_text, cta_url = self._notification_email_content(
+            notification_type=notification_type,
+            title=title,
+            body=body,
+            data=data,
+            donor_name=donor_name,
+            donor_url=donor_url,
+        )
+
+        html_body = _create_email_html_template(
+            heading=heading,
+            body_paragraphs=[p for p in plain_text.split("\n\n") if p.strip()],
+            cta_text=cta_text,
+            cta_url=cta_url,
+            footer_text="You received this because of your notification preferences. "
+            "Update them any time from Settings in the FundrBolt app.",
+            logo_url=self._get_logo_url("dark"),
+        )
+
+        return await self._send_email_with_retry(
+            to_email=to_email,
+            subject=subject,
+            body=plain_text,
+            email_type=f"notification_{notification_type}",
+            html_body=html_body,
+        )
 
 
 # Singleton instance

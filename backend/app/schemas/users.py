@@ -235,3 +235,4 @@ class CommunicationsEmailResponse(BaseModel):
     """Response for communications email verification requests."""
 
     message: str
+    verification_url: str | None = None

@@ -6,7 +6,7 @@ Cross-resource search across Users, NPOs, Events, and Auction Items with role-ba
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import String, func, or_, select
+from sqlalchemy import String, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -231,11 +231,12 @@ async def search(
             logger.info("Starting auction items search")
             auction_items_query = select(AuctionItem)
 
-            # Apply text search
+            # Apply text search (title, description, and bid_number)
             auction_items_query = auction_items_query.where(
                 or_(
                     func.lower(AuctionItem.title).like(func.lower(search_pattern)),
                     func.lower(AuctionItem.description).like(func.lower(search_pattern)),
+                    cast(AuctionItem.bid_number, String).like(search_request.query.strip()),
                 )
             )
 
@@ -260,6 +261,7 @@ async def search(
                 AuctionItemSearchResult(
                     id=item.id,
                     name=item.title,
+                    bid_number=item.bid_number,
                     event_id=item.event_id,
                     event_slug=getattr(item.event, "slug", None) if item.event else None,
                     event_name=getattr(item.event, "name", "Unknown") if item.event else "Unknown",

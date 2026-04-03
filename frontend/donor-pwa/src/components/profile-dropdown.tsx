@@ -21,6 +21,7 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Home,
   LogOut,
   Settings,
 } from 'lucide-react'
@@ -66,8 +67,8 @@ export function ProfileDropdown() {
         }}
       >
         <DropdownMenuTrigger asChild>
-          <Button variant='ghost' className='relative h-8 w-8 rounded-full'>
-            <Avatar className='h-8 w-8'>
+          <Button variant='ghost' className='relative h-11 w-11 rounded-full'>
+            <Avatar className='h-10 w-10'>
               <AvatarImage
                 src={profilePictureUrl || undefined}
                 alt={displayEmail}
@@ -156,6 +157,12 @@ export function ProfileDropdown() {
             </>
           )}
           <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link to='/home'>
+              <Home className='mr-2 size-4' />
+              Home
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to='/settings'>
               <Settings className='mr-2 size-4' />

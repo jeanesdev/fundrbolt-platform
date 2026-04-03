@@ -96,10 +96,10 @@ export function SidebarFreeLayout({
         {/* Compact header - no sidebar trigger */}
         <header
           className={cn(
-            'sticky top-0 z-50 border-b',
+            'sticky top-0 z-50 border-b pt-safe-top',
             headerVariant === 'brand'
-              ? 'h-16 border-white/10 text-white'
-              : 'bg-background/95 supports-[backdrop-filter]:bg-background/60 h-14 backdrop-blur'
+              ? 'min-h-16 border-white/10 text-white'
+              : 'bg-background/95 supports-[backdrop-filter]:bg-background/60 min-h-14 backdrop-blur'
           )}
           style={
             headerVariant === 'brand'

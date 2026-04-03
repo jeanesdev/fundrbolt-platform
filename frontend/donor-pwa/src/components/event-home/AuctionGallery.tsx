@@ -36,7 +36,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { Eye, Gavel, Loader2 } from 'lucide-react'
+import { Eye, Gavel, Loader2, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AuctionItemCard } from './AuctionItemCard'
 
@@ -378,8 +378,8 @@ export function AuctionGallery({
           filter === 'silent' || filter === 'live' ? filter : undefined,
       }),
     enabled: !!eventId,
-    staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     retry: 1,
@@ -817,6 +817,16 @@ export function AuctionGallery({
           >
             {displayedCount} item{displayedCount !== 1 ? 's' : ''}
           </span>
+
+          <button
+            type='button'
+            onClick={() => void refetch()}
+            aria-label='Refresh auction items'
+            className='ml-1 inline-flex items-center justify-center rounded-full p-1.5 transition-colors hover:opacity-80'
+            style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+          >
+            <RefreshCw className='h-4 w-4' />
+          </button>
         </div>
 
         <div className='grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end'>

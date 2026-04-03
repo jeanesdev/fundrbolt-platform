@@ -1,5 +1,6 @@
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { useTabSwipe } from '@/hooks/use-tab-swipe'
+import { useEventContextStore } from '@/stores/event-context-store'
 import { Outlet, useLocation, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
 
@@ -14,6 +15,7 @@ const SETTINGS_TABS = [
 export function Settings() {
   const navigate = useNavigate()
   const pathname = useLocation({ select: (l) => l.pathname })
+  const selectedEventSlug = useEventContextStore((s) => s.selectedEventSlug)
 
   const currentIndex = SETTINGS_TABS.indexOf(
     pathname as (typeof SETTINGS_TABS)[number]
@@ -38,10 +40,19 @@ export function Settings() {
   return (
     <div className='bg-background flex min-h-screen flex-col'>
       {/* Compact header with back button */}
-      <header className='bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 flex h-14 items-center border-b backdrop-blur'>
+      <header className='bg-background/95 sticky top-0 z-50 flex min-h-14 items-center border-b pt-safe-top backdrop-blur'>
         <div className='flex w-full items-center px-4'>
           <button
-            onClick={() => void navigate({ to: '/home' })}
+            onClick={() =>
+              void navigate({
+                to: selectedEventSlug
+                  ? '/events/$slug'
+                  : '/home',
+                params: selectedEventSlug
+                  ? { slug: selectedEventSlug }
+                  : undefined,
+              })
+            }
             className='text-muted-foreground hover:text-foreground flex items-center gap-1'
             aria-label='Back to event'
           >

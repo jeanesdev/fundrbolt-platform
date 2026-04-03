@@ -107,6 +107,17 @@ class NotificationService {
     )
     return response.data
   }
+
+  async deleteNotification(
+    notificationId: string,
+    eventId?: string,
+  ): Promise<{ success: boolean }> {
+    const response = await apiClient.delete<{ success: boolean }>(
+      `/notifications/${notificationId}`,
+      { params: eventId ? { event_id: eventId } : undefined },
+    )
+    return response.data
+  }
 }
 
 export const notificationService = new NotificationService()

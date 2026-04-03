@@ -1,6 +1,7 @@
 """User management endpoints for administrators."""
 
 import uuid
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import select
@@ -27,6 +28,12 @@ from app.services.audit_service import AuditService
 from app.services.user_service import UserService
 
 router = APIRouter()
+
+
+def _build_communications_email_verification_url(email: str) -> str:
+    """Build a donor-PWA deep link back into the communications email OTP step."""
+    query = urlencode({"step": "otp", "email": email})
+    return f"{get_settings().frontend_donor_url}/complete-profile?{query}"
 
 
 async def build_user_response(user: User, db: AsyncSession) -> dict[str, object]:
@@ -284,6 +291,7 @@ async def request_communications_email_verification(
 
     otp = generate_verification_otp()
     await RedisService.store_comms_email_otp(otp, current_user.id, body.email)
+    verification_url = _build_communications_email_verification_url(body.email)
 
     email_service = get_email_service()
     try:
@@ -291,6 +299,7 @@ async def request_communications_email_verification(
             to_email=body.email,
             otp=otp,
             user_name=current_user.first_name,
+            verification_url=verification_url,
         )
     except Exception as exc:  # noqa: BLE001
         import logging  # noqa: PLC0415
@@ -301,7 +310,10 @@ async def request_communications_email_verification(
             detail={"code": "EMAIL_SEND_FAILED", "message": "Failed to send verification email"},
         ) from exc
 
-    return CommunicationsEmailResponse(message=f"Verification code sent to {body.email}")
+    return CommunicationsEmailResponse(
+        message=f"Verification code sent to {body.email}",
+        verification_url=verification_url,
+    )
 
 
 @router.post("/me/communications-email/confirm", response_model=CommunicationsEmailResponse)

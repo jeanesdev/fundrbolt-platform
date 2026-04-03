@@ -58,6 +58,27 @@ async def test_send_password_reset_email_uses_confirm_route() -> None:
 
 
 @pytest.mark.asyncio
+async def test_send_communications_email_otp_includes_verification_screen_link() -> None:
+    """Communications email OTP emails should link back to the donor verification screen."""
+    service = EmailService()
+    service._send_email_with_retry = AsyncMock(return_value=True)  # type: ignore[method-assign]
+
+    await service.send_communications_email_otp(
+        to_email="alerts@example.com",
+        otp="123456",
+        user_name="Taylor",
+    )
+
+    service._send_email_with_retry.assert_awaited_once()  # type: ignore[attr-defined]
+    kwargs = service._send_email_with_retry.await_args.kwargs  # type: ignore[attr-defined]
+    plain_body = kwargs["body"]
+    html_body = kwargs["html_body"]
+
+    assert "/complete-profile?step=otp&email=alerts%40example.com" in plain_body
+    assert "/complete-profile?step=otp&email=alerts%40example.com" in html_body
+
+
+@pytest.mark.asyncio
 async def test_send_npo_application_submitted_email_includes_review_acknowledgement() -> None:
     """Applicant acknowledgement should clearly say the organisation is under review."""
     service = EmailService()

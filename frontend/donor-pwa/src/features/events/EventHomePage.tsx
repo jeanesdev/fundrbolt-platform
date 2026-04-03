@@ -40,9 +40,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { usePreviewMode } from '@/contexts/PreviewContext'
 import { useEventBranding } from '@/hooks/use-event-branding'
 import { useEventContext } from '@/hooks/use-event-context'
-import { useNotificationSocket } from '@/hooks/use-notification-socket'
 import { useUnreadCount } from '@/hooks/use-notifications'
 import { useTabSwipe } from '@/hooks/use-tab-swipe'
+import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
 import { getMyInventory } from '@/lib/api/ticket-purchases'
 import apiClient from '@/lib/axios'
 import auctionItemService from '@/services/auctionItemService'
@@ -122,6 +122,18 @@ export function EventHomePage() {
     staleTime: 5 * 60 * 1000,
   })
 
+  // Registrations data — used as fallback to find the event ID when
+  // availableEvents (Zustand store) hasn't been populated yet (e.g.
+  // direct navigation to /events/:slug outside the authenticated layout).
+  // The same query key is used by events.$slug.index.tsx, so data is
+  // usually available from the React Query cache.
+  const { data: registrationsData } = useQuery({
+    queryKey: ['registrations', 'events-with-branding'],
+    queryFn: getRegisteredEventsWithBranding,
+    staleTime: 5 * 60 * 1000,
+    enabled: !!eventSlug && !isPreviewMode,
+  })
+
   // Refetch auction data when connectivity is restored (FR-017)
   useEffect(() => {
     if (isOnline && !prevOnlineRef.current) {
@@ -130,6 +142,24 @@ export function EventHomePage() {
     }
     prevOnlineRef.current = isOnline
   }, [isOnline, queryClient])
+
+  // Handle deep-link search params (e.g. ?item=<uuid> or ?tab=auction)
+  const deepLinkHandled = useRef(false)
+  useEffect(() => {
+    if (deepLinkHandled.current) return
+    const params = new URLSearchParams(window.location.search)
+    const itemParam = params.get('item')
+    const tabParam = params.get('tab')
+    if (itemParam) {
+      deepLinkHandled.current = true
+      setSelectedAuctionItemId(itemParam)
+    }
+    if (tabParam === 'auction') {
+      deepLinkHandled.current = true
+      setDisplayedTab('auction')
+      setUserSelectedTab('auction')
+    }
+  }, [])
 
   const getTaggedImageUrls = useCallback(
     (tag: EventMediaUsageTag) => {
@@ -489,12 +519,17 @@ export function EventHomePage() {
       const purchasedEvent = ticketInventoryData?.events.find(
         (event) => event.event_slug === eventSlug
       )
+      const registeredEvent = registrationsData?.events?.find(
+        (event: { slug: string }) => event.slug === eventSlug
+      )
 
       const loadPromise = accessibleEvent?.id
         ? loadEventById(accessibleEvent.id)
         : purchasedEvent?.event_id
           ? loadEventById(purchasedEvent.event_id)
-          : loadEventBySlug(eventSlug)
+          : registeredEvent?.id
+            ? loadEventById(registeredEvent.id)
+            : loadEventBySlug(eventSlug)
 
       if (accessibleEvent) {
         setSelectedEvent(
@@ -507,6 +542,12 @@ export function EventHomePage() {
           purchasedEvent.event_id,
           purchasedEvent.event_name,
           purchasedEvent.event_slug
+        )
+      } else if (registeredEvent) {
+        setSelectedEvent(
+          registeredEvent.id,
+          registeredEvent.name,
+          registeredEvent.slug
         )
       }
 
@@ -525,6 +566,7 @@ export function EventHomePage() {
     isPreviewMode,
     availableEvents,
     ticketInventoryData,
+    registrationsData,
   ])
 
   useEffect(() => {
@@ -945,7 +987,6 @@ export function EventHomePage() {
 
   // ─── Notifications ──────────────────────────────────────────────────────────
   useUnreadCount(currentEvent?.id ?? '')
-  useNotificationSocket(currentEvent?.id)
 
   // ─── Loading state ───────────────────────────────────────────────────────────
   if (eventsLoading) {
@@ -1268,8 +1309,9 @@ export function EventHomePage() {
     <>
       {/* Sticky header */}
       <div
-        className='sticky top-0 z-20 border-b px-4 py-3 backdrop-blur-md'
+        className='sticky top-0 z-20 border-b px-4 pb-3 backdrop-blur-md'
         style={{
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
           backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.92)',
           borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
         }}
@@ -1327,8 +1369,9 @@ export function EventHomePage() {
   const seatTabContent = (
     <>
       <div
-        className='sticky top-0 z-20 border-b px-4 py-3 backdrop-blur-md'
+        className='sticky top-0 z-20 border-b px-4 pb-3 backdrop-blur-md'
         style={{
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
           backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.92)',
           borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
         }}
@@ -1421,6 +1464,7 @@ export function EventHomePage() {
             <MyBidsDonationsSection
               activity={myActivity}
               isAuctionClosed={currentEvent?.status === 'closed'}
+              onViewItem={(itemId) => setSelectedAuctionItemId(itemId)}
             />
           )}
 

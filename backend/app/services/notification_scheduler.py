@@ -128,7 +128,7 @@ async def send_auction_opened_notification(db: AsyncSession, event_id: str) -> i
                 title="Auction is now open!",
                 body=f"Bidding is live for {event_name}. Browse items and place your bids!",
                 data={
-                    "deep_link": f"/events/{event_slug}/auction",
+                    "deep_link": f"/events/{event_slug}?tab=auction",
                     "animation_type": "pulse",
                 },
                 sio=sio,
@@ -197,7 +197,7 @@ async def send_auction_closing_soon(db: AsyncSession, event_id: str, minutes_rem
                     "Review your bids now!"
                 ),
                 data={
-                    "deep_link": f"/events/{event_slug}/auction",
+                    "deep_link": f"/events/{event_slug}?tab=auction",
                     "minutes_remaining": minutes_remaining,
                 },
                 sio=sio,

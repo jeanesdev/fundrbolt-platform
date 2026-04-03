@@ -21,7 +21,10 @@ depends_on = None
 def upgrade() -> None:
     # Create enum type for session type
     op.execute("""
-        CREATE TYPE onboardingsessiontype AS ENUM ('user_signup', 'npo_onboarding')
+        DO $$ BEGIN
+            CREATE TYPE onboardingsessiontype AS ENUM ('user_signup', 'npo_onboarding');
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END $$;
     """)
 
     # Create onboarding_sessions table

@@ -1,10 +1,3 @@
-import { type KeyboardEvent, useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { useParams } from '@tanstack/react-router'
-import { eventApi } from '@/services/event-service'
-import { Check, ChevronsUpDown } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useEventContext } from '@/hooks/use-event-context'
 import {
   Command,
   CommandEmpty,
@@ -19,6 +12,13 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useEventContext } from '@/hooks/use-event-context'
+import { cn } from '@/lib/utils'
+import { eventApi } from '@/services/event-service'
+import { useQuery } from '@tanstack/react-query'
+import { useParams } from '@tanstack/react-router'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import { type KeyboardEvent, useEffect, useMemo, useState } from 'react'
 import {
   getLiveAuctionOverview,
   getQuickEntryLiveAuctionItems,
@@ -27,19 +27,21 @@ import { useBuyNowEntry } from '../hooks/useBuyNowEntry'
 import { useLiveAuctionControls } from '../hooks/useLiveAuctionControls'
 import { useLiveBidEntry } from '../hooks/useLiveBidEntry'
 import { usePaddleRaiseEntry } from '../hooks/usePaddleRaiseEntry'
+import { useSilentBidEntry } from '../hooks/useSilentBidEntry'
 import { BuyNowEntryForm } from './BuyNowEntryForm'
 import { LiveBidEntryForm } from './LiveBidEntryForm'
 import { LiveBidLogAndMetrics } from './LiveBidLogAndMetrics'
 import { PaddleRaiseEntryForm } from './PaddleRaiseEntryForm'
+import { SilentBidEntryForm } from './SilentBidEntryForm'
 
 export function QuickEntryPage() {
   const { eventId } = useParams({
     from: '/_authenticated/events/$eventId/quick-entry',
   })
   const { selectedEventId, availableEvents } = useEventContext()
-  const [mode, setMode] = useState<'LIVE_AUCTION' | 'PADDLE_RAISE' | 'BUY_NOW'>(
-    'LIVE_AUCTION'
-  )
+  const [mode, setMode] = useState<
+    'LIVE_AUCTION' | 'PADDLE_RAISE' | 'BUY_NOW' | 'SILENT_AUCTION'
+  >('LIVE_AUCTION')
   const [itemMenuOpen, setItemMenuOpen] = useState(false)
   const [itemSearch, setItemSearch] = useState('')
   const [liveSelection, setLiveSelection] = useState<{
@@ -85,7 +87,7 @@ export function QuickEntryPage() {
   const liveEventTotalRaised = useMemo(
     () =>
       liveAuctionItems.reduce(
-        (sum, item) => sum + (item.current_bid_amount ?? 0),
+        (sum, item) => sum + Number(item.current_bid_amount ?? 0),
         0
       ),
     [liveAuctionItems]
@@ -190,6 +192,7 @@ export function QuickEntryPage() {
   } = usePaddleRaiseEntry(resolvedEventId)
 
   const buyNow = useBuyNowEntry(resolvedEventId)
+  const silent = useSilentBidEntry(resolvedEventId)
 
   return (
     <div className='space-y-2 p-4'>
@@ -198,7 +201,13 @@ export function QuickEntryPage() {
         <Tabs
           value={mode}
           onValueChange={(value) =>
-            setMode(value as 'LIVE_AUCTION' | 'PADDLE_RAISE' | 'BUY_NOW')
+            setMode(
+              value as
+              | 'LIVE_AUCTION'
+              | 'PADDLE_RAISE'
+              | 'BUY_NOW'
+              | 'SILENT_AUCTION'
+            )
           }
         >
           <TabsList className='h-11'>
@@ -210,6 +219,9 @@ export function QuickEntryPage() {
             </TabsTrigger>
             <TabsTrigger value='BUY_NOW' className='min-h-9 px-4'>
               Buy It Now
+            </TabsTrigger>
+            <TabsTrigger value='SILENT_AUCTION' className='min-h-9 px-4'>
+              Silent Auction
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -419,7 +431,7 @@ export function QuickEntryPage() {
           onSelectedLabelIdsChange={setSelectedLabelIds}
           onSubmit={submitDonation}
         />
-      ) : (
+      ) : mode === 'BUY_NOW' ? (
         <BuyNowEntryForm
           items={buyNow.items}
           isLoadingItems={buyNow.isLoadingItems}
@@ -439,6 +451,24 @@ export function QuickEntryPage() {
           onSubmit={buyNow.submitBid}
           onDeleteBid={buyNow.deleteBid}
           summary={buyNow.summary}
+        />
+      ) : (
+        <SilentBidEntryForm
+          items={silent.items}
+          isLoadingItems={silent.isLoadingItems}
+          isItemsError={silent.isItemsError}
+          selectedItemId={silent.selectedItemId}
+          selectedItem={silent.selectedItem}
+          onSelectItem={silent.setSelectedItemId}
+          amount={silent.amount}
+          bidderNumber={silent.bidderNumber}
+          bidderRef={silent.bidderRef}
+          recentBids={silent.recentBids}
+          isSubmitting={silent.isSubmitting}
+          onAmountChange={silent.setAmount}
+          onBidderNumberChange={silent.setBidderNumber}
+          onBidderKeyDown={silent.handleBidderKeyDown}
+          onSubmit={silent.submitBid}
         />
       )}
     </div>

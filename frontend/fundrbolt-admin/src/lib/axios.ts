@@ -15,14 +15,35 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 // Global flag to track if consent modal is already shown
 let consentModalShown = false
 
-// Normalize API base URL to include /api/v1
-const rawBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-const normalizedBaseUrl = rawBaseUrl.replace(/\/+$/, '')
-const apiBaseUrl = normalizedBaseUrl.endsWith('/api/v1')
-  ? normalizedBaseUrl
-  : normalizedBaseUrl.endsWith('/api')
-    ? `${normalizedBaseUrl}/v1`
-    : `${normalizedBaseUrl}/api/v1`
+// Normalize API base URL to include /api/v1.
+// In dev mode on localhost, use the relative path so requests go through the
+// Vite proxy — this ensures the app works from any device on the LAN.
+const resolveApiBaseUrl = (): string => {
+  const configured = import.meta.env.VITE_API_URL
+  if (configured) {
+    const normalized = configured.replace(/\/+$/, '')
+    if (normalized.endsWith('/api/v1')) return normalized
+    if (normalized.endsWith('/api')) return `${normalized}/v1`
+    return `${normalized}/api/v1`
+  }
+
+  if (
+    import.meta.env.DEV &&
+    typeof window !== 'undefined' &&
+    ['localhost', '127.0.0.1'].includes(window.location.hostname)
+  ) {
+    return '/api/v1'
+  }
+
+  // Fallback: same origin proxy path (works on LAN / phone via Vite proxy)
+  if (import.meta.env.DEV) {
+    return '/api/v1'
+  }
+
+  return 'http://localhost:8000/api/v1'
+}
+
+const apiBaseUrl = resolveApiBaseUrl()
 
 // Create axios instance with default config
 const apiClient = axios.create({

@@ -24,39 +24,81 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    # Make ticket_package_id nullable
-    op.alter_column(
-        "custom_ticket_options",
-        "ticket_package_id",
-        existing_type=UUID(),
-        nullable=True,
-    )
+    bind = op.get_bind()
 
-    # Add event_id FK
-    op.add_column(
-        "custom_ticket_options",
-        sa.Column("event_id", UUID(as_uuid=True), nullable=True),
+    # Make ticket_package_id nullable (idempotent check)
+    result = bind.execute(
+        sa.text(
+            "SELECT is_nullable FROM information_schema.columns "
+            "WHERE table_name='custom_ticket_options' AND column_name='ticket_package_id'"
+        )
     )
-    op.create_index(
-        "ix_custom_ticket_options_event_id",
-        "custom_ticket_options",
-        ["event_id"],
-    )
-    op.create_foreign_key(
-        "fk_custom_ticket_options_event_id",
-        "custom_ticket_options",
-        "events",
-        ["event_id"],
-        ["id"],
-        ondelete="CASCADE",
-    )
+    row = result.fetchone()
+    if row and row[0] == "NO":
+        op.alter_column(
+            "custom_ticket_options",
+            "ticket_package_id",
+            existing_type=UUID(),
+            nullable=True,
+        )
 
-    # Exactly one of ticket_package_id or event_id must be set
-    op.create_check_constraint(
-        "check_custom_option_owner",
-        "custom_ticket_options",
-        "(ticket_package_id IS NOT NULL AND event_id IS NULL) OR (ticket_package_id IS NULL AND event_id IS NOT NULL)",
+    # Add event_id FK (idempotent check)
+    result = bind.execute(
+        sa.text(
+            "SELECT EXISTS(SELECT 1 FROM information_schema.columns "
+            "WHERE table_name='custom_ticket_options' AND column_name='event_id')"
+        )
     )
+    if not result.scalar():
+        op.add_column(
+            "custom_ticket_options",
+            sa.Column("event_id", UUID(as_uuid=True), nullable=True),
+        )
+
+    # Create index (idempotent)
+    result = bind.execute(
+        sa.text(
+            "SELECT EXISTS(SELECT 1 FROM pg_indexes "
+            "WHERE indexname='ix_custom_ticket_options_event_id')"
+        )
+    )
+    if not result.scalar():
+        op.create_index(
+            "ix_custom_ticket_options_event_id",
+            "custom_ticket_options",
+            ["event_id"],
+        )
+
+    # Create FK constraint (idempotent)
+    result = bind.execute(
+        sa.text(
+            "SELECT EXISTS(SELECT 1 FROM information_schema.table_constraints "
+            "WHERE constraint_name='fk_custom_ticket_options_event_id')"
+        )
+    )
+    if not result.scalar():
+        op.create_foreign_key(
+            "fk_custom_ticket_options_event_id",
+            "custom_ticket_options",
+            "events",
+            ["event_id"],
+            ["id"],
+            ondelete="CASCADE",
+        )
+
+    # Check constraint (idempotent)
+    result = bind.execute(
+        sa.text(
+            "SELECT EXISTS(SELECT 1 FROM information_schema.table_constraints "
+            "WHERE constraint_name='check_custom_option_owner')"
+        )
+    )
+    if not result.scalar():
+        op.create_check_constraint(
+            "check_custom_option_owner",
+            "custom_ticket_options",
+            "(ticket_package_id IS NOT NULL AND event_id IS NULL) OR (ticket_package_id IS NULL AND event_id IS NOT NULL)",
+        )
 
 
 def downgrade() -> None:

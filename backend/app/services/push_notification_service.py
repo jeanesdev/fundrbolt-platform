@@ -3,6 +3,7 @@
 Manages push subscriptions and sends push notifications via the Web Push protocol.
 """
 
+import base64
 import json
 import uuid
 from datetime import UTC, datetime
@@ -19,6 +20,37 @@ from app.models.push_subscription import PushSubscription
 
 logger = get_logger(__name__)
 settings = get_settings()
+
+
+def _get_vapid_private_key_raw() -> str | None:
+    """Extract raw base64url-encoded VAPID private key.
+
+    pywebpush expects a raw 32-byte EC private key in base64url encoding,
+    but the key may be stored in PEM format. Detect and convert as needed.
+    """
+    key = settings.vapid_private_key
+    if not key:
+        return None
+
+    if key.strip().startswith("-----BEGIN"):
+        from cryptography.hazmat.primitives.serialization import load_pem_private_key
+
+        # Handle escaped newlines from env vars (\\n → \n)
+        pem_str = key.replace("\\n", "\n")
+        try:
+            pem_key = load_pem_private_key(pem_str.encode(), password=None)
+            # Extract the raw 32-byte private scalar from the EC key
+            private_numbers = pem_key.private_numbers()  # type: ignore[union-attr]
+            raw_bytes = private_numbers.private_value.to_bytes(32, byteorder="big")  # type: ignore[union-attr]
+            return base64.urlsafe_b64encode(raw_bytes).rstrip(b"=").decode()
+        except Exception as exc:
+            logger.warning(
+                "Failed to parse VAPID private key from PEM; push notifications disabled.",
+                extra={"error": str(exc)},
+            )
+            return None
+
+    return key
 
 
 class PushNotificationService:
@@ -147,6 +179,11 @@ class PushNotificationService:
             logger.warning("VAPID keys not configured, skipping push notification")
             return False
 
+        vapid_key = _get_vapid_private_key_raw()
+        if not vapid_key:
+            logger.warning("Could not extract VAPID private key, skipping push notification")
+            return False
+
         # Load notification
         notif_stmt = select(Notification).where(Notification.id == notification_id)
         notif_result = await db.execute(notif_stmt)
@@ -191,6 +228,20 @@ class PushNotificationService:
                 "No active push subscriptions for user",
                 extra={"user_id": str(notification.user_id)},
             )
+            # Mark delivery as skipped so it doesn't stay pending forever
+            update_delivery_stmt = (
+                update(NotificationDeliveryStatus)
+                .where(
+                    NotificationDeliveryStatus.notification_id == notification_id,
+                    NotificationDeliveryStatus.channel == DeliveryChannelEnum.PUSH,
+                )
+                .values(
+                    status=DeliveryStatusEnum.SKIPPED,
+                    failure_reason="no_active_subscriptions",
+                )
+            )
+            await db.execute(update_delivery_stmt)
+            await db.commit()
             return False
 
         # Build push payload
@@ -214,12 +265,28 @@ class PushNotificationService:
             }
         )
 
-        vapid_claims = {"sub": settings.vapid_claims_email}
         any_success = False
 
         for subscription in subscriptions:
             try:
-                webpush(
+                endpoint_domain = subscription.endpoint.split("/")[2]
+            except IndexError:
+                endpoint_domain = "unknown"
+            logger.info(
+                "Sending push to subscription",
+                extra={
+                    "subscription_id": str(subscription.id),
+                    "endpoint_domain": endpoint_domain,
+                    "notification_id": str(notification_id),
+                },
+            )
+            try:
+                # Fresh claims dict per subscription — pywebpush mutates it
+                # (sets 'aud' from the endpoint URL), so reusing a single dict
+                # causes subsequent calls to different push services (e.g.
+                # Apple after FCM) to send a JWT with the wrong audience.
+                vapid_claims = {"sub": settings.vapid_claims_email}
+                resp = webpush(
                     subscription_info={
                         "endpoint": subscription.endpoint,
                         "keys": {
@@ -228,8 +295,21 @@ class PushNotificationService:
                         },
                     },
                     data=payload,
-                    vapid_private_key=settings.vapid_private_key,
+                    vapid_private_key=vapid_key,
                     vapid_claims=vapid_claims,
+                    headers={
+                        "TTL": "86400",
+                        "Urgency": "high",
+                    },
+                )
+                resp_status = resp.status_code if resp else "no-response"
+                logger.info(
+                    "Push sent successfully",
+                    extra={
+                        "subscription_id": str(subscription.id),
+                        "endpoint_domain": endpoint_domain,
+                        "status_code": resp_status,
+                    },
                 )
                 any_success = True
             except WebPushException as e:

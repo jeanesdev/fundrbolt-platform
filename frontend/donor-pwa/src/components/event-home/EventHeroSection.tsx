@@ -253,7 +253,7 @@ export function EventHeroSection({
 
       {/* If there's a logo image, show it as a small badge in top-left */}
       {logoUrl && (
-        <div className='absolute top-12 left-3 z-10'>
+        <div className='absolute left-3 z-10' style={{ top: 'calc(env(safe-area-inset-top, 0px) + 2.5rem)' }}>
           <div className='animate-float'>
             <img
               src={logoUrl}
@@ -265,7 +265,10 @@ export function EventHeroSection({
       )}
 
       {/* Top bar: switcher left, profile right */}
-      <div className='absolute top-0 left-0 right-0 flex items-start justify-between px-3 pt-safe-top pt-3 z-20'>
+      <div
+        className='absolute top-0 left-0 right-0 flex items-start justify-between px-3 z-20'
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
+      >
         {switcherSlot ? (
           <div className='rounded-xl bg-black/40 backdrop-blur-md shadow-lg'>
             {switcherSlot}

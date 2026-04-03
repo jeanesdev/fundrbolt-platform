@@ -1,5 +1,7 @@
-"""Admin quick-entry API endpoints for live bids and paddle raise donations."""
+"""Admin quick-entry API endpoints for live bids, paddle raise, buy-now, and silent auction."""
 
+import logging
+from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
 
@@ -10,7 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.middleware.auth import get_current_user
-from app.models.auction_item import AuctionItemMedia
+from app.models.auction_bid import AuctionBid, BidStatus, BidType
+from app.models.auction_item import AuctionItem, AuctionItemMedia, AuctionType
 from app.models.event import Event
 from app.models.user import User
 from app.schemas.quick_entry.schemas import (
@@ -34,13 +37,22 @@ from app.schemas.quick_entry.schemas import (
     QuickEntryPaddleDonationListResponse,
     QuickEntryPaddleDonationResponse,
     QuickEntryPaddleSummaryResponse,
+    QuickEntrySilentBidCreateRequest,
+    QuickEntrySilentBidListResponse,
+    QuickEntrySilentBidResponse,
+    QuickEntrySilentItemListResponse,
+    QuickEntrySilentItemResponse,
     QuickEntryWinnerAssignmentResponse,
 )
+from app.services.auction_bid_service import AuctionBidService
 from app.services.auction_item_media_service import AuctionItemMediaService
 from app.services.permission_service import PermissionService
 from app.services.quick_entry.buy_now_service import BuyNowService
 from app.services.quick_entry.live_auction_service import LiveAuctionService
 from app.services.quick_entry.paddle_raise_service import PaddleRaiseService
+from app.services.quick_entry.service_base import QuickEntryServiceBase
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin/events/{event_id}/quick-entry", tags=["quick-entry"])
 
@@ -526,6 +538,184 @@ async def delete_buy_now_bid(
     )
 
 
+# ---------------------------------------------------------------------------
+# Silent Auction endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/silent-auction/items",
+    response_model=QuickEntrySilentItemListResponse,
+)
+async def list_silent_auction_items(
+    event_id: UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> QuickEntrySilentItemListResponse:
+    """List published silent auction items for quick-entry item picker."""
+    event = await _get_event_or_404(db, event_id)
+    await _require_quick_entry_access(db, current_user, event)
+
+    stmt = (
+        select(AuctionItem)
+        .where(
+            AuctionItem.event_id == event_id,
+            AuctionItem.auction_type == AuctionType.SILENT.value,
+            AuctionItem.status == "published",
+            AuctionItem.deleted_at.is_(None),
+        )
+        .order_by(AuctionItem.bid_number)
+    )
+    result = await db.execute(stmt)
+    items = result.scalars().all()
+
+    settings = get_settings()
+    media_service = AuctionItemMediaService(settings, db)
+    result_items: list[QuickEntrySilentItemResponse] = []
+
+    for item in items:
+        primary_image_url = await _get_primary_image_url(db, item.id, media_service, settings)
+        result_items.append(
+            QuickEntrySilentItemResponse(
+                id=item.id,
+                bid_number=item.bid_number,
+                title=item.title,
+                starting_bid=float(item.starting_bid),
+                bid_increment=float(item.bid_increment),
+                current_bid_amount=float(item.current_bid_amount)
+                if item.current_bid_amount
+                else None,
+                min_next_bid_amount=float(item.min_next_bid_amount)
+                if item.min_next_bid_amount
+                else None,
+                bid_count=item.bid_count or 0,
+                primary_image_url=primary_image_url,
+            )
+        )
+
+    return QuickEntrySilentItemListResponse(items=result_items)
+
+
+@router.post(
+    "/silent-auction/bids",
+    response_model=QuickEntrySilentBidResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_silent_auction_bid(
+    event_id: UUID,
+    payload: QuickEntrySilentBidCreateRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> QuickEntrySilentBidResponse:
+    """Place a silent auction bid on behalf of a donor via quick entry."""
+    event = await _get_event_or_404(db, event_id)
+    await _require_quick_entry_access(db, current_user, event)
+
+    # Verify the item exists and is a silent auction item
+    item_stmt = select(AuctionItem).where(
+        AuctionItem.id == payload.item_id,
+        AuctionItem.event_id == event_id,
+        AuctionItem.deleted_at.is_(None),
+    )
+    item_result = await db.execute(item_stmt)
+    item = item_result.scalar_one_or_none()
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Auction item not found")
+    if item.auction_type != AuctionType.SILENT.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Item is not a silent auction item",
+        )
+
+    # Resolve bidder number to donor
+    bidder = await QuickEntryServiceBase.lookup_bidder(db, event_id, payload.bidder_number)
+    if bidder.donor_user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Bidder is not linked to a user account",
+        )
+
+    # Place the bid using the real auction bid service
+    bid_service = AuctionBidService(db)
+    try:
+        bid = await bid_service.place_bid(
+            user_id=bidder.donor_user_id,
+            event_id=event_id,
+            auction_item_id=payload.item_id,
+            bid_amount=Decimal(payload.amount),
+            bid_type=BidType.REGULAR,
+            max_bid=None,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    return QuickEntrySilentBidResponse(
+        id=bid.id,
+        event_id=bid.event_id,
+        item_id=bid.auction_item_id,
+        bidder_number=bid.bidder_number,
+        donor_name=bidder.donor_display_name,
+        amount=float(bid.bid_amount),
+        bid_status=bid.bid_status,
+        placed_at=bid.placed_at,
+    )
+
+
+@router.get(
+    "/silent-auction/bids",
+    response_model=QuickEntrySilentBidListResponse,
+)
+async def list_silent_auction_bids(
+    event_id: UUID,
+    item_id: Annotated[UUID, Query()],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> QuickEntrySilentBidListResponse:
+    """List recent bids for a silent auction item."""
+    event = await _get_event_or_404(db, event_id)
+    await _require_quick_entry_access(db, current_user, event)
+
+    stmt = (
+        select(AuctionBid)
+        .where(
+            AuctionBid.event_id == event_id,
+            AuctionBid.auction_item_id == item_id,
+            AuctionBid.bid_status.in_([BidStatus.ACTIVE.value, BidStatus.WINNING.value]),
+        )
+        .order_by(AuctionBid.bid_amount.desc())
+        .limit(50)
+    )
+    result = await db.execute(stmt)
+    bids = result.scalars().all()
+
+    response_items: list[QuickEntrySilentBidResponse] = []
+    for bid in bids:
+        donor_name: str | None = None
+        if bid.user_id:
+            user_stmt = select(User).where(User.id == bid.user_id)
+            user_result = await db.execute(user_stmt)
+            user = user_result.scalar_one_or_none()
+            if user:
+                donor_name = f"{user.first_name} {user.last_name}".strip() or None
+        response_items.append(
+            QuickEntrySilentBidResponse(
+                id=bid.id,
+                event_id=bid.event_id,
+                item_id=bid.auction_item_id,
+                bidder_number=bid.bidder_number,
+                donor_name=donor_name,
+                amount=float(bid.bid_amount),
+                bid_status=bid.bid_status,
+                placed_at=bid.placed_at,
+            )
+        )
+
+    return QuickEntrySilentBidListResponse(items=response_items)
+
+
 async def _get_event_or_404(db: AsyncSession, event_id: UUID) -> Event:
     stmt = select(Event).where(Event.id == event_id)
     result = await db.execute(stmt)
@@ -540,3 +730,36 @@ async def _require_quick_entry_access(db: AsyncSession, current_user: User, even
     can_view_event = await permission_service.can_view_event(current_user, event.npo_id, db=db)
     if not can_view_event or not permission_service.can_use_quick_entry(current_user):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+
+async def _get_primary_image_url(
+    db: AsyncSession,
+    item_id: UUID,
+    media_service: AuctionItemMediaService,
+    settings: object,
+) -> str | None:
+    """Resolve the primary image URL for an auction item."""
+    media_stmt = (
+        select(AuctionItemMedia)
+        .where(
+            AuctionItemMedia.auction_item_id == item_id,
+            AuctionItemMedia.media_type == "image",
+        )
+        .order_by(AuctionItemMedia.display_order)
+        .limit(1)
+    )
+    media_result = await db.execute(media_stmt)
+    primary_media = media_result.scalar_one_or_none()
+    if not primary_media or not primary_media.file_path:
+        return None
+    if primary_media.file_path.startswith("https://"):
+        try:
+            container_path = f"{settings.azure_storage_container_name}/"  # type: ignore[attr-defined]
+            if container_path in primary_media.file_path:
+                blob_path = primary_media.file_path.split(container_path, 1)[1]
+                blob_path = blob_path.split("?", 1)[0]
+                return media_service._generate_blob_sas_url(blob_path, expiry_hours=24)
+            return primary_media.file_path
+        except (ValueError, IndexError):
+            return primary_media.file_path
+    return primary_media.file_path

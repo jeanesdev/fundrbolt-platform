@@ -17,6 +17,7 @@ from app.models.auction_bid import AuctionBid, BidStatus
 from app.models.event import Event
 from app.models.notification import (
     CampaignStatusEnum,
+    DeliveryChannelEnum,
     Notification,
     NotificationPriorityEnum,
     NotificationTypeEnum,
@@ -152,12 +153,13 @@ async def _send_auction_closed_async(event_id: str) -> int:
 
             winner_user_ids: set[uuid.UUID] = set()
             sent = 0
+            created_notifications: list[tuple[str, list[DeliveryChannelEnum]]] = []
 
             # Notify winners
             for bid in winning_bids:
                 winner_user_ids.add(bid.user_id)
                 try:
-                    await NotificationService.create_notification(
+                    notification = await NotificationService.create_notification(
                         db=db,
                         event_id=event_uuid,
                         user_id=bid.user_id,
@@ -170,12 +172,15 @@ async def _send_auction_closed_async(event_id: str) -> int:
                         ),
                         data={
                             "item_id": str(bid.auction_item_id),
-                            "deep_link": f"/events/{event_slug}/auction/{bid.auction_item_id}",
+                            "deep_link": f"/events/{event_slug}?item={bid.auction_item_id}",
                             "animation_type": "confetti",
                             "bid_amount": str(bid.bid_amount),
                         },
                         sio=sio,
+                        dispatch_tasks=False,
                     )
+                    channels = getattr(notification, "_resolved_channels", [])
+                    created_notifications.append((str(notification.id), channels))
                     sent += 1
                 except Exception:
                     logger.warning(
@@ -194,7 +199,7 @@ async def _send_auction_closed_async(event_id: str) -> int:
             # Notify non-winners
             for user_id in non_winners:
                 try:
-                    await NotificationService.create_notification(
+                    notification = await NotificationService.create_notification(
                         db=db,
                         event_id=event_uuid,
                         user_id=user_id,
@@ -206,10 +211,13 @@ async def _send_auction_closed_async(event_id: str) -> int:
                             "Your support makes a difference."
                         ),
                         data={
-                            "deep_link": f"/events/{event_slug}/auction",
+                            "deep_link": f"/events/{event_slug}?tab=auction",
                         },
                         sio=sio,
+                        dispatch_tasks=False,
                     )
+                    channels = getattr(notification, "_resolved_channels", [])
+                    created_notifications.append((str(notification.id), channels))
                     sent += 1
                 except Exception:
                     logger.warning(
@@ -218,6 +226,10 @@ async def _send_auction_closed_async(event_id: str) -> int:
                     )
 
             await db.commit()
+
+            # Dispatch delivery tasks after commit
+            for notif_id, channels in created_notifications:
+                NotificationService.dispatch_delivery_tasks(notif_id, channels)
             logger.info(
                 "Sent auction closed notifications",
                 extra={
@@ -303,6 +315,7 @@ async def _send_push_async(notification_id: str) -> bool:
     async with AsyncSessionLocal() as db:
         try:
             result = await PushNotificationService.send_push(db, uuid.UUID(notification_id))
+            await db.commit()
             return result
         except Exception:
             await db.rollback()
@@ -380,10 +393,11 @@ async def _send_checkout_reminders_async(event_id: str) -> int:
 
             all_recipients = set(donor_ids) | reg_ids
             sent = 0
+            created_notifications: list[tuple[str, list[DeliveryChannelEnum]]] = []
 
             for user_id in all_recipients:
                 try:
-                    await NotificationService.create_notification(
+                    notification = await NotificationService.create_notification(
                         db=db,
                         event_id=event_uuid,
                         user_id=user_id,
@@ -398,7 +412,10 @@ async def _send_checkout_reminders_async(event_id: str) -> int:
                             "deep_link": f"/events/{event_slug}",
                         },
                         sio=sio,
+                        dispatch_tasks=False,
                     )
+                    channels = getattr(notification, "_resolved_channels", [])
+                    created_notifications.append((str(notification.id), channels))
                     sent += 1
                 except Exception:
                     logger.warning(
@@ -407,6 +424,10 @@ async def _send_checkout_reminders_async(event_id: str) -> int:
                     )
 
             await db.commit()
+
+            # Dispatch delivery tasks after commit
+            for notif_id, channels in created_notifications:
+                NotificationService.dispatch_delivery_tasks(notif_id, channels)
             logger.info(
                 "Sent checkout reminders",
                 extra={"event_id": event_id, "sent_count": sent},
@@ -512,6 +533,18 @@ async def _deliver_campaign_async(campaign_id: str) -> int:
                     result = await db.execute(table_stmt)
                     user_ids = [row[0] for row in result.all()]
 
+            elif recipient_type == "item_watchers":
+                from app.models.watch_list_entry import WatchListEntry
+
+                item_id_str = criteria.get("item_id")
+                if item_id_str:
+                    item_uuid = uuid.UUID(item_id_str)
+                    watcher_stmt = select(WatchListEntry.user_id).where(
+                        WatchListEntry.item_id == item_uuid
+                    )
+                    result = await db.execute(watcher_stmt)
+                    user_ids = [row[0] for row in result.all()]
+
             elif recipient_type == "individual":
                 individual_ids = criteria.get("user_ids", [])
                 user_ids = [uuid.UUID(uid) for uid in individual_ids]
@@ -520,24 +553,102 @@ async def _deliver_campaign_async(campaign_id: str) -> int:
             unique_user_ids = list(set(user_ids))
             campaign.recipient_count = len(unique_user_ids)
 
+            # Map campaign channel strings to DeliveryChannelEnum
+            campaign_channels = campaign.channels or ["inapp"]
+            channel_map = {
+                "in_app": DeliveryChannelEnum.INAPP,
+                "inapp": DeliveryChannelEnum.INAPP,
+                "push": DeliveryChannelEnum.PUSH,
+                "email": DeliveryChannelEnum.EMAIL,
+                "sms": DeliveryChannelEnum.SMS,
+            }
+            override_channels = [
+                channel_map[ch] for ch in campaign_channels if ch in channel_map
+            ] or [DeliveryChannelEnum.INAPP]
+
+            # Build notification data/title based on context
+            notification_title = f"Message from {event_name}"
+            notification_data: dict[str, Any] = {"deep_link": None}
+
+            if recipient_type == "item_watchers" and criteria.get("item_id"):
+                from app.models.auction_item import AuctionItem, AuctionItemMedia
+
+                item_uuid = uuid.UUID(criteria["item_id"])
+                item_result = await db.execute(
+                    select(AuctionItem.title, AuctionItem.id).where(AuctionItem.id == item_uuid)
+                )
+                item_row = item_result.one_or_none()
+                if item_row:
+                    event_slug = event_row[1] if event_row else None
+                    notification_title = f"About: {item_row.title}"
+                    notification_data["item_id"] = str(item_row.id)
+                    notification_data["item_title"] = item_row.title
+                    if event_slug:
+                        notification_data["deep_link"] = f"/events/{event_slug}?item={item_row.id}"
+                    # Get first image for thumbnail
+                    media_result = await db.execute(
+                        select(AuctionItemMedia.file_path)
+                        .where(
+                            AuctionItemMedia.auction_item_id == item_uuid,
+                            AuctionItemMedia.media_type == "image",
+                        )
+                        .order_by(AuctionItemMedia.display_order)
+                        .limit(1)
+                    )
+                    media_row = media_result.scalar_one_or_none()
+                    if media_row:
+                        # Generate SAS URL for blob storage images
+                        if media_row.startswith("https://"):
+                            try:
+                                from app.core.config import get_settings
+                                from app.services.auction_item_media_service import (
+                                    AuctionItemMediaService,
+                                )
+
+                                _settings = get_settings()
+                                _media_svc = AuctionItemMediaService(_settings, db)
+                                container_path = f"{_settings.azure_storage_container_name}/"
+                                if container_path in media_row:
+                                    blob_path = media_row.split(container_path, 1)[1]
+                                    blob_path = blob_path.split("?", 1)[0]
+                                    notification_data["image_url"] = (
+                                        _media_svc._generate_blob_sas_url(
+                                            blob_path, expiry_hours=24
+                                        )
+                                    )
+                                else:
+                                    notification_data["image_url"] = media_row
+                            except Exception:
+                                notification_data["image_url"] = media_row
+                        else:
+                            notification_data["image_url"] = media_row
+
             sent = 0
             failed = 0
+            # Collect created notifications so we can dispatch delivery tasks
+            # AFTER the transaction commits (avoids transaction-isolation issues
+            # when Celery runs in eager / synchronous mode).
+            created_notifications: list[tuple[str, list[DeliveryChannelEnum]]] = []
 
             for user_id in unique_user_ids:
                 try:
-                    await NotificationService.create_notification(
+                    notification = await NotificationService.create_notification(
                         db=db,
                         event_id=event_id,
                         user_id=user_id,
                         notification_type=NotificationTypeEnum.CUSTOM,
                         priority=NotificationPriorityEnum.NORMAL,
-                        title=f"Message from {event_name}",
+                        title=notification_title,
                         body=campaign.message,
                         campaign_id=campaign.id,
                         created_by=campaign.sender_id,
-                        data={"deep_link": None},
+                        data=notification_data,
                         sio=sio,
+                        override_channels=override_channels,
+                        dispatch_tasks=False,
                     )
+                    channels = getattr(notification, "_resolved_channels", override_channels)
+                    created_notifications.append((str(notification.id), channels))
                     sent += 1
                 except Exception:
                     failed += 1
@@ -551,6 +662,12 @@ async def _deliver_campaign_async(campaign_id: str) -> int:
             campaign.status = CampaignStatusEnum.SENT
             campaign.sent_at = datetime.now(UTC)
             await db.commit()
+
+            # Now that the transaction is committed, dispatch delivery tasks
+            # so the Celery workers (or eager inline execution) can read the
+            # notification rows from the database.
+            for notif_id, channels in created_notifications:
+                NotificationService.dispatch_delivery_tasks(notif_id, channels)
 
             logger.info(
                 "Campaign delivered",
@@ -616,6 +733,7 @@ def send_email_notification_task(self: Any, notification_id: str) -> bool:
 async def _send_email_notification_async(notification_id: str) -> bool:
     from app.models.notification_delivery_status import NotificationDeliveryStatus
     from app.models.user import User
+    from app.services.email_service import get_email_service
 
     async with AsyncSessionLocal() as db:
         try:
@@ -636,15 +754,18 @@ async def _send_email_notification_async(notification_id: str) -> bool:
 
             email, first_name = user_row
 
-            # TODO: Integrate with email_service.py email templates (T072)
-            # For now, log that email would be sent
-            logger.info(
-                "Email notification would be sent",
-                extra={
-                    "notification_id": notification_id,
-                    "to": email,
-                    "subject": notification.title,
-                },
+            # Send branded notification email via EmailService (T072)
+            email_service = get_email_service()
+            notification_data: dict[str, object] | None = (
+                dict(notification.data) if notification.data else None
+            )
+            await email_service.send_notification_email(
+                to_email=email,
+                notification_type=notification.notification_type.value,
+                title=notification.title,
+                body=notification.body,
+                donor_name=first_name,
+                data=notification_data,
             )
 
             # Update delivery status

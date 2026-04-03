@@ -83,24 +83,26 @@ class AuctionBidService:
         """T075: Send bid confirmation notification to the bidder."""
         try:
             event_slug = await self._get_event_slug(bid.event_id)
-            await NotificationService.create_notification(
-                db=self.db,
-                event_id=bid.event_id,
-                user_id=bid.user_id,
-                notification_type=NotificationTypeEnum.BID_CONFIRMATION,
-                priority=NotificationPriorityEnum.LOW,
-                title="You're the high bidder!",
-                body=f"Your bid of ${bid.bid_amount:,.2f} on {item.title} is currently winning.",
-                data={
-                    "item_id": str(item.id),
-                    "bid_amount": str(bid.bid_amount),
-                    "deep_link": f"/events/{event_slug}/auction/{item.id}",
-                    "animation_type": "pulse",
-                },
-                sio=sio,
-            )
+            async with self.db.begin_nested():
+                await NotificationService.create_notification(
+                    db=self.db,
+                    event_id=bid.event_id,
+                    user_id=bid.user_id,
+                    notification_type=NotificationTypeEnum.BID_CONFIRMATION,
+                    priority=NotificationPriorityEnum.LOW,
+                    title="You're the high bidder!",
+                    body=f"Your bid of ${bid.bid_amount:,.2f} on {item.title} is currently winning.",
+                    data={
+                        "item_id": str(item.id),
+                        "bid_amount": str(bid.bid_amount),
+                        "deep_link": f"/events/{event_slug}?item={item.id}",
+                        "animation_type": "pulse",
+                    },
+                    sio=sio,
+                )
             await self.db.commit()
         except Exception:
+            await self.db.rollback()
             logger.warning(
                 "Failed to send bid confirmation notification",
                 extra={"bid_id": str(bid.id), "user_id": str(bid.user_id)},
@@ -238,7 +240,11 @@ class AuctionBidService:
         new_bid_amount: Decimal | None = None,
         item: AuctionItem | None = None,
     ) -> None:
-        """Create an outbid notification for the outbid user."""
+        """Create an outbid notification for the outbid user.
+
+        Uses a savepoint so that a DB failure (e.g. missing notifications
+        table) does not corrupt the parent bid transaction.
+        """
         if item is None:
             item = await self._get_auction_item(previous_bid.auction_item_id)
 
@@ -251,25 +257,26 @@ class AuctionBidService:
         amount_str = f"${new_bid_amount:,.2f}" if new_bid_amount else "a higher amount"
         old_amount_str = f"${previous_bid.bid_amount:,.2f}"
 
-        await NotificationService.create_notification(
-            db=self.db,
-            event_id=previous_bid.event_id,
-            user_id=previous_bid.user_id,
-            notification_type=NotificationTypeEnum.OUTBID,
-            priority=NotificationPriorityEnum.HIGH,
-            title="You've been outbid!",
-            body=(
-                f"Someone bid {amount_str} on {item.title}. "
-                f"Your bid of {old_amount_str} is no longer the highest."
-            ),
-            data={
-                "item_id": str(item.id),
-                "deep_link": f"/events/{event_slug}/auction/{item.id}",
-                "animation_type": "flash",
-                "bid_amount": str(new_bid_amount) if new_bid_amount else None,
-            },
-            sio=sio,
-        )
+        async with self.db.begin_nested():
+            await NotificationService.create_notification(
+                db=self.db,
+                event_id=previous_bid.event_id,
+                user_id=previous_bid.user_id,
+                notification_type=NotificationTypeEnum.OUTBID,
+                priority=NotificationPriorityEnum.HIGH,
+                title="You've been outbid!",
+                body=(
+                    f"Someone bid {amount_str} on {item.title}. "
+                    f"Your bid of {old_amount_str} is no longer the highest."
+                ),
+                data={
+                    "item_id": str(item.id),
+                    "deep_link": f"/events/{event_slug}?item={item.id}",
+                    "animation_type": "flash",
+                    "bid_amount": str(new_bid_amount) if new_bid_amount else None,
+                },
+                sio=sio,
+            )
 
     async def place_bid(
         self,
@@ -444,25 +451,26 @@ class AuctionBidService:
             # T076: Notify user their proxy bid auto-executed
             try:
                 event_slug = await self._get_event_slug(item.event_id)
-                await NotificationService.create_notification(
-                    db=self.db,
-                    event_id=item.event_id,
-                    user_id=best.user_id,
-                    notification_type=NotificationTypeEnum.PROXY_BID_TRIGGERED,
-                    priority=NotificationPriorityEnum.NORMAL,
-                    title="Proxy bid placed automatically",
-                    body=(
-                        f"Your proxy bid of ${next_amount:,.2f} was automatically "
-                        f"placed on {item.title}."
-                    ),
-                    data={
-                        "item_id": str(item.id),
-                        "bid_amount": str(next_amount),
-                        "max_bid": str(best.max_bid),
-                        "deep_link": f"/events/{event_slug}/auction/{item.id}",
-                    },
-                    sio=sio,
-                )
+                async with self.db.begin_nested():
+                    await NotificationService.create_notification(
+                        db=self.db,
+                        event_id=item.event_id,
+                        user_id=best.user_id,
+                        notification_type=NotificationTypeEnum.PROXY_BID_TRIGGERED,
+                        priority=NotificationPriorityEnum.NORMAL,
+                        title="Proxy bid placed automatically",
+                        body=(
+                            f"Your proxy bid of ${next_amount:,.2f} was automatically "
+                            f"placed on {item.title}."
+                        ),
+                        data={
+                            "item_id": str(item.id),
+                            "bid_amount": str(next_amount),
+                            "max_bid": str(best.max_bid),
+                            "deep_link": f"/events/{event_slug}?item={item.id}",
+                        },
+                        sio=sio,
+                    )
             except Exception:
                 logger.warning(
                     "Failed to send proxy bid triggered notification",
@@ -545,7 +553,7 @@ class AuctionBidService:
                     "item_id": str(item.id),
                     "bid_amount": str(winning_bid.bid_amount),
                     "admin_name": admin_name,
-                    "deep_link": f"/events/{event_slug}/auction/{item.id}",
+                    "deep_link": f"/events/{event_slug}?item={item.id}",
                 },
                 sio=sio,
             )

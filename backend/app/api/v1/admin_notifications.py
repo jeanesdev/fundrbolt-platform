@@ -43,10 +43,11 @@ def _require_admin(user: User) -> None:
 class RecipientCriteria(BaseModel):
     type: str = Field(
         ...,
-        description="Recipient type: all_attendees, all_bidders, specific_table, individual",
+        description="Recipient type: all_attendees, all_bidders, specific_table, individual, item_watchers",
     )
     table_number: int | None = Field(None, description="Table number for specific_table type")
     user_ids: list[str] | None = Field(None, description="User UUIDs for individual type")
+    item_id: str | None = Field(None, description="Auction item UUID for item_watchers type")
 
 
 class SendNotificationRequest(BaseModel):
@@ -105,14 +106,14 @@ async def send_notification(
     await db.commit()
     await db.refresh(campaign)
 
-    # Dispatch async delivery task
+    # Dispatch delivery task (runs synchronously in dev via task_always_eager)
     try:
         from app.tasks.notification_tasks import deliver_campaign_task
 
         deliver_campaign_task.delay(str(campaign.id))
     except Exception:
-        logger.warning(
-            "Failed to dispatch campaign delivery task",
+        logger.exception(
+            "Failed to dispatch/execute campaign delivery task",
             extra={"campaign_id": str(campaign.id)},
         )
 

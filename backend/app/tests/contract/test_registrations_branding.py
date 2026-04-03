@@ -12,7 +12,14 @@ import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.event import Event, EventStatus
+from app.models.event import (
+    Event,
+    EventMedia,
+    EventMediaStatus,
+    EventMediaType,
+    EventMediaUsageTag,
+    EventStatus,
+)
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.npo_branding import NPOBranding
 
@@ -170,6 +177,65 @@ async def npo_branding_with_colors(db_session: AsyncSession, test_approved_npo: 
     await db_session.commit()
     await db_session.refresh(branding)
     return branding
+
+
+@pytest_asyncio.fixture
+async def event_with_map_and_logo_media(
+    db_session: AsyncSession, test_approved_npo: Any, test_npo_admin_user: Any
+) -> Event:
+    """Create an event whose first media asset is a map but with a tagged logo present."""
+    event = Event(
+        npo_id=test_approved_npo.id,
+        name="Map Before Logo Event",
+        slug="map-before-logo-event",
+        status=EventStatus.ACTIVE,
+        event_datetime=datetime.now(UTC) + timedelta(days=12),
+        timezone="America/New_York",
+        venue_name="Logo Venue",
+        venue_address="123 Logo Way",
+        description="Event with both map and logo media",
+        version=1,
+        created_by=test_npo_admin_user.id,
+        updated_by=test_npo_admin_user.id,
+    )
+    db_session.add(event)
+    await db_session.flush()
+
+    db_session.add_all(
+        [
+            EventMedia(
+                event_id=event.id,
+                media_type=EventMediaType.IMAGE,
+                usage_tag=EventMediaUsageTag.EVENT_LAYOUT_MAP,
+                file_url="https://example.com/layout-map.png",
+                file_name="layout-map.png",
+                file_type="image/png",
+                mime_type="image/png",
+                blob_name="events/layout-map.png",
+                file_size=1024,
+                display_order=0,
+                status=EventMediaStatus.SCANNED,
+                uploaded_by=test_npo_admin_user.id,
+            ),
+            EventMedia(
+                event_id=event.id,
+                media_type=EventMediaType.IMAGE,
+                usage_tag=EventMediaUsageTag.EVENT_LOGO,
+                file_url="https://example.com/event-logo.png",
+                file_name="event-logo.png",
+                file_type="image/png",
+                mime_type="image/png",
+                blob_name="events/event-logo.png",
+                file_size=1024,
+                display_order=1,
+                status=EventMediaStatus.SCANNED,
+                uploaded_by=test_npo_admin_user.id,
+            ),
+        ]
+    )
+    await db_session.commit()
+    await db_session.refresh(event)
+    return event
 
 
 async def create_registration(
@@ -418,3 +484,20 @@ class TestGetRegisteredEventsWithBrandingContract:
         # Validate color format
         assert event["primary_color"].startswith("#")
         assert len(event["primary_color"]) == 7
+
+    async def test_get_registered_events_prefers_logo_over_layout_map_thumbnail(
+        self,
+        authenticated_client: AsyncClient,
+        db_session: AsyncSession,
+        test_user: Any,
+        event_with_map_and_logo_media: Event,
+    ):
+        """Layout maps should never be chosen for authenticated-home event thumbnails."""
+        await create_registration(db_session, test_user.id, event_with_map_and_logo_media.id)
+
+        response = await authenticated_client.get("/api/v1/registrations/events-with-branding")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["events"]) == 1
+        assert data["events"][0]["thumbnail_url"] == "https://example.com/event-logo.png"
