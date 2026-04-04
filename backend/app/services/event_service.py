@@ -82,10 +82,16 @@ class EventService:
         # Generate unique slug
         slug = await EventService._generate_unique_slug(db, event_data.name, event_data.custom_slug)
 
+        # Auto-generate hashtag if not provided
+        hashtag = event_data.hashtag
+        if not hashtag:
+            hashtag = EventService._generate_hashtag(event_data.name)
+
         # Create event
         event = Event(
-            **event_data.model_dump(exclude={"custom_slug"}),
+            **event_data.model_dump(exclude={"custom_slug", "hashtag"}),
             slug=slug,
+            hashtag=hashtag,
             status=EventStatus.DRAFT,
             version=1,
             created_by=current_user.id,
@@ -924,6 +930,23 @@ class EventService:
             status_code=status.HTTP_409_CONFLICT,
             detail="Unable to generate unique slug after 3 attempts",
         )
+
+    @staticmethod
+    def _generate_hashtag(event_name: str) -> str:
+        """Generate a CamelCase hashtag from the event name.
+
+        Examples:
+            'Summer Gala 2025' -> '#SummerGala2025'
+            'An Evening of Elegance' -> '#AnEveningOfElegance'
+        """
+        import re
+
+        # Split into words, keep only alphanumeric
+        words = re.split(r"[\s\-_]+", event_name.strip())
+        camel = "".join(w.capitalize() for w in words if w)
+        # Strip any remaining non-alphanumeric chars
+        camel = re.sub(r"[^A-Za-z0-9]", "", camel)
+        return f"#{camel}" if camel else "#Event"
 
     @staticmethod
     def _validate_timezone(timezone: str) -> None:

@@ -1,6 +1,11 @@
 /**
  * TemplateManagementDialog — List, rename, delete, and set-default templates
  */
+import { useEffect, useState } from 'react'
+import type { ChecklistTemplate } from '@/types/checklist'
+import { Check, Pencil, Shield, Star, Trash2, X } from 'lucide-react'
+import { toast } from 'sonner'
+import { useChecklistStore } from '@/stores/checklistStore'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -9,11 +14,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { useChecklistStore } from '@/stores/checklistStore'
-import type { ChecklistTemplate } from '@/types/checklist'
-import { Check, Pencil, Shield, Star, Trash2, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
 
 interface TemplateManagementDialogProps {
   npoId: string

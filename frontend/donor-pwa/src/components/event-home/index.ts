@@ -28,6 +28,10 @@ export { TablemateCard } from './TablemateCard'
 export { EventDetails } from './EventDetails'
 export type { EventDetailsProps } from './EventDetails'
 
+// Share Button
+export { ShareEventButton } from './ShareEventButton'
+export type { ShareEventButtonProps } from './ShareEventButton'
+
 // Sponsors Carousel
 export { SponsorsCarousel } from './SponsorsCarousel'
 

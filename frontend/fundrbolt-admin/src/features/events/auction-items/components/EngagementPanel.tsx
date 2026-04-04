@@ -2,8 +2,23 @@
  * EngagementPanel Component
  * Displays auction item engagement data with tabs for Watchers, Views, and Bids
  */
-import { BidderAvatar } from '@/components/bidder-avatar'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { auctionEngagementService } from '@/services/auctionEngagementService'
+import { eventNotificationService } from '@/services/eventNotificationService'
+import type { AdminEngagementResponse } from '@/types/auction-engagement'
+import {
+  Bell,
+  Clock,
+  DollarSign,
+  Eye,
+  Heart,
+  Loader2,
+  TrendingUp,
+  Users,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -28,23 +43,8 @@ import {
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { auctionEngagementService } from '@/services/auctionEngagementService'
-import { eventNotificationService } from '@/services/eventNotificationService'
-import type { AdminEngagementResponse } from '@/types/auction-engagement'
-import { useQuery } from '@tanstack/react-query'
-import {
-  Bell,
-  Clock,
-  DollarSign,
-  Eye,
-  Heart,
-  Loader2,
-  TrendingUp,
-  Users,
-} from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { toast } from 'sonner'
+import { BidderAvatar } from '@/components/bidder-avatar'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 
 interface EngagementPanelProps {
   eventId: string
@@ -247,7 +247,7 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
       {/* Summary Stats */}
       <div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
         <Card className='py-0'>
-          <CardHeader className='px-3 pb-1 pt-3'>
+          <CardHeader className='px-3 pt-3 pb-1'>
             <CardTitle className='text-muted-foreground flex items-center gap-1.5 text-xs font-medium'>
               <Heart className='h-3.5 w-3.5' />
               Watchers
@@ -261,7 +261,7 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
         </Card>
 
         <Card className='py-0'>
-          <CardHeader className='px-3 pb-1 pt-3'>
+          <CardHeader className='px-3 pt-3 pb-1'>
             <CardTitle className='text-muted-foreground flex items-center gap-1.5 text-xs font-medium'>
               <Eye className='h-3.5 w-3.5' />
               Total Views
@@ -276,7 +276,7 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
         </Card>
 
         <Card className='py-0'>
-          <CardHeader className='px-3 pb-1 pt-3'>
+          <CardHeader className='px-3 pt-3 pb-1'>
             <CardTitle className='text-muted-foreground flex items-center gap-1.5 text-xs font-medium'>
               <Clock className='h-3.5 w-3.5' />
               View Time
@@ -290,7 +290,7 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
         </Card>
 
         <Card className='py-0'>
-          <CardHeader className='px-3 pb-1 pt-3'>
+          <CardHeader className='px-3 pt-3 pb-1'>
             <CardTitle className='text-muted-foreground flex items-center gap-1.5 text-xs font-medium'>
               <TrendingUp className='h-3.5 w-3.5' />
               Total Bids
@@ -644,8 +644,8 @@ export function EngagementPanel({ eventId, itemId }: EngagementPanelProps) {
           <DialogHeader>
             <DialogTitle>Notify Watchers</DialogTitle>
             <DialogDescription>
-              Send a notification to all {data?.summary.total_watchers ?? 0} user(s)
-              watching this item.
+              Send a notification to all {data?.summary.total_watchers ?? 0}{' '}
+              user(s) watching this item.
             </DialogDescription>
           </DialogHeader>
           <div className='space-y-4'>

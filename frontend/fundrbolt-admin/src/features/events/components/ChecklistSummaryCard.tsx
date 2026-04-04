@@ -2,10 +2,7 @@
  * ChecklistSummaryCard — Compact checklist progress card for the event dashboard.
  * Shows progress bar + counts and a button to navigate to the full checklist page.
  */
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-import { useChecklistStore } from '@/stores/checklistStore'
+import { useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import {
   AlertTriangle,
@@ -13,7 +10,10 @@ import {
   ClipboardList,
   Pencil,
 } from 'lucide-react'
-import { useEffect } from 'react'
+import { useChecklistStore } from '@/stores/checklistStore'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
 
 interface ChecklistSummaryCardProps {
   eventId: string
@@ -24,7 +24,7 @@ export function ChecklistSummaryCard({ eventId }: ChecklistSummaryCardProps) {
   const navigate = useNavigate()
 
   useEffect(() => {
-    fetchChecklist(eventId).catch(() => { })
+    fetchChecklist(eventId).catch(() => {})
   }, [eventId, fetchChecklist])
 
   const total = checklist?.total_count ?? 0

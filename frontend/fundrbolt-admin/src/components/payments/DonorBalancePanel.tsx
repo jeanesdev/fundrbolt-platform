@@ -4,7 +4,11 @@
  * Lists outstanding donor balances for an event and lets admins initiate a
  * charge via AdminChargeModal.
  */
-import { BidderAvatar } from '@/components/bidder-avatar'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import type { DonorBalanceSummary } from '@/types/payments'
+import { CreditCard, Loader2, RefreshCw, Zap } from 'lucide-react'
+import { getDonorBalances } from '@/lib/api/admin-payments'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,11 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { getDonorBalances } from '@/lib/api/admin-payments'
-import type { DonorBalanceSummary } from '@/types/payments'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { CreditCard, Loader2, RefreshCw, Zap } from 'lucide-react'
-import { useState } from 'react'
+import { BidderAvatar } from '@/components/bidder-avatar'
 import { AdminChargeModal } from './AdminChargeModal'
 
 interface DonorBalancePanelProps {
@@ -132,7 +132,9 @@ export function DonorBalancePanel({ eventId, npoId }: DonorBalancePanelProps) {
                   <TableRow key={donor.user_id}>
                     <TableCell className='font-medium'>
                       <div className='flex items-center gap-2'>
-                        <BidderAvatar name={`${donor.first_name} ${donor.last_name}`} />
+                        <BidderAvatar
+                          name={`${donor.first_name} ${donor.last_name}`}
+                        />
                         {donor.first_name} {donor.last_name}
                       </div>
                     </TableCell>

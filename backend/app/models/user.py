@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.models.audit_log import AuditLog
     from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
     from app.models.donation import Donation
+    from app.models.donor_label_assignment import DonorLabelAssignment
     from app.models.event_registration import EventRegistration
     from app.models.notification import Notification
     from app.models.notification_preference import NotificationPreference
@@ -217,6 +218,11 @@ class User(Base, UUIDMixin, TimestampMixin):
         "PaymentTransaction",
         back_populates="user",
         foreign_keys="PaymentTransaction.user_id",
+    )
+    donor_label_assignments: Mapped[list["DonorLabelAssignment"]] = relationship(
+        "DonorLabelAssignment",
+        back_populates="user",
+        cascade="all, delete-orphan",
     )
 
     # Check constraints

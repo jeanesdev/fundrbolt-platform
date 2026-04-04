@@ -110,8 +110,8 @@ export const useChecklistStore = create<ChecklistState>((set) => ({
             progress_percentage:
               items.length > 0
                 ? (items.filter((i) => i.status === 'complete').length /
-                  items.length) *
-                100
+                    items.length) *
+                  100
                 : 0,
           },
         }
@@ -164,11 +164,11 @@ export const useChecklistStore = create<ChecklistState>((set) => ({
       const items = state.checklist.items.map((i) =>
         i.id === itemId
           ? {
-            ...i,
-            status: data.status,
-            completed_at:
-              data.status === 'complete' ? new Date().toISOString() : null,
-          }
+              ...i,
+              status: data.status,
+              completed_at:
+                data.status === 'complete' ? new Date().toISOString() : null,
+            }
           : i
       )
       return {
@@ -181,8 +181,8 @@ export const useChecklistStore = create<ChecklistState>((set) => ({
           progress_percentage:
             items.length > 0
               ? (items.filter((i) => i.status === 'complete').length /
-                items.length) *
-              100
+                  items.length) *
+                100
               : 0,
         },
       }
@@ -212,8 +212,8 @@ export const useChecklistStore = create<ChecklistState>((set) => ({
             progress_percentage:
               items.length > 0
                 ? (items.filter((i) => i.status === 'complete').length /
-                  items.length) *
-                100
+                    items.length) *
+                  100
                 : 0,
           },
         }
@@ -253,8 +253,8 @@ export const useChecklistStore = create<ChecklistState>((set) => ({
             progress_percentage:
               items.length > 0
                 ? (items.filter((i) => i.status === 'complete').length /
-                  items.length) *
-                100
+                    items.length) *
+                  100
                 : 0,
           },
         }

@@ -6,8 +6,16 @@
  * On success: registers user via auth store, persists step data to the
  * onboarding session, then calls onNext.
  */
-import { TermsOfServiceModal } from '@/components/legal/terms-of-service-modal'
-import { PasswordInput } from '@/components/password-input'
+import { useCallback, useRef, useState } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Link } from '@tanstack/react-router'
+import { consentService } from '@/services/consent-service'
+import { AlertCircle, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { updateStep } from '@/lib/api/onboarding'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -20,16 +28,8 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { updateStep } from '@/lib/api/onboarding'
-import { consentService } from '@/services/consent-service'
-import { useAuthStore } from '@/stores/auth-store'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Link } from '@tanstack/react-router'
-import { AlertCircle, Loader2 } from 'lucide-react'
-import { useCallback, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
+import { TermsOfServiceModal } from '@/components/legal/terms-of-service-modal'
+import { PasswordInput } from '@/components/password-input'
 import {
   TurnstileWidget,
   type TurnstileWidgetHandle,

@@ -11,6 +11,8 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.donor_label import DonorLabel
+from app.models.donor_label_assignment import DonorLabelAssignment
 from app.models.event import Event, FoodOption
 from app.models.event_registration import EventRegistration
 from app.models.meal_selection import MealSelection
@@ -87,6 +89,22 @@ class AdminGuestService:
             )
             users_with_profile = {str(row[0]) for row in profile_result.fetchall()}
 
+        # Load donor labels for all users in this NPO in a single query
+        user_donor_labels: dict[str, list[dict[str, Any]]] = {}
+        if npo_id_row is not None:
+            labels_result = await db.execute(
+                select(
+                    DonorLabelAssignment.user_id, DonorLabel.id, DonorLabel.name, DonorLabel.color
+                )
+                .join(DonorLabel, DonorLabelAssignment.label_id == DonorLabel.id)
+                .where(DonorLabel.npo_id == npo_id_row)
+            )
+            for row in labels_result.fetchall():
+                uid = str(row[0])
+                if uid not in user_donor_labels:
+                    user_donor_labels[uid] = []
+                user_donor_labels[uid].append({"id": str(row[1]), "name": row[2], "color": row[3]})
+
         attendees = []
 
         # Process each registration
@@ -139,6 +157,7 @@ class AdminGuestService:
                     "has_payment_profile": reg_user_id in users_with_profile,
                     "status": primary_guest.status,
                     "created_at": primary_guest.created_at.isoformat(),
+                    "donor_labels": user_donor_labels.get(reg_user_id, []),
                 }
 
                 if include_meal_selections:
@@ -181,6 +200,7 @@ class AdminGuestService:
                     "has_payment_profile": reg_user_id in users_with_profile,
                     "status": registration.status,
                     "created_at": registration.created_at.isoformat(),
+                    "donor_labels": user_donor_labels.get(reg_user_id, []),
                 }
 
                 if include_meal_selections:
@@ -231,6 +251,9 @@ class AdminGuestService:
                         guest_user_id and guest_user_id in users_with_profile
                     ),
                     "status": guest.status or "confirmed",
+                    "donor_labels": user_donor_labels.get(guest_user_id, [])
+                    if guest_user_id
+                    else [],
                 }
 
                 if include_meal_selections:

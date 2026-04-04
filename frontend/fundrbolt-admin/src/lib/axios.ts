@@ -1,6 +1,4 @@
-import { isRetryableError, retryWithBackoff } from '@/lib/retry'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import type {
   SocialAuthCallbackRequest,
   SocialAuthCallbackResponse,
@@ -10,7 +8,9 @@ import type {
   SocialAuthStartResponse,
 } from '@fundrbolt/shared/types'
 import { sanitizeRequestPayload } from '@fundrbolt/shared/utils'
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { isRetryableError, retryWithBackoff } from '@/lib/retry'
 
 // Global flag to track if consent modal is already shown
 let consentModalShown = false
@@ -289,7 +289,7 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 429) {
       const retryAfter = error.response.headers['retry-after']
       if (retryAfter) {
-        ; (error as AxiosError & { retryAfter?: number }).retryAfter = parseInt(
+        ;(error as AxiosError & { retryAfter?: number }).retryAfter = parseInt(
           retryAfter,
           10
         )

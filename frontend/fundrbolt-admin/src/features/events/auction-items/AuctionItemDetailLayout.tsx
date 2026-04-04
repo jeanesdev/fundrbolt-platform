@@ -3,6 +3,24 @@
  * Shared layout wrapper for auction item detail views (Details + Engagement).
  * Provides the header, status badges, action buttons, sub-navigation, and dialogs.
  */
+import { type ReactNode, useEffect, useState } from 'react'
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useRouterState,
+} from '@tanstack/react-router'
+import { AuctionType, ItemStatus } from '@/types/auction-item'
+import {
+  ArrowLeft,
+  DollarSign,
+  Pencil,
+  Sparkles,
+  TrendingUp,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -17,24 +35,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { BuyNowEditor } from '@/features/events/auction-items/components/BuyNowEditor'
 import { PromotionEditor } from '@/features/events/auction-items/components/PromotionEditor'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
-import { cn } from '@/lib/utils'
-import { useAuctionItemStore } from '@/stores/auctionItemStore'
-import { AuctionType, ItemStatus } from '@/types/auction-item'
-import {
-  Link,
-  useNavigate,
-  useParams,
-  useRouterState,
-} from '@tanstack/react-router'
-import {
-  ArrowLeft,
-  DollarSign,
-  Pencil,
-  Sparkles,
-  TrendingUp,
-} from 'lucide-react'
-import { type ReactNode, useEffect, useState } from 'react'
-import { toast } from 'sonner'
 
 const tabs = [
   {
@@ -66,8 +66,7 @@ export function AuctionItemDetailLayout({
   }
   // Use real UUID for API calls, keep route param (or slug fallback) for navigation
   const eventId = currentEvent.id
-  const routeEventId =
-    rawRouteEventId || currentEvent.slug || currentEvent.id
+  const routeEventId = rawRouteEventId || currentEvent.slug || currentEvent.id
   const pathname = useRouterState({
     select: (s) => s.location.pathname,
   })
@@ -168,7 +167,11 @@ export function AuctionItemDetailLayout({
               <Sparkles className='mr-1.5 h-4 w-4' />
               Promotion
             </Button>
-            <Button variant='outline' size='sm' onClick={() => setBuyNowDialogOpen(true)}>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => setBuyNowDialogOpen(true)}
+            >
               <DollarSign className='mr-1.5 h-4 w-4' />
               Buy-Now
             </Button>

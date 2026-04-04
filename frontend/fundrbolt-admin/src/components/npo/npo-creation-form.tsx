@@ -2,13 +2,6 @@
  * NPO Creation Form Component
  * Multi-section form for creating a new NPO with validation
  */
-import { useEffect, useRef, useState } from 'react'
-import * as z from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import type { NPOCreateRequest } from '@/types/npo'
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
-import { AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -35,6 +28,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import type { NPOCreateRequest } from '@/types/npo'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { AlertCircle } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
 
 // US States for dropdown
 const US_STATES = [
@@ -178,6 +178,14 @@ const npoFormSchema = z.object({
     .max(255, 'Tagline must not exceed 255 characters')
     .optional()
     .or(z.literal('')),
+  hashtag: z
+    .string()
+    .max(100, 'Hashtag must not exceed 100 characters')
+    .refine((value) => !value || !/\s/.test(value), {
+      message: 'Hashtag cannot contain spaces',
+    })
+    .optional()
+    .or(z.literal('')),
   description: z
     .string()
     .max(5000, 'Description must not exceed 5000 characters')
@@ -255,12 +263,31 @@ export function NPOCreationForm({
   const autocompleteRef = useRef<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
   const isGoogleMapsInitialized = useRef(false)
 
+  const generateHashtag = (name: string): string => {
+    const camel = name
+      .trim()
+      .split(/[\s\-_]+/)
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join('')
+      .replace(/[^A-Za-z0-9]/g, '')
+
+    return camel ? `#${camel}` : '#NPO'
+  }
+
+  const normalizeHashtag = (value: string): string => {
+    const trimmed = value.trim()
+    if (!trimmed) return ''
+    return trimmed.startsWith('#') ? trimmed : `#${trimmed}`
+  }
+
   const form = useForm<NPOFormValues>({
     resolver: zodResolver(npoFormSchema),
     defaultValues: {
       name: defaultValues?.name || '',
       email: defaultValues?.email || '',
       tagline: defaultValues?.tagline || '',
+      hashtag: defaultValues?.hashtag || '',
       description: defaultValues?.description || '',
       mission_statement: defaultValues?.mission_statement || '',
       website_url: defaultValues?.website_url || '',
@@ -277,6 +304,30 @@ export function NPOCreationForm({
       },
     },
   })
+
+  const handleNameBlur = () => {
+    const currentName = form.getValues('name')
+    const currentHashtag = form.getValues('hashtag')
+
+    if (currentName && !currentHashtag) {
+      form.setValue('hashtag', generateHashtag(currentName), {
+        shouldDirty: true,
+        shouldValidate: true,
+      })
+    }
+  }
+
+  const handleHashtagBlur = () => {
+    const currentHashtag = form.getValues('hashtag')
+    const normalizedHashtag = normalizeHashtag(currentHashtag ?? '')
+
+    if (normalizedHashtag !== currentHashtag) {
+      form.setValue('hashtag', normalizedHashtag, {
+        shouldDirty: true,
+        shouldValidate: true,
+      })
+    }
+  }
 
   // Initialize Google Places Autocomplete
   useEffect(() => {
@@ -392,6 +443,9 @@ export function NPOCreationForm({
     if (values.tagline?.trim()) {
       cleanData.tagline = values.tagline.trim()
     }
+    if (values.hashtag?.trim()) {
+      cleanData.hashtag = normalizeHashtag(values.hashtag)
+    }
     if (values.description?.trim()) {
       cleanData.description = values.description.trim()
     }
@@ -459,6 +513,10 @@ export function NPOCreationForm({
                     <Input
                       placeholder='e.g., Community Food Bank'
                       {...field}
+                      onBlur={() => {
+                        field.onBlur()
+                        handleNameBlur()
+                      }}
                       disabled={isLoading}
                     />
                   </FormControl>
@@ -524,6 +582,32 @@ export function NPOCreationForm({
                   <FormDescription>
                     A short, memorable phrase that describes your mission
                     (optional)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='hashtag'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Organization Hashtag</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder='#CommunityFoodBank'
+                      {...field}
+                      onBlur={() => {
+                        field.onBlur()
+                        handleHashtagBlur()
+                      }}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Auto-generated from the organization name. We add #
+                    automatically if needed.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

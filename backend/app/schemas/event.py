@@ -39,6 +39,11 @@ class EventCreateRequest(BaseModel):
     venue_state: str | None = Field(default=None, max_length=50)
     venue_zip: str | None = Field(default=None, max_length=20)
     attire: str | None = Field(default=None, max_length=100)
+    hashtag: str | None = Field(
+        default=None,
+        max_length=100,
+        description="Social media hashtag (e.g., '#GalaForGood2026')",
+    )
     fundraising_goal: float | None = Field(
         default=None,
         ge=0,
@@ -64,6 +69,25 @@ class EventCreateRequest(BaseModel):
         if not v.strip():
             raise ValueError("Event name cannot be empty or whitespace")
         return v.strip()
+
+    @field_validator("hashtag")
+    @classmethod
+    def validate_hashtag(cls, v: str | None) -> str | None:
+        """Normalize hashtag input and ensure it begins with #."""
+        if v is None:
+            return None
+
+        normalized = v.strip()
+        if not normalized:
+            return None
+
+        if not normalized.startswith("#"):
+            normalized = f"#{normalized}"
+
+        if any(char.isspace() for char in normalized):
+            raise ValueError("Hashtag cannot contain spaces")
+
+        return normalized
 
     @field_validator("custom_slug")
     @classmethod
@@ -102,6 +126,11 @@ class EventUpdateRequest(BaseModel):
     venue_state: str | None = Field(default=None, max_length=50)
     venue_zip: str | None = Field(default=None, max_length=20)
     attire: str | None = Field(default=None, max_length=100)
+    hashtag: str | None = Field(
+        default=None,
+        max_length=100,
+        description="Social media hashtag (e.g., '#GalaForGood2026')",
+    )
     fundraising_goal: float | None = Field(default=None, ge=0)
     primary_contact_name: str | None = Field(default=None, max_length=255)
     primary_contact_email: str | None = Field(default=None, max_length=255)
@@ -124,6 +153,25 @@ class EventUpdateRequest(BaseModel):
         default=None, max_length=500, description="Azure Blob URL for event space layout image"
     )
     version: int | None = Field(default=None, description="Current version for optimistic locking")
+
+    @field_validator("hashtag")
+    @classmethod
+    def validate_hashtag(cls, v: str | None) -> str | None:
+        """Normalize hashtag input and ensure it begins with #."""
+        if v is None:
+            return None
+
+        normalized = v.strip()
+        if not normalized:
+            return None
+
+        if not normalized.startswith("#"):
+            normalized = f"#{normalized}"
+
+        if any(char.isspace() for char in normalized):
+            raise ValueError("Hashtag cannot contain spaces")
+
+        return normalized
 
     @field_validator("name")
     @classmethod
@@ -373,6 +421,7 @@ class EventDetailResponse(BaseModel):
     venue_state: str | None
     venue_zip: str | None
     attire: str | None
+    hashtag: str | None = None
     fundraising_goal: float | None
     primary_contact_name: str | None
     primary_contact_email: str | None
@@ -448,6 +497,7 @@ class EventPublicResponse(BaseModel):
     venue_state: str | None
     venue_zip: str | None
     attire: str | None
+    hashtag: str | None = None
     fundraising_goal: float | None
     primary_contact_name: str | None
     primary_contact_email: str | None

@@ -5,8 +5,22 @@
  * Desktop: Logo | Nav dropdowns | Search | Profile
  * Mobile:  Logo | Hamburger (sheet) | Search | Profile
  */
-import { CommandMenu } from '@/components/command-menu'
-import { ProfileDropdown } from '@/components/profile-dropdown'
+import { useState } from 'react'
+import { Link, useLocation, useNavigate } from '@tanstack/react-router'
+import LogoWhiteGoldPng from '@fundrbolt/shared/assets/logos/fundrbolt-logo-white-gold.png'
+import {
+  BarChart3,
+  Calendar,
+  CreditCard,
+  Gavel,
+  Menu,
+  SearchIcon,
+  Settings,
+  Users,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useSearch } from '@/context/search-provider'
+import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
 import { Button } from '@/components/ui/button'
 import {
   NavigationMenu,
@@ -23,22 +37,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { useSearch } from '@/context/search-provider'
-import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
-import { cn } from '@/lib/utils'
-import LogoWhiteGoldPng from '@fundrbolt/shared/assets/logos/fundrbolt-logo-white-gold.png'
-import { Link, useLocation, useNavigate } from '@tanstack/react-router'
-import {
-  BarChart3,
-  Calendar,
-  CreditCard,
-  Gavel,
-  Menu,
-  SearchIcon,
-  Settings,
-  Users,
-} from 'lucide-react'
-import { useState } from 'react'
+import { CommandMenu } from '@/components/command-menu'
+import { ProfileDropdown } from '@/components/profile-dropdown'
 import { iconMap } from './icon-map'
 
 /** Map nav group titles to lucide icons for the trigger buttons */
@@ -90,11 +90,7 @@ function DesktopNav() {
   ]
 
   return (
-    <NavigationMenu
-      viewport={false}
-      value={openNav}
-      onValueChange={setOpenNav}
-    >
+    <NavigationMenu viewport={false} value={openNav} onValueChange={setOpenNav}>
       <NavigationMenuList>
         {allGroups.map((group) => (
           <NavigationMenuItem key={group.title} value={group.title}>
@@ -107,7 +103,7 @@ function DesktopNav() {
               {group.title}
             </NavigationMenuTrigger>
             <NavigationMenuContent>
-              <ul className='grid w-48 gap-0.5 p-1 max-h-[70vh] overflow-y-auto'>
+              <ul className='grid max-h-[70vh] w-48 gap-0.5 overflow-y-auto p-1'>
                 {group.items.map((item) => {
                   const Icon = item.icon
                     ? iconMap[item.icon as keyof typeof iconMap]
@@ -122,7 +118,7 @@ function DesktopNav() {
                             'flex flex-col items-center gap-1 rounded-sm px-3 py-2.5 text-sm transition-colors',
                             'hover:bg-accent hover:text-accent-foreground',
                             isActive &&
-                            'bg-accent/50 text-accent-foreground font-medium'
+                              'bg-accent/50 text-accent-foreground font-medium'
                           )}
                         >
                           {Icon && (
@@ -225,7 +221,7 @@ function MobileNav() {
                             'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
                             'hover:bg-accent hover:text-accent-foreground',
                             isActive &&
-                            'bg-accent text-accent-foreground font-medium'
+                              'bg-accent text-accent-foreground font-medium'
                           )}
                         >
                           {Icon && (

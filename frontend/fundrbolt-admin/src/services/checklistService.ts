@@ -1,4 +1,3 @@
-import apiClient from '@/lib/axios'
 import type {
   ApplyTemplateRequest,
   ChecklistItem,
@@ -12,6 +11,7 @@ import type {
   ChecklistTemplateUpdate,
   SaveAsTemplateRequest,
 } from '@/types/checklist'
+import apiClient from '@/lib/axios'
 
 class ChecklistService {
   async getEventChecklist(eventId: string): Promise<ChecklistResponse> {

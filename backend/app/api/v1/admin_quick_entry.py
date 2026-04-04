@@ -197,7 +197,8 @@ async def get_quick_entry_summary(
         unique_donor_count=unique_donor_count,
         participation_percent=round(participation_percent, 2),
         by_amount_level=[
-            QuickEntryPaddleAmountLevel(amount=amount, count=count) for amount, count in by_level
+            QuickEntryPaddleAmountLevel(amount=amount, count=count, is_monthly=is_monthly)
+            for amount, count, is_monthly in by_level
         ],
         updated_at=updated_at,
     )
@@ -299,6 +300,7 @@ async def create_paddle_raise_donation(
         event_id=event_id,
         amount=payload.amount,
         bidder_number=payload.bidder_number,
+        is_monthly=payload.is_monthly,
         label_ids=payload.label_ids,
         custom_label=payload.custom_label,
         entered_by_user_id=current_user.id,
@@ -308,6 +310,7 @@ async def create_paddle_raise_donation(
         event_id=donation.event_id,
         amount=donation.amount,
         bidder_number=donation.bidder_number,
+        is_monthly=donation.is_monthly,
         donor_name=donor_name,
         entered_at=donation.entered_at,
         entered_by=donation.entered_by_user_id,
@@ -336,6 +339,7 @@ async def list_paddle_raise_donations(
                 event_id=donation.event_id,
                 amount=donation.amount,
                 bidder_number=donation.bidder_number,
+                is_monthly=donation.is_monthly,
                 donor_name=donor_name,
                 entered_at=donation.entered_at,
                 entered_by=donation.entered_by_user_id,

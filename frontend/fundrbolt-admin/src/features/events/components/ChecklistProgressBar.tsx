@@ -1,8 +1,8 @@
 /**
  * ChecklistProgressBar — Shows "X of Y complete" with visual progress bar
  */
-import { Progress } from '@/components/ui/progress'
 import { AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { Progress } from '@/components/ui/progress'
 
 interface ChecklistProgressBarProps {
   totalCount: number

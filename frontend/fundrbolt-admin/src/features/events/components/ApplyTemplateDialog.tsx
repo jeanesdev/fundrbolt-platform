@@ -1,6 +1,9 @@
 /**
  * ApplyTemplateDialog — Select and apply a checklist template to an event
  */
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { useChecklistStore } from '@/stores/checklistStore'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -17,9 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useChecklistStore } from '@/stores/checklistStore'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
 
 interface ApplyTemplateDialogProps {
   eventId: string

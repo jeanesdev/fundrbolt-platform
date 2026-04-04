@@ -1,13 +1,13 @@
 /**
  * ChecklistItem — Single checklist item row with status cycle-click badge
  */
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
 import type {
   ChecklistItemStatus,
   ChecklistItem as ChecklistItemType,
 } from '@/types/checklist'
 import { AlertTriangle, Check, Circle, Clock } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 
 const STATUS_CYCLE: Record<ChecklistItemStatus, ChecklistItemStatus> = {
   not_complete: 'in_progress',
@@ -64,9 +64,9 @@ export function ChecklistItemRow({
 
   const formattedDueDate = item.due_date
     ? new Date(item.due_date + 'T00:00:00').toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    })
+        month: 'short',
+        day: 'numeric',
+      })
     : null
 
   return (
@@ -75,8 +75,8 @@ export function ChecklistItemRow({
         'rounded-lg border px-3 py-2 transition-colors',
         item.status === 'complete' && 'bg-muted/50 opacity-75',
         item.is_overdue &&
-        item.status !== 'complete' &&
-        'border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-950'
+          item.status !== 'complete' &&
+          'border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-950'
       )}
     >
       {/* Top row: drag handle + status badge + title */}

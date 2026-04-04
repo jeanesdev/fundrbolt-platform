@@ -1,5 +1,7 @@
-import { BidderAvatar } from '@/components/bidder-avatar'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import {
   Command,
   CommandEmpty,
@@ -13,10 +15,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { cn } from '@/lib/utils'
-import { Check, ChevronsUpDown } from 'lucide-react'
-import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
+import { BidderAvatar } from '@/components/bidder-avatar'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import type {
   QuickEntryBuyNowBidResponse,
   QuickEntryBuyNowItem,
@@ -318,7 +318,9 @@ export function BuyNowEntryForm({
                     </span>
                   </div>
                   <p className='flex items-center gap-2 text-sm'>
-                    {bid.donor_name ? <BidderAvatar name={bid.donor_name} /> : null}
+                    {bid.donor_name ? (
+                      <BidderAvatar name={bid.donor_name} />
+                    ) : null}
                     {bid.donor_name ?? '—'}
                   </p>
                   <div className='flex items-center justify-between'>
@@ -355,7 +357,9 @@ export function BuyNowEntryForm({
                       <td className='px-3 py-2'>{bid.bidder_number}</td>
                       <td className='px-3 py-2'>
                         <div className='flex items-center gap-2'>
-                          {bid.donor_name ? <BidderAvatar name={bid.donor_name} /> : null}
+                          {bid.donor_name ? (
+                            <BidderAvatar name={bid.donor_name} />
+                          ) : null}
                           {bid.donor_name ?? '—'}
                         </div>
                       </td>

@@ -4,7 +4,11 @@
  * Presents a confirmation + charge UI when an admin clicks "Charge" next to a
  * donor in the DonorBalancePanel. Calls POST /admin/payments/charge.
  */
-import { BidderAvatar } from '@/components/bidder-avatar'
+import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import type { AdminChargeResponse, DonorBalanceSummary } from '@/types/payments'
+import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import { adminChargeDonor } from '@/lib/api/admin-payments'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -16,11 +20,7 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { adminChargeDonor } from '@/lib/api/admin-payments'
-import type { AdminChargeResponse, DonorBalanceSummary } from '@/types/payments'
-import { useMutation } from '@tanstack/react-query'
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { BidderAvatar } from '@/components/bidder-avatar'
 
 interface AdminChargeModalProps {
   open: boolean

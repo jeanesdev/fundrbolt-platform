@@ -22,6 +22,8 @@ from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
 from app.models.donation import Donation, DonationStatus
 from app.models.donation_label import DonationLabel
 from app.models.donation_label_assignment import DonationLabelAssignment
+from app.models.donor_label import DonorLabel
+from app.models.donor_label_assignment import DonorLabelAssignment
 from app.models.event import Event, EventLink, EventMedia, FoodOption
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.event_table import EventTable
@@ -131,6 +133,8 @@ __all__ = [
     "DonationLabel",
     "DonationLabelAssignment",
     "DonationStatus",
+    "DonorLabel",
+    "DonorLabelAssignment",
     "DiscountType",
     "Event",
     "EventLink",

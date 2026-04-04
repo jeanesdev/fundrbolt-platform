@@ -29,6 +29,7 @@ class PaddleRaiseService(QuickEntryServiceBase):
         event_id: UUID,
         amount: int,
         bidder_number: int,
+        is_monthly: bool = False,
         label_ids: list[UUID],
         custom_label: str | None,
         entered_by_user_id: UUID,
@@ -48,6 +49,7 @@ class PaddleRaiseService(QuickEntryServiceBase):
             event_id=event_id,
             amount=amount,
             bidder_number=bidder_number,
+            is_monthly=is_monthly,
             donor_user_id=bidder.donor_user_id if bidder is not None else None,
             entered_at=datetime.now(UTC),
             entered_by_user_id=entered_by_user_id,
@@ -161,7 +163,7 @@ class PaddleRaiseService(QuickEntryServiceBase):
         db: AsyncSession,
         *,
         event_id: UUID,
-    ) -> tuple[int, int, int, float, list[tuple[int, int]], datetime]:
+    ) -> tuple[int, int, int, float, list[tuple[int, int, bool]], datetime]:
         """Compute paddle raise totals, by-level counts, and participation metrics."""
         totals_stmt = select(
             func.coalesce(func.sum(QuickEntryDonation.amount), 0),
@@ -190,13 +192,20 @@ class PaddleRaiseService(QuickEntryServiceBase):
         )
 
         by_level_stmt = (
-            select(QuickEntryDonation.amount, func.count(QuickEntryDonation.id))
+            select(
+                QuickEntryDonation.amount,
+                QuickEntryDonation.is_monthly,
+                func.count(QuickEntryDonation.id),
+            )
             .where(QuickEntryDonation.event_id == event_id)
-            .group_by(QuickEntryDonation.amount)
-            .order_by(QuickEntryDonation.amount.desc())
+            .group_by(QuickEntryDonation.amount, QuickEntryDonation.is_monthly)
+            .order_by(QuickEntryDonation.amount.desc(), QuickEntryDonation.is_monthly.asc())
         )
         by_level_result = await db.execute(by_level_stmt)
-        by_level = [(int(amount), int(count)) for amount, count in by_level_result.all()]
+        by_level = [
+            (int(amount), int(count), bool(is_monthly))
+            for amount, is_monthly, count in by_level_result.all()
+        ]
 
         return (
             int(total_pledged or 0),

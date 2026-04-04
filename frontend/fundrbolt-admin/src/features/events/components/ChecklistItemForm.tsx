@@ -1,11 +1,11 @@
 /**
  * ChecklistItemForm — Inline add/edit form with title and optional date picker
  */
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useState } from 'react'
 import type { ChecklistItem } from '@/types/checklist'
 import { Plus, X } from 'lucide-react'
-import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 interface ChecklistItemFormProps {
   editingItem?: ChecklistItem | null

@@ -3,17 +3,8 @@
  * Manages event-level (universal) custom options that apply to every registration.
  * These are separate from per-package custom options.
  */
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import apiClient from '@/lib/axios'
-import { getErrorMessage } from '@/lib/error-utils'
+import { useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   closestCenter,
   DndContext,
@@ -31,10 +22,19 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import apiClient from '@/lib/axios'
+import { getErrorMessage } from '@/lib/error-utils'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { EventCustomOptionFormDialog } from './EventCustomOptionFormDialog'
 
 const MAX_EVENT_OPTIONS = 8
@@ -66,9 +66,7 @@ export function EventCustomOptionsManager({
   const { data, error, isError, isLoading, refetch } = useQuery({
     queryKey: ['event-custom-options', eventId],
     queryFn: async () => {
-      const response = await apiClient.get(
-        `/admin/events/${eventId}/options`
-      )
+      const response = await apiClient.get(`/admin/events/${eventId}/options`)
       return response.data as CustomOption[]
     },
   })
@@ -83,10 +81,9 @@ export function EventCustomOptionsManager({
     mutationFn: async (reorderedOptions: CustomOption[]) => {
       await Promise.all(
         reorderedOptions.map((option, index) =>
-          apiClient.patch(
-            `/admin/events/${eventId}/options/${option.id}`,
-            { display_order: index }
-          )
+          apiClient.patch(`/admin/events/${eventId}/options/${option.id}`, {
+            display_order: index,
+          })
         )
       )
     },
@@ -129,9 +126,7 @@ export function EventCustomOptionsManager({
       })
       toast.success('Custom option has been deleted successfully.')
     },
-    onError: (
-      error: Error & { response?: { data?: { detail?: string } } }
-    ) => {
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       const detail = error.response?.data?.detail
       if (detail?.includes('responses')) {
         toast.error('This option has responses and cannot be deleted.')

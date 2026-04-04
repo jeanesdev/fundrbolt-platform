@@ -8,7 +8,7 @@
 import { SignOutDialog } from '@/components/sign-out-dialog'
 import useDialogState from '@/hooks/use-dialog-state'
 import { Link, useLocation } from '@tanstack/react-router'
-import { Bell, CreditCard, KeyRound, LogOut, Shield, UserCog } from 'lucide-react'
+import { Bell, CreditCard, KeyRound, LogOut, MoreHorizontal, UserCog } from 'lucide-react'
 
 function NavTab({
   to,
@@ -64,16 +64,16 @@ export function BottomNav() {
           isActive={pathname === '/settings/notifications'}
         />
         <NavTab
-          to='/settings/consent'
-          icon={Shield}
-          label='Privacy'
-          isActive={pathname === '/settings/consent'}
-        />
-        <NavTab
           to='/settings/payment'
           icon={CreditCard}
           label='Payment'
           isActive={pathname === '/settings/payment'}
+        />
+        <NavTab
+          to='/settings/other'
+          icon={MoreHorizontal}
+          label='Other'
+          isActive={pathname === '/settings/other'}
         />
 
         <button

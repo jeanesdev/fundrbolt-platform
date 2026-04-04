@@ -1,29 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { checkinService } from '@/services/checkin-service'
-import {
-  Check,
-  ChevronDown,
-  CreditCard,
-  Crown,
-  Filter,
-  Loader2,
-  RotateCcw,
-  Settings2,
-  X,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
-import {
-  adminCreatePaymentProfile,
-  adminCreatePaymentSession,
-} from '@/lib/api/admin-payments'
-import {
-  assignBidderNumber,
-  assignRegistrationBidderNumber,
-} from '@/lib/api/admin-seating'
-import { getErrorMessage } from '@/lib/error-utils'
-import { useViewPreference } from '@/hooks/use-view-preference'
+import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -56,7 +32,32 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
+import {
+  adminCreatePaymentProfile,
+  adminCreatePaymentSession,
+} from '@/lib/api/admin-payments'
+import {
+  assignBidderNumber,
+  assignRegistrationBidderNumber,
+} from '@/lib/api/admin-seating'
+import { getErrorMessage } from '@/lib/error-utils'
+import { checkinService } from '@/services/checkin-service'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  Check,
+  ChevronDown,
+  CreditCard,
+  Crown,
+  Filter,
+  Loader2,
+  RotateCcw,
+  Settings2,
+  X,
+} from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 function StatusBadge({ checkedIn }: { checkedIn: boolean }) {
@@ -826,6 +827,7 @@ export function EventCheckInSection() {
                             <Settings2 className='h-4 w-4' />
                           </Button>
                         </div>
+                        <InlineDonorLabels labels={attendee.donor_labels} userId={attendee.user_id} />
                         <dl className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
                           <dt className='text-muted-foreground'>Status</dt>
                           <dd>
@@ -838,11 +840,10 @@ export function EventCheckInSection() {
                           <dt className='text-muted-foreground'>Payment</dt>
                           <dd>
                             <span
-                              className={`flex items-center gap-1 text-xs ${
-                                attendee.has_payment_profile
-                                  ? 'text-green-600'
-                                  : 'text-muted-foreground'
-                              }`}
+                              className={`flex items-center gap-1 text-xs ${attendee.has_payment_profile
+                                ? 'text-green-600'
+                                : 'text-muted-foreground'
+                                }`}
                             >
                               <CreditCard className='h-3 w-3' />
                               {attendee.has_payment_profile
@@ -894,6 +895,7 @@ export function EventCheckInSection() {
                   <TableRow>
                     <TableHead>Check-in</TableHead>
                     <TableHead>Name</TableHead>
+                    <TableHead>Labels</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Party Of</TableHead>
@@ -922,6 +924,7 @@ export function EventCheckInSection() {
                         }
                       />
                     </TableHead>
+                    <TableHead />
                     <TableHead>
                       <Input
                         placeholder='Filter email'
@@ -1034,7 +1037,7 @@ export function EventCheckInSection() {
                   {filteredAttendees.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={11}
+                        colSpan={12}
                         className='text-muted-foreground py-8 text-center'
                       >
                         No attendees match the current filters.
@@ -1107,6 +1110,9 @@ export function EventCheckInSection() {
                               )}
                             </div>
                           </TableCell>
+                          <TableCell>
+                            <InlineDonorLabels labels={attendee.donor_labels} userId={attendee.user_id} />
+                          </TableCell>
                           <TableCell>{attendee.email || '—'}</TableCell>
                           <TableCell>
                             {formatPhoneForDisplay(attendee.phone)}
@@ -1134,11 +1140,10 @@ export function EventCheckInSection() {
                               }
                             >
                               <CreditCard
-                                className={`h-4 w-4 ${
-                                  attendee.has_payment_profile
-                                    ? 'text-green-600'
-                                    : 'text-muted-foreground'
-                                }`}
+                                className={`h-4 w-4 ${attendee.has_payment_profile
+                                  ? 'text-green-600'
+                                  : 'text-muted-foreground'
+                                  }`}
                               />
                             </span>
                           </TableCell>

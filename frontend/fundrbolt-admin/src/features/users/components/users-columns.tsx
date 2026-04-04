@@ -234,6 +234,44 @@ export const usersColumns: ColumnDef<User>[] = [
     enableSorting: false,
   },
   {
+    id: 'donor_labels',
+    accessorKey: 'donor_labels',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Labels' />
+    ),
+    cell: ({ row }) => {
+      const labels = row.original.donor_labels || []
+
+      if (labels.length === 0) {
+        return <span className='text-muted-foreground text-sm'>—</span>
+      }
+
+      return (
+        <div className='flex flex-wrap gap-1'>
+          {labels.map((label) => (
+            <Badge
+              key={label.id}
+              variant='outline'
+              className='text-xs'
+              style={
+                label.color
+                  ? {
+                      backgroundColor: `${label.color}20`,
+                      borderColor: `${label.color}60`,
+                      color: label.color,
+                    }
+                  : {}
+              }
+            >
+              {label.name}
+            </Badge>
+          ))}
+        </div>
+      )
+    },
+    enableSorting: false,
+  },
+  {
     id: 'actions',
     cell: DataTableRowActions,
   },

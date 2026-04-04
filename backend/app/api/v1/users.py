@@ -67,6 +67,23 @@ async def build_user_response(user: User, db: AsyncSession) -> dict[str, object]
     ]
     primary_npo_id = npo_memberships[0].npo_id if len(npo_memberships) == 1 else None
 
+    # Get donor labels
+    from app.models.donor_label import DonorLabel
+    from app.models.donor_label_assignment import DonorLabelAssignment
+    from app.schemas.donor_label import DonorLabelAssignmentInfo
+
+    label_stmt = (
+        select(DonorLabel)
+        .join(DonorLabelAssignment, DonorLabel.id == DonorLabelAssignment.label_id)
+        .where(DonorLabelAssignment.user_id == user.id)
+        .order_by(DonorLabel.name.asc())
+    )
+    label_result = await db.execute(label_stmt)
+    donor_labels = [
+        DonorLabelAssignmentInfo(id=label.id, name=label.name, color=label.color)
+        for label in label_result.scalars().all()
+    ]
+
     # Get role name
     from app.models.base import Base
 
@@ -93,6 +110,7 @@ async def build_user_response(user: User, db: AsyncSession) -> dict[str, object]
         "role": role_name,
         "npo_id": primary_npo_id,
         "npo_memberships": npo_memberships,
+        "donor_labels": donor_labels,
         "email_verified": user.email_verified,
         "is_active": user.is_active,
         "last_login_at": user.last_login_at,

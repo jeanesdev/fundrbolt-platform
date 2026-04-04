@@ -7,6 +7,12 @@ export interface NPOMembership {
   status: string
 }
 
+export interface DonorLabelInfo {
+  id: string
+  name: string
+  color: string | null
+}
+
 export interface User {
   id: string
   email: string
@@ -25,6 +31,7 @@ export interface User {
   role: string
   npo_id?: string | null
   npo_memberships: NPOMembership[]
+  donor_labels: DonorLabelInfo[]
   email_verified: boolean
   is_active: boolean
   last_login_at: string | null

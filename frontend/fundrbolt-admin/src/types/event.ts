@@ -42,6 +42,7 @@ export interface Event {
   venue_state: string | null
   venue_zip: string | null
   attire: string | null
+  hashtag: string | null
   fundraising_goal: number | null
   primary_contact_name: string | null
   primary_contact_email: string | null
@@ -88,6 +89,7 @@ export interface EventCreateRequest {
   venue_state?: string
   venue_zip?: string
   attire?: string
+  hashtag?: string
   fundraising_goal?: number | null
   primary_contact_name?: string
   primary_contact_email?: string
@@ -114,6 +116,7 @@ export interface EventUpdateRequest {
   venue_state?: string
   venue_zip?: string
   attire?: string
+  hashtag?: string
   fundraising_goal?: number | null
   primary_contact_name?: string
   primary_contact_email?: string

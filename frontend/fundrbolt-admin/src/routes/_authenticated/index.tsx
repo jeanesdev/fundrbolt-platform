@@ -1,3 +1,7 @@
+import { lazy, Suspense } from 'react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { PlusCircle } from 'lucide-react'
+import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -6,10 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { useAuth } from '@/hooks/use-auth'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { PlusCircle } from 'lucide-react'
-import { lazy, Suspense } from 'react'
 
 // Lazy load dashboard components for better performance
 const SuperAdminDashboard = lazy(() =>

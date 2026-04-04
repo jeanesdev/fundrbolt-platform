@@ -1,5 +1,7 @@
-import { BidderAvatar } from '@/components/bidder-avatar'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import {
   Command,
   CommandEmpty,
@@ -13,10 +15,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { cn } from '@/lib/utils'
-import { Check, ChevronsUpDown } from 'lucide-react'
-import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
+import { BidderAvatar } from '@/components/bidder-avatar'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import type {
   QuickEntrySilentBidResponse,
   QuickEntrySilentItem,
@@ -293,11 +293,11 @@ export function SilentBidEntryForm({
               placeholder={
                 selectedItem.min_next_bid_amount
                   ? Math.round(selectedItem.min_next_bid_amount).toLocaleString(
-                    'en-US'
-                  )
+                      'en-US'
+                    )
                   : Math.round(selectedItem.starting_bid).toLocaleString(
-                    'en-US'
-                  )
+                      'en-US'
+                    )
               }
               disabled={isSubmitting}
             />

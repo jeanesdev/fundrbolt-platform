@@ -2,18 +2,6 @@
  * EventForm Component
  * Comprehensive form for creating and editing events with all fields
  */
-import { useEffect, useRef, useState } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import type { NPOBranding } from '@/services/event-service'
-import type {
-  EventCreateRequest,
-  EventDetail,
-  EventUpdateRequest,
-} from '@/types/event'
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
-import { Calendar, Clock, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -33,6 +21,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import type { NPOBranding } from '@/services/event-service'
+import type {
+  EventCreateRequest,
+  EventDetail,
+  EventUpdateRequest,
+} from '@/types/event'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Calendar, Clock, MapPin } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import { ColorPicker } from './ColorPicker.tsx'
 import { RichTextEditor } from './RichTextEditor.tsx'
 import {
@@ -94,6 +94,13 @@ const eventFormSchema = z.object({
   tagline: z
     .string()
     .max(200, 'Tagline must be under 200 characters')
+    .optional(),
+  hashtag: z
+    .string()
+    .max(100, 'Hashtag must be under 100 characters')
+    .refine((value) => !value || !/\s/.test(value), {
+      message: 'Hashtag cannot contain spaces',
+    })
     .optional(),
   description: z.string().optional(),
   event_datetime: z.string().min(1, 'Event date and time is required'),
@@ -166,6 +173,7 @@ export function EventForm({
       name: event?.name || '',
       slug: event?.slug || '',
       tagline: event?.tagline || '',
+      hashtag: event?.hashtag || '',
       description: event?.description || '',
       event_datetime: event?.event_datetime
         ? new Date(event.event_datetime).toISOString().slice(0, 16)
@@ -204,14 +212,50 @@ export function EventForm({
       .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
   }
 
+  const generateHashtag = (name: string): string => {
+    const camel = name
+      .trim()
+      .split(/[\s\-_]+/)
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join('')
+      .replace(/[^A-Za-z0-9]/g, '')
+    return camel ? `#${camel}` : '#Event'
+  }
+
+  const normalizeHashtag = (value: string): string => {
+    const trimmed = value.trim()
+    if (!trimmed) return ''
+    return trimmed.startsWith('#') ? trimmed : `#${trimmed}`
+  }
+
   const handleNameBlur = () => {
     const currentName = form.getValues('name')
     const currentSlug = form.getValues('slug')
+    const currentHashtag = form.getValues('hashtag')
 
     // Only auto-generate if slug is empty and name has content
     if (currentName && !currentSlug) {
       const generatedSlug = generateSlug(currentName)
       form.setValue('slug', generatedSlug)
+    }
+
+    // Only auto-generate if hashtag is empty and name has content
+    if (currentName && !currentHashtag) {
+      const generatedHashtag = generateHashtag(currentName)
+      form.setValue('hashtag', generatedHashtag)
+    }
+  }
+
+  const handleHashtagBlur = () => {
+    const currentHashtag = form.getValues('hashtag')
+    const normalizedHashtag = normalizeHashtag(currentHashtag ?? '')
+
+    if (normalizedHashtag !== currentHashtag) {
+      form.setValue('hashtag', normalizedHashtag, {
+        shouldDirty: true,
+        shouldValidate: true,
+      })
     }
   }
 
@@ -306,6 +350,7 @@ export function EventForm({
   const handleSubmit = async (values: EventFormValues) => {
     const baseData = {
       ...values,
+      hashtag: normalizeHashtag(values.hashtag ?? '') || undefined,
       npo_id: npoId,
       // Convert datetime-local to ISO string
       event_datetime: new Date(values.event_datetime).toISOString(),
@@ -386,6 +431,31 @@ export function EventForm({
                 </FormControl>
                 <FormDescription>
                   Short catchy phrase (max 200 characters)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='hashtag'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Event Hashtag</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder='#GalaForGood2026'
+                    {...field}
+                    onBlur={() => {
+                      field.onBlur()
+                      handleHashtagBlur()
+                    }}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Social media hashtag for sharing. We add # automatically if
+                  needed.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

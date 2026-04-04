@@ -47,8 +47,8 @@ import { Route as EventsSlugCheckoutRouteImport } from './routes/events.$slug.ch
 import { Route as AuthenticatedTicketsHistoryRouteImport } from './routes/_authenticated/tickets.history'
 import { Route as AuthenticatedSettingsPaymentRouteImport } from './routes/_authenticated/settings/payment'
 import { Route as AuthenticatedSettingsPasswordRouteImport } from './routes/_authenticated/settings/password'
+import { Route as AuthenticatedSettingsOtherRouteImport } from './routes/_authenticated/settings/other'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
-import { Route as AuthenticatedSettingsConsentRouteImport } from './routes/_authenticated/settings/consent'
 import { Route as AuthenticatedNposCreateRouteImport } from './routes/_authenticated/npos/create'
 import { Route as AuthenticatedEventsCreateRouteImport } from './routes/_authenticated/events/create'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
@@ -261,16 +261,16 @@ const AuthenticatedSettingsPasswordRoute =
     path: '/password',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedSettingsOtherRoute =
+  AuthenticatedSettingsOtherRouteImport.update({
+    id: '/other',
+    path: '/other',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/notifications',
     path: '/notifications',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any)
-const AuthenticatedSettingsConsentRoute =
-  AuthenticatedSettingsConsentRouteImport.update({
-    id: '/consent',
-    path: '/consent',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
 const AuthenticatedNposCreateRoute = AuthenticatedNposCreateRouteImport.update({
@@ -388,8 +388,8 @@ export interface FileRoutesByFullPath {
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/events/create': typeof AuthenticatedEventsCreateRoute
   '/npos/create': typeof AuthenticatedNposCreateRoute
-  '/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/settings/other': typeof AuthenticatedSettingsOtherRoute
   '/settings/password': typeof AuthenticatedSettingsPasswordRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/tickets/history': typeof AuthenticatedTicketsHistoryRoute
@@ -440,8 +440,8 @@ export interface FileRoutesByTo {
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/events/create': typeof AuthenticatedEventsCreateRoute
   '/npos/create': typeof AuthenticatedNposCreateRoute
-  '/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/settings/other': typeof AuthenticatedSettingsOtherRoute
   '/settings/password': typeof AuthenticatedSettingsPasswordRoute
   '/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/tickets/history': typeof AuthenticatedTicketsHistoryRoute
@@ -496,8 +496,8 @@ export interface FileRoutesById {
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/events/create': typeof AuthenticatedEventsCreateRoute
   '/_authenticated/npos/create': typeof AuthenticatedNposCreateRoute
-  '/_authenticated/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/_authenticated/settings/other': typeof AuthenticatedSettingsOtherRoute
   '/_authenticated/settings/password': typeof AuthenticatedSettingsPasswordRoute
   '/_authenticated/settings/payment': typeof AuthenticatedSettingsPaymentRoute
   '/_authenticated/tickets/history': typeof AuthenticatedTicketsHistoryRoute
@@ -553,8 +553,8 @@ export interface FileRouteTypes {
     | '/errors/$error'
     | '/events/create'
     | '/npos/create'
-    | '/settings/consent'
     | '/settings/notifications'
+    | '/settings/other'
     | '/settings/password'
     | '/settings/payment'
     | '/tickets/history'
@@ -605,8 +605,8 @@ export interface FileRouteTypes {
     | '/errors/$error'
     | '/events/create'
     | '/npos/create'
-    | '/settings/consent'
     | '/settings/notifications'
+    | '/settings/other'
     | '/settings/password'
     | '/settings/payment'
     | '/tickets/history'
@@ -660,8 +660,8 @@ export interface FileRouteTypes {
     | '/_authenticated/errors/$error'
     | '/_authenticated/events/create'
     | '/_authenticated/npos/create'
-    | '/_authenticated/settings/consent'
     | '/_authenticated/settings/notifications'
+    | '/_authenticated/settings/other'
     | '/_authenticated/settings/password'
     | '/_authenticated/settings/payment'
     | '/_authenticated/tickets/history'
@@ -978,18 +978,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsPasswordRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/settings/other': {
+      id: '/_authenticated/settings/other'
+      path: '/other'
+      fullPath: '/settings/other'
+      preLoaderRoute: typeof AuthenticatedSettingsOtherRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
     '/_authenticated/settings/notifications': {
       id: '/_authenticated/settings/notifications'
       path: '/notifications'
       fullPath: '/settings/notifications'
       preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
-      parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
-    '/_authenticated/settings/consent': {
-      id: '/_authenticated/settings/consent'
-      path: '/consent'
-      fullPath: '/settings/consent'
-      preLoaderRoute: typeof AuthenticatedSettingsConsentRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
     '/_authenticated/npos/create': {
@@ -1094,8 +1094,8 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedSettingsRouteRouteChildren {
-  AuthenticatedSettingsConsentRoute: typeof AuthenticatedSettingsConsentRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
+  AuthenticatedSettingsOtherRoute: typeof AuthenticatedSettingsOtherRoute
   AuthenticatedSettingsPasswordRoute: typeof AuthenticatedSettingsPasswordRoute
   AuthenticatedSettingsPaymentRoute: typeof AuthenticatedSettingsPaymentRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
@@ -1103,9 +1103,9 @@ interface AuthenticatedSettingsRouteRouteChildren {
 
 const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
   {
-    AuthenticatedSettingsConsentRoute: AuthenticatedSettingsConsentRoute,
     AuthenticatedSettingsNotificationsRoute:
       AuthenticatedSettingsNotificationsRoute,
+    AuthenticatedSettingsOtherRoute: AuthenticatedSettingsOtherRoute,
     AuthenticatedSettingsPasswordRoute: AuthenticatedSettingsPasswordRoute,
     AuthenticatedSettingsPaymentRoute: AuthenticatedSettingsPaymentRoute,
     AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,

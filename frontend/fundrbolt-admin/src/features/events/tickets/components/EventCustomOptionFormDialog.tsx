@@ -3,6 +3,14 @@
  * Dialog form for creating and editing event-level custom options.
  * Uses event-level API endpoints instead of package-level ones.
  */
+import { useEffect, useState } from 'react'
+import { z } from 'zod'
+import { useForm, useWatch } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Plus, X } from 'lucide-react'
+import { toast } from 'sonner'
+import apiClient from '@/lib/axios'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -30,14 +38,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import apiClient from '@/lib/axios'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
 
 const optionSchema = z.object({
   option_type: z.enum(['boolean', 'multi_select', 'text_input']),
@@ -130,9 +130,7 @@ export function EventCustomOptionFormDialog({
       toast.success('Question has been created successfully.')
       onOpenChange(false)
     },
-    onError: (
-      error: Error & { response?: { data?: { detail?: string } } }
-    ) => {
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       const detail = error.response?.data?.detail
       if (detail?.includes('Maximum')) {
         toast.error('Maximum number of event questions reached.')
@@ -157,9 +155,7 @@ export function EventCustomOptionFormDialog({
       toast.success('Question has been updated successfully.')
       onOpenChange(false)
     },
-    onError: (
-      error: Error & { response?: { data?: { detail?: string } } }
-    ) => {
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       const detail = error.response?.data?.detail
       if (detail?.includes('responses')) {
         toast.error('This question has responses and cannot be modified.')

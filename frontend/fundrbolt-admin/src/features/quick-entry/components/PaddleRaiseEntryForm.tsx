@@ -1,6 +1,3 @@
-import { BidderAvatar } from '@/components/bidder-avatar'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
-import { useViewPreference } from '@/hooks/use-view-preference'
 import {
   type FormEvent,
   type KeyboardEvent,
@@ -9,6 +6,9 @@ import {
   useRef,
   useState,
 } from 'react'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import { BidderAvatar } from '@/components/bidder-avatar'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import type {
   QuickEntryDonationLabel,
   QuickEntryPaddleDonationResponse,
@@ -21,6 +21,7 @@ interface PaddleRaiseEntryFormProps {
   bidderNumber: string
   customLabel: string
   selectedLabelIds: string[]
+  isMonthly: boolean
   labels: QuickEntryDonationLabel[]
   labelsError?: unknown
   isLoadingLabels?: boolean
@@ -32,6 +33,7 @@ interface PaddleRaiseEntryFormProps {
   onBidderNumberChange: (value: string) => void
   onCustomLabelChange: (value: string) => void
   onSelectedLabelIdsChange: (value: string[]) => void
+  onIsMonthlyChange: (value: boolean) => void
   onSubmit: () => void
 }
 
@@ -48,6 +50,7 @@ export function PaddleRaiseEntryForm({
   bidderNumber,
   customLabel,
   selectedLabelIds,
+  isMonthly,
   labels,
   labelsError,
   isLoadingLabels,
@@ -59,6 +62,7 @@ export function PaddleRaiseEntryForm({
   onBidderNumberChange,
   onCustomLabelChange,
   onSelectedLabelIdsChange,
+  onIsMonthlyChange,
   onSubmit,
 }: PaddleRaiseEntryFormProps) {
   const amountRef = useRef<HTMLInputElement>(null)
@@ -255,6 +259,16 @@ export function PaddleRaiseEntryForm({
           {disabled ? 'Submitting…' : 'Submit Donation'}
         </button>
 
+        <label className='inline-flex items-center gap-2 text-sm'>
+          <input
+            type='checkbox'
+            checked={isMonthly}
+            onChange={(event) => onIsMonthlyChange(event.target.checked)}
+            disabled={disabled}
+          />
+          <span>Monthly recurring donation</span>
+        </label>
+
         <div className='space-y-2 rounded-md border p-3'>
           <p className='text-sm font-medium'>Donation Labels (optional)</p>
           {isLoadingLabels ? (
@@ -313,8 +327,18 @@ export function PaddleRaiseEntryForm({
         <p className='mb-2 text-sm font-medium'>Counts by Amount Level</p>
         <ul className='space-y-1 text-sm'>
           {(summary?.by_amount_level ?? []).map((row) => (
-            <li key={row.amount} className='flex items-center justify-between'>
-              <span>${row.amount.toLocaleString('en-US')}</span>
+            <li
+              key={`${row.amount}-${row.is_monthly}`}
+              className='flex items-center justify-between'
+            >
+              <span className='flex items-center gap-1.5'>
+                ${row.amount.toLocaleString('en-US')}
+                {row.is_monthly ? (
+                  <span className='rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900 dark:text-blue-300'>
+                    Monthly
+                  </span>
+                ) : null}
+              </span>
               <span>{row.count}</span>
             </li>
           ))}
@@ -345,13 +369,23 @@ export function PaddleRaiseEntryForm({
                 <div className='flex items-center justify-between'>
                   <span className='text-lg font-semibold'>
                     ${donation.amount.toLocaleString('en-US')}
+                    {donation.is_monthly ? '/mo' : ''}
                   </span>
-                  <span className='text-muted-foreground text-sm'>
-                    #{donation.bidder_number}
-                  </span>
+                  <div className='flex items-center gap-2'>
+                    {donation.is_monthly ? (
+                      <span className='rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900 dark:text-blue-300'>
+                        Monthly
+                      </span>
+                    ) : null}
+                    <span className='text-muted-foreground text-sm'>
+                      #{donation.bidder_number}
+                    </span>
+                  </div>
                 </div>
                 <p className='flex items-center gap-2 text-sm'>
-                  {donation.donor_name ? <BidderAvatar name={donation.donor_name} /> : null}
+                  {donation.donor_name ? (
+                    <BidderAvatar name={donation.donor_name} />
+                  ) : null}
                   {donation.donor_name ?? '—'}
                 </p>
                 <div className='flex flex-wrap gap-1'>
@@ -449,11 +483,18 @@ export function PaddleRaiseEntryForm({
                 <tr key={donation.id} className='border-t'>
                   <td className='px-3 py-2'>
                     ${donation.amount.toLocaleString('en-US')}
+                    {donation.is_monthly ? (
+                      <span className='ml-1 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900 dark:text-blue-300'>
+                        Monthly
+                      </span>
+                    ) : null}
                   </td>
                   <td className='px-3 py-2'>{donation.bidder_number}</td>
                   <td className='px-3 py-2'>
                     <div className='flex items-center gap-2'>
-                      {donation.donor_name ? <BidderAvatar name={donation.donor_name} /> : null}
+                      {donation.donor_name ? (
+                        <BidderAvatar name={donation.donor_name} />
+                      ) : null}
                       {donation.donor_name ?? '—'}
                     </div>
                   </td>

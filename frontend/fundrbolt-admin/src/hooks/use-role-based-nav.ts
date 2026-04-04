@@ -55,8 +55,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const { role, isSuperAdmin, isNpoAdmin, isEventCoordinator, isStaff } =
     useAuth()
   const { selectedNpoId } = useNpoContext()
-  const { selectedEventId, selectedEventName } =
-    useEventContext()
+  const { selectedEventId, selectedEventName } = useEventContext()
   const { data: eventStats } = useEventStats(selectedEventId)
 
   // Determine NPO link based on selected NPO
@@ -217,9 +216,9 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   // Grouped nav: Event, Guests, Auctions
   const eventNavGroups: EventNavGroup[] = selectedEventId
     ? EVENT_NAV_GROUPS.map((group) => ({
-      title: group.title,
-      items: group.sections.map(buildEventNavItem),
-    }))
+        title: group.title,
+        items: group.sections.map(buildEventNavItem),
+      }))
     : []
 
   const eventNavTitle = selectedEventId
@@ -334,44 +333,44 @@ const EVENT_NAV_GROUPS: Array<{
   title: string
   sections: EventSectionConfig[]
 }> = [
-    {
-      title: 'Event',
-      sections: [
-        sectionByPath('details'),
-        sectionByPath('checklist'),
-        sectionByPath('preview'),
-        sectionByPath('media'),
-        sectionByPath('links'),
-        sectionByPath('food'),
-        sectionByPath('tickets'),
-        sectionByPath('tickets/sales'),
-        sectionByPath('tickets/promos'),
-        sectionByPath('sponsors'),
-        sectionByPath('notifications'),
-      ],
-    },
-    {
-      title: 'Guests',
-      sections: [
-        sectionByPath('registrations'),
-        sectionByPath('checkin'),
-        sectionByPath('seating'),
-      ],
-    },
-    {
-      title: 'Auctions',
-      sections: [
-        sectionByPath('auction-items'),
-        sectionByPath('auction-bids'),
-        sectionByPath('quick-entry'),
-      ],
-    },
-    {
-      title: 'Finance',
-      sections: [sectionByPath('payments')],
-    },
-    {
-      title: 'Data',
-      sections: [sectionByPath('dashboard')],
-    },
-  ]
+  {
+    title: 'Event',
+    sections: [
+      sectionByPath('details'),
+      sectionByPath('checklist'),
+      sectionByPath('preview'),
+      sectionByPath('media'),
+      sectionByPath('links'),
+      sectionByPath('food'),
+      sectionByPath('tickets'),
+      sectionByPath('tickets/sales'),
+      sectionByPath('tickets/promos'),
+      sectionByPath('sponsors'),
+      sectionByPath('notifications'),
+    ],
+  },
+  {
+    title: 'Guests',
+    sections: [
+      sectionByPath('registrations'),
+      sectionByPath('checkin'),
+      sectionByPath('seating'),
+    ],
+  },
+  {
+    title: 'Auctions',
+    sections: [
+      sectionByPath('auction-items'),
+      sectionByPath('auction-bids'),
+      sectionByPath('quick-entry'),
+    ],
+  },
+  {
+    title: 'Finance',
+    sections: [sectionByPath('payments')],
+  },
+  {
+    title: 'Data',
+    sections: [sectionByPath('dashboard')],
+  },
+]

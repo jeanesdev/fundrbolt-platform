@@ -1,8 +1,8 @@
+import { useMemo, useState } from 'react'
+import { Crown, Gavel } from 'lucide-react'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { BidderAvatar } from '@/components/bidder-avatar'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { Crown } from 'lucide-react'
-import { useMemo, useState } from 'react'
 import type { QuickEntryLiveSummary } from '../api/quickEntryApi'
 import { FilterableColumnHeader, type SortDir } from './FilterableColumnHeader'
 
@@ -147,11 +147,11 @@ export function LiveBidLogAndMetrics({
   return (
     <section className='space-y-3' aria-live='polite'>
       {hasWinner && winnerBid ? (
-        <div className='flex items-center justify-between rounded-md border border-yellow-400 bg-yellow-50 px-3 py-2 dark:border-yellow-600 dark:bg-yellow-950'>
+        <div className='flex items-center justify-between rounded-md border border-green-400 bg-green-50 px-3 py-2 dark:border-green-600 dark:bg-green-950'>
           <div className='flex items-center gap-2'>
-            <Crown className='h-4 w-4 text-yellow-600 dark:text-yellow-400' />
+            <Gavel className='h-4 w-4 text-green-600 dark:text-green-400' />
             <span className='text-sm font-medium'>
-              Winner: Bidder #{winnerBid.bidder_number} — $
+              Auction Complete — Winner: Bidder #{winnerBid.bidder_number} — $
               {winnerBid.amount.toLocaleString('en-US')}
             </span>
           </div>
@@ -161,7 +161,7 @@ export function LiveBidLogAndMetrics({
             onClick={() => {
               if (
                 window.confirm(
-                  'Remove winner? Bidding will reopen for this item.'
+                  'Reopen this auction? The winner will be removed and bidding will resume.'
                 )
               ) {
                 onRemoveWinner()
@@ -169,7 +169,7 @@ export function LiveBidLogAndMetrics({
             }}
             disabled={isRemovingWinner}
           >
-            {isRemovingWinner ? 'Removing…' : 'Remove Winner'}
+            {isRemovingWinner ? 'Reopening…' : 'Reopen Auction'}
           </button>
         </div>
       ) : null}
@@ -195,20 +195,20 @@ export function LiveBidLogAndMetrics({
         <div className='flex justify-end'>
           <button
             type='button'
-            className='rounded-md border px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60'
+            className='bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60'
             onClick={() => {
               if (
                 window.confirm(
-                  'Assign winner to the current highest valid bid?'
+                  'Close this auction and assign the winner to the current highest bid?'
                 )
               ) {
                 onAssignWinner()
               }
             }}
             disabled={summary.bid_count === 0 || isAssigningWinner}
-            aria-label='Assign winner to highest valid bid'
+            aria-label='Close auction and assign winner to highest valid bid'
           >
-            {isAssigningWinner ? 'Assigning Winner…' : 'Assign Winner'}
+            {isAssigningWinner ? 'Closing Auction…' : 'Close Auction'}
           </button>
         </div>
       )}
@@ -247,7 +247,9 @@ export function LiveBidLogAndMetrics({
                     </span>
                   </div>
                   <p className='flex items-center gap-2 text-sm'>
-                    {bid.donor_name ? <BidderAvatar name={bid.donor_name} /> : null}
+                    {bid.donor_name ? (
+                      <BidderAvatar name={bid.donor_name} />
+                    ) : null}
                     {bid.donor_name ?? '—'}
                   </p>
                   <div className='text-muted-foreground flex items-center justify-between text-xs'>
@@ -372,7 +374,9 @@ export function LiveBidLogAndMetrics({
                     <td className='px-3 py-2'>{bid.bidder_number}</td>
                     <td className='px-3 py-2'>
                       <div className='flex items-center gap-2'>
-                        {bid.donor_name ? <BidderAvatar name={bid.donor_name} /> : null}
+                        {bid.donor_name ? (
+                          <BidderAvatar name={bid.donor_name} />
+                        ) : null}
                         {bid.donor_name ?? '—'}
                       </div>
                     </td>

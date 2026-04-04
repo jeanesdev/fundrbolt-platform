@@ -3,6 +3,7 @@
  *
  * Handles API requests for event attendee management, meal summaries, and guest invitations.
  */
+import type { DonorLabelInfo } from '@/features/users/api/users-api'
 import apiClient from '@/lib/axios'
 
 export interface Attendee {
@@ -23,6 +24,7 @@ export interface Attendee {
   checked_in?: boolean
   check_in_time?: string | null
   has_payment_profile?: boolean
+  donor_labels?: DonorLabelInfo[]
   status: string
   created_at: string
 }
@@ -170,6 +172,31 @@ export const inviteGuestToEvent = async (
     message: string
   }>(`/admin/events/${eventId}/invite-guest`, guestData)
 
+  return response.data
+}
+
+/**
+ * Update an attendee's contact details (name, email, phone)
+ *
+ * @param eventId - Event UUID
+ * @param guestId - Guest UUID (works for both registrants and guests)
+ * @param details - Updated fields
+ * @returns Updated guest details
+ */
+export const updateAttendeeDetails = async (
+  eventId: string,
+  guestId: string,
+  details: { name?: string; email?: string; phone?: string }
+): Promise<{
+  guest_id: string
+  name: string | null
+  email: string | null
+  phone: string | null
+}> => {
+  const response = await apiClient.patch(
+    `/admin/events/${eventId}/guests/${guestId}/details`,
+    details
+  )
   return response.data
 }
 

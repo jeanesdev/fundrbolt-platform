@@ -2,13 +2,14 @@
  * ChecklistPanel — Persistent panel above tabs on the event edit page
  * Renders progress bar, item list, and action buttons
  */
-import { Button } from '@/components/ui/button'
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
-import { useChecklistStore } from '@/stores/checklistStore'
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import type { ChecklistItem, ChecklistItemStatus } from '@/types/checklist'
 import {
   closestCenter,
@@ -33,15 +34,14 @@ import {
   Plus,
   Settings2,
 } from 'lucide-react'
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
 import { toast } from 'sonner'
+import { useChecklistStore } from '@/stores/checklistStore'
+import { Button } from '@/components/ui/button'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import { ChecklistItemForm } from './ChecklistItemForm'
 import { ChecklistProgressBar } from './ChecklistProgressBar'
 import { SortableChecklistItem } from './SortableChecklistItem'

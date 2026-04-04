@@ -1,6 +1,4 @@
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { adminSocialAuthApi } from '@/lib/axios'
+import { useCallback, useState, type ComponentType, type SVGProps } from 'react'
 import {
   AppleIcon,
   FacebookIcon,
@@ -9,17 +7,19 @@ import {
 } from '@fundrbolt/shared'
 import type { SocialAuthProvider } from '@fundrbolt/shared/types'
 import { Loader2 } from 'lucide-react'
-import { useCallback, useState, type ComponentType, type SVGProps } from 'react'
+import { adminSocialAuthApi } from '@/lib/axios'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 
 const DEFAULT_PROVIDERS: {
   provider: SocialAuthProvider
   display_name: string
 }[] = [
-    { provider: 'google', display_name: 'Google' },
-    { provider: 'apple', display_name: 'Apple' },
-    { provider: 'facebook', display_name: 'Facebook' },
-    { provider: 'microsoft', display_name: 'Microsoft' },
-  ]
+  { provider: 'google', display_name: 'Google' },
+  { provider: 'apple', display_name: 'Apple' },
+  { provider: 'facebook', display_name: 'Facebook' },
+  { provider: 'microsoft', display_name: 'Microsoft' },
+]
 
 const providerIcons: Record<
   SocialAuthProvider,
