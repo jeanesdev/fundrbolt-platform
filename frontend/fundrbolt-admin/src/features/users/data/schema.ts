@@ -20,6 +20,13 @@ const npoMembershipSchema = z.object({
 })
 export type NPOMembership = z.infer<typeof npoMembershipSchema>
 
+const donorLabelSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  color: z.string().nullable(),
+})
+export type DonorLabel = z.infer<typeof donorLabelSchema>
+
 const userSchema = z.object({
   id: z.string(),
   email: z.string(),
@@ -37,6 +44,7 @@ const userSchema = z.object({
   social_media_links: z.record(z.string(), z.string()).nullable(),
   role: z.string(), // String role name from backend
   npo_memberships: z.array(npoMembershipSchema).default([]),
+  donor_labels: z.array(donorLabelSchema).default([]),
   email_verified: z.boolean(),
   is_active: z.boolean(),
   last_login_at: z.string().nullable(),

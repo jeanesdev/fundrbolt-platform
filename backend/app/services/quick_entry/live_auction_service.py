@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from decimal import Decimal
 from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.auction_item import AuctionItem
+from app.models.auction_item import AuctionItem, ItemStatus
 from app.models.event_registration import EventRegistration
 from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
 from app.models.registration_guest import RegistrationGuest
@@ -215,6 +216,11 @@ class LiveAuctionService(QuickEntryServiceBase):
             elif bid.status == QuickEntryBidStatus.WINNING:
                 bid.status = QuickEntryBidStatus.ACTIVE
 
+        item = await cls._get_live_item_or_404(db=db, event_id=event_id, item_id=item_id)
+        item.status = ItemStatus.SOLD
+        item.current_bid_amount = Decimal(winner.amount)
+        item.bid_count = len(bids)
+
         cls.log_quick_entry_action(
             db,
             actor_user_id=assigned_by_user_id,
@@ -256,6 +262,9 @@ class LiveAuctionService(QuickEntryServiceBase):
 
         for bid in winning_bids:
             bid.status = QuickEntryBidStatus.ACTIVE
+
+        item = await cls._get_live_item_or_404(db=db, event_id=event_id, item_id=item_id)
+        item.status = ItemStatus.PUBLISHED
 
         cls.log_quick_entry_action(
             db,

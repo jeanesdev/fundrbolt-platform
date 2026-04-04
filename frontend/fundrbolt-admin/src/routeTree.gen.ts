@@ -43,6 +43,7 @@ import { Route as authRegisterNpoIndexRouteImport } from './routes/(auth)/regist
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
+import { Route as AuthenticatedSettingsSupportRouteImport } from './routes/_authenticated/settings/support'
 import { Route as AuthenticatedSettingsPasswordRouteImport } from './routes/_authenticated/settings/password'
 import { Route as AuthenticatedSettingsConsentRouteImport } from './routes/_authenticated/settings/consent'
 import { Route as AuthenticatedNposCreateRouteImport } from './routes/_authenticated/npos/create'
@@ -69,6 +70,7 @@ import { Route as AuthenticatedEventsEventIdFoodRouteImport } from './routes/_au
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events/$eventId/edit'
 import { Route as AuthenticatedEventsEventIdDetailsRouteImport } from './routes/_authenticated/events/$eventId/details'
 import { Route as AuthenticatedEventsEventIdDashboardRouteImport } from './routes/_authenticated/events/$eventId/dashboard'
+import { Route as AuthenticatedEventsEventIdChecklistRouteImport } from './routes/_authenticated/events/$eventId/checklist'
 import { Route as AuthenticatedEventsEventIdCheckinRouteImport } from './routes/_authenticated/events/$eventId/checkin'
 import { Route as AuthenticatedEventsEventIdAuctionItemsRouteImport } from './routes/_authenticated/events/$eventId/auction-items'
 import { Route as AuthenticatedEventsEventIdAuctionBidsRouteImport } from './routes/_authenticated/events/$eventId/auction-bids'
@@ -256,6 +258,12 @@ const ClerkauthSignInRoute = ClerkauthSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => ClerkauthRouteRoute,
 } as any)
+const AuthenticatedSettingsSupportRoute =
+  AuthenticatedSettingsSupportRouteImport.update({
+    id: '/support',
+    path: '/support',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 const AuthenticatedSettingsPasswordRoute =
   AuthenticatedSettingsPasswordRouteImport.update({
     id: '/password',
@@ -411,6 +419,12 @@ const AuthenticatedEventsEventIdDashboardRoute =
     path: '/dashboard',
     getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
+const AuthenticatedEventsEventIdChecklistRoute =
+  AuthenticatedEventsEventIdChecklistRouteImport.update({
+    id: '/checklist',
+    path: '/checklist',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdCheckinRoute =
   AuthenticatedEventsEventIdCheckinRouteImport.update({
     id: '/checkin',
@@ -521,6 +535,7 @@ export interface FileRoutesByFullPath {
   '/npos/create': typeof AuthenticatedNposCreateRoute
   '/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/settings/password': typeof AuthenticatedSettingsPasswordRoute
+  '/settings/support': typeof AuthenticatedSettingsSupportRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
@@ -532,6 +547,7 @@ export interface FileRoutesByFullPath {
   '/events/$eventId/auction-bids': typeof AuthenticatedEventsEventIdAuctionBidsRoute
   '/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsRouteWithChildren
   '/events/$eventId/checkin': typeof AuthenticatedEventsEventIdCheckinRoute
+  '/events/$eventId/checklist': typeof AuthenticatedEventsEventIdChecklistRoute
   '/events/$eventId/dashboard': typeof AuthenticatedEventsEventIdDashboardRoute
   '/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
@@ -590,6 +606,7 @@ export interface FileRoutesByTo {
   '/npos/create': typeof AuthenticatedNposCreateRoute
   '/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/settings/password': typeof AuthenticatedSettingsPasswordRoute
+  '/settings/support': typeof AuthenticatedSettingsSupportRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
@@ -600,6 +617,7 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersIndexRoute
   '/events/$eventId/auction-bids': typeof AuthenticatedEventsEventIdAuctionBidsRoute
   '/events/$eventId/checkin': typeof AuthenticatedEventsEventIdCheckinRoute
+  '/events/$eventId/checklist': typeof AuthenticatedEventsEventIdChecklistRoute
   '/events/$eventId/dashboard': typeof AuthenticatedEventsEventIdDashboardRoute
   '/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
@@ -664,6 +682,7 @@ export interface FileRoutesById {
   '/_authenticated/npos/create': typeof AuthenticatedNposCreateRoute
   '/_authenticated/settings/consent': typeof AuthenticatedSettingsConsentRoute
   '/_authenticated/settings/password': typeof AuthenticatedSettingsPasswordRoute
+  '/_authenticated/settings/support': typeof AuthenticatedSettingsSupportRoute
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
@@ -675,6 +694,7 @@ export interface FileRoutesById {
   '/_authenticated/events/$eventId/auction-bids': typeof AuthenticatedEventsEventIdAuctionBidsRoute
   '/_authenticated/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsRouteWithChildren
   '/_authenticated/events/$eventId/checkin': typeof AuthenticatedEventsEventIdCheckinRoute
+  '/_authenticated/events/$eventId/checklist': typeof AuthenticatedEventsEventIdChecklistRoute
   '/_authenticated/events/$eventId/dashboard': typeof AuthenticatedEventsEventIdDashboardRoute
   '/_authenticated/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
@@ -738,6 +758,7 @@ export interface FileRouteTypes {
     | '/npos/create'
     | '/settings/consent'
     | '/settings/password'
+    | '/settings/support'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
@@ -749,6 +770,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/auction-bids'
     | '/events/$eventId/auction-items'
     | '/events/$eventId/checkin'
+    | '/events/$eventId/checklist'
     | '/events/$eventId/dashboard'
     | '/events/$eventId/details'
     | '/events/$eventId/edit'
@@ -807,6 +829,7 @@ export interface FileRouteTypes {
     | '/npos/create'
     | '/settings/consent'
     | '/settings/password'
+    | '/settings/support'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
@@ -817,6 +840,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/events/$eventId/auction-bids'
     | '/events/$eventId/checkin'
+    | '/events/$eventId/checklist'
     | '/events/$eventId/dashboard'
     | '/events/$eventId/details'
     | '/events/$eventId/edit'
@@ -880,6 +904,7 @@ export interface FileRouteTypes {
     | '/_authenticated/npos/create'
     | '/_authenticated/settings/consent'
     | '/_authenticated/settings/password'
+    | '/_authenticated/settings/support'
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
     | '/clerk/_authenticated/user-management'
@@ -891,6 +916,7 @@ export interface FileRouteTypes {
     | '/_authenticated/events/$eventId/auction-bids'
     | '/_authenticated/events/$eventId/auction-items'
     | '/_authenticated/events/$eventId/checkin'
+    | '/_authenticated/events/$eventId/checklist'
     | '/_authenticated/events/$eventId/dashboard'
     | '/_authenticated/events/$eventId/details'
     | '/_authenticated/events/$eventId/edit'
@@ -1187,6 +1213,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClerkauthSignInRouteImport
       parentRoute: typeof ClerkauthRouteRoute
     }
+    '/_authenticated/settings/support': {
+      id: '/_authenticated/settings/support'
+      path: '/support'
+      fullPath: '/settings/support'
+      preLoaderRoute: typeof AuthenticatedSettingsSupportRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
     '/_authenticated/settings/password': {
       id: '/_authenticated/settings/password'
       path: '/password'
@@ -1369,6 +1402,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsEventIdDashboardRouteImport
       parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
+    '/_authenticated/events/$eventId/checklist': {
+      id: '/_authenticated/events/$eventId/checklist'
+      path: '/checklist'
+      fullPath: '/events/$eventId/checklist'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdChecklistRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
     '/_authenticated/events/$eventId/checkin': {
       id: '/_authenticated/events/$eventId/checkin'
       path: '/checkin'
@@ -1521,6 +1561,7 @@ interface AuthenticatedEventsEventIdRouteRouteChildren {
   AuthenticatedEventsEventIdAuctionBidsRoute: typeof AuthenticatedEventsEventIdAuctionBidsRoute
   AuthenticatedEventsEventIdAuctionItemsRoute: typeof AuthenticatedEventsEventIdAuctionItemsRouteWithChildren
   AuthenticatedEventsEventIdCheckinRoute: typeof AuthenticatedEventsEventIdCheckinRoute
+  AuthenticatedEventsEventIdChecklistRoute: typeof AuthenticatedEventsEventIdChecklistRoute
   AuthenticatedEventsEventIdDashboardRoute: typeof AuthenticatedEventsEventIdDashboardRoute
   AuthenticatedEventsEventIdDetailsRoute: typeof AuthenticatedEventsEventIdDetailsRoute
   AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
@@ -1546,6 +1587,8 @@ const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRo
       AuthenticatedEventsEventIdAuctionItemsRouteWithChildren,
     AuthenticatedEventsEventIdCheckinRoute:
       AuthenticatedEventsEventIdCheckinRoute,
+    AuthenticatedEventsEventIdChecklistRoute:
+      AuthenticatedEventsEventIdChecklistRoute,
     AuthenticatedEventsEventIdDashboardRoute:
       AuthenticatedEventsEventIdDashboardRoute,
     AuthenticatedEventsEventIdDetailsRoute:
@@ -1600,6 +1643,7 @@ const AuthenticatedEventsRouteRouteWithChildren =
 interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsConsentRoute: typeof AuthenticatedSettingsConsentRoute
   AuthenticatedSettingsPasswordRoute: typeof AuthenticatedSettingsPasswordRoute
+  AuthenticatedSettingsSupportRoute: typeof AuthenticatedSettingsSupportRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
 
@@ -1607,6 +1651,7 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
   {
     AuthenticatedSettingsConsentRoute: AuthenticatedSettingsConsentRoute,
     AuthenticatedSettingsPasswordRoute: AuthenticatedSettingsPasswordRoute,
+    AuthenticatedSettingsSupportRoute: AuthenticatedSettingsSupportRoute,
     AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   }
 

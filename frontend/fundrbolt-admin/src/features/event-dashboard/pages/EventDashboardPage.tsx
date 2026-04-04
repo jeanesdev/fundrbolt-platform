@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { ScenarioType, SegmentType } from '@/services/event-dashboard'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { ChecklistSummaryCard } from '@/features/events/components/ChecklistSummaryCard'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { AlertCards } from '../components/AlertCards'
 import { CashflowTimeline } from '../components/CashflowTimeline'
@@ -79,6 +80,8 @@ export function EventDashboardPage() {
           <LastRefreshed timestamp={summary.last_refreshed_at} />
         </div>
       </div>
+
+      <ChecklistSummaryCard eventId={currentEvent.id} />
 
       <SummaryCards summary={summary} />
 

@@ -15,11 +15,12 @@
  * The Turnstile CAPTCHA token is collected silently during the npo_profile
  * and first_event steps and used at submission time.
  */
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { npoApi } from '@/services/npo-service'
+import LogoWhiteGold from '@fundrbolt/shared/assets/logos/fundrbolt-logo-white-gold.svg'
+import { AlertCircle, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
 import {
   createSession,
   getSession,
@@ -27,12 +28,11 @@ import {
   type SessionResponse,
 } from '@/lib/api/onboarding'
 import apiClient from '@/lib/axios'
-import { npoApi } from '@/services/npo-service'
-import { useAuthStore } from '@/stores/auth-store'
-import LogoWhiteGold from '@fundrbolt/shared/assets/logos/fundrbolt-logo-white-gold.svg'
-import { AlertCircle, Loader2 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { ProfileDropdown } from '@/components/profile-dropdown'
 import {
   SignUpWizard,
   type WizardStep,

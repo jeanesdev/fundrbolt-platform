@@ -6,6 +6,8 @@ from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
+from app.schemas.donor_label import DonorLabelAssignmentInfo
+
 # ================================
 # Request Schemas
 # ================================
@@ -183,6 +185,7 @@ class UserPublicWithRole(BaseModel):
     role: str
     npo_id: uuid.UUID | None = None
     npo_memberships: list[NPOMembershipInfo] = []
+    donor_labels: list[DonorLabelAssignmentInfo] = []
     email_verified: bool
     is_active: bool
     last_login_at: datetime | None = None

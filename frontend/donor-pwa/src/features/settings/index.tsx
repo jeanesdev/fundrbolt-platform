@@ -8,8 +8,8 @@ const SETTINGS_TABS = [
   '/settings',
   '/settings/password',
   '/settings/notifications',
-  '/settings/consent',
   '/settings/payment',
+  '/settings/other',
 ] as const
 
 export function Settings() {

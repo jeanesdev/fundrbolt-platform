@@ -45,6 +45,7 @@ export const users = Array.from({ length: 500 }, () => {
     ]),
     npo_id: faker.helpers.arrayElement([null, faker.string.uuid()]),
     npo_memberships: [],
+    donor_labels: [],
     email_verified: faker.datatype.boolean(),
     is_active: faker.datatype.boolean({ probability: 0.9 }),
     last_login_at: faker.helpers.arrayElement([

@@ -101,8 +101,10 @@ class NPOService:
             )
 
         # Create NPO
+        hashtag = npo_data.hashtag or NPOService._generate_hashtag(npo_data.name)
         npo = NPO(
-            **npo_data.model_dump(),
+            **npo_data.model_dump(exclude={"hashtag"}),
+            hashtag=hashtag,
             status=NPOStatus.DRAFT,
             created_by_user_id=created_by_user_id,
         )
@@ -412,3 +414,18 @@ class NPOService:
         await db.commit()
 
         logger.info(f"NPO deleted: {npo.name} (ID: {npo.id}) by user {deleted_by_user_id}")
+
+    @staticmethod
+    def _generate_hashtag(name: str) -> str:
+        """Generate a CamelCase hashtag from the organization name.
+
+        Examples:
+            'Helping Hands Foundation' -> '#HelpingHandsFoundation'
+            'Save the Children' -> '#SaveTheChildren'
+        """
+        import re
+
+        words = re.split(r"[\s\-_]+", name.strip())
+        camel = "".join(w.capitalize() for w in words if w)
+        camel = re.sub(r"[^A-Za-z0-9]", "", camel)
+        return f"#{camel}" if camel else "#NPO"

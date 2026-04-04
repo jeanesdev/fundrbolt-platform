@@ -165,6 +165,11 @@ class Event(Base, UUIDMixin, TimestampMixin):
         nullable=True,
         comment="Dress code or attire (e.g., 'Black Tie', 'Cocktail Attire', 'Business Casual')",
     )
+    hashtag: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        comment="Social media hashtag for event sharing (e.g., '#GalaForGood2026')",
+    )
     fundraising_goal: Mapped[Decimal | None] = mapped_column(
         Numeric(12, 2),
         nullable=True,

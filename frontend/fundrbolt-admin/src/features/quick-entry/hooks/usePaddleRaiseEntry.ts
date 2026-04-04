@@ -45,6 +45,7 @@ export function usePaddleRaiseEntry(eventId: string) {
   const [bidderNumber, setBidderNumber] = useState('')
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([])
   const [customLabel, setCustomLabel] = useState('')
+  const [isMonthly, setIsMonthly] = useState(false)
   const [submitToken, setSubmitToken] = useState(0)
 
   const parsedAmount = useMemo(
@@ -89,6 +90,7 @@ export function usePaddleRaiseEntry(eventId: string) {
       return createPaddleDonation(eventId, {
         amount: parsedAmount,
         bidder_number: parsedBidder,
+        is_monthly: isMonthly,
         label_ids: selectedLabelIds,
         custom_label: customLabel.trim() || undefined,
       })
@@ -110,6 +112,7 @@ export function usePaddleRaiseEntry(eventId: string) {
     bidderNumber,
     selectedLabelIds,
     customLabel,
+    isMonthly,
     labels: labelsQuery.data?.items ?? [],
     labelsError: labelsQuery.error,
     isLoadingLabels: labelsQuery.isLoading,
@@ -120,6 +123,7 @@ export function usePaddleRaiseEntry(eventId: string) {
     setBidderNumber,
     setCustomLabel,
     setSelectedLabelIds,
+    setIsMonthly,
     submitDonation: () => mutation.mutate(),
     submitToken,
   }

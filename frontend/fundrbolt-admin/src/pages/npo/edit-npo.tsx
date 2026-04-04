@@ -179,6 +179,7 @@ export default function EditNPOPage() {
     name: currentNPO.name,
     email: currentNPO.email,
     tagline: currentNPO.tagline || undefined,
+    hashtag: currentNPO.hashtag || undefined,
     description: currentNPO.description || undefined,
     mission_statement: currentNPO.mission_statement || undefined,
     tax_id: currentNPO.tax_id || undefined,

@@ -2,34 +2,8 @@
  * NPO Detail Page
  * Displays detailed information about a specific NPO with edit and delete actions
  */
-import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import type { NPOApplication } from '@/types/npo'
-import {
-  type CredentialRead,
-  type CredentialResponse,
-  isConfigured,
-} from '@/types/payments'
-import { colors as brandColors } from '@fundrbolt/shared/assets'
-import {
-  ArrowLeft,
-  Building2,
-  Calendar,
-  ClipboardCheck,
-  CreditCard,
-  Edit,
-  Globe,
-  Mail,
-  MapPin,
-  Phone,
-  Trash2,
-  Users,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { useNPOStore } from '@/stores/npo-store'
-import apiClient from '@/lib/axios'
+import { ApplicationReviewDialog } from '@/components/admin/application-review-dialog'
+import { ApplicationStatusBadge } from '@/components/npo/application-status-badge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -41,11 +15,38 @@ import {
 } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ApplicationReviewDialog } from '@/components/admin/application-review-dialog'
-import { ApplicationStatusBadge } from '@/components/npo/application-status-badge'
 import { MemberList } from '@/features/npo-management/components/MemberList'
 import { PendingInvitations } from '@/features/npo-management/components/PendingInvitations'
 import { StaffInvitation } from '@/features/npo-management/components/StaffInvitation'
+import apiClient from '@/lib/axios'
+import { useAuthStore } from '@/stores/auth-store'
+import { useNPOStore } from '@/stores/npo-store'
+import type { NPOApplication } from '@/types/npo'
+import {
+  type CredentialRead,
+  type CredentialResponse,
+  isConfigured,
+} from '@/types/payments'
+import { colors as brandColors } from '@fundrbolt/shared/assets'
+import { useQuery } from '@tanstack/react-query'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
+import {
+  ArrowLeft,
+  Building2,
+  Calendar,
+  ClipboardCheck,
+  CreditCard,
+  Edit,
+  Globe,
+  Hash,
+  Mail,
+  MapPin,
+  Phone,
+  Trash2,
+  Users,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 // Helper to get full logo URL
 function getLogoUrl(logoPath: string | null): string | null {
@@ -358,6 +359,16 @@ export default function NpoDetailPage() {
                 >
                   {npo.website_url}
                 </a>
+              </div>
+            )}
+
+            {npo.hashtag && (
+              <div className='space-y-2'>
+                <div className='text-muted-foreground flex items-center gap-2 text-sm font-medium'>
+                  <Hash className='h-4 w-4' />
+                  Hashtag
+                </div>
+                <p className='text-sm font-medium'>{npo.hashtag}</p>
               </div>
             )}
 

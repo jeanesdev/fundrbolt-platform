@@ -102,15 +102,10 @@ async def send_test_notification(
 ) -> dict[str, object]:
     """Send a test push + in-app notification to the current user.
 
-    Requires the user to have an active event registration.
-    Restricted to super_admin users.
+    Any authenticated user can test their own notification delivery.
+    Requires at least one event registration (notifications are event-scoped).
     """
-    if getattr(current_user, "role_name", None) != "super_admin":
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=403, detail="Super admin access required")
-
-    from sqlalchemy import select
+    from fastapi import HTTPException
 
     from app.models.event_registration import EventRegistration
 
@@ -120,13 +115,12 @@ async def send_test_notification(
         .where(EventRegistration.user_id == current_user.id)
         .limit(1)
     )
-    event_row = reg_result.scalar_one_or_none()
-    if not event_row:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=404, detail="No event registration found for this user")
-
-    event_id = event_row
+    event_id = reg_result.scalar_one_or_none()
+    if not event_id:
+        raise HTTPException(
+            status_code=404,
+            detail="You must be registered for an event to test notifications.",
+        )
 
     # Create notification with both INAPP and PUSH channels
     notification = await NotificationService.create_notification(

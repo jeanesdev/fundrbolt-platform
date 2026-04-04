@@ -1,5 +1,6 @@
 """Pydantic schemas for NPO (Non-Profit Organization) management."""
 
+import re
 import uuid
 from datetime import datetime
 
@@ -18,6 +19,11 @@ class NPOCreateRequest(BaseModel):
 
     name: str = Field(..., min_length=2, max_length=255)
     tagline: str | None = Field(default=None, max_length=255)
+    hashtag: str | None = Field(
+        default=None,
+        max_length=100,
+        description="Social media hashtag (e.g., '#HelpingHands')",
+    )
     description: str | None = Field(default=None, max_length=5000)
     mission_statement: str | None = Field(default=None, max_length=5000)
     tax_id: str | None = Field(default=None, max_length=50)
@@ -50,12 +56,39 @@ class NPOCreateRequest(BaseModel):
             raise ValueError("NPO name cannot be empty or whitespace")
         return v.strip()
 
+    @field_validator("hashtag")
+    @classmethod
+    def validate_hashtag(cls, v: str | None) -> str | None:
+        """Normalize hashtag input and ensure it begins with #."""
+        if v is None:
+            return None
+
+        normalized = v.strip()
+        if not normalized:
+            return None
+
+        if not normalized.startswith("#"):
+            normalized = f"#{normalized}"
+
+        if any(char.isspace() for char in normalized):
+            raise ValueError("Hashtag cannot contain spaces")
+
+        if not re.match(r"^#[A-Za-z0-9_]+$", normalized):
+            raise ValueError("Hashtag can contain only letters, numbers, and underscores")
+
+        return normalized
+
 
 class NPOUpdateRequest(BaseModel):
     """Request schema for updating NPO details."""
 
     name: str | None = Field(default=None, min_length=2, max_length=255)
     tagline: str | None = Field(default=None, max_length=255)
+    hashtag: str | None = Field(
+        default=None,
+        max_length=100,
+        description="Social media hashtag (e.g., '#HelpingHands')",
+    )
     description: str | None = Field(default=None, max_length=5000)
     mission_statement: str | None = Field(default=None, max_length=5000)
     tax_id: str | None = Field(default=None, max_length=50)
@@ -84,6 +117,28 @@ class NPOUpdateRequest(BaseModel):
         if v is not None and not v.strip():
             raise ValueError("NPO name cannot be empty or whitespace")
         return v.strip() if v else None
+
+    @field_validator("hashtag")
+    @classmethod
+    def validate_hashtag(cls, v: str | None) -> str | None:
+        """Normalize hashtag input and ensure it begins with #."""
+        if v is None:
+            return None
+
+        normalized = v.strip()
+        if not normalized:
+            return None
+
+        if not normalized.startswith("#"):
+            normalized = f"#{normalized}"
+
+        if any(char.isspace() for char in normalized):
+            raise ValueError("Hashtag cannot contain spaces")
+
+        if not re.match(r"^#[A-Za-z0-9_]+$", normalized):
+            raise ValueError("Hashtag can contain only letters, numbers, and underscores")
+
+        return normalized
 
 
 class NPOStatusUpdateRequest(BaseModel):
@@ -114,6 +169,7 @@ class NPOResponse(BaseModel):
     id: uuid.UUID
     name: str
     tagline: str | None
+    hashtag: str | None
     description: str | None
     mission_statement: str | None
     tax_id: str | None
@@ -162,6 +218,7 @@ class PublicNPOResponse(BaseModel):
     id: uuid.UUID
     name: str
     tagline: str | None
+    hashtag: str | None
     description: str | None
     mission_statement: str | None
     website_url: str | None

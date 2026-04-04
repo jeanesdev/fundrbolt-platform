@@ -1,0 +1,582 @@
+openapi: 3.1.0
+info:
+  title: FundrBolt Planning Checklist API
+  version: 1.0.0
+  description: API contracts for event planning checklist and template management
+
+paths:
+  # ─── Event Checklist Items ───────────────────────────────────────────
+  /api/v1/admin/events/{event_id}/checklist:
+    get:
+      operationId: listChecklistItems
+      summary: List all checklist items for an event
+      tags: [admin-checklist]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Checklist items with progress summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistResponse"
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: Event not found
+
+    post:
+      operationId: createChecklistItem
+      summary: Add a new checklist item to an event
+      tags: [admin-checklist]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChecklistItemCreate"
+      responses:
+        "201":
+          description: Item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistItemResponse"
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: Event not found
+
+  /api/v1/admin/events/{event_id}/checklist/{item_id}:
+    patch:
+      operationId: updateChecklistItem
+      summary: Update a checklist item (title, due_date, status)
+      tags: [admin-checklist]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChecklistItemUpdate"
+      responses:
+        "200":
+          description: Item updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistItemResponse"
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: Item or event not found
+
+    delete:
+      operationId: deleteChecklistItem
+      summary: Delete a checklist item
+      tags: [admin-checklist]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Item deleted
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: Item or event not found
+
+  # ─── Checklist Item Status (convenience endpoint) ────────────────────
+  /api/v1/admin/events/{event_id}/checklist/{item_id}/status:
+    patch:
+      operationId: updateChecklistItemStatus
+      summary: Update only the status of a checklist item (fast path for toggle)
+      tags: [admin-checklist]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChecklistItemStatusUpdate"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistItemResponse"
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: Item or event not found
+
+  # ─── Checklist Reorder ───────────────────────────────────────────────
+  /api/v1/admin/events/{event_id}/checklist/reorder:
+    patch:
+      operationId: reorderChecklistItems
+      summary: Reorder checklist items
+      tags: [admin-checklist]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChecklistReorderRequest"
+      responses:
+        "200":
+          description: Items reordered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistResponse"
+        "403":
+          description: Insufficient permissions
+
+  # ─── Apply Template to Event ─────────────────────────────────────────
+  /api/v1/admin/events/{event_id}/checklist/apply-template:
+    post:
+      operationId: applyTemplateToEvent
+      summary: Apply a checklist template to an event (replace or append)
+      tags: [admin-checklist]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplyTemplateRequest"
+      responses:
+        "200":
+          description: Template applied, returns updated checklist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistResponse"
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: Event or template not found
+
+  # ─── Save Event Checklist as Template ────────────────────────────────
+  /api/v1/admin/events/{event_id}/checklist/save-as-template:
+    post:
+      operationId: saveChecklistAsTemplate
+      summary: Save current event checklist as a reusable NPO template
+      tags: [admin-checklist]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveAsTemplateRequest"
+      responses:
+        "201":
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistTemplateResponse"
+        "403":
+          description: Insufficient permissions
+
+  # ─── NPO Checklist Templates ────────────────────────────────────────
+  /api/v1/admin/npos/{npo_id}/checklist-templates:
+    get:
+      operationId: listChecklistTemplates
+      summary: List all checklist templates for an NPO (includes system default)
+      tags: [admin-checklist-templates]
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Template list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChecklistTemplateResponse"
+        "403":
+          description: Insufficient permissions
+
+  /api/v1/admin/npos/{npo_id}/checklist-templates/{template_id}:
+    get:
+      operationId: getChecklistTemplate
+      summary: Get a template with all its items
+      tags: [admin-checklist-templates]
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Template with items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistTemplateDetailResponse"
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: Template not found
+
+    patch:
+      operationId: updateChecklistTemplate
+      summary: Update template name, items, or default status
+      tags: [admin-checklist-templates]
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChecklistTemplateUpdate"
+      responses:
+        "200":
+          description: Template updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistTemplateDetailResponse"
+        "403":
+          description: Insufficient permissions or system template
+        "404":
+          description: Template not found
+
+    delete:
+      operationId: deleteChecklistTemplate
+      summary: Delete a checklist template (cannot delete system default)
+      tags: [admin-checklist-templates]
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Template deleted
+        "403":
+          description: Insufficient permissions or system template
+        "404":
+          description: Template not found
+
+  /api/v1/admin/npos/{npo_id}/checklist-templates/{template_id}/set-default:
+    post:
+      operationId: setDefaultTemplate
+      summary: Set a template as the NPO's default for new events
+      tags: [admin-checklist-templates]
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Default updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChecklistTemplateResponse"
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: Template not found
+
+components:
+  schemas:
+    ChecklistItemStatus:
+      type: string
+      enum: [not_complete, in_progress, complete]
+
+    ChecklistItemCreate:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        due_date:
+          type: string
+          format: date
+          nullable: true
+
+    ChecklistItemUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        due_date:
+          type: string
+          format: date
+          nullable: true
+
+    ChecklistItemStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/ChecklistItemStatus"
+
+    ChecklistItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        due_date:
+          type: string
+          format: date
+          nullable: true
+        status:
+          $ref: "#/components/schemas/ChecklistItemStatus"
+        display_order:
+          type: integer
+        due_date_is_template_derived:
+          type: boolean
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        is_overdue:
+          type: boolean
+          description: Computed field — true if due_date is in the past and status is not complete
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ChecklistResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChecklistItemResponse"
+        total_count:
+          type: integer
+        completed_count:
+          type: integer
+        in_progress_count:
+          type: integer
+        overdue_count:
+          type: integer
+        progress_percentage:
+          type: number
+          format: float
+
+    ChecklistReorderRequest:
+      type: object
+      required: [item_ids]
+      properties:
+        item_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Ordered array of item IDs representing the new display order
+
+    ApplyTemplateRequest:
+      type: object
+      required: [template_id, mode]
+      properties:
+        template_id:
+          type: string
+          format: uuid
+        mode:
+          type: string
+          enum: [replace, append]
+
+    SaveAsTemplateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+
+    ChecklistTemplateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        npo_id:
+          type: string
+          format: uuid
+          nullable: true
+        name:
+          type: string
+        is_default:
+          type: boolean
+        is_system_default:
+          type: boolean
+        item_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    ChecklistTemplateDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/ChecklistTemplateResponse"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/ChecklistTemplateItemResponse"
+
+    ChecklistTemplateItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        offset_days:
+          type: integer
+        display_order:
+          type: integer
+
+    ChecklistTemplateUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        items:
+          type: array
+          items:
+            type: object
+            required: [title, offset_days]
+            properties:
+              title:
+                type: string
+                minLength: 1
+                maxLength: 200
+              offset_days:
+                type: integer
+              display_order:
+                type: integer

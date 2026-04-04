@@ -1,3 +1,10 @@
+import { type KeyboardEvent, useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useParams } from '@tanstack/react-router'
+import { eventApi } from '@/services/event-service'
+import { Check, ChevronsUpDown, Gavel } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useEventContext } from '@/hooks/use-event-context'
 import {
   Command,
   CommandEmpty,
@@ -12,13 +19,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useEventContext } from '@/hooks/use-event-context'
-import { cn } from '@/lib/utils'
-import { eventApi } from '@/services/event-service'
-import { useQuery } from '@tanstack/react-query'
-import { useParams } from '@tanstack/react-router'
-import { Check, ChevronsUpDown } from 'lucide-react'
-import { type KeyboardEvent, useEffect, useMemo, useState } from 'react'
 import {
   getLiveAuctionOverview,
   getQuickEntryLiveAuctionItems,
@@ -177,6 +177,7 @@ export function QuickEntryPage() {
     bidderNumber: paddleBidderNumber,
     selectedLabelIds,
     customLabel,
+    isMonthly,
     labels,
     labelsError,
     isLoadingLabels,
@@ -186,6 +187,7 @@ export function QuickEntryPage() {
     setBidderNumber: setPaddleBidderNumber,
     setCustomLabel,
     setSelectedLabelIds,
+    setIsMonthly,
     submitDonation,
     submitToken: paddleSubmitToken,
     recentDonations,
@@ -203,10 +205,10 @@ export function QuickEntryPage() {
           onValueChange={(value) =>
             setMode(
               value as
-              | 'LIVE_AUCTION'
-              | 'PADDLE_RAISE'
-              | 'BUY_NOW'
-              | 'SILENT_AUCTION'
+                | 'LIVE_AUCTION'
+                | 'PADDLE_RAISE'
+                | 'BUY_NOW'
+                | 'SILENT_AUCTION'
             )
           }
         >
@@ -266,7 +268,7 @@ export function QuickEntryPage() {
                   >
                     <span className='truncate text-left'>
                       {selectedItem
-                        ? `#${selectedItem.bid_number} · ${selectedItem.title}`
+                        ? `#${selectedItem.bid_number} · ${selectedItem.title}${selectedItem.status === 'sold' ? ' ✓ Sold' : ''}`
                         : auctionItemsQuery.isLoading
                           ? 'Loading live auction items...'
                           : auctionItemsQuery.isError
@@ -311,8 +313,14 @@ export function QuickEntryPage() {
                               )}
                             </div>
                             <div className='min-w-0 flex-1'>
-                              <p className='truncate text-sm font-medium'>
+                              <p className='flex items-center gap-1 truncate text-sm font-medium'>
                                 #{item.bid_number} · {item.title}
+                                {item.status === 'sold' && (
+                                  <span className='inline-flex items-center gap-0.5 rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 dark:bg-green-900 dark:text-green-300'>
+                                    <Gavel className='h-2.5 w-2.5' />
+                                    Sold
+                                  </span>
+                                )}
                               </p>
                               <p className='text-muted-foreground text-xs'>
                                 Starting: $
@@ -383,7 +391,7 @@ export function QuickEntryPage() {
         <>
           {summary?.bids.some((b) => b.status === 'winning') ? (
             <p className='text-muted-foreground text-sm'>
-              Winner assigned — remove winner to continue bidding.
+              Auction closed — reopen auction to continue bidding.
             </p>
           ) : null}
           <LiveBidEntryForm
@@ -418,6 +426,7 @@ export function QuickEntryPage() {
           bidderNumber={paddleBidderNumber}
           customLabel={customLabel}
           selectedLabelIds={selectedLabelIds}
+          isMonthly={isMonthly}
           labels={labels}
           labelsError={labelsError}
           isLoadingLabels={isLoadingLabels}
@@ -429,6 +438,7 @@ export function QuickEntryPage() {
           onBidderNumberChange={setPaddleBidderNumber}
           onCustomLabelChange={setCustomLabel}
           onSelectedLabelIdsChange={setSelectedLabelIds}
+          onIsMonthlyChange={setIsMonthly}
           onSubmit={submitDonation}
         />
       ) : mode === 'BUY_NOW' ? (

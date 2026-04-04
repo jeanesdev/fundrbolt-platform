@@ -49,23 +49,23 @@ export function useLiveAuctionControls(
     mutationFn: () => assignWinner(eventId, selectedItemId),
     onSuccess: (data) => {
       toast.success(
-        `Winner assigned: Bidder ${data.winner_bidder_number} at $${data.winning_amount.toLocaleString('en-US')}`
+        `Auction closed — Winner: Bidder #${data.winner_bidder_number} at $${data.winning_amount.toLocaleString('en-US')}`
       )
       queryClient.invalidateQueries({ queryKey: ['quick-entry'] })
     },
     onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to assign winner'))
+      toast.error(getErrorMessage(error, 'Failed to close auction'))
     },
   })
 
   const removeWinnerMutation = useMutation({
     mutationFn: () => removeWinner(eventId, selectedItemId),
     onSuccess: () => {
-      toast.success('Winner removed. Bidding is now open again.')
+      toast.success('Auction reopened. Bidding is now open again.')
       queryClient.invalidateQueries({ queryKey: ['quick-entry'] })
     },
     onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to remove winner'))
+      toast.error(getErrorMessage(error, 'Failed to reopen auction'))
     },
   })
 

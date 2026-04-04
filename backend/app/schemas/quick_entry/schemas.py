@@ -28,6 +28,7 @@ class QuickEntryPaddleDonationCreateRequest(BaseModel):
 
     amount: int = Field(..., ge=1)
     bidder_number: int = Field(..., ge=1)
+    is_monthly: bool = False
     label_ids: list[UUID] = Field(default_factory=list)
     custom_label: str | None = Field(default=None, max_length=80)
 
@@ -98,6 +99,7 @@ class QuickEntryPaddleDonationResponse(BaseModel):
     event_id: UUID
     amount: int
     bidder_number: int
+    is_monthly: bool = False
     donor_name: str | None = None
     entered_at: datetime
     entered_by: UUID
@@ -109,6 +111,7 @@ class QuickEntryPaddleAmountLevel(BaseModel):
 
     amount: int
     count: int
+    is_monthly: bool = False
 
 
 class QuickEntryPaddleSummaryResponse(BaseModel):

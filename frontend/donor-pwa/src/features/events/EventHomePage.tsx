@@ -13,6 +13,7 @@ import {
   AuctionGallery,
   EventDetails,
   MySeatingSection,
+  ShareEventButton,
 } from '@/components/event-home'
 import { AuctionCountdownTimer } from '@/components/event-home/AuctionCountdownTimer'
 import { AuctionItemDetailModal } from '@/components/event-home/AuctionItemDetailModal'
@@ -1207,6 +1208,30 @@ export function EventHomePage() {
 
         {/* Push notification opt-in prompt */}
         <PushOptInPrompt />
+
+        {/* Event Hashtag & Share */}
+        <div
+          className='flex flex-col items-stretch gap-3 rounded-2xl px-4 py-3 sm:flex-row sm:items-center sm:justify-between'
+          style={{
+            backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.08)',
+            borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
+          }}
+        >
+          {currentEvent.hashtag ? (
+            <span
+              className='min-w-0 break-all text-base font-black tracking-wide sm:text-lg'
+              style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+            >
+              {currentEvent.hashtag}
+            </span>
+          ) : null}
+          <ShareEventButton
+            eventName={currentEvent.name}
+            eventSlug={currentEvent.slug}
+            hashtag={currentEvent.hashtag}
+            className='w-full sm:w-auto'
+          />
+        </div>
 
         {/* CTA for bidding */}
         {eventStatus !== 'past' && (

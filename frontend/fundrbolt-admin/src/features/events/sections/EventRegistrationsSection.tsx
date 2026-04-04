@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { Upload } from 'lucide-react'
-import { toast } from 'sonner'
+import { AttendeeListTable } from '@/components/admin/AttendeeListTable'
+import { InviteGuestDialog } from '@/components/admin/InviteGuestDialog'
+import { MealSummaryCard } from '@/components/admin/MealSummaryCard'
+import { RegistrationImportDialog } from '@/components/admin/RegistrationImportDialog'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -9,10 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { AttendeeListTable } from '@/components/admin/AttendeeListTable'
-import { InviteGuestDialog } from '@/components/admin/InviteGuestDialog'
-import { MealSummaryCard } from '@/components/admin/MealSummaryCard'
-import { RegistrationImportDialog } from '@/components/admin/RegistrationImportDialog'
+import { Upload } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventRegistrationsSection() {
@@ -71,6 +71,7 @@ export function EventRegistrationsSection() {
         <CardContent>
           <AttendeeListTable
             eventId={currentEvent.id}
+            npoId={currentEvent.npo_id}
             includeMealSelections={hasFoodOptions}
           />
         </CardContent>

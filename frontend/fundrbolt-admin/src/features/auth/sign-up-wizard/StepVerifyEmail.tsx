@@ -4,14 +4,14 @@
  * Primary flow: user enters the 6-digit code from their email.
  * Fallback: clicking the link in the email also works (polling detects it).
  */
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import apiClient from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { CheckCircle2, Loader2, Mail } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import apiClient from '@/lib/axios'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 // ---------------------------------------------------------------------------
 // Props
@@ -30,7 +30,11 @@ interface StepVerifyEmailProps {
 // Component
 // ---------------------------------------------------------------------------
 
-export function StepVerifyEmail({ email, onNext, sessionToken }: StepVerifyEmailProps) {
+export function StepVerifyEmail({
+  email,
+  onNext,
+  sessionToken,
+}: StepVerifyEmailProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const setUser = useAuthStore((state) => state.setUser)
   const setAccessToken = useAuthStore((state) => state.setAccessToken)

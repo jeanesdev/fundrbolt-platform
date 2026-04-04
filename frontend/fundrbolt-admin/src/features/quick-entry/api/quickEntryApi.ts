@@ -1,5 +1,5 @@
-import apiClient from '@/lib/axios'
 import type { AuctionItem } from '@/types/auction-item'
+import apiClient from '@/lib/axios'
 
 export async function getQuickEntryStatus(
   eventId: string
@@ -50,6 +50,7 @@ export interface QuickEntryLiveSummary {
 export interface QuickEntryPaddleAmountLevel {
   amount: number
   count: number
+  is_monthly: boolean
 }
 
 export interface QuickEntryPaddleSummary {
@@ -73,6 +74,7 @@ export interface QuickEntryWinnerAssignmentResponse {
 export interface CreatePaddleDonationPayload {
   amount: number
   bidder_number: number
+  is_monthly: boolean
   label_ids: string[]
   custom_label?: string
 }
@@ -86,6 +88,7 @@ export interface QuickEntryPaddleDonationResponse {
   event_id: string
   amount: number
   bidder_number: number
+  is_monthly: boolean
   donor_name: string | null
   entered_at: string
   entered_by: string

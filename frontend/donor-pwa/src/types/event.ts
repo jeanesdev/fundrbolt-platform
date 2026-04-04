@@ -45,6 +45,7 @@ export interface Event {
   venue_zip: string | null
   venue_capacity?: number | null
   attire: string | null
+  hashtag: string | null
   primary_contact_name: string | null
   primary_contact_email: string | null
   primary_contact_phone: string | null

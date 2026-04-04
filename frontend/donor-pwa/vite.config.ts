@@ -21,7 +21,7 @@ export default defineConfig({
       filename: 'sw.ts',
       registerType: 'prompt',
       devOptions: {
-        enabled: false,
+        enabled: true,
         type: 'module',
       },
       includeAssets: [

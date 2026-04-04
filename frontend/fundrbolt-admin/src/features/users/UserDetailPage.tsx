@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { DonorLabelsSection } from './components/donor-labels-section'
 import { useUser } from './hooks/use-users'
 
 export function UserDetailPage() {
@@ -273,6 +274,12 @@ export function UserDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Donor Labels */}
+          <DonorLabelsSection
+            userId={user.id}
+            currentLabels={user.donor_labels ?? []}
+          />
 
           {/* Account Activity */}
           <Card>

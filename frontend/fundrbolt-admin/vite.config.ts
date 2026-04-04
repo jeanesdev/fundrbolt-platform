@@ -18,6 +18,10 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'prompt',
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      },
       includeAssets: [
         'favicon.ico',
         'images/*.png',

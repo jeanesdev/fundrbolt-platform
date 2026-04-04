@@ -2,12 +2,6 @@
  * NPO List Page
  * Lists all NPOs with filtering, search, and pagination
  */
-import { useEffect, useState } from 'react'
-import { Link } from '@tanstack/react-router'
-import type { NPOStatus } from '@/types/npo'
-import { Building2, Plus, Search } from 'lucide-react'
-import { useNPOStore } from '@/stores/npo-store'
-import { useNpoContext } from '@/hooks/use-npo-context'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,6 +19,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useNpoContext } from '@/hooks/use-npo-context'
+import { useNPOStore } from '@/stores/npo-store'
+import type { NPOStatus } from '@/types/npo'
+import { Link } from '@tanstack/react-router'
+import { Building2, Hash, Plus, Search } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 // Status color mapping
 const statusColors = {
@@ -240,6 +240,12 @@ export default function NpoListPage() {
                 <p className='text-muted-foreground line-clamp-2 text-sm'>
                   {npo.description || 'No description provided'}
                 </p>
+                {npo.hashtag && (
+                  <div className='text-muted-foreground mt-3 flex items-center gap-2 text-sm'>
+                    <Hash className='h-4 w-4' />
+                    <span className='font-medium'>{npo.hashtag}</span>
+                  </div>
+                )}
                 <div className='text-muted-foreground mt-4 flex items-center justify-between text-xs'>
                   <span>
                     {npo.member_count || 0} member

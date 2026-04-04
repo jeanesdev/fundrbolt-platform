@@ -82,10 +82,16 @@ class EventService:
         # Generate unique slug
         slug = await EventService._generate_unique_slug(db, event_data.name, event_data.custom_slug)
 
+        # Auto-generate hashtag if not provided
+        hashtag = event_data.hashtag
+        if not hashtag:
+            hashtag = EventService._generate_hashtag(event_data.name)
+
         # Create event
         event = Event(
-            **event_data.model_dump(exclude={"custom_slug"}),
+            **event_data.model_dump(exclude={"custom_slug", "hashtag"}),
             slug=slug,
+            hashtag=hashtag,
             status=EventStatus.DRAFT,
             version=1,
             created_by=current_user.id,
@@ -98,6 +104,22 @@ class EventService:
 
         # Increment metrics
         EVENTS_CREATED_TOTAL.labels(npo_id=str(event.npo_id)).inc()
+
+        # Auto-populate checklist from default template
+        try:
+            from app.services.checklist_service import ChecklistService
+
+            template = await ChecklistService.resolve_default_template(db, event.npo_id)
+            if template:
+                await ChecklistService.populate_from_template(db, event, template, current_user.id)
+                await db.commit()
+        except Exception:
+            await db.rollback()
+            logger.warning(
+                "Failed to auto-populate checklist for event %s",
+                event.id,
+                exc_info=True,
+            )
 
         logger.info(f"Event created: {event.name} (ID: {event.id}) by user {current_user.id}")
         return event
@@ -146,6 +168,10 @@ class EventService:
         if event_data.timezone:
             EventService._validate_timezone(event_data.timezone)
 
+        # Snapshot event_datetime for checklist recalculation
+        old_event_datetime = event.event_datetime
+        old_timezone = event.timezone
+
         # Update fields
         update_dict = event_data.model_dump(exclude_unset=True, exclude={"version"})
         for key, value in update_dict.items():
@@ -155,6 +181,25 @@ class EventService:
         event.version += 1
 
         await db.commit()
+
+        # Recalculate template-derived checklist dates if event_datetime or timezone changed
+        datetime_changed = event.event_datetime != old_event_datetime
+        timezone_changed = event.timezone != old_timezone
+        if datetime_changed or timezone_changed:
+            try:
+                from app.services.checklist_service import ChecklistService
+
+                count = await ChecklistService.recalculate_template_dates(db, event)
+                if count > 0:
+                    await db.commit()
+                    logger.info(f"Recalculated {count} checklist due dates after event date change")
+            except Exception:
+                await db.rollback()
+                logger.warning(
+                    "Failed to recalculate checklist dates for event %s",
+                    event_id,
+                    exc_info=True,
+                )
 
         # Re-query to get fresh data with all relationships loaded
         result = await db.execute(
@@ -885,6 +930,23 @@ class EventService:
             status_code=status.HTTP_409_CONFLICT,
             detail="Unable to generate unique slug after 3 attempts",
         )
+
+    @staticmethod
+    def _generate_hashtag(event_name: str) -> str:
+        """Generate a CamelCase hashtag from the event name.
+
+        Examples:
+            'Summer Gala 2025' -> '#SummerGala2025'
+            'An Evening of Elegance' -> '#AnEveningOfElegance'
+        """
+        import re
+
+        # Split into words, keep only alphanumeric
+        words = re.split(r"[\s\-_]+", event_name.strip())
+        camel = "".join(w.capitalize() for w in words if w)
+        # Strip any remaining non-alphanumeric chars
+        camel = re.sub(r"[^A-Za-z0-9]", "", camel)
+        return f"#{camel}" if camel else "#Event"
 
     @staticmethod
     def _validate_timezone(timezone: str) -> None:

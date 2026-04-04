@@ -36,6 +36,7 @@ export interface NPO {
   id: string
   name: string
   tagline: string | null
+  hashtag: string | null
   description: string | null
   mission_statement: string | null
   tax_id: string | null
@@ -67,6 +68,7 @@ export interface NPODetail extends NPO {
 export interface NPOCreateRequest {
   name: string
   tagline?: string
+  hashtag?: string
   description?: string
   mission_statement?: string
   tax_id?: string
@@ -87,6 +89,7 @@ export interface NPOCreateRequest {
 export interface NPOUpdateRequest {
   name?: string
   tagline?: string
+  hashtag?: string
   description?: string
   mission_statement?: string
   tax_id?: string

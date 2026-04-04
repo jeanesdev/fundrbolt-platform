@@ -12,10 +12,18 @@ from app.models.auction_item import AuctionItem
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin, UUIDMixin
 from app.models.buy_now_availability import BuyNowAvailability
+from app.models.checklist import (
+    ChecklistItem,
+    ChecklistItemStatus,
+    ChecklistTemplate,
+    ChecklistTemplateItem,
+)
 from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
 from app.models.donation import Donation, DonationStatus
 from app.models.donation_label import DonationLabel
 from app.models.donation_label_assignment import DonationLabelAssignment
+from app.models.donor_label import DonorLabel
+from app.models.donor_label_assignment import DonorLabelAssignment
 from app.models.event import Event, EventLink, EventMedia, FoodOption
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.event_table import EventTable
@@ -112,6 +120,10 @@ __all__ = [
     "BidActionAudit",
     "BuyNowAvailability",
     "CampaignStatusEnum",
+    "ChecklistItem",
+    "ChecklistItemStatus",
+    "ChecklistTemplate",
+    "ChecklistTemplateItem",
     "ConsentAuditLog",
     "CookieConsent",
     "CustomTicketOption",
@@ -121,6 +133,8 @@ __all__ = [
     "DonationLabel",
     "DonationLabelAssignment",
     "DonationStatus",
+    "DonorLabel",
+    "DonorLabelAssignment",
     "DiscountType",
     "Event",
     "EventLink",

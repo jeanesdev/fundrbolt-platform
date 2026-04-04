@@ -11,11 +11,14 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.donor_label import DonorLabel
+from app.models.donor_label_assignment import DonorLabelAssignment
 from app.models.event import Event, FoodOption
 from app.models.event_registration import EventRegistration
 from app.models.meal_selection import MealSelection
 from app.models.payment_profile import PaymentProfile
 from app.models.registration_guest import RegistrationGuest
+from app.models.user import User
 from app.services.bidder_number_service import BidderNumberService
 from app.services.email_service import EmailService, _create_email_html_template
 
@@ -87,6 +90,41 @@ class AdminGuestService:
             )
             users_with_profile = {str(row[0]) for row in profile_result.fetchall()}
 
+        # Load donor labels for all users in this NPO in a single query
+        user_donor_labels: dict[str, list[dict[str, Any]]] = {}
+        if npo_id_row is not None:
+            labels_result = await db.execute(
+                select(
+                    DonorLabelAssignment.user_id, DonorLabel.id, DonorLabel.name, DonorLabel.color
+                )
+                .join(DonorLabel, DonorLabelAssignment.label_id == DonorLabel.id)
+                .where(DonorLabel.npo_id == npo_id_row)
+            )
+            for row in labels_result.fetchall():
+                uid = str(row[0])
+                if uid not in user_donor_labels:
+                    user_donor_labels[uid] = []
+                user_donor_labels[uid].append({"id": str(row[1]), "name": row[2], "color": row[3]})
+
+        # Collect all user IDs and batch-query profile picture URLs
+        all_user_ids: set[UUID] = set()
+        for registration in registrations:
+            if registration.user:
+                all_user_ids.add(registration.user.id)
+            for guest in registration.guests:
+                if guest.user_id:
+                    all_user_ids.add(guest.user_id)
+        user_profile_pics: dict[str, str | None] = {}
+        if all_user_ids:
+            pic_result = await db.execute(
+                select(User.id, User.profile_picture_url).where(
+                    User.id.in_(all_user_ids),
+                    User.profile_picture_url.isnot(None),
+                )
+            )
+            for pic_row in pic_result.fetchall():
+                user_profile_pics[str(pic_row[0])] = pic_row[1]
+
         attendees = []
 
         # Process each registration
@@ -137,8 +175,10 @@ class AdminGuestService:
                         else None
                     ),
                     "has_payment_profile": reg_user_id in users_with_profile,
+                    "profile_picture_url": user_profile_pics.get(reg_user_id),
                     "status": primary_guest.status,
                     "created_at": primary_guest.created_at.isoformat(),
+                    "donor_labels": user_donor_labels.get(reg_user_id, []),
                 }
 
                 if include_meal_selections:
@@ -179,8 +219,10 @@ class AdminGuestService:
                     "checked_in": False,
                     "check_in_time": None,
                     "has_payment_profile": reg_user_id in users_with_profile,
+                    "profile_picture_url": user_profile_pics.get(reg_user_id),
                     "status": registration.status,
                     "created_at": registration.created_at.isoformat(),
+                    "donor_labels": user_donor_labels.get(reg_user_id, []),
                 }
 
                 if include_meal_selections:
@@ -230,7 +272,13 @@ class AdminGuestService:
                     "has_payment_profile": bool(
                         guest_user_id and guest_user_id in users_with_profile
                     ),
+                    "profile_picture_url": user_profile_pics.get(guest_user_id)
+                    if guest_user_id
+                    else None,
                     "status": guest.status or "confirmed",
+                    "donor_labels": user_donor_labels.get(guest_user_id, [])
+                    if guest_user_id
+                    else [],
                 }
 
                 if include_meal_selections:

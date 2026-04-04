@@ -73,6 +73,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Azure Database for PostgreSQL (notification data, preferences, push subscriptions, campaigns), Azure Cache for Redis (pub/sub for real-time, notification count cache, Celery broker) (035-donor-notifications)
 - Python 3.11 (backend) + TypeScript 5.x / React 19 (donor PWA) (036-ticket-purchasing)
 - Azure Database for PostgreSQL (primary data); Azure Blob Storage (sponsor logos); Azure Cache for Redis (session/rate-limit) (036-ticket-purchasing)
+- Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18+, Vite, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (Frontend) (037-planning-checklist)
+- Azure Database for PostgreSQL (3 new tables: checklist_items, checklist_templates, checklist_template_items) (037-planning-checklist)
 
 ## Project Structure
 ```
@@ -157,10 +159,9 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 037-planning-checklist: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18+, Vite, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (Frontend)
 - 036-ticket-purchasing: Added Python 3.11 (backend) + TypeScript 5.x / React 19 (donor PWA)
 - 035-donor-notifications: Added Python 3.11+ (Backend), TypeScript 5.9 (Frontend)
-- 034-npo-onboarding: Added Python 3.11 (backend) · TypeScript 5.9 / React 19 (frontend Admin PWA) + FastAPI 0.120, SQLAlchemy 2.0, Pydantic 2.0, Alembic (backend); React 19, Vite 7, TanStack Router, Zustand, Radix UI, Tailwind 4 (frontend)
-- 033-payment-processing: Added Python 3.11 (backend) + TypeScript 5.x / React 19 (donor PWA & admin PWA)
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields
   - ✅ Updated registration_guests with is_table_captain boolean field
   - ✅ US1 - Customize Table Capacity: Event coordinators can set custom capacity per table (1-20), system enforces limits

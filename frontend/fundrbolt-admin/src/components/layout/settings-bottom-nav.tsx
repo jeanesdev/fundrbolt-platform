@@ -4,7 +4,7 @@
  * Mobile bottom navigation bar for settings pages in the admin PWA.
  */
 import { Link, useLocation } from '@tanstack/react-router'
-import { KeyRound, LogOut, Shield, UserCog } from 'lucide-react'
+import { KeyRound, LifeBuoy, LogOut, Shield, UserCog } from 'lucide-react'
 import useDialogState from '@/hooks/use-dialog-state'
 import { SignOutDialog } from '@/components/sign-out-dialog'
 
@@ -56,6 +56,12 @@ export function SettingsBottomNav() {
           icon={Shield}
           label='Privacy'
           isActive={pathname === '/settings/consent'}
+        />
+        <NavTab
+          to='/settings/support'
+          icon={LifeBuoy}
+          label='Support'
+          isActive={pathname === '/settings/support'}
         />
 
         <button

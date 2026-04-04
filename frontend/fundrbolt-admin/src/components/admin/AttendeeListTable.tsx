@@ -14,6 +14,7 @@ import {
   Loader2,
   Mail,
   PenLine,
+  Search,
   Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -65,6 +66,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { AssignBidderNumberDialog } from './AssignBidderNumberDialog'
 import {
@@ -72,10 +74,12 @@ import {
   type CancelAttendeesPayload,
 } from './CancelAttendeesDialog'
 import { CancelRegistrationDialog } from './CancelRegistrationDialog'
+import { EditAttendeeDialog } from './EditAttendeeDialog'
 
 interface AttendeeListTableProps {
   eventId: string
   includeMealSelections?: boolean
+  npoId?: string | null
 }
 
 type SortKey =
@@ -89,6 +93,7 @@ type SortKey =
   | 'status'
 
 type FilterState = {
+  search: string
   name: string
   type: string
   bidder: string
@@ -101,6 +106,7 @@ type FilterState = {
 
 export function AttendeeListTable({
   eventId,
+  npoId,
   includeMealSelections = true,
 }: AttendeeListTableProps) {
   const [selectedAttendees, setSelectedAttendees] = useState<Set<string>>(
@@ -114,6 +120,7 @@ export function AttendeeListTable({
   const [bulkCancelDialogOpen, setBulkCancelDialogOpen] = useState(false)
   const [bulkCancelPending, setBulkCancelPending] = useState(false)
   const [filters, setFilters] = useState<FilterState>({
+    search: '',
     name: '',
     type: 'all',
     bidder: '',
@@ -140,6 +147,8 @@ export function AttendeeListTable({
     registration_id: string
     name: string
   } | null>(null)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [attendeeToEdit, setAttendeeToEdit] = useState<Attendee | null>(null)
   // Cancel registration handler
   const handleCancelRegistrationClick = (
     registrationId: string,
@@ -154,6 +163,16 @@ export function AttendeeListTable({
   const handleCancelRegistrationComplete = () => {
     queryClient.invalidateQueries({ queryKey: ['event-attendees', eventId] })
     setRegistrantToCancel(null)
+  }
+
+  const handleEditClick = (attendee: Attendee) => {
+    setAttendeeToEdit(attendee)
+    setEditDialogOpen(true)
+  }
+
+  const handleEditComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ['event-attendees', eventId] })
+    setAttendeeToEdit(null)
   }
   const queryClient = useQueryClient()
 
@@ -388,6 +407,19 @@ export function AttendeeListTable({
   const matchesText = (value: string | null | undefined, needle: string) =>
     value?.toLowerCase().includes(needle.toLowerCase()) ?? false
   const filteredAttendees = attendees.filter((attendee) => {
+    if (filters.search) {
+      const q = filters.search.toLowerCase()
+      const haystack = [
+        attendee.name,
+        attendee.email,
+        attendee.phone,
+        attendee.guest_of,
+        attendee.bidder_number != null ? String(attendee.bidder_number) : '',
+      ]
+      if (!haystack.some((v) => v?.toLowerCase().includes(q))) {
+        return false
+      }
+    }
     if (filters.name && !matchesText(attendee.name, filters.name)) {
       return false
     }
@@ -589,6 +621,7 @@ export function AttendeeListTable({
   )
   const resetFilters = () => {
     setFilters({
+      search: '',
       name: '',
       type: 'all',
       bidder: '',
@@ -715,6 +748,65 @@ export function AttendeeListTable({
         </div>
       </div>
 
+      {/* Card view search & filter bar */}
+      {viewMode === 'card' && (
+        <div className='flex flex-wrap items-center gap-2'>
+          <div className='relative min-w-0 flex-1'>
+            <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
+            <Input
+              placeholder='Search by name, email, phone, bidder #…'
+              value={filters.search}
+              onChange={(e) => updateFilter('search', e.target.value)}
+              className='pl-9'
+            />
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='outline' size='sm'>
+                <Filter className='mr-1.5 h-3.5 w-3.5' />
+                Type{filters.type !== 'all' ? `: ${filters.type}` : ''}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end' className='w-40'>
+              <DropdownMenuRadioGroup
+                value={filters.type}
+                onValueChange={(v) => updateFilter('type', v)}
+              >
+                <DropdownMenuRadioItem value='all'>All</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value='registrant'>
+                  Registrant
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value='guest'>
+                  Guest
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='outline' size='sm'>
+                <Filter className='mr-1.5 h-3.5 w-3.5' />
+                Status
+                {filters.status !== 'all' ? `: ${filters.status}` : ''}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end' className='w-40'>
+              <DropdownMenuRadioGroup
+                value={filters.status}
+                onValueChange={(v) => updateFilter('status', v)}
+              >
+                <DropdownMenuRadioItem value='all'>All</DropdownMenuRadioItem>
+                {statusOptions.map((s) => (
+                  <DropdownMenuRadioItem key={s} value={s}>
+                    {s}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+
       {/* Table or Card View */}
       {viewMode === 'card' ? (
         <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
@@ -750,6 +842,14 @@ export function AttendeeListTable({
                       onCheckedChange={() => toggleSelection(attendee.id)}
                     />
                     <div className='flex items-center gap-1'>
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        onClick={() => handleEditClick(attendee)}
+                        title='Edit attendee'
+                      >
+                        <PenLine className='h-4 w-4' />
+                      </Button>
                       {attendee.attendee_type === 'guest' && attendee.email && (
                         <Button
                           variant='ghost'
@@ -794,6 +894,7 @@ export function AttendeeListTable({
                   {/* Primary fields */}
                   <div className='space-y-1.5'>
                     <div className='font-medium'>{attendee.name}</div>
+                    <InlineDonorLabels labels={attendee.donor_labels} />
                     <div className='flex items-center gap-2'>
                       <Badge
                         variant={
@@ -923,6 +1024,7 @@ export function AttendeeListTable({
                   />
                 </TableHead>
                 {renderTextHeader('Name', 'name', 'name', 'Filter name')}
+                <TableHead>Labels</TableHead>
                 {renderOptionHeader('Type', 'type', 'type', [
                   { value: 'all', label: 'All types' },
                   { value: 'registrant', label: 'Registrant' },
@@ -967,7 +1069,7 @@ export function AttendeeListTable({
               {displayedAttendees.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={includeMealSelections ? 10 : 9}
+                    colSpan={includeMealSelections ? 11 : 10}
                     className='text-center'
                   >
                     <p className='text-muted-foreground py-8'>
@@ -992,6 +1094,9 @@ export function AttendeeListTable({
                       </TableCell>
                       <TableCell className='font-medium'>
                         {attendee.name}
+                      </TableCell>
+                      <TableCell>
+                        <InlineDonorLabels labels={attendee.donor_labels} />
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -1061,6 +1166,15 @@ export function AttendeeListTable({
                       </TableCell>
                       <TableCell className='text-right'>
                         <div className='flex items-center justify-end gap-2'>
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            onClick={() => handleEditClick(attendee)}
+                            title='Edit attendee'
+                          >
+                            <PenLine className='mr-2 h-4 w-4' />
+                            Edit
+                          </Button>
                           {attendee.attendee_type === 'guest' &&
                             attendee.email && (
                               <Button
@@ -1177,6 +1291,18 @@ export function AttendeeListTable({
           onCancelComplete={handleCancelRegistrationComplete}
         />
       )}
+      {/* Edit Attendee Dialog */}
+      {attendeeToEdit && (
+        <EditAttendeeDialog
+          eventId={eventId}
+          npoId={npoId}
+          attendee={attendeeToEdit}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onEditComplete={handleEditComplete}
+        />
+      )}
+
       {/* Bulk Cancel Dialog */}
       <CancelAttendeesDialog
         open={bulkCancelDialogOpen}

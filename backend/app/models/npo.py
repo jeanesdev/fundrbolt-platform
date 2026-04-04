@@ -12,6 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
+    from app.models.donor_label import DonorLabel
     from app.models.event import Event
     from app.models.npo_application import NPOApplication
     from app.models.npo_branding import NPOBranding
@@ -65,6 +66,11 @@ class NPO(Base, UUIDMixin, TimestampMixin):
         index=True,
     )
     tagline: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    hashtag: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        comment="Social media hashtag for the organization (e.g., '#HelpingHands')",
+    )
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     mission_statement: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -151,6 +157,11 @@ class NPO(Base, UUIDMixin, TimestampMixin):
     payment_transactions: Mapped[list["PaymentTransaction"]] = relationship(
         "PaymentTransaction",
         back_populates="npo",
+    )
+    donor_labels: Mapped[list["DonorLabel"]] = relationship(
+        "DonorLabel",
+        back_populates="npo",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:

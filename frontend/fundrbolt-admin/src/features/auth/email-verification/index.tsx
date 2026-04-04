@@ -1,3 +1,5 @@
+import { Link, useNavigate } from '@tanstack/react-router'
+import { useAuthStore } from '@/stores/auth-store'
 import {
   Card,
   CardContent,
@@ -6,8 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { useAuthStore } from '@/stores/auth-store'
-import { Link, useNavigate } from '@tanstack/react-router'
 import { AuthLayout } from '../auth-layout'
 import { StepVerifyEmail } from '../sign-up-wizard/StepVerifyEmail'
 import { EmailVerificationForm } from './components/email-verification-form'

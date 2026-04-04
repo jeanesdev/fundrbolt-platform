@@ -2,17 +2,8 @@
  * CustomOptionsManager
  * Component for managing custom ticket options (create, edit, delete, reorder)
  */
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import apiClient from '@/lib/axios'
-import { getErrorMessage } from '@/lib/error-utils'
+import { useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   closestCenter,
   DndContext,
@@ -30,10 +21,19 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import apiClient from '@/lib/axios'
+import { getErrorMessage } from '@/lib/error-utils'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { CustomOptionFormDialog } from './CustomOptionFormDialog'
 
 interface CustomOption {

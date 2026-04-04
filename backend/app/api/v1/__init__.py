@@ -7,7 +7,9 @@ from app.api.v1 import (
     admin_auction_bid_import,
     admin_auction_engagement,
     admin_auction_item_import,
+    admin_checklist,
     admin_donations,
+    admin_donor_labels,
     admin_event_dashboard,
     admin_notifications,
     admin_npo_credentials,
@@ -76,6 +78,7 @@ api_router.include_router(events_media.router, tags=["events", "media"])
 api_router.include_router(events_food_options.router, tags=["events", "food-options"])
 api_router.include_router(sponsors.router, tags=["events", "sponsors"])
 api_router.include_router(admin_donations.router, tags=["donations"])
+api_router.include_router(admin_donor_labels.router, tags=["admin-donor-labels"])
 api_router.include_router(registrations.router, tags=["registrations"])
 api_router.include_router(checkin.router, tags=["checkin"])
 api_router.include_router(auction_items.router, tags=["auction-items"])
@@ -93,6 +96,7 @@ api_router.include_router(public_onboarding.router, prefix="/public", tags=["pub
 api_router.include_router(public_testimonials.router, tags=["public-testimonials"])
 api_router.include_router(admin_testimonials.router, tags=["admin-testimonials"])
 api_router.include_router(admin_seating.router, tags=["admin-seating"])
+api_router.include_router(admin_checklist.router, tags=["admin-checklist"])
 api_router.include_router(admin_auction_bid_import.router)
 api_router.include_router(admin_auction_item_import.router)
 api_router.include_router(admin_registration_import.router)

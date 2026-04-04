@@ -5,13 +5,6 @@
  * Optional: mission / description.
  * Shows a duplicate-name warning banner when the server flags a similar name.
  */
-import { useState } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { AlertTriangle, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { updateStep } from '@/lib/api/onboarding'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,6 +18,13 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { updateStep } from '@/lib/api/onboarding'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { AlertTriangle, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
 
 function formatPhoneNumber(value: string): string {
   const digits = value.replace(/\D/g, '')
@@ -50,6 +50,16 @@ const formSchema = z.object({
     .string()
     .min(2, 'Organization name is required (min 2 chars)')
     .max(255),
+  hashtag: z
+    .string()
+    .max(100, 'Hashtag must be under 100 characters')
+    .refine((value) => !value || !/\s/.test(value), {
+      message: 'Hashtag cannot contain spaces',
+    })
+    .refine((value) => !value || /^#?[A-Za-z0-9_]+$/.test(value), {
+      message: 'Hashtag can contain only letters, numbers, and underscores',
+    })
+    .optional(),
   ein: z
     .string()
     .min(1, 'EIN is required')
@@ -97,12 +107,50 @@ export function StepNpoProfile({
     resolver: zodResolver(formSchema),
     defaultValues: {
       npo_name: initialValues?.npo_name ?? '',
+      hashtag: initialValues?.hashtag ?? '',
       ein: initialValues?.ein ?? '',
       website_url: initialValues?.website_url ?? '',
       phone: initialValues?.phone ?? '',
       mission: initialValues?.mission ?? '',
     },
   })
+
+  const generateHashtag = (name: string): string => {
+    const camel = name
+      .trim()
+      .split(/[\s\-_]+/)
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join('')
+      .replace(/[^A-Za-z0-9]/g, '')
+    return camel ? `#${camel}` : '#NPO'
+  }
+
+  const normalizeHashtag = (value: string): string => {
+    const trimmed = value.trim()
+    if (!trimmed) return ''
+    return trimmed.startsWith('#') ? trimmed : `#${trimmed}`
+  }
+
+  const handleNameBlur = () => {
+    const currentName = form.getValues('npo_name')
+    const currentHashtag = form.getValues('hashtag')
+    if (currentName && !currentHashtag) {
+      form.setValue('hashtag', generateHashtag(currentName))
+    }
+  }
+
+  const handleHashtagBlur = () => {
+    const currentHashtag = form.getValues('hashtag')
+    const normalizedHashtag = normalizeHashtag(currentHashtag ?? '')
+
+    if (normalizedHashtag !== currentHashtag) {
+      form.setValue('hashtag', normalizedHashtag, {
+        shouldDirty: true,
+        shouldValidate: true,
+      })
+    }
+  }
 
   const saveAndAdvance = async (values: FormValues) => {
     setIsLoading(true)
@@ -158,8 +206,40 @@ export function StepNpoProfile({
               <FormItem>
                 <FormLabel>Organization name *</FormLabel>
                 <FormControl>
-                  <Input placeholder='Helping Hands Foundation' {...field} />
+                  <Input
+                    placeholder='Helping Hands Foundation'
+                    {...field}
+                    onBlur={() => {
+                      field.onBlur()
+                      handleNameBlur()
+                    }}
+                  />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Hashtag */}
+          <FormField
+            control={form.control}
+            name='hashtag'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Organization hashtag</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder='#HelpingHands'
+                    {...field}
+                    onBlur={() => {
+                      field.onBlur()
+                      handleHashtagBlur()
+                    }}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Auto-generated from name. We add # automatically if needed.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

@@ -1,3 +1,12 @@
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import {
+  eventNotificationService,
+  type RecipientCriteria,
+} from '@/services/eventNotificationService'
+import { ArrowUpDown, Loader2, Search } from 'lucide-react'
+import { toast } from 'sonner'
+import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -19,15 +28,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
-import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
-import {
-  eventNotificationService,
-  type RecipientCriteria,
-} from '@/services/eventNotificationService'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowUpDown, Loader2, Search } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { toast } from 'sonner'
 
 const MAX_MESSAGE_LENGTH = 500
 
@@ -90,12 +90,12 @@ export function ComposeNotification({
     const q = searchQuery.toLowerCase()
     const filtered = q
       ? uniqueAttendees.filter(
-        (a) =>
-          a.name?.toLowerCase().includes(q) ||
-          a.email?.toLowerCase().includes(q) ||
-          String(a.table_number ?? '').includes(q) ||
-          String(a.bidder_number ?? '').includes(q)
-      )
+          (a) =>
+            a.name?.toLowerCase().includes(q) ||
+            a.email?.toLowerCase().includes(q) ||
+            String(a.table_number ?? '').includes(q) ||
+            String(a.bidder_number ?? '').includes(q)
+        )
       : uniqueAttendees
 
     return [...filtered].sort((a, b) => {

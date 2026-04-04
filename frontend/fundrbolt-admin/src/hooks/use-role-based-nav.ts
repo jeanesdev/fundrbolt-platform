@@ -55,8 +55,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const { role, isSuperAdmin, isNpoAdmin, isEventCoordinator, isStaff } =
     useAuth()
   const { selectedNpoId } = useNpoContext()
-  const { selectedEventId, selectedEventName } =
-    useEventContext()
+  const { selectedEventId, selectedEventName } = useEventContext()
   const { data: eventStats } = useEventStats(selectedEventId)
 
   // Determine NPO link based on selected NPO
@@ -217,9 +216,9 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   // Grouped nav: Event, Guests, Auctions
   const eventNavGroups: EventNavGroup[] = selectedEventId
     ? EVENT_NAV_GROUPS.map((group) => ({
-      title: group.title,
-      items: group.sections.map(buildEventNavItem),
-    }))
+        title: group.title,
+        items: group.sections.map(buildEventNavItem),
+      }))
     : []
 
   const eventNavTitle = selectedEventId
@@ -253,6 +252,7 @@ type EventSectionConfig = {
 const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
   { title: 'NPO Dashboard', path: 'dashboard', icon: 'BarChart3' },
   { title: 'Details', path: 'details', icon: 'FileText' },
+  { title: 'Planning Checklist', path: 'checklist', icon: 'ClipboardList' },
   { title: 'Preview', path: 'preview', icon: 'Eye' },
   { title: 'Media', path: 'media', icon: 'Image', statKey: 'media_count' },
   { title: 'Links', path: 'links', icon: 'Link2', statKey: 'links_count' },
@@ -337,6 +337,7 @@ const EVENT_NAV_GROUPS: Array<{
     title: 'Event',
     sections: [
       sectionByPath('details'),
+      sectionByPath('checklist'),
       sectionByPath('preview'),
       sectionByPath('media'),
       sectionByPath('links'),

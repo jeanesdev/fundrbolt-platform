@@ -4,6 +4,7 @@ import { NotificationPreferencesForm } from '@/features/settings/components/noti
 import { PushNotificationToggle } from '@/features/settings/components/push-notification-toggle'
 import apiClient from '@/lib/axios'
 import { createFileRoute } from '@tanstack/react-router'
+import { AxiosError } from 'axios'
 import { Send } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -28,8 +29,12 @@ function TestNotificationButton() {
             : 'Test sent (in-app only — push may not have been delivered).'
         )
       }
-    } catch {
-      toast.error('Failed to send test notification.')
+    } catch (err: unknown) {
+      const detail =
+        err instanceof AxiosError && typeof err.response?.data?.detail === 'string'
+          ? err.response.data.detail
+          : 'Failed to send test notification.'
+      toast.error(detail)
     } finally {
       setSending(false)
     }

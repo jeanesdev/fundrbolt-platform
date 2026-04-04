@@ -67,6 +67,23 @@ async def build_user_response(user: User, db: AsyncSession) -> dict[str, object]
     ]
     primary_npo_id = npo_memberships[0].npo_id if len(npo_memberships) == 1 else None
 
+    # Get donor labels
+    from app.models.donor_label import DonorLabel
+    from app.models.donor_label_assignment import DonorLabelAssignment
+    from app.schemas.donor_label import DonorLabelAssignmentInfo
+
+    label_stmt = (
+        select(DonorLabel)
+        .join(DonorLabelAssignment, DonorLabel.id == DonorLabelAssignment.label_id)
+        .where(DonorLabelAssignment.user_id == user.id)
+        .order_by(DonorLabel.name.asc())
+    )
+    label_result = await db.execute(label_stmt)
+    donor_labels = [
+        DonorLabelAssignmentInfo(id=label.id, name=label.name, color=label.color)
+        for label in label_result.scalars().all()
+    ]
+
     # Get role name
     from app.models.base import Base
 
@@ -93,6 +110,7 @@ async def build_user_response(user: User, db: AsyncSession) -> dict[str, object]
         "role": role_name,
         "npo_id": primary_npo_id,
         "npo_memberships": npo_memberships,
+        "donor_labels": donor_labels,
         "email_verified": user.email_verified,
         "is_active": user.is_active,
         "last_login_at": user.last_login_at,
@@ -508,59 +526,7 @@ async def get_user(
             db=db, current_user=current_user, user_id=user_id, npo_id=npo_id
         )
 
-        from app.models.npo import NPO
-        from app.models.npo_member import MemberStatus, NPOMember
-
-        member_stmt = (
-            select(NPOMember, NPO.name)
-            .join(NPO, NPOMember.npo_id == NPO.id)
-            .where(NPOMember.user_id == user.id)
-            .where(NPOMember.status == MemberStatus.ACTIVE)
-        )
-        member_result = await db.execute(member_stmt)
-        npo_memberships = [
-            NPOMembershipInfo(
-                npo_id=member.npo_id,
-                npo_name=npo_name,
-                role=member.role.value,
-                status=member.status.value,
-            )
-            for member, npo_name in member_result.all()
-        ]
-        primary_npo_id = npo_memberships[0].npo_id if len(npo_memberships) == 1 else None
-
-        # Get role name
-        from app.models.base import Base
-
-        roles_table = Base.metadata.tables["roles"]
-        role_stmt = select(roles_table.c.name).where(roles_table.c.id == user.role_id)
-        role_result = await db.execute(role_stmt)
-        role_name = role_result.scalar_one()
-
-        return {
-            "id": user.id,
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "phone": user.phone,
-            "organization_name": user.organization_name,
-            "address_line1": user.address_line1,
-            "address_line2": user.address_line2,
-            "city": user.city,
-            "state": user.state,
-            "postal_code": user.postal_code,
-            "country": user.country,
-            "profile_picture_url": user.profile_picture_url,
-            "social_media_links": user.social_media_links,
-            "role": role_name,
-            "npo_id": primary_npo_id,
-            "npo_memberships": npo_memberships,
-            "email_verified": user.email_verified,
-            "is_active": user.is_active,
-            "last_login_at": user.last_login_at,
-            "created_at": user.created_at,
-            "updated_at": user.updated_at,
-        }
+        return await build_user_response(user, db)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except PermissionError as e:

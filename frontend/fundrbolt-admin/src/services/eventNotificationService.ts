@@ -2,11 +2,11 @@ import apiClient from '@/lib/axios'
 
 export interface RecipientCriteria {
   type:
-  | 'all_attendees'
-  | 'all_bidders'
-  | 'specific_table'
-  | 'individual'
-  | 'item_watchers'
+    | 'all_attendees'
+    | 'all_bidders'
+    | 'specific_table'
+    | 'individual'
+    | 'item_watchers'
   table_number?: number
   user_ids?: string[]
   item_id?: string

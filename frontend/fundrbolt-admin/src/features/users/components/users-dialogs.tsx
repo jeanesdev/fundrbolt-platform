@@ -29,6 +29,7 @@ export function UsersDialogs() {
         social_media_links: currentRow.social_media_links,
         role: currentRow.role,
         npo_memberships: currentRow.npo_memberships || [],
+        donor_labels: currentRow.donor_labels || [],
         email_verified: currentRow.email_verified,
         is_active: currentRow.is_active,
         last_login_at: currentRow.last_login_at,
