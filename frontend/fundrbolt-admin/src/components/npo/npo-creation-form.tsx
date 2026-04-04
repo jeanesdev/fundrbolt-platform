@@ -184,6 +184,9 @@ const npoFormSchema = z.object({
     .refine((value) => !value || !/\s/.test(value), {
       message: 'Hashtag cannot contain spaces',
     })
+    .refine((value) => !value || /^#?[A-Za-z0-9_]+$/.test(value), {
+      message: 'Hashtag can contain only letters, numbers, and underscores',
+    })
     .optional()
     .or(z.literal('')),
   description: z

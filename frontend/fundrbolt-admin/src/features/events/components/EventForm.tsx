@@ -101,6 +101,9 @@ const eventFormSchema = z.object({
     .refine((value) => !value || !/\s/.test(value), {
       message: 'Hashtag cannot contain spaces',
     })
+    .refine((value) => !value || /^#?[A-Za-z0-9_]+$/.test(value), {
+      message: 'Hashtag can contain only letters, numbers, and underscores',
+    })
     .optional(),
   description: z.string().optional(),
   event_datetime: z.string().min(1, 'Event date and time is required'),
@@ -496,15 +499,15 @@ export function EventForm({
               control={form.control}
               name='event_datetime'
               render={({ field }) => (
-                <FormItem>
+                <FormItem className='min-w-0'>
                   <Label htmlFor='event_datetime'>Event Date & Time *</Label>
                   <FormControl>
-                    <div className='relative'>
+                    <div className='relative min-w-0'>
                       <Clock className='text-muted-foreground absolute top-3 left-3 h-4 w-4' />
                       <Input
                         id='event_datetime'
                         type='datetime-local'
-                        className='pl-10'
+                        className='w-full min-w-0 max-w-full pl-10'
                         autoComplete='off'
                         {...field}
                       />
@@ -519,7 +522,7 @@ export function EventForm({
               control={form.control}
               name='timezone'
               render={({ field }) => (
-                <FormItem>
+                <FormItem className='min-w-0'>
                   <Label htmlFor='timezone'>Timezone *</Label>
                   <Select
                     value={field.value}
@@ -527,7 +530,7 @@ export function EventForm({
                     name={field.name}
                   >
                     <FormControl>
-                      <SelectTrigger id='timezone'>
+                      <SelectTrigger id='timezone' className='w-full min-w-0 max-w-full'>
                         <SelectValue placeholder='Select timezone' />
                       </SelectTrigger>
                     </FormControl>

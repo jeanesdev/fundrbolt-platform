@@ -24,6 +24,7 @@ export interface Attendee {
   checked_in?: boolean
   check_in_time?: string | null
   has_payment_profile?: boolean
+  profile_picture_url?: string | null
   donor_labels?: DonorLabelInfo[]
   status: string
   created_at: string

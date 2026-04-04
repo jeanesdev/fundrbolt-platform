@@ -1210,31 +1210,28 @@ export function EventHomePage() {
         <PushOptInPrompt />
 
         {/* Event Hashtag & Share */}
-        {(currentEvent.hashtag || true) && (
-          <div
-            className='flex items-center justify-between rounded-2xl px-4 py-3'
-            style={{
-              backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.08)',
-              borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
-            }}
-          >
-            {currentEvent.hashtag ? (
-              <span
-                className='text-lg font-black tracking-wide'
-                style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
-              >
-                {currentEvent.hashtag}
-              </span>
-            ) : (
-              <span />
-            )}
-            <ShareEventButton
-              eventName={currentEvent.name}
-              eventSlug={currentEvent.slug}
-              hashtag={currentEvent.hashtag}
-            />
-          </div>
-        )}
+        <div
+          className='flex flex-col items-stretch gap-3 rounded-2xl px-4 py-3 sm:flex-row sm:items-center sm:justify-between'
+          style={{
+            backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.08)',
+            borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
+          }}
+        >
+          {currentEvent.hashtag ? (
+            <span
+              className='min-w-0 break-all text-base font-black tracking-wide sm:text-lg'
+              style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+            >
+              {currentEvent.hashtag}
+            </span>
+          ) : null}
+          <ShareEventButton
+            eventName={currentEvent.name}
+            eventSlug={currentEvent.slug}
+            hashtag={currentEvent.hashtag}
+            className='w-full sm:w-auto'
+          />
+        </div>
 
         {/* CTA for bidding */}
         {eventStatus !== 'past' && (

@@ -43,6 +43,14 @@ export function useDeleteDonorLabel(npoId: string | null) {
   })
 }
 
+export function useUserDonorLabels(npoId: string | null, userId: string | null) {
+  return useQuery({
+    queryKey: ['user-donor-labels', npoId, userId],
+    queryFn: () => donorLabelsApi.getUserDonorLabels(npoId!, userId!),
+    enabled: !!npoId && !!userId,
+  })
+}
+
 export function useSetUserDonorLabels(npoId: string | null) {
   const queryClient = useQueryClient()
 
@@ -55,6 +63,7 @@ export function useSetUserDonorLabels(npoId: string | null) {
       labelIds: string[]
     }) => donorLabelsApi.setUserDonorLabels(npoId!, userId, labelIds),
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['user-donor-labels', npoId, variables.userId] })
       queryClient.invalidateQueries({ queryKey: ['users', variables.userId] })
       queryClient.invalidateQueries({ queryKey: ['users'] })
       queryClient.invalidateQueries({ queryKey: ['event-attendees'] })

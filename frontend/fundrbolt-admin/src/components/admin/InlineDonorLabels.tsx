@@ -7,7 +7,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from '@/components/ui/command'
+import { Input } from '@/components/ui/input'
 import {
   Popover,
   PopoverContent,
@@ -15,10 +17,13 @@ import {
 } from '@/components/ui/popover'
 import type { DonorLabelInfo } from '@/features/users/api/users-api'
 import {
+  useCreateDonorLabel,
   useDonorLabels,
   useSetUserDonorLabels,
+  useUserDonorLabels,
 } from '@/features/users/hooks/use-donor-labels'
 import { useNPOContextStore } from '@/stores/npo-context-store'
+import { DONOR_LABEL_COLORS } from '@/themes/colors'
 import { Check, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 
@@ -35,18 +40,28 @@ interface InlineDonorLabelsProps {
   labels: DonorLabelInfo[] | undefined
   /** When provided, labels become editable (add/remove) */
   userId?: string | null
+  /** NPO ID for label queries — falls back to NPO context store */
+  npoId?: string | null
 }
 
-export function InlineDonorLabels({ labels, userId }: InlineDonorLabelsProps) {
+export function InlineDonorLabels({
+  labels,
+  userId,
+  npoId: npoIdProp,
+}: InlineDonorLabelsProps) {
   const editable = !!userId
-  const selectedNpoId = useNPOContextStore((state) => state.selectedNpoId)
-  const { data: labelsData } = useDonorLabels(
-    editable ? selectedNpoId : null
-  )
-  const setLabels = useSetUserDonorLabels(editable ? selectedNpoId : null)
+  const storeNpoId = useNPOContextStore((state) => state.selectedNpoId)
+  const npoId = npoIdProp ?? storeNpoId
+  const { data: labelsData } = useDonorLabels(editable ? npoId : null)
+  const { data: userLabelsData } = useUserDonorLabels(editable ? npoId : null, userId ?? null)
+  const setLabels = useSetUserDonorLabels(editable ? npoId : null)
+  const createLabel = useCreateDonorLabel(editable ? npoId : null)
   const [popoverOpen, setPopoverOpen] = useState(false)
+  const [showCreate, setShowCreate] = useState(false)
+  const [newLabelName, setNewLabelName] = useState('')
 
-  const currentLabels = labels ?? []
+  // Use live query data when available, fall back to prop
+  const currentLabels = (editable && userLabelsData ? userLabelsData : null) ?? labels ?? []
   const currentLabelIds = currentLabels.map((l) => l.id)
   const allLabels = labelsData?.items ?? []
 
@@ -62,6 +77,30 @@ export function InlineDonorLabels({ labels, userId }: InlineDonorLabelsProps) {
     if (!userId) return
     const newIds = currentLabelIds.filter((id) => id !== labelId)
     setLabels.mutate({ userId, labelIds: newIds })
+  }
+
+  const handleCreateLabel = () => {
+    const name = newLabelName.trim()
+    if (!name) return
+    // Pick color based on label name length to avoid Math.random() purity lint
+    const colorIndex = name.length % DONOR_LABEL_COLORS.length
+    const color = DONOR_LABEL_COLORS[colorIndex]
+    createLabel.mutate(
+      { name, color },
+      {
+        onSuccess: (created) => {
+          setNewLabelName('')
+          setShowCreate(false)
+          // Auto-assign the new label to this user
+          if (userId) {
+            setLabels.mutate({
+              userId,
+              labelIds: [...currentLabelIds, created.id],
+            })
+          }
+        },
+      }
+    )
   }
 
   if (!editable && currentLabels.length === 0) return null
@@ -90,7 +129,16 @@ export function InlineDonorLabels({ labels, userId }: InlineDonorLabelsProps) {
         </Badge>
       ))}
       {editable && (
-        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+        <Popover
+          open={popoverOpen}
+          onOpenChange={(open) => {
+            setPopoverOpen(open)
+            if (!open) {
+              setShowCreate(false)
+              setNewLabelName('')
+            }
+          }}
+        >
           <PopoverTrigger asChild>
             <Button
               variant='ghost'
@@ -101,7 +149,7 @@ export function InlineDonorLabels({ labels, userId }: InlineDonorLabelsProps) {
               <Plus className='h-3 w-3' />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className='w-[200px] p-0' align='start'>
+          <PopoverContent className='w-[220px] p-0' align='start'>
             <Command>
               <CommandInput placeholder='Search labels...' />
               <CommandList>
@@ -127,6 +175,45 @@ export function InlineDonorLabels({ labels, userId }: InlineDonorLabelsProps) {
                       )}
                     </CommandItem>
                   ))}
+                </CommandGroup>
+                <CommandSeparator />
+                <CommandGroup>
+                  {showCreate ? (
+                    <div className='flex items-center gap-1 px-2 py-1.5'>
+                      <Input
+                        value={newLabelName}
+                        onChange={(e) => setNewLabelName(e.target.value)}
+                        placeholder='Label name'
+                        className='h-7 text-xs'
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            handleCreateLabel()
+                          }
+                          e.stopPropagation()
+                        }}
+                        autoFocus
+                      />
+                      <Button
+                        size='sm'
+                        className='h-7 px-2 text-xs'
+                        disabled={
+                          !newLabelName.trim() || createLabel.isPending
+                        }
+                        onClick={handleCreateLabel}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  ) : (
+                    <CommandItem
+                      onSelect={() => setShowCreate(true)}
+                      className='text-xs'
+                    >
+                      <Plus className='mr-2 h-3 w-3' />
+                      Create new label
+                    </CommandItem>
+                  )}
                 </CommandGroup>
               </CommandList>
             </Command>

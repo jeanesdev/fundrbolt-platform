@@ -12,7 +12,7 @@ from app.middleware.auth import get_current_user
 from app.models.donor_label import DonorLabel
 from app.models.donor_label_assignment import DonorLabelAssignment
 from app.models.npo import NPO
-from app.models.npo_member import MemberRole, MemberStatus, NPOMember
+from app.models.npo_member import MemberStatus, NPOMember
 from app.models.user import User
 from app.schemas.donor_label import (
     DonorLabelAssignmentInfo,
@@ -31,8 +31,8 @@ async def _require_npo_access(
     current_user: User,
     db: AsyncSession,
 ) -> NPO:
-    """Verify the user has admin-level access to the NPO."""
-    role_name = current_user.role.name if current_user.role else ""
+    """Verify the user has access to the NPO."""
+    role_name = getattr(current_user, "role_name", "")
 
     if role_name == "super_admin":
         stmt = select(NPO).where(NPO.id == npo_id)
@@ -42,12 +42,11 @@ async def _require_npo_access(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="NPO not found")
         return npo
 
-    # Check NPO membership
+    # Check NPO membership (any active member can manage labels)
     member_stmt = select(NPOMember).where(
         NPOMember.npo_id == npo_id,
         NPOMember.user_id == current_user.id,
         NPOMember.status == MemberStatus.ACTIVE,
-        NPOMember.role.in_([MemberRole.ADMIN, MemberRole.CO_ADMIN]),
     )
     result = await db.execute(member_stmt)
     member = result.scalar_one_or_none()

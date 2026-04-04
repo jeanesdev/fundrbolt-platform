@@ -79,6 +79,7 @@ import { EditAttendeeDialog } from './EditAttendeeDialog'
 interface AttendeeListTableProps {
   eventId: string
   includeMealSelections?: boolean
+  npoId?: string | null
 }
 
 type SortKey =
@@ -105,6 +106,7 @@ type FilterState = {
 
 export function AttendeeListTable({
   eventId,
+  npoId,
   includeMealSelections = true,
 }: AttendeeListTableProps) {
   const [selectedAttendees, setSelectedAttendees] = useState<Set<string>>(
@@ -146,12 +148,7 @@ export function AttendeeListTable({
     name: string
   } | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [attendeeToEdit, setAttendeeToEdit] = useState<{
-    id: string
-    name: string
-    email: string
-    phone: string
-  } | null>(null)
+  const [attendeeToEdit, setAttendeeToEdit] = useState<Attendee | null>(null)
   // Cancel registration handler
   const handleCancelRegistrationClick = (
     registrationId: string,
@@ -169,12 +166,7 @@ export function AttendeeListTable({
   }
 
   const handleEditClick = (attendee: Attendee) => {
-    setAttendeeToEdit({
-      id: attendee.id,
-      name: attendee.name,
-      email: attendee.email,
-      phone: attendee.phone,
-    })
+    setAttendeeToEdit(attendee)
     setEditDialogOpen(true)
   }
 
@@ -1303,6 +1295,7 @@ export function AttendeeListTable({
       {attendeeToEdit && (
         <EditAttendeeDialog
           eventId={eventId}
+          npoId={npoId}
           attendee={attendeeToEdit}
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}

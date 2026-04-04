@@ -1,5 +1,6 @@
 import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
 import {
   Table,
   TableBody,
@@ -32,6 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { getUser, updateUser } from '@/features/users/api/users-api'
 import { useViewPreference } from '@/hooks/use-view-preference'
 import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
 import {
@@ -53,6 +56,7 @@ import {
   Filter,
   Loader2,
   RotateCcw,
+  Search,
   Settings2,
   X,
 } from 'lucide-react'
@@ -128,6 +132,13 @@ type EditFormState = {
   phone: string
   bidderNumber: string
   replacementEmail: string
+  organizationName: string
+  addressLine1: string
+  addressLine2: string
+  city: string
+  state: string
+  postalCode: string
+  country: string
 }
 
 const defaultEditForm: EditFormState = {
@@ -136,11 +147,19 @@ const defaultEditForm: EditFormState = {
   phone: '',
   bidderNumber: '',
   replacementEmail: '',
+  organizationName: '',
+  addressLine1: '',
+  addressLine2: '',
+  city: '',
+  state: '',
+  postalCode: '',
+  country: '',
 }
 
 export function EventCheckInSection() {
   const { currentEvent } = useEventWorkspace()
   const queryClient = useQueryClient()
+  const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState<Filters>(defaultFilters)
   const [editingAttendee, setEditingAttendee] = useState<Attendee | null>(null)
   const [editForm, setEditForm] = useState<EditFormState>(defaultEditForm)
@@ -246,31 +265,40 @@ export function EventCheckInSection() {
       }
 
       const nextBidderValue = editForm.bidderNumber.trim()
-      if (!nextBidderValue) {
-        return
+      if (nextBidderValue) {
+        const bidderNumber = Number.parseInt(nextBidderValue, 10)
+        if (
+          Number.isNaN(bidderNumber) ||
+          bidderNumber < 100 ||
+          bidderNumber > 999
+        ) {
+          throw new Error('Bidder number must be between 100 and 999')
+        }
+
+        if (bidderNumber !== (attendee.bidder_number ?? null)) {
+          if (attendee.attendee_type === 'registrant') {
+            await assignRegistrationBidderNumber(
+              currentEvent.id,
+              attendee.registration_id,
+              bidderNumber
+            )
+          } else {
+            await assignBidderNumber(currentEvent.id, attendee.id, bidderNumber)
+          }
+        }
       }
 
-      const bidderNumber = Number.parseInt(nextBidderValue, 10)
-      if (
-        Number.isNaN(bidderNumber) ||
-        bidderNumber < 100 ||
-        bidderNumber > 999
-      ) {
-        throw new Error('Bidder number must be between 100 and 999')
-      }
-
-      if (bidderNumber === (attendee.bidder_number ?? null)) {
-        return
-      }
-
-      if (attendee.attendee_type === 'registrant') {
-        await assignRegistrationBidderNumber(
-          currentEvent.id,
-          attendee.registration_id,
-          bidderNumber
-        )
-      } else {
-        await assignBidderNumber(currentEvent.id, attendee.id, bidderNumber)
+      // Save address/company via user update API
+      if (attendee.user_id) {
+        await updateUser(attendee.user_id, {
+          organization_name: editForm.organizationName.trim() || undefined,
+          address_line1: editForm.addressLine1.trim() || undefined,
+          address_line2: editForm.addressLine2.trim() || undefined,
+          city: editForm.city.trim() || undefined,
+          state: editForm.state.trim() || undefined,
+          postal_code: editForm.postalCode.trim() || undefined,
+          country: editForm.country.trim() || undefined,
+        })
       }
     },
     onSuccess: () => {
@@ -278,6 +306,7 @@ export function EventCheckInSection() {
       queryClient.invalidateQueries({
         queryKey: ['event-attendees', currentEvent.id],
       })
+      queryClient.invalidateQueries({ queryKey: ['users'] })
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, 'Failed to save attendee'))
@@ -331,7 +360,25 @@ export function EventCheckInSection() {
     const normalize = (value: string | null | undefined) =>
       (value ?? '').toLowerCase()
 
+    const q = searchQuery.trim().toLowerCase()
+
     return attendees.filter((row) => {
+      // Universal search — matches across multiple fields
+      if (q) {
+        const haystack = [
+          row.name,
+          row.email,
+          row.phone,
+          row.guest_of,
+          row.registration_id,
+          row.bidder_number != null ? String(row.bidder_number) : '',
+          row.table_number != null ? String(row.table_number) : '',
+        ]
+          .join(' ')
+          .toLowerCase()
+        if (!haystack.includes(q)) return false
+      }
+
       const checkedIn = Boolean(row.checked_in || row.check_in_time)
       const partyOf =
         row.attendee_type === 'registrant' ? row.name : (row.guest_of ?? '')
@@ -400,7 +447,7 @@ export function EventCheckInSection() {
 
       return true
     })
-  }, [attendees, filters])
+  }, [attendees, filters, searchQuery])
 
   const handleToggleCheckIn = (attendee: Attendee, checkedIn: boolean) => {
     const targetId =
@@ -415,7 +462,7 @@ export function EventCheckInSection() {
     })
   }
 
-  const openManageDialog = (attendee: Attendee) => {
+  const openManageDialog = async (attendee: Attendee) => {
     setEditingAttendee(attendee)
     setEditForm({
       name: attendee.name ?? '',
@@ -424,7 +471,32 @@ export function EventCheckInSection() {
       bidderNumber:
         attendee.bidder_number == null ? '' : String(attendee.bidder_number),
       replacementEmail: '',
+      organizationName: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: '',
     })
+    // Fetch user details for address/company fields
+    if (attendee.user_id) {
+      try {
+        const user = await getUser(attendee.user_id)
+        setEditForm((prev) => ({
+          ...prev,
+          organizationName: user.organization_name ?? '',
+          addressLine1: user.address_line1 ?? '',
+          addressLine2: user.address_line2 ?? '',
+          city: user.city ?? '',
+          state: user.state ?? '',
+          postalCode: user.postal_code ?? '',
+          country: user.country ?? '',
+        }))
+      } catch {
+        // User details not available, fields stay empty
+      }
+    }
   }
 
   const closeManageDialog = () => {
@@ -544,6 +616,26 @@ export function EventCheckInSection() {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Universal search bar */}
+          <div className='relative mb-4'>
+            <Search className='text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2' />
+            <Input
+              placeholder='Search by name, email, phone, bidder #, table #, confirmation code…'
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className='pl-9'
+            />
+            {searchQuery && (
+              <Button
+                variant='ghost'
+                size='sm'
+                className='absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 p-0'
+                onClick={() => setSearchQuery('')}
+              >
+                <X className='h-3.5 w-3.5' />
+              </Button>
+            )}
+          </div>
           {viewMode === 'card' ? (
             <div className='space-y-3'>
               {/* Card-mode filter bar */}
@@ -804,6 +896,14 @@ export function EventCheckInSection() {
                                 <Check className='h-4 w-4' />
                               )}
                             </Button>
+                            {attendee.profile_picture_url && (
+                              <Avatar className='h-6 w-6'>
+                                <AvatarImage src={attendee.profile_picture_url} alt={attendee.name || ''} />
+                                <AvatarFallback className='text-[10px]'>
+                                  {(attendee.name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
                             <span className='font-medium'>
                               {attendee.name || '—'}
                             </span>
@@ -827,7 +927,7 @@ export function EventCheckInSection() {
                             <Settings2 className='h-4 w-4' />
                           </Button>
                         </div>
-                        <InlineDonorLabels labels={attendee.donor_labels} userId={attendee.user_id} />
+                        <InlineDonorLabels labels={attendee.donor_labels} userId={attendee.user_id} npoId={currentEvent.npo_id} />
                         <dl className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
                           <dt className='text-muted-foreground'>Status</dt>
                           <dd>
@@ -1097,6 +1197,14 @@ export function EventCheckInSection() {
                           </TableCell>
                           <TableCell>
                             <div className='flex items-center gap-2'>
+                              {attendee.profile_picture_url && (
+                                <Avatar className='h-6 w-6'>
+                                  <AvatarImage src={attendee.profile_picture_url} alt={attendee.name || ''} />
+                                  <AvatarFallback className='text-[10px]'>
+                                    {(attendee.name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                              )}
                               <span>{attendee.name || '—'}</span>
                               {attendee.is_table_captain && (
                                 <Badge
@@ -1111,7 +1219,7 @@ export function EventCheckInSection() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <InlineDonorLabels labels={attendee.donor_labels} userId={attendee.user_id} />
+                            <InlineDonorLabels labels={attendee.donor_labels} userId={attendee.user_id} npoId={currentEvent.npo_id} />
                           </TableCell>
                           <TableCell>{attendee.email || '—'}</TableCell>
                           <TableCell>
@@ -1169,16 +1277,28 @@ export function EventCheckInSection() {
           }
         }}
       >
-        <DialogContent className='sm:max-w-xl'>
+        <DialogContent className='sm:max-w-xl max-h-[85vh] overflow-y-auto'>
           <DialogHeader>
             <DialogTitle>Manage Attendee</DialogTitle>
             <DialogDescription>
-              Update bidder number and contact details from the check-in page.
+              Update attendee details, labels, and address information.
             </DialogDescription>
           </DialogHeader>
 
           {editingAttendee && (
             <div className='space-y-6'>
+              {/* Donor Labels */}
+              {editingAttendee.user_id && (
+                <div className='space-y-2'>
+                  <Label>Labels</Label>
+                  <InlineDonorLabels
+                    labels={editingAttendee.donor_labels}
+                    userId={editingAttendee.user_id}
+                    npoId={currentEvent.npo_id}
+                  />
+                </div>
+              )}
+
               <div className='grid gap-3 sm:grid-cols-2'>
                 <div className='space-y-2 sm:col-span-2'>
                   <Label htmlFor='edit-name'>Name</Label>
@@ -1236,6 +1356,106 @@ export function EventCheckInSection() {
                   />
                 </div>
               </div>
+
+              {/* Address & Company */}
+              {editingAttendee.user_id && (
+                <>
+                  <Separator />
+                  <div className='grid gap-3 sm:grid-cols-2'>
+                    <div className='space-y-2 sm:col-span-2'>
+                      <Label htmlFor='edit-org'>Company / Organization</Label>
+                      <Input
+                        id='edit-org'
+                        value={editForm.organizationName}
+                        onChange={(event) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            organizationName: event.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-2 sm:col-span-2'>
+                      <Label htmlFor='edit-addr1'>Address Line 1</Label>
+                      <Input
+                        id='edit-addr1'
+                        value={editForm.addressLine1}
+                        onChange={(event) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            addressLine1: event.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-2 sm:col-span-2'>
+                      <Label htmlFor='edit-addr2'>Address Line 2</Label>
+                      <Input
+                        id='edit-addr2'
+                        value={editForm.addressLine2}
+                        onChange={(event) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            addressLine2: event.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-2'>
+                      <Label htmlFor='edit-city'>City</Label>
+                      <Input
+                        id='edit-city'
+                        value={editForm.city}
+                        onChange={(event) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            city: event.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-2'>
+                      <Label htmlFor='edit-state'>State</Label>
+                      <Input
+                        id='edit-state'
+                        value={editForm.state}
+                        onChange={(event) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            state: event.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-2'>
+                      <Label htmlFor='edit-zip'>Postal Code</Label>
+                      <Input
+                        id='edit-zip'
+                        value={editForm.postalCode}
+                        onChange={(event) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            postalCode: event.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className='space-y-2'>
+                      <Label htmlFor='edit-country'>Country</Label>
+                      <Input
+                        id='edit-country'
+                        value={editForm.country}
+                        onChange={(event) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            country: event.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               {editingAttendee.attendee_type === 'guest' && (
                 <div className='space-y-2 rounded-md border p-3'>

@@ -1,5 +1,6 @@
 """Pydantic schemas for NPO (Non-Profit Organization) management."""
 
+import re
 import uuid
 from datetime import datetime
 
@@ -72,6 +73,9 @@ class NPOCreateRequest(BaseModel):
         if any(char.isspace() for char in normalized):
             raise ValueError("Hashtag cannot contain spaces")
 
+        if not re.match(r"^#[A-Za-z0-9_]+$", normalized):
+            raise ValueError("Hashtag can contain only letters, numbers, and underscores")
+
         return normalized
 
 
@@ -130,6 +134,9 @@ class NPOUpdateRequest(BaseModel):
 
         if any(char.isspace() for char in normalized):
             raise ValueError("Hashtag cannot contain spaces")
+
+        if not re.match(r"^#[A-Za-z0-9_]+$", normalized):
+            raise ValueError("Hashtag can contain only letters, numbers, and underscores")
 
         return normalized
 

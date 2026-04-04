@@ -87,6 +87,9 @@ class EventCreateRequest(BaseModel):
         if any(char.isspace() for char in normalized):
             raise ValueError("Hashtag cannot contain spaces")
 
+        if not re.match(r"^#[A-Za-z0-9_]+$", normalized):
+            raise ValueError("Hashtag can contain only letters, numbers, and underscores")
+
         return normalized
 
     @field_validator("custom_slug")
@@ -170,6 +173,9 @@ class EventUpdateRequest(BaseModel):
 
         if any(char.isspace() for char in normalized):
             raise ValueError("Hashtag cannot contain spaces")
+
+        if not re.match(r"^#[A-Za-z0-9_]+$", normalized):
+            raise ValueError("Hashtag can contain only letters, numbers, and underscores")
 
         return normalized
 
