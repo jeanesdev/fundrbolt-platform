@@ -155,6 +155,12 @@ class EventUpdateRequest(BaseModel):
     seating_layout_image_url: str | None = Field(
         default=None, max_length=500, description="Azure Blob URL for event space layout image"
     )
+    live_auction_start_datetime: datetime | None = Field(
+        default=None, description="When the live auction is scheduled to start"
+    )
+    auction_close_datetime: datetime | None = Field(
+        default=None, description="When the silent auction closes"
+    )
     version: int | None = Field(default=None, description="Current version for optimistic locking")
 
     @field_validator("hashtag")

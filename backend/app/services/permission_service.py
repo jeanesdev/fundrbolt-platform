@@ -34,13 +34,13 @@ class PermissionService:
     PERMISSION_CACHE_TTL = 300
 
     # Roles that require npo_id
-    ROLES_REQUIRING_NPO = {"npo_admin", "event_coordinator", "staff"}
+    ROLES_REQUIRING_NPO = {"npo_admin", "event_coordinator", "staff", "auctioneer"}
 
     # Roles that forbid npo_id
     ROLES_FORBIDDING_NPO = {"donor"}
 
     # Roles that can view users
-    ROLES_CAN_VIEW_USERS = {"super_admin", "npo_admin", "event_coordinator"}
+    ROLES_CAN_VIEW_USERS = {"super_admin", "npo_admin", "event_coordinator", "auctioneer"}
 
     # Roles that can create users
     ROLES_CAN_CREATE_USERS = {"super_admin", "npo_admin", "event_coordinator"}
@@ -379,7 +379,7 @@ class PermissionService:
         result = False
         if user.role_name == "super_admin":
             result = True
-        elif user.role_name in {"npo_admin", "event_coordinator", "staff"}:
+        elif user.role_name in {"npo_admin", "event_coordinator", "staff", "auctioneer"}:
             if db is None:
                 result = False
             else:
@@ -455,7 +455,7 @@ class PermissionService:
         result = False
         if user.role_name == "super_admin":
             result = True
-        elif user.role_name in {"npo_admin", "event_coordinator", "staff"}:
+        elif user.role_name in {"npo_admin", "event_coordinator", "staff", "auctioneer"}:
             if db is None:
                 result = False
             else:
@@ -524,3 +524,11 @@ class PermissionService:
     def can_use_quick_entry(self, user: Any) -> bool:
         """Return whether a role can access quick-entry workflows."""
         return getattr(user, "role_name", None) in self.ROLES_CAN_USE_QUICK_ENTRY
+
+    def can_view_auctioneer_data(self, user: Any) -> bool:
+        """Return whether a role can view auctioneer commission/earnings data."""
+        return getattr(user, "role_name", None) in {"super_admin", "auctioneer"}
+
+    def can_edit_auctioneer_data(self, user: Any) -> bool:
+        """Return whether a role can edit auctioneer commission data."""
+        return getattr(user, "role_name", None) == "auctioneer"

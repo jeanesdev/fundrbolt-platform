@@ -268,6 +268,18 @@ class Event(Base, UUIDMixin, TimestampMixin):
         comment="Max total tickets a single donor can purchase for this event. NULL = unlimited. Default: 20",
     )
 
+    # Auction Timing (Feature 038)
+    live_auction_start_datetime: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="When the live auction starts (for countdown timers)",
+    )
+    auction_close_datetime: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="When the silent auction closes (migration 032, mapped in feature 038)",
+    )
+
     # Optimistic Locking
     version: Mapped[int] = mapped_column(
         Integer,

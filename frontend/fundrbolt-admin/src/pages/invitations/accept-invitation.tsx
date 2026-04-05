@@ -25,6 +25,7 @@ interface InvitationDetails {
   role: string
   inviter_name?: string
   email: string
+  event_id?: string
 }
 
 export default function AcceptInvitationPage() {
@@ -89,6 +90,7 @@ export default function AcceptInvitationPage() {
           role: payload.role || 'staff',
           inviter_name: payload.inviter_name,
           email: payload.email,
+          event_id: payload.event_id,
         })
         setValidating(false)
       } catch (_err) {

@@ -55,6 +55,8 @@ export interface Event {
   table_count: number | null
   max_guests_per_table: number | null
   seating_layout_image_url: string | null
+  live_auction_start_datetime: string | null
+  auction_close_datetime: string | null
   status: EventStatus
   version: number
   created_by: string
@@ -129,6 +131,8 @@ export interface EventUpdateRequest {
   table_count?: number | null
   max_guests_per_table?: number | null
   seating_layout_image_url?: string | null
+  live_auction_start_datetime?: string
+  auction_close_datetime?: string
   version?: number
 }
 

@@ -3,6 +3,7 @@
  * Comprehensive form for creating and editing events with all fields
  */
 import { Button } from '@/components/ui/button'
+import { Calendar as CalendarPicker } from '@/components/ui/calendar'
 import {
   Form,
   FormControl,
@@ -15,12 +16,18 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 import type { NPOBranding } from '@/services/event-service'
 import type {
   EventCreateRequest,
@@ -29,7 +36,8 @@ import type {
 } from '@/types/event'
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Calendar, Clock, MapPin } from 'lucide-react'
+import { format, parse } from 'date-fns'
+import { CalendarIcon, MapPin } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -119,6 +127,8 @@ const eventFormSchema = z.object({
     .min(0, 'Goal must be zero or greater')
     .nullable()
     .optional(),
+  live_auction_start_datetime: z.string().optional(),
+  auction_close_datetime: z.string().optional(),
   primary_contact_name: z.string().optional(),
   primary_contact_email: z
     .string()
@@ -190,6 +200,12 @@ export function EventForm({
       venue_zip: event?.venue_zip || '',
       attire: event?.attire || '',
       fundraising_goal: event?.fundraising_goal ?? null,
+      live_auction_start_datetime: event?.live_auction_start_datetime
+        ? new Date(event.live_auction_start_datetime).toISOString().slice(0, 16)
+        : '',
+      auction_close_datetime: event?.auction_close_datetime
+        ? new Date(event.auction_close_datetime).toISOString().slice(0, 16)
+        : '',
       primary_contact_name: event?.primary_contact_name || '',
       primary_contact_email: event?.primary_contact_email || '',
       primary_contact_phone: event?.primary_contact_phone || '',
@@ -360,6 +376,12 @@ export function EventForm({
       table_count: seatingConfig.table_count,
       max_guests_per_table: seatingConfig.max_guests_per_table,
       fundraising_goal: values.fundraising_goal ?? null,
+      live_auction_start_datetime: values.live_auction_start_datetime
+        ? new Date(values.live_auction_start_datetime).toISOString()
+        : undefined,
+      auction_close_datetime: values.auction_close_datetime
+        ? new Date(values.auction_close_datetime).toISOString()
+        : undefined,
     }
 
     // Add version for optimistic locking on updates
@@ -490,7 +512,7 @@ export function EventForm({
         {/* Date, Time & Location Section */}
         <div className='space-y-4'>
           <h3 className='flex items-center gap-2 text-base font-semibold md:text-lg'>
-            <Calendar className='h-4 w-4 md:h-5 md:w-5' />
+            <CalendarIcon className='h-4 w-4 md:h-5 md:w-5' />
             Date, Time & Location
           </h3>
 
@@ -498,24 +520,137 @@ export function EventForm({
             <FormField
               control={form.control}
               name='event_datetime'
-              render={({ field }) => (
-                <FormItem className='min-w-0'>
-                  <Label htmlFor='event_datetime'>Event Date & Time *</Label>
-                  <FormControl>
-                    <div className='relative min-w-0'>
-                      <Clock className='text-muted-foreground absolute top-3 left-3 h-4 w-4' />
-                      <Input
-                        id='event_datetime'
-                        type='datetime-local'
-                        className='w-full min-w-0 max-w-full pl-10'
-                        autoComplete='off'
-                        {...field}
-                      />
+              render={({ field }) => {
+                const dateValue = field.value
+                  ? parse(field.value.split('T')[0], 'yyyy-MM-dd', new Date())
+                  : undefined
+                const timeValue = field.value
+                  ? field.value.split('T')[1] || ''
+                  : ''
+                // Parse 24h time into hour/minute/period for selects
+                const [h24, m] = timeValue
+                  ? timeValue.split(':').map(Number)
+                  : [0, 0]
+                const period = h24 >= 12 ? 'PM' : 'AM'
+                const h12 = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24
+
+                const updateTime = (
+                  hour12: number,
+                  minute: number,
+                  ampm: string
+                ) => {
+                  const h =
+                    ampm === 'AM'
+                      ? hour12 === 12
+                        ? 0
+                        : hour12
+                      : hour12 === 12
+                        ? 12
+                        : hour12 + 12
+                  const newTime = `${String(h).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+                  const datePart = field.value ? field.value.split('T')[0] : ''
+                  field.onChange(datePart ? `${datePart}T${newTime}` : '')
+                }
+
+                return (
+                  <FormItem className='min-w-0'>
+                    <Label>Event Date & Time *</Label>
+                    <div className='flex flex-col gap-2'>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant='outline'
+                              className={cn(
+                                'w-full justify-start text-left font-normal',
+                                !dateValue && 'text-muted-foreground'
+                              )}
+                            >
+                              <CalendarIcon className='mr-2 h-4 w-4' />
+                              {dateValue
+                                ? format(dateValue, 'PPP')
+                                : 'Pick a date'}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className='w-auto p-0' align='start'>
+                          <CalendarPicker
+                            mode='single'
+                            selected={dateValue}
+                            onSelect={(day) => {
+                              if (day) {
+                                const datePart = format(day, 'yyyy-MM-dd')
+                                const time = timeValue || '00:00'
+                                field.onChange(`${datePart}T${time}`)
+                              }
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <div className='flex gap-2'>
+                        <Select
+                          value={String(h12)}
+                          onValueChange={(v) =>
+                            updateTime(Number(v), m, period)
+                          }
+                        >
+                          <SelectTrigger className='w-[4.5rem]'>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                              (hour) => (
+                                <SelectItem key={hour} value={String(hour)}>
+                                  {hour}
+                                </SelectItem>
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <span className='flex items-center text-lg font-medium'>
+                          :
+                        </span>
+                        <Select
+                          value={String(m).padStart(2, '0')}
+                          onValueChange={(v) =>
+                            updateTime(h12, Number(v), period)
+                          }
+                        >
+                          <SelectTrigger className='w-[4.5rem]'>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 12 }, (_, i) => i * 5).map(
+                              (min) => (
+                                <SelectItem
+                                  key={min}
+                                  value={String(min).padStart(2, '0')}
+                                >
+                                  {String(min).padStart(2, '0')}
+                                </SelectItem>
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          value={period}
+                          onValueChange={(v) => updateTime(h12, m, v)}
+                        >
+                          <SelectTrigger className='w-[4.5rem]'>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value='AM'>AM</SelectItem>
+                            <SelectItem value='PM'>PM</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+                    <FormMessage />
+                  </FormItem>
+                )
+              }}
             />
 
             <FormField
@@ -530,7 +665,10 @@ export function EventForm({
                     name={field.name}
                   >
                     <FormControl>
-                      <SelectTrigger id='timezone' className='w-full min-w-0 max-w-full'>
+                      <SelectTrigger
+                        id='timezone'
+                        className='w-full max-w-full min-w-0'
+                      >
                         <SelectValue placeholder='Select timezone' />
                       </SelectTrigger>
                     </FormControl>
@@ -815,6 +953,314 @@ export function EventForm({
               </FormItem>
             )}
           />
+        </div>
+
+        {/* Auction Timing Section */}
+        <div className='space-y-4'>
+          <h3 className='text-base font-semibold md:text-lg'>Auction Timing</h3>
+          <p className='text-muted-foreground text-xs md:text-sm'>
+            Schedule live auction start and silent auction close times
+            (optional)
+          </p>
+
+          <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+            <FormField
+              control={form.control}
+              name='live_auction_start_datetime'
+              render={({ field }) => {
+                const dateValue = field.value
+                  ? parse(
+                      field.value.split('T')[0],
+                      'yyyy-MM-dd',
+                      new Date()
+                    )
+                  : undefined
+                const timeValue = field.value
+                  ? field.value.split('T')[1] || ''
+                  : ''
+                const [lH24, lM] = timeValue
+                  ? timeValue.split(':').map(Number)
+                  : [0, 0]
+                const lPeriod = lH24 >= 12 ? 'PM' : 'AM'
+                const lH12 =
+                  lH24 === 0 ? 12 : lH24 > 12 ? lH24 - 12 : lH24
+
+                const updateLiveTime = (
+                  hour12: number,
+                  minute: number,
+                  ampm: string
+                ) => {
+                  const h =
+                    ampm === 'AM'
+                      ? hour12 === 12
+                        ? 0
+                        : hour12
+                      : hour12 === 12
+                        ? 12
+                        : hour12 + 12
+                  const newTime = `${String(h).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+                  const datePart = field.value
+                    ? field.value.split('T')[0]
+                    : ''
+                  field.onChange(datePart ? `${datePart}T${newTime}` : '')
+                }
+
+                return (
+                  <FormItem className='min-w-0'>
+                    <FormLabel>Live Auction Start</FormLabel>
+                    <div className='flex flex-col gap-2'>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant='outline'
+                              className={cn(
+                                'w-full justify-start text-left font-normal',
+                                !dateValue && 'text-muted-foreground'
+                              )}
+                            >
+                              <CalendarIcon className='mr-2 h-4 w-4' />
+                              {dateValue
+                                ? format(dateValue, 'PPP')
+                                : 'Pick a date'}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className='w-auto p-0' align='start'>
+                          <CalendarPicker
+                            mode='single'
+                            selected={dateValue}
+                            onSelect={(day) => {
+                              if (day) {
+                                const datePart = format(day, 'yyyy-MM-dd')
+                                const time = timeValue || '00:00'
+                                field.onChange(`${datePart}T${time}`)
+                              }
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <div className='flex gap-2'>
+                        <Select
+                          value={String(lH12)}
+                          onValueChange={(v) =>
+                            updateLiveTime(Number(v), lM, lPeriod)
+                          }
+                        >
+                          <SelectTrigger className='w-[4.5rem]'>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from(
+                              { length: 12 },
+                              (_, i) => i + 1
+                            ).map((hour) => (
+                              <SelectItem key={hour} value={String(hour)}>
+                                {hour}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <span className='flex items-center text-lg font-medium'>
+                          :
+                        </span>
+                        <Select
+                          value={String(lM).padStart(2, '0')}
+                          onValueChange={(v) =>
+                            updateLiveTime(lH12, Number(v), lPeriod)
+                          }
+                        >
+                          <SelectTrigger className='w-[4.5rem]'>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from(
+                              { length: 12 },
+                              (_, i) => i * 5
+                            ).map((min) => (
+                              <SelectItem
+                                key={min}
+                                value={String(min).padStart(2, '0')}
+                              >
+                                {String(min).padStart(2, '0')}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          value={lPeriod}
+                          onValueChange={(v) =>
+                            updateLiveTime(lH12, lM, v)
+                          }
+                        >
+                          <SelectTrigger className='w-[4.5rem]'>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value='AM'>AM</SelectItem>
+                            <SelectItem value='PM'>PM</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <FormDescription>
+                      When the live auction is scheduled to begin
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )
+              }}
+            />
+            <FormField
+              control={form.control}
+              name='auction_close_datetime'
+              render={({ field }) => {
+                const dateValue = field.value
+                  ? parse(
+                      field.value.split('T')[0],
+                      'yyyy-MM-dd',
+                      new Date()
+                    )
+                  : undefined
+                const timeValue = field.value
+                  ? field.value.split('T')[1] || ''
+                  : ''
+                const [cH24, cM] = timeValue
+                  ? timeValue.split(':').map(Number)
+                  : [0, 0]
+                const cPeriod = cH24 >= 12 ? 'PM' : 'AM'
+                const cH12 =
+                  cH24 === 0 ? 12 : cH24 > 12 ? cH24 - 12 : cH24
+
+                const updateCloseTime = (
+                  hour12: number,
+                  minute: number,
+                  ampm: string
+                ) => {
+                  const h =
+                    ampm === 'AM'
+                      ? hour12 === 12
+                        ? 0
+                        : hour12
+                      : hour12 === 12
+                        ? 12
+                        : hour12 + 12
+                  const newTime = `${String(h).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+                  const datePart = field.value
+                    ? field.value.split('T')[0]
+                    : ''
+                  field.onChange(datePart ? `${datePart}T${newTime}` : '')
+                }
+
+                return (
+                  <FormItem className='min-w-0'>
+                    <FormLabel>Silent Auction Close</FormLabel>
+                    <div className='flex flex-col gap-2'>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant='outline'
+                              className={cn(
+                                'w-full justify-start text-left font-normal',
+                                !dateValue && 'text-muted-foreground'
+                              )}
+                            >
+                              <CalendarIcon className='mr-2 h-4 w-4' />
+                              {dateValue
+                                ? format(dateValue, 'PPP')
+                                : 'Pick a date'}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className='w-auto p-0' align='start'>
+                          <CalendarPicker
+                            mode='single'
+                            selected={dateValue}
+                            onSelect={(day) => {
+                              if (day) {
+                                const datePart = format(day, 'yyyy-MM-dd')
+                                const time = timeValue || '00:00'
+                                field.onChange(`${datePart}T${time}`)
+                              }
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <div className='flex gap-2'>
+                        <Select
+                          value={String(cH12)}
+                          onValueChange={(v) =>
+                            updateCloseTime(Number(v), cM, cPeriod)
+                          }
+                        >
+                          <SelectTrigger className='w-[4.5rem]'>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from(
+                              { length: 12 },
+                              (_, i) => i + 1
+                            ).map((hour) => (
+                              <SelectItem key={hour} value={String(hour)}>
+                                {hour}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <span className='flex items-center text-lg font-medium'>
+                          :
+                        </span>
+                        <Select
+                          value={String(cM).padStart(2, '0')}
+                          onValueChange={(v) =>
+                            updateCloseTime(cH12, Number(v), cPeriod)
+                          }
+                        >
+                          <SelectTrigger className='w-[4.5rem]'>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from(
+                              { length: 12 },
+                              (_, i) => i * 5
+                            ).map((min) => (
+                              <SelectItem
+                                key={min}
+                                value={String(min).padStart(2, '0')}
+                              >
+                                {String(min).padStart(2, '0')}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          value={cPeriod}
+                          onValueChange={(v) =>
+                            updateCloseTime(cH12, cM, v)
+                          }
+                        >
+                          <SelectTrigger className='w-[4.5rem]'>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value='AM'>AM</SelectItem>
+                            <SelectItem value='PM'>PM</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <FormDescription>
+                      When the silent auction closes for bidding
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )
+              }}
+            />
+          </div>
         </div>
 
         {/* Contact Information Section */}

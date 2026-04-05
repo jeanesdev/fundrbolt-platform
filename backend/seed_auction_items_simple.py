@@ -51,7 +51,7 @@ async def seed_auction_items():
 
         # Sample auction items
         items_data = [
-            AuctionItemCreate(
+            AuctionItemCreate(  # type: ignore[call-arg]
                 title="Weekend Getaway at Luxury Resort",
                 description="Enjoy a relaxing 3-night stay at the Grand Mountain Resort. Includes spa treatment for two, gourmet breakfast, and resort credits. Valid for 1 year.",
                 auction_type=AuctionType.LIVE,
@@ -66,7 +66,7 @@ async def seed_auction_items():
                 item_webpage="https://grandmountainresort.example.com",
                 display_priority=100,
             ),
-            AuctionItemCreate(
+            AuctionItemCreate(  # type: ignore[call-arg]
                 title="Wine Tasting Experience for Four",
                 description="Private wine tasting at Vineyard Estate with sommelier-guided tour. Includes tasting of 8 premium wines and gourmet cheese pairing.",
                 auction_type=AuctionType.LIVE,
@@ -81,7 +81,7 @@ async def seed_auction_items():
                 item_webpage="https://vineyardestate.example.com",
                 display_priority=90,
             ),
-            AuctionItemCreate(
+            AuctionItemCreate(  # type: ignore[call-arg]
                 title="Original Artwork by Local Artist",
                 description="Beautiful 24x36 canvas painting featuring mountain landscape. Professionally framed and ready to hang. One-of-a-kind piece.",
                 auction_type=AuctionType.LIVE,
@@ -96,7 +96,7 @@ async def seed_auction_items():
                 item_webpage="https://sarahmitchellart.example.com",
                 display_priority=80,
             ),
-            AuctionItemCreate(
+            AuctionItemCreate(  # type: ignore[call-arg]
                 title="Golf Package at Championship Course",
                 description="Foursome golf package at Pebble Creek Championship Golf Course. Includes cart, range balls, and lunch at the clubhouse.",
                 auction_type=AuctionType.LIVE,
@@ -111,7 +111,7 @@ async def seed_auction_items():
                 item_webpage="https://pebblecreekgolf.example.com",
                 display_priority=70,
             ),
-            AuctionItemCreate(
+            AuctionItemCreate(  # type: ignore[call-arg]
                 title="Gourmet Coffee Gift Basket",
                 description="Premium coffee lovers bundle with artisan roasted beans, French press, and gourmet treats. Perfect gift for coffee enthusiasts.",
                 auction_type=AuctionType.SILENT,
@@ -126,7 +126,7 @@ async def seed_auction_items():
                 item_webpage="https://roasterycoffee.example.com",
                 display_priority=60,
             ),
-            AuctionItemCreate(
+            AuctionItemCreate(  # type: ignore[call-arg]
                 title="Spa Day Package",
                 description="Full day spa package including massage, facial, manicure, and access to spa facilities. Valid for 6 months.",
                 auction_type=AuctionType.SILENT,
@@ -141,7 +141,7 @@ async def seed_auction_items():
                 item_webpage="https://serenityspa.example.com",
                 display_priority=55,
             ),
-            AuctionItemCreate(
+            AuctionItemCreate(  # type: ignore[call-arg]
                 title="Professional Photography Session",
                 description="2-hour family or portrait photography session with professional photographer. Includes 20 edited digital images.",
                 auction_type=AuctionType.SILENT,
@@ -156,7 +156,7 @@ async def seed_auction_items():
                 item_webpage="https://capturemoments.example.com",
                 display_priority=50,
             ),
-            AuctionItemCreate(
+            AuctionItemCreate(  # type: ignore[call-arg]
                 title="Cooking Class with Celebrity Chef",
                 description="Hands-on cooking class featuring Italian cuisine. Learn to make fresh pasta, sauces, and authentic dishes. Includes dinner and wine.",
                 auction_type=AuctionType.SILENT,
@@ -171,7 +171,7 @@ async def seed_auction_items():
                 item_webpage="https://chefmarcos.example.com",
                 display_priority=45,
             ),
-            AuctionItemCreate(
+            AuctionItemCreate(  # type: ignore[call-arg]
                 title="Designer Handbag",
                 description="Authentic designer leather handbag from premium collection. Brand new with tags and authentication certificate.",
                 auction_type=AuctionType.SILENT,
@@ -186,7 +186,7 @@ async def seed_auction_items():
                 item_webpage="https://luxefashion.example.com",
                 display_priority=40,
             ),
-            AuctionItemCreate(
+            AuctionItemCreate(  # type: ignore[call-arg]
                 title="Art Supplies Bundle",
                 description="Complete art supplies set including professional-grade paints, brushes, canvas, and easel. Perfect for beginners or experienced artists.",
                 auction_type=AuctionType.SILENT,

@@ -41,6 +41,7 @@ class InvitationService:
         first_name: str | None = None,
         last_name: str | None = None,
         message: str | None = None,
+        event_id: uuid.UUID | None = None,
     ) -> Invitation:
         """
         Create a new invitation.
@@ -108,6 +109,7 @@ class InvitationService:
             status=InvitationStatus.PENDING,
             expires_at=datetime.now(UTC) + timedelta(days=7),
             token_hash="temp",  # Temporary, will be updated below
+            event_id=event_id,
         )
         db.add(invitation)
         await db.commit()
@@ -134,6 +136,7 @@ class InvitationService:
             inviter_name=inviter_name,
             first_name=first_name,
             last_name=last_name,
+            event_id=str(event_id) if event_id else None,
         )
         invitation.token_hash = hash_password(token)
         await db.commit()
@@ -353,28 +356,34 @@ class InvitationService:
             NPOMember.user_id == user_id,
             NPOMember.status == MemberStatus.ACTIVE,
         )
-        result = await db.execute(member_stmt)
-        existing_member = result.scalar_one_or_none()
+        member_result = await db.execute(member_stmt)
+        existing_member = member_result.scalar_one_or_none()
 
+        member: NPOMember
         if existing_member:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="You are already a member of this organization",
+            # For auctioneer role, update existing member's role instead of rejecting
+            if invitation.role == "auctioneer":
+                existing_member.role = MemberRole.AUCTIONEER
+                member = existing_member
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="You are already a member of this organization",
+                )
+        else:
+            # Create member
+            member = NPOMember(
+                npo_id=invitation.npo_id,
+                user_id=user_id,
+                role=MemberRole(invitation.role),
+                status=MemberStatus.ACTIVE,
             )
+            db.add(member)
 
         # Get user for audit logging
         user_stmt = select(User).where(User.id == user_id)
         user_result = await db.execute(user_stmt)
         user = user_result.scalar_one()
-
-        # Create member
-        member = NPOMember(
-            npo_id=invitation.npo_id,
-            user_id=user_id,
-            role=MemberRole(invitation.role),
-            status=MemberStatus.ACTIVE,
-        )
-        db.add(member)
 
         # Update invitation status
         invitation.status = InvitationStatus.ACCEPTED
