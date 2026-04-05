@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { BidHistoryEntry } from '@/services/auctioneerService'
 import { History } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface BidHistoryProps {
   bids: BidHistoryEntry[]
@@ -50,7 +50,7 @@ export function BidHistory({ bids }: BidHistoryProps) {
                 </div>
                 <div className='flex items-center gap-3'>
                   <span className='font-semibold'>
-                    {formatCurrency(bid.amount)}
+                    {formatCurrency(bid.bid_amount)}
                   </span>
                   <span className='text-muted-foreground text-xs'>
                     {formatTime(bid.placed_at)}

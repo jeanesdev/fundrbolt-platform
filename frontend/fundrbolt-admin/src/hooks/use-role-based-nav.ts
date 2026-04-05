@@ -241,7 +241,13 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
 
   // Grouped nav: Event, Guests, Auctions
   const eventNavGroups: EventNavGroup[] = selectedEventId
-    ? EVENT_NAV_GROUPS.map((group) => ({
+    ? EVENT_NAV_GROUPS.filter((group) => {
+        // Only show Auctioneer section for auctioneers and super admins
+        if (group.title === 'Auctioneer') {
+          return isAuctioneer || isSuperAdmin
+        }
+        return true
+      }).map((group) => ({
         title: group.title,
         items: group.sections.map(buildEventNavItem),
       }))

@@ -226,5 +226,4 @@ class AuctionItemMedia(Base, UUIDMixin, TimestampMixin):
     __table_args__ = (
         CheckConstraint("media_type IN ('image', 'video')", name="ck_auction_item_media_type"),
         CheckConstraint("file_size > 0", name="ck_auction_item_media_file_size_positive"),
-        UniqueConstraint("auction_item_id", "file_path", name="uq_auction_item_media_item_file"),
     )

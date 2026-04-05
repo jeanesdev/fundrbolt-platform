@@ -15,6 +15,7 @@ from app.models.auction_bid import AuctionBid, BidStatus, PaddleRaiseContributio
 from app.models.auction_item import AuctionItem, AuctionItemMedia
 from app.models.auctioneer import AuctioneerEventSettings, AuctioneerItemCommission
 from app.models.event import Event
+from app.models.event_registration import EventRegistration
 from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
 from app.models.quick_entry_donation import QuickEntryDonation
 from app.models.registration_guest import RegistrationGuest
@@ -50,6 +51,17 @@ class AuctioneerService:
     async def get_commissions(
         self, event_id: UUID, auctioneer_user_id: UUID
     ) -> CommissionListResponse:
+        # Subquery for primary image to avoid N+1 queries
+        primary_img_subq = (
+            select(
+                AuctionItemMedia.auction_item_id,
+                func.min(AuctionItemMedia.file_path).label("file_path"),
+            )
+            .where(AuctionItemMedia.display_order == 0)
+            .group_by(AuctionItemMedia.auction_item_id)
+            .subquery()
+        )
+
         stmt = (
             select(
                 AuctioneerItemCommission,
@@ -61,10 +73,15 @@ class AuctioneerService:
                 AuctionItem.quantity_available,
                 AuctionItem.cost,
                 AuctionItem.bid_count,
+                primary_img_subq.c.file_path.label("primary_image_url"),
             )
             .join(
                 AuctionItem,
                 AuctioneerItemCommission.auction_item_id == AuctionItem.id,
+            )
+            .outerjoin(
+                primary_img_subq,
+                AuctionItem.id == primary_img_subq.c.auction_item_id,
             )
             .where(
                 AuctioneerItemCommission.auctioneer_user_id == auctioneer_user_id,
@@ -78,17 +95,7 @@ class AuctioneerService:
         commissions: list[CommissionListItem] = []
         for row in rows:
             comm = row[0]
-            # Get primary image
-            img_stmt = (
-                select(AuctionItemMedia.file_path)
-                .where(
-                    AuctionItemMedia.auction_item_id == comm.auction_item_id,
-                    AuctionItemMedia.display_order == 0,
-                )
-                .limit(1)
-            )
-            img_result = await self.db.execute(img_stmt)
-            primary_image = img_result.scalar_one_or_none()
+            primary_image = row[10]  # primary_image_url from subquery
 
             commissions.append(
                 CommissionListItem(
@@ -395,12 +402,50 @@ class AuctioneerService:
         # Event settings for category percentages
         settings = await self.get_event_settings(event_id, auctioneer_user_id)
 
-        # Category earnings — exclude commissioned items to avoid double-counting
-        # For simplicity we apply category % to the full category pool
-        # (items with per-item commission are already counted above)
-        live_cat = revenue["live_auction"] * settings.live_auction_percent / Decimal("100")
+        # Category earnings — exclude commissioned items to avoid double-counting.
+        # Category percentages apply only to revenue from items without per-item commissions.
+        commissioned_live_revenue = Decimal("0")
+        commissioned_silent_revenue = Decimal("0")
+
+        if commissioned_ids:
+            for c_id in commissioned_ids:
+                bid_amt = Decimal("0")
+                # Check auction type for this item
+                item_type_result = await self.db.execute(
+                    select(AuctionItem.auction_type).where(AuctionItem.id == c_id)
+                )
+                item_type = item_type_result.scalar_one_or_none()
+
+                # Get highest bid from AuctionBid
+                ab_stmt = select(func.max(AuctionBid.bid_amount)).where(
+                    AuctionBid.auction_item_id == c_id,
+                    AuctionBid.bid_status.in_(
+                        [BidStatus.ACTIVE.value, BidStatus.OUTBID.value, BidStatus.WINNING.value]
+                    ),
+                )
+                ab_max = Decimal((await self.db.execute(ab_stmt)).scalar_one() or 0)
+
+                # Get highest bid from QuickEntryBid
+                qe_stmt = select(func.max(QuickEntryBid.amount)).where(
+                    QuickEntryBid.item_id == c_id,
+                    QuickEntryBid.status.in_(
+                        [QuickEntryBidStatus.ACTIVE, QuickEntryBidStatus.WINNING]
+                    ),
+                )
+                qe_max = Decimal((await self.db.execute(qe_stmt)).scalar_one() or 0)
+
+                bid_amt = max(ab_max, qe_max)
+                if item_type == "live":
+                    commissioned_live_revenue += bid_amt
+                elif item_type == "silent":
+                    commissioned_silent_revenue += bid_amt
+
+        live_pool = max(Decimal("0"), revenue["live_auction"] - commissioned_live_revenue)
+        silent_pool = max(Decimal("0"), revenue["silent_auction"] - commissioned_silent_revenue)
+
+        live_cat = live_pool * settings.live_auction_percent / Decimal("100")
         paddle_cat = revenue["paddle_raise"] * settings.paddle_raise_percent / Decimal("100")
-        silent_cat = revenue["silent_auction"] * settings.silent_auction_percent / Decimal("100")
+        silent_cat = silent_pool * settings.silent_auction_percent / Decimal("100")
 
         total_earnings = per_item_total + live_cat + paddle_cat + silent_cat
 
@@ -551,8 +596,13 @@ class AuctioneerService:
             if bidder_user:
                 guest_stmt = (
                     select(RegistrationGuest.table_number)
+                    .join(
+                        EventRegistration,
+                        RegistrationGuest.registration_id == EventRegistration.id,
+                    )
                     .where(
                         RegistrationGuest.user_id == bidder_user.id,
+                        EventRegistration.event_id == event_id,
                     )
                     .limit(1)
                 )

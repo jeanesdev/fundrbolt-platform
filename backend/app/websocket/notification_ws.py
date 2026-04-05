@@ -277,6 +277,11 @@ async def auction_join_event(sid: str, data: dict[str, Any]) -> None:
     event_id = data.get("event_id")
     if not event_id:
         return
+    # Verify the user is auth'd for this session
+    session_data = await sio.get_session(sid)
+    if not session_data or not session_data.get("user_id"):
+        logger.warning("Unauthenticated auction:join_event from sid=%s", sid)
+        return
     room = f"event:{event_id}"
     await sio.enter_room(sid, room)
 

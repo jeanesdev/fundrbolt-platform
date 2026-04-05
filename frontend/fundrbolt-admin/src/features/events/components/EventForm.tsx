@@ -2,6 +2,20 @@
  * EventForm Component
  * Comprehensive form for creating and editing events with all fields
  */
+import { useEffect, useRef, useState } from 'react'
+import { z } from 'zod'
+import { format, parse } from 'date-fns'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import type { NPOBranding } from '@/services/event-service'
+import type {
+  EventCreateRequest,
+  EventDetail,
+  EventUpdateRequest,
+} from '@/types/event'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
+import { CalendarIcon, MapPin } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Calendar as CalendarPicker } from '@/components/ui/calendar'
 import {
@@ -27,20 +41,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { cn } from '@/lib/utils'
-import type { NPOBranding } from '@/services/event-service'
-import type {
-  EventCreateRequest,
-  EventDetail,
-  EventUpdateRequest,
-} from '@/types/event'
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { format, parse } from 'date-fns'
-import { CalendarIcon, MapPin } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 import { ColorPicker } from './ColorPicker.tsx'
 import { RichTextEditor } from './RichTextEditor.tsx'
 import {
@@ -378,10 +378,10 @@ export function EventForm({
       fundraising_goal: values.fundraising_goal ?? null,
       live_auction_start_datetime: values.live_auction_start_datetime
         ? new Date(values.live_auction_start_datetime).toISOString()
-        : undefined,
+        : null,
       auction_close_datetime: values.auction_close_datetime
         ? new Date(values.auction_close_datetime).toISOString()
-        : undefined,
+        : null,
     }
 
     // Add version for optimistic locking on updates
@@ -969,11 +969,7 @@ export function EventForm({
               name='live_auction_start_datetime'
               render={({ field }) => {
                 const dateValue = field.value
-                  ? parse(
-                      field.value.split('T')[0],
-                      'yyyy-MM-dd',
-                      new Date()
-                    )
+                  ? parse(field.value.split('T')[0], 'yyyy-MM-dd', new Date())
                   : undefined
                 const timeValue = field.value
                   ? field.value.split('T')[1] || ''
@@ -982,8 +978,7 @@ export function EventForm({
                   ? timeValue.split(':').map(Number)
                   : [0, 0]
                 const lPeriod = lH24 >= 12 ? 'PM' : 'AM'
-                const lH12 =
-                  lH24 === 0 ? 12 : lH24 > 12 ? lH24 - 12 : lH24
+                const lH12 = lH24 === 0 ? 12 : lH24 > 12 ? lH24 - 12 : lH24
 
                 const updateLiveTime = (
                   hour12: number,
@@ -999,9 +994,7 @@ export function EventForm({
                         ? 12
                         : hour12 + 12
                   const newTime = `${String(h).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
-                  const datePart = field.value
-                    ? field.value.split('T')[0]
-                    : ''
+                  const datePart = field.value ? field.value.split('T')[0] : ''
                   field.onChange(datePart ? `${datePart}T${newTime}` : '')
                 }
 
@@ -1052,14 +1045,13 @@ export function EventForm({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {Array.from(
-                              { length: 12 },
-                              (_, i) => i + 1
-                            ).map((hour) => (
-                              <SelectItem key={hour} value={String(hour)}>
-                                {hour}
-                              </SelectItem>
-                            ))}
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                              (hour) => (
+                                <SelectItem key={hour} value={String(hour)}>
+                                  {hour}
+                                </SelectItem>
+                              )
+                            )}
                           </SelectContent>
                         </Select>
                         <span className='flex items-center text-lg font-medium'>
@@ -1075,24 +1067,21 @@ export function EventForm({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {Array.from(
-                              { length: 12 },
-                              (_, i) => i * 5
-                            ).map((min) => (
-                              <SelectItem
-                                key={min}
-                                value={String(min).padStart(2, '0')}
-                              >
-                                {String(min).padStart(2, '0')}
-                              </SelectItem>
-                            ))}
+                            {Array.from({ length: 12 }, (_, i) => i * 5).map(
+                              (min) => (
+                                <SelectItem
+                                  key={min}
+                                  value={String(min).padStart(2, '0')}
+                                >
+                                  {String(min).padStart(2, '0')}
+                                </SelectItem>
+                              )
+                            )}
                           </SelectContent>
                         </Select>
                         <Select
                           value={lPeriod}
-                          onValueChange={(v) =>
-                            updateLiveTime(lH12, lM, v)
-                          }
+                          onValueChange={(v) => updateLiveTime(lH12, lM, v)}
                         >
                           <SelectTrigger className='w-[4.5rem]'>
                             <SelectValue />
@@ -1117,11 +1106,7 @@ export function EventForm({
               name='auction_close_datetime'
               render={({ field }) => {
                 const dateValue = field.value
-                  ? parse(
-                      field.value.split('T')[0],
-                      'yyyy-MM-dd',
-                      new Date()
-                    )
+                  ? parse(field.value.split('T')[0], 'yyyy-MM-dd', new Date())
                   : undefined
                 const timeValue = field.value
                   ? field.value.split('T')[1] || ''
@@ -1130,8 +1115,7 @@ export function EventForm({
                   ? timeValue.split(':').map(Number)
                   : [0, 0]
                 const cPeriod = cH24 >= 12 ? 'PM' : 'AM'
-                const cH12 =
-                  cH24 === 0 ? 12 : cH24 > 12 ? cH24 - 12 : cH24
+                const cH12 = cH24 === 0 ? 12 : cH24 > 12 ? cH24 - 12 : cH24
 
                 const updateCloseTime = (
                   hour12: number,
@@ -1147,9 +1131,7 @@ export function EventForm({
                         ? 12
                         : hour12 + 12
                   const newTime = `${String(h).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
-                  const datePart = field.value
-                    ? field.value.split('T')[0]
-                    : ''
+                  const datePart = field.value ? field.value.split('T')[0] : ''
                   field.onChange(datePart ? `${datePart}T${newTime}` : '')
                 }
 
@@ -1200,14 +1182,13 @@ export function EventForm({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {Array.from(
-                              { length: 12 },
-                              (_, i) => i + 1
-                            ).map((hour) => (
-                              <SelectItem key={hour} value={String(hour)}>
-                                {hour}
-                              </SelectItem>
-                            ))}
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                              (hour) => (
+                                <SelectItem key={hour} value={String(hour)}>
+                                  {hour}
+                                </SelectItem>
+                              )
+                            )}
                           </SelectContent>
                         </Select>
                         <span className='flex items-center text-lg font-medium'>
@@ -1223,24 +1204,21 @@ export function EventForm({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {Array.from(
-                              { length: 12 },
-                              (_, i) => i * 5
-                            ).map((min) => (
-                              <SelectItem
-                                key={min}
-                                value={String(min).padStart(2, '0')}
-                              >
-                                {String(min).padStart(2, '0')}
-                              </SelectItem>
-                            ))}
+                            {Array.from({ length: 12 }, (_, i) => i * 5).map(
+                              (min) => (
+                                <SelectItem
+                                  key={min}
+                                  value={String(min).padStart(2, '0')}
+                                >
+                                  {String(min).padStart(2, '0')}
+                                </SelectItem>
+                              )
+                            )}
                           </SelectContent>
                         </Select>
                         <Select
                           value={cPeriod}
-                          onValueChange={(v) =>
-                            updateCloseTime(cH12, cM, v)
-                          }
+                          onValueChange={(v) => updateCloseTime(cH12, cM, v)}
                         >
                           <SelectTrigger className='w-[4.5rem]'>
                             <SelectValue />

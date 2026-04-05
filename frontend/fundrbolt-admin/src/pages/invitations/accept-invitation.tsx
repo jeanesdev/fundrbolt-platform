@@ -84,7 +84,13 @@ export default function AcceptInvitationPage() {
 
       // Decode JWT token to extract invitation details
       try {
-        const payload = JSON.parse(atob(urlToken.split('.')[1]))
+        // Base64url → base64: replace URL-safe chars and add padding
+        const base64 = urlToken
+          .split('.')[1]
+          .replace(/-/g, '+')
+          .replace(/_/g, '/')
+        const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4)
+        const payload = JSON.parse(atob(padded))
         setDetails({
           npo_name: payload.npo_name || 'Unknown Organization',
           role: payload.role || 'staff',

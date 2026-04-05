@@ -9,7 +9,6 @@ export interface CommissionUpsertRequest {
 
 export interface CommissionResponse {
   id: string
-  auctioneer_user_id: string
   auction_item_id: string
   commission_percent: number
   flat_fee: number
@@ -50,7 +49,6 @@ export interface EventSettingsUpsertRequest {
 }
 
 export interface EventSettingsResponse {
-  id: string
   auctioneer_user_id: string
   event_id: string
   live_auction_percent: number
@@ -94,7 +92,8 @@ export interface DashboardResponse {
 // Live auction types
 export interface HighBidder {
   bidder_number: number | null
-  full_name: string
+  first_name: string
+  last_name: string
   table_number: number | null
   profile_picture_url: string | null
 }
@@ -102,24 +101,28 @@ export interface HighBidder {
 export interface BidHistoryEntry {
   bidder_number: number | null
   bidder_name: string
-  amount: number
+  bid_amount: number
   placed_at: string
 }
 
 export interface LiveAuctionItem {
   id: string
+  bid_number: number | null
   title: string
   description: string | null
-  image_url: string | null
   starting_bid: number | null
-  current_bid: number | null
+  current_bid_amount: number | null
   bid_count: number
+  primary_image_url: string | null
+  donor_value: number | null
+  cost: number | null
 }
 
 export interface LiveAuctionResponse {
   current_item: LiveAuctionItem | null
   high_bidder: HighBidder | null
   bid_history: BidHistoryEntry[]
+  auction_status: 'not_started' | 'in_progress' | 'ended' | 'not_scheduled'
 }
 
 class AuctioneerService {

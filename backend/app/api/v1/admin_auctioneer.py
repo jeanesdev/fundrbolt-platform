@@ -24,8 +24,24 @@ from app.schemas.auctioneer import (
 )
 from app.services.auction_item_media_service import AuctionItemMediaService
 from app.services.auctioneer_service import AuctioneerService
+from app.services.permission_service import PermissionService
 
 router = APIRouter(prefix="/admin/events", tags=["admin-auctioneer"])
+
+
+async def _verify_event_access(event_id: UUID, current_user: User, db: AsyncSession) -> None:
+    """Verify the user can access the given event."""
+    from app.models.event import Event
+
+    event = (await db.execute(select(Event).where(Event.id == event_id))).scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    permission_service = PermissionService()
+    if not await permission_service.can_view_event(current_user, event.npo_id, db=db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to access this event",
+        )
 
 
 def _resolve_auctioneer_id(current_user: User, auctioneer_user_id: UUID | None) -> UUID:
@@ -51,6 +67,7 @@ async def get_commissions(
     db: AsyncSession = Depends(get_db),
     auctioneer_user_id: UUID | None = Query(default=None),
 ) -> CommissionListResponse:
+    await _verify_event_access(event_id, current_user, db)
     target_id = _resolve_auctioneer_id(current_user, auctioneer_user_id)
     service = AuctioneerService(db)
     result = await service.get_commissions(event_id, target_id)
@@ -86,6 +103,7 @@ async def upsert_commission(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ) -> CommissionResponse:
+    await _verify_event_access(event_id, current_user, db)
     # Verify item belongs to event
     item = (
         await db.execute(
@@ -123,6 +141,7 @@ async def delete_commission(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ) -> None:
+    await _verify_event_access(event_id, current_user, db)
     service = AuctioneerService(db)
     deleted = await service.delete_commission(current_user.id, auction_item_id)
     if not deleted:
@@ -147,6 +166,7 @@ async def get_event_settings(
     db: AsyncSession = Depends(get_db),
     auctioneer_user_id: UUID | None = Query(default=None),
 ) -> EventSettingsResponse:
+    await _verify_event_access(event_id, current_user, db)
     target_id = _resolve_auctioneer_id(current_user, auctioneer_user_id)
     service = AuctioneerService(db)
     return await service.get_event_settings(event_id, target_id)
@@ -164,6 +184,7 @@ async def upsert_event_settings(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ) -> EventSettingsResponse:
+    await _verify_event_access(event_id, current_user, db)
     service = AuctioneerService(db)
     result = await service.upsert_event_settings(
         event_id=event_id,
@@ -191,6 +212,7 @@ async def get_dashboard(
     db: AsyncSession = Depends(get_db),
     auctioneer_user_id: UUID | None = Query(default=None),
 ) -> DashboardResponse:
+    await _verify_event_access(event_id, current_user, db)
     target_id = _resolve_auctioneer_id(current_user, auctioneer_user_id)
     service = AuctioneerService(db)
     return await service.get_dashboard(event_id, target_id)
@@ -210,5 +232,6 @@ async def get_live_auction(
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ) -> LiveAuctionResponse:
+    await _verify_event_access(event_id, current_user, db)
     service = AuctioneerService(db)
     return await service.get_live_auction(event_id)

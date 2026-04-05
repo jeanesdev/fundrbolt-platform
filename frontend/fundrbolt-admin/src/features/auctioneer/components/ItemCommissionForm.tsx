@@ -1,3 +1,6 @@
+import { useMemo, useState } from 'react'
+import type { CommissionListItem } from '@/services/auctioneerService'
+import { DollarSign, Percent, Save, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -9,9 +12,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import type { CommissionListItem } from '@/services/auctioneerService'
-import { DollarSign, Percent, Save, Trash2 } from 'lucide-react'
-import { useState } from 'react'
 import {
   useDeleteCommission,
   useUpsertCommission,
@@ -24,6 +24,27 @@ interface ItemCommissionFormProps {
 }
 
 export function ItemCommissionForm({
+  eventId,
+  auctionItemId,
+  existing,
+}: ItemCommissionFormProps) {
+  // Derive a stable key so React remounts the form when existing data changes
+  const formKey = useMemo(
+    () => existing?.auction_item_id ?? 'new',
+    [existing?.auction_item_id]
+  )
+
+  return (
+    <ItemCommissionFormInner
+      key={formKey}
+      eventId={eventId}
+      auctionItemId={auctionItemId}
+      existing={existing}
+    />
+  )
+}
+
+function ItemCommissionFormInner({
   eventId,
   auctionItemId,
   existing,

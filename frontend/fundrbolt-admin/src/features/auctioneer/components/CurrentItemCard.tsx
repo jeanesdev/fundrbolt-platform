@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { LiveAuctionItem } from '@/services/auctioneerService'
 import { Gavel, Image } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface CurrentItemCardProps {
   item: LiveAuctionItem
@@ -25,9 +25,9 @@ export function CurrentItemCard({ item }: CurrentItemCardProps) {
       <CardContent>
         <div className='flex gap-4'>
           <div className='h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-neutral-100 dark:bg-neutral-800'>
-            {item.image_url ? (
+            {item.primary_image_url ? (
               <img
-                src={item.image_url}
+                src={item.primary_image_url}
                 alt={item.title}
                 className='h-full w-full object-cover'
               />
@@ -53,11 +53,11 @@ export function CurrentItemCard({ item }: CurrentItemCardProps) {
                   </span>
                 </div>
               )}
-              {item.current_bid !== null && (
+              {item.current_bid_amount !== null && (
                 <div>
                   <span className='text-muted-foreground'>Current: </span>
                   <span className='font-bold text-green-600 dark:text-green-400'>
-                    {formatCurrency(item.current_bid)}
+                    {formatCurrency(item.current_bid_amount)}
                   </span>
                 </div>
               )}

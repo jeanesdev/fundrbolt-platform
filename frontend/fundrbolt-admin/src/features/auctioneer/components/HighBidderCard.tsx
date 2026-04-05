@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { HighBidder } from '@/services/auctioneerService'
 import { Crown, User } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface HighBidderCardProps {
   bidder: HighBidder
@@ -21,7 +21,7 @@ export function HighBidderCard({ bidder }: HighBidderCardProps) {
             {bidder.profile_picture_url ? (
               <img
                 src={bidder.profile_picture_url}
-                alt={bidder.full_name}
+                alt={`${bidder.first_name} ${bidder.last_name}`}
                 className='h-full w-full object-cover'
               />
             ) : (
@@ -29,7 +29,9 @@ export function HighBidderCard({ bidder }: HighBidderCardProps) {
             )}
           </div>
           <div>
-            <div className='text-lg font-semibold'>{bidder.full_name}</div>
+            <div className='text-lg font-semibold'>
+              {bidder.first_name} {bidder.last_name}
+            </div>
             <div className='text-muted-foreground flex gap-3 text-sm'>
               {bidder.bidder_number !== null && (
                 <span>Bidder #{bidder.bidder_number}</span>
