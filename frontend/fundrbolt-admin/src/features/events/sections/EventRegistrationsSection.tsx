@@ -1,7 +1,6 @@
-import { AttendeeListTable } from '@/components/admin/AttendeeListTable'
-import { InviteGuestDialog } from '@/components/admin/InviteGuestDialog'
-import { MealSummaryCard } from '@/components/admin/MealSummaryCard'
-import { RegistrationImportDialog } from '@/components/admin/RegistrationImportDialog'
+import { useState } from 'react'
+import { Upload } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -10,9 +9,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Upload } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
+import { AttendeeListTable } from '@/components/admin/AttendeeListTable'
+import { InviteGuestDialog } from '@/components/admin/InviteGuestDialog'
+import { MealSummaryCard } from '@/components/admin/MealSummaryCard'
+import { RegistrationImportDialog } from '@/components/admin/RegistrationImportDialog'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventRegistrationsSection() {

@@ -3,13 +3,13 @@
  * Shows auction item details (description, pricing, additional info).
  * Wrapped in AuctionItemDetailLayout which provides header, status, sub-nav, and dialogs.
  */
+import { ExternalLink } from 'lucide-react'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import { useAuth } from '@/hooks/use-auth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ItemCommissionForm } from '@/features/auctioneer/components/ItemCommissionForm'
 import { useAuctioneerCommissions } from '@/features/auctioneer/hooks/useAuctioneerData'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
-import { useAuth } from '@/hooks/use-auth'
-import { useAuctionItemStore } from '@/stores/auctionItemStore'
-import { ExternalLink } from 'lucide-react'
 import { AuctionItemDetailLayout } from './AuctionItemDetailLayout'
 
 const formatCurrency = (amount: number | null): string => {

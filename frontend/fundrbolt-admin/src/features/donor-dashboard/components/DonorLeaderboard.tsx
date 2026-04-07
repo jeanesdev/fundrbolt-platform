@@ -1,4 +1,7 @@
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useState } from 'react'
+import { ChevronRight, Download, Filter, Search } from 'lucide-react'
+import apiClient from '@/lib/axios'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,10 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import apiClient from '@/lib/axios'
-import { ChevronRight, Download, Filter, Search } from 'lucide-react'
-import { useState } from 'react'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useDonorLeaderboard } from '../hooks/useDonorDashboard'
 
 const fmt = (n: number) =>

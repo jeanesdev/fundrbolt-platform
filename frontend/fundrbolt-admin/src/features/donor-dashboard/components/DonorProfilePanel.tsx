@@ -427,10 +427,7 @@ export function DonorProfilePanel({
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width='100%' height={300}>
-              <BarChart
-                data={categoryChartData}
-                margin={{ bottom: 40 }}
-              >
+              <BarChart data={categoryChartData} margin={{ bottom: 40 }}>
                 <CartesianGrid vertical={false} strokeDasharray='3 3' />
                 <XAxis
                   dataKey='name'
@@ -447,7 +444,7 @@ export function DonorProfilePanel({
                     border: '1px solid var(--color-border)',
                     borderRadius: '0.375rem',
                   }}
-                  formatter={(value?: number | string, name?: string) => [
+                  formatter={(value, name) => [
                     name === 'amount' ? fmt(Number(value ?? 0)) : (value ?? 0),
                     name === 'amount' ? 'Bid Amount' : 'Bid Count',
                   ]}

@@ -1,3 +1,6 @@
+import { useState } from 'react'
+import type { EventSettingsResponse } from '@/services/auctioneerService'
+import { Percent, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -8,9 +11,6 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { EventSettingsResponse } from '@/services/auctioneerService'
-import { Percent, Save } from 'lucide-react'
-import { useState } from 'react'
 import { useUpsertSettings } from '../hooks/useAuctioneerData'
 
 interface CategoryPercentagesProps {

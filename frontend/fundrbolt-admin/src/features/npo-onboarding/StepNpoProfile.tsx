@@ -5,6 +5,13 @@
  * Optional: mission / description.
  * Shows a duplicate-name warning banner when the server flags a similar name.
  */
+import { useState } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { AlertTriangle, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { updateStep } from '@/lib/api/onboarding'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,13 +25,6 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { updateStep } from '@/lib/api/onboarding'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { AlertTriangle, Loader2 } from 'lucide-react'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
 
 function formatPhoneNumber(value: string): string {
   const digits = value.replace(/\D/g, '')

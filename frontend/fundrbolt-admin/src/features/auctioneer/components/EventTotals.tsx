@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { EventTotals as EventTotalsData } from '@/services/auctioneerService'
 import { BarChart3 } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface EventTotalsProps {
   totals: EventTotalsData

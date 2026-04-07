@@ -1,7 +1,7 @@
-import { Badge } from '@/components/ui/badge'
+import { useEffect, useState } from 'react'
 import type { TimerData } from '@/services/auctioneerService'
 import { Clock, Timer } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Badge } from '@/components/ui/badge'
 
 interface CountdownTimersProps {
   timer: TimerData

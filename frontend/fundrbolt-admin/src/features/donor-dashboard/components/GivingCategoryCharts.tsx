@@ -127,9 +127,7 @@ export function GivingCategoryCharts({
                     border: '1px solid var(--color-border)',
                     borderRadius: '0.375rem',
                   }}
-                  formatter={(value?: number | string) =>
-                    fmt(Number(value ?? 0))
-                  }
+                  formatter={(value) => fmt(Number(value ?? 0))}
                 />
                 <Legend />
               </PieChart>
@@ -167,7 +165,7 @@ export function GivingCategoryCharts({
                     border: '1px solid var(--color-border)',
                     borderRadius: '0.375rem',
                   }}
-                  formatter={(value?: number | string, name?: string) => [
+                  formatter={(value, name) => [
                     name === 'amount' ? fmt(Number(value ?? 0)) : (value ?? 0),
                     name === 'amount' ? 'Amount' : 'Items',
                   ]}

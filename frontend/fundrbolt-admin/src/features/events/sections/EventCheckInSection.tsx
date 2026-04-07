@@ -1,5 +1,30 @@
-import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { checkinService } from '@/services/checkin-service'
+import {
+  Check,
+  ChevronDown,
+  CreditCard,
+  Crown,
+  Filter,
+  Loader2,
+  RotateCcw,
+  Search,
+  Settings2,
+  X,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
+import {
+  adminCreatePaymentProfile,
+  adminCreatePaymentSession,
+} from '@/lib/api/admin-payments'
+import {
+  assignBidderNumber,
+  assignRegistrationBidderNumber,
+} from '@/lib/api/admin-seating'
+import { getErrorMessage } from '@/lib/error-utils'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -34,34 +59,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { getUser, updateUser } from '@/features/users/api/users-api'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
-import {
-  adminCreatePaymentProfile,
-  adminCreatePaymentSession,
-} from '@/lib/api/admin-payments'
-import {
-  assignBidderNumber,
-  assignRegistrationBidderNumber,
-} from '@/lib/api/admin-seating'
-import { getErrorMessage } from '@/lib/error-utils'
-import { checkinService } from '@/services/checkin-service'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  Check,
-  ChevronDown,
-  CreditCard,
-  Crown,
-  Filter,
-  Loader2,
-  RotateCcw,
-  Search,
-  Settings2,
-  X,
-} from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 function StatusBadge({ checkedIn }: { checkedIn: boolean }) {
@@ -618,7 +618,7 @@ export function EventCheckInSection() {
         <CardContent>
           {/* Universal search bar */}
           <div className='relative mb-4'>
-            <Search className='text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2' />
+            <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
             <Input
               placeholder='Search by name, email, phone, bidder #, table #, confirmation code…'
               value={searchQuery}
@@ -629,7 +629,7 @@ export function EventCheckInSection() {
               <Button
                 variant='ghost'
                 size='sm'
-                className='absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 p-0'
+                className='absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 p-0'
                 onClick={() => setSearchQuery('')}
               >
                 <X className='h-3.5 w-3.5' />
@@ -898,9 +898,17 @@ export function EventCheckInSection() {
                             </Button>
                             {attendee.profile_picture_url && (
                               <Avatar className='h-6 w-6'>
-                                <AvatarImage src={attendee.profile_picture_url} alt={attendee.name || ''} />
+                                <AvatarImage
+                                  src={attendee.profile_picture_url}
+                                  alt={attendee.name || ''}
+                                />
                                 <AvatarFallback className='text-[10px]'>
-                                  {(attendee.name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                  {(attendee.name || '?')
+                                    .split(' ')
+                                    .map((n) => n[0])
+                                    .join('')
+                                    .slice(0, 2)
+                                    .toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                             )}
@@ -927,7 +935,11 @@ export function EventCheckInSection() {
                             <Settings2 className='h-4 w-4' />
                           </Button>
                         </div>
-                        <InlineDonorLabels labels={attendee.donor_labels} userId={attendee.user_id} npoId={currentEvent.npo_id} />
+                        <InlineDonorLabels
+                          labels={attendee.donor_labels}
+                          userId={attendee.user_id}
+                          npoId={currentEvent.npo_id}
+                        />
                         <dl className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
                           <dt className='text-muted-foreground'>Status</dt>
                           <dd>
@@ -940,10 +952,11 @@ export function EventCheckInSection() {
                           <dt className='text-muted-foreground'>Payment</dt>
                           <dd>
                             <span
-                              className={`flex items-center gap-1 text-xs ${attendee.has_payment_profile
-                                ? 'text-green-600'
-                                : 'text-muted-foreground'
-                                }`}
+                              className={`flex items-center gap-1 text-xs ${
+                                attendee.has_payment_profile
+                                  ? 'text-green-600'
+                                  : 'text-muted-foreground'
+                              }`}
                             >
                               <CreditCard className='h-3 w-3' />
                               {attendee.has_payment_profile
@@ -1199,9 +1212,17 @@ export function EventCheckInSection() {
                             <div className='flex items-center gap-2'>
                               {attendee.profile_picture_url && (
                                 <Avatar className='h-6 w-6'>
-                                  <AvatarImage src={attendee.profile_picture_url} alt={attendee.name || ''} />
+                                  <AvatarImage
+                                    src={attendee.profile_picture_url}
+                                    alt={attendee.name || ''}
+                                  />
                                   <AvatarFallback className='text-[10px]'>
-                                    {(attendee.name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                    {(attendee.name || '?')
+                                      .split(' ')
+                                      .map((n) => n[0])
+                                      .join('')
+                                      .slice(0, 2)
+                                      .toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
                               )}
@@ -1219,7 +1240,11 @@ export function EventCheckInSection() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <InlineDonorLabels labels={attendee.donor_labels} userId={attendee.user_id} npoId={currentEvent.npo_id} />
+                            <InlineDonorLabels
+                              labels={attendee.donor_labels}
+                              userId={attendee.user_id}
+                              npoId={currentEvent.npo_id}
+                            />
                           </TableCell>
                           <TableCell>{attendee.email || '—'}</TableCell>
                           <TableCell>
@@ -1248,10 +1273,11 @@ export function EventCheckInSection() {
                               }
                             >
                               <CreditCard
-                                className={`h-4 w-4 ${attendee.has_payment_profile
-                                  ? 'text-green-600'
-                                  : 'text-muted-foreground'
-                                  }`}
+                                className={`h-4 w-4 ${
+                                  attendee.has_payment_profile
+                                    ? 'text-green-600'
+                                    : 'text-muted-foreground'
+                                }`}
                               />
                             </span>
                           </TableCell>
@@ -1277,7 +1303,7 @@ export function EventCheckInSection() {
           }
         }}
       >
-        <DialogContent className='sm:max-w-xl max-h-[85vh] overflow-y-auto'>
+        <DialogContent className='max-h-[85vh] overflow-y-auto sm:max-w-xl'>
           <DialogHeader>
             <DialogTitle>Manage Attendee</DialogTitle>
             <DialogDescription>
