@@ -1,9 +1,9 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   auctioneerService,
   type CommissionUpsertRequest,
   type EventSettingsUpsertRequest,
 } from '@/services/auctioneerService'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 export function useAuctioneerDashboard(eventId: string) {

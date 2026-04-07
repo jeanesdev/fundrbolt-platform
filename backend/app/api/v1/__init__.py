@@ -10,6 +10,7 @@ from app.api.v1 import (
     admin_auctioneer,
     admin_checklist,
     admin_donations,
+    admin_donor_dashboard,
     admin_donor_labels,
     admin_event_dashboard,
     admin_notifications,
@@ -104,6 +105,7 @@ api_router.include_router(admin_registration_import.router)
 api_router.include_router(admin_ticket_sales_import.router)
 api_router.include_router(admin_user_import.router)
 api_router.include_router(admin_event_dashboard.router)
+api_router.include_router(admin_donor_dashboard.router)
 api_router.include_router(admin_quick_entry.router)
 api_router.include_router(donor_seating.router, tags=["donor-seating"])
 api_router.include_router(notifications.router, tags=["notifications"])

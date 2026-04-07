@@ -1,3 +1,7 @@
+import { useState } from 'react'
+import { DONOR_LABEL_COLORS } from '@/themes/colors'
+import { Check, Plus, X } from 'lucide-react'
+import { useNPOContextStore } from '@/stores/npo-context-store'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,10 +26,6 @@ import {
   useSetUserDonorLabels,
   useUserDonorLabels,
 } from '@/features/users/hooks/use-donor-labels'
-import { useNPOContextStore } from '@/stores/npo-context-store'
-import { DONOR_LABEL_COLORS } from '@/themes/colors'
-import { Check, Plus, X } from 'lucide-react'
-import { useState } from 'react'
 
 function getLabelStyle(color: string | null) {
   if (!color) return {}
@@ -53,7 +53,10 @@ export function InlineDonorLabels({
   const storeNpoId = useNPOContextStore((state) => state.selectedNpoId)
   const npoId = npoIdProp ?? storeNpoId
   const { data: labelsData } = useDonorLabels(editable ? npoId : null)
-  const { data: userLabelsData } = useUserDonorLabels(editable ? npoId : null, userId ?? null)
+  const { data: userLabelsData } = useUserDonorLabels(
+    editable ? npoId : null,
+    userId ?? null
+  )
   const setLabels = useSetUserDonorLabels(editable ? npoId : null)
   const createLabel = useCreateDonorLabel(editable ? npoId : null)
   const [popoverOpen, setPopoverOpen] = useState(false)
@@ -61,7 +64,8 @@ export function InlineDonorLabels({
   const [newLabelName, setNewLabelName] = useState('')
 
   // Use live query data when available, fall back to prop
-  const currentLabels = (editable && userLabelsData ? userLabelsData : null) ?? labels ?? []
+  const currentLabels =
+    (editable && userLabelsData ? userLabelsData : null) ?? labels ?? []
   const currentLabelIds = currentLabels.map((l) => l.id)
   const allLabels = labelsData?.items ?? []
 
@@ -197,9 +201,7 @@ export function InlineDonorLabels({
                       <Button
                         size='sm'
                         className='h-7 px-2 text-xs'
-                        disabled={
-                          !newLabelName.trim() || createLabel.isPending
-                        }
+                        disabled={!newLabelName.trim() || createLabel.isPending}
                         onClick={handleCreateLabel}
                       >
                         Add

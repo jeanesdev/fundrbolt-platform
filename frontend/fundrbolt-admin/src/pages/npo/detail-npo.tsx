@@ -2,25 +2,9 @@
  * NPO Detail Page
  * Displays detailed information about a specific NPO with edit and delete actions
  */
-import { ApplicationReviewDialog } from '@/components/admin/application-review-dialog'
-import { ApplicationStatusBadge } from '@/components/npo/application-status-badge'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { Skeleton } from '@/components/ui/skeleton'
-import { MemberList } from '@/features/npo-management/components/MemberList'
-import { PendingInvitations } from '@/features/npo-management/components/PendingInvitations'
-import { StaffInvitation } from '@/features/npo-management/components/StaffInvitation'
-import apiClient from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
-import { useNPOStore } from '@/stores/npo-store'
+import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import type { NPOApplication } from '@/types/npo'
 import {
   type CredentialRead,
@@ -28,8 +12,6 @@ import {
   isConfigured,
 } from '@/types/payments'
 import { colors as brandColors } from '@fundrbolt/shared/assets'
-import { useQuery } from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
   ArrowLeft,
   Building2,
@@ -45,8 +27,26 @@ import {
   Trash2,
   Users,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { useNPOStore } from '@/stores/npo-store'
+import apiClient from '@/lib/axios'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ApplicationReviewDialog } from '@/components/admin/application-review-dialog'
+import { ApplicationStatusBadge } from '@/components/npo/application-status-badge'
+import { MemberList } from '@/features/npo-management/components/MemberList'
+import { PendingInvitations } from '@/features/npo-management/components/PendingInvitations'
+import { StaffInvitation } from '@/features/npo-management/components/StaffInvitation'
 
 // Helper to get full logo URL
 function getLogoUrl(logoPath: string | null): string | null {

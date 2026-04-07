@@ -54,7 +54,10 @@ export function AuctioneerDashboardPage() {
         <EventTotals totals={data.event_totals} />
       </div>
 
-      <CategoryPercentages eventId={currentEvent.id} settings={settings ?? null} />
+      <CategoryPercentages
+        eventId={currentEvent.id}
+        settings={settings ?? null}
+      />
 
       <div>
         <h3 className='mb-3 text-lg font-semibold'>Item Commissions</h3>

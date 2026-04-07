@@ -2,6 +2,13 @@
  * NPO Creation Form Component
  * Multi-section form for creating a new NPO with validation
  */
+import { useEffect, useRef, useState } from 'react'
+import * as z from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import type { NPOCreateRequest } from '@/types/npo'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
+import { AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -28,13 +35,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import type { NPOCreateRequest } from '@/types/npo'
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { AlertCircle } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import * as z from 'zod'
 
 // US States for dropdown
 const US_STATES = [

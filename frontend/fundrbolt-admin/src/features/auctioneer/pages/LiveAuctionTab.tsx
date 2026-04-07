@@ -1,6 +1,6 @@
+import { Gavel } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
-import { Gavel } from 'lucide-react'
 import { BidHistory } from '../components/BidHistory'
 import { CurrentItemCard } from '../components/CurrentItemCard'
 import { HighBidderCard } from '../components/HighBidderCard'

@@ -1,9 +1,9 @@
+import { useNavigate } from '@tanstack/react-router'
+import type { CommissionListItem } from '@/services/auctioneerService'
+import { DollarSign, Image } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
-import type { CommissionListItem } from '@/services/auctioneerService'
-import { useNavigate } from '@tanstack/react-router'
-import { DollarSign, Image } from 'lucide-react'
 
 interface CommissionGalleryProps {
   commissions: CommissionListItem[]
@@ -37,7 +37,8 @@ export function CommissionGallery({ commissions }: CommissionGalleryProps) {
       {commissions.map((item) => {
         const earning =
           item.current_bid_amount != null
-            ? item.current_bid_amount * item.commission_percent / 100 + item.flat_fee
+            ? (item.current_bid_amount * item.commission_percent) / 100 +
+              item.flat_fee
             : null
 
         return (
@@ -71,12 +72,17 @@ export function CommissionGallery({ commissions }: CommissionGalleryProps) {
               <div className='flex min-w-0 items-start justify-between gap-2'>
                 <CardTitle className='min-w-0 truncate text-sm'>
                   {item.auction_item_bid_number != null && (
-                    <span className='text-muted-foreground mr-1'>#{item.auction_item_bid_number}</span>
+                    <span className='text-muted-foreground mr-1'>
+                      #{item.auction_item_bid_number}
+                    </span>
                   )}
                   {item.auction_item_title}
                 </CardTitle>
                 {item.auction_type && (
-                  <Badge variant='outline' className='shrink-0 whitespace-nowrap text-xs capitalize'>
+                  <Badge
+                    variant='outline'
+                    className='shrink-0 text-xs whitespace-nowrap capitalize'
+                  >
                     {item.auction_type.replace('_', ' ')}
                   </Badge>
                 )}
@@ -98,7 +104,8 @@ export function CommissionGallery({ commissions }: CommissionGalleryProps) {
                   {item.item_status === 'sold'
                     ? `Sold: ${item.quantity_available} of ${item.quantity_available}`
                     : `Available: ${item.quantity_available}`}
-                  {item.bid_count > 0 && ` · ${item.bid_count} bid${item.bid_count !== 1 ? 's' : ''}`}
+                  {item.bid_count > 0 &&
+                    ` · ${item.bid_count} bid${item.bid_count !== 1 ? 's' : ''}`}
                 </div>
               )}
               {item.current_bid_amount != null && (

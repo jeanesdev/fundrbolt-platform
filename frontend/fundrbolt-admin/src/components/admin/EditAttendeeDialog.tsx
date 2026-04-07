@@ -1,4 +1,18 @@
-import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
+import { useEffect, useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { checkinService } from '@/services/checkin-service'
+import { Check, CreditCard, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import type { Attendee } from '@/lib/api/admin-attendees'
+import {
+  adminCreatePaymentProfile,
+  adminCreatePaymentSession,
+} from '@/lib/api/admin-payments'
+import {
+  assignBidderNumber,
+  assignRegistrationBidderNumber,
+} from '@/lib/api/admin-seating'
+import { getErrorMessage } from '@/lib/error-utils'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -11,22 +25,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
 import { getUser, updateUser } from '@/features/users/api/users-api'
-import type { Attendee } from '@/lib/api/admin-attendees'
-import {
-  adminCreatePaymentProfile,
-  adminCreatePaymentSession,
-} from '@/lib/api/admin-payments'
-import {
-  assignBidderNumber,
-  assignRegistrationBidderNumber,
-} from '@/lib/api/admin-seating'
-import { getErrorMessage } from '@/lib/error-utils'
-import { checkinService } from '@/services/checkin-service'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Check, CreditCard, Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
 
 function formatPhoneInput(value: string): string {
   const digitsOnly = value.replace(/\D/g, '').slice(0, 10)
@@ -288,14 +288,21 @@ export function EditAttendeeDialog({
     }
     window.addEventListener('message', handleMessage)
     return () => window.removeEventListener('message', handleMessage)
-  }, [addCardHpfUrl, attendee.user_id, npoId, eventId, queryClient, onOpenChange])
+  }, [
+    addCardHpfUrl,
+    attendee.user_id,
+    npoId,
+    eventId,
+    queryClient,
+    onOpenChange,
+  ])
 
   const isPending =
     saveAttendeeMutation.isPending || replaceGuestMutation.isPending
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && closeDialog()}>
-      <DialogContent className='sm:max-w-xl max-h-[85vh] overflow-y-auto'>
+      <DialogContent className='max-h-[85vh] overflow-y-auto sm:max-w-xl'>
         <DialogHeader>
           <DialogTitle>Manage Attendee</DialogTitle>
           <DialogDescription>

@@ -1,0 +1,666 @@
+openapi: "3.1.0"
+info:
+  title: Donor Dashboard API
+  version: "1.0.0"
+  description: Admin endpoints for donor/attendee analytics and leaderboard
+
+paths:
+  /api/v1/admin/donor-dashboard/leaderboard:
+    get:
+      operationId: getDonorLeaderboard
+      summary: Get ranked donor leaderboard
+      description: Returns paginated list of donors ranked by total giving. Supports scope filtering (single event or all events) and sorting by any giving category.
+      tags: [admin-donor-dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: query
+          required: false
+          description: Filter to a single event. If omitted, aggregates across all accessible events.
+          schema:
+            type: string
+            format: uuid
+        - name: npo_id
+          in: query
+          required: false
+          description: Filter to a specific NPO. Required for NPO-scoped roles; Super Admin/Auctioneer may omit for cross-NPO view.
+          schema:
+            type: string
+            format: uuid
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [total_given, events_attended, ticket_total, donation_total, silent_auction_total, live_auction_total, buy_now_total]
+            default: total_given
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: search
+          in: query
+          required: false
+          description: Search donors by name or email (case-insensitive partial match)
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        "200":
+          description: Paginated donor leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DonorLeaderboardResponse"
+        "403":
+          description: Insufficient permissions
+
+  /api/v1/admin/donor-dashboard/leaderboard/export:
+    get:
+      operationId: exportDonorLeaderboard
+      summary: Export donor leaderboard as CSV
+      description: Streams the full leaderboard (not paginated) as a CSV download matching the current scope and sort.
+      tags: [admin-donor-dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: npo_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [total_given, events_attended, ticket_total, donation_total, silent_auction_total, live_auction_total, buy_now_total]
+            default: total_given
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: CSV file stream
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+
+  /api/v1/admin/donor-dashboard/donors/{user_id}:
+    get:
+      operationId: getDonorProfile
+      summary: Get detailed donor profile
+      description: Returns complete donor activity including event history, bid history, donations, tickets, category interests, and outbid summary. Scoped by caller's permissions.
+      tags: [admin-donor-dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: event_id
+          in: query
+          required: false
+          description: Scope activity to a single event
+          schema:
+            type: string
+            format: uuid
+        - name: npo_id
+          in: query
+          required: false
+          description: Scope to a specific NPO
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Donor profile with full activity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DonorProfileResponse"
+        "403":
+          description: Insufficient permissions
+        "404":
+          description: Donor not found
+
+  /api/v1/admin/donor-dashboard/outbid-leaders:
+    get:
+      operationId: getOutbidLeaders
+      summary: Get donors ranked by outbid amount
+      description: Returns donors who demonstrated spending intent but didn't win, ranked by total outbid amount.
+      tags: [admin-donor-dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: npo_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        "200":
+          description: Paginated outbid leaders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutbidLeadersResponse"
+
+  /api/v1/admin/donor-dashboard/bid-wars:
+    get:
+      operationId: getBidWars
+      summary: Get donors with most bid war activity
+      description: Returns donors ranked by number of items where they placed 3+ bids (bid war engagement).
+      tags: [admin-donor-dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: npo_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        "200":
+          description: Paginated bid war leaders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BidWarsResponse"
+
+  /api/v1/admin/donor-dashboard/category-breakdown:
+    get:
+      operationId: getCategoryBreakdown
+      summary: Get giving breakdown by category
+      description: Returns aggregate giving data segmented by giving type and auction item category.
+      tags: [admin-donor-dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: npo_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Category breakdown data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryBreakdownResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    DonorLeaderboardResponse:
+      type: object
+      required: [items, total, page, per_page, pages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DonorLeaderboardEntry"
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        pages:
+          type: integer
+
+    DonorLeaderboardEntry:
+      type: object
+      required: [user_id, first_name, last_name, email, is_active, total_given, events_attended, ticket_total, donation_total, silent_auction_total, live_auction_total, buy_now_total]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+        is_active:
+          type: boolean
+        total_given:
+          type: number
+          format: decimal
+        events_attended:
+          type: integer
+        ticket_total:
+          type: number
+          format: decimal
+        donation_total:
+          type: number
+          format: decimal
+        silent_auction_total:
+          type: number
+          format: decimal
+        live_auction_total:
+          type: number
+          format: decimal
+        buy_now_total:
+          type: number
+          format: decimal
+
+    DonorProfileResponse:
+      type: object
+      required: [user_id, first_name, last_name, email, is_active, total_given, events_attended, event_history, bid_history, donation_history, ticket_history, category_interests, outbid_summary]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+        total_given:
+          type: number
+          format: decimal
+        events_attended:
+          type: integer
+        event_history:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventAttendance"
+        bid_history:
+          type: array
+          items:
+            $ref: "#/components/schemas/BidRecord"
+        donation_history:
+          type: array
+          items:
+            $ref: "#/components/schemas/DonationRecord"
+        ticket_history:
+          type: array
+          items:
+            $ref: "#/components/schemas/TicketRecord"
+        category_interests:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryInterest"
+        outbid_summary:
+          $ref: "#/components/schemas/OutbidSummary"
+
+    EventAttendance:
+      type: object
+      required: [event_id, event_name, event_date, npo_id, npo_name, checked_in, total_given_at_event]
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        event_name:
+          type: string
+        event_date:
+          type: string
+          format: date-time
+        npo_id:
+          type: string
+          format: uuid
+        npo_name:
+          type: string
+        checked_in:
+          type: boolean
+        total_given_at_event:
+          type: number
+          format: decimal
+
+    BidRecord:
+      type: object
+      required: [bid_id, event_id, event_name, item_id, item_title, item_category, bid_amount, bid_status, bid_type, created_at]
+      properties:
+        bid_id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        event_name:
+          type: string
+        item_id:
+          type: string
+          format: uuid
+        item_title:
+          type: string
+        item_category:
+          type: string
+        bid_amount:
+          type: number
+          format: decimal
+        bid_status:
+          type: string
+          enum: [WINNING, OUTBID, ACTIVE, CANCELLED, WITHDRAWN]
+        bid_type:
+          type: string
+          enum: [SILENT, LIVE, BUY_NOW]
+        created_at:
+          type: string
+          format: date-time
+
+    DonationRecord:
+      type: object
+      required: [donation_id, event_id, event_name, amount, source, created_at]
+      properties:
+        donation_id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        event_name:
+          type: string
+        amount:
+          type: number
+          format: decimal
+        source:
+          type: string
+          enum: [donation, paddle_raise, quick_entry_donation]
+        is_paddle_raise:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    TicketRecord:
+      type: object
+      required: [purchase_id, event_id, event_name, package_name, quantity, total_price, purchased_at]
+      properties:
+        purchase_id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        event_name:
+          type: string
+        package_name:
+          type: string
+        quantity:
+          type: integer
+        total_price:
+          type: number
+          format: decimal
+        purchased_at:
+          type: string
+          format: date-time
+
+    OutbidSummary:
+      type: object
+      required: [total_outbid_amount, items_bid_on, items_won, items_lost, win_rate]
+      properties:
+        total_outbid_amount:
+          type: number
+          format: decimal
+        items_bid_on:
+          type: integer
+        items_won:
+          type: integer
+        items_lost:
+          type: integer
+        win_rate:
+          type: number
+          format: decimal
+          description: Decimal between 0 and 1
+
+    CategoryInterest:
+      type: object
+      required: [category, bid_count, total_bid_amount, items_won]
+      properties:
+        category:
+          type: string
+          enum: [Experiences, Dining, Travel, Wellness, Sports, Family, Art, Retail, Services, Other]
+        bid_count:
+          type: integer
+        total_bid_amount:
+          type: number
+          format: decimal
+        items_won:
+          type: integer
+
+    OutbidLeadersResponse:
+      type: object
+      required: [items, total, page, per_page, pages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OutbidLeaderEntry"
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        pages:
+          type: integer
+
+    OutbidLeaderEntry:
+      type: object
+      required: [user_id, first_name, last_name, total_outbid_amount, items_bid_on, items_won, items_lost, win_rate]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        last_name:
+          type: string
+        total_outbid_amount:
+          type: number
+          format: decimal
+        items_bid_on:
+          type: integer
+        items_won:
+          type: integer
+        items_lost:
+          type: integer
+        win_rate:
+          type: number
+          format: decimal
+
+    BidWarsResponse:
+      type: object
+      required: [items, total, page, per_page, pages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BidWarEntry"
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        pages:
+          type: integer
+
+    BidWarEntry:
+      type: object
+      required: [user_id, first_name, last_name, bid_war_count, total_bids_in_wars, top_war_items]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        last_name:
+          type: string
+        bid_war_count:
+          type: integer
+        total_bids_in_wars:
+          type: integer
+        top_war_items:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/BidWarItem"
+
+    BidWarItem:
+      type: object
+      required: [item_id, item_title, bid_count, highest_bid, won]
+      properties:
+        item_id:
+          type: string
+          format: uuid
+        item_title:
+          type: string
+        bid_count:
+          type: integer
+        highest_bid:
+          type: number
+          format: decimal
+        won:
+          type: boolean
+
+    CategoryBreakdownResponse:
+      type: object
+      required: [giving_type_breakdown, auction_category_breakdown]
+      properties:
+        giving_type_breakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/GivingTypeEntry"
+        auction_category_breakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuctionCategoryEntry"
+
+    GivingTypeEntry:
+      type: object
+      required: [category, total_amount, donor_count]
+      properties:
+        category:
+          type: string
+          enum: [tickets, donations_paddle_raise, silent_auction, live_auction, buy_now]
+        total_amount:
+          type: number
+          format: decimal
+        donor_count:
+          type: integer
+
+    AuctionCategoryEntry:
+      type: object
+      required: [category, total_bid_amount, total_revenue, bid_count, item_count]
+      properties:
+        category:
+          type: string
+          enum: [Experiences, Dining, Travel, Wellness, Sports, Family, Art, Retail, Services, Other]
+        total_bid_amount:
+          type: number
+          format: decimal
+        total_revenue:
+          type: number
+          format: decimal
+          description: Sum of winning bids only
+        bid_count:
+          type: integer
+        item_count:
+          type: integer

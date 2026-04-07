@@ -296,9 +296,6 @@ export function EventEditPage() {
                     {currentEvent.npo_name}
                   </p>
                 )}
-                <p className='text-muted-foreground hidden text-sm sm:block'>
-                  Edit event details and content
-                </p>
               </div>
             </div>
             <div className='flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4'>

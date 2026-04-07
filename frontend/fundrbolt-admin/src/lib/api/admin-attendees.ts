@@ -3,8 +3,8 @@
  *
  * Handles API requests for event attendee management, meal summaries, and guest invitations.
  */
-import type { DonorLabelInfo } from '@/features/users/api/users-api'
 import apiClient from '@/lib/axios'
+import type { DonorLabelInfo } from '@/features/users/api/users-api'
 
 export interface Attendee {
   id: string

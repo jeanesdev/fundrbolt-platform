@@ -68,6 +68,7 @@ import { Route as AuthenticatedEventsEventIdMediaRouteImport } from './routes/_a
 import { Route as AuthenticatedEventsEventIdLinksRouteImport } from './routes/_authenticated/events/$eventId/links'
 import { Route as AuthenticatedEventsEventIdFoodRouteImport } from './routes/_authenticated/events/$eventId/food'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events/$eventId/edit'
+import { Route as AuthenticatedEventsEventIdDonorDashboardRouteImport } from './routes/_authenticated/events/$eventId/donor-dashboard'
 import { Route as AuthenticatedEventsEventIdDetailsRouteImport } from './routes/_authenticated/events/$eventId/details'
 import { Route as AuthenticatedEventsEventIdDashboardRouteImport } from './routes/_authenticated/events/$eventId/dashboard'
 import { Route as AuthenticatedEventsEventIdChecklistRouteImport } from './routes/_authenticated/events/$eventId/checklist'
@@ -409,6 +410,12 @@ const AuthenticatedEventsEventIdEditRoute =
     path: '/edit',
     getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
+const AuthenticatedEventsEventIdDonorDashboardRoute =
+  AuthenticatedEventsEventIdDonorDashboardRouteImport.update({
+    id: '/donor-dashboard',
+    path: '/donor-dashboard',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdDetailsRoute =
   AuthenticatedEventsEventIdDetailsRouteImport.update({
     id: '/details',
@@ -564,6 +571,7 @@ export interface FileRoutesByFullPath {
   '/events/$eventId/checklist': typeof AuthenticatedEventsEventIdChecklistRoute
   '/events/$eventId/dashboard': typeof AuthenticatedEventsEventIdDashboardRoute
   '/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
+  '/events/$eventId/donor-dashboard': typeof AuthenticatedEventsEventIdDonorDashboardRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
@@ -636,6 +644,7 @@ export interface FileRoutesByTo {
   '/events/$eventId/checklist': typeof AuthenticatedEventsEventIdChecklistRoute
   '/events/$eventId/dashboard': typeof AuthenticatedEventsEventIdDashboardRoute
   '/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
+  '/events/$eventId/donor-dashboard': typeof AuthenticatedEventsEventIdDonorDashboardRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
@@ -715,6 +724,7 @@ export interface FileRoutesById {
   '/_authenticated/events/$eventId/checklist': typeof AuthenticatedEventsEventIdChecklistRoute
   '/_authenticated/events/$eventId/dashboard': typeof AuthenticatedEventsEventIdDashboardRoute
   '/_authenticated/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
+  '/_authenticated/events/$eventId/donor-dashboard': typeof AuthenticatedEventsEventIdDonorDashboardRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/_authenticated/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/_authenticated/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
@@ -793,6 +803,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/checklist'
     | '/events/$eventId/dashboard'
     | '/events/$eventId/details'
+    | '/events/$eventId/donor-dashboard'
     | '/events/$eventId/edit'
     | '/events/$eventId/food'
     | '/events/$eventId/links'
@@ -865,6 +876,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/checklist'
     | '/events/$eventId/dashboard'
     | '/events/$eventId/details'
+    | '/events/$eventId/donor-dashboard'
     | '/events/$eventId/edit'
     | '/events/$eventId/food'
     | '/events/$eventId/links'
@@ -943,6 +955,7 @@ export interface FileRouteTypes {
     | '/_authenticated/events/$eventId/checklist'
     | '/_authenticated/events/$eventId/dashboard'
     | '/_authenticated/events/$eventId/details'
+    | '/_authenticated/events/$eventId/donor-dashboard'
     | '/_authenticated/events/$eventId/edit'
     | '/_authenticated/events/$eventId/food'
     | '/_authenticated/events/$eventId/links'
@@ -1414,6 +1427,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsEventIdEditRouteImport
       parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
+    '/_authenticated/events/$eventId/donor-dashboard': {
+      id: '/_authenticated/events/$eventId/donor-dashboard'
+      path: '/donor-dashboard'
+      fullPath: '/events/$eventId/donor-dashboard'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdDonorDashboardRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
     '/_authenticated/events/$eventId/details': {
       id: '/_authenticated/events/$eventId/details'
       path: '/details'
@@ -1604,6 +1624,7 @@ interface AuthenticatedEventsEventIdRouteRouteChildren {
   AuthenticatedEventsEventIdChecklistRoute: typeof AuthenticatedEventsEventIdChecklistRoute
   AuthenticatedEventsEventIdDashboardRoute: typeof AuthenticatedEventsEventIdDashboardRoute
   AuthenticatedEventsEventIdDetailsRoute: typeof AuthenticatedEventsEventIdDetailsRoute
+  AuthenticatedEventsEventIdDonorDashboardRoute: typeof AuthenticatedEventsEventIdDonorDashboardRoute
   AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
   AuthenticatedEventsEventIdFoodRoute: typeof AuthenticatedEventsEventIdFoodRoute
   AuthenticatedEventsEventIdLinksRoute: typeof AuthenticatedEventsEventIdLinksRoute
@@ -1635,6 +1656,8 @@ const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRo
       AuthenticatedEventsEventIdDashboardRoute,
     AuthenticatedEventsEventIdDetailsRoute:
       AuthenticatedEventsEventIdDetailsRoute,
+    AuthenticatedEventsEventIdDonorDashboardRoute:
+      AuthenticatedEventsEventIdDonorDashboardRoute,
     AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
     AuthenticatedEventsEventIdFoodRoute: AuthenticatedEventsEventIdFoodRoute,
     AuthenticatedEventsEventIdLinksRoute: AuthenticatedEventsEventIdLinksRoute,

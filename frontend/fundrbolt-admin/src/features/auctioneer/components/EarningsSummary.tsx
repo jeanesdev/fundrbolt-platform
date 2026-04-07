@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { EarningsSummary as EarningsSummaryData } from '@/services/auctioneerService'
 import { DollarSign } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface EarningsSummaryProps {
   earnings: EarningsSummaryData
@@ -16,9 +16,18 @@ function formatCurrency(value: number): string {
 export function EarningsSummary({ earnings }: EarningsSummaryProps) {
   const breakdown = [
     { label: 'Per-Item Commissions', value: earnings.per_item_total },
-    { label: 'Live Auction Pool', value: earnings.live_auction_category_earning },
-    { label: 'Paddle Raise Pool', value: earnings.paddle_raise_category_earning },
-    { label: 'Silent Auction Pool', value: earnings.silent_auction_category_earning },
+    {
+      label: 'Live Auction Pool',
+      value: earnings.live_auction_category_earning,
+    },
+    {
+      label: 'Paddle Raise Pool',
+      value: earnings.paddle_raise_category_earning,
+    },
+    {
+      label: 'Silent Auction Pool',
+      value: earnings.silent_auction_category_earning,
+    },
   ]
 
   return (
