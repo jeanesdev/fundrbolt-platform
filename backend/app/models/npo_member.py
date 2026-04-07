@@ -22,6 +22,7 @@ class MemberRole(str, enum.Enum):
     ADMIN = "admin"
     CO_ADMIN = "co_admin"
     STAFF = "staff"
+    AUCTIONEER = "auctioneer"
 
 
 class MemberStatus(str, enum.Enum):

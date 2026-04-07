@@ -75,6 +75,7 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Azure Database for PostgreSQL (primary data); Azure Blob Storage (sponsor logos); Azure Cache for Redis (session/rate-limit) (036-ticket-purchasing)
 - Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18+, Vite, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (Frontend) (037-planning-checklist)
 - Azure Database for PostgreSQL (3 new tables: checklist_items, checklist_templates, checklist_template_items) (037-planning-checklist)
+- Azure Database for PostgreSQL (3 new tables: auctioneer_item_commissions, auctioneer_event_settings; 1 new column on events: live_auction_start_datetime; existing auction_close_datetime needs model mapping), Azure Cache for Redis (permission caching) (038-auctioneer-dashboard)
 - Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+ (Backend); React 19, Vite 7, TanStack Router, TanStack React Query 5, Zustand, Radix UI, Recharts, Tailwind CSS 4 (Frontend) (039-donor-dashboard)
 - Azure Database for PostgreSQL (existing tables — no new migrations), Azure Cache for Redis (optional caching for leaderboard aggregations) (039-donor-dashboard)
 
@@ -162,6 +163,7 @@ git commit -m "message"
 
 ## Recent Changes
 - 039-donor-dashboard: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+ (Backend); React 19, Vite 7, TanStack Router, TanStack React Query 5, Zustand, Radix UI, Recharts, Tailwind CSS 4 (Frontend)
+- 038-auctioneer-dashboard: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18+, Vite, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (Frontend)
 - 037-planning-checklist: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18+, Vite, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (Frontend)
 - 036-ticket-purchasing: Added Python 3.11 (backend) + TypeScript 5.x / React 19 (donor PWA)
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields

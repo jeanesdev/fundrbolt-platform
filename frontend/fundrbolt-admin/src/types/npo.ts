@@ -22,7 +22,7 @@ export type ApplicationStatus =
   | 'rejected'
   | 'reopened'
 
-export type MemberRole = 'admin' | 'co_admin' | 'staff'
+export type MemberRole = 'admin' | 'co_admin' | 'auctioneer' | 'staff'
 
 export type MemberStatus = 'active' | 'invited' | 'suspended' | 'removed'
 

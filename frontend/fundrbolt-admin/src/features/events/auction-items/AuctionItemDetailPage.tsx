@@ -3,9 +3,13 @@
  * Shows auction item details (description, pricing, additional info).
  * Wrapped in AuctionItemDetailLayout which provides header, status, sub-nav, and dialogs.
  */
-import { ExternalLink } from 'lucide-react'
-import { useAuctionItemStore } from '@/stores/auctionItemStore'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ItemCommissionForm } from '@/features/auctioneer/components/ItemCommissionForm'
+import { useAuctioneerCommissions } from '@/features/auctioneer/hooks/useAuctioneerData'
+import { useEventWorkspace } from '@/features/events/useEventWorkspace'
+import { useAuth } from '@/hooks/use-auth'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import { ExternalLink } from 'lucide-react'
 import { AuctionItemDetailLayout } from './AuctionItemDetailLayout'
 
 const formatCurrency = (amount: number | null): string => {
@@ -18,6 +22,16 @@ const formatCurrency = (amount: number | null): string => {
 
 export function AuctionItemDetailPage() {
   const { selectedItem } = useAuctionItemStore()
+  const { isSuperAdmin, isAuctioneer } = useAuth()
+  const { currentEvent } = useEventWorkspace()
+  const showCommission = isSuperAdmin || isAuctioneer
+  const { data: commissionData } = useAuctioneerCommissions(
+    showCommission ? currentEvent.id : ''
+  )
+
+  const existingCommission = commissionData?.commissions.find(
+    (c) => c.auction_item_id === selectedItem?.id
+  )
 
   // Layout handles loading state and data fetching
   return (
@@ -148,6 +162,15 @@ export function AuctionItemDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Auctioneer Commission - visible to auctioneer and super_admin only */}
+          {showCommission && (
+            <ItemCommissionForm
+              eventId={currentEvent.id}
+              auctionItemId={selectedItem.id}
+              existing={existingCommission ?? null}
+            />
+          )}
         </div>
       )}
     </AuctionItemDetailLayout>

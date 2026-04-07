@@ -7,6 +7,7 @@ from app.api.v1 import (
     admin_auction_bid_import,
     admin_auction_engagement,
     admin_auction_item_import,
+    admin_auctioneer,
     admin_checklist,
     admin_donations,
     admin_donor_dashboard,
@@ -125,6 +126,8 @@ api_router.include_router(admin_payments.router, tags=["admin-payments"])
 api_router.include_router(admin_npo_credentials.router, tags=["admin-npo-credentials"])
 # Feature 036: Ticket purchasing
 api_router.include_router(public_tickets.router, tags=["ticket-purchasing"])
+# Feature 038: Auctioneer dashboard
+api_router.include_router(admin_auctioneer.router, tags=["admin-auctioneer"])
 api_router.include_router(ticket_assignments.router, tags=["ticket-purchasing"])
 api_router.include_router(ticket_invitations.router, tags=["ticket-invitations"])
 

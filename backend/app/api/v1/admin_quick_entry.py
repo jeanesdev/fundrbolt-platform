@@ -113,6 +113,19 @@ async def create_live_auction_bid(
         entered_by_user_id=current_user.id,
     )
 
+    # Emit real-time bid event for auctioneer dashboard
+    from app.websocket.notification_ws import emit_auction_bid_placed
+
+    await emit_auction_bid_placed(
+        str(event_id),
+        {
+            "item_id": str(bid.item_id),
+            "amount": float(bid.amount),
+            "bidder_number": bid.bidder_number,
+            "donor_name": donor_name,
+        },
+    )
+
     return QuickEntryBidResponse(
         id=bid.id,
         event_id=bid.event_id,

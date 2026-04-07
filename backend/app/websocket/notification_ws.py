@@ -239,3 +239,58 @@ async def _emit_missed_notifications(
             "count": len(missed),
         },
     )
+
+
+async def emit_auction_bid_placed(
+    event_id: str,
+    bid_data: dict[str, Any],
+) -> None:
+    """Emit auction:bid_placed to the event-wide room."""
+    room = f"event:{event_id}"
+    try:
+        await sio.emit("auction:bid_placed", bid_data, room=room)
+    except Exception:
+        logger.warning(
+            "Failed to emit auction:bid_placed",
+            extra={"event_id": event_id, "room": room},
+        )
+
+
+async def emit_auction_item_changed(
+    event_id: str,
+    item_data: dict[str, Any],
+) -> None:
+    """Emit auction:item_changed to the event-wide room."""
+    room = f"event:{event_id}"
+    try:
+        await sio.emit("auction:item_changed", item_data, room=room)
+    except Exception:
+        logger.warning(
+            "Failed to emit auction:item_changed",
+            extra={"event_id": event_id, "room": room},
+        )
+
+
+@sio.on("auction:join_event")  # type: ignore[misc]
+async def auction_join_event(sid: str, data: dict[str, Any]) -> None:
+    """Join event-wide auction room for real-time bid updates."""
+    event_id = data.get("event_id")
+    if not event_id:
+        return
+    # Verify the user is auth'd for this session
+    session_data = await sio.get_session(sid)
+    if not session_data or not session_data.get("user_id"):
+        logger.warning("Unauthenticated auction:join_event from sid=%s", sid)
+        return
+    room = f"event:{event_id}"
+    await sio.enter_room(sid, room)
+
+
+@sio.on("auction:leave_event")  # type: ignore[misc]
+async def auction_leave_event(sid: str, data: dict[str, Any]) -> None:
+    """Leave event-wide auction room."""
+    event_id = data.get("event_id")
+    if not event_id:
+        return
+    room = f"event:{event_id}"
+    await sio.leave_room(sid, room)

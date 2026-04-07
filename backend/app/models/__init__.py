@@ -9,6 +9,7 @@ from app.models.auction_bid_import import (
     AuctionBidImportStatus,
 )
 from app.models.auction_item import AuctionItem
+from app.models.auctioneer import AuctioneerEventSettings, AuctioneerItemCommission
 from app.models.audit_log import AuditLog
 from app.models.base import Base, TimestampMixin, UUIDMixin
 from app.models.buy_now_availability import BuyNowAvailability
@@ -114,6 +115,8 @@ __all__ = [
     "AssignedTicket",
     "AssignmentStatus",
     "AuctionBid",
+    "AuctioneerEventSettings",
+    "AuctioneerItemCommission",
     "AuctionItem",
     "AuditLog",
     "Base",

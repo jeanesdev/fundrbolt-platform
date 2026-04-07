@@ -290,7 +290,10 @@ export function AuctionItemDetailModal({
         return false
       }
 
-      const identity = `${media.file_path}|${media.thumbnail_path || ''}`
+      // Strip query strings (SAS tokens) so duplicate rows with different tokens are caught
+      const basePath = media.file_path?.split('?')[0] ?? ''
+      const baseThumb = media.thumbnail_path?.split('?')[0] ?? ''
+      const identity = `${basePath}|${baseThumb}`
       if (seen.has(identity)) {
         return false
       }
