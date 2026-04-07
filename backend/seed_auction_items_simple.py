@@ -52,6 +52,7 @@ async def seed_auction_items():
         # Sample auction items
         items_data = [
             AuctionItemCreate(
+                external_id=None,
                 title="Weekend Getaway at Luxury Resort",
                 description="Enjoy a relaxing 3-night stay at the Grand Mountain Resort. Includes spa treatment for two, gourmet breakfast, and resort credits. Valid for 1 year.",
                 auction_type=AuctionType.LIVE,
@@ -67,6 +68,7 @@ async def seed_auction_items():
                 display_priority=100,
             ),
             AuctionItemCreate(
+                external_id=None,
                 title="Wine Tasting Experience for Four",
                 description="Private wine tasting at Vineyard Estate with sommelier-guided tour. Includes tasting of 8 premium wines and gourmet cheese pairing.",
                 auction_type=AuctionType.LIVE,
@@ -82,6 +84,7 @@ async def seed_auction_items():
                 display_priority=90,
             ),
             AuctionItemCreate(
+                external_id=None,
                 title="Original Artwork by Local Artist",
                 description="Beautiful 24x36 canvas painting featuring mountain landscape. Professionally framed and ready to hang. One-of-a-kind piece.",
                 auction_type=AuctionType.LIVE,
@@ -97,6 +100,7 @@ async def seed_auction_items():
                 display_priority=80,
             ),
             AuctionItemCreate(
+                external_id=None,
                 title="Golf Package at Championship Course",
                 description="Foursome golf package at Pebble Creek Championship Golf Course. Includes cart, range balls, and lunch at the clubhouse.",
                 auction_type=AuctionType.LIVE,
@@ -112,6 +116,7 @@ async def seed_auction_items():
                 display_priority=70,
             ),
             AuctionItemCreate(
+                external_id=None,
                 title="Gourmet Coffee Gift Basket",
                 description="Premium coffee lovers bundle with artisan roasted beans, French press, and gourmet treats. Perfect gift for coffee enthusiasts.",
                 auction_type=AuctionType.SILENT,
@@ -127,6 +132,7 @@ async def seed_auction_items():
                 display_priority=60,
             ),
             AuctionItemCreate(
+                external_id=None,
                 title="Spa Day Package",
                 description="Full day spa package including massage, facial, manicure, and access to spa facilities. Valid for 6 months.",
                 auction_type=AuctionType.SILENT,
@@ -142,6 +148,7 @@ async def seed_auction_items():
                 display_priority=55,
             ),
             AuctionItemCreate(
+                external_id=None,
                 title="Professional Photography Session",
                 description="2-hour family or portrait photography session with professional photographer. Includes 20 edited digital images.",
                 auction_type=AuctionType.SILENT,
@@ -157,6 +164,7 @@ async def seed_auction_items():
                 display_priority=50,
             ),
             AuctionItemCreate(
+                external_id=None,
                 title="Cooking Class with Celebrity Chef",
                 description="Hands-on cooking class featuring Italian cuisine. Learn to make fresh pasta, sauces, and authentic dishes. Includes dinner and wine.",
                 auction_type=AuctionType.SILENT,
@@ -172,6 +180,7 @@ async def seed_auction_items():
                 display_priority=45,
             ),
             AuctionItemCreate(
+                external_id=None,
                 title="Designer Handbag",
                 description="Authentic designer leather handbag from premium collection. Brand new with tags and authentication certificate.",
                 auction_type=AuctionType.SILENT,
@@ -187,6 +196,7 @@ async def seed_auction_items():
                 display_priority=40,
             ),
             AuctionItemCreate(
+                external_id=None,
                 title="Art Supplies Bundle",
                 description="Complete art supplies set including professional-grade paints, brushes, canvas, and easel. Perfect for beginners or experienced artists.",
                 auction_type=AuctionType.SILENT,

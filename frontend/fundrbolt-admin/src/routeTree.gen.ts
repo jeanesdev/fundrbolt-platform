@@ -68,6 +68,7 @@ import { Route as AuthenticatedEventsEventIdMediaRouteImport } from './routes/_a
 import { Route as AuthenticatedEventsEventIdLinksRouteImport } from './routes/_authenticated/events/$eventId/links'
 import { Route as AuthenticatedEventsEventIdFoodRouteImport } from './routes/_authenticated/events/$eventId/food'
 import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events/$eventId/edit'
+import { Route as AuthenticatedEventsEventIdDonorDashboardRouteImport } from './routes/_authenticated/events/$eventId/donor-dashboard'
 import { Route as AuthenticatedEventsEventIdDetailsRouteImport } from './routes/_authenticated/events/$eventId/details'
 import { Route as AuthenticatedEventsEventIdDashboardRouteImport } from './routes/_authenticated/events/$eventId/dashboard'
 import { Route as AuthenticatedEventsEventIdChecklistRouteImport } from './routes/_authenticated/events/$eventId/checklist'
@@ -75,6 +76,7 @@ import { Route as AuthenticatedEventsEventIdCheckinRouteImport } from './routes/
 import { Route as AuthenticatedEventsEventIdAuctionItemsRouteImport } from './routes/_authenticated/events/$eventId/auction-items'
 import { Route as AuthenticatedEventsEventIdAuctionBidsRouteImport } from './routes/_authenticated/events/$eventId/auction-bids'
 import { Route as AuthenticatedEventsEventIdTicketsIndexRouteImport } from './routes/_authenticated/events/$eventId/tickets/index'
+import { Route as AuthenticatedEventsEventIdAuctioneerIndexRouteImport } from './routes/_authenticated/events/$eventId/auctioneer/index'
 import { Route as AuthenticatedEventsEventIdAuctionItemsIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-items/index'
 import { Route as AuthenticatedEventsEventIdTicketsSalesRouteImport } from './routes/_authenticated/events/$eventId/tickets/sales'
 import { Route as AuthenticatedEventsEventIdTicketsPromosRouteImport } from './routes/_authenticated/events/$eventId/tickets/promos'
@@ -407,6 +409,12 @@ const AuthenticatedEventsEventIdEditRoute =
     path: '/edit',
     getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
+const AuthenticatedEventsEventIdDonorDashboardRoute =
+  AuthenticatedEventsEventIdDonorDashboardRouteImport.update({
+    id: '/donor-dashboard',
+    path: '/donor-dashboard',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdDetailsRoute =
   AuthenticatedEventsEventIdDetailsRouteImport.update({
     id: '/details',
@@ -448,6 +456,12 @@ const AuthenticatedEventsEventIdTicketsIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedEventsEventIdTicketsRoute,
+  } as any)
+const AuthenticatedEventsEventIdAuctioneerIndexRoute =
+  AuthenticatedEventsEventIdAuctioneerIndexRouteImport.update({
+    id: '/auctioneer/',
+    path: '/auctioneer/',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
 const AuthenticatedEventsEventIdAuctionItemsIndexRoute =
   AuthenticatedEventsEventIdAuctionItemsIndexRouteImport.update({
@@ -550,6 +564,7 @@ export interface FileRoutesByFullPath {
   '/events/$eventId/checklist': typeof AuthenticatedEventsEventIdChecklistRoute
   '/events/$eventId/dashboard': typeof AuthenticatedEventsEventIdDashboardRoute
   '/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
+  '/events/$eventId/donor-dashboard': typeof AuthenticatedEventsEventIdDonorDashboardRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
@@ -572,6 +587,7 @@ export interface FileRoutesByFullPath {
   '/events/$eventId/tickets/promos': typeof AuthenticatedEventsEventIdTicketsPromosRoute
   '/events/$eventId/tickets/sales': typeof AuthenticatedEventsEventIdTicketsSalesRoute
   '/events/$eventId/auction-items/': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
+  '/events/$eventId/auctioneer/': typeof AuthenticatedEventsEventIdAuctioneerIndexRoute
   '/events/$eventId/tickets/': typeof AuthenticatedEventsEventIdTicketsIndexRoute
   '/events/$eventId/auction-items/$itemId/edit': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
   '/events/$eventId/auction-items/$itemId/engagement': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEngagementRoute
@@ -620,6 +636,7 @@ export interface FileRoutesByTo {
   '/events/$eventId/checklist': typeof AuthenticatedEventsEventIdChecklistRoute
   '/events/$eventId/dashboard': typeof AuthenticatedEventsEventIdDashboardRoute
   '/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
+  '/events/$eventId/donor-dashboard': typeof AuthenticatedEventsEventIdDonorDashboardRoute
   '/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
@@ -641,6 +658,7 @@ export interface FileRoutesByTo {
   '/events/$eventId/tickets/promos': typeof AuthenticatedEventsEventIdTicketsPromosRoute
   '/events/$eventId/tickets/sales': typeof AuthenticatedEventsEventIdTicketsSalesRoute
   '/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
+  '/events/$eventId/auctioneer': typeof AuthenticatedEventsEventIdAuctioneerIndexRoute
   '/events/$eventId/tickets': typeof AuthenticatedEventsEventIdTicketsIndexRoute
   '/events/$eventId/auction-items/$itemId/edit': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
   '/events/$eventId/auction-items/$itemId/engagement': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEngagementRoute
@@ -697,6 +715,7 @@ export interface FileRoutesById {
   '/_authenticated/events/$eventId/checklist': typeof AuthenticatedEventsEventIdChecklistRoute
   '/_authenticated/events/$eventId/dashboard': typeof AuthenticatedEventsEventIdDashboardRoute
   '/_authenticated/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
+  '/_authenticated/events/$eventId/donor-dashboard': typeof AuthenticatedEventsEventIdDonorDashboardRoute
   '/_authenticated/events/$eventId/edit': typeof AuthenticatedEventsEventIdEditRoute
   '/_authenticated/events/$eventId/food': typeof AuthenticatedEventsEventIdFoodRoute
   '/_authenticated/events/$eventId/links': typeof AuthenticatedEventsEventIdLinksRoute
@@ -719,6 +738,7 @@ export interface FileRoutesById {
   '/_authenticated/events/$eventId/tickets/promos': typeof AuthenticatedEventsEventIdTicketsPromosRoute
   '/_authenticated/events/$eventId/tickets/sales': typeof AuthenticatedEventsEventIdTicketsSalesRoute
   '/_authenticated/events/$eventId/auction-items/': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
+  '/_authenticated/events/$eventId/auctioneer/': typeof AuthenticatedEventsEventIdAuctioneerIndexRoute
   '/_authenticated/events/$eventId/tickets/': typeof AuthenticatedEventsEventIdTicketsIndexRoute
   '/_authenticated/events/$eventId/auction-items/$itemId/edit': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
   '/_authenticated/events/$eventId/auction-items/$itemId/engagement': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEngagementRoute
@@ -773,6 +793,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/checklist'
     | '/events/$eventId/dashboard'
     | '/events/$eventId/details'
+    | '/events/$eventId/donor-dashboard'
     | '/events/$eventId/edit'
     | '/events/$eventId/food'
     | '/events/$eventId/links'
@@ -795,6 +816,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/tickets/promos'
     | '/events/$eventId/tickets/sales'
     | '/events/$eventId/auction-items/'
+    | '/events/$eventId/auctioneer/'
     | '/events/$eventId/tickets/'
     | '/events/$eventId/auction-items/$itemId/edit'
     | '/events/$eventId/auction-items/$itemId/engagement'
@@ -843,6 +865,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/checklist'
     | '/events/$eventId/dashboard'
     | '/events/$eventId/details'
+    | '/events/$eventId/donor-dashboard'
     | '/events/$eventId/edit'
     | '/events/$eventId/food'
     | '/events/$eventId/links'
@@ -864,6 +887,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/tickets/promos'
     | '/events/$eventId/tickets/sales'
     | '/events/$eventId/auction-items'
+    | '/events/$eventId/auctioneer'
     | '/events/$eventId/tickets'
     | '/events/$eventId/auction-items/$itemId/edit'
     | '/events/$eventId/auction-items/$itemId/engagement'
@@ -919,6 +943,7 @@ export interface FileRouteTypes {
     | '/_authenticated/events/$eventId/checklist'
     | '/_authenticated/events/$eventId/dashboard'
     | '/_authenticated/events/$eventId/details'
+    | '/_authenticated/events/$eventId/donor-dashboard'
     | '/_authenticated/events/$eventId/edit'
     | '/_authenticated/events/$eventId/food'
     | '/_authenticated/events/$eventId/links'
@@ -941,6 +966,7 @@ export interface FileRouteTypes {
     | '/_authenticated/events/$eventId/tickets/promos'
     | '/_authenticated/events/$eventId/tickets/sales'
     | '/_authenticated/events/$eventId/auction-items/'
+    | '/_authenticated/events/$eventId/auctioneer/'
     | '/_authenticated/events/$eventId/tickets/'
     | '/_authenticated/events/$eventId/auction-items/$itemId/edit'
     | '/_authenticated/events/$eventId/auction-items/$itemId/engagement'
@@ -1388,6 +1414,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsEventIdEditRouteImport
       parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
+    '/_authenticated/events/$eventId/donor-dashboard': {
+      id: '/_authenticated/events/$eventId/donor-dashboard'
+      path: '/donor-dashboard'
+      fullPath: '/events/$eventId/donor-dashboard'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdDonorDashboardRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
     '/_authenticated/events/$eventId/details': {
       id: '/_authenticated/events/$eventId/details'
       path: '/details'
@@ -1436,6 +1469,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/events/$eventId/tickets/'
       preLoaderRoute: typeof AuthenticatedEventsEventIdTicketsIndexRouteImport
       parentRoute: typeof AuthenticatedEventsEventIdTicketsRoute
+    }
+    '/_authenticated/events/$eventId/auctioneer/': {
+      id: '/_authenticated/events/$eventId/auctioneer/'
+      path: '/auctioneer'
+      fullPath: '/events/$eventId/auctioneer/'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdAuctioneerIndexRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
     '/_authenticated/events/$eventId/auction-items/': {
       id: '/_authenticated/events/$eventId/auction-items/'
@@ -1564,6 +1604,7 @@ interface AuthenticatedEventsEventIdRouteRouteChildren {
   AuthenticatedEventsEventIdChecklistRoute: typeof AuthenticatedEventsEventIdChecklistRoute
   AuthenticatedEventsEventIdDashboardRoute: typeof AuthenticatedEventsEventIdDashboardRoute
   AuthenticatedEventsEventIdDetailsRoute: typeof AuthenticatedEventsEventIdDetailsRoute
+  AuthenticatedEventsEventIdDonorDashboardRoute: typeof AuthenticatedEventsEventIdDonorDashboardRoute
   AuthenticatedEventsEventIdEditRoute: typeof AuthenticatedEventsEventIdEditRoute
   AuthenticatedEventsEventIdFoodRoute: typeof AuthenticatedEventsEventIdFoodRoute
   AuthenticatedEventsEventIdLinksRoute: typeof AuthenticatedEventsEventIdLinksRoute
@@ -1577,6 +1618,7 @@ interface AuthenticatedEventsEventIdRouteRouteChildren {
   AuthenticatedEventsEventIdSponsorsRoute: typeof AuthenticatedEventsEventIdSponsorsRoute
   AuthenticatedEventsEventIdTicketsRoute: typeof AuthenticatedEventsEventIdTicketsRouteWithChildren
   AuthenticatedEventsEventIdIndexRoute: typeof AuthenticatedEventsEventIdIndexRoute
+  AuthenticatedEventsEventIdAuctioneerIndexRoute: typeof AuthenticatedEventsEventIdAuctioneerIndexRoute
 }
 
 const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRouteRouteChildren =
@@ -1593,6 +1635,8 @@ const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRo
       AuthenticatedEventsEventIdDashboardRoute,
     AuthenticatedEventsEventIdDetailsRoute:
       AuthenticatedEventsEventIdDetailsRoute,
+    AuthenticatedEventsEventIdDonorDashboardRoute:
+      AuthenticatedEventsEventIdDonorDashboardRoute,
     AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
     AuthenticatedEventsEventIdFoodRoute: AuthenticatedEventsEventIdFoodRoute,
     AuthenticatedEventsEventIdLinksRoute: AuthenticatedEventsEventIdLinksRoute,
@@ -1614,6 +1658,8 @@ const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRo
     AuthenticatedEventsEventIdTicketsRoute:
       AuthenticatedEventsEventIdTicketsRouteWithChildren,
     AuthenticatedEventsEventIdIndexRoute: AuthenticatedEventsEventIdIndexRoute,
+    AuthenticatedEventsEventIdAuctioneerIndexRoute:
+      AuthenticatedEventsEventIdAuctioneerIndexRoute,
   }
 
 const AuthenticatedEventsEventIdRouteRouteWithChildren =

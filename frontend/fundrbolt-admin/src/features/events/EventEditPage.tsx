@@ -2,13 +2,11 @@
  * EventEditPage
  * Page for editing an existing event with media, links, and food options
  */
-import { useCallback, useEffect, useState } from 'react'
-import {
-  Outlet,
-  useLocation,
-  useNavigate,
-  useParams,
-} from '@tanstack/react-router'
+import { Button } from '@/components/ui/button'
+import { getErrorMessage } from '@/lib/error-utils'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import { useEventStore } from '@/stores/event-store'
+import { useSponsorStore } from '@/stores/sponsorStore'
 import type {
   EventLinkCreateRequest,
   EventMediaUsageTag,
@@ -16,13 +14,15 @@ import type {
   FoodOptionCreateRequest,
   MediaUpdateRequest,
 } from '@/types/event'
+import {
+  Outlet,
+  useLocation,
+  useNavigate,
+  useParams,
+} from '@tanstack/react-router'
 import { Clock } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { useAuctionItemStore } from '@/stores/auctionItemStore'
-import { useEventStore } from '@/stores/event-store'
-import { useSponsorStore } from '@/stores/sponsorStore'
-import { getErrorMessage } from '@/lib/error-utils'
-import { Button } from '@/components/ui/button'
 import { EventWorkspaceProvider } from './EventWorkspaceProvider'
 
 export function EventEditPage() {
@@ -296,22 +296,18 @@ export function EventEditPage() {
                     {currentEvent.npo_name}
                   </p>
                 )}
-                <p className='text-muted-foreground hidden text-sm sm:block'>
-                  Edit event details and content
-                </p>
               </div>
             </div>
             <div className='flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4'>
               <div className='flex items-center gap-2'>
                 <span className='text-muted-foreground text-sm'>Status:</span>
                 <span
-                  className={`rounded px-2 py-1 text-xs whitespace-nowrap ${
-                    currentEvent.status === 'draft'
+                  className={`rounded px-2 py-1 text-xs whitespace-nowrap ${currentEvent.status === 'draft'
                       ? 'bg-gray-100 text-gray-800'
                       : currentEvent.status === 'active'
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
-                  }`}
+                    }`}
                 >
                   {currentEvent.status.charAt(0).toUpperCase() +
                     currentEvent.status.slice(1)}
@@ -319,15 +315,15 @@ export function EventEditPage() {
               </div>
               {(currentEvent.status === 'draft' ||
                 currentEvent.status === 'closed') && (
-                <Button
-                  variant='destructive'
-                  size='sm'
-                  onClick={handleDelete}
-                  className='w-full sm:w-auto'
-                >
-                  Delete Event
-                </Button>
-              )}
+                  <Button
+                    variant='destructive'
+                    size='sm'
+                    onClick={handleDelete}
+                    className='w-full sm:w-auto'
+                  >
+                    Delete Event
+                  </Button>
+                )}
             </div>
           </div>
         </div>
