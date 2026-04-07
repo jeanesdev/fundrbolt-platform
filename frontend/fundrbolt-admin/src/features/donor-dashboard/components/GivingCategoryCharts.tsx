@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { colors as brandColors } from '@fundrbolt/shared/assets'
 import {
@@ -35,7 +36,7 @@ export function GivingCategoryCharts({
   eventId,
   npoId,
 }: GivingCategoryChartsProps) {
-  const { data, isLoading } = useCategoryBreakdown({
+  const { data, isLoading, isError, refetch } = useCategoryBreakdown({
     event_id: eventId,
     npo_id: npoId,
   })
@@ -45,6 +46,21 @@ export function GivingCategoryCharts({
       <Card>
         <CardContent className='text-muted-foreground p-6 text-sm'>
           Loading category data...
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardContent className='space-y-4 p-6'>
+          <p className='text-muted-foreground text-sm'>
+            Unable to load category data. Please try again.
+          </p>
+          <Button size='sm' onClick={() => void refetch()}>
+            Retry
+          </Button>
         </CardContent>
       </Card>
     )

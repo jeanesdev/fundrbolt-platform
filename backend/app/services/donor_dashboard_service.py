@@ -362,6 +362,19 @@ class DonorDashboardService:
             *([Event.id == event_id] if event_id else []),
         )
 
+        # Access check: verify donor has activity within the caller's scope
+        access_check = (
+            select(literal(1))
+            .select_from(RegistrationGuest)
+            .join(EventRegistration, RegistrationGuest.registration_id == EventRegistration.id)
+            .join(Event, EventRegistration.event_id == Event.id)
+            .where(RegistrationGuest.user_id == user_id, event_filter)
+            .limit(1)
+        )
+        has_access = (await self.db.execute(access_check)).scalar_one_or_none()
+        if has_access is None:
+            return None
+
         # Event history
         event_history = await self._get_event_history(user_id, event_filter)
         # Bid history
@@ -419,10 +432,14 @@ class DonorDashboardService:
         )
         rows = (await self.db.execute(stmt)).all()
 
+        # Compute giving totals in bulk to avoid N+1 queries
+        event_ids = [r.event_id for r in rows]
+        giving_map: dict[UUID, float] = {}
+        if event_ids:
+            giving_map = await self._get_user_events_giving_bulk(user_id, event_ids)
+
         results: list[EventAttendance] = []
         for r in rows:
-            # Compute per-event giving total inline
-            giving = await self._get_user_event_giving(user_id, r.event_id)
             results.append(
                 EventAttendance(
                     event_id=r.event_id,
@@ -431,7 +448,7 @@ class DonorDashboardService:
                     npo_id=r.npo_id,
                     npo_name=r.npo_name,
                     checked_in=r.checked_in,
-                    total_given_at_event=giving,
+                    total_given_at_event=giving_map.get(r.event_id, 0.0),
                 )
             )
         return results
@@ -510,6 +527,107 @@ class DonorDashboardService:
         total += r.scalar_one()
 
         return float(total)
+
+    async def _get_user_events_giving_bulk(
+        self, user_id: UUID, event_ids: list[UUID]
+    ) -> dict[UUID, float]:
+        """Sum all giving for a user across multiple events in bulk (avoids N+1)."""
+        ticket_sq = (
+            select(
+                TicketPurchase.event_id.label("event_id"),
+                func.coalesce(func.sum(TicketPurchase.total_price), 0).label("amount"),
+            )
+            .where(
+                TicketPurchase.user_id == user_id,
+                TicketPurchase.event_id.in_(event_ids),
+                TicketPurchase.payment_status == PaymentStatus.COMPLETED,
+            )
+            .group_by(TicketPurchase.event_id)
+        )
+        donation_sq = (
+            select(
+                Donation.event_id.label("event_id"),
+                func.coalesce(func.sum(Donation.amount), 0).label("amount"),
+            )
+            .where(
+                Donation.donor_user_id == user_id,
+                Donation.event_id.in_(event_ids),
+                Donation.status == DonationStatus.ACTIVE,
+            )
+            .group_by(Donation.event_id)
+        )
+        qe_donation_sq = (
+            select(
+                QuickEntryDonation.event_id.label("event_id"),
+                func.coalesce(func.sum(QuickEntryDonation.amount), 0).label("amount"),
+            )
+            .where(
+                QuickEntryDonation.donor_user_id == user_id,
+                QuickEntryDonation.event_id.in_(event_ids),
+            )
+            .group_by(QuickEntryDonation.event_id)
+        )
+        paddle_sq = (
+            select(
+                PaddleRaiseContribution.event_id.label("event_id"),
+                func.coalesce(func.sum(PaddleRaiseContribution.amount), 0).label("amount"),
+            )
+            .where(
+                PaddleRaiseContribution.user_id == user_id,
+                PaddleRaiseContribution.event_id.in_(event_ids),
+            )
+            .group_by(PaddleRaiseContribution.event_id)
+        )
+        silent_bid_sq = (
+            select(
+                AuctionBid.event_id.label("event_id"),
+                func.coalesce(func.sum(AuctionBid.bid_amount), 0).label("amount"),
+            )
+            .where(
+                AuctionBid.user_id == user_id,
+                AuctionBid.event_id.in_(event_ids),
+                AuctionBid.bid_status == BidStatus.WINNING.value,
+            )
+            .group_by(AuctionBid.event_id)
+        )
+        live_bid_sq = (
+            select(
+                QuickEntryBid.event_id.label("event_id"),
+                func.coalesce(func.sum(QuickEntryBid.amount), 0).label("amount"),
+            )
+            .where(
+                QuickEntryBid.donor_user_id == user_id,
+                QuickEntryBid.event_id.in_(event_ids),
+                QuickEntryBid.status == QuickEntryBidStatus.WINNING,
+            )
+            .group_by(QuickEntryBid.event_id)
+        )
+        buynow_sq = (
+            select(
+                QuickEntryBuyNowBid.event_id.label("event_id"),
+                func.coalesce(func.sum(QuickEntryBuyNowBid.amount), 0).label("amount"),
+            )
+            .where(
+                QuickEntryBuyNowBid.donor_user_id == user_id,
+                QuickEntryBuyNowBid.event_id.in_(event_ids),
+            )
+            .group_by(QuickEntryBuyNowBid.event_id)
+        )
+        combined = union_all(
+            ticket_sq,
+            donation_sq,
+            qe_donation_sq,
+            paddle_sq,
+            silent_bid_sq,
+            live_bid_sq,
+            buynow_sq,
+        ).subquery("all_giving")
+        stmt = select(
+            combined.c.event_id,
+            func.sum(combined.c.amount).label("total"),
+        ).group_by(combined.c.event_id)
+        rows = (await self.db.execute(stmt)).all()
+        return {r.event_id: float(r.total) for r in rows}
 
     async def _get_bid_history(self, user_id: UUID, event_filter: Any) -> list[BidRecord]:
         """Get all bids placed by this donor."""
@@ -1038,9 +1156,12 @@ class DonorDashboardService:
         ).all()
 
         items: list[BidWarEntry] = []
+        user_ids = [r.user_id for r in rows]
+        # Bulk fetch top war items for all users on this page
+        top_items_map: dict[UUID, list[BidWarItem]] = {uid: [] for uid in user_ids}
+        if user_ids:
+            top_items_map = await self._get_top_war_items_bulk(user_ids, event_filter)
         for r in rows:
-            # Fetch top 5 war items for this user
-            top_items = await self._get_top_war_items(r.user_id, war_items)
             items.append(
                 BidWarEntry(
                     user_id=r.user_id,
@@ -1048,7 +1169,7 @@ class DonorDashboardService:
                     last_name=r.last_name,
                     bid_war_count=r.bid_war_count,
                     total_bids_in_wars=r.total_bids_in_wars,
-                    top_war_items=top_items,
+                    top_war_items=top_items_map.get(r.user_id, []),
                 )
             )
 
@@ -1060,15 +1181,13 @@ class DonorDashboardService:
             pages=max(1, math.ceil(total / per_page)),
         )
 
-    async def _get_top_war_items(self, user_id: UUID, war_items_sq: Any) -> list[BidWarItem]:
-        """Get top 5 bid war items for a specific user."""
-        # Re-query from the base tables since we can't re-use the subquery
-        # with both user filter and join to AuctionItem
-        event_filter_unrestricted = and_(
-            Event.status.in_([EventStatus.ACTIVE.value, EventStatus.CLOSED.value]),
-        )
-        stmt = (
+    async def _get_top_war_items_bulk(
+        self, user_ids: list[UUID], event_filter: Any
+    ) -> dict[UUID, list[BidWarItem]]:
+        """Get top 5 bid war items per user in a single query using window functions."""
+        per_user_items = (
             select(
+                AuctionBid.user_id.label("user_id"),
                 AuctionBid.auction_item_id.label("item_id"),
                 AuctionItem.title.label("item_title"),
                 func.count(AuctionBid.id).label("bid_count"),
@@ -1078,28 +1197,46 @@ class DonorDashboardService:
             .join(Event, AuctionBid.event_id == Event.id)
             .join(AuctionItem, AuctionBid.auction_item_id == AuctionItem.id)
             .where(
-                AuctionBid.user_id == user_id,
+                AuctionBid.user_id.in_(user_ids),
                 AuctionBid.bid_status.notin_(
                     [BidStatus.CANCELLED.value, BidStatus.WITHDRAWN.value]
                 ),
-                event_filter_unrestricted,
+                event_filter,
             )
-            .group_by(AuctionBid.auction_item_id, AuctionItem.title)
+            .group_by(AuctionBid.user_id, AuctionBid.auction_item_id, AuctionItem.title)
             .having(func.count(AuctionBid.id) >= 3)
-            .order_by(func.count(AuctionBid.id).desc())
-            .limit(5)
+            .subquery("per_user_items")
         )
-        rows = (await self.db.execute(stmt)).all()
-        return [
-            BidWarItem(
-                item_id=r.item_id,
-                item_title=r.item_title,
-                bid_count=r.bid_count,
-                highest_bid=float(r.highest_bid),
-                won=r.won,
+
+        row_num = (
+            func.row_number()
+            .over(
+                partition_by=per_user_items.c.user_id,
+                order_by=[
+                    per_user_items.c.bid_count.desc(),
+                    per_user_items.c.highest_bid.desc(),
+                ],
             )
-            for r in rows
-        ]
+            .label("rn")
+        )
+
+        ranked = select(per_user_items, row_num).subquery("ranked")
+        stmt = select(ranked).where(ranked.c.rn <= 5)
+
+        rows = (await self.db.execute(stmt)).all()
+
+        result: dict[UUID, list[BidWarItem]] = {uid: [] for uid in user_ids}
+        for r in rows:
+            result[r.user_id].append(
+                BidWarItem(
+                    item_id=r.item_id,
+                    item_title=r.item_title,
+                    bid_count=r.bid_count,
+                    highest_bid=float(r.highest_bid),
+                    won=r.won,
+                )
+            )
+        return result
 
     # ------------------------------------------------------------------
     # Category Breakdown
@@ -1324,18 +1461,7 @@ class DonorDashboardService:
         sort_order: str = "desc",
         search: str | None = None,
     ) -> str:
-        """Generate CSV string of the full leaderboard (no pagination)."""
-        # Re-use leaderboard query with a very large page
-        result = await self.get_leaderboard(
-            accessible_npo_ids,
-            event_id=event_id,
-            sort_by=sort_by,
-            sort_order=sort_order,
-            search=search,
-            page=1,
-            per_page=10000,
-        )
-
+        """Generate CSV string of the full leaderboard (all rows, paginated internally)."""
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow(
@@ -1354,22 +1480,40 @@ class DonorDashboardService:
                 "Buy Now",
             ]
         )
-        for i, entry in enumerate(result.items, start=1):
-            writer.writerow(
-                [
-                    i,
-                    entry.first_name,
-                    entry.last_name,
-                    entry.email,
-                    "Yes" if entry.is_active else "No",
-                    f"{entry.total_given:.2f}",
-                    entry.events_attended,
-                    f"{entry.ticket_total:.2f}",
-                    f"{entry.donation_total:.2f}",
-                    f"{entry.silent_auction_total:.2f}",
-                    f"{entry.live_auction_total:.2f}",
-                    f"{entry.buy_now_total:.2f}",
-                ]
+
+        page = 1
+        batch_size = 500
+        rank = 0
+        while True:
+            result = await self.get_leaderboard(
+                accessible_npo_ids,
+                event_id=event_id,
+                sort_by=sort_by,
+                sort_order=sort_order,
+                search=search,
+                page=page,
+                per_page=batch_size,
             )
+            for entry in result.items:
+                rank += 1
+                writer.writerow(
+                    [
+                        rank,
+                        entry.first_name,
+                        entry.last_name,
+                        entry.email,
+                        "Yes" if entry.is_active else "No",
+                        f"{entry.total_given:.2f}",
+                        entry.events_attended,
+                        f"{entry.ticket_total:.2f}",
+                        f"{entry.donation_total:.2f}",
+                        f"{entry.silent_auction_total:.2f}",
+                        f"{entry.live_auction_total:.2f}",
+                        f"{entry.buy_now_total:.2f}",
+                    ]
+                )
+            if page >= result.pages:
+                break
+            page += 1
 
         return output.getvalue()

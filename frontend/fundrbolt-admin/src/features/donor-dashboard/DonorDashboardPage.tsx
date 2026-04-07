@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useEventContext } from '@/hooks/use-event-context'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BidWarsTab } from './components/BidWarsTab'
@@ -12,8 +12,16 @@ type Scope = 'event' | 'all'
 
 export function DonorDashboardPage() {
   const { selectedEventId } = useEventContext()
-  const [scope, setScope] = useState<Scope>(selectedEventId ? 'event' : 'all')
+  const [scopePreference, setScopePreference] = useState<Scope>(
+    selectedEventId ? 'event' : 'all'
+  )
   const [selectedDonorId, setSelectedDonorId] = useState<string | null>(null)
+
+  // If no event is selected, force scope to 'all' regardless of preference
+  const scope = useMemo<Scope>(
+    () => (selectedEventId ? scopePreference : 'all'),
+    [selectedEventId, scopePreference]
+  )
 
   const eventId = scope === 'event' ? (selectedEventId ?? undefined) : undefined
 
@@ -41,7 +49,7 @@ export function DonorDashboardPage() {
         </div>
         <ScopeToggle
           value={scope}
-          onChange={setScope}
+          onChange={setScopePreference}
           hasEvent={!!selectedEventId}
         />
       </div>

@@ -49,7 +49,7 @@ export function OutbidLeadersTab({
   const [cardFiltersOpen, setCardFiltersOpen] = useState(false)
   const perPage = 20
 
-  const { data, isLoading } = useOutbidLeaders({
+  const { data, isLoading, isError, refetch } = useOutbidLeaders({
     event_id: eventId,
     npo_id: npoId,
     page,
@@ -103,6 +103,21 @@ export function OutbidLeadersTab({
       <Card>
         <CardContent className='text-muted-foreground p-6 text-sm'>
           Loading outbid leaders...
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardContent className='space-y-4 p-6'>
+          <p className='text-muted-foreground text-sm'>
+            Unable to load outbid leaders. Please try again.
+          </p>
+          <Button size='sm' onClick={() => void refetch()}>
+            Retry
+          </Button>
         </CardContent>
       </Card>
     )

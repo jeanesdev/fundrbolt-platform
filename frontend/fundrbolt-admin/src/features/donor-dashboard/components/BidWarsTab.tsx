@@ -48,7 +48,7 @@ export function BidWarsTab({ eventId, npoId }: BidWarsTabProps) {
   const [cardFiltersOpen, setCardFiltersOpen] = useState(false)
   const perPage = 20
 
-  const { data, isLoading } = useBidWars({
+  const { data, isLoading, isError, refetch } = useBidWars({
     event_id: eventId,
     npo_id: npoId,
     page,
@@ -107,6 +107,21 @@ export function BidWarsTab({ eventId, npoId }: BidWarsTabProps) {
       <Card>
         <CardContent className='text-muted-foreground p-6 text-sm'>
           Loading bid wars...
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardContent className='space-y-4 p-6'>
+          <p className='text-muted-foreground text-sm'>
+            Unable to load bid wars. Please try again.
+          </p>
+          <Button size='sm' onClick={() => void refetch()}>
+            Retry
+          </Button>
         </CardContent>
       </Card>
     )
