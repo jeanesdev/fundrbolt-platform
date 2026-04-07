@@ -122,8 +122,8 @@ export function ItemDetailView({ data, onBack }: ItemDetailViewProps) {
                 />
                 <YAxis tickFormatter={(v: number) => fmt(v)} />
                 <Tooltip
-                  labelFormatter={(v: string) =>
-                    new Date(v).toLocaleString()
+                  labelFormatter={(v) =>
+                    new Date(String(v)).toLocaleString()
                   }
                   formatter={(v) => [fmt(Number(v)), 'Bid']}
                 />
