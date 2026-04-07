@@ -153,10 +153,19 @@ async def get_donor_profile(
     accessible = await _resolve_accessible_npo_ids(current_user, db, npo_id)
     if not accessible:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No accessible NPOs")
+
+    # Check user exists before calling service (separate 404 from 403)
+    donor_exists = await db.scalar(select(User.id).where(User.id == user_id))
+    if donor_exists is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Donor not found")
+
     service = DonorDashboardService(db)
     profile = await service.get_donor_profile(user_id, accessible, event_id=event_id)
     if profile is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Donor not found")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Donor profile is not accessible in the current scope",
+        )
     return profile
 
 

@@ -218,8 +218,16 @@ export function OutbidLeadersTab({
               {filteredAndSorted.map((leader, i) => (
                 <div
                   key={leader.user_id}
+                  role='button'
+                  tabIndex={0}
                   className='hover:bg-muted/50 cursor-pointer space-y-2 rounded-md border p-3'
                   onClick={() => onSelectDonor(leader.user_id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onSelectDonor(leader.user_id)
+                    }
+                  }}
                 >
                   <div className='flex items-center gap-2'>
                     <span className='text-muted-foreground font-mono text-xs'>

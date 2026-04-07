@@ -56,21 +56,6 @@ _LEADERBOARD_SORT_COLUMNS = {
 }
 
 
-def _event_scope_filter(
-    event_column: Any,
-    accessible_npo_ids: list[UUID],
-    event_id: UUID | None = None,
-) -> Any:
-    """Build filter clause that scopes queries to accessible events."""
-    conditions: list[Any] = [
-        Event.npo_id.in_(accessible_npo_ids),
-        Event.status.in_([EventStatus.ACTIVE.value, EventStatus.CLOSED.value]),
-    ]
-    if event_id is not None:
-        conditions.append(Event.id == event_id)
-    return and_(event_column == Event.id, *conditions)
-
-
 class DonorDashboardService:
     """Compute donor analytics from existing event data."""
 
@@ -91,6 +76,7 @@ class DonorDashboardService:
         search: str | None = None,
         page: int = 1,
         per_page: int = 25,
+        _known_total: int | None = None,
     ) -> DonorLeaderboardResponse:
         if sort_by not in _LEADERBOARD_SORT_COLUMNS:
             sort_by = "total_given"
@@ -300,9 +286,12 @@ class DonorDashboardService:
         sort_col = sort_map.get(sort_by, total_val)
         order = sort_col.desc() if sort_order == "desc" else sort_col.asc()
 
-        # Count
-        count_query = select(func.count()).select_from(base_query.subquery())
-        total = (await self.db.execute(count_query)).scalar_one()
+        # Count (skip when caller already knows the total, e.g. CSV export)
+        if _known_total is not None:
+            total = _known_total
+        else:
+            count_query = select(func.count()).select_from(base_query.subquery())
+            total = (await self.db.execute(count_query)).scalar_one()
 
         # Paginated result
         rows = (
@@ -362,15 +351,59 @@ class DonorDashboardService:
             *([Event.id == event_id] if event_id else []),
         )
 
-        # Access check: verify donor has activity within the caller's scope
-        access_check = (
-            select(literal(1))
+        # Access check: verify donor has any activity within the caller's scope.
+        # Must be broader than RegistrationGuest alone because donors can appear
+        # in the leaderboard through tickets, donations, or auction activity.
+        activity_sources = union_all(
+            select(literal(1).label("x"))
             .select_from(RegistrationGuest)
             .join(EventRegistration, RegistrationGuest.registration_id == EventRegistration.id)
             .join(Event, EventRegistration.event_id == Event.id)
-            .where(RegistrationGuest.user_id == user_id, event_filter)
-            .limit(1)
-        )
+            .where(RegistrationGuest.user_id == user_id, event_filter),
+            select(literal(1).label("x"))
+            .select_from(TicketPurchase)
+            .join(Event, TicketPurchase.event_id == Event.id)
+            .where(
+                TicketPurchase.user_id == user_id,
+                TicketPurchase.payment_status == PaymentStatus.COMPLETED,
+                event_filter,
+            ),
+            select(literal(1).label("x"))
+            .select_from(Donation)
+            .join(Event, Donation.event_id == Event.id)
+            .where(
+                Donation.donor_user_id == user_id,
+                Donation.status == DonationStatus.ACTIVE,
+                event_filter,
+            ),
+            select(literal(1).label("x"))
+            .select_from(QuickEntryDonation)
+            .join(Event, QuickEntryDonation.event_id == Event.id)
+            .where(QuickEntryDonation.donor_user_id == user_id, event_filter),
+            select(literal(1).label("x"))
+            .select_from(PaddleRaiseContribution)
+            .join(Event, PaddleRaiseContribution.event_id == Event.id)
+            .where(PaddleRaiseContribution.user_id == user_id, event_filter),
+            select(literal(1).label("x"))
+            .select_from(AuctionBid)
+            .join(Event, AuctionBid.event_id == Event.id)
+            .where(
+                AuctionBid.user_id == user_id,
+                AuctionBid.bid_status.notin_(
+                    [BidStatus.CANCELLED.value, BidStatus.WITHDRAWN.value]
+                ),
+                event_filter,
+            ),
+            select(literal(1).label("x"))
+            .select_from(QuickEntryBid)
+            .join(Event, QuickEntryBid.event_id == Event.id)
+            .where(QuickEntryBid.donor_user_id == user_id, event_filter),
+            select(literal(1).label("x"))
+            .select_from(QuickEntryBuyNowBid)
+            .join(Event, QuickEntryBuyNowBid.event_id == Event.id)
+            .where(QuickEntryBuyNowBid.donor_user_id == user_id, event_filter),
+        ).subquery("activity")
+        access_check = select(literal(1)).select_from(activity_sources).limit(1)
         has_access = (await self.db.execute(access_check)).scalar_one_or_none()
         if has_access is None:
             return None
@@ -1268,11 +1301,7 @@ class DonorDashboardService:
         self, event_filter: Any, accessible_npo_ids: list[UUID], event_id: UUID | None
     ) -> list[GivingTypeEntry]:
         """Compute total amount and distinct donor count per giving type."""
-        ef = and_(
-            Event.npo_id.in_(accessible_npo_ids),
-            Event.status.in_([EventStatus.ACTIVE.value, EventStatus.CLOSED.value]),
-            *([Event.id == event_id] if event_id else []),
-        )
+        ef = event_filter
 
         result: list[GivingTypeEntry] = []
 
@@ -1484,6 +1513,7 @@ class DonorDashboardService:
         page = 1
         batch_size = 500
         rank = 0
+        known_total: int | None = None
         while True:
             result = await self.get_leaderboard(
                 accessible_npo_ids,
@@ -1493,7 +1523,10 @@ class DonorDashboardService:
                 search=search,
                 page=page,
                 per_page=batch_size,
+                _known_total=known_total,
             )
+            if known_total is None:
+                known_total = result.total
             for entry in result.items:
                 rank += 1
                 writer.writerow(

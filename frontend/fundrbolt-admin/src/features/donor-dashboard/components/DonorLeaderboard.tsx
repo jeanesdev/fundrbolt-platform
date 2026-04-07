@@ -224,8 +224,16 @@ export function DonorLeaderboard({
               {data.items.map((donor, i) => (
                 <div
                   key={donor.user_id}
+                  role='button'
+                  tabIndex={0}
                   className='hover:bg-muted/50 cursor-pointer space-y-2 rounded-md border p-3'
                   onClick={() => onSelectDonor(donor.user_id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onSelectDonor(donor.user_id)
+                    }
+                  }}
                 >
                   <div className='flex items-center justify-between'>
                     <div className='flex items-center gap-2'>
