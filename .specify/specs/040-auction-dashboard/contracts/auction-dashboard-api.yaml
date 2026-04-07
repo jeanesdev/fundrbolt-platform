@@ -1,0 +1,402 @@
+openapi: 3.0.3
+info:
+  title: Auction Dashboard API
+  version: 1.0.0
+  description: Read-only analytics endpoints for auction item performance dashboard
+
+paths:
+  /api/v1/admin/auction-dashboard/summary:
+    get:
+      summary: Get auction dashboard summary statistics
+      operationId: getAuctionDashboardSummary
+      tags: [Auction Dashboard]
+      parameters:
+        - name: event_id
+          in: query
+          required: false
+          description: Filter to specific event. If omitted, aggregates across all accessible events.
+          schema:
+            type: string
+            format: uuid
+        - name: auction_type
+          in: query
+          required: false
+          description: Filter by auction type(s). Comma-separated (silent,live,buy_now).
+          schema:
+            type: string
+        - name: category
+          in: query
+          required: false
+          description: Filter by category(ies). Comma-separated.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dashboard summary statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuctionDashboardSummary'
+        '401':
+          description: Not authenticated
+        '403':
+          description: Not authorized
+
+  /api/v1/admin/auction-dashboard/items:
+    get:
+      summary: Get paginated, sortable, searchable auction items list
+      operationId: getAuctionDashboardItems
+      tags: [Auction Dashboard]
+      parameters:
+        - name: event_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: auction_type
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          description: Search by item title or donor name
+          schema:
+            type: string
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [title, auction_type, category, current_bid_amount, bid_count, watcher_count, status]
+            default: current_bid_amount
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 25
+      responses:
+        '200':
+          description: Paginated list of auction items with metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuctionItemsListResponse'
+
+  /api/v1/admin/auction-dashboard/items/export:
+    get:
+      summary: Export filtered auction items as CSV
+      operationId: exportAuctionDashboardItems
+      tags: [Auction Dashboard]
+      parameters:
+        - name: event_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: auction_type
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: sort_order
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: CSV file download
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+
+  /api/v1/admin/auction-dashboard/charts:
+    get:
+      summary: Get chart data for auction dashboard visualizations
+      operationId: getAuctionDashboardCharts
+      tags: [Auction Dashboard]
+      parameters:
+        - name: event_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: auction_type
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Chart data for all dashboard visualizations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuctionDashboardCharts'
+
+  /api/v1/admin/auction-dashboard/items/{item_id}:
+    get:
+      summary: Get detailed auction item info with bid history
+      operationId: getAuctionItemDetail
+      tags: [Auction Dashboard]
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Detailed item info with bid history and timeline data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuctionItemDetailResponse'
+        '404':
+          description: Item not found
+
+components:
+  schemas:
+    AuctionDashboardSummary:
+      type: object
+      properties:
+        total_items:
+          type: integer
+        total_bids:
+          type: integer
+        total_revenue:
+          type: number
+          format: decimal
+        average_bid_amount:
+          type: number
+          format: decimal
+
+    AuctionItemsListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuctionItemRow'
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total_pages:
+          type: integer
+
+    AuctionItemRow:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        auction_type:
+          type: string
+          enum: [silent, live]
+        buy_now_enabled:
+          type: boolean
+        category:
+          type: string
+          nullable: true
+        current_bid_amount:
+          type: number
+          format: decimal
+          nullable: true
+        bid_count:
+          type: integer
+        watcher_count:
+          type: integer
+        status:
+          type: string
+          enum: [draft, published, sold, withdrawn]
+        event_id:
+          type: string
+          format: uuid
+        event_name:
+          type: string
+        donated_by:
+          type: string
+          nullable: true
+
+    AuctionDashboardCharts:
+      type: object
+      properties:
+        revenue_by_type:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChartDataPoint'
+        revenue_by_category:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChartDataPoint'
+        bid_count_by_type:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChartDataPoint'
+        top_items_by_revenue:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChartDataPoint'
+        top_items_by_bid_count:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChartDataPoint'
+        top_items_by_watchers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChartDataPoint'
+
+    ChartDataPoint:
+      type: object
+      properties:
+        label:
+          type: string
+        value:
+          type: number
+
+    AuctionItemDetailResponse:
+      type: object
+      properties:
+        item:
+          $ref: '#/components/schemas/AuctionItemFull'
+        bid_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/BidHistoryEntry'
+        bid_timeline:
+          type: array
+          items:
+            $ref: '#/components/schemas/BidTimelinePoint'
+
+    AuctionItemFull:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        auction_type:
+          type: string
+        category:
+          type: string
+          nullable: true
+        status:
+          type: string
+        starting_bid:
+          type: number
+        current_bid_amount:
+          type: number
+          nullable: true
+        bid_count:
+          type: integer
+        watcher_count:
+          type: integer
+        buy_now_enabled:
+          type: boolean
+        buy_now_price:
+          type: number
+          nullable: true
+        bid_increment:
+          type: number
+        donated_by:
+          type: string
+          nullable: true
+        donor_value:
+          type: number
+          nullable: true
+        bidding_open:
+          type: boolean
+        event_id:
+          type: string
+          format: uuid
+        event_name:
+          type: string
+
+    BidHistoryEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        bidder_number:
+          type: integer
+        bidder_name:
+          type: string
+        bid_amount:
+          type: number
+        bid_type:
+          type: string
+          enum: [regular, buy_now, proxy_auto]
+        bid_status:
+          type: string
+          enum: [active, outbid, winning, cancelled, withdrawn]
+        placed_at:
+          type: string
+          format: date-time
+
+    BidTimelinePoint:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        bid_amount:
+          type: number
+        bidder_number:
+          type: integer

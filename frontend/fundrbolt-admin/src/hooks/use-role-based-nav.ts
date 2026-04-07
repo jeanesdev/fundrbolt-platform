@@ -242,15 +242,15 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   // Grouped nav: Event, Guests, Auctions
   const eventNavGroups: EventNavGroup[] = selectedEventId
     ? EVENT_NAV_GROUPS.filter((group) => {
-        // Only show Auctioneer section for auctioneers and super admins
-        if (group.title === 'Auctioneer') {
-          return isAuctioneer || isSuperAdmin
-        }
-        return true
-      }).map((group) => ({
-        title: group.title,
-        items: group.sections.map(buildEventNavItem),
-      }))
+      // Only show Auctioneer section for auctioneers and super admins
+      if (group.title === 'Auctioneer') {
+        return isAuctioneer || isSuperAdmin
+      }
+      return true
+    }).map((group) => ({
+      title: group.title,
+      items: group.sections.map(buildEventNavItem),
+    }))
     : []
 
   const eventNavTitle = selectedEventId
@@ -284,6 +284,7 @@ type EventSectionConfig = {
 const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
   { title: 'Event Dashboard', path: 'dashboard', icon: 'BarChart3' },
   { title: 'Donor Dashboard', path: 'donor-dashboard', icon: 'HeartHandshake' },
+  { title: 'Auction Dashboard', path: 'auction-dashboard', icon: 'Gavel' },
   { title: 'Details', path: 'details', icon: 'FileText' },
   { title: 'Planning Checklist', path: 'checklist', icon: 'ClipboardList' },
   { title: 'Preview', path: 'preview', icon: 'Eye' },
@@ -371,48 +372,48 @@ const EVENT_NAV_GROUPS: Array<{
   title: string
   sections: EventSectionConfig[]
 }> = [
-  {
-    title: 'Event',
-    sections: [
-      sectionByPath('details'),
-      sectionByPath('checklist'),
-      sectionByPath('preview'),
-      sectionByPath('media'),
-      sectionByPath('links'),
-      sectionByPath('food'),
-      sectionByPath('tickets'),
-      sectionByPath('tickets/sales'),
-      sectionByPath('tickets/promos'),
-      sectionByPath('sponsors'),
-      sectionByPath('notifications'),
-    ],
-  },
-  {
-    title: 'Guests',
-    sections: [
-      sectionByPath('registrations'),
-      sectionByPath('checkin'),
-      sectionByPath('seating'),
-    ],
-  },
-  {
-    title: 'Auctions',
-    sections: [
-      sectionByPath('auction-items'),
-      sectionByPath('auction-bids'),
-      sectionByPath('quick-entry'),
-    ],
-  },
-  {
-    title: 'Finance',
-    sections: [sectionByPath('payments')],
-  },
-  {
-    title: 'Data',
-    sections: [sectionByPath('dashboard'), sectionByPath('donor-dashboard')],
-  },
-  {
-    title: 'Auctioneer',
-    sections: [sectionByPath('auctioneer')],
-  },
-]
+    {
+      title: 'Event',
+      sections: [
+        sectionByPath('details'),
+        sectionByPath('checklist'),
+        sectionByPath('preview'),
+        sectionByPath('media'),
+        sectionByPath('links'),
+        sectionByPath('food'),
+        sectionByPath('tickets'),
+        sectionByPath('tickets/sales'),
+        sectionByPath('tickets/promos'),
+        sectionByPath('sponsors'),
+        sectionByPath('notifications'),
+      ],
+    },
+    {
+      title: 'Guests',
+      sections: [
+        sectionByPath('registrations'),
+        sectionByPath('checkin'),
+        sectionByPath('seating'),
+      ],
+    },
+    {
+      title: 'Auctions',
+      sections: [
+        sectionByPath('auction-items'),
+        sectionByPath('auction-bids'),
+        sectionByPath('quick-entry'),
+      ],
+    },
+    {
+      title: 'Finance',
+      sections: [sectionByPath('payments')],
+    },
+    {
+      title: 'Data',
+      sections: [sectionByPath('dashboard'), sectionByPath('donor-dashboard'), sectionByPath('auction-dashboard')],
+    },
+    {
+      title: 'Auctioneer',
+      sections: [sectionByPath('auctioneer')],
+    },
+  ]

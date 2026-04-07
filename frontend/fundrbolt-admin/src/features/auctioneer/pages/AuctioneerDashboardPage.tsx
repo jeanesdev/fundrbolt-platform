@@ -19,7 +19,7 @@ export function AuctioneerDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className='space-y-4 p-4'>
+      <div className='space-y-4 px-2 py-4 sm:px-4'>
         <Skeleton className='h-20 w-full' />
         <div className='grid gap-4 md:grid-cols-2'>
           <Skeleton className='h-48' />
@@ -32,14 +32,14 @@ export function AuctioneerDashboardPage() {
 
   if (error || !data) {
     return (
-      <div className='p-4'>
+      <div className='px-2 py-4 sm:px-4'>
         <p className='text-destructive'>Failed to load auctioneer dashboard.</p>
       </div>
     )
   }
 
   return (
-    <div className='space-y-6 p-4'>
+    <div className='space-y-6 px-2 py-4 sm:px-4'>
       <div>
         <h2 className='text-2xl font-bold'>Auctioneer Dashboard</h2>
         <p className='text-muted-foreground text-sm'>
