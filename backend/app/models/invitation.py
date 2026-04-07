@@ -55,6 +55,14 @@ class Invitation(Base, UUIDMixin, TimestampMixin):
         index=True,
     )
 
+    # Optional event scope (for auctioneer invitations)
+    event_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("events.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="Event ID for event-scoped invitations (e.g., auctioneer)",
+    )
+
     # Inviter
     invited_by_user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),

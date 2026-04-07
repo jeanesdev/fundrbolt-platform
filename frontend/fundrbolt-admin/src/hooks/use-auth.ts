@@ -15,6 +15,7 @@ export type UserRole =
   | 'super_admin'
   | 'npo_admin'
   | 'event_coordinator'
+  | 'auctioneer'
   | 'staff'
   | 'donor'
 
@@ -46,6 +47,7 @@ export interface UseAuthReturn {
   isSuperAdmin: boolean
   isNpoAdmin: boolean
   isEventCoordinator: boolean
+  isAuctioneer: boolean
   isStaff: boolean
   isDonor: boolean
 
@@ -67,6 +69,7 @@ export function useAuth(): UseAuthReturn {
   const isSuperAdmin = role === 'super_admin'
   const isNpoAdmin = role === 'npo_admin'
   const isEventCoordinator = role === 'event_coordinator'
+  const isAuctioneer = role === 'auctioneer'
   const isStaff = role === 'staff'
   const isDonor = role === 'donor'
 
@@ -94,6 +97,7 @@ export function useAuth(): UseAuthReturn {
     isSuperAdmin,
     isNpoAdmin,
     isEventCoordinator,
+    isAuctioneer,
     isStaff,
     isDonor,
     hasRole,

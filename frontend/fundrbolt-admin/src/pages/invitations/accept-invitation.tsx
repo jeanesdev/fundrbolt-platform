@@ -25,6 +25,7 @@ interface InvitationDetails {
   role: string
   inviter_name?: string
   email: string
+  event_id?: string
 }
 
 export default function AcceptInvitationPage() {
@@ -83,12 +84,19 @@ export default function AcceptInvitationPage() {
 
       // Decode JWT token to extract invitation details
       try {
-        const payload = JSON.parse(atob(urlToken.split('.')[1]))
+        // Base64url → base64: replace URL-safe chars and add padding
+        const base64 = urlToken
+          .split('.')[1]
+          .replace(/-/g, '+')
+          .replace(/_/g, '/')
+        const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4)
+        const payload = JSON.parse(atob(padded))
         setDetails({
           npo_name: payload.npo_name || 'Unknown Organization',
           role: payload.role || 'staff',
           inviter_name: payload.inviter_name,
           email: payload.email,
+          event_id: payload.event_id,
         })
         setValidating(false)
       } catch (_err) {

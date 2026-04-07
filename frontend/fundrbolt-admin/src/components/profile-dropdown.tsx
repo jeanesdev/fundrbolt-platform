@@ -1,13 +1,5 @@
-import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
-import { Building2, Calendar, Clock, LogOut, Settings } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { useEventStore } from '@/stores/event-store'
-import useDialogState from '@/hooks/use-dialog-state'
-import { useEventContext } from '@/hooks/use-event-context'
-import { useNpoContext } from '@/hooks/use-npo-context'
+import { DebugSpoofSheet } from '@/components/debug-spoof-sheet'
+import { SignOutDialog } from '@/components/sign-out-dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -30,17 +22,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { InitialAvatar } from '@/components/ui/initial-avatar'
-import { Input } from '@/components/ui/input'
-import { SignOutDialog } from '@/components/sign-out-dialog'
-
-function toDateTimeLocalInputValue(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  return `${year}-${month}-${day}T${hours}:${minutes}`
-}
+import useDialogState from '@/hooks/use-dialog-state'
+import { useEventContext } from '@/hooks/use-event-context'
+import { useNpoContext } from '@/hooks/use-npo-context'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { Link } from '@tanstack/react-router'
+import { Building2, Calendar, Clock, LogOut, Settings } from 'lucide-react'
+import { useState } from 'react'
 
 export function ProfileDropdown() {
   const [open, setOpen] = useDialogState()
@@ -49,9 +38,6 @@ export function ProfileDropdown() {
   const user = useAuthStore((state) => state.user)
   const getProfilePictureUrl = useAuthStore(
     (state) => state.getProfilePictureUrl
-  )
-  const currentEventDateTime = useEventStore(
-    (state) => state.currentEvent?.event_datetime
   )
   const {
     selectedEventId,
@@ -70,16 +56,7 @@ export function ProfileDropdown() {
     isFundrBoltPlatformView,
   } = useNpoContext()
   const timeBaseSpoofMs = useDebugSpoofStore((state) => state.timeBaseSpoofMs)
-  const getEffectiveNowMs = useDebugSpoofStore(
-    (state) => state.getEffectiveNowMs
-  )
-  const setSpoofedTime = useDebugSpoofStore((state) => state.setSpoofedTime)
-  const clearSpoofedTime = useDebugSpoofStore((state) => state.clearSpoofedTime)
-  const [spoofTimeInput, setSpoofTimeInput] = useState(() =>
-    timeBaseSpoofMs === null
-      ? ''
-      : toDateTimeLocalInputValue(new Date(getEffectiveNowMs()))
-  )
+  const [spoofSheetOpen, setSpoofSheetOpen] = useState(false)
 
   const isSuperAdmin = user?.role === 'super_admin'
 
@@ -88,35 +65,13 @@ export function ProfileDropdown() {
     : 'U'
 
   const profilePictureUrl = getProfilePictureUrl()
-  const eventStartDate = currentEventDateTime
-    ? new Date(currentEventDateTime)
-    : null
-  const hasValidEventStart =
-    !!eventStartDate && !Number.isNaN(eventStartDate.getTime())
+
   const filteredEvents =
     shouldShowSearch && eventSearchQuery
       ? availableEvents.filter((event) =>
-          event.name.toLowerCase().includes(eventSearchQuery.toLowerCase())
-        )
+        event.name.toLowerCase().includes(eventSearchQuery.toLowerCase())
+      )
       : availableEvents
-
-  const handleSpoofTimeApply = () => {
-    const trimmed = spoofTimeInput.trim()
-    if (!trimmed) {
-      clearSpoofedTime()
-      toast.success('Time spoof cleared')
-      return
-    }
-
-    const parsed = new Date(trimmed)
-    if (Number.isNaN(parsed.getTime())) {
-      toast.error('Invalid date/time format')
-      return
-    }
-
-    setSpoofedTime(parsed)
-    toast.success('Time spoof enabled')
-  }
 
   return (
     <>
@@ -321,71 +276,20 @@ export function ProfileDropdown() {
             <>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Debug Tools</DropdownMenuLabel>
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <Clock className='mr-2 size-4' />
-                  {timeBaseSpoofMs !== null
-                    ? 'Update Spoof Time'
-                    : 'Spoof Time'}
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent className='w-80 space-y-2 p-3'>
-                  <p className='text-muted-foreground text-xs'>
-                    Set effective event time (local).
-                  </p>
-                  <Input
-                    type='datetime-local'
-                    value={spoofTimeInput}
-                    onChange={(event) => setSpoofTimeInput(event.target.value)}
-                    placeholder='YYYY-MM-DDTHH:mm'
-                    onKeyDown={(event) => event.stopPropagation()}
-                  />
-                  {timeBaseSpoofMs !== null && (
-                    <p className='text-muted-foreground text-xs'>
-                      Current spoof:{' '}
-                      {new Date(getEffectiveNowMs()).toLocaleString()}
-                    </p>
-                  )}
-                  <div className='flex items-center gap-2'>
-                    <Button
-                      type='button'
-                      size='sm'
-                      onClick={handleSpoofTimeApply}
-                    >
-                      Apply
-                    </Button>
-                    <Button
-                      type='button'
-                      size='sm'
-                      variant='outline'
-                      disabled={!hasValidEventStart}
-                      onClick={() => {
-                        if (!eventStartDate) {
-                          return
-                        }
-                        setSpoofedTime(eventStartDate)
-                        setSpoofTimeInput(
-                          toDateTimeLocalInputValue(eventStartDate)
-                        )
-                        toast.success('Time spoof set to event start')
-                      }}
-                    >
-                      Event Start
-                    </Button>
-                    <Button
-                      type='button'
-                      size='sm'
-                      variant='outline'
-                      onClick={() => {
-                        setSpoofTimeInput('')
-                        clearSpoofedTime()
-                        toast.success('Time spoof cleared')
-                      }}
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
+              <DropdownMenuItem
+                onClick={() => {
+                  setMenuOpen(false)
+                  setSpoofSheetOpen(true)
+                }}
+              >
+                <Clock className='mr-2 size-4' />
+                {timeBaseSpoofMs !== null
+                  ? 'Update Spoof Time'
+                  : 'Spoof Time'}
+                {timeBaseSpoofMs !== null && (
+                  <span className='ml-auto h-2 w-2 rounded-full bg-amber-400' />
+                )}
+              </DropdownMenuItem>
             </>
           )}
           <DropdownMenuSeparator />
@@ -397,6 +301,13 @@ export function ProfileDropdown() {
       </DropdownMenu>
 
       <SignOutDialog open={!!open} onOpenChange={setOpen} />
+
+      {isSuperAdmin && (
+        <DebugSpoofSheet
+          open={spoofSheetOpen}
+          onOpenChange={setSpoofSheetOpen}
+        />
+      )}
     </>
   )
 }

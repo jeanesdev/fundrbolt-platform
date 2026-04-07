@@ -40,6 +40,11 @@ const roleOptions: { value: MemberRole; label: string; description: string }[] =
       label: 'Co-Admin',
       description: 'Manage members and settings',
     },
+    {
+      value: 'auctioneer',
+      label: 'Auctioneer',
+      description: 'Auction management and commissions',
+    },
     { value: 'staff', label: 'Staff', description: 'Basic access' },
   ]
 

@@ -52,8 +52,14 @@ export interface UseRoleBasedNavReturn {
 }
 
 export function useRoleBasedNav(): UseRoleBasedNavReturn {
-  const { role, isSuperAdmin, isNpoAdmin, isEventCoordinator, isStaff } =
-    useAuth()
+  const {
+    role,
+    isSuperAdmin,
+    isNpoAdmin,
+    isEventCoordinator,
+    isAuctioneer,
+    isStaff,
+  } = useAuth()
   const { selectedNpoId } = useNpoContext()
   const { selectedEventId, selectedEventName } = useEventContext()
   const { data: eventStats } = useEventStats(selectedEventId)
@@ -169,6 +175,24 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     },
   ]
 
+  // Auctioneer sees NPO (read-only), events (assigned), auction-focused
+  const auctioneerNavItems: NavItem[] = [
+    ...baseNavItems,
+    {
+      title: 'My Organization',
+      href: npoHref,
+      icon: 'Building2',
+      description: 'View your organization (read-only)',
+      badge: 'Read-only',
+    },
+    {
+      title: 'Events',
+      href: '/events',
+      icon: 'Calendar',
+      description: 'Your assigned events',
+    },
+  ]
+
   // Select nav items based on role
   let navItems: NavItem[] = baseNavItems
   if (isSuperAdmin) {
@@ -177,6 +201,8 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     navItems = npoAdminNavItems
   } else if (isEventCoordinator) {
     navItems = eventCoordinatorNavItems
+  } else if (isAuctioneer) {
+    navItems = auctioneerNavItems
   } else if (isStaff) {
     navItems = staffNavItems
   }
@@ -215,7 +241,13 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
 
   // Grouped nav: Event, Guests, Auctions
   const eventNavGroups: EventNavGroup[] = selectedEventId
-    ? EVENT_NAV_GROUPS.map((group) => ({
+    ? EVENT_NAV_GROUPS.filter((group) => {
+        // Only show Auctioneer section for auctioneers and super admins
+        if (group.title === 'Auctioneer') {
+          return isAuctioneer || isSuperAdmin
+        }
+        return true
+      }).map((group) => ({
         title: group.title,
         items: group.sections.map(buildEventNavItem),
       }))
@@ -314,6 +346,11 @@ const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
     path: 'payments',
     icon: 'CreditCard',
   },
+  {
+    title: 'Auctioneer',
+    path: 'auctioneer',
+    icon: 'Gavel',
+  },
 ]
 
 /** Helper to look up a section by its path. Throws at startup if a path is missing. */
@@ -372,5 +409,9 @@ const EVENT_NAV_GROUPS: Array<{
   {
     title: 'Data',
     sections: [sectionByPath('dashboard')],
+  },
+  {
+    title: 'Auctioneer',
+    sections: [sectionByPath('auctioneer')],
   },
 ]

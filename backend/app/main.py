@@ -129,6 +129,10 @@ app = FastAPI(
             "name": "admin-notifications",
             "description": "Admin custom notification campaigns",
         },
+        {
+            "name": "admin-auctioneer",
+            "description": "Auctioneer dashboard, commissions, and live auction management",
+        },
         {"name": "health", "description": "Health check and monitoring"},
         {"name": "metrics", "description": "Prometheus metrics for monitoring"},
         {"name": "root", "description": "Root API information"},

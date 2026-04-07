@@ -148,6 +148,7 @@ def create_invitation_token(
     inviter_name: str | None = None,
     first_name: str | None = None,
     last_name: str | None = None,
+    event_id: str | None = None,
 ) -> str:
     """Create a JWT token for NPO invitation.
 
@@ -156,19 +157,14 @@ def create_invitation_token(
         npo_id: UUID of the NPO
         email: Email address of invitee
         npo_name: Name of the NPO organization
-        role: Role being assigned (admin, co_admin, staff)
+        role: Role being assigned (admin, co_admin, staff, auctioneer)
         inviter_name: Optional name of person sending invitation
         first_name: Optional first name to pre-fill registration
         last_name: Optional last name to pre-fill registration
+        event_id: Optional event ID for event-scoped invitations
 
     Returns:
         str: Encoded JWT invitation token (7-day expiry)
-
-    Example:
-        token = create_invitation_token(
-            str(invitation.id), str(npo.id), "user@example.com",
-            "Example NPO", "staff", "John Doe", "Jane", "Smith"
-        )
     """
     to_encode: dict[str, str | datetime] = {
         "sub": invitation_id,
@@ -187,6 +183,9 @@ def create_invitation_token(
 
     if last_name:
         to_encode["last_name"] = last_name
+
+    if event_id:
+        to_encode["event_id"] = event_id
 
     expire = datetime.utcnow() + timedelta(days=7)
 

@@ -59,6 +59,7 @@ interface MemberListProps {
 const roleColors: Record<MemberRole, string> = {
   admin: 'bg-red-500 text-white',
   co_admin: 'bg-orange-500 text-white',
+  auctioneer: 'bg-purple-500 text-white',
   staff: 'bg-blue-500 text-white',
 }
 
@@ -66,6 +67,7 @@ const roleColors: Record<MemberRole, string> = {
 const roleLabels: Record<MemberRole, string> = {
   admin: 'Admin',
   co_admin: 'Co-Admin',
+  auctioneer: 'Auctioneer',
   staff: 'Staff',
 }
 
