@@ -446,7 +446,7 @@ export default function AcceptInvitationPage() {
                 </div>
 
                 <div className='space-y-2'>
-                  <Label htmlFor='inv-phone'>Phone Number (optional)</Label>
+                  <Label htmlFor='inv-phone'>Cell Number (optional)</Label>
                   <Input
                     id='inv-phone'
                     type='tel'

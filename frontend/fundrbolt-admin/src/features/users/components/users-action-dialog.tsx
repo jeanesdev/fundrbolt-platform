@@ -1,8 +1,7 @@
 'use client'
 
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { PasswordInput } from '@/components/password-input'
+import { SelectDropdown } from '@/components/select-dropdown'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -21,8 +20,9 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { PasswordInput } from '@/components/password-input'
-import { SelectDropdown } from '@/components/select-dropdown'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import { roles } from '../data/data'
 import { type User } from '../data/schema'
 import { useCreateUser, useUpdateUser } from '../hooks/use-users'
@@ -130,25 +130,25 @@ export function UsersActionDialog({
     resolver: zodResolver(formSchema),
     defaultValues: isEdit
       ? {
-          firstName: currentRow.first_name,
-          lastName: currentRow.last_name,
-          email: currentRow.email,
-          role: currentRow.role,
-          phoneNumber: currentRow.phone || '',
-          password: '',
-          confirmPassword: '',
-          isEdit,
-        }
+        firstName: currentRow.first_name,
+        lastName: currentRow.last_name,
+        email: currentRow.email,
+        role: currentRow.role,
+        phoneNumber: currentRow.phone || '',
+        password: '',
+        confirmPassword: '',
+        isEdit,
+      }
       : {
-          firstName: '',
-          lastName: '',
-          email: '',
-          role: '',
-          phoneNumber: '',
-          password: '',
-          confirmPassword: '',
-          isEdit,
-        },
+        firstName: '',
+        lastName: '',
+        email: '',
+        role: '',
+        phoneNumber: '',
+        password: '',
+        confirmPassword: '',
+        isEdit,
+      },
   })
 
   const onSubmit = async (values: UserForm) => {
@@ -181,7 +181,7 @@ export function UsersActionDialog({
         // For now, these roles cannot be created without npo_id
         if (['npo_admin', 'event_coordinator'].includes(values.role)) {
           throw new Error(
-            'NPO Admin and Event Coordinator roles require NPO selection. Please use Staff or Donor role for now.'
+            'NPO Admin and Event Coordinator roles require NPO selection. Please use Staff or Attendee role for now.'
           )
         }
 
@@ -315,7 +315,7 @@ export function UsersActionDialog({
                   return (
                     <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
                       <FormLabel className='col-span-2 text-end'>
-                        Phone Number
+                        Cell Number
                       </FormLabel>
                       <FormControl>
                         <Input

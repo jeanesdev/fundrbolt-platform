@@ -72,6 +72,12 @@ export interface TableAssignmentResponse {
   bidder_number?: number | null
 }
 
+export interface DonorLabelInfo {
+  id: string
+  name: string
+  color: string | null
+}
+
 /**
  * Guest seating information for admin views
  */
@@ -85,6 +91,8 @@ export interface GuestSeatingInfo {
   checked_in: boolean
   is_guest_of_primary: boolean
   primary_registrant_name: string | null
+  profile_picture_url?: string | null
+  donor_labels?: DonorLabelInfo[]
 }
 
 /**

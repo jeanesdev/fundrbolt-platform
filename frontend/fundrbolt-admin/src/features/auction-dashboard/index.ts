@@ -1,1 +1,1 @@
-export { AuctionDashboardPage } from './AuctionDashboardPage';
+export { AuctionDashboardPage } from './AuctionDashboardPage'

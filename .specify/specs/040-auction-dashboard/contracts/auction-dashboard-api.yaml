@@ -398,5 +398,3 @@ components:
           format: date-time
         bid_amount:
           type: number
-        bidder_number:
-          type: integer

@@ -8,7 +8,7 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import case, func, select
+from sqlalchemy import case, func, literal, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.auction_bid import AuctionBid
@@ -30,16 +30,19 @@ from app.schemas.auction_dashboard import (
 # Bid statuses to exclude from analytics
 _EXCLUDED_BID_STATUSES = ("cancelled", "withdrawn")
 
-# Valid sort columns for the items list
-_SORT_COLUMNS = {
+# Winning bid status for revenue calculations
+_WINNING_STATUS = "winning"
+
+# Valid sort columns for the items list (columns that live directly on AuctionItem)
+_SORT_COLUMNS_STATIC = {
     "title": AuctionItem.title,
     "auction_type": AuctionItem.auction_type,
     "category": AuctionItem.category,
-    "current_bid_amount": AuctionItem.current_bid_amount,
-    "bid_count": AuctionItem.bid_count,
     "watcher_count": AuctionItem.watcher_count,
     "status": AuctionItem.status,
 }
+# Sort columns that come from the live bid stats subquery
+_SORT_COLUMNS_LIVE = {"current_bid_amount", "bid_count"}
 
 
 def _decimal_to_float(val: Decimal | float | None) -> float:
@@ -115,7 +118,7 @@ class AuctionDashboardService:
         )
         total_items = await self._db.scalar(item_stmt) or 0
 
-        # Bid aggregation (exclude cancelled/withdrawn bids)
+        # Bid aggregation (only winning bids count as revenue)
         bid_stmt = (
             select(
                 func.count(AuctionBid.id),
@@ -128,7 +131,7 @@ class AuctionDashboardService:
             .where(
                 Event.npo_id.in_(npo_ids),
                 AuctionItem.deleted_at.is_(None),
-                AuctionBid.bid_status.notin_(_EXCLUDED_BID_STATUSES),
+                AuctionBid.bid_status == _WINNING_STATUS,
             )
         )
         if event_id:
@@ -178,7 +181,24 @@ class AuctionDashboardService:
         page: int = 1,
         per_page: int = 25,
     ) -> AuctionItemsListResponse:
-        # Base query
+        # Subquery: compute live bid stats from auction_bids
+        bid_stats = (
+            select(
+                AuctionBid.auction_item_id,
+                func.max(AuctionBid.bid_amount).label("live_current_bid"),
+                func.count(AuctionBid.id).label("live_bid_count"),
+            )
+            .where(AuctionBid.bid_status.notin_(_EXCLUDED_BID_STATUSES))
+            .group_by(AuctionBid.auction_item_id)
+            .subquery()
+        )
+
+        live_current_bid = func.coalesce(bid_stats.c.live_current_bid, literal(None)).label(
+            "current_bid_amount"
+        )
+        live_bid_count = func.coalesce(bid_stats.c.live_bid_count, 0).label("bid_count")
+
+        # Base query — join bid_stats for live numbers
         base = (
             select(
                 AuctionItem.id,
@@ -186,8 +206,8 @@ class AuctionDashboardService:
                 AuctionItem.auction_type,
                 AuctionItem.buy_now_enabled,
                 AuctionItem.category,
-                AuctionItem.current_bid_amount,
-                AuctionItem.bid_count,
+                live_current_bid,
+                live_bid_count,
                 AuctionItem.watcher_count,
                 AuctionItem.status,
                 AuctionItem.event_id,
@@ -196,6 +216,7 @@ class AuctionDashboardService:
             )
             .select_from(AuctionItem)
             .join(Event, AuctionItem.event_id == Event.id)
+            .outerjoin(bid_stats, bid_stats.c.auction_item_id == AuctionItem.id)
         )
         base = self._base_item_filter(
             base, npo_ids, event_id=event_id, auction_type=auction_type, category=category
@@ -211,7 +232,11 @@ class AuctionDashboardService:
         total = await self._db.scalar(count_stmt) or 0
 
         # Sort
-        col = _SORT_COLUMNS.get(sort_by, AuctionItem.current_bid_amount)
+        col: Any
+        if sort_by in _SORT_COLUMNS_LIVE:
+            col = live_current_bid if sort_by == "current_bid_amount" else live_bid_count
+        else:
+            col = _SORT_COLUMNS_STATIC.get(sort_by, live_current_bid)
         order = col.desc() if sort_order == "desc" else col.asc()
         base = base.order_by(order)
 
@@ -325,30 +350,87 @@ class AuctionDashboardService:
         auction_type: str | None = None,
         category: str | None = None,
     ) -> AuctionDashboardCharts:
-        # Revenue by type
+        # Helper to apply common bid-level filters (npo scope, event, type, category)
+        def _bid_filters(
+            stmt: Any,
+            *,
+            winning_only: bool = False,
+        ) -> Any:
+            stmt = stmt.where(
+                Event.npo_id.in_(npo_ids),
+                AuctionItem.deleted_at.is_(None),
+            )
+            if winning_only:
+                stmt = stmt.where(AuctionBid.bid_status == _WINNING_STATUS)
+            else:
+                stmt = stmt.where(AuctionBid.bid_status.notin_(_EXCLUDED_BID_STATUSES))
+            if event_id:
+                stmt = stmt.where(AuctionBid.event_id == event_id)
+            if auction_type:
+                types = [t.strip() for t in auction_type.split(",")]
+                if "buy_now" in types:
+                    remaining = [t for t in types if t != "buy_now"]
+                    if remaining:
+                        stmt = stmt.where(
+                            (AuctionItem.auction_type.in_(remaining))
+                            | (AuctionItem.buy_now_enabled.is_(True))
+                        )
+                    else:
+                        stmt = stmt.where(AuctionItem.buy_now_enabled.is_(True))
+                else:
+                    stmt = stmt.where(AuctionItem.auction_type.in_(types))
+            if category:
+                cats = [c.strip() for c in category.split(",")]
+                stmt = stmt.where(AuctionItem.category.in_(cats))
+            return stmt
+
+        # Helper to apply common item-level filters (no bid join)
+        def _item_filters(stmt: Any) -> Any:
+            stmt = stmt.where(
+                Event.npo_id.in_(npo_ids),
+                AuctionItem.deleted_at.is_(None),
+            )
+            if event_id:
+                stmt = stmt.where(AuctionItem.event_id == event_id)
+            if auction_type:
+                types = [t.strip() for t in auction_type.split(",")]
+                if "buy_now" in types:
+                    remaining = [t for t in types if t != "buy_now"]
+                    if remaining:
+                        stmt = stmt.where(
+                            (AuctionItem.auction_type.in_(remaining))
+                            | (AuctionItem.buy_now_enabled.is_(True))
+                        )
+                    else:
+                        stmt = stmt.where(AuctionItem.buy_now_enabled.is_(True))
+                else:
+                    stmt = stmt.where(AuctionItem.auction_type.in_(types))
+            if category:
+                cats = [c.strip() for c in category.split(",")]
+                stmt = stmt.where(AuctionItem.category.in_(cats))
+            return stmt
+
+        # Revenue by type (winning bids, buy_now as distinct bucket)
         rev_type_stmt = (
             select(
-                AuctionItem.auction_type,
+                case(
+                    (AuctionBid.bid_type == "buy_now", "buy_now"),
+                    else_=AuctionItem.auction_type,
+                ).label("type_label"),
                 func.coalesce(func.sum(AuctionBid.bid_amount), 0).label("revenue"),
             )
             .select_from(AuctionBid)
             .join(AuctionItem, AuctionBid.auction_item_id == AuctionItem.id)
             .join(Event, AuctionItem.event_id == Event.id)
-            .where(
-                Event.npo_id.in_(npo_ids),
-                AuctionItem.deleted_at.is_(None),
-                AuctionBid.bid_status.notin_(_EXCLUDED_BID_STATUSES),
-            )
-            .group_by(AuctionItem.auction_type)
+            .group_by("type_label")
         )
-        if event_id:
-            rev_type_stmt = rev_type_stmt.where(AuctionBid.event_id == event_id)
+        rev_type_stmt = _bid_filters(rev_type_stmt, winning_only=True)
         result = await self._db.execute(rev_type_stmt)
         revenue_by_type = [
             ChartDataPoint(label=r[0], value=_decimal_to_float(r[1])) for r in result.all()
         ]
 
-        # Revenue by category
+        # Revenue by category (winning bids)
         rev_cat_stmt = (
             select(
                 func.coalesce(AuctionItem.category, "Uncategorized").label("cat"),
@@ -357,16 +439,10 @@ class AuctionDashboardService:
             .select_from(AuctionBid)
             .join(AuctionItem, AuctionBid.auction_item_id == AuctionItem.id)
             .join(Event, AuctionItem.event_id == Event.id)
-            .where(
-                Event.npo_id.in_(npo_ids),
-                AuctionItem.deleted_at.is_(None),
-                AuctionBid.bid_status.notin_(_EXCLUDED_BID_STATUSES),
-            )
             .group_by("cat")
             .order_by(func.sum(AuctionBid.bid_amount).desc())
         )
-        if event_id:
-            rev_cat_stmt = rev_cat_stmt.where(AuctionBid.event_id == event_id)
+        rev_cat_stmt = _bid_filters(rev_cat_stmt, winning_only=True)
         result = await self._db.execute(rev_cat_stmt)
         revenue_by_category = [
             ChartDataPoint(label=r[0], value=_decimal_to_float(r[1])) for r in result.all()
@@ -384,19 +460,13 @@ class AuctionDashboardService:
             .select_from(AuctionBid)
             .join(AuctionItem, AuctionBid.auction_item_id == AuctionItem.id)
             .join(Event, AuctionItem.event_id == Event.id)
-            .where(
-                Event.npo_id.in_(npo_ids),
-                AuctionItem.deleted_at.is_(None),
-                AuctionBid.bid_status.notin_(_EXCLUDED_BID_STATUSES),
-            )
             .group_by("type_label")
         )
-        if event_id:
-            bid_type_stmt = bid_type_stmt.where(AuctionBid.event_id == event_id)
+        bid_type_stmt = _bid_filters(bid_type_stmt)
         result = await self._db.execute(bid_type_stmt)
         bid_count_by_type = [ChartDataPoint(label=r[0], value=float(r[1])) for r in result.all()]
 
-        # Top 10 items by revenue
+        # Top 10 items by revenue (winning bids)
         top_rev_stmt = (
             select(
                 AuctionItem.title,
@@ -405,39 +475,30 @@ class AuctionDashboardService:
             .select_from(AuctionBid)
             .join(AuctionItem, AuctionBid.auction_item_id == AuctionItem.id)
             .join(Event, AuctionItem.event_id == Event.id)
-            .where(
-                Event.npo_id.in_(npo_ids),
-                AuctionItem.deleted_at.is_(None),
-                AuctionBid.bid_status.notin_(_EXCLUDED_BID_STATUSES),
-            )
             .group_by(AuctionItem.id, AuctionItem.title)
             .order_by(func.sum(AuctionBid.bid_amount).desc())
             .limit(10)
         )
-        if event_id:
-            top_rev_stmt = top_rev_stmt.where(AuctionBid.event_id == event_id)
+        top_rev_stmt = _bid_filters(top_rev_stmt, winning_only=True)
         result = await self._db.execute(top_rev_stmt)
         top_items_by_revenue = [
             ChartDataPoint(label=r[0], value=_decimal_to_float(r[1])) for r in result.all()
         ]
 
-        # Top 10 items by bid count
+        # Top 10 items by bid count (computed live from auction_bids)
         top_bids_stmt = (
             select(
                 AuctionItem.title,
-                AuctionItem.bid_count.label("cnt"),
+                func.count(AuctionBid.id).label("cnt"),
             )
-            .select_from(AuctionItem)
+            .select_from(AuctionBid)
+            .join(AuctionItem, AuctionBid.auction_item_id == AuctionItem.id)
             .join(Event, AuctionItem.event_id == Event.id)
-            .where(
-                Event.npo_id.in_(npo_ids),
-                AuctionItem.deleted_at.is_(None),
-            )
-            .order_by(AuctionItem.bid_count.desc())
+            .group_by(AuctionItem.id, AuctionItem.title)
+            .order_by(func.count(AuctionBid.id).desc())
             .limit(10)
         )
-        if event_id:
-            top_bids_stmt = top_bids_stmt.where(AuctionItem.event_id == event_id)
+        top_bids_stmt = _bid_filters(top_bids_stmt)
         result = await self._db.execute(top_bids_stmt)
         top_items_by_bid_count = [
             ChartDataPoint(label=r[0], value=float(r[1])) for r in result.all()
@@ -451,15 +512,10 @@ class AuctionDashboardService:
             )
             .select_from(AuctionItem)
             .join(Event, AuctionItem.event_id == Event.id)
-            .where(
-                Event.npo_id.in_(npo_ids),
-                AuctionItem.deleted_at.is_(None),
-            )
             .order_by(AuctionItem.watcher_count.desc())
             .limit(10)
         )
-        if event_id:
-            top_watch_stmt = top_watch_stmt.where(AuctionItem.event_id == event_id)
+        top_watch_stmt = _item_filters(top_watch_stmt)
         result = await self._db.execute(top_watch_stmt)
         top_items_by_watchers = [
             ChartDataPoint(label=r[0], value=float(r[1])) for r in result.all()
@@ -501,6 +557,19 @@ class AuctionDashboardService:
         ai: AuctionItem = row[0]
         event_name: str = row[1]
 
+        # Compute live bid stats for this item
+        bid_agg_stmt = select(
+            func.max(AuctionBid.bid_amount).label("max_bid"),
+            func.count(AuctionBid.id).label("bid_count"),
+        ).where(
+            AuctionBid.auction_item_id == item_id,
+            AuctionBid.bid_status.notin_(_EXCLUDED_BID_STATUSES),
+        )
+        bid_agg_result = await self._db.execute(bid_agg_stmt)
+        bid_agg = bid_agg_result.one()
+        live_max_bid = bid_agg[0]
+        live_bid_count = bid_agg[1] or 0
+
         item = AuctionItemFull(
             id=ai.id,
             title=ai.title,
@@ -509,10 +578,8 @@ class AuctionDashboardService:
             category=ai.category,
             status=ai.status,
             starting_bid=_decimal_to_float(ai.starting_bid),
-            current_bid_amount=_decimal_to_float(ai.current_bid_amount)
-            if ai.current_bid_amount
-            else None,
-            bid_count=ai.bid_count,
+            current_bid_amount=_decimal_to_float(live_max_bid) if live_max_bid else None,
+            bid_count=live_bid_count,
             watcher_count=ai.watcher_count,
             buy_now_enabled=ai.buy_now_enabled,
             buy_now_price=_decimal_to_float(ai.buy_now_price) if ai.buy_now_price else None,
@@ -524,7 +591,7 @@ class AuctionDashboardService:
             event_name=event_name,
         )
 
-        # Bid history (exclude cancelled/withdrawn)
+        # Bid history (include all statuses for full context)
         bid_stmt = (
             select(
                 AuctionBid.id,
@@ -539,7 +606,6 @@ class AuctionDashboardService:
             .join(User, AuctionBid.user_id == User.id)
             .where(
                 AuctionBid.auction_item_id == item_id,
-                AuctionBid.bid_status.notin_(_EXCLUDED_BID_STATUSES),
             )
             .order_by(AuctionBid.placed_at.desc())
         )
@@ -559,13 +625,14 @@ class AuctionDashboardService:
             for b in bids
         ]
 
-        # Bid timeline (ascending for chart)
+        # Bid timeline (ascending for chart, exclude cancelled/withdrawn)
         bid_timeline = [
             BidTimelinePoint(
                 timestamp=b[7],
                 bid_amount=_decimal_to_float(b[4]),
             )
             for b in reversed(bids)
+            if b[6] not in _EXCLUDED_BID_STATUSES
         ]
 
         return AuctionItemDetailResponse(

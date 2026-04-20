@@ -79,16 +79,16 @@ export function SignUp() {
                   <HandCoins className='h-5 w-5' />
                 </div>
                 <div>
-                  <h3 className='font-semibold'>Donor</h3>
+                  <h3 className='font-semibold'>Attendee</h3>
                   <p className='text-muted-foreground text-sm'>
-                    Create a donor account here for ticketing, bidding, and
-                    donor-facing event flows.
+                    Create an attendee account here for ticketing, bidding, and
+                    event flows.
                   </p>
                 </div>
               </div>
               <Button asChild variant='outline' className='w-full'>
                 <Link to='/sign-up' search={{ intent: 'donor', redirect }}>
-                  Create donor account
+                  Create attendee account
                 </Link>
               </Button>
             </div>

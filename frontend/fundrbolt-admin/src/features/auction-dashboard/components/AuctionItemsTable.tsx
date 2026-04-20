@@ -236,7 +236,7 @@ export function AuctionItemsTable({
                   >
                     Status{sortIndicator('status')}
                   </TableHead>
-                  <TableHead>Event</TableHead>
+                  {!eventId && <TableHead>Event</TableHead>}
                   <TableHead />
                 </TableRow>
               </TableHeader>
@@ -269,9 +269,11 @@ export function AuctionItemsTable({
                     <TableCell>
                       <StatusBadge status={item.status} />
                     </TableCell>
-                    <TableCell className='text-muted-foreground text-xs'>
-                      {item.event_name}
-                    </TableCell>
+                    {!eventId && (
+                      <TableCell className='text-muted-foreground text-xs'>
+                        {item.event_name}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <ChevronRight className='text-muted-foreground h-4 w-4' />
                     </TableCell>
@@ -324,9 +326,11 @@ export function AuctionItemsTable({
                     <span className='text-muted-foreground'>Watchers</span>
                     <span>{item.watcher_count}</span>
                   </div>
-                  <div className='text-muted-foreground mt-1 text-xs'>
-                    {item.event_name}
-                  </div>
+                  {!eventId && (
+                    <div className='text-muted-foreground mt-1 text-xs'>
+                      {item.event_name}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

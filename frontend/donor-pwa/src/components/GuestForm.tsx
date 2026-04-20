@@ -98,7 +98,7 @@ export function GuestForm({
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phone Number</FormLabel>
+                <FormLabel>Cell Number</FormLabel>
                 <FormControl>
                   <Input type="tel" placeholder="(555) 123-4567" {...field} />
                 </FormControl>

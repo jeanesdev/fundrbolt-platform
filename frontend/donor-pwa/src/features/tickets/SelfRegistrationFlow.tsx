@@ -306,7 +306,7 @@ export function SelfRegistrationFlow({
             </div>
 
             <div className='space-y-2'>
-              <Label htmlFor='phone'>Phone number</Label>
+              <Label htmlFor='phone'>Cell Number</Label>
               <Input
                 id='phone'
                 type='tel'
@@ -324,7 +324,7 @@ export function SelfRegistrationFlow({
               />
               {showPhoneError && !phoneIsValid && (
                 <p className='text-sm text-red-600'>
-                  Enter a valid phone number.
+                  Enter a valid cell number.
                 </p>
               )}
             </div>

@@ -1,16 +1,3 @@
-import { useState } from 'react'
-import {
-  AlertCircle,
-  CheckCircle2,
-  Download,
-  FileText,
-  Loader2,
-  Upload,
-  UploadCloud,
-  XCircle,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { useNpoContext } from '@/hooks/use-npo-context'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,6 +11,19 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useNpoContext } from '@/hooks/use-npo-context'
+import {
+  AlertCircle,
+  CheckCircle2,
+  Download,
+  FileText,
+  Loader2,
+  Upload,
+  UploadCloud,
+  XCircle,
+} from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 import {
   buildUserImportErrorReport,
   commitUserImport,
@@ -296,7 +296,7 @@ export function UsersImportDialog({
             </p>
             <p>
               <strong>Roles:</strong> npo_admin, event_coordinator, donor
-              (donors are created without NPO membership)
+              (attendees are created without NPO membership)
             </p>
             <p>
               <strong>Optional fields:</strong> npo_identifier (informational),

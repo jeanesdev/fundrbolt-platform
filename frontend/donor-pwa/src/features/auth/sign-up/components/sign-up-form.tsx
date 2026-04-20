@@ -521,7 +521,7 @@ export function SignUpForm({
           name='phone'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Phone (Optional)</FormLabel>
+              <FormLabel>Cell Number (Optional)</FormLabel>
               <FormControl>
                 <Input
                   placeholder='(123)456-7890 or +1(123)456-7890'

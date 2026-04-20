@@ -1,3 +1,8 @@
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { cn } from '@/lib/utils'
 import { Link, useParams } from '@tanstack/react-router'
 import {
   ArrowLeft,
@@ -12,11 +17,6 @@ import {
   Twitter,
   Youtube,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { DonorLabelsSection } from './components/donor-labels-section'
 import { useUser } from './hooks/use-users'
 
@@ -150,7 +150,7 @@ export function UserDetailPage() {
                 <div className='flex items-start gap-3'>
                   <Phone className='text-muted-foreground mt-0.5 h-4 w-4 shrink-0' />
                   <div className='min-w-0 flex-1'>
-                    <p className='text-muted-foreground text-xs'>Phone</p>
+                    <p className='text-muted-foreground text-xs'>Cell Number</p>
                     <a
                       href={`tel:${user.phone}`}
                       className='text-sm hover:underline'
