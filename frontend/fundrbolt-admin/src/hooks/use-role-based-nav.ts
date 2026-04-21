@@ -258,16 +258,24 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     ? `Event${selectedEventName ? `: ${selectedEventName}` : ''}`
     : null
 
-  // Donate Now nav group — only for super admins and NPO admins when an NPO is selected
+  // Donate Now nav group — visible for super admins and NPO admins always;
+  // when no NPO is selected, prompt the user to select one first
   const donateNowNavGroup: EventNavGroup | null =
-    selectedNpoId && (isSuperAdmin || isNpoAdmin)
-      ? {
+    isSuperAdmin || isNpoAdmin
+      ? selectedNpoId
+        ? {
           title: 'Donate Now',
           items: [
             { title: 'Dashboard', href: `/npos/${selectedNpoId}/donate-now/dashboard`, icon: 'BarChart3' },
             { title: 'Setup', href: `/npos/${selectedNpoId}/donate-now/setup`, icon: 'Settings' },
             { title: 'Tiers', href: `/npos/${selectedNpoId}/donate-now/tiers`, icon: 'Layers' },
             { title: 'Support Wall', href: `/npos/${selectedNpoId}/donate-now/wall`, icon: 'MessageSquare' },
+          ],
+        }
+        : {
+          title: 'Donate Now',
+          items: [
+            { title: 'Select an organization first', href: '/npos', icon: 'Building2' },
           ],
         }
       : null
