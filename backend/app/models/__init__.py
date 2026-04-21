@@ -20,9 +20,11 @@ from app.models.checklist import (
     ChecklistTemplateItem,
 )
 from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
+from app.models.donate_now_config import DonateNowPageConfig
 from app.models.donation import Donation, DonationStatus
 from app.models.donation_label import DonationLabel
 from app.models.donation_label_assignment import DonationLabelAssignment
+from app.models.donation_tier import DonationTier
 from app.models.donor_label import DonorLabel
 from app.models.donor_label_assignment import DonorLabelAssignment
 from app.models.event import Event, EventLink, EventMedia, FoodOption
@@ -47,6 +49,7 @@ from app.models.notification_preference import NotificationPreference
 from app.models.npo import NPO
 from app.models.npo_application import NPOApplication
 from app.models.npo_branding import NPOBranding
+from app.models.npo_donation import NpoDonation, NpoDonationStatus, RecurrenceStatus
 from app.models.npo_member import NPOMember
 from app.models.onboarding_session import OnboardingSession, OnboardingSessionType
 from app.models.payment_gateway_credential import PaymentGatewayCredential
@@ -79,6 +82,7 @@ from app.models.social_auth_challenge import (
 )
 from app.models.social_identity_link import SocialIdentityLink
 from app.models.sponsor import Sponsor
+from app.models.support_wall_entry import SupportWallEntry
 from app.models.ticket_management import (
     AssignedTicket,
     AssignmentStatus,

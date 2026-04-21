@@ -31,6 +31,10 @@ celery_app.conf.update(
             "task": "app.tasks.notification_tasks.purge_expired_notifications",
             "schedule": 86400.0,  # daily
         },
+        "process-monthly-donations": {
+            "task": "app.tasks.recurring_donation_tasks.process_monthly_donations",
+            "schedule": 86400.0,  # daily at celery beat startup time
+        },
     },
 )
 

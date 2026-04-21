@@ -1,6 +1,7 @@
 """Onboarding session service for NPO wizard state management."""
 
 import asyncio
+import re
 import uuid
 from collections.abc import Coroutine
 from datetime import UTC, datetime, timedelta
@@ -408,8 +409,10 @@ class OnboardingService:
             npo.mission_statement = npo_data.get("mission") or npo_data.get("mission_description")
             npo.status = NPOStatus.PENDING_APPROVAL
         else:
+            npo_slug = re.sub(r"[^a-z0-9]+", "-", npo_name.lower()).strip("-")[:100]
             npo = NPO(
                 name=npo_name,
+                slug=npo_slug,
                 tax_id=npo_data.get("ein"),
                 website_url=npo_data.get("website_url"),
                 phone=npo_data.get("phone"),

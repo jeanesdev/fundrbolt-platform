@@ -374,6 +374,7 @@ class TestUsersRoleUpdateContract:
             NPO(
                 id=npo_id,
                 name=f"Role Downgrade NPO {npo_id}",
+                slug=f"role-downgrade-{npo_id}",
                 email=f"role-downgrade-{npo_id}@example.com",
                 status=NPOStatus.APPROVED,
                 created_by_user_id=user_id,

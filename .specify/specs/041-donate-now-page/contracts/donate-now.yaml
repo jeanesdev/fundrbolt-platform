@@ -1,0 +1,695 @@
+openapi: "3.1.0"
+info:
+  title: Donate Now Page API
+  version: "1.0.0"
+  description: |
+    API contracts for feature 041 — Donate Now Page.
+    Covers public donor endpoints and admin configuration endpoints.
+
+tags:
+  - name: Public Donate Now
+    description: Publicly accessible endpoints for the donor-facing donate page
+  - name: Admin Donate Now
+    description: Admin-only endpoints for configuring and moderating the donate page
+
+paths:
+
+  # ─── Public Donor Endpoints ───────────────────────────────────────────────
+
+  /api/v1/npos/{npo_slug}/donate-now:
+    get:
+      tags: [Public Donate Now]
+      summary: Get public donate page data
+      description: |
+        Returns all data needed to render the donor-facing Donate Now page.
+        Publicly accessible — no authentication required.
+        Returns 404 if the NPO does not exist or the page is disabled.
+      parameters:
+        - name: npo_slug
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "habitat-for-humanity"
+      responses:
+        "200":
+          description: Donate page data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DonateNowPagePublic"
+        "404":
+          description: NPO not found or donate page disabled
+
+  /api/v1/npos/{npo_slug}/donate-now/donations:
+    post:
+      tags: [Public Donate Now]
+      summary: Submit a donation
+      description: |
+        Submits a donation. Requires authentication.
+        Creates a HPF session to capture card details (if no saved profile provided),
+        stores the donation record, and initiates the charge via Deluxe gateway.
+        Idempotency key must be provided to prevent double-submission.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: npo_slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationCreateRequest"
+      responses:
+        "201":
+          description: Donation accepted and charge initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DonationResponse"
+        "400":
+          description: Validation error (invalid amount, bad dates, etc.)
+        "401":
+          description: Authentication required
+        "409":
+          description: Duplicate submission (idempotency key already used)
+        "422":
+          description: Payment declined — inline error detail returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentDeclinedError"
+
+  /api/v1/npos/{npo_slug}/donate-now/donations/{donation_id}/cancel:
+    post:
+      tags: [Public Donate Now]
+      summary: Cancel a recurring donation
+      description: |
+        Cancels a monthly recurring donation. Only the donor who created it
+        (or an NPO admin) may cancel. Sets recurrence_status to 'cancelled'.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: npo_slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: donation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Recurring donation cancelled
+        "403":
+          description: Not the donation owner or NPO admin
+        "404":
+          description: Donation not found
+        "409":
+          description: Donation is not an active recurring donation
+
+  /api/v1/npos/{npo_slug}/donate-now/support-wall:
+    get:
+      tags: [Public Donate Now]
+      summary: List support wall entries
+      description: |
+        Returns paginated support wall entries for the NPO's donate page.
+        Only shows entries where is_hidden=false and donation.status='captured'.
+      parameters:
+        - name: npo_slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 5
+      responses:
+        "200":
+          description: Paginated support wall entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportWallPage"
+        "404":
+          description: NPO not found or donate page disabled
+
+  # ─── Admin Configuration Endpoints ────────────────────────────────────────
+
+  /api/v1/admin/npos/{npo_id}/donate-now/config:
+    get:
+      tags: [Admin Donate Now]
+      summary: Get donate page configuration
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Current configuration (or defaults if not yet configured)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DonateNowConfig"
+        "403":
+          description: Not authorized for this NPO
+
+    put:
+      tags: [Admin Donate Now]
+      summary: Save donate page configuration
+      description: |
+        Full replacement of the configuration (upsert). Enables or disables the page,
+        sets hero media, donate plea text, processing fee %, and NPO info text.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonateNowConfigUpdate"
+      responses:
+        "200":
+          description: Configuration saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DonateNowConfig"
+        "403":
+          description: Not authorized for this NPO
+        "422":
+          description: Validation error
+
+  /api/v1/admin/npos/{npo_id}/donate-now/tiers:
+    get:
+      tags: [Admin Donate Now]
+      summary: List donation tiers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Ordered list of donation tiers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DonationTier"
+
+    put:
+      tags: [Admin Donate Now]
+      summary: Replace all donation tiers
+      description: |
+        Full replacement of donation tiers (ordered). Send the complete desired
+        list; any tiers not in the list are deleted. Max 10 tiers.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              maxItems: 10
+              items:
+                $ref: "#/components/schemas/DonationTierInput"
+      responses:
+        "200":
+          description: Tiers replaced
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DonationTier"
+
+  /api/v1/admin/npos/{npo_id}/donate-now/support-wall:
+    get:
+      tags: [Admin Donate Now]
+      summary: List all support wall entries (including hidden)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: include_hidden
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: All support wall entries with hidden status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSupportWallPage"
+
+  /api/v1/admin/npos/{npo_id}/donate-now/support-wall/{entry_id}/hide:
+    post:
+      tags: [Admin Donate Now]
+      summary: Hide a support wall entry
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: entry_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Entry hidden
+
+  /api/v1/admin/npos/{npo_id}/donate-now/support-wall/{entry_id}/restore:
+    post:
+      tags: [Admin Donate Now]
+      summary: Restore a hidden support wall entry
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: entry_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Entry restored
+
+  /api/v1/admin/npos/{npo_id}/donate-now/hero-upload-url:
+    post:
+      tags: [Admin Donate Now]
+      summary: Get a pre-signed URL for hero media upload
+      description: Returns an Azure Blob Storage SAS URL for direct upload of hero image/video.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [filename, content_type]
+              properties:
+                filename:
+                  type: string
+                content_type:
+                  type: string
+                  enum: [image/jpeg, image/png, image/webp, video/mp4]
+      responses:
+        "200":
+          description: Pre-signed upload URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  upload_url:
+                    type: string
+                    format: uri
+                  media_url:
+                    type: string
+                    format: uri
+                    description: Public URL to use in config after upload completes
+
+# ─── Components ──────────────────────────────────────────────────────────────
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+
+    DonateNowPagePublic:
+      type: object
+      description: All data needed to render the public donate page
+      properties:
+        npo_slug:
+          type: string
+        npo_name:
+          type: string
+        donate_plea_text:
+          type: string
+          nullable: true
+        hero_media_url:
+          type: string
+          format: uri
+          nullable: true
+        hero_transition_style:
+          type: string
+          enum: [documentary_style, fade, swipe, simple]
+        processing_fee_pct:
+          type: number
+          format: float
+          description: "e.g. 0.029 for 2.9%"
+        npo_info_text:
+          type: string
+          nullable: true
+        donation_tiers:
+          type: array
+          items:
+            $ref: "#/components/schemas/DonationTier"
+        social_links:
+          type: array
+          items:
+            $ref: "#/components/schemas/SocialLink"
+        upcoming_event:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/UpcomingEventSummary"
+
+    DonationTier:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        amount_cents:
+          type: integer
+          description: Amount in cents
+          example: 5000
+        impact_statement:
+          type: string
+          nullable: true
+          example: "Feeds a family for a week"
+        display_order:
+          type: integer
+
+    DonationTierInput:
+      type: object
+      required: [amount_cents]
+      properties:
+        amount_cents:
+          type: integer
+          minimum: 100
+          description: Amount in cents (minimum $1.00)
+        impact_statement:
+          type: string
+          maxLength: 200
+          nullable: true
+        display_order:
+          type: integer
+
+    DonationCreateRequest:
+      type: object
+      required: [amount_cents, idempotency_key]
+      properties:
+        amount_cents:
+          type: integer
+          minimum: 100
+          description: Donation amount in cents
+        covers_processing_fee:
+          type: boolean
+          default: false
+        payment_profile_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: |
+            Saved vault profile to charge. If null, a new HPF session will
+            be returned for card capture.
+        is_monthly:
+          type: boolean
+          default: false
+        recurrence_start:
+          type: string
+          format: date
+          nullable: true
+          description: Required when is_monthly=true; defaults to today
+        recurrence_end:
+          type: string
+          format: date
+          nullable: true
+          description: Optional end date for monthly recurring. Null = open-ended.
+        support_wall_message:
+          type: string
+          maxLength: 200
+          nullable: true
+        is_anonymous:
+          type: boolean
+          default: false
+        show_amount:
+          type: boolean
+          default: true
+        idempotency_key:
+          type: string
+          maxLength: 100
+          description: Client-generated unique key to prevent double-submission
+
+    DonationResponse:
+      type: object
+      properties:
+        donation_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, captured, declined]
+        hpf_session_url:
+          type: string
+          format: uri
+          nullable: true
+          description: |
+            Present only when no saved payment profile was provided.
+            Donor must complete HPF before donation is captured.
+        total_charged_cents:
+          type: integer
+        is_monthly:
+          type: boolean
+
+    PaymentDeclinedError:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: "Your card was declined. Please try a different amount or payment method."
+        decline_code:
+          type: string
+          nullable: true
+          example: "insufficient_funds"
+
+    SupportWallEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+          nullable: true
+          description: "Donor name or null/Anonymous if is_anonymous=true"
+        is_anonymous:
+          type: boolean
+        show_amount:
+          type: boolean
+        amount_cents:
+          type: integer
+          nullable: true
+          description: "Null if show_amount=false"
+        message:
+          type: string
+          nullable: true
+        tier_label:
+          type: string
+          nullable: true
+          description: "Tier impact statement matching the donation amount, if any"
+        created_at:
+          type: string
+          format: date-time
+
+    SupportWallPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SupportWallEntry"
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total_pages:
+          type: integer
+
+    AdminSupportWallPage:
+      allOf:
+        - $ref: "#/components/schemas/SupportWallPage"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                allOf:
+                  - $ref: "#/components/schemas/SupportWallEntry"
+                  - type: object
+                    properties:
+                      is_hidden:
+                        type: boolean
+                      donor_user_id:
+                        type: string
+                        format: uuid
+
+    DonateNowConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        npo_id:
+          type: string
+          format: uuid
+        is_enabled:
+          type: boolean
+        donate_plea_text:
+          type: string
+          nullable: true
+        hero_media_url:
+          type: string
+          format: uri
+          nullable: true
+        hero_transition_style:
+          type: string
+          enum: [documentary_style, fade, swipe, simple]
+        processing_fee_pct:
+          type: number
+          format: float
+        npo_info_text:
+          type: string
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+
+    DonateNowConfigUpdate:
+      type: object
+      properties:
+        is_enabled:
+          type: boolean
+        donate_plea_text:
+          type: string
+          maxLength: 500
+          nullable: true
+        hero_media_url:
+          type: string
+          format: uri
+          nullable: true
+        hero_transition_style:
+          type: string
+          enum: [documentary_style, fade, swipe, simple]
+        processing_fee_pct:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: "Decimal fraction e.g. 0.029 for 2.9%"
+        npo_info_text:
+          type: string
+          nullable: true
+
+    SocialLink:
+      type: object
+      properties:
+        platform:
+          type: string
+          example: instagram
+        url:
+          type: string
+          format: uri
+
+    UpcomingEventSummary:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        name:
+          type: string
+        event_date:
+          type: string
+          format: date-time

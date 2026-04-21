@@ -170,6 +170,7 @@ class TestEmailVerificationIntegration:
 
         npo = NPO(
             name="Verification NPO",
+            slug="verification-npo",
             description="NPO for email verification",
             mission_statement="Test email verification",
             email="verify-npo@example.com",
@@ -291,6 +292,7 @@ class TestEmailVerificationIntegration:
         npo_one = NPO(
             id=npo_id_1,
             name=f"Verification NPO One {npo_id_1}",
+            slug=f"verification-npo-one-{npo_id_1}",
             description="First NPO for email verification",
             mission_statement="Test email verification",
             email=f"verify-npo1-{npo_id_1}@example.com",
@@ -340,6 +342,7 @@ class TestEmailVerificationIntegration:
         npo_two = NPO(
             id=npo_id_2,
             name=f"Verification NPO Two {npo_id_2}",
+            slug=f"verification-npo-two-{npo_id_2}",
             description="Second NPO for email verification",
             mission_statement="Test email verification",
             email=f"verify-npo2-{npo_id_2}@example.com",
@@ -654,6 +657,7 @@ class TestEmailVerificationIntegration:
 
         npo = NPO(
             name="Complete Flow NPO",
+            slug="complete-flow-npo",
             description="NPO for complete verification flow",
             mission_statement="Test verification flow",
             email="complete-flow-npo@example.com",
