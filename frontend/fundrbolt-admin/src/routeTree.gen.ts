@@ -8,93 +8,95 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as authCompleteProfileRouteImport } from './routes/(auth)/complete-profile'
-import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
-import { Route as authOtpRouteImport } from './routes/(auth)/otp'
-import { Route as authPasswordResetRouteImport } from './routes/(auth)/password-reset'
-import { Route as authPasswordResetConfirmRouteImport } from './routes/(auth)/password-reset-confirm'
-import { Route as authPrivacyPolicyRouteImport } from './routes/(auth)/privacy-policy'
-import { Route as authRegisterNpoIndexRouteImport } from './routes/(auth)/register-npo/index'
-import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
-import { Route as authSignIn2RouteImport } from './routes/(auth)/sign-in-2'
-import { Route as authSignUpRouteImport } from './routes/(auth)/sign-up'
-import { Route as authSocialCallbackRouteImport } from './routes/(auth)/social-callback'
-import { Route as authTermsOfServiceRouteImport } from './routes/(auth)/terms-of-service'
-import { Route as authVerifyEmailRouteImport } from './routes/(auth)/verify-email'
-import { Route as errors401RouteImport } from './routes/(errors)/401'
-import { Route as errors403RouteImport } from './routes/(errors)/403'
-import { Route as errors404RouteImport } from './routes/(errors)/404'
-import { Route as errors500RouteImport } from './routes/(errors)/500'
-import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthenticatedAdminNpoApplicationsRouteImport } from './routes/_authenticated/admin/npo-applications'
-import { Route as AuthenticatedDonorDashboardIndexRouteImport } from './routes/_authenticated/donor-dashboard/index'
-import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
-import { Route as AuthenticatedEventsEventIdAuctionBidsRouteImport } from './routes/_authenticated/events/$eventId/auction-bids'
-import { Route as AuthenticatedEventsEventIdAuctionDashboardIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-dashboard/index'
-import { Route as AuthenticatedEventsEventIdAuctionDashboardItemsItemIdRouteImport } from './routes/_authenticated/events/$eventId/auction-dashboard/items/$itemId'
-import { Route as AuthenticatedEventsEventIdAuctionItemsRouteImport } from './routes/_authenticated/events/$eventId/auction-items'
-import { Route as AuthenticatedEventsEventIdAuctionItemsItemIdEditRouteImport } from './routes/_authenticated/events/$eventId/auction-items/$itemId/edit'
-import { Route as AuthenticatedEventsEventIdAuctionItemsItemIdEngagementRouteImport } from './routes/_authenticated/events/$eventId/auction-items/$itemId/engagement'
-import { Route as AuthenticatedEventsEventIdAuctionItemsItemIdIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-items/$itemId/index'
-import { Route as AuthenticatedEventsEventIdAuctionItemsCreateRouteImport } from './routes/_authenticated/events/$eventId/auction-items/create'
-import { Route as AuthenticatedEventsEventIdAuctionItemsIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-items/index'
-import { Route as AuthenticatedEventsEventIdAuctioneerIndexRouteImport } from './routes/_authenticated/events/$eventId/auctioneer/index'
-import { Route as AuthenticatedEventsEventIdAuctioneerLiveRouteImport } from './routes/_authenticated/events/$eventId/auctioneer/live'
-import { Route as AuthenticatedEventsEventIdCheckinRouteImport } from './routes/_authenticated/events/$eventId/checkin'
-import { Route as AuthenticatedEventsEventIdChecklistRouteImport } from './routes/_authenticated/events/$eventId/checklist'
-import { Route as AuthenticatedEventsEventIdDashboardRouteImport } from './routes/_authenticated/events/$eventId/dashboard'
-import { Route as AuthenticatedEventsEventIdDetailsRouteImport } from './routes/_authenticated/events/$eventId/details'
-import { Route as AuthenticatedEventsEventIdDonorDashboardRouteImport } from './routes/_authenticated/events/$eventId/donor-dashboard'
-import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events/$eventId/edit'
-import { Route as AuthenticatedEventsEventIdFoodRouteImport } from './routes/_authenticated/events/$eventId/food'
-import { Route as AuthenticatedEventsEventIdIndexRouteImport } from './routes/_authenticated/events/$eventId/index'
-import { Route as AuthenticatedEventsEventIdLinksRouteImport } from './routes/_authenticated/events/$eventId/links'
-import { Route as AuthenticatedEventsEventIdMediaRouteImport } from './routes/_authenticated/events/$eventId/media'
-import { Route as AuthenticatedEventsEventIdNotificationsRouteImport } from './routes/_authenticated/events/$eventId/notifications'
-import { Route as AuthenticatedEventsEventIdPaymentsRouteImport } from './routes/_authenticated/events/$eventId/payments'
-import { Route as AuthenticatedEventsEventIdPreviewRouteImport } from './routes/_authenticated/events/$eventId/preview'
-import { Route as AuthenticatedEventsEventIdQuickEntryRouteImport } from './routes/_authenticated/events/$eventId/quick-entry'
-import { Route as AuthenticatedEventsEventIdRegistrationsRouteImport } from './routes/_authenticated/events/$eventId/registrations'
-import { Route as AuthenticatedEventsEventIdRouteRouteImport } from './routes/_authenticated/events/$eventId/route'
-import { Route as AuthenticatedEventsEventIdSeatingRouteImport } from './routes/_authenticated/events/$eventId/seating'
-import { Route as AuthenticatedEventsEventIdSponsorsRouteImport } from './routes/_authenticated/events/$eventId/sponsors'
-import { Route as AuthenticatedEventsEventIdTicketsRouteImport } from './routes/_authenticated/events/$eventId/tickets'
-import { Route as AuthenticatedEventsEventIdTicketsPackageIdEditRouteImport } from './routes/_authenticated/events/$eventId/tickets/$packageId/edit'
-import { Route as AuthenticatedEventsEventIdTicketsCreateRouteImport } from './routes/_authenticated/events/$eventId/tickets/create'
-import { Route as AuthenticatedEventsEventIdTicketsIndexRouteImport } from './routes/_authenticated/events/$eventId/tickets/index'
-import { Route as AuthenticatedEventsEventIdTicketsPromosRouteImport } from './routes/_authenticated/events/$eventId/tickets/promos'
-import { Route as AuthenticatedEventsEventIdTicketsSalesRouteImport } from './routes/_authenticated/events/$eventId/tickets/sales'
-import { Route as AuthenticatedEventsCreateRouteImport } from './routes/_authenticated/events/create'
-import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events/index'
-import { Route as AuthenticatedEventsRouteRouteImport } from './routes/_authenticated/events/route'
-import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedNposNpoIdIndexRouteImport } from './routes/_authenticated/npos/$npoId.index'
-import { Route as AuthenticatedNposNpoIdDonateNowHeroRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/hero'
-import { Route as AuthenticatedNposNpoIdDonateNowIndexRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/index'
-import { Route as AuthenticatedNposNpoIdDonateNowInfoRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/info'
-import { Route as AuthenticatedNposNpoIdDonateNowTiersRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/tiers'
-import { Route as AuthenticatedNposNpoIdDonateNowWallRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/wall'
-import { Route as AuthenticatedNposNpoIdEditRouteImport } from './routes/_authenticated/npos/$npoId/edit'
-import { Route as AuthenticatedNposNpoIdPaymentSettingsRouteImport } from './routes/_authenticated/npos/$npoId/payment-settings'
-import { Route as AuthenticatedNposCreateRouteImport } from './routes/_authenticated/npos/create'
-import { Route as AuthenticatedNposIndexRouteImport } from './routes/_authenticated/npos/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthenticatedSettingsConsentRouteImport } from './routes/_authenticated/settings/consent'
-import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
-import { Route as AuthenticatedSettingsPasswordRouteImport } from './routes/_authenticated/settings/password'
-import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
-import { Route as AuthenticatedSettingsSupportRouteImport } from './routes/_authenticated/settings/support'
-import { Route as AuthenticatedUsersUserIdIndexRouteImport } from './routes/_authenticated/users/$userId/index'
-import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
-import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
-import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
-import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
-import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_authenticated/route'
-import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
-import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
 import { Route as DonorPortalRedirectRouteImport } from './routes/donor-portal-redirect'
+import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as InvitationsAcceptRouteImport } from './routes/invitations/accept'
+import { Route as errors503RouteImport } from './routes/(errors)/503'
+import { Route as errors500RouteImport } from './routes/(errors)/500'
+import { Route as errors404RouteImport } from './routes/(errors)/404'
+import { Route as errors403RouteImport } from './routes/(errors)/403'
+import { Route as errors401RouteImport } from './routes/(errors)/401'
+import { Route as authVerifyEmailRouteImport } from './routes/(auth)/verify-email'
+import { Route as authTermsOfServiceRouteImport } from './routes/(auth)/terms-of-service'
+import { Route as authSocialCallbackRouteImport } from './routes/(auth)/social-callback'
+import { Route as authSignUpRouteImport } from './routes/(auth)/sign-up'
+import { Route as authSignIn2RouteImport } from './routes/(auth)/sign-in-2'
+import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
+import { Route as authPrivacyPolicyRouteImport } from './routes/(auth)/privacy-policy'
+import { Route as authPasswordResetConfirmRouteImport } from './routes/(auth)/password-reset-confirm'
+import { Route as authPasswordResetRouteImport } from './routes/(auth)/password-reset'
+import { Route as authOtpRouteImport } from './routes/(auth)/otp'
+import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
+import { Route as authCompleteProfileRouteImport } from './routes/(auth)/complete-profile'
+import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_authenticated/route'
+import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
+import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
+import { Route as AuthenticatedEventsRouteRouteImport } from './routes/_authenticated/events/route'
+import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
+import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedNposIndexRouteImport } from './routes/_authenticated/npos/index'
+import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events/index'
+import { Route as AuthenticatedDonorDashboardIndexRouteImport } from './routes/_authenticated/donor-dashboard/index'
+import { Route as authRegisterNpoIndexRouteImport } from './routes/(auth)/register-npo/index'
+import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
+import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
+import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
+import { Route as AuthenticatedSettingsSupportRouteImport } from './routes/_authenticated/settings/support'
+import { Route as AuthenticatedSettingsPasswordRouteImport } from './routes/_authenticated/settings/password'
+import { Route as AuthenticatedSettingsConsentRouteImport } from './routes/_authenticated/settings/consent'
+import { Route as AuthenticatedNposCreateRouteImport } from './routes/_authenticated/npos/create'
+import { Route as AuthenticatedEventsCreateRouteImport } from './routes/_authenticated/events/create'
+import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+import { Route as AuthenticatedAdminNpoApplicationsRouteImport } from './routes/_authenticated/admin/npo-applications'
+import { Route as AuthenticatedEventsEventIdRouteRouteImport } from './routes/_authenticated/events/$eventId/route'
+import { Route as AuthenticatedUsersUserIdIndexRouteImport } from './routes/_authenticated/users/$userId/index'
+import { Route as AuthenticatedNposNpoIdIndexRouteImport } from './routes/_authenticated/npos/$npoId.index'
+import { Route as AuthenticatedEventsEventIdIndexRouteImport } from './routes/_authenticated/events/$eventId/index'
+import { Route as AuthenticatedNposNpoIdPaymentSettingsRouteImport } from './routes/_authenticated/npos/$npoId/payment-settings'
+import { Route as AuthenticatedNposNpoIdEditRouteImport } from './routes/_authenticated/npos/$npoId/edit'
+import { Route as AuthenticatedEventsEventIdTicketsRouteImport } from './routes/_authenticated/events/$eventId/tickets'
+import { Route as AuthenticatedEventsEventIdSponsorsRouteImport } from './routes/_authenticated/events/$eventId/sponsors'
+import { Route as AuthenticatedEventsEventIdSeatingRouteImport } from './routes/_authenticated/events/$eventId/seating'
+import { Route as AuthenticatedEventsEventIdRegistrationsRouteImport } from './routes/_authenticated/events/$eventId/registrations'
+import { Route as AuthenticatedEventsEventIdQuickEntryRouteImport } from './routes/_authenticated/events/$eventId/quick-entry'
+import { Route as AuthenticatedEventsEventIdPreviewRouteImport } from './routes/_authenticated/events/$eventId/preview'
+import { Route as AuthenticatedEventsEventIdPaymentsRouteImport } from './routes/_authenticated/events/$eventId/payments'
+import { Route as AuthenticatedEventsEventIdNotificationsRouteImport } from './routes/_authenticated/events/$eventId/notifications'
+import { Route as AuthenticatedEventsEventIdMediaRouteImport } from './routes/_authenticated/events/$eventId/media'
+import { Route as AuthenticatedEventsEventIdLinksRouteImport } from './routes/_authenticated/events/$eventId/links'
+import { Route as AuthenticatedEventsEventIdFoodRouteImport } from './routes/_authenticated/events/$eventId/food'
+import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_authenticated/events/$eventId/edit'
+import { Route as AuthenticatedEventsEventIdDonorDashboardRouteImport } from './routes/_authenticated/events/$eventId/donor-dashboard'
+import { Route as AuthenticatedEventsEventIdDetailsRouteImport } from './routes/_authenticated/events/$eventId/details'
+import { Route as AuthenticatedEventsEventIdDashboardRouteImport } from './routes/_authenticated/events/$eventId/dashboard'
+import { Route as AuthenticatedEventsEventIdChecklistRouteImport } from './routes/_authenticated/events/$eventId/checklist'
+import { Route as AuthenticatedEventsEventIdCheckinRouteImport } from './routes/_authenticated/events/$eventId/checkin'
+import { Route as AuthenticatedEventsEventIdAuctionItemsRouteImport } from './routes/_authenticated/events/$eventId/auction-items'
+import { Route as AuthenticatedEventsEventIdAuctionBidsRouteImport } from './routes/_authenticated/events/$eventId/auction-bids'
+import { Route as AuthenticatedNposNpoIdDonateNowIndexRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/index'
+import { Route as AuthenticatedEventsEventIdTicketsIndexRouteImport } from './routes/_authenticated/events/$eventId/tickets/index'
+import { Route as AuthenticatedEventsEventIdAuctioneerIndexRouteImport } from './routes/_authenticated/events/$eventId/auctioneer/index'
+import { Route as AuthenticatedEventsEventIdAuctionItemsIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-items/index'
+import { Route as AuthenticatedEventsEventIdAuctionDashboardIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-dashboard/index'
+import { Route as AuthenticatedNposNpoIdDonateNowWallRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/wall'
+import { Route as AuthenticatedNposNpoIdDonateNowTiersRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/tiers'
+import { Route as AuthenticatedNposNpoIdDonateNowSetupRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/setup'
+import { Route as AuthenticatedNposNpoIdDonateNowInfoRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/info'
+import { Route as AuthenticatedNposNpoIdDonateNowHeroRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/hero'
+import { Route as AuthenticatedNposNpoIdDonateNowDashboardRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/dashboard'
+import { Route as AuthenticatedEventsEventIdTicketsSalesRouteImport } from './routes/_authenticated/events/$eventId/tickets/sales'
+import { Route as AuthenticatedEventsEventIdTicketsPromosRouteImport } from './routes/_authenticated/events/$eventId/tickets/promos'
+import { Route as AuthenticatedEventsEventIdTicketsCreateRouteImport } from './routes/_authenticated/events/$eventId/tickets/create'
+import { Route as AuthenticatedEventsEventIdAuctioneerLiveRouteImport } from './routes/_authenticated/events/$eventId/auctioneer/live'
+import { Route as AuthenticatedEventsEventIdAuctionItemsCreateRouteImport } from './routes/_authenticated/events/$eventId/auction-items/create'
+import { Route as AuthenticatedEventsEventIdAuctionItemsItemIdIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-items/$itemId/index'
+import { Route as AuthenticatedEventsEventIdTicketsPackageIdEditRouteImport } from './routes/_authenticated/events/$eventId/tickets/$packageId/edit'
+import { Route as AuthenticatedEventsEventIdAuctionItemsItemIdEngagementRouteImport } from './routes/_authenticated/events/$eventId/auction-items/$itemId/engagement'
+import { Route as AuthenticatedEventsEventIdAuctionItemsItemIdEditRouteImport } from './routes/_authenticated/events/$eventId/auction-items/$itemId/edit'
+import { Route as AuthenticatedEventsEventIdAuctionDashboardItemsItemIdRouteImport } from './routes/_authenticated/events/$eventId/auction-dashboard/items/$itemId'
 
 const DonorPortalRedirectRoute = DonorPortalRedirectRouteImport.update({
   id: '/donor-portal-redirect',
@@ -508,6 +510,12 @@ const AuthenticatedNposNpoIdDonateNowTiersRoute =
     path: '/npos/$npoId/donate-now/tiers',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedNposNpoIdDonateNowSetupRoute =
+  AuthenticatedNposNpoIdDonateNowSetupRouteImport.update({
+    id: '/npos/$npoId/donate-now/setup',
+    path: '/npos/$npoId/donate-now/setup',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedNposNpoIdDonateNowInfoRoute =
   AuthenticatedNposNpoIdDonateNowInfoRouteImport.update({
     id: '/npos/$npoId/donate-now/info',
@@ -518,6 +526,12 @@ const AuthenticatedNposNpoIdDonateNowHeroRoute =
   AuthenticatedNposNpoIdDonateNowHeroRouteImport.update({
     id: '/npos/$npoId/donate-now/hero',
     path: '/npos/$npoId/donate-now/hero',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNposNpoIdDonateNowDashboardRoute =
+  AuthenticatedNposNpoIdDonateNowDashboardRouteImport.update({
+    id: '/npos/$npoId/donate-now/dashboard',
+    path: '/npos/$npoId/donate-now/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEventsEventIdTicketsSalesRoute =
@@ -651,8 +665,10 @@ export interface FileRoutesByFullPath {
   '/events/$eventId/tickets/create': typeof AuthenticatedEventsEventIdTicketsCreateRoute
   '/events/$eventId/tickets/promos': typeof AuthenticatedEventsEventIdTicketsPromosRoute
   '/events/$eventId/tickets/sales': typeof AuthenticatedEventsEventIdTicketsSalesRoute
+  '/npos/$npoId/donate-now/dashboard': typeof AuthenticatedNposNpoIdDonateNowDashboardRoute
   '/npos/$npoId/donate-now/hero': typeof AuthenticatedNposNpoIdDonateNowHeroRoute
   '/npos/$npoId/donate-now/info': typeof AuthenticatedNposNpoIdDonateNowInfoRoute
+  '/npos/$npoId/donate-now/setup': typeof AuthenticatedNposNpoIdDonateNowSetupRoute
   '/npos/$npoId/donate-now/tiers': typeof AuthenticatedNposNpoIdDonateNowTiersRoute
   '/npos/$npoId/donate-now/wall': typeof AuthenticatedNposNpoIdDonateNowWallRoute
   '/events/$eventId/auction-dashboard/': typeof AuthenticatedEventsEventIdAuctionDashboardIndexRoute
@@ -731,8 +747,10 @@ export interface FileRoutesByTo {
   '/events/$eventId/tickets/create': typeof AuthenticatedEventsEventIdTicketsCreateRoute
   '/events/$eventId/tickets/promos': typeof AuthenticatedEventsEventIdTicketsPromosRoute
   '/events/$eventId/tickets/sales': typeof AuthenticatedEventsEventIdTicketsSalesRoute
+  '/npos/$npoId/donate-now/dashboard': typeof AuthenticatedNposNpoIdDonateNowDashboardRoute
   '/npos/$npoId/donate-now/hero': typeof AuthenticatedNposNpoIdDonateNowHeroRoute
   '/npos/$npoId/donate-now/info': typeof AuthenticatedNposNpoIdDonateNowInfoRoute
+  '/npos/$npoId/donate-now/setup': typeof AuthenticatedNposNpoIdDonateNowSetupRoute
   '/npos/$npoId/donate-now/tiers': typeof AuthenticatedNposNpoIdDonateNowTiersRoute
   '/npos/$npoId/donate-now/wall': typeof AuthenticatedNposNpoIdDonateNowWallRoute
   '/events/$eventId/auction-dashboard': typeof AuthenticatedEventsEventIdAuctionDashboardIndexRoute
@@ -820,8 +838,10 @@ export interface FileRoutesById {
   '/_authenticated/events/$eventId/tickets/create': typeof AuthenticatedEventsEventIdTicketsCreateRoute
   '/_authenticated/events/$eventId/tickets/promos': typeof AuthenticatedEventsEventIdTicketsPromosRoute
   '/_authenticated/events/$eventId/tickets/sales': typeof AuthenticatedEventsEventIdTicketsSalesRoute
+  '/_authenticated/npos/$npoId/donate-now/dashboard': typeof AuthenticatedNposNpoIdDonateNowDashboardRoute
   '/_authenticated/npos/$npoId/donate-now/hero': typeof AuthenticatedNposNpoIdDonateNowHeroRoute
   '/_authenticated/npos/$npoId/donate-now/info': typeof AuthenticatedNposNpoIdDonateNowInfoRoute
+  '/_authenticated/npos/$npoId/donate-now/setup': typeof AuthenticatedNposNpoIdDonateNowSetupRoute
   '/_authenticated/npos/$npoId/donate-now/tiers': typeof AuthenticatedNposNpoIdDonateNowTiersRoute
   '/_authenticated/npos/$npoId/donate-now/wall': typeof AuthenticatedNposNpoIdDonateNowWallRoute
   '/_authenticated/events/$eventId/auction-dashboard/': typeof AuthenticatedEventsEventIdAuctionDashboardIndexRoute
@@ -838,257 +858,263 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-  | '/'
-  | '/clerk'
-  | '/donor-portal-redirect'
-  | '/events'
-  | '/settings'
-  | '/complete-profile'
-  | '/forgot-password'
-  | '/otp'
-  | '/password-reset'
-  | '/password-reset-confirm'
-  | '/privacy-policy'
-  | '/sign-in'
-  | '/sign-in-2'
-  | '/sign-up'
-  | '/social-callback'
-  | '/terms-of-service'
-  | '/verify-email'
-  | '/401'
-  | '/403'
-  | '/404'
-  | '/500'
-  | '/503'
-  | '/invitations/accept'
-  | '/events/$eventId'
-  | '/admin/npo-applications'
-  | '/errors/$error'
-  | '/events/create'
-  | '/npos/create'
-  | '/settings/consent'
-  | '/settings/password'
-  | '/settings/support'
-  | '/clerk/sign-in'
-  | '/clerk/sign-up'
-  | '/clerk/user-management'
-  | '/register-npo/'
-  | '/donor-dashboard/'
-  | '/events/'
-  | '/npos/'
-  | '/settings/'
-  | '/users/'
-  | '/events/$eventId/auction-bids'
-  | '/events/$eventId/auction-items'
-  | '/events/$eventId/checkin'
-  | '/events/$eventId/checklist'
-  | '/events/$eventId/dashboard'
-  | '/events/$eventId/details'
-  | '/events/$eventId/donor-dashboard'
-  | '/events/$eventId/edit'
-  | '/events/$eventId/food'
-  | '/events/$eventId/links'
-  | '/events/$eventId/media'
-  | '/events/$eventId/notifications'
-  | '/events/$eventId/payments'
-  | '/events/$eventId/preview'
-  | '/events/$eventId/quick-entry'
-  | '/events/$eventId/registrations'
-  | '/events/$eventId/seating'
-  | '/events/$eventId/sponsors'
-  | '/events/$eventId/tickets'
-  | '/npos/$npoId/edit'
-  | '/npos/$npoId/payment-settings'
-  | '/events/$eventId/'
-  | '/npos/$npoId/'
-  | '/users/$userId/'
-  | '/events/$eventId/auction-items/create'
-  | '/events/$eventId/auctioneer/live'
-  | '/events/$eventId/tickets/create'
-  | '/events/$eventId/tickets/promos'
-  | '/events/$eventId/tickets/sales'
-  | '/npos/$npoId/donate-now/hero'
-  | '/npos/$npoId/donate-now/info'
-  | '/npos/$npoId/donate-now/tiers'
-  | '/npos/$npoId/donate-now/wall'
-  | '/events/$eventId/auction-dashboard/'
-  | '/events/$eventId/auction-items/'
-  | '/events/$eventId/auctioneer/'
-  | '/events/$eventId/tickets/'
-  | '/npos/$npoId/donate-now/'
-  | '/events/$eventId/auction-dashboard/items/$itemId'
-  | '/events/$eventId/auction-items/$itemId/edit'
-  | '/events/$eventId/auction-items/$itemId/engagement'
-  | '/events/$eventId/tickets/$packageId/edit'
-  | '/events/$eventId/auction-items/$itemId/'
+    | '/'
+    | '/clerk'
+    | '/donor-portal-redirect'
+    | '/events'
+    | '/settings'
+    | '/complete-profile'
+    | '/forgot-password'
+    | '/otp'
+    | '/password-reset'
+    | '/password-reset-confirm'
+    | '/privacy-policy'
+    | '/sign-in'
+    | '/sign-in-2'
+    | '/sign-up'
+    | '/social-callback'
+    | '/terms-of-service'
+    | '/verify-email'
+    | '/401'
+    | '/403'
+    | '/404'
+    | '/500'
+    | '/503'
+    | '/invitations/accept'
+    | '/events/$eventId'
+    | '/admin/npo-applications'
+    | '/errors/$error'
+    | '/events/create'
+    | '/npos/create'
+    | '/settings/consent'
+    | '/settings/password'
+    | '/settings/support'
+    | '/clerk/sign-in'
+    | '/clerk/sign-up'
+    | '/clerk/user-management'
+    | '/register-npo/'
+    | '/donor-dashboard/'
+    | '/events/'
+    | '/npos/'
+    | '/settings/'
+    | '/users/'
+    | '/events/$eventId/auction-bids'
+    | '/events/$eventId/auction-items'
+    | '/events/$eventId/checkin'
+    | '/events/$eventId/checklist'
+    | '/events/$eventId/dashboard'
+    | '/events/$eventId/details'
+    | '/events/$eventId/donor-dashboard'
+    | '/events/$eventId/edit'
+    | '/events/$eventId/food'
+    | '/events/$eventId/links'
+    | '/events/$eventId/media'
+    | '/events/$eventId/notifications'
+    | '/events/$eventId/payments'
+    | '/events/$eventId/preview'
+    | '/events/$eventId/quick-entry'
+    | '/events/$eventId/registrations'
+    | '/events/$eventId/seating'
+    | '/events/$eventId/sponsors'
+    | '/events/$eventId/tickets'
+    | '/npos/$npoId/edit'
+    | '/npos/$npoId/payment-settings'
+    | '/events/$eventId/'
+    | '/npos/$npoId/'
+    | '/users/$userId/'
+    | '/events/$eventId/auction-items/create'
+    | '/events/$eventId/auctioneer/live'
+    | '/events/$eventId/tickets/create'
+    | '/events/$eventId/tickets/promos'
+    | '/events/$eventId/tickets/sales'
+    | '/npos/$npoId/donate-now/dashboard'
+    | '/npos/$npoId/donate-now/hero'
+    | '/npos/$npoId/donate-now/info'
+    | '/npos/$npoId/donate-now/setup'
+    | '/npos/$npoId/donate-now/tiers'
+    | '/npos/$npoId/donate-now/wall'
+    | '/events/$eventId/auction-dashboard/'
+    | '/events/$eventId/auction-items/'
+    | '/events/$eventId/auctioneer/'
+    | '/events/$eventId/tickets/'
+    | '/npos/$npoId/donate-now/'
+    | '/events/$eventId/auction-dashboard/items/$itemId'
+    | '/events/$eventId/auction-items/$itemId/edit'
+    | '/events/$eventId/auction-items/$itemId/engagement'
+    | '/events/$eventId/tickets/$packageId/edit'
+    | '/events/$eventId/auction-items/$itemId/'
   fileRoutesByTo: FileRoutesByTo
   to:
-  | '/clerk'
-  | '/donor-portal-redirect'
-  | '/complete-profile'
-  | '/forgot-password'
-  | '/otp'
-  | '/password-reset'
-  | '/password-reset-confirm'
-  | '/privacy-policy'
-  | '/sign-in'
-  | '/sign-in-2'
-  | '/sign-up'
-  | '/social-callback'
-  | '/terms-of-service'
-  | '/verify-email'
-  | '/401'
-  | '/403'
-  | '/404'
-  | '/500'
-  | '/503'
-  | '/invitations/accept'
-  | '/'
-  | '/admin/npo-applications'
-  | '/errors/$error'
-  | '/events/create'
-  | '/npos/create'
-  | '/settings/consent'
-  | '/settings/password'
-  | '/settings/support'
-  | '/clerk/sign-in'
-  | '/clerk/sign-up'
-  | '/clerk/user-management'
-  | '/register-npo'
-  | '/donor-dashboard'
-  | '/events'
-  | '/npos'
-  | '/settings'
-  | '/users'
-  | '/events/$eventId/auction-bids'
-  | '/events/$eventId/checkin'
-  | '/events/$eventId/checklist'
-  | '/events/$eventId/dashboard'
-  | '/events/$eventId/details'
-  | '/events/$eventId/donor-dashboard'
-  | '/events/$eventId/edit'
-  | '/events/$eventId/food'
-  | '/events/$eventId/links'
-  | '/events/$eventId/media'
-  | '/events/$eventId/notifications'
-  | '/events/$eventId/payments'
-  | '/events/$eventId/preview'
-  | '/events/$eventId/quick-entry'
-  | '/events/$eventId/registrations'
-  | '/events/$eventId/seating'
-  | '/events/$eventId/sponsors'
-  | '/npos/$npoId/edit'
-  | '/npos/$npoId/payment-settings'
-  | '/events/$eventId'
-  | '/npos/$npoId'
-  | '/users/$userId'
-  | '/events/$eventId/auction-items/create'
-  | '/events/$eventId/auctioneer/live'
-  | '/events/$eventId/tickets/create'
-  | '/events/$eventId/tickets/promos'
-  | '/events/$eventId/tickets/sales'
-  | '/npos/$npoId/donate-now/hero'
-  | '/npos/$npoId/donate-now/info'
-  | '/npos/$npoId/donate-now/tiers'
-  | '/npos/$npoId/donate-now/wall'
-  | '/events/$eventId/auction-dashboard'
-  | '/events/$eventId/auction-items'
-  | '/events/$eventId/auctioneer'
-  | '/events/$eventId/tickets'
-  | '/npos/$npoId/donate-now'
-  | '/events/$eventId/auction-dashboard/items/$itemId'
-  | '/events/$eventId/auction-items/$itemId/edit'
-  | '/events/$eventId/auction-items/$itemId/engagement'
-  | '/events/$eventId/tickets/$packageId/edit'
-  | '/events/$eventId/auction-items/$itemId'
+    | '/clerk'
+    | '/donor-portal-redirect'
+    | '/complete-profile'
+    | '/forgot-password'
+    | '/otp'
+    | '/password-reset'
+    | '/password-reset-confirm'
+    | '/privacy-policy'
+    | '/sign-in'
+    | '/sign-in-2'
+    | '/sign-up'
+    | '/social-callback'
+    | '/terms-of-service'
+    | '/verify-email'
+    | '/401'
+    | '/403'
+    | '/404'
+    | '/500'
+    | '/503'
+    | '/invitations/accept'
+    | '/'
+    | '/admin/npo-applications'
+    | '/errors/$error'
+    | '/events/create'
+    | '/npos/create'
+    | '/settings/consent'
+    | '/settings/password'
+    | '/settings/support'
+    | '/clerk/sign-in'
+    | '/clerk/sign-up'
+    | '/clerk/user-management'
+    | '/register-npo'
+    | '/donor-dashboard'
+    | '/events'
+    | '/npos'
+    | '/settings'
+    | '/users'
+    | '/events/$eventId/auction-bids'
+    | '/events/$eventId/checkin'
+    | '/events/$eventId/checklist'
+    | '/events/$eventId/dashboard'
+    | '/events/$eventId/details'
+    | '/events/$eventId/donor-dashboard'
+    | '/events/$eventId/edit'
+    | '/events/$eventId/food'
+    | '/events/$eventId/links'
+    | '/events/$eventId/media'
+    | '/events/$eventId/notifications'
+    | '/events/$eventId/payments'
+    | '/events/$eventId/preview'
+    | '/events/$eventId/quick-entry'
+    | '/events/$eventId/registrations'
+    | '/events/$eventId/seating'
+    | '/events/$eventId/sponsors'
+    | '/npos/$npoId/edit'
+    | '/npos/$npoId/payment-settings'
+    | '/events/$eventId'
+    | '/npos/$npoId'
+    | '/users/$userId'
+    | '/events/$eventId/auction-items/create'
+    | '/events/$eventId/auctioneer/live'
+    | '/events/$eventId/tickets/create'
+    | '/events/$eventId/tickets/promos'
+    | '/events/$eventId/tickets/sales'
+    | '/npos/$npoId/donate-now/dashboard'
+    | '/npos/$npoId/donate-now/hero'
+    | '/npos/$npoId/donate-now/info'
+    | '/npos/$npoId/donate-now/setup'
+    | '/npos/$npoId/donate-now/tiers'
+    | '/npos/$npoId/donate-now/wall'
+    | '/events/$eventId/auction-dashboard'
+    | '/events/$eventId/auction-items'
+    | '/events/$eventId/auctioneer'
+    | '/events/$eventId/tickets'
+    | '/npos/$npoId/donate-now'
+    | '/events/$eventId/auction-dashboard/items/$itemId'
+    | '/events/$eventId/auction-items/$itemId/edit'
+    | '/events/$eventId/auction-items/$itemId/engagement'
+    | '/events/$eventId/tickets/$packageId/edit'
+    | '/events/$eventId/auction-items/$itemId'
   id:
-  | '__root__'
-  | '/_authenticated'
-  | '/clerk'
-  | '/donor-portal-redirect'
-  | '/_authenticated/events'
-  | '/_authenticated/settings'
-  | '/clerk/(auth)'
-  | '/clerk/_authenticated'
-  | '/(auth)/complete-profile'
-  | '/(auth)/forgot-password'
-  | '/(auth)/otp'
-  | '/(auth)/password-reset'
-  | '/(auth)/password-reset-confirm'
-  | '/(auth)/privacy-policy'
-  | '/(auth)/sign-in'
-  | '/(auth)/sign-in-2'
-  | '/(auth)/sign-up'
-  | '/(auth)/social-callback'
-  | '/(auth)/terms-of-service'
-  | '/(auth)/verify-email'
-  | '/(errors)/401'
-  | '/(errors)/403'
-  | '/(errors)/404'
-  | '/(errors)/500'
-  | '/(errors)/503'
-  | '/invitations/accept'
-  | '/_authenticated/'
-  | '/_authenticated/events/$eventId'
-  | '/_authenticated/admin/npo-applications'
-  | '/_authenticated/errors/$error'
-  | '/_authenticated/events/create'
-  | '/_authenticated/npos/create'
-  | '/_authenticated/settings/consent'
-  | '/_authenticated/settings/password'
-  | '/_authenticated/settings/support'
-  | '/clerk/(auth)/sign-in'
-  | '/clerk/(auth)/sign-up'
-  | '/clerk/_authenticated/user-management'
-  | '/(auth)/register-npo/'
-  | '/_authenticated/donor-dashboard/'
-  | '/_authenticated/events/'
-  | '/_authenticated/npos/'
-  | '/_authenticated/settings/'
-  | '/_authenticated/users/'
-  | '/_authenticated/events/$eventId/auction-bids'
-  | '/_authenticated/events/$eventId/auction-items'
-  | '/_authenticated/events/$eventId/checkin'
-  | '/_authenticated/events/$eventId/checklist'
-  | '/_authenticated/events/$eventId/dashboard'
-  | '/_authenticated/events/$eventId/details'
-  | '/_authenticated/events/$eventId/donor-dashboard'
-  | '/_authenticated/events/$eventId/edit'
-  | '/_authenticated/events/$eventId/food'
-  | '/_authenticated/events/$eventId/links'
-  | '/_authenticated/events/$eventId/media'
-  | '/_authenticated/events/$eventId/notifications'
-  | '/_authenticated/events/$eventId/payments'
-  | '/_authenticated/events/$eventId/preview'
-  | '/_authenticated/events/$eventId/quick-entry'
-  | '/_authenticated/events/$eventId/registrations'
-  | '/_authenticated/events/$eventId/seating'
-  | '/_authenticated/events/$eventId/sponsors'
-  | '/_authenticated/events/$eventId/tickets'
-  | '/_authenticated/npos/$npoId/edit'
-  | '/_authenticated/npos/$npoId/payment-settings'
-  | '/_authenticated/events/$eventId/'
-  | '/_authenticated/npos/$npoId/'
-  | '/_authenticated/users/$userId/'
-  | '/_authenticated/events/$eventId/auction-items/create'
-  | '/_authenticated/events/$eventId/auctioneer/live'
-  | '/_authenticated/events/$eventId/tickets/create'
-  | '/_authenticated/events/$eventId/tickets/promos'
-  | '/_authenticated/events/$eventId/tickets/sales'
-  | '/_authenticated/npos/$npoId/donate-now/hero'
-  | '/_authenticated/npos/$npoId/donate-now/info'
-  | '/_authenticated/npos/$npoId/donate-now/tiers'
-  | '/_authenticated/npos/$npoId/donate-now/wall'
-  | '/_authenticated/events/$eventId/auction-dashboard/'
-  | '/_authenticated/events/$eventId/auction-items/'
-  | '/_authenticated/events/$eventId/auctioneer/'
-  | '/_authenticated/events/$eventId/tickets/'
-  | '/_authenticated/npos/$npoId/donate-now/'
-  | '/_authenticated/events/$eventId/auction-dashboard/items/$itemId'
-  | '/_authenticated/events/$eventId/auction-items/$itemId/edit'
-  | '/_authenticated/events/$eventId/auction-items/$itemId/engagement'
-  | '/_authenticated/events/$eventId/tickets/$packageId/edit'
-  | '/_authenticated/events/$eventId/auction-items/$itemId/'
+    | '__root__'
+    | '/_authenticated'
+    | '/clerk'
+    | '/donor-portal-redirect'
+    | '/_authenticated/events'
+    | '/_authenticated/settings'
+    | '/clerk/(auth)'
+    | '/clerk/_authenticated'
+    | '/(auth)/complete-profile'
+    | '/(auth)/forgot-password'
+    | '/(auth)/otp'
+    | '/(auth)/password-reset'
+    | '/(auth)/password-reset-confirm'
+    | '/(auth)/privacy-policy'
+    | '/(auth)/sign-in'
+    | '/(auth)/sign-in-2'
+    | '/(auth)/sign-up'
+    | '/(auth)/social-callback'
+    | '/(auth)/terms-of-service'
+    | '/(auth)/verify-email'
+    | '/(errors)/401'
+    | '/(errors)/403'
+    | '/(errors)/404'
+    | '/(errors)/500'
+    | '/(errors)/503'
+    | '/invitations/accept'
+    | '/_authenticated/'
+    | '/_authenticated/events/$eventId'
+    | '/_authenticated/admin/npo-applications'
+    | '/_authenticated/errors/$error'
+    | '/_authenticated/events/create'
+    | '/_authenticated/npos/create'
+    | '/_authenticated/settings/consent'
+    | '/_authenticated/settings/password'
+    | '/_authenticated/settings/support'
+    | '/clerk/(auth)/sign-in'
+    | '/clerk/(auth)/sign-up'
+    | '/clerk/_authenticated/user-management'
+    | '/(auth)/register-npo/'
+    | '/_authenticated/donor-dashboard/'
+    | '/_authenticated/events/'
+    | '/_authenticated/npos/'
+    | '/_authenticated/settings/'
+    | '/_authenticated/users/'
+    | '/_authenticated/events/$eventId/auction-bids'
+    | '/_authenticated/events/$eventId/auction-items'
+    | '/_authenticated/events/$eventId/checkin'
+    | '/_authenticated/events/$eventId/checklist'
+    | '/_authenticated/events/$eventId/dashboard'
+    | '/_authenticated/events/$eventId/details'
+    | '/_authenticated/events/$eventId/donor-dashboard'
+    | '/_authenticated/events/$eventId/edit'
+    | '/_authenticated/events/$eventId/food'
+    | '/_authenticated/events/$eventId/links'
+    | '/_authenticated/events/$eventId/media'
+    | '/_authenticated/events/$eventId/notifications'
+    | '/_authenticated/events/$eventId/payments'
+    | '/_authenticated/events/$eventId/preview'
+    | '/_authenticated/events/$eventId/quick-entry'
+    | '/_authenticated/events/$eventId/registrations'
+    | '/_authenticated/events/$eventId/seating'
+    | '/_authenticated/events/$eventId/sponsors'
+    | '/_authenticated/events/$eventId/tickets'
+    | '/_authenticated/npos/$npoId/edit'
+    | '/_authenticated/npos/$npoId/payment-settings'
+    | '/_authenticated/events/$eventId/'
+    | '/_authenticated/npos/$npoId/'
+    | '/_authenticated/users/$userId/'
+    | '/_authenticated/events/$eventId/auction-items/create'
+    | '/_authenticated/events/$eventId/auctioneer/live'
+    | '/_authenticated/events/$eventId/tickets/create'
+    | '/_authenticated/events/$eventId/tickets/promos'
+    | '/_authenticated/events/$eventId/tickets/sales'
+    | '/_authenticated/npos/$npoId/donate-now/dashboard'
+    | '/_authenticated/npos/$npoId/donate-now/hero'
+    | '/_authenticated/npos/$npoId/donate-now/info'
+    | '/_authenticated/npos/$npoId/donate-now/setup'
+    | '/_authenticated/npos/$npoId/donate-now/tiers'
+    | '/_authenticated/npos/$npoId/donate-now/wall'
+    | '/_authenticated/events/$eventId/auction-dashboard/'
+    | '/_authenticated/events/$eventId/auction-items/'
+    | '/_authenticated/events/$eventId/auctioneer/'
+    | '/_authenticated/events/$eventId/tickets/'
+    | '/_authenticated/npos/$npoId/donate-now/'
+    | '/_authenticated/events/$eventId/auction-dashboard/items/$itemId'
+    | '/_authenticated/events/$eventId/auction-items/$itemId/edit'
+    | '/_authenticated/events/$eventId/auction-items/$itemId/engagement'
+    | '/_authenticated/events/$eventId/tickets/$packageId/edit'
+    | '/_authenticated/events/$eventId/auction-items/$itemId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1636,6 +1662,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNposNpoIdDonateNowTiersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/npos/$npoId/donate-now/setup': {
+      id: '/_authenticated/npos/$npoId/donate-now/setup'
+      path: '/npos/$npoId/donate-now/setup'
+      fullPath: '/npos/$npoId/donate-now/setup'
+      preLoaderRoute: typeof AuthenticatedNposNpoIdDonateNowSetupRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/npos/$npoId/donate-now/info': {
       id: '/_authenticated/npos/$npoId/donate-now/info'
       path: '/npos/$npoId/donate-now/info'
@@ -1648,6 +1681,13 @@ declare module '@tanstack/react-router' {
       path: '/npos/$npoId/donate-now/hero'
       fullPath: '/npos/$npoId/donate-now/hero'
       preLoaderRoute: typeof AuthenticatedNposNpoIdDonateNowHeroRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/npos/$npoId/donate-now/dashboard': {
+      id: '/_authenticated/npos/$npoId/donate-now/dashboard'
+      path: '/npos/$npoId/donate-now/dashboard'
+      fullPath: '/npos/$npoId/donate-now/dashboard'
+      preLoaderRoute: typeof AuthenticatedNposNpoIdDonateNowDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/events/$eventId/tickets/sales': {
@@ -1732,18 +1772,18 @@ interface AuthenticatedEventsEventIdAuctionItemsRouteChildren {
 }
 
 const AuthenticatedEventsEventIdAuctionItemsRouteChildren: AuthenticatedEventsEventIdAuctionItemsRouteChildren =
-{
-  AuthenticatedEventsEventIdAuctionItemsCreateRoute:
-    AuthenticatedEventsEventIdAuctionItemsCreateRoute,
-  AuthenticatedEventsEventIdAuctionItemsIndexRoute:
-    AuthenticatedEventsEventIdAuctionItemsIndexRoute,
-  AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute:
-    AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute,
-  AuthenticatedEventsEventIdAuctionItemsItemIdEngagementRoute:
-    AuthenticatedEventsEventIdAuctionItemsItemIdEngagementRoute,
-  AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute:
-    AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute,
-}
+  {
+    AuthenticatedEventsEventIdAuctionItemsCreateRoute:
+      AuthenticatedEventsEventIdAuctionItemsCreateRoute,
+    AuthenticatedEventsEventIdAuctionItemsIndexRoute:
+      AuthenticatedEventsEventIdAuctionItemsIndexRoute,
+    AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute:
+      AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute,
+    AuthenticatedEventsEventIdAuctionItemsItemIdEngagementRoute:
+      AuthenticatedEventsEventIdAuctionItemsItemIdEngagementRoute,
+    AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute:
+      AuthenticatedEventsEventIdAuctionItemsItemIdIndexRoute,
+  }
 
 const AuthenticatedEventsEventIdAuctionItemsRouteWithChildren =
   AuthenticatedEventsEventIdAuctionItemsRoute._addFileChildren(
@@ -1759,18 +1799,18 @@ interface AuthenticatedEventsEventIdTicketsRouteChildren {
 }
 
 const AuthenticatedEventsEventIdTicketsRouteChildren: AuthenticatedEventsEventIdTicketsRouteChildren =
-{
-  AuthenticatedEventsEventIdTicketsCreateRoute:
-    AuthenticatedEventsEventIdTicketsCreateRoute,
-  AuthenticatedEventsEventIdTicketsPromosRoute:
-    AuthenticatedEventsEventIdTicketsPromosRoute,
-  AuthenticatedEventsEventIdTicketsSalesRoute:
-    AuthenticatedEventsEventIdTicketsSalesRoute,
-  AuthenticatedEventsEventIdTicketsIndexRoute:
-    AuthenticatedEventsEventIdTicketsIndexRoute,
-  AuthenticatedEventsEventIdTicketsPackageIdEditRoute:
-    AuthenticatedEventsEventIdTicketsPackageIdEditRoute,
-}
+  {
+    AuthenticatedEventsEventIdTicketsCreateRoute:
+      AuthenticatedEventsEventIdTicketsCreateRoute,
+    AuthenticatedEventsEventIdTicketsPromosRoute:
+      AuthenticatedEventsEventIdTicketsPromosRoute,
+    AuthenticatedEventsEventIdTicketsSalesRoute:
+      AuthenticatedEventsEventIdTicketsSalesRoute,
+    AuthenticatedEventsEventIdTicketsIndexRoute:
+      AuthenticatedEventsEventIdTicketsIndexRoute,
+    AuthenticatedEventsEventIdTicketsPackageIdEditRoute:
+      AuthenticatedEventsEventIdTicketsPackageIdEditRoute,
+  }
 
 const AuthenticatedEventsEventIdTicketsRouteWithChildren =
   AuthenticatedEventsEventIdTicketsRoute._addFileChildren(
@@ -1805,51 +1845,51 @@ interface AuthenticatedEventsEventIdRouteRouteChildren {
 }
 
 const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRouteRouteChildren =
-{
-  AuthenticatedEventsEventIdAuctionBidsRoute:
-    AuthenticatedEventsEventIdAuctionBidsRoute,
-  AuthenticatedEventsEventIdAuctionItemsRoute:
-    AuthenticatedEventsEventIdAuctionItemsRouteWithChildren,
-  AuthenticatedEventsEventIdCheckinRoute:
-    AuthenticatedEventsEventIdCheckinRoute,
-  AuthenticatedEventsEventIdChecklistRoute:
-    AuthenticatedEventsEventIdChecklistRoute,
-  AuthenticatedEventsEventIdDashboardRoute:
-    AuthenticatedEventsEventIdDashboardRoute,
-  AuthenticatedEventsEventIdDetailsRoute:
-    AuthenticatedEventsEventIdDetailsRoute,
-  AuthenticatedEventsEventIdDonorDashboardRoute:
-    AuthenticatedEventsEventIdDonorDashboardRoute,
-  AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
-  AuthenticatedEventsEventIdFoodRoute: AuthenticatedEventsEventIdFoodRoute,
-  AuthenticatedEventsEventIdLinksRoute: AuthenticatedEventsEventIdLinksRoute,
-  AuthenticatedEventsEventIdMediaRoute: AuthenticatedEventsEventIdMediaRoute,
-  AuthenticatedEventsEventIdNotificationsRoute:
-    AuthenticatedEventsEventIdNotificationsRoute,
-  AuthenticatedEventsEventIdPaymentsRoute:
-    AuthenticatedEventsEventIdPaymentsRoute,
-  AuthenticatedEventsEventIdPreviewRoute:
-    AuthenticatedEventsEventIdPreviewRoute,
-  AuthenticatedEventsEventIdQuickEntryRoute:
-    AuthenticatedEventsEventIdQuickEntryRoute,
-  AuthenticatedEventsEventIdRegistrationsRoute:
-    AuthenticatedEventsEventIdRegistrationsRoute,
-  AuthenticatedEventsEventIdSeatingRoute:
-    AuthenticatedEventsEventIdSeatingRoute,
-  AuthenticatedEventsEventIdSponsorsRoute:
-    AuthenticatedEventsEventIdSponsorsRoute,
-  AuthenticatedEventsEventIdTicketsRoute:
-    AuthenticatedEventsEventIdTicketsRouteWithChildren,
-  AuthenticatedEventsEventIdIndexRoute: AuthenticatedEventsEventIdIndexRoute,
-  AuthenticatedEventsEventIdAuctioneerLiveRoute:
-    AuthenticatedEventsEventIdAuctioneerLiveRoute,
-  AuthenticatedEventsEventIdAuctionDashboardIndexRoute:
-    AuthenticatedEventsEventIdAuctionDashboardIndexRoute,
-  AuthenticatedEventsEventIdAuctioneerIndexRoute:
-    AuthenticatedEventsEventIdAuctioneerIndexRoute,
-  AuthenticatedEventsEventIdAuctionDashboardItemsItemIdRoute:
-    AuthenticatedEventsEventIdAuctionDashboardItemsItemIdRoute,
-}
+  {
+    AuthenticatedEventsEventIdAuctionBidsRoute:
+      AuthenticatedEventsEventIdAuctionBidsRoute,
+    AuthenticatedEventsEventIdAuctionItemsRoute:
+      AuthenticatedEventsEventIdAuctionItemsRouteWithChildren,
+    AuthenticatedEventsEventIdCheckinRoute:
+      AuthenticatedEventsEventIdCheckinRoute,
+    AuthenticatedEventsEventIdChecklistRoute:
+      AuthenticatedEventsEventIdChecklistRoute,
+    AuthenticatedEventsEventIdDashboardRoute:
+      AuthenticatedEventsEventIdDashboardRoute,
+    AuthenticatedEventsEventIdDetailsRoute:
+      AuthenticatedEventsEventIdDetailsRoute,
+    AuthenticatedEventsEventIdDonorDashboardRoute:
+      AuthenticatedEventsEventIdDonorDashboardRoute,
+    AuthenticatedEventsEventIdEditRoute: AuthenticatedEventsEventIdEditRoute,
+    AuthenticatedEventsEventIdFoodRoute: AuthenticatedEventsEventIdFoodRoute,
+    AuthenticatedEventsEventIdLinksRoute: AuthenticatedEventsEventIdLinksRoute,
+    AuthenticatedEventsEventIdMediaRoute: AuthenticatedEventsEventIdMediaRoute,
+    AuthenticatedEventsEventIdNotificationsRoute:
+      AuthenticatedEventsEventIdNotificationsRoute,
+    AuthenticatedEventsEventIdPaymentsRoute:
+      AuthenticatedEventsEventIdPaymentsRoute,
+    AuthenticatedEventsEventIdPreviewRoute:
+      AuthenticatedEventsEventIdPreviewRoute,
+    AuthenticatedEventsEventIdQuickEntryRoute:
+      AuthenticatedEventsEventIdQuickEntryRoute,
+    AuthenticatedEventsEventIdRegistrationsRoute:
+      AuthenticatedEventsEventIdRegistrationsRoute,
+    AuthenticatedEventsEventIdSeatingRoute:
+      AuthenticatedEventsEventIdSeatingRoute,
+    AuthenticatedEventsEventIdSponsorsRoute:
+      AuthenticatedEventsEventIdSponsorsRoute,
+    AuthenticatedEventsEventIdTicketsRoute:
+      AuthenticatedEventsEventIdTicketsRouteWithChildren,
+    AuthenticatedEventsEventIdIndexRoute: AuthenticatedEventsEventIdIndexRoute,
+    AuthenticatedEventsEventIdAuctioneerLiveRoute:
+      AuthenticatedEventsEventIdAuctioneerLiveRoute,
+    AuthenticatedEventsEventIdAuctionDashboardIndexRoute:
+      AuthenticatedEventsEventIdAuctionDashboardIndexRoute,
+    AuthenticatedEventsEventIdAuctioneerIndexRoute:
+      AuthenticatedEventsEventIdAuctioneerIndexRoute,
+    AuthenticatedEventsEventIdAuctionDashboardItemsItemIdRoute:
+      AuthenticatedEventsEventIdAuctionDashboardItemsItemIdRoute,
+  }
 
 const AuthenticatedEventsEventIdRouteRouteWithChildren =
   AuthenticatedEventsEventIdRouteRoute._addFileChildren(
@@ -1863,12 +1903,12 @@ interface AuthenticatedEventsRouteRouteChildren {
 }
 
 const AuthenticatedEventsRouteRouteChildren: AuthenticatedEventsRouteRouteChildren =
-{
-  AuthenticatedEventsEventIdRouteRoute:
-    AuthenticatedEventsEventIdRouteRouteWithChildren,
-  AuthenticatedEventsCreateRoute: AuthenticatedEventsCreateRoute,
-  AuthenticatedEventsIndexRoute: AuthenticatedEventsIndexRoute,
-}
+  {
+    AuthenticatedEventsEventIdRouteRoute:
+      AuthenticatedEventsEventIdRouteRouteWithChildren,
+    AuthenticatedEventsCreateRoute: AuthenticatedEventsCreateRoute,
+    AuthenticatedEventsIndexRoute: AuthenticatedEventsIndexRoute,
+  }
 
 const AuthenticatedEventsRouteRouteWithChildren =
   AuthenticatedEventsRouteRoute._addFileChildren(
@@ -1883,12 +1923,12 @@ interface AuthenticatedSettingsRouteRouteChildren {
 }
 
 const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
-{
-  AuthenticatedSettingsConsentRoute: AuthenticatedSettingsConsentRoute,
-  AuthenticatedSettingsPasswordRoute: AuthenticatedSettingsPasswordRoute,
-  AuthenticatedSettingsSupportRoute: AuthenticatedSettingsSupportRoute,
-  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
-}
+  {
+    AuthenticatedSettingsConsentRoute: AuthenticatedSettingsConsentRoute,
+    AuthenticatedSettingsPasswordRoute: AuthenticatedSettingsPasswordRoute,
+    AuthenticatedSettingsSupportRoute: AuthenticatedSettingsSupportRoute,
+    AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+  }
 
 const AuthenticatedSettingsRouteRouteWithChildren =
   AuthenticatedSettingsRouteRoute._addFileChildren(
@@ -1909,8 +1949,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNposNpoIdPaymentSettingsRoute: typeof AuthenticatedNposNpoIdPaymentSettingsRoute
   AuthenticatedNposNpoIdIndexRoute: typeof AuthenticatedNposNpoIdIndexRoute
   AuthenticatedUsersUserIdIndexRoute: typeof AuthenticatedUsersUserIdIndexRoute
+  AuthenticatedNposNpoIdDonateNowDashboardRoute: typeof AuthenticatedNposNpoIdDonateNowDashboardRoute
   AuthenticatedNposNpoIdDonateNowHeroRoute: typeof AuthenticatedNposNpoIdDonateNowHeroRoute
   AuthenticatedNposNpoIdDonateNowInfoRoute: typeof AuthenticatedNposNpoIdDonateNowInfoRoute
+  AuthenticatedNposNpoIdDonateNowSetupRoute: typeof AuthenticatedNposNpoIdDonateNowSetupRoute
   AuthenticatedNposNpoIdDonateNowTiersRoute: typeof AuthenticatedNposNpoIdDonateNowTiersRoute
   AuthenticatedNposNpoIdDonateNowWallRoute: typeof AuthenticatedNposNpoIdDonateNowWallRoute
   AuthenticatedNposNpoIdDonateNowIndexRoute: typeof AuthenticatedNposNpoIdDonateNowIndexRoute
@@ -1932,10 +1974,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedNposNpoIdPaymentSettingsRoute,
   AuthenticatedNposNpoIdIndexRoute: AuthenticatedNposNpoIdIndexRoute,
   AuthenticatedUsersUserIdIndexRoute: AuthenticatedUsersUserIdIndexRoute,
+  AuthenticatedNposNpoIdDonateNowDashboardRoute:
+    AuthenticatedNposNpoIdDonateNowDashboardRoute,
   AuthenticatedNposNpoIdDonateNowHeroRoute:
     AuthenticatedNposNpoIdDonateNowHeroRoute,
   AuthenticatedNposNpoIdDonateNowInfoRoute:
     AuthenticatedNposNpoIdDonateNowInfoRoute,
+  AuthenticatedNposNpoIdDonateNowSetupRoute:
+    AuthenticatedNposNpoIdDonateNowSetupRoute,
   AuthenticatedNposNpoIdDonateNowTiersRoute:
     AuthenticatedNposNpoIdDonateNowTiersRoute,
   AuthenticatedNposNpoIdDonateNowWallRoute:
@@ -1966,10 +2012,10 @@ interface ClerkAuthenticatedRouteRouteChildren {
 }
 
 const ClerkAuthenticatedRouteRouteChildren: ClerkAuthenticatedRouteRouteChildren =
-{
-  ClerkAuthenticatedUserManagementRoute:
-    ClerkAuthenticatedUserManagementRoute,
-}
+  {
+    ClerkAuthenticatedUserManagementRoute:
+      ClerkAuthenticatedUserManagementRoute,
+  }
 
 const ClerkAuthenticatedRouteRouteWithChildren =
   ClerkAuthenticatedRouteRoute._addFileChildren(

@@ -43,6 +43,7 @@ export interface UseRoleBasedNavReturn {
   eventNavItems: EventNavItem[]
   eventNavGroups: EventNavGroup[]
   eventNavTitle: string | null
+  donateNowNavGroup: EventNavGroup | null
   canAccessNpos: boolean
   canAccessEvents: boolean
   canAccessUsers: boolean
@@ -100,16 +101,6 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
       icon: 'Users',
       description: 'Manage platform users',
     },
-    ...(selectedNpoId
-      ? [
-        {
-          title: 'Donate Now',
-          href: `/npos/${selectedNpoId}/donate-now`,
-          icon: 'Heart',
-          description: 'Configure the public donation page',
-        },
-      ]
-      : []),
   ]
 
   // NPO Admin sees their NPO, events, and users
@@ -133,16 +124,6 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
       icon: 'Users',
       description: 'Manage NPO users',
     },
-    ...(selectedNpoId
-      ? [
-        {
-          title: 'Donate Now',
-          href: `/npos/${selectedNpoId}/donate-now`,
-          icon: 'Heart',
-          description: 'Configure the public donation page',
-        },
-      ]
-      : []),
   ]
 
   // Event Coordinator sees NPOs (read-only), events, and event users
@@ -277,11 +258,26 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     ? `Event${selectedEventName ? `: ${selectedEventName}` : ''}`
     : null
 
+  // Donate Now nav group — only for super admins and NPO admins when an NPO is selected
+  const donateNowNavGroup: EventNavGroup | null =
+    selectedNpoId && (isSuperAdmin || isNpoAdmin)
+      ? {
+          title: 'Donate Now',
+          items: [
+            { title: 'Dashboard', href: `/npos/${selectedNpoId}/donate-now/dashboard`, icon: 'BarChart3' },
+            { title: 'Setup', href: `/npos/${selectedNpoId}/donate-now/setup`, icon: 'Settings' },
+            { title: 'Tiers', href: `/npos/${selectedNpoId}/donate-now/tiers`, icon: 'Layers' },
+            { title: 'Support Wall', href: `/npos/${selectedNpoId}/donate-now/wall`, icon: 'MessageSquare' },
+          ],
+        }
+      : null
+
   return {
     navItems,
     eventNavItems,
     eventNavGroups,
     eventNavTitle,
+    donateNowNavGroup,
     canAccessNpos,
     canAccessEvents,
     canAccessUsers,

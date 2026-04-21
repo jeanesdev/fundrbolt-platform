@@ -11,6 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.donate_now_config import DonateNowPageConfig
+from app.models.event import Event, EventStatus
 from app.models.npo import NPO
 from app.models.npo_donation import NpoDonation, NpoDonationStatus, RecurrenceStatus
 from app.models.support_wall_entry import SupportWallEntry
@@ -107,6 +108,24 @@ class NpoDonationService:
             idempotency_key=request.idempotency_key,
         )
         db.add(donation)
+        await db.flush()
+
+        # Auto-assign next upcoming event for this NPO
+        now_utc = datetime.now(UTC)
+        upcoming_stmt = (
+            select(Event)
+            .where(
+                Event.npo_id == npo.id,
+                Event.event_datetime >= now_utc,
+                Event.status == EventStatus.ACTIVE,
+            )
+            .order_by(Event.event_datetime.asc())
+            .limit(1)
+        )
+        upcoming_result = await db.execute(upcoming_stmt)
+        upcoming_event = upcoming_result.scalar_one_or_none()
+        if upcoming_event is not None:
+            donation.event_id = upcoming_event.id
         await db.flush()
 
         # Charge via gateway

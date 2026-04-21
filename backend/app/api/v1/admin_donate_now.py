@@ -11,14 +11,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.middleware.auth import require_role
+from app.middleware.auth import get_current_user, require_role
+from app.models.npo_donation import NpoDonation, NpoDonationStatus
 from app.models.support_wall_entry import SupportWallEntry
 from app.models.user import User
 from app.schemas.donate_now_config import (
     DonateNowConfigResponse,
     DonateNowConfigUpdate,
+    DonationsDashboardResponse,
     DonationTierInput,
     DonationTierResponse,
+    RecentDonationItem,
 )
 from app.schemas.support_wall_entry import AdminSupportWallEntryResponse, AdminSupportWallPage
 from app.services.donate_now_service import DonateNowService
@@ -34,10 +37,11 @@ router = APIRouter(prefix="/admin/npos/{npo_id}/donate-now", tags=["Admin Donate
     response_model=DonateNowConfigResponse,
     summary="Get donate-now page config (admin)",
 )
+@require_role("super_admin", "npo_admin")
 async def get_config(
     npo_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role("super_admin", "npo_admin")),
+    current_user: User = Depends(get_current_user),
 ) -> DonateNowConfigResponse:
     """Return the donate-now page config for an NPO, creating one if not yet configured."""
     config = await DonateNowService.get_config(db, npo_id)
@@ -50,24 +54,102 @@ async def get_config(
     response_model=DonateNowConfigResponse,
     summary="Update donate-now page config (admin)",
 )
+@require_role("super_admin", "npo_admin")
 async def update_config(
     npo_id: uuid.UUID,
     data: DonateNowConfigUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role("super_admin", "npo_admin")),
+    current_user: User = Depends(get_current_user),
 ) -> DonateNowConfigResponse:
     """Update the donate-now page config for an NPO."""
+    from app.models.donate_now_config import DonateNowPageConfig
+
     config = await DonateNowService.update_config(db, npo_id, data)
     await db.commit()
-    # Re-query with selectinload so tiers relationship is populated after commit
     stmt = (
-        select(type(config))
-        .where(type(config).id == config.id)
-        .options(selectinload(type(config).tiers))
+        select(DonateNowPageConfig)
+        .where(DonateNowPageConfig.id == config.id)
+        .options(selectinload(DonateNowPageConfig.tiers))
     )
     result = await db.execute(stmt)
     config = result.scalar_one()
     return DonateNowConfigResponse.model_validate(config)
+
+
+# ── Donation stats dashboard ──────────────────────────────────────────────────
+
+
+@router.get(
+    "/stats",
+    response_model=DonationsDashboardResponse,
+    summary="Get donation stats for NPO donate-now page (admin)",
+)
+@require_role("super_admin", "npo_admin")
+async def get_donation_stats(
+    npo_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> DonationsDashboardResponse:
+    """Return aggregate donation metrics and recent donations for the NPO."""
+    base = select(NpoDonation).where(
+        NpoDonation.npo_id == npo_id,
+        NpoDonation.status == NpoDonationStatus.CAPTURED,
+    )
+
+    # Totals
+    totals_stmt = select(
+        func.count(NpoDonation.id).label("total_count"),
+        func.coalesce(func.sum(NpoDonation.amount_cents), 0).label("total_amount_cents"),
+        func.count(NpoDonation.id).filter(NpoDonation.is_monthly.is_(True)).label("monthly_count"),
+        func.coalesce(
+            func.sum(NpoDonation.amount_cents).filter(NpoDonation.is_monthly.is_(True)), 0
+        ).label("monthly_amount_cents"),
+    ).where(
+        NpoDonation.npo_id == npo_id,
+        NpoDonation.status == NpoDonationStatus.CAPTURED,
+    )
+    totals_result = await db.execute(totals_stmt)
+    row = totals_result.one()
+    total_count = row.total_count or 0
+    total_amount_cents = row.total_amount_cents or 0
+    monthly_count = row.monthly_count or 0
+    monthly_amount_cents = row.monthly_amount_cents or 0
+    one_time_count = total_count - monthly_count
+    one_time_amount_cents = total_amount_cents - monthly_amount_cents
+
+    # Recent donations (last 20, with donor)
+    recent_stmt = (
+        base.options(selectinload(NpoDonation.donor))
+        .order_by(NpoDonation.created_at.desc())
+        .limit(20)
+    )
+    recent_result = await db.execute(recent_stmt)
+    recent = recent_result.scalars().all()
+
+    recent_items = [
+        RecentDonationItem(
+            id=d.id,
+            amount_cents=d.amount_cents,
+            is_monthly=d.is_monthly,
+            status=d.status.value,
+            donor_name=(
+                f"{d.donor.first_name} {d.donor.last_name}".strip() if d.donor else "Anonymous"
+            ),
+            event_id=getattr(d, "event_id", None),
+            created_at=d.created_at,
+        )
+        for d in recent
+    ]
+
+    return DonationsDashboardResponse(
+        total_count=total_count,
+        total_amount_cents=total_amount_cents,
+        one_time_count=one_time_count,
+        one_time_amount_cents=one_time_amount_cents,
+        monthly_count=monthly_count,
+        monthly_amount_cents=monthly_amount_cents,
+        recent=recent_items,
+    )
 
 
 # ── Tier endpoints ───────────────────────────────────────────────────────────
@@ -78,10 +160,11 @@ async def update_config(
     response_model=list[DonationTierResponse],
     summary="List donation tiers (admin)",
 )
+@require_role("super_admin", "npo_admin")
 async def get_tiers(
     npo_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role("super_admin", "npo_admin")),
+    current_user: User = Depends(get_current_user),
 ) -> list[DonationTierResponse]:
     """Return all donation tiers for the NPO's donate-now page."""
     config = await DonateNowService.get_config(db, npo_id)
@@ -94,11 +177,12 @@ async def get_tiers(
     response_model=list[DonationTierResponse],
     summary="Replace donation tiers (admin)",
 )
+@require_role("super_admin", "npo_admin")
 async def update_tiers(
     npo_id: uuid.UUID,
     tiers: list[DonationTierInput],
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role("super_admin", "npo_admin")),
+    current_user: User = Depends(get_current_user),
 ) -> list[DonationTierResponse]:
     """Replace all donation tiers for the NPO's donate-now page (max 10)."""
     new_tiers = await DonateNowService.upsert_tiers(db, npo_id, tiers)
@@ -114,13 +198,14 @@ async def update_tiers(
     response_model=AdminSupportWallPage,
     summary="List support wall entries (admin)",
 )
+@require_role("super_admin", "npo_admin")
 async def admin_list_support_wall(
     npo_id: uuid.UUID,
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     include_hidden: bool = Query(False),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role("super_admin", "npo_admin")),
+    current_user: User = Depends(get_current_user),
 ) -> AdminSupportWallPage:
     """List all support wall entries for an NPO, optionally including hidden ones."""
     stmt = select(SupportWallEntry).where(SupportWallEntry.npo_id == npo_id)
@@ -167,11 +252,12 @@ async def admin_list_support_wall(
     status_code=204,
     summary="Hide a support wall entry (admin)",
 )
+@require_role("super_admin", "npo_admin")
 async def hide_wall_entry(
     npo_id: uuid.UUID,
     entry_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role("super_admin", "npo_admin")),
+    current_user: User = Depends(get_current_user),
 ) -> None:
     """Hide a support wall entry from the public wall."""
     from fastapi import HTTPException
@@ -194,11 +280,12 @@ async def hide_wall_entry(
     status_code=204,
     summary="Restore a hidden support wall entry (admin)",
 )
+@require_role("super_admin", "npo_admin")
 async def restore_wall_entry(
     npo_id: uuid.UUID,
     entry_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role("super_admin", "npo_admin")),
+    current_user: User = Depends(get_current_user),
 ) -> None:
     """Restore a hidden support wall entry to the public wall."""
     from fastapi import HTTPException
@@ -223,11 +310,12 @@ async def restore_wall_entry(
     "/hero-upload-url",
     summary="Generate SAS URL for hero media upload (admin)",
 )
+@require_role("super_admin", "npo_admin")
 async def get_hero_upload_url(
     npo_id: uuid.UUID,
     filename: str,
     content_type: str,
-    current_user: User = Depends(require_role("super_admin", "npo_admin")),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, str]:
     """Generate an Azure Blob SAS upload URL for the donate-now hero image.
 

@@ -33,6 +33,7 @@ import {
   Calendar,
   CreditCard,
   Gavel,
+  Heart,
   Menu,
   SearchIcon,
   Settings,
@@ -49,12 +50,13 @@ const groupIconMap: Record<string, React.ElementType> = {
   Finance: CreditCard,
   Data: BarChart3,
   Auctioneer: Gavel,
+  'Donate Now': Heart,
   Admin: Settings,
 }
 
 /* ─── Desktop Navigation Dropdowns ─── */
 function DesktopNav() {
-  const { navItems, eventNavGroups } = useRoleBasedNav()
+  const { navItems, eventNavGroups, donateNowNavGroup } = useRoleBasedNav()
   const href = useLocation({ select: (l) => l.href })
   const [openNav, setOpenNav] = useState('')
   const [prevHref, setPrevHref] = useState(href)
@@ -87,6 +89,15 @@ function DesktopNav() {
         badge: i.badge,
       })),
     })),
+    ...(donateNowNavGroup ? [{
+      title: donateNowNavGroup.title,
+      items: donateNowNavGroup.items.map((i) => ({
+        title: i.title,
+        href: i.href,
+        icon: i.icon,
+        badge: i.badge,
+      })),
+    }] : []),
     adminGroup,
   ]
 
@@ -149,7 +160,7 @@ function DesktopNav() {
 
 /* ─── Mobile Sheet Nav ─── */
 function MobileNav() {
-  const { navItems, eventNavGroups } = useRoleBasedNav()
+  const { navItems, eventNavGroups, donateNowNavGroup } = useRoleBasedNav()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const href = useLocation({ select: (l) => l.href })
@@ -164,6 +175,15 @@ function MobileNav() {
         badge: i.badge,
       })),
     })),
+    ...(donateNowNavGroup ? [{
+      title: donateNowNavGroup.title,
+      items: donateNowNavGroup.items.map((i) => ({
+        title: i.title,
+        href: i.href,
+        icon: i.icon,
+        badge: i.badge,
+      })),
+    }] : []),
     {
       title: 'Admin',
       items: navItems.map((item) => ({

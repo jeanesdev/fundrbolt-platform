@@ -50,6 +50,26 @@ export interface AdminSupportWallPage {
   page_size: number
 }
 
+export interface RecentDonationItem {
+  id: string
+  amount_cents: number
+  is_monthly: boolean
+  status: string
+  donor_name: string
+  event_id?: string | null
+  created_at: string
+}
+
+export interface DonationsDashboardResponse {
+  total_count: number
+  total_amount_cents: number
+  one_time_count: number
+  one_time_amount_cents: number
+  monthly_count: number
+  monthly_amount_cents: number
+  recent: RecentDonationItem[]
+}
+
 export const donateNowAdminApi = {
   getConfig: (npoId: string) =>
     apiClient.get<DonateNowConfigResponse>(`/admin/npos/${npoId}/donate-now/config`),
@@ -78,4 +98,7 @@ export const donateNowAdminApi = {
 
   restoreEntry: (npoId: string, entryId: string) =>
     apiClient.post(`/admin/npos/${npoId}/donate-now/support-wall/${entryId}/restore`),
+
+  getStats: (npoId: string) =>
+    apiClient.get<DonationsDashboardResponse>(`/admin/npos/${npoId}/donate-now/stats`),
 }

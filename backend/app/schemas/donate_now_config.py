@@ -100,3 +100,32 @@ class DonateNowPagePublic(BaseModel):
     tiers: list[DonationTierResponse] = []
     social_links: list[SocialLinkPublic] = []
     upcoming_event: UpcomingEventSummary | None = None
+
+
+# ─── Dashboard / Stats Schemas ───────────────────────────────────────────────
+
+
+class RecentDonationItem(BaseModel):
+    """A single donation entry for the admin dashboard."""
+
+    id: uuid.UUID
+    amount_cents: int
+    is_monthly: bool
+    status: str
+    donor_name: str
+    event_id: uuid.UUID | None = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DonationsDashboardResponse(BaseModel):
+    """Aggregate donation metrics for the admin donate-now dashboard."""
+
+    total_count: int
+    total_amount_cents: int
+    one_time_count: int
+    one_time_amount_cents: int
+    monthly_count: int
+    monthly_amount_cents: int
+    recent: list[RecentDonationItem] = []

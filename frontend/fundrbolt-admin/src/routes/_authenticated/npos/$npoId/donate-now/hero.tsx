@@ -1,9 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated/npos/$npoId/donate-now/hero')({
-  component: DonateNowHeroTab,
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: '/npos/$npoId/donate-now/setup',
+      params: { npoId: params.npoId },
+      replace: true,
+    })
+  },
+  component: () => null,
 })
-
-function DonateNowHeroTab() {
-  return <div>Hero Configuration — Coming Soon</div>
-}

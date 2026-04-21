@@ -23,6 +23,7 @@ from app.models.base import Base, UUIDMixin
 
 if TYPE_CHECKING:
     from app.models.donate_now_config import DonateNowPageConfig
+    from app.models.event import Event
     from app.models.npo import NPO
     from app.models.payment_profile import PaymentProfile
     from app.models.payment_transaction import PaymentTransaction
@@ -117,6 +118,12 @@ class NpoDonation(Base, UUIDMixin):
         default=NpoDonationStatus.PENDING,
     )
     idempotency_key: Mapped[str | None] = mapped_column(String(100), nullable=True, unique=True)
+    event_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("events.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -135,6 +142,7 @@ class NpoDonation(Base, UUIDMixin):
     )
     npo: Mapped["NPO"] = relationship("NPO", foreign_keys=[npo_id])
     donor: Mapped["User | None"] = relationship("User", foreign_keys=[donor_user_id])
+    event: Mapped["Event | None"] = relationship("Event", foreign_keys=[event_id])
     payment_profile: Mapped["PaymentProfile | None"] = relationship(
         "PaymentProfile", foreign_keys=[payment_profile_id]
     )
