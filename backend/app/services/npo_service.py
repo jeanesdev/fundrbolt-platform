@@ -6,6 +6,7 @@ Handles multi-tenant data isolation and status transitions.
 """
 
 import logging
+import re
 import uuid
 from datetime import datetime
 
@@ -102,9 +103,11 @@ class NPOService:
 
         # Create NPO
         hashtag = npo_data.hashtag or NPOService._generate_hashtag(npo_data.name)
+        slug = await NPOService._generate_unique_slug(db, npo_data.name)
         npo = NPO(
             **npo_data.model_dump(exclude={"hashtag"}),
             hashtag=hashtag,
+            slug=slug,
             status=NPOStatus.DRAFT,
             created_by_user_id=created_by_user_id,
         )
@@ -414,6 +417,19 @@ class NPOService:
         await db.commit()
 
         logger.info(f"NPO deleted: {npo.name} (ID: {npo.id}) by user {deleted_by_user_id}")
+
+    @staticmethod
+    async def _generate_unique_slug(db: AsyncSession, name: str) -> str:
+        """Generate a unique URL slug from an NPO name."""
+        base_slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:100]
+        slug = base_slug
+        counter = 2
+        while True:
+            existing = await db.execute(select(NPO).where(NPO.slug == slug))
+            if existing.scalar_one_or_none() is None:
+                return slug
+            slug = f"{base_slug[:97]}-{counter}"
+            counter += 1
 
     @staticmethod
     def _generate_hashtag(name: str) -> str:

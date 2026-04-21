@@ -18,6 +18,7 @@ async def test_npo(db_session: AsyncSession, test_user):
     """Create a test NPO."""
     npo = NPO(
         name="Test NPO",
+        slug="test-npo-auction-item",
         mission_statement="Test mission",
         status=NPOStatus.APPROVED,
         phone="555-1234",

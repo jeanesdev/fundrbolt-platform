@@ -337,6 +337,7 @@ class TestSubmissionNotifications:
         npo = NPO(
             id=uuid.uuid4(),
             name="Test NPO",
+            slug="test-npo-onboarding-notify",
             email=test_user.email,
             status=NPOStatus.PENDING_APPROVAL,
             created_by_user_id=test_user.id,
@@ -379,6 +380,7 @@ class TestSubmissionNotifications:
         npo = NPO(
             id=uuid.uuid4(),
             name="Test NPO",
+            slug="test-npo-onboarding-notify-fail",
             email=test_user.email,
             status=NPOStatus.PENDING_APPROVAL,
             created_by_user_id=test_user.id,

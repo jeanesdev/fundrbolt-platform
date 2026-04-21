@@ -106,6 +106,7 @@ async def test_npo_admin_cannot_verify_other_npo_users(
     # Create a user in a different NPO
     other_npo = NPO(
         name="Other NPO",
+        slug="other-npo-verify-email",
         description="Other NPO for email verification tests",
         mission_statement="Testing email verification",
         email="other-npo@test.com",

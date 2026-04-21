@@ -109,6 +109,7 @@ class TestRoleAssignmentIntegration:
             NPO(
                 id=npo_id,
                 name=f"Upgrade Flow NPO {npo_id}",
+                slug=f"upgrade-flow-npo-{npo_id}",
                 email=f"upgrade-flow-{npo_id}@example.com",
                 status=NPOStatus.APPROVED,
                 created_by_user_id=admin_id,
@@ -203,6 +204,7 @@ class TestRoleAssignmentIntegration:
             NPO(
                 id=npo_id,
                 name=f"NPO Admin Test {npo_id}",
+                slug=f"npo-admin-test-{npo_id}",
                 email=f"npo-admin-{npo_id}@example.com",
                 status=NPOStatus.APPROVED,
                 created_by_user_id=admin_id,
@@ -308,6 +310,7 @@ class TestRoleAssignmentIntegration:
             NPO(
                 id=npo_id,
                 name=f"Downgrade NPO {npo_id}",
+                slug=f"downgrade-npo-{npo_id}",
                 email=f"downgrade-{npo_id}@example.com",
                 status=NPOStatus.APPROVED,
                 created_by_user_id=admin_id,
