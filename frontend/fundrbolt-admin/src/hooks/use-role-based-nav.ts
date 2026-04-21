@@ -62,7 +62,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     isStaff,
   } = useAuth()
   const { selectedNpoId } = useNpoContext()
-  const { selectedEventId, selectedEventName } = useEventContext()
+  const { selectedEventId, selectedEventName, availableEvents } = useEventContext()
   const { data: eventStats } = useEventStats(selectedEventId)
 
   // Determine NPO link based on selected NPO
@@ -258,18 +258,23 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     ? `Event${selectedEventName ? `: ${selectedEventName}` : ''}`
     : null
 
+  // Resolve effective NPO ID: explicit selection takes priority,
+  // then fall back to the NPO of the currently selected event.
+  const selectedEventNpoId = availableEvents.find((e) => e.id === selectedEventId)?.npo_id ?? null
+  const effectiveNpoId = selectedNpoId ?? selectedEventNpoId
+
   // Donate Now nav group — visible for super admins and NPO admins always;
-  // when no NPO is selected, prompt the user to select one first
+  // when no NPO can be resolved, prompt the user to select one first
   const donateNowNavGroup: EventNavGroup | null =
     isSuperAdmin || isNpoAdmin
-      ? selectedNpoId
+      ? effectiveNpoId
         ? {
           title: 'Donate Now',
           items: [
-            { title: 'Dashboard', href: `/npos/${selectedNpoId}/donate-now/dashboard`, icon: 'BarChart3' },
-            { title: 'Setup', href: `/npos/${selectedNpoId}/donate-now/setup`, icon: 'Settings' },
-            { title: 'Tiers', href: `/npos/${selectedNpoId}/donate-now/tiers`, icon: 'Layers' },
-            { title: 'Support Wall', href: `/npos/${selectedNpoId}/donate-now/wall`, icon: 'MessageSquare' },
+            { title: 'Dashboard', href: `/npos/${effectiveNpoId}/donate-now/dashboard`, icon: 'BarChart3' },
+            { title: 'Setup', href: `/npos/${effectiveNpoId}/donate-now/setup`, icon: 'Settings' },
+            { title: 'Tiers', href: `/npos/${effectiveNpoId}/donate-now/tiers`, icon: 'Layers' },
+            { title: 'Support Wall', href: `/npos/${effectiveNpoId}/donate-now/wall`, icon: 'MessageSquare' },
           ],
         }
         : {

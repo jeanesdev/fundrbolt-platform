@@ -130,7 +130,7 @@ function DesktopNav() {
                             'flex flex-col items-center gap-1 rounded-sm px-3 py-2.5 text-sm transition-colors',
                             'hover:bg-accent hover:text-accent-foreground',
                             isActive &&
-                              'bg-accent/50 text-accent-foreground font-medium'
+                            'bg-accent/50 text-accent-foreground font-medium'
                           )}
                         >
                           {Icon && (
@@ -242,7 +242,7 @@ function MobileNav() {
                             'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
                             'hover:bg-accent hover:text-accent-foreground',
                             isActive &&
-                              'bg-accent text-accent-foreground font-medium'
+                            'bg-accent text-accent-foreground font-medium'
                           )}
                         >
                           {Icon && (
