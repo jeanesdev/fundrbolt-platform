@@ -59,7 +59,14 @@ async def update_config(
     """Update the donate-now page config for an NPO."""
     config = await DonateNowService.update_config(db, npo_id, data)
     await db.commit()
-    await db.refresh(config)
+    # Re-query with selectinload so tiers relationship is populated after commit
+    stmt = (
+        select(type(config))
+        .where(type(config).id == config.id)
+        .options(selectinload(type(config).tiers))
+    )
+    result = await db.execute(stmt)
+    config = result.scalar_one()
     return DonateNowConfigResponse.model_validate(config)
 
 

@@ -100,6 +100,16 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
       icon: 'Users',
       description: 'Manage platform users',
     },
+    ...(selectedNpoId
+      ? [
+        {
+          title: 'Donate Now',
+          href: `/npos/${selectedNpoId}/donate-now`,
+          icon: 'Heart',
+          description: 'Configure the public donation page',
+        },
+      ]
+      : []),
   ]
 
   // NPO Admin sees their NPO, events, and users
@@ -123,6 +133,16 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
       icon: 'Users',
       description: 'Manage NPO users',
     },
+    ...(selectedNpoId
+      ? [
+        {
+          title: 'Donate Now',
+          href: `/npos/${selectedNpoId}/donate-now`,
+          icon: 'Heart',
+          description: 'Configure the public donation page',
+        },
+      ]
+      : []),
   ]
 
   // Event Coordinator sees NPOs (read-only), events, and event users
