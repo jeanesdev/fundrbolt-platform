@@ -275,11 +275,11 @@ export function SettingsProfile() {
   // Derive initials: prefer spoofed user label, fall back to auth user
   const userInitials = spoofedUser
     ? spoofedUser.label
-        .split(' ')
-        .map((n) => n[0] ?? '')
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
+      .split(' ')
+      .map((n) => n[0] ?? '')
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
     : user
       ? `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase()
       : 'U'
@@ -347,7 +347,7 @@ export function SettingsProfile() {
               name='phone'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone</FormLabel>
+                  <FormLabel>Cell Number</FormLabel>
                   <FormControl>
                     <Input
                       placeholder='(555) 555-5555'
@@ -360,7 +360,7 @@ export function SettingsProfile() {
                       inputMode='tel'
                     />
                   </FormControl>
-                  <FormDescription>Your contact phone number</FormDescription>
+                  <FormDescription>Your cell number</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

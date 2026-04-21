@@ -5,22 +5,8 @@
  * Desktop: Logo | Nav dropdowns | Search | Profile
  * Mobile:  Logo | Hamburger (sheet) | Search | Profile
  */
-import { useState } from 'react'
-import { Link, useLocation, useNavigate } from '@tanstack/react-router'
-import LogoWhiteGoldPng from '@fundrbolt/shared/assets/logos/fundrbolt-logo-white-gold.png'
-import {
-  BarChart3,
-  Calendar,
-  CreditCard,
-  Gavel,
-  Menu,
-  SearchIcon,
-  Settings,
-  Users,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useSearch } from '@/context/search-provider'
-import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
+import { CommandMenu } from '@/components/command-menu'
+import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Button } from '@/components/ui/button'
 import {
   NavigationMenu,
@@ -37,8 +23,22 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { CommandMenu } from '@/components/command-menu'
-import { ProfileDropdown } from '@/components/profile-dropdown'
+import { useSearch } from '@/context/search-provider'
+import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
+import { cn } from '@/lib/utils'
+import LogoWhiteGoldPng from '@fundrbolt/shared/assets/logos/fundrbolt-logo-white-gold.png'
+import { Link, useLocation, useNavigate } from '@tanstack/react-router'
+import {
+  BarChart3,
+  Calendar,
+  CreditCard,
+  Gavel,
+  Menu,
+  SearchIcon,
+  Settings,
+  Users,
+} from 'lucide-react'
+import { useState } from 'react'
 import { iconMap } from './icon-map'
 
 /** Map nav group titles to lucide icons for the trigger buttons */
@@ -48,6 +48,7 @@ const groupIconMap: Record<string, React.ElementType> = {
   Auctions: Gavel,
   Finance: CreditCard,
   Data: BarChart3,
+  Auctioneer: Gavel,
   Admin: Settings,
 }
 

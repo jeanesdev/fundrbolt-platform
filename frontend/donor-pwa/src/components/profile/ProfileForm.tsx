@@ -118,12 +118,12 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
           name='phone'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Phone</FormLabel>
+              <FormLabel>Cell Number</FormLabel>
               <FormControl>
                 <Input placeholder='+14155552671' {...field} value={field.value || ''} />
               </FormControl>
               <FormDescription>
-                Phone number in E.164 format (e.g., +14155552671)
+                Cell number in E.164 format (e.g., +14155552671)
               </FormDescription>
               <FormMessage />
             </FormItem>

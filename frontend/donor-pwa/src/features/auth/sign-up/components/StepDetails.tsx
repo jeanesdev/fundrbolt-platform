@@ -105,7 +105,7 @@ export function StepDetails({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  Phone number{' '}
+                  Cell Number{' '}
                   <span className='text-muted-foreground font-normal'>
                     (optional)
                   </span>

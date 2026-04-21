@@ -4,10 +4,6 @@
  * Dialog for inviting a new guest to an event by admin.
  * Creates a guest record and sends them an invitation email.
  */
-import { useState } from 'react'
-import { Loader2, UserPlus } from 'lucide-react'
-import { toast } from 'sonner'
-import { inviteGuestToEvent } from '@/lib/api/admin-attendees'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -20,6 +16,10 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { inviteGuestToEvent } from '@/lib/api/admin-attendees'
+import { Loader2, UserPlus } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface InviteGuestDialogProps {
   eventId: string
@@ -69,7 +69,7 @@ export function InviteGuestDialog({
       } else {
         toast.warning(
           result.message ||
-            'Guest created but email failed to send. Please try sending again.'
+          'Guest created but email failed to send. Please try sending again.'
         )
       }
 
@@ -149,7 +149,7 @@ export function InviteGuestDialog({
               />
             </div>
             <div className='grid gap-2'>
-              <Label htmlFor='phone'>Phone (optional)</Label>
+              <Label htmlFor='phone'>Cell Number (optional)</Label>
               <Input
                 id='phone'
                 type='tel'

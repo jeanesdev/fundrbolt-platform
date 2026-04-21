@@ -201,6 +201,14 @@ class NextBidderNumberResponse(BaseModel):
 # Admin Seating Management Schemas (T010)
 
 
+class DonorLabelInfo(BaseModel):
+    """Donor label summary for seating views."""
+
+    id: UUID
+    name: str
+    color: str | None = None
+
+
 class GuestSeatingInfo(BaseModel):
     """Guest seating information for admin views (T010)."""
 
@@ -217,6 +225,8 @@ class GuestSeatingInfo(BaseModel):
         default=False,
         description="Whether this guest is designated as table captain (Feature 014)",
     )
+    profile_picture_url: str | None = None
+    donor_labels: list[DonorLabelInfo] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 

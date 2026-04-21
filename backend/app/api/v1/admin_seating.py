@@ -750,14 +750,61 @@ async def get_seating_guests(
     guests_with_registration = list(guests_result.all())
 
     # Convert to GuestSeatingInfo
-    from app.schemas.seating import GuestSeatingInfo
+    from app.schemas.seating import DonorLabelInfo, GuestSeatingInfo
+
+    # Batch-fetch profile pictures and donor labels for all guests
+    all_user_ids: set[UUID] = set()
+    for guest, registration, _primary_user in guests_with_registration:
+        user_id = guest.user_id if guest.user_id else registration.user_id
+        if user_id:
+            all_user_ids.add(user_id)
+
+    user_profile_pics: dict[str, str | None] = {}
+    user_donor_labels: dict[str, list[DonorLabelInfo]] = {}
+
+    if all_user_ids:
+        # Profile pictures
+        pic_result = await db.execute(
+            select(User.id, User.profile_picture_url).where(
+                User.id.in_(all_user_ids),
+                User.profile_picture_url.isnot(None),
+            )
+        )
+        for pic_row in pic_result.fetchall():
+            user_profile_pics[str(pic_row[0])] = pic_row[1]
+
+        # Donor labels
+        from app.models.donor_label import DonorLabel
+        from app.models.donor_label_assignment import DonorLabelAssignment
+
+        npo_id = event.npo_id
+        if npo_id:
+            labels_result = await db.execute(
+                select(
+                    DonorLabelAssignment.user_id,
+                    DonorLabel.id,
+                    DonorLabel.name,
+                    DonorLabel.color,
+                )
+                .join(DonorLabel, DonorLabelAssignment.label_id == DonorLabel.id)
+                .where(
+                    DonorLabel.npo_id == npo_id,
+                    DonorLabelAssignment.user_id.in_(all_user_ids),
+                )
+            )
+            for row in labels_result.fetchall():
+                uid = str(row[0])
+                if uid not in user_donor_labels:
+                    user_donor_labels[uid] = []
+                user_donor_labels[uid].append(DonorLabelInfo(id=row[1], name=row[2], color=row[3]))
 
     guest_info_list = []
     for guest, registration, primary_user in guests_with_registration:
         # Determine if this guest is a guest of the primary registrant
-        # If the guest has a user_id and it matches the registration's user_id, they are the primary
-        # If guest.user_id is None or different, they are a guest of the primary
         is_guest_of_primary = guest.user_id is None or guest.user_id != registration.user_id
+
+        # Resolve the user_id for profile pic / labels lookup
+        resolved_user_id = str(guest.user_id) if guest.user_id else str(registration.user_id)
 
         guest_info_list.append(
             GuestSeatingInfo(
@@ -774,6 +821,8 @@ async def get_seating_guests(
                     if is_guest_of_primary
                     else None
                 ),
+                profile_picture_url=user_profile_pics.get(resolved_user_id),
+                donor_labels=user_donor_labels.get(resolved_user_id, []),
             )
         )
 

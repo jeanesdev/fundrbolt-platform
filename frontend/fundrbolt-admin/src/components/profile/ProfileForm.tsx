@@ -4,16 +4,6 @@
  * Uses React Hook Form + Zod for form validation
  * Connects to PATCH /api/v1/users/me/profile endpoint
  */
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  profileUpdateSchema,
-  type ProfileUpdateFormData,
-} from '@/schemas/profile'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import apiClient from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -25,6 +15,16 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import apiClient from '@/lib/axios'
+import {
+  profileUpdateSchema,
+  type ProfileUpdateFormData,
+} from '@/schemas/profile'
+import { useAuthStore } from '@/stores/auth-store'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
 
 function formatPhoneNumber(value: string): string {
   const digits = value.replace(/\D/g, '')
@@ -140,7 +140,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
           name='phone'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Phone</FormLabel>
+              <FormLabel>Cell Number</FormLabel>
               <FormControl>
                 <Input
                   placeholder='(555) 555-5555'
@@ -153,7 +153,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
                   inputMode='tel'
                 />
               </FormControl>
-              <FormDescription>Your contact phone number</FormDescription>
+              <FormDescription>Your cell number</FormDescription>
               <FormMessage />
             </FormItem>
           )}

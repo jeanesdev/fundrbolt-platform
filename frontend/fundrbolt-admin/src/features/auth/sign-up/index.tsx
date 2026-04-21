@@ -1,6 +1,3 @@
-import { Link, useSearch } from '@tanstack/react-router'
-import { Building2, HandCoins, Users } from 'lucide-react'
-import { buildDonorPortalSignUpUrl } from '@/lib/donor-portal'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -10,6 +7,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { buildDonorPortalSignUpUrl } from '@/lib/donor-portal'
+import { Link, useSearch } from '@tanstack/react-router'
+import { Building2, HandCoins, Users } from 'lucide-react'
 import { AuthLayout } from '../auth-layout'
 import { UserSignUpWizard } from './UserSignUpWizard'
 
@@ -103,15 +103,15 @@ export function SignUp() {
                 <HandCoins className='h-5 w-5' />
               </div>
               <div>
-                <h3 className='font-semibold'>Donor</h3>
+                <h3 className='font-semibold'>Attendee</h3>
                 <p className='text-muted-foreground text-sm'>
-                  Go to the donor portal for ticketing, bidding, and
-                  donor-facing event flows.
+                  Go to the attendee portal for ticketing, bidding, and
+                  event flows.
                 </p>
               </div>
             </div>
             <Button asChild variant='outline' className='w-full'>
-              <a href={buildDonorPortalSignUpUrl()}>Create donor account</a>
+              <a href={buildDonorPortalSignUpUrl()}>Create attendee account</a>
             </Button>
           </div>
         </CardContent>

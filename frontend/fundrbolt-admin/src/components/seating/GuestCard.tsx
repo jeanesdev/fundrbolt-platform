@@ -3,6 +3,11 @@
  *
  * Draggable card displaying guest information for seating assignments.
  */
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import {
@@ -13,10 +18,6 @@ import {
   UserCheck,
   Users,
 } from 'lucide-react'
-import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 
 interface GuestCardProps {
   guest: GuestSeatingInfo
@@ -68,6 +69,24 @@ export function GuestCard({
           {/* Drag Handle */}
           <GripVertical className='text-muted-foreground mt-1 h-4 w-4 flex-shrink-0' />
 
+          {/* Profile Picture */}
+          <Avatar className='mt-0.5 h-8 w-8 flex-shrink-0'>
+            {guest.profile_picture_url && (
+              <AvatarImage
+                src={guest.profile_picture_url}
+                alt={guest.name || 'Guest'}
+              />
+            )}
+            <AvatarFallback className='text-xs'>
+              {(guest.name || '?')
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+
           <div className='min-w-0 flex-1'>
             {/* Guest Name */}
             <div className='mb-1 flex items-center gap-2'>
@@ -112,6 +131,30 @@ export function GuestCard({
                 <Hash className='mr-1 h-3 w-3' />
                 {guest.bidder_number}
               </Badge>
+            )}
+
+            {/* Donor Labels */}
+            {guest.donor_labels && guest.donor_labels.length > 0 && (
+              <div className='mt-1 flex flex-wrap gap-1'>
+                {guest.donor_labels.map((label) => (
+                  <Badge
+                    key={label.id}
+                    variant='secondary'
+                    className='text-xs'
+                    style={
+                      label.color
+                        ? {
+                          backgroundColor: `${label.color}20`,
+                          color: label.color,
+                          borderColor: `${label.color}40`,
+                        }
+                        : undefined
+                    }
+                  >
+                    {label.name}
+                  </Badge>
+                ))}
+              </div>
             )}
 
             {/* Assign Table Button */}

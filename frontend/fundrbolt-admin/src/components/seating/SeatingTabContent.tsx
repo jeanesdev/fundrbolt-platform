@@ -2,10 +2,24 @@
  * SeatingTabContent Component
  *
  * Main container for the interactive seating assignment interface with drag-and-drop.
+ * Includes table setup configuration (table count and max guests per table).
  * Can be used both as a standalone page and within a tab.
  */
-import { useEffect, useState } from 'react'
+import { TableDetailsPanel } from '@/components/admin/seating/TableDetailsPanel'
+import { AutoAssignButton } from '@/components/seating/AutoAssignButton'
+import { GuestCard } from '@/components/seating/GuestCard'
+import { SeatingLayoutModal } from '@/components/seating/SeatingLayoutModal'
+import { TableAssignmentModal } from '@/components/seating/TableAssignmentModal'
+import { TableCard } from '@/components/seating/TableCard'
+import { UnassignedSection } from '@/components/seating/UnassignedSection'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
+import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
 import type { EventTableDetails } from '@/services/seating-service'
+import { useSeatingStore } from '@/stores/seating.store'
+import type { EventUpdateRequest } from '@/types/event'
 import {
   DndContext,
   DragOverlay,
@@ -15,19 +29,9 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
-import { Image, LayoutGrid, RefreshCw } from 'lucide-react'
+import { Image, LayoutGrid, RefreshCw, Save } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { useSeatingStore } from '@/stores/seating.store'
-import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import { TableDetailsPanel } from '@/components/admin/seating/TableDetailsPanel'
-import { AutoAssignButton } from '@/components/seating/AutoAssignButton'
-import { GuestCard } from '@/components/seating/GuestCard'
-import { SeatingLayoutModal } from '@/components/seating/SeatingLayoutModal'
-import { TableAssignmentModal } from '@/components/seating/TableAssignmentModal'
-import { TableCard } from '@/components/seating/TableCard'
-import { UnassignedSection } from '@/components/seating/UnassignedSection'
 
 interface SeatingTabContentProps {
   eventId: string
@@ -35,6 +39,11 @@ interface SeatingTabContentProps {
   maxGuestsPerTable?: number
   layoutImageUrl?: string | null
   onLayoutImageUpdate?: (url: string) => void
+  onUpdateEvent?: (
+    eventId: string,
+    data: EventUpdateRequest
+  ) => Promise<unknown>
+  onReloadEvent?: (eventId: string) => Promise<void>
 }
 
 export function SeatingTabContent({
@@ -43,6 +52,8 @@ export function SeatingTabContent({
   maxGuestsPerTable: propMaxGuestsPerTable,
   layoutImageUrl,
   onLayoutImageUpdate,
+  onUpdateEvent,
+  onReloadEvent,
 }: SeatingTabContentProps) {
   const [activeGuest, setActiveGuest] = useState<GuestSeatingInfo | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -54,6 +65,26 @@ export function SeatingTabContent({
   const [selectedTableNumber, setSelectedTableNumber] = useState<number | null>(
     null
   )
+
+  // Table setup config state
+  const [editTableCount, setEditTableCount] = useState<string>(
+    propTableCount?.toString() || ''
+  )
+  const [editMaxGuests, setEditMaxGuests] = useState<string>(
+    propMaxGuestsPerTable?.toString() || ''
+  )
+  const [isSavingConfig, setIsSavingConfig] = useState(false)
+
+  // Track whether setup has changed from props
+  const configChanged =
+    editTableCount !== (propTableCount?.toString() || '') ||
+    editMaxGuests !== (propMaxGuestsPerTable?.toString() || '')
+
+  // Sync local state when props change (e.g. after save + reload)
+  useEffect(() => {
+    setEditTableCount(propTableCount?.toString() || '')
+    setEditMaxGuests(propMaxGuestsPerTable?.toString() || '')
+  }, [propTableCount, propMaxGuestsPerTable])
 
   const {
     tables,
@@ -186,6 +217,38 @@ export function SeatingTabContent({
     setDetailsPanelOpen(false)
   }
 
+  const handleSaveTableSetup = async () => {
+    if (!onUpdateEvent) return
+
+    const newTableCount =
+      editTableCount === '' ? null : parseInt(editTableCount, 10)
+    const newMaxGuests =
+      editMaxGuests === '' ? null : parseInt(editMaxGuests, 10)
+
+    if ((newTableCount && !newMaxGuests) || (!newTableCount && newMaxGuests)) {
+      toast.error(
+        'Both table count and max guests per table must be set together'
+      )
+      return
+    }
+
+    setIsSavingConfig(true)
+    try {
+      await onUpdateEvent(eventId, {
+        table_count: newTableCount,
+        max_guests_per_table: newMaxGuests,
+      })
+      if (onReloadEvent) {
+        await onReloadEvent(eventId)
+      }
+      toast.success('Table setup saved')
+    } catch {
+      toast.error('Failed to save table setup')
+    } finally {
+      setIsSavingConfig(false)
+    }
+  }
+
   // Calculate table occupancy for modal
   const tableOccupancy = new Map<number, number>()
   tables.forEach((guests, tableNumber) => {
@@ -262,6 +325,55 @@ export function SeatingTabContent({
           </div>
         </div>
 
+        {/* Table Setup */}
+        <div className='bg-muted/30 rounded-lg border p-4'>
+          <div className='flex flex-wrap items-end gap-4'>
+            <div className='space-y-1'>
+              <Label htmlFor='setup-table-count'>Number of Tables</Label>
+              <Input
+                id='setup-table-count'
+                type='number'
+                min='1'
+                max='1000'
+                placeholder='e.g., 15'
+                value={editTableCount}
+                onChange={(e) => setEditTableCount(e.target.value)}
+                className='w-36'
+              />
+            </div>
+            <div className='space-y-1'>
+              <Label htmlFor='setup-max-guests'>Max Guests Per Table</Label>
+              <Input
+                id='setup-max-guests'
+                type='number'
+                min='1'
+                max='50'
+                placeholder='e.g., 8'
+                value={editMaxGuests}
+                onChange={(e) => setEditMaxGuests(e.target.value)}
+                className='w-36'
+              />
+            </div>
+            {onUpdateEvent && (
+              <Button
+                size='sm'
+                onClick={handleSaveTableSetup}
+                disabled={!configChanged || isSavingConfig}
+              >
+                <Save className='mr-2 h-4 w-4' />
+                {isSavingConfig ? 'Saving...' : 'Save Setup'}
+              </Button>
+            )}
+            {editTableCount && editMaxGuests && (
+              <p className='text-muted-foreground text-sm'>
+                Total capacity:{' '}
+                {parseInt(editTableCount, 10) * parseInt(editMaxGuests, 10)}{' '}
+                guests
+              </p>
+            )}
+          </div>
+        </div>
+
         {/* Stats */}
         <div className='grid grid-cols-1 gap-4 sm:grid-cols-4'>
           <div className='bg-card rounded-lg border p-4'>
@@ -291,30 +403,30 @@ export function SeatingTabContent({
 
         {/* Seating Chart */}
         <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
-          {/* Tables Grid - Scrollable */}
+          {/* Tables Grid - scrolls independently */}
           <div className='lg:col-span-2'>
-            <div className='max-h-[600px] overflow-y-auto pr-2'>
-              <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'>
-                {tablesArray.map((table) => (
-                  <TableCard
-                    key={table.number}
-                    tableNumber={table.number}
-                    guests={table.guests}
-                    maxCapacity={maxGuestsPerTable}
-                    tableDetails={tableDetails.get(table.number)}
-                    onEditTable={handleEditTable}
-                  />
-                ))}
-              </div>
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'>
+              {tablesArray.map((table) => (
+                <TableCard
+                  key={table.number}
+                  tableNumber={table.number}
+                  guests={table.guests}
+                  maxCapacity={maxGuestsPerTable}
+                  tableDetails={tableDetails.get(table.number)}
+                  onEditTable={handleEditTable}
+                />
+              ))}
             </div>
           </div>
 
-          {/* Unassigned Guests */}
+          {/* Unassigned Guests - sticky so it stays visible while scrolling tables, scrollable internally */}
           <div className='lg:col-span-1'>
-            <UnassignedSection
-              guests={unassignedGuests}
-              onAssignClick={handleAssignClick}
-            />
+            <div className='flex lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)]'>
+              <UnassignedSection
+                guests={unassignedGuests}
+                onAssignClick={handleAssignClick}
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -78,6 +78,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Azure Database for PostgreSQL (3 new tables: auctioneer_item_commissions, auctioneer_event_settings; 1 new column on events: live_auction_start_datetime; existing auction_close_datetime needs model mapping), Azure Cache for Redis (permission caching) (038-auctioneer-dashboard)
 - Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+ (Backend); React 19, Vite 7, TanStack Router, TanStack React Query 5, Zustand, Radix UI, Recharts, Tailwind CSS 4 (Frontend) (039-donor-dashboard)
 - Azure Database for PostgreSQL (existing tables — no new migrations), Azure Cache for Redis (optional caching for leaderboard aggregations) (039-donor-dashboard)
+- Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+ (backend); React 19, Vite 7, TanStack Router, TanStack React Table 8, TanStack React Query 5, Zustand, Radix UI, Recharts, Tailwind CSS 4 (frontend) (040-auction-dashboard)
+- Azure Database for PostgreSQL (existing auction_items, auction_bids tables — no new migrations), Azure Cache for Redis (optional caching) (040-auction-dashboard)
 
 ## Project Structure
 ```
@@ -162,10 +164,9 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 040-auction-dashboard: Added Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+ (backend); React 19, Vite 7, TanStack Router, TanStack React Table 8, TanStack React Query 5, Zustand, Radix UI, Recharts, Tailwind CSS 4 (frontend)
 - 039-donor-dashboard: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+ (Backend); React 19, Vite 7, TanStack Router, TanStack React Query 5, Zustand, Radix UI, Recharts, Tailwind CSS 4 (Frontend)
 - 038-auctioneer-dashboard: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18+, Vite, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (Frontend)
-- 037-planning-checklist: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18+, Vite, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (Frontend)
-- 036-ticket-purchasing: Added Python 3.11 (backend) + TypeScript 5.x / React 19 (donor PWA)
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields
   - ✅ Updated registration_guests with is_table_captain boolean field
   - ✅ US1 - Customize Table Capacity: Event coordinators can set custom capacity per table (1-20), system enforces limits

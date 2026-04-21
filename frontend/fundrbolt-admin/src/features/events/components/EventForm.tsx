@@ -2,20 +2,6 @@
  * EventForm Component
  * Comprehensive form for creating and editing events with all fields
  */
-import { useEffect, useRef, useState } from 'react'
-import { z } from 'zod'
-import { format, parse } from 'date-fns'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import type { NPOBranding } from '@/services/event-service'
-import type {
-  EventCreateRequest,
-  EventDetail,
-  EventUpdateRequest,
-} from '@/types/event'
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
-import { CalendarIcon, MapPin } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Calendar as CalendarPicker } from '@/components/ui/calendar'
 import {
@@ -41,12 +27,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
+import type { NPOBranding } from '@/services/event-service'
+import type {
+  EventCreateRequest,
+  EventDetail,
+  EventUpdateRequest,
+} from '@/types/event'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { format, parse } from 'date-fns'
+import { CalendarIcon, MapPin } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import { ColorPicker } from './ColorPicker.tsx'
 import { RichTextEditor } from './RichTextEditor.tsx'
-import {
-  SeatingConfigSection,
-  type SeatingConfig,
-} from './SeatingConfigSection.tsx'
 
 const parseCurrencyInput = (value: string): number | null => {
   const sanitized = value.replace(/[^\d.]/g, '')
@@ -170,11 +166,7 @@ export function EventForm({
   const autocompleteRef = useRef<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
   const isGoogleMapsInitialized = useRef(false)
 
-  // Seating configuration state
-  const [seatingConfig, setSeatingConfig] = useState<SeatingConfig>({
-    table_count: event?.table_count ?? null,
-    max_guests_per_table: event?.max_guests_per_table ?? null,
-  })
+  // Seating configuration state (table_count is managed on the seating page)
   const [goalInputValue, setGoalInputValue] = useState<string>(
     formatGoalCurrency(event?.fundraising_goal ?? null)
   )
@@ -373,8 +365,8 @@ export function EventForm({
       npo_id: npoId,
       // Convert datetime-local to ISO string
       event_datetime: new Date(values.event_datetime).toISOString(),
-      table_count: seatingConfig.table_count,
-      max_guests_per_table: seatingConfig.max_guests_per_table,
+      table_count: values.table_count,
+      max_guests_per_table: values.max_guests_per_table,
       fundraising_goal: values.fundraising_goal ?? null,
       live_auction_start_datetime: values.live_auction_start_datetime
         ? new Date(values.live_auction_start_datetime).toISOString()
@@ -1319,12 +1311,42 @@ export function EventForm({
           </div>
         </div>
 
-        {/* Seating Configuration Section */}
-        <SeatingConfigSection
-          initialConfig={seatingConfig}
-          onConfigChange={setSeatingConfig}
-          disabled={isSubmitting}
-        />
+        {/* Max Guests Per Table */}
+        <div className='space-y-4'>
+          <h3 className='text-base font-semibold md:text-lg'>
+            Seating Capacity
+          </h3>
+          <p className='text-muted-foreground text-xs md:text-sm'>
+            Set the default maximum number of guests per table. Table count and
+            assignments are managed on the Seating page.
+          </p>
+          <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+            <FormField
+              control={form.control}
+              name='max_guests_per_table'
+              render={({ field }) => (
+                <FormItem>
+                  <Label>Max Guests Per Table</Label>
+                  <FormControl>
+                    <Input
+                      type='number'
+                      min='1'
+                      max='50'
+                      placeholder='e.g., 8'
+                      value={field.value ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        field.onChange(val === '' ? null : parseInt(val, 10))
+                      }}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
 
         {/* Branding Colors Section */}
         <div className='space-y-4'>

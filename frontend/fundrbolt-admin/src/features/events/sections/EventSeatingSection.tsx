@@ -1,4 +1,4 @@
-import { toast } from 'sonner'
+import { SeatingTabContent } from '@/components/seating/SeatingTabContent'
 import {
   Card,
   CardContent,
@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { SeatingTabContent } from '@/components/seating/SeatingTabContent'
+import { toast } from 'sonner'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventSeatingSection() {
@@ -44,6 +44,8 @@ export function EventSeatingSection() {
           tableCount={currentEvent?.table_count ?? undefined}
           maxGuestsPerTable={currentEvent?.max_guests_per_table ?? undefined}
           layoutImageUrl={currentEvent?.seating_layout_image_url ?? null}
+          onUpdateEvent={updateEvent}
+          onReloadEvent={loadEventById}
           onLayoutImageUpdate={async (url) => {
             try {
               await updateEvent(currentEvent.id, {
