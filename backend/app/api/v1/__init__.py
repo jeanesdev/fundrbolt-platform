@@ -10,6 +10,7 @@ from app.api.v1 import (
     admin_auction_item_import,
     admin_auctioneer,
     admin_checklist,
+    admin_donate_now,
     admin_donations,
     admin_donor_dashboard,
     admin_donor_labels,
@@ -46,6 +47,7 @@ from app.api.v1 import (
     npos,
     payments,
     promo_codes,
+    public_donate_now,
     public_testimonials,
     public_tickets,
     push_subscriptions,
@@ -132,5 +134,9 @@ api_router.include_router(public_tickets.router, tags=["ticket-purchasing"])
 api_router.include_router(admin_auctioneer.router, tags=["admin-auctioneer"])
 api_router.include_router(ticket_assignments.router, tags=["ticket-purchasing"])
 api_router.include_router(ticket_invitations.router, tags=["ticket-invitations"])
+
+# Feature 041: Donate Now Page
+api_router.include_router(public_donate_now.router, tags=["Public Donate Now"])
+api_router.include_router(admin_donate_now.router, tags=["Admin Donate Now"])
 
 __all__ = ["api_router"]

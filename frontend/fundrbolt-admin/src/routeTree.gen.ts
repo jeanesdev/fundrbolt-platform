@@ -76,10 +76,15 @@ import { Route as AuthenticatedEventsEventIdChecklistRouteImport } from './route
 import { Route as AuthenticatedEventsEventIdCheckinRouteImport } from './routes/_authenticated/events/$eventId/checkin'
 import { Route as AuthenticatedEventsEventIdAuctionItemsRouteImport } from './routes/_authenticated/events/$eventId/auction-items'
 import { Route as AuthenticatedEventsEventIdAuctionBidsRouteImport } from './routes/_authenticated/events/$eventId/auction-bids'
+import { Route as AuthenticatedNposNpoIdDonateNowIndexRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/index'
 import { Route as AuthenticatedEventsEventIdTicketsIndexRouteImport } from './routes/_authenticated/events/$eventId/tickets/index'
 import { Route as AuthenticatedEventsEventIdAuctioneerIndexRouteImport } from './routes/_authenticated/events/$eventId/auctioneer/index'
 import { Route as AuthenticatedEventsEventIdAuctionItemsIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-items/index'
 import { Route as AuthenticatedEventsEventIdAuctionDashboardIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-dashboard/index'
+import { Route as AuthenticatedNposNpoIdDonateNowWallRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/wall'
+import { Route as AuthenticatedNposNpoIdDonateNowTiersRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/tiers'
+import { Route as AuthenticatedNposNpoIdDonateNowInfoRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/info'
+import { Route as AuthenticatedNposNpoIdDonateNowHeroRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/hero'
 import { Route as AuthenticatedEventsEventIdTicketsSalesRouteImport } from './routes/_authenticated/events/$eventId/tickets/sales'
 import { Route as AuthenticatedEventsEventIdTicketsPromosRouteImport } from './routes/_authenticated/events/$eventId/tickets/promos'
 import { Route as AuthenticatedEventsEventIdTicketsCreateRouteImport } from './routes/_authenticated/events/$eventId/tickets/create'
@@ -461,6 +466,12 @@ const AuthenticatedEventsEventIdAuctionBidsRoute =
     path: '/auction-bids',
     getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
+const AuthenticatedNposNpoIdDonateNowIndexRoute =
+  AuthenticatedNposNpoIdDonateNowIndexRouteImport.update({
+    id: '/npos/$npoId/donate-now/',
+    path: '/npos/$npoId/donate-now/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdTicketsIndexRoute =
   AuthenticatedEventsEventIdTicketsIndexRouteImport.update({
     id: '/',
@@ -484,6 +495,30 @@ const AuthenticatedEventsEventIdAuctionDashboardIndexRoute =
     id: '/auction-dashboard/',
     path: '/auction-dashboard/',
     getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
+const AuthenticatedNposNpoIdDonateNowWallRoute =
+  AuthenticatedNposNpoIdDonateNowWallRouteImport.update({
+    id: '/npos/$npoId/donate-now/wall',
+    path: '/npos/$npoId/donate-now/wall',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNposNpoIdDonateNowTiersRoute =
+  AuthenticatedNposNpoIdDonateNowTiersRouteImport.update({
+    id: '/npos/$npoId/donate-now/tiers',
+    path: '/npos/$npoId/donate-now/tiers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNposNpoIdDonateNowInfoRoute =
+  AuthenticatedNposNpoIdDonateNowInfoRouteImport.update({
+    id: '/npos/$npoId/donate-now/info',
+    path: '/npos/$npoId/donate-now/info',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNposNpoIdDonateNowHeroRoute =
+  AuthenticatedNposNpoIdDonateNowHeroRouteImport.update({
+    id: '/npos/$npoId/donate-now/hero',
+    path: '/npos/$npoId/donate-now/hero',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEventsEventIdTicketsSalesRoute =
   AuthenticatedEventsEventIdTicketsSalesRouteImport.update({
@@ -616,10 +651,15 @@ export interface FileRoutesByFullPath {
   '/events/$eventId/tickets/create': typeof AuthenticatedEventsEventIdTicketsCreateRoute
   '/events/$eventId/tickets/promos': typeof AuthenticatedEventsEventIdTicketsPromosRoute
   '/events/$eventId/tickets/sales': typeof AuthenticatedEventsEventIdTicketsSalesRoute
+  '/npos/$npoId/donate-now/hero': typeof AuthenticatedNposNpoIdDonateNowHeroRoute
+  '/npos/$npoId/donate-now/info': typeof AuthenticatedNposNpoIdDonateNowInfoRoute
+  '/npos/$npoId/donate-now/tiers': typeof AuthenticatedNposNpoIdDonateNowTiersRoute
+  '/npos/$npoId/donate-now/wall': typeof AuthenticatedNposNpoIdDonateNowWallRoute
   '/events/$eventId/auction-dashboard/': typeof AuthenticatedEventsEventIdAuctionDashboardIndexRoute
   '/events/$eventId/auction-items/': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
   '/events/$eventId/auctioneer/': typeof AuthenticatedEventsEventIdAuctioneerIndexRoute
   '/events/$eventId/tickets/': typeof AuthenticatedEventsEventIdTicketsIndexRoute
+  '/npos/$npoId/donate-now/': typeof AuthenticatedNposNpoIdDonateNowIndexRoute
   '/events/$eventId/auction-dashboard/items/$itemId': typeof AuthenticatedEventsEventIdAuctionDashboardItemsItemIdRoute
   '/events/$eventId/auction-items/$itemId/edit': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
   '/events/$eventId/auction-items/$itemId/engagement': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEngagementRoute
@@ -691,10 +731,15 @@ export interface FileRoutesByTo {
   '/events/$eventId/tickets/create': typeof AuthenticatedEventsEventIdTicketsCreateRoute
   '/events/$eventId/tickets/promos': typeof AuthenticatedEventsEventIdTicketsPromosRoute
   '/events/$eventId/tickets/sales': typeof AuthenticatedEventsEventIdTicketsSalesRoute
+  '/npos/$npoId/donate-now/hero': typeof AuthenticatedNposNpoIdDonateNowHeroRoute
+  '/npos/$npoId/donate-now/info': typeof AuthenticatedNposNpoIdDonateNowInfoRoute
+  '/npos/$npoId/donate-now/tiers': typeof AuthenticatedNposNpoIdDonateNowTiersRoute
+  '/npos/$npoId/donate-now/wall': typeof AuthenticatedNposNpoIdDonateNowWallRoute
   '/events/$eventId/auction-dashboard': typeof AuthenticatedEventsEventIdAuctionDashboardIndexRoute
   '/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
   '/events/$eventId/auctioneer': typeof AuthenticatedEventsEventIdAuctioneerIndexRoute
   '/events/$eventId/tickets': typeof AuthenticatedEventsEventIdTicketsIndexRoute
+  '/npos/$npoId/donate-now': typeof AuthenticatedNposNpoIdDonateNowIndexRoute
   '/events/$eventId/auction-dashboard/items/$itemId': typeof AuthenticatedEventsEventIdAuctionDashboardItemsItemIdRoute
   '/events/$eventId/auction-items/$itemId/edit': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
   '/events/$eventId/auction-items/$itemId/engagement': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEngagementRoute
@@ -775,10 +820,15 @@ export interface FileRoutesById {
   '/_authenticated/events/$eventId/tickets/create': typeof AuthenticatedEventsEventIdTicketsCreateRoute
   '/_authenticated/events/$eventId/tickets/promos': typeof AuthenticatedEventsEventIdTicketsPromosRoute
   '/_authenticated/events/$eventId/tickets/sales': typeof AuthenticatedEventsEventIdTicketsSalesRoute
+  '/_authenticated/npos/$npoId/donate-now/hero': typeof AuthenticatedNposNpoIdDonateNowHeroRoute
+  '/_authenticated/npos/$npoId/donate-now/info': typeof AuthenticatedNposNpoIdDonateNowInfoRoute
+  '/_authenticated/npos/$npoId/donate-now/tiers': typeof AuthenticatedNposNpoIdDonateNowTiersRoute
+  '/_authenticated/npos/$npoId/donate-now/wall': typeof AuthenticatedNposNpoIdDonateNowWallRoute
   '/_authenticated/events/$eventId/auction-dashboard/': typeof AuthenticatedEventsEventIdAuctionDashboardIndexRoute
   '/_authenticated/events/$eventId/auction-items/': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
   '/_authenticated/events/$eventId/auctioneer/': typeof AuthenticatedEventsEventIdAuctioneerIndexRoute
   '/_authenticated/events/$eventId/tickets/': typeof AuthenticatedEventsEventIdTicketsIndexRoute
+  '/_authenticated/npos/$npoId/donate-now/': typeof AuthenticatedNposNpoIdDonateNowIndexRoute
   '/_authenticated/events/$eventId/auction-dashboard/items/$itemId': typeof AuthenticatedEventsEventIdAuctionDashboardItemsItemIdRoute
   '/_authenticated/events/$eventId/auction-items/$itemId/edit': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEditRoute
   '/_authenticated/events/$eventId/auction-items/$itemId/engagement': typeof AuthenticatedEventsEventIdAuctionItemsItemIdEngagementRoute
@@ -857,10 +907,15 @@ export interface FileRouteTypes {
     | '/events/$eventId/tickets/create'
     | '/events/$eventId/tickets/promos'
     | '/events/$eventId/tickets/sales'
+    | '/npos/$npoId/donate-now/hero'
+    | '/npos/$npoId/donate-now/info'
+    | '/npos/$npoId/donate-now/tiers'
+    | '/npos/$npoId/donate-now/wall'
     | '/events/$eventId/auction-dashboard/'
     | '/events/$eventId/auction-items/'
     | '/events/$eventId/auctioneer/'
     | '/events/$eventId/tickets/'
+    | '/npos/$npoId/donate-now/'
     | '/events/$eventId/auction-dashboard/items/$itemId'
     | '/events/$eventId/auction-items/$itemId/edit'
     | '/events/$eventId/auction-items/$itemId/engagement'
@@ -932,10 +987,15 @@ export interface FileRouteTypes {
     | '/events/$eventId/tickets/create'
     | '/events/$eventId/tickets/promos'
     | '/events/$eventId/tickets/sales'
+    | '/npos/$npoId/donate-now/hero'
+    | '/npos/$npoId/donate-now/info'
+    | '/npos/$npoId/donate-now/tiers'
+    | '/npos/$npoId/donate-now/wall'
     | '/events/$eventId/auction-dashboard'
     | '/events/$eventId/auction-items'
     | '/events/$eventId/auctioneer'
     | '/events/$eventId/tickets'
+    | '/npos/$npoId/donate-now'
     | '/events/$eventId/auction-dashboard/items/$itemId'
     | '/events/$eventId/auction-items/$itemId/edit'
     | '/events/$eventId/auction-items/$itemId/engagement'
@@ -1015,10 +1075,15 @@ export interface FileRouteTypes {
     | '/_authenticated/events/$eventId/tickets/create'
     | '/_authenticated/events/$eventId/tickets/promos'
     | '/_authenticated/events/$eventId/tickets/sales'
+    | '/_authenticated/npos/$npoId/donate-now/hero'
+    | '/_authenticated/npos/$npoId/donate-now/info'
+    | '/_authenticated/npos/$npoId/donate-now/tiers'
+    | '/_authenticated/npos/$npoId/donate-now/wall'
     | '/_authenticated/events/$eventId/auction-dashboard/'
     | '/_authenticated/events/$eventId/auction-items/'
     | '/_authenticated/events/$eventId/auctioneer/'
     | '/_authenticated/events/$eventId/tickets/'
+    | '/_authenticated/npos/$npoId/donate-now/'
     | '/_authenticated/events/$eventId/auction-dashboard/items/$itemId'
     | '/_authenticated/events/$eventId/auction-items/$itemId/edit'
     | '/_authenticated/events/$eventId/auction-items/$itemId/engagement'
@@ -1522,6 +1587,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsEventIdAuctionBidsRouteImport
       parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
+    '/_authenticated/npos/$npoId/donate-now/': {
+      id: '/_authenticated/npos/$npoId/donate-now/'
+      path: '/npos/$npoId/donate-now'
+      fullPath: '/npos/$npoId/donate-now/'
+      preLoaderRoute: typeof AuthenticatedNposNpoIdDonateNowIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/events/$eventId/tickets/': {
       id: '/_authenticated/events/$eventId/tickets/'
       path: '/'
@@ -1549,6 +1621,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/events/$eventId/auction-dashboard/'
       preLoaderRoute: typeof AuthenticatedEventsEventIdAuctionDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
+    '/_authenticated/npos/$npoId/donate-now/wall': {
+      id: '/_authenticated/npos/$npoId/donate-now/wall'
+      path: '/npos/$npoId/donate-now/wall'
+      fullPath: '/npos/$npoId/donate-now/wall'
+      preLoaderRoute: typeof AuthenticatedNposNpoIdDonateNowWallRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/npos/$npoId/donate-now/tiers': {
+      id: '/_authenticated/npos/$npoId/donate-now/tiers'
+      path: '/npos/$npoId/donate-now/tiers'
+      fullPath: '/npos/$npoId/donate-now/tiers'
+      preLoaderRoute: typeof AuthenticatedNposNpoIdDonateNowTiersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/npos/$npoId/donate-now/info': {
+      id: '/_authenticated/npos/$npoId/donate-now/info'
+      path: '/npos/$npoId/donate-now/info'
+      fullPath: '/npos/$npoId/donate-now/info'
+      preLoaderRoute: typeof AuthenticatedNposNpoIdDonateNowInfoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/npos/$npoId/donate-now/hero': {
+      id: '/_authenticated/npos/$npoId/donate-now/hero'
+      path: '/npos/$npoId/donate-now/hero'
+      fullPath: '/npos/$npoId/donate-now/hero'
+      preLoaderRoute: typeof AuthenticatedNposNpoIdDonateNowHeroRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/events/$eventId/tickets/sales': {
       id: '/_authenticated/events/$eventId/tickets/sales'
@@ -1809,6 +1909,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNposNpoIdPaymentSettingsRoute: typeof AuthenticatedNposNpoIdPaymentSettingsRoute
   AuthenticatedNposNpoIdIndexRoute: typeof AuthenticatedNposNpoIdIndexRoute
   AuthenticatedUsersUserIdIndexRoute: typeof AuthenticatedUsersUserIdIndexRoute
+  AuthenticatedNposNpoIdDonateNowHeroRoute: typeof AuthenticatedNposNpoIdDonateNowHeroRoute
+  AuthenticatedNposNpoIdDonateNowInfoRoute: typeof AuthenticatedNposNpoIdDonateNowInfoRoute
+  AuthenticatedNposNpoIdDonateNowTiersRoute: typeof AuthenticatedNposNpoIdDonateNowTiersRoute
+  AuthenticatedNposNpoIdDonateNowWallRoute: typeof AuthenticatedNposNpoIdDonateNowWallRoute
+  AuthenticatedNposNpoIdDonateNowIndexRoute: typeof AuthenticatedNposNpoIdDonateNowIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1827,6 +1932,16 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedNposNpoIdPaymentSettingsRoute,
   AuthenticatedNposNpoIdIndexRoute: AuthenticatedNposNpoIdIndexRoute,
   AuthenticatedUsersUserIdIndexRoute: AuthenticatedUsersUserIdIndexRoute,
+  AuthenticatedNposNpoIdDonateNowHeroRoute:
+    AuthenticatedNposNpoIdDonateNowHeroRoute,
+  AuthenticatedNposNpoIdDonateNowInfoRoute:
+    AuthenticatedNposNpoIdDonateNowInfoRoute,
+  AuthenticatedNposNpoIdDonateNowTiersRoute:
+    AuthenticatedNposNpoIdDonateNowTiersRoute,
+  AuthenticatedNposNpoIdDonateNowWallRoute:
+    AuthenticatedNposNpoIdDonateNowWallRoute,
+  AuthenticatedNposNpoIdDonateNowIndexRoute:
+    AuthenticatedNposNpoIdDonateNowIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

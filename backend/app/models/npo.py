@@ -12,6 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
+    from app.models.donate_now_config import DonateNowPageConfig
     from app.models.donor_label import DonorLabel
     from app.models.event import Event
     from app.models.npo_application import NPOApplication
@@ -61,6 +62,12 @@ class NPO(Base, UUIDMixin, TimestampMixin):
     # Identity
     name: Mapped[str] = mapped_column(
         String(255),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+    slug: Mapped[str] = mapped_column(
+        String(100),
         unique=True,
         nullable=False,
         index=True,
@@ -161,6 +168,13 @@ class NPO(Base, UUIDMixin, TimestampMixin):
     donor_labels: Mapped[list["DonorLabel"]] = relationship(
         "DonorLabel",
         back_populates="npo",
+        cascade="all, delete-orphan",
+    )
+
+    donate_now_config: Mapped["DonateNowPageConfig | None"] = relationship(
+        "DonateNowPageConfig",
+        back_populates="npo",
+        uselist=False,
         cascade="all, delete-orphan",
     )
 
