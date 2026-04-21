@@ -1,6 +1,6 @@
 # Quickstart: Donate Now Page (041)
 
-**Branch**: `041-dontate-now-page`
+**Branch**: `041-donate-now-page`
 
 ## Prerequisites
 
@@ -76,7 +76,7 @@ cd frontend/fundrbolt-admin && pnpm test --run
 
 ## API Reference
 
-Full OpenAPI contract: `.specify/specs/041-dontate-now-page/contracts/donate-now.yaml`
+Full OpenAPI contract: `.specify/specs/041-donate-now-page/contracts/donate-now.yaml`
 
 Interactive docs (backend running): `http://localhost:8000/docs#/Donate Now`
 

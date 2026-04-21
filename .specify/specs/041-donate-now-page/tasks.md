@@ -1,6 +1,6 @@
 # Tasks: Donate Now Page (041)
 
-**Input**: Design documents from `/specs/041-dontate-now-page/`
+**Input**: Design documents from `/specs/041-donate-now-page/`
 **Prerequisites**: plan.md ✅, spec.md ✅, research.md ✅, data-model.md ✅, contracts/donate-now.yaml ✅, quickstart.md ✅
 
 **Organization**: Tasks grouped by user story. Each story is independently completable and testable.
@@ -189,7 +189,7 @@
 - [ ] T076 Run full backend CI checks: `cd backend && poetry run ruff check . && poetry run ruff format --check . && poetry run mypy app --strict --ignore-missing-imports --exclude 'app/tests'` — fix all errors
 - [ ] T077 Run full frontend CI checks for donor PWA: `cd frontend/donor-pwa && pnpm lint && pnpm format:check && pnpm build` — fix all errors
 - [ ] T078 Run full frontend CI checks for admin PWA: `cd frontend/fundrbolt-admin && pnpm lint && pnpm format:check && pnpm build` — fix all errors
-- [ ] T079 Validate end-to-end using quickstart.md: run through full donation flow per `specs/041-dontate-now-page/quickstart.md`; confirm support wall, admin config, and monthly flow all work
+- [ ] T079 Validate end-to-end using quickstart.md: run through full donation flow per `specs/041-donate-now-page/quickstart.md`; confirm support wall, admin config, and monthly flow all work
 
 ---
 

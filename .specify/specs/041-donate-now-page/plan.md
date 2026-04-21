@@ -1,7 +1,7 @@
 # Implementation Plan: Donate Now Page
 
-**Branch**: `041-dontate-now-page` | **Date**: 2026-04-20 | **Spec**: [spec.md](spec.md)
-**Input**: Feature specification from `/specs/041-dontate-now-page/spec.md`
+**Branch**: `041-donate-now-page` | **Date**: 2026-04-20 | **Spec**: [spec.md](spec.md)
+**Input**: Feature specification from `/specs/041-donate-now-page/spec.md`
 
 ## Summary
 
@@ -38,7 +38,7 @@ A public NPO-specific donation page (`/npo/$npoSlug/donate-now`) enabling one-ti
 ### Documentation (this feature)
 
 ```
-specs/041-dontate-now-page/
+specs/041-donate-now-page/
 ├── plan.md              ← this file
 ├── research.md          ← Phase 0 complete
 ├── data-model.md        ← Phase 1 output

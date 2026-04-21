@@ -80,8 +80,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Azure Database for PostgreSQL (existing tables — no new migrations), Azure Cache for Redis (optional caching for leaderboard aggregations) (039-donor-dashboard)
 - Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+ (backend); React 19, Vite 7, TanStack Router, TanStack React Table 8, TanStack React Query 5, Zustand, Radix UI, Recharts, Tailwind CSS 4 (frontend) (040-auction-dashboard)
 - Azure Database for PostgreSQL (existing auction_items, auction_bids tables — no new migrations), Azure Cache for Redis (optional caching) (040-auction-dashboard)
-- Python 3.11+ (backend), TypeScript 5.x / React 19 (donor PWA frontend), TypeScript 5.x / React 19 (admin PWA frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (backend); React 19, Vite 7, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (donor PWA + admin PWA); Celery + Redis (recurring charge scheduling) (041-dontate-now-page)
-- Azure Database for PostgreSQL (donations, support wall, config, NPO slug); Azure Blob Storage (hero media, reusing existing NPO branding blob container); Azure Cache for Redis (Celery broker for recurring payment tasks) (041-dontate-now-page)
+- Python 3.11+ (backend), TypeScript 5.x / React 19 (donor PWA frontend), TypeScript 5.x / React 19 (admin PWA frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (backend); React 19, Vite 7, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (donor PWA + admin PWA); Celery + Redis (recurring charge scheduling) (041-donate-now-page)
+- Azure Database for PostgreSQL (donations, support wall, config, NPO slug); Azure Blob Storage (hero media, reusing existing NPO branding blob container); Azure Cache for Redis (Celery broker for recurring payment tasks) (041-donate-now-page)
 
 ## Project Structure
 ```
@@ -166,7 +166,7 @@ git commit -m "message"
 ```
 
 ## Recent Changes
-- 041-dontate-now-page: Added Python 3.11+ (backend), TypeScript 5.x / React 19 (donor PWA frontend), TypeScript 5.x / React 19 (admin PWA frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (backend); React 19, Vite 7, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (donor PWA + admin PWA); Celery + Redis (recurring charge scheduling)
+- 041-donate-now-page: Added Python 3.11+ (backend), TypeScript 5.x / React 19 (donor PWA frontend), TypeScript 5.x / React 19 (admin PWA frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (backend); React 19, Vite 7, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (donor PWA + admin PWA); Celery + Redis (recurring charge scheduling)
 - 040-auction-dashboard: Added Python 3.11+ (backend), TypeScript 5.x (frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+ (backend); React 19, Vite 7, TanStack Router, TanStack React Table 8, TanStack React Query 5, Zustand, Radix UI, Recharts, Tailwind CSS 4 (frontend)
 - 039-donor-dashboard: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+ (Backend); React 19, Vite 7, TanStack Router, TanStack React Query 5, Zustand, Radix UI, Recharts, Tailwind CSS 4 (Frontend)
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields

@@ -1,9 +1,9 @@
 # Feature Specification: Donate Now Page
 
-**Feature Branch**: `041-dontate-now-page`
+**Feature Branch**: `041-donate-now-page`
 **Created**: 2026-04-20
 **Status**: Draft
-**Input**: User description: "dontate-now-page"
+**Input**: User description: "donate-now-page"
 
 ## Overview
 

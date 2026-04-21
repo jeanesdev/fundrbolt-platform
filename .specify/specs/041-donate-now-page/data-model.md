@@ -1,7 +1,7 @@
 # Data Model: Donate Now Page (041)
 
 **Date**: 2026-04-20
-**Branch**: `041-dontate-now-page`
+**Branch**: `041-donate-now-page`
 
 ---
 
