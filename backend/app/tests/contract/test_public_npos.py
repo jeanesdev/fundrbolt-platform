@@ -18,6 +18,7 @@ async def test_list_public_npos_returns_only_approved_organizations(
 ) -> None:
     hidden_npo = NPO(
         name="Hidden Draft NPO",
+        slug="hidden-draft-npo",
         tagline="Should not be public",
         description="Draft org",
         mission_statement="Not visible",

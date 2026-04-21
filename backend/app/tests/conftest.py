@@ -537,6 +537,7 @@ async def test_npo_id(db_session: AsyncSession, test_npo_admin_user: Any) -> Any
 
     npo = NPO(
         name="Fixture Admin NPO",
+        slug="fixture-admin-npo",
         description="Fixture NPO for admin user",
         mission_statement="Test fixture NPO",
         email="npoadmin-npo@test.com",
@@ -1145,6 +1146,7 @@ async def test_npo(db_session: AsyncSession, test_user: Any) -> Any:
     # Create NPO
     npo = NPO(
         name="Test NPO Organization",
+        slug="test-npo-organization",
         description="A test non-profit organization for testing",
         mission_statement="Help people test software properly",
         email="test@testnpo.org",
@@ -1192,6 +1194,7 @@ async def test_npo_2(db_session: AsyncSession, test_super_admin_user: Any) -> An
     # Create NPO
     npo = NPO(
         name="Second Test NPO",
+        slug="second-test-npo",
         description="Another test organization",
         mission_statement="Testing multiple NPOs",
         email="test2@testnpo.org",
@@ -1313,6 +1316,7 @@ async def test_npo_other_user(db_session: AsyncSession, test_user_2: Any) -> Any
     # Create NPO for test_user_2
     npo = NPO(
         name="Other User NPO",
+        slug="other-user-npo",
         mission_statement="NPO for cross-NPO permission testing",
         description="Used for testing that users can't access other NPOs",
         tax_id="98-7654321",
@@ -1710,6 +1714,7 @@ async def test_approved_npo(db_session: AsyncSession, test_npo_admin_user: Any) 
     # Create NPO
     npo = NPO(
         name="Approved Test NPO",
+        slug="approved-test-npo",
         description="An approved non-profit organization for event testing",
         mission_statement="Host amazing fundraising events",
         email="approved@testnpo.org",

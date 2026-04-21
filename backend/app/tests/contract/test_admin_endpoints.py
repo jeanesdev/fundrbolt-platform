@@ -42,6 +42,7 @@ class TestGetPendingApplications:
         draft_npo = NPO(
             id=uuid.uuid4(),
             name="Draft NPO",
+            slug="draft-npo",
             email="draft@test.com",
             status=NPOStatus.DRAFT,
             created_by_user_id=test_user.id,
@@ -57,6 +58,7 @@ class TestGetPendingApplications:
         pending_npo_1 = NPO(
             id=uuid.uuid4(),
             name="Pending NPO 1",
+            slug="pending-npo-1",
             email="pending1@test.com",
             status=NPOStatus.PENDING_APPROVAL,
             created_by_user_id=test_user.id,
@@ -71,6 +73,7 @@ class TestGetPendingApplications:
         pending_npo_2 = NPO(
             id=uuid.uuid4(),
             name="Pending NPO 2",
+            slug="pending-npo-2",
             email="pending2@test.com",
             status=NPOStatus.PENDING_APPROVAL,
             created_by_user_id=test_user.id,
@@ -86,6 +89,7 @@ class TestGetPendingApplications:
         approved_npo = NPO(
             id=uuid.uuid4(),
             name="Approved NPO",
+            slug="approved-npo",
             email="approved@test.com",
             status=NPOStatus.APPROVED,
             created_by_user_id=test_user.id,
@@ -137,6 +141,7 @@ class TestGetPendingApplications:
             npo = NPO(
                 id=uuid.uuid4(),
                 name=f"Pending NPO {i}",
+                slug=f"pending-npo-pg-{i}",
                 description=f"Pending NPO {i} description",
                 email=f"pending{i}@npo.org",
                 phone=f"555-000{i}",
@@ -233,6 +238,7 @@ class TestReviewApplication:
         npo = NPO(
             id=uuid.uuid4(),
             name="Test NPO for Approval",
+            slug="test-npo-for-approval",
             description="NPO to be approved",
             email="approve@npo.org",
             phone="555-1234",
@@ -285,6 +291,7 @@ class TestReviewApplication:
         npo = NPO(
             id=uuid.uuid4(),
             name="Test NPO for Rejection",
+            slug="test-npo-for-rejection",
             description="NPO to be rejected",
             email="reject@npo.org",
             phone="555-5678",
@@ -339,6 +346,7 @@ class TestReviewApplication:
         npo = NPO(
             id=uuid.uuid4(),
             name="Draft NPO",
+            slug="draft-npo-review",
             description="Still in draft",
             email="draft@npo.org",
             phone="555-9999",
@@ -385,6 +393,7 @@ class TestReviewApplication:
         npo = NPO(
             id=uuid.uuid4(),
             name="Pending NPO",
+            slug="pending-npo-invalid-decision",
             description="Pending",
             email="pending@npo.org",
             phone="555-0000",
@@ -431,6 +440,7 @@ class TestReviewApplication:
         npo = NPO(
             id=uuid.uuid4(),
             name="Pending NPO",
+            slug="pending-npo-non-superadmin",
             description="Pending",
             email="pending@npo.org",
             phone="555-1111",
