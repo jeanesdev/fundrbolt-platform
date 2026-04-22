@@ -61,7 +61,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     isAuctioneer,
     isStaff,
   } = useAuth()
-  const { selectedNpoId } = useNpoContext()
+  const { selectedNpoId, availableNpos } = useNpoContext()
   const { selectedEventId, selectedEventName, availableEvents } = useEventContext()
   const { data: eventStats } = useEventStats(selectedEventId)
 
@@ -263,18 +263,23 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const selectedEventNpoId = availableEvents.find((e) => e.id === selectedEventId)?.npo_id ?? null
   const effectiveNpoId = selectedNpoId ?? selectedEventNpoId
 
+  // Resolve effective NPO slug for slug-based donate-now URLs.
+  // Falls back to the UUID if no slug is available (e.g. NPO hasn't been slugified yet).
+  const effectiveNpoEntry = availableNpos.find((n) => n.id === effectiveNpoId)
+  const effectiveNpoSlug = effectiveNpoEntry?.slug ?? effectiveNpoId
+
   // Donate Now nav group — visible for super admins and NPO admins always;
   // when no NPO can be resolved, prompt the user to select one first
   const donateNowNavGroup: EventNavGroup | null =
     isSuperAdmin || isNpoAdmin
-      ? effectiveNpoId
+      ? effectiveNpoSlug
         ? {
           title: 'Donate Now',
           items: [
-            { title: 'Dashboard', href: `/npos/${effectiveNpoId}/donate-now/dashboard`, icon: 'BarChart3' },
-            { title: 'Setup', href: `/npos/${effectiveNpoId}/donate-now/setup`, icon: 'Settings' },
-            { title: 'Tiers', href: `/npos/${effectiveNpoId}/donate-now/tiers`, icon: 'Layers' },
-            { title: 'Support Wall', href: `/npos/${effectiveNpoId}/donate-now/wall`, icon: 'MessageSquare' },
+            { title: 'Dashboard', href: `/npos/${effectiveNpoSlug}/donate-now/dashboard`, icon: 'BarChart3' },
+            { title: 'Setup', href: `/npos/${effectiveNpoSlug}/donate-now/setup`, icon: 'Settings' },
+            { title: 'Tiers', href: `/npos/${effectiveNpoSlug}/donate-now/tiers`, icon: 'Layers' },
+            { title: 'Support Wall', href: `/npos/${effectiveNpoSlug}/donate-now/wall`, icon: 'MessageSquare' },
           ],
         }
         : {

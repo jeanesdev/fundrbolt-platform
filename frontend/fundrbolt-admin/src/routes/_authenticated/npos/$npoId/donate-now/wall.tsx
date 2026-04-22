@@ -1,4 +1,5 @@
 import { SupportWallModerationTable } from '@/components/donate-now/SupportWallModerationTable'
+import { useNpoContext } from '@/hooks/use-npo-context'
 import { createFileRoute, useParams } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated/npos/$npoId/donate-now/wall')({
@@ -6,7 +7,10 @@ export const Route = createFileRoute('/_authenticated/npos/$npoId/donate-now/wal
 })
 
 function DonateNowWallPage() {
-  const { npoId } = useParams({ from: '/_authenticated/npos/$npoId/donate-now/wall' })
+  const { npoId: npoSlug } = useParams({ from: '/_authenticated/npos/$npoId/donate-now/wall' })
+  const { availableNpos } = useNpoContext()
+  // The URL param may be a slug (e.g. "hope-foundation") — resolve to UUID for API calls
+  const npoId = availableNpos.find((n) => n.slug === npoSlug)?.id ?? npoSlug
 
   return (
     <div className='space-y-6 p-6'>

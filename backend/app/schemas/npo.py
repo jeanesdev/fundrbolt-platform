@@ -168,6 +168,7 @@ class NPOResponse(BaseModel):
 
     id: uuid.UUID
     name: str
+    slug: str | None = None
     tagline: str | None
     hashtag: str | None
     description: str | None

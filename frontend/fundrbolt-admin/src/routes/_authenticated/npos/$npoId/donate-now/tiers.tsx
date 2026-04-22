@@ -2,6 +2,7 @@ import { donateNowAdminApi } from '@/api/donateNow'
 import { DonationTierEditor } from '@/components/donate-now/DonationTierEditor'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useNpoContext } from '@/hooks/use-npo-context'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useParams } from '@tanstack/react-router'
 
@@ -10,7 +11,10 @@ export const Route = createFileRoute('/_authenticated/npos/$npoId/donate-now/tie
 })
 
 function DonateNowTiersPage() {
-  const { npoId } = useParams({ from: '/_authenticated/npos/$npoId/donate-now/tiers' })
+  const { npoId: npoSlug } = useParams({ from: '/_authenticated/npos/$npoId/donate-now/tiers' })
+  const { availableNpos } = useNpoContext()
+  // The URL param may be a slug (e.g. "hope-foundation") — resolve to UUID for API calls
+  const npoId = availableNpos.find((n) => n.slug === npoSlug)?.id ?? npoSlug
 
   const { data: tiers, isLoading } = useQuery({
     queryKey: ['donate-now-tiers', npoId],
