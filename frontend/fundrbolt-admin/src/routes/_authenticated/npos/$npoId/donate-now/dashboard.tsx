@@ -75,7 +75,7 @@ function DonateNowDashboardPage() {
         <div className='flex items-center gap-3'>
           <Heart className='h-6 w-6 text-rose-500' />
           <div>
-            <h1 className='text-2xl font-bold'>Donate Now</h1>
+            <h1 className='text-2xl font-bold'>Donate</h1>
             <p className='text-muted-foreground text-sm'>
               Manage your public donation page and track contributions
             </p>

@@ -65,10 +65,16 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   const { selectedEventId, selectedEventName, availableEvents } = useEventContext()
   const { data: eventStats } = useEventStats(selectedEventId)
 
-  // Determine NPO link based on selected NPO
-  const npoHref = selectedNpoId ? `/npos/${selectedNpoId}` : '/npos'
-  // Change title based on whether specific NPO is selected
-  const npoTitle = selectedNpoId ? 'Organization' : 'Organizations'
+  // Resolve the effective NPO early so nav links can fall back to the event's NPO
+  // when no NPO is explicitly selected.
+  const selectedEventNpoId = availableEvents.find((e) => e.id === selectedEventId)?.npo_id ?? null
+  const effectiveNpoId = selectedNpoId ?? selectedEventNpoId
+
+  // Determine NPO link: go straight to the detail page when an NPO can be resolved
+  // (either from an explicit selection or from the currently selected event).
+  const npoHref = effectiveNpoId ? `/npos/${effectiveNpoId}` : '/npos'
+  // Change title based on whether a specific NPO is resolved
+  const npoTitle = effectiveNpoId ? 'Organization' : 'Organizations'
 
   // Base navigation items available to all authenticated users
   const baseNavItems: NavItem[] = [
@@ -258,11 +264,6 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     ? `Event${selectedEventName ? `: ${selectedEventName}` : ''}`
     : null
 
-  // Resolve effective NPO ID: explicit selection takes priority,
-  // then fall back to the NPO of the currently selected event.
-  const selectedEventNpoId = availableEvents.find((e) => e.id === selectedEventId)?.npo_id ?? null
-  const effectiveNpoId = selectedNpoId ?? selectedEventNpoId
-
   // Resolve effective NPO slug for slug-based donate-now URLs.
   // Falls back to the UUID if no slug is available (e.g. NPO hasn't been slugified yet).
   const effectiveNpoEntry = availableNpos.find((n) => n.id === effectiveNpoId)
@@ -274,7 +275,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     isSuperAdmin || isNpoAdmin
       ? effectiveNpoSlug
         ? {
-          title: 'Donate Now',
+          title: 'Donate',
           items: [
             { title: 'Dashboard', href: `/npos/${effectiveNpoSlug}/donate-now/dashboard`, icon: 'BarChart3' },
             { title: 'Setup', href: `/npos/${effectiveNpoSlug}/donate-now/setup`, icon: 'Settings' },
@@ -283,7 +284,7 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
           ],
         }
         : {
-          title: 'Donate Now',
+          title: 'Donate',
           items: [
             { title: 'Select an organization first', href: '/npos', icon: 'Building2' },
           ],

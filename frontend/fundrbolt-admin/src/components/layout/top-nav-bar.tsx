@@ -50,7 +50,7 @@ const groupIconMap: Record<string, React.ElementType> = {
   Finance: CreditCard,
   Data: BarChart3,
   Auctioneer: Gavel,
-  'Donate Now': Heart,
+  'Donate': Heart,
   Admin: Settings,
 }
 
@@ -293,8 +293,8 @@ export function TopNavBar() {
         <MobileNav />
 
         {/* Logo */}
-        <Link to='/' className='flex items-center'>
-          <img src={LogoWhiteGoldPng} alt='FundrBolt' className='h-7 w-auto' />
+        <Link to='/' className='flex shrink-0 items-center'>
+          <img src={LogoWhiteGoldPng} alt='FundrBolt' className='h-7 w-auto shrink-0' />
         </Link>
 
         {/* Separator */}
