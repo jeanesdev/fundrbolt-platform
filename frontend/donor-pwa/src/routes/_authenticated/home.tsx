@@ -260,7 +260,7 @@ function DonorHomePage() {
         style={{ backgroundColor: colors.primary.navy }}
       >
         <div className='relative flex h-16 items-center justify-center px-5'>
-          <img src={LogoWhiteGold} alt='FundrBolt' className='h-10' />
+          <img src={LogoWhiteGold} alt='FundrBolt' className='h-8 w-auto shrink-0' />
           <div className='absolute right-5'>
             <ProfileDropdown />
           </div>

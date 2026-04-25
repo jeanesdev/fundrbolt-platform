@@ -52,11 +52,11 @@ function TicketListingPage() {
             </Button>
           </div>
 
-          <div className='pointer-events-none absolute inset-x-0 flex justify-center px-16'>
+          <div className='pointer-events-none absolute inset-x-0 flex items-center justify-center px-16'>
             <img
               src={LogoWhiteGold}
               alt='FundrBolt'
-              className='h-10 max-w-full'
+              className='h-8 w-auto shrink-0'
             />
           </div>
 
