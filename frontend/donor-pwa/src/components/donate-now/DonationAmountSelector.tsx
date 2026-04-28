@@ -1,7 +1,4 @@
-import { Input } from '@/components/ui/input'
-import { Slider } from '@/components/ui/slider'
-import { Switch } from '@/components/ui/switch'
-import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -10,7 +7,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
 import type { useDonateNow } from '@/features/donate-now/useDonateNow'
 import type { DonationTier } from '@/lib/api/donateNow'
 import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'

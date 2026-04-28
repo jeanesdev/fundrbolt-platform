@@ -9,14 +9,32 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.middleware.auth import get_current_user_optional
+from app.models.donate_now_media import DonateNowMedia
 from app.models.user import User
-from app.schemas.donate_now_config import DonateNowPagePublic, DonationTierResponse
+from app.schemas.donate_now_config import (
+    DonateNowMediaResponse,
+    DonateNowPagePublic,
+    DonationTierResponse,
+)
 from app.schemas.npo_donation import DonationCreateRequest, DonationResponse
 from app.schemas.support_wall_entry import SupportWallPage
 from app.services.donate_now_service import DonateNowService
+from app.services.media_service import MediaService
 from app.services.npo_donation_service import NpoDonationService
 
 router = APIRouter()
+
+
+def _build_media_response(media: DonateNowMedia) -> DonateNowMediaResponse:
+    file_url = media.file_url
+    if media.blob_name:
+        try:
+            file_url = MediaService.generate_read_sas_url(media.blob_name)
+        except Exception:
+            file_url = media.file_url
+
+    response = DonateNowMediaResponse.model_validate(media)
+    return response.model_copy(update={"file_url": file_url})
 
 
 @router.get(
@@ -33,6 +51,15 @@ async def get_donate_now_page(
     Returns 404 if the page is not enabled or the NPO slug doesn't exist.
     """
     npo, config = await DonateNowService.get_public_config(db, npo_slug)
+    npo_branding = npo.branding if hasattr(npo, "branding") else None
+    effective_primary = config.brand_color_primary or (
+        npo_branding.primary_color if npo_branding else None
+    )
+    effective_secondary = config.brand_color_secondary or (
+        npo_branding.secondary_color if npo_branding else None
+    )
+    effective_background = npo_branding.background_color if npo_branding else None
+    effective_accent = npo_branding.accent_color if npo_branding else None
     return DonateNowPagePublic(
         npo_id=npo.id,
         npo_name=npo.name,
@@ -43,6 +70,11 @@ async def get_donate_now_page(
         hero_transition_style=config.hero_transition_style,
         processing_fee_pct=config.processing_fee_pct,
         npo_info_text=config.npo_info_text,
+        page_logo_url=config.page_logo_url,
+        effective_color_primary=effective_primary,
+        effective_color_secondary=effective_secondary,
+        effective_color_background=effective_background,
+        effective_color_accent=effective_accent,
         tiers=[
             DonationTierResponse(
                 id=t.id,
@@ -51,6 +83,10 @@ async def get_donate_now_page(
                 display_order=t.display_order,
             )
             for t in (config.tiers or [])
+        ],
+        media_items=[
+            _build_media_response(m)
+            for m in sorted(config.media_items or [], key=lambda x: x.display_order)
         ],
         social_links=[],
         upcoming_event=None,

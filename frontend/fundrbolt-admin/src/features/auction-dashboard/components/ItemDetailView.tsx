@@ -1,14 +1,3 @@
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import type { AuctionItemDetailResponse } from '@/services/auction-dashboard'
 import { colors } from '@fundrbolt/shared/assets'
 import { ArrowLeft } from 'lucide-react'
@@ -21,11 +10,20 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 const titleCase = (s: string) =>
-  s
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
+  s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 
 const fmt = (n: number) =>
   n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
@@ -54,10 +52,18 @@ export function ItemDetailView({ data, onBack }: ItemDetailViewProps) {
 
       {/* Item stats */}
       <div className='grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4'>
-        <StatCard label='Current Bid' value={item.current_bid_amount != null ? fmt(item.current_bid_amount) : '—'} />
+        <StatCard
+          label='Current Bid'
+          value={
+            item.current_bid_amount != null ? fmt(item.current_bid_amount) : '—'
+          }
+        />
         <StatCard label='Starting Bid' value={fmt(item.starting_bid)} />
         <StatCard label='Bid Count' value={item.bid_count.toLocaleString()} />
-        <StatCard label='Watchers' value={item.watcher_count.toLocaleString()} />
+        <StatCard
+          label='Watchers'
+          value={item.watcher_count.toLocaleString()}
+        />
       </div>
 
       {/* Item details */}
@@ -70,11 +76,16 @@ export function ItemDetailView({ data, onBack }: ItemDetailViewProps) {
             <DetailField label='Type' value={titleCase(item.auction_type)} />
             <DetailField label='Category' value={item.category ?? '—'} />
             <DetailField label='Status'>
-              <Badge variant={item.status === 'published' ? 'default' : 'secondary'}>
+              <Badge
+                variant={item.status === 'published' ? 'default' : 'secondary'}
+              >
                 {item.status}
               </Badge>
             </DetailField>
-            <DetailField label='Bid Increment' value={fmt(item.bid_increment)} />
+            <DetailField
+              label='Bid Increment'
+              value={fmt(item.bid_increment)}
+            />
             <DetailField
               label='Buy Now'
               value={
@@ -83,13 +94,21 @@ export function ItemDetailView({ data, onBack }: ItemDetailViewProps) {
                   : 'Disabled'
               }
             />
-            <DetailField label='Donor Value' value={item.donor_value != null ? fmt(item.donor_value) : '—'} />
+            <DetailField
+              label='Donor Value'
+              value={item.donor_value != null ? fmt(item.donor_value) : '—'}
+            />
             <DetailField label='Donated By' value={item.donated_by ?? '—'} />
-            <DetailField label='Bidding Open' value={item.bidding_open ? 'Yes' : 'No'} />
+            <DetailField
+              label='Bidding Open'
+              value={item.bidding_open ? 'Yes' : 'No'}
+            />
           </dl>
           {item.description && (
             <div className='mt-4'>
-              <dt className='text-muted-foreground text-xs font-medium'>Description</dt>
+              <dt className='text-muted-foreground text-xs font-medium'>
+                Description
+              </dt>
               <dd className='mt-1 text-sm'>{item.description}</dd>
             </div>
           )}
@@ -122,9 +141,7 @@ export function ItemDetailView({ data, onBack }: ItemDetailViewProps) {
                 />
                 <YAxis tickFormatter={(v: number) => fmt(v)} />
                 <Tooltip
-                  labelFormatter={(v) =>
-                    new Date(String(v)).toLocaleString()
-                  }
+                  labelFormatter={(v) => new Date(String(v)).toLocaleString()}
                   formatter={(v) => [fmt(Number(v)), 'Bid']}
                 />
                 <Line

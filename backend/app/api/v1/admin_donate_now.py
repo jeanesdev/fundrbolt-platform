@@ -5,19 +5,25 @@ from __future__ import annotations
 import math
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import status as http_status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.middleware.auth import get_current_user, require_role
+from app.models.donate_now_config import DonateNowPageConfig
+from app.models.donate_now_media import DonateNowMedia
+from app.models.npo import NPO
 from app.models.npo_donation import NpoDonation, NpoDonationStatus
 from app.models.support_wall_entry import SupportWallEntry
 from app.models.user import User
 from app.schemas.donate_now_config import (
     DonateNowConfigResponse,
     DonateNowConfigUpdate,
+    DonateNowMediaResponse,
     DonationsDashboardResponse,
     DonationTierInput,
     DonationTierResponse,
@@ -25,8 +31,38 @@ from app.schemas.donate_now_config import (
 )
 from app.schemas.support_wall_entry import AdminSupportWallEntryResponse, AdminSupportWallPage
 from app.services.donate_now_service import DonateNowService
+from app.services.media_service import MediaService
 
 router = APIRouter(prefix="/admin/npos/{npo_id}/donate-now", tags=["Admin Donate Now"])
+
+
+def _build_media_response(media: DonateNowMedia) -> DonateNowMediaResponse:
+    file_url = media.file_url
+    if media.blob_name:
+        try:
+            file_url = MediaService.generate_read_sas_url(media.blob_name)
+        except Exception:
+            file_url = media.file_url
+
+    response = DonateNowMediaResponse.model_validate(media)
+    return response.model_copy(update={"file_url": file_url})
+
+
+def _build_config_response(config: DonateNowPageConfig) -> DonateNowConfigResponse:
+    response = DonateNowConfigResponse.model_validate(config)
+    npo_branding = config.npo.branding if config.npo else None
+    media_items = [
+        _build_media_response(media)
+        for media in sorted(config.media_items or [], key=lambda item: item.display_order)
+    ]
+    return response.model_copy(
+        update={
+            "media_items": media_items,
+            "npo_brand_color_primary": npo_branding.primary_color if npo_branding else None,
+            "npo_brand_color_secondary": npo_branding.secondary_color if npo_branding else None,
+            "npo_brand_logo_url": npo_branding.logo_url if npo_branding else None,
+        }
+    )
 
 
 # ── Config endpoints ─────────────────────────────────────────────────────────
@@ -46,7 +82,7 @@ async def get_config(
     """Return the donate-now page config for an NPO, creating one if not yet configured."""
     config = await DonateNowService.get_config(db, npo_id)
     await db.commit()
-    return DonateNowConfigResponse.model_validate(config)
+    return _build_config_response(config)
 
 
 @router.put(
@@ -69,11 +105,15 @@ async def update_config(
     stmt = (
         select(DonateNowPageConfig)
         .where(DonateNowPageConfig.id == config.id)
-        .options(selectinload(DonateNowPageConfig.tiers))
+        .options(
+            selectinload(DonateNowPageConfig.tiers),
+            selectinload(DonateNowPageConfig.media_items),
+            selectinload(DonateNowPageConfig.npo).selectinload(NPO.branding),
+        )
     )
     result = await db.execute(stmt)
     config = result.scalar_one()
-    return DonateNowConfigResponse.model_validate(config)
+    return _build_config_response(config)
 
 
 # ── Donation stats dashboard ──────────────────────────────────────────────────
@@ -329,3 +369,272 @@ async def get_hero_upload_url(
     service = FileUploadService(settings)
     upload_url, blob_url = service.generate_upload_sas_url(npo_id, filename, content_type)
     return {"upload_url": upload_url, "blob_url": blob_url}
+
+
+# ── Hero media management ─────────────────────────────────────────────────────
+
+_ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+_ALLOWED_VIDEO_TYPES = {"video/mp4", "video/quicktime"}
+_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
+
+
+@router.post(
+    "/media/upload",
+    response_model=DonateNowMediaResponse,
+    status_code=http_status.HTTP_201_CREATED,
+    summary="Upload hero media for donate-now page (admin)",
+)
+@require_role("super_admin", "npo_admin")
+async def upload_hero_media(
+    npo_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> DonateNowMediaResponse:
+    """Upload a hero image or video for the donate-now page slideshow."""
+    import logging
+
+    from azure.storage.blob import BlobServiceClient, ContentSettings
+
+    logger = logging.getLogger(__name__)
+    settings = get_settings()
+
+    content_type = file.content_type or "application/octet-stream"
+    filename = file.filename or "upload.bin"
+
+    if content_type in _ALLOWED_IMAGE_TYPES:
+        media_type = "image"
+    elif content_type in _ALLOWED_VIDEO_TYPES:
+        media_type = "video"
+    else:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=f"File type {content_type} is not allowed. Accepted: images (jpeg/png/webp/gif) and videos (mp4/mov).",
+        )
+
+    file_bytes = await file.read()
+    if len(file_bytes) == 0:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is empty.",
+        )
+    if len(file_bytes) > _MAX_FILE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=http_status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="File exceeds 10 MB limit.",
+        )
+
+    config = await DonateNowService.get_config(db, npo_id)
+    await db.commit()
+
+    media_id = uuid.uuid4()
+    blob_name = f"donate-now/{config.id}/{media_id}/{filename}"
+    container_name = settings.azure_storage_container_name or "event-media"
+
+    if not settings.azure_storage_connection_string:
+        raise HTTPException(
+            status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Azure Storage not configured.",
+        )
+
+    blob_service = BlobServiceClient.from_connection_string(
+        settings.azure_storage_connection_string
+    )
+
+    try:
+        blob = blob_service.get_blob_client(container=container_name, blob=blob_name)
+        blob.upload_blob(
+            file_bytes,
+            overwrite=True,
+            content_settings=ContentSettings(content_type=content_type),
+        )
+    except Exception as exc:
+        logger.exception("Direct blob upload failed for donate-now config %s", config.id)
+        raise HTTPException(
+            status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Failed to upload media to storage.",
+        ) from exc
+
+    if blob_service.url:
+        base_url = blob_service.url.rstrip("/")
+        file_url = f"{base_url}/{container_name}/{blob_name}"
+    else:
+        account_name = settings.azure_storage_account_name or "storage"
+        file_url = f"https://{account_name}.blob.core.windows.net/{container_name}/{blob_name}"
+
+    # Count existing items to set display_order
+    count_result = await db.execute(
+        select(func.count(DonateNowMedia.id)).where(DonateNowMedia.config_id == config.id)
+    )
+    display_order = count_result.scalar_one() or 0
+
+    media = DonateNowMedia(
+        id=media_id,
+        config_id=config.id,
+        media_type=media_type,
+        file_url=file_url,
+        file_name=filename,
+        file_type=content_type,
+        mime_type=content_type,
+        blob_name=blob_name,
+        file_size=len(file_bytes),
+        display_order=display_order,
+        uploaded_by=current_user.id,
+    )
+    db.add(media)
+    await db.commit()
+    await db.refresh(media)
+
+    return _build_media_response(media)
+
+
+@router.delete(
+    "/media/{media_id}",
+    status_code=http_status.HTTP_204_NO_CONTENT,
+    summary="Delete a hero media item (admin)",
+)
+@require_role("super_admin", "npo_admin")
+async def delete_hero_media(
+    npo_id: uuid.UUID,
+    media_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """Delete a hero media item from the donate-now page slideshow."""
+    import logging
+
+    from azure.storage.blob import BlobServiceClient
+
+    logger = logging.getLogger(__name__)
+    settings = get_settings()
+
+    config = await DonateNowService.get_config(db, npo_id)
+    await db.commit()
+
+    stmt = select(DonateNowMedia).where(
+        DonateNowMedia.id == media_id,
+        DonateNowMedia.config_id == config.id,
+    )
+    result = await db.execute(stmt)
+    media = result.scalar_one_or_none()
+    if media is None:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Media item not found.",
+        )
+
+    if settings.azure_storage_connection_string:
+        try:
+            blob_service = BlobServiceClient.from_connection_string(
+                settings.azure_storage_connection_string
+            )
+            container_name = settings.azure_storage_container_name or "event-media"
+            blob = blob_service.get_blob_client(container=container_name, blob=media.blob_name)
+            blob.delete_blob()
+        except Exception as exc:
+            logger.error("Failed to delete blob %s: %s", media.blob_name, exc)
+
+    await db.delete(media)
+    await db.commit()
+
+
+# ── Page logo upload ──────────────────────────────────────────────────────────
+
+_ALLOWED_LOGO_TYPES = {"image/jpeg", "image/png", "image/webp"}
+_MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024  # 2 MB
+
+
+@router.post(
+    "/page-logo",
+    response_model=DonateNowConfigResponse,
+    summary="Upload page logo for donate-now header (admin)",
+)
+@require_role("super_admin", "npo_admin")
+async def upload_page_logo(
+    npo_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> DonateNowConfigResponse:
+    """Upload a small square logo shown in the donate-now page header."""
+    import logging
+
+    from azure.storage.blob import BlobServiceClient, ContentSettings
+
+    logger = logging.getLogger(__name__)
+    settings = get_settings()
+
+    content_type = file.content_type or "application/octet-stream"
+    filename = file.filename or "logo.png"
+
+    if content_type not in _ALLOWED_LOGO_TYPES:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Logo must be a JPEG, PNG, or WebP image.",
+        )
+
+    file_bytes = await file.read()
+    if len(file_bytes) == 0:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is empty.",
+        )
+    if len(file_bytes) > _MAX_LOGO_SIZE_BYTES:
+        raise HTTPException(
+            status_code=http_status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Logo file exceeds 2 MB limit.",
+        )
+
+    config = await DonateNowService.get_config(db, npo_id)
+    await db.commit()
+
+    blob_name = f"donate-now/{config.id}/logo/{filename}"
+    container_name = settings.azure_storage_container_name or "event-media"
+
+    if not settings.azure_storage_connection_string:
+        raise HTTPException(
+            status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Azure Storage not configured.",
+        )
+
+    blob_service = BlobServiceClient.from_connection_string(
+        settings.azure_storage_connection_string
+    )
+
+    try:
+        blob = blob_service.get_blob_client(container=container_name, blob=blob_name)
+        blob.upload_blob(
+            file_bytes,
+            overwrite=True,
+            content_settings=ContentSettings(content_type=content_type),
+        )
+    except Exception as exc:
+        logger.exception("Logo blob upload failed for donate-now config %s", config.id)
+        raise HTTPException(
+            status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Failed to upload logo to storage.",
+        ) from exc
+
+    if blob_service.url:
+        base_url = blob_service.url.rstrip("/")
+        logo_url = f"{base_url}/{container_name}/{blob_name}"
+    else:
+        account_name = settings.azure_storage_account_name or "storage"
+        logo_url = f"https://{account_name}.blob.core.windows.net/{container_name}/{blob_name}"
+
+    config.page_logo_url = logo_url
+    await db.commit()
+
+    # Reload with all relationships
+    stmt = (
+        select(DonateNowPageConfig)
+        .where(DonateNowPageConfig.id == config.id)
+        .options(
+            selectinload(DonateNowPageConfig.tiers),
+            selectinload(DonateNowPageConfig.media_items),
+            selectinload(DonateNowPageConfig.npo).selectinload(NPO.branding),
+        )
+    )
+    result = await db.execute(stmt)
+    config = result.scalar_one()
+    return _build_config_response(config)

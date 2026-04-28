@@ -37,20 +37,50 @@ describe('useRoleBasedNav', () => {
       ...overrides,
     }) as ReturnType<typeof useAuth>
 
+  const buildNpoContextMock = (
+    overrides: Partial<ReturnType<typeof useNpoContext>> = {}
+  ): ReturnType<typeof useNpoContext> =>
+    ({
+      selectedNpoId: 'npo-123',
+      selectedNpoName: 'Test NPO',
+      availableNpos: [{ id: 'npo-123', name: 'Test NPO' }],
+      isLoading: false,
+      error: null,
+      selectNpo: vi.fn(),
+      setAvailableNpos: vi.fn(),
+      isFundrBoltPlatformView: false,
+      isSingleNpoUser: false,
+      canChangeNpo: true,
+      ...overrides,
+    }) as ReturnType<typeof useNpoContext>
+
+  const buildEventContextMock = (
+    overrides: Partial<ReturnType<typeof useEventContext>> = {}
+  ): ReturnType<typeof useEventContext> =>
+    ({
+      selectedEventId: null,
+      selectedEventName: null,
+      selectedEventSlug: null,
+      isManualSelection: false,
+      availableEvents: [],
+      isLoading: false,
+      error: null,
+      selectEvent: vi.fn(),
+      clearEvent: vi.fn(),
+      isEventSelected: false,
+      hasMultipleEvents: false,
+      shouldShowSearch: false,
+      ...overrides,
+    }) as ReturnType<typeof useEventContext>
+
   beforeEach(() => {
     vi.clearAllMocks()
 
     mockUseAuth.mockReturnValue(buildAuthMock())
 
-    mockUseNpoContext.mockReturnValue({
-      selectedNpoId: 'npo-123',
-    } as ReturnType<typeof useNpoContext>)
+    mockUseNpoContext.mockReturnValue(buildNpoContextMock())
 
-    mockUseEventContext.mockReturnValue({
-      selectedEventId: null,
-      selectedEventName: null,
-      selectedEventSlug: null,
-    } as ReturnType<typeof useEventContext>)
+    mockUseEventContext.mockReturnValue(buildEventContextMock())
 
     mockUseEventStats.mockReturnValue({
       data: undefined,
@@ -70,29 +100,33 @@ describe('useRoleBasedNav', () => {
   })
 
   it('adds event navigation group when event is selected', () => {
-    mockUseEventContext.mockReturnValue({
-      selectedEventId: 'event-123',
-      selectedEventName: 'Gala Night',
-      selectedEventSlug: 'gala-night',
-    } as ReturnType<typeof useEventContext>)
+    mockUseEventContext.mockReturnValue(
+      buildEventContextMock({
+        selectedEventId: 'event-123',
+        selectedEventName: 'Gala Night',
+        selectedEventSlug: 'gala-night',
+      })
+    )
 
     const { result } = renderHook(() => useRoleBasedNav())
 
     expect(result.current.eventNavItems).toHaveLength(22)
     expect(
       result.current.eventNavItems.some(
-        (item) => item.href === '/events/gala-night/quick-entry'
+        (item) => item.href === '/events/event-123/quick-entry'
       )
     ).toBe(true)
     expect(result.current.eventNavTitle).toBe('Event: Gala Night')
   })
 
   it('falls back to event ID when slug is unavailable', () => {
-    mockUseEventContext.mockReturnValue({
-      selectedEventId: 'event-999',
-      selectedEventName: 'Spring Gala',
-      selectedEventSlug: null,
-    } as ReturnType<typeof useEventContext>)
+    mockUseEventContext.mockReturnValue(
+      buildEventContextMock({
+        selectedEventId: 'event-999',
+        selectedEventName: 'Spring Gala',
+        selectedEventSlug: null,
+      })
+    )
 
     const { result } = renderHook(() => useRoleBasedNav())
 
@@ -140,5 +174,21 @@ describe('useRoleBasedNav', () => {
     expect(usersNav?.badge).toBe('Read-only')
     expect(result.current.canAccessUsers).toBe(false)
     expect(result.current.canModifyUsers).toBe(false)
+  })
+
+  it('falls back to organizations list when selected NPO is unresolved', () => {
+    mockUseNpoContext.mockReturnValue(
+      buildNpoContextMock({
+        selectedNpoId: 'stale-npo-id',
+        availableNpos: [{ id: 'npo-123', name: 'Known NPO' }],
+      })
+    )
+
+    const { result } = renderHook(() => useRoleBasedNav())
+
+    const orgNav = result.current.navItems.find(
+      (item) => item.title === 'Organizations'
+    )
+    expect(orgNav?.href).toBe('/npos')
   })
 })

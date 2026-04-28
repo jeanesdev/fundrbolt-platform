@@ -4,6 +4,16 @@
  * Uses React Hook Form + Zod for form validation
  * Connects to PATCH /api/v1/users/me/profile endpoint
  */
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  profileUpdateSchema,
+  type ProfileUpdateFormData,
+} from '@/schemas/profile'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import apiClient from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -15,16 +25,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import apiClient from '@/lib/axios'
-import {
-  profileUpdateSchema,
-  type ProfileUpdateFormData,
-} from '@/schemas/profile'
-import { useAuthStore } from '@/stores/auth-store'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
 
 function formatPhoneNumber(value: string): string {
   const digits = value.replace(/\D/g, '')

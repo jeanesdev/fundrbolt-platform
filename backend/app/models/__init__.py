@@ -21,6 +21,7 @@ from app.models.checklist import (
 )
 from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
 from app.models.donate_now_config import DonateNowPageConfig
+from app.models.donate_now_media import DonateNowMedia
 from app.models.donation import Donation, DonationStatus
 from app.models.donation_label import DonationLabel
 from app.models.donation_label_assignment import DonationLabelAssignment

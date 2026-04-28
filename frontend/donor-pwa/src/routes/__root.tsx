@@ -6,6 +6,7 @@ import { SessionExpirationWarning } from '@/components/session-expiration-warnin
 import { Toaster } from '@/components/ui/sonner'
 import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { InstallPromptBanner } from '@fundrbolt/shared/pwa/install-prompt-banner'
 import { UpdateNotification } from '@fundrbolt/shared/pwa/update-notification'
 import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
@@ -27,6 +28,7 @@ export const Route = createRootRouteWithContext<{
 })
 
 function RootComponent() {
+  const isMobile = useIsMobile()
   const { needRefresh, updateServiceWorker, dismissUpdate } =
     useServiceWorker()
   const isOnline = useOnlineStatus()
@@ -51,7 +53,7 @@ function RootComponent() {
       <Outlet />
       <Toaster duration={5000} position="top-center" />
       <NotificationToastOverlay />
-      <InstallPromptBanner appId="donor" />
+      {isMobile && <InstallPromptBanner appId="donor" />}
     </>
   )
 }

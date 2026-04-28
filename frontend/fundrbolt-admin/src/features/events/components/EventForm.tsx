@@ -2,6 +2,20 @@
  * EventForm Component
  * Comprehensive form for creating and editing events with all fields
  */
+import { useEffect, useRef, useState } from 'react'
+import { z } from 'zod'
+import { format, parse } from 'date-fns'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import type { NPOBranding } from '@/services/event-service'
+import type {
+  EventCreateRequest,
+  EventDetail,
+  EventUpdateRequest,
+} from '@/types/event'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
+import { CalendarIcon, MapPin } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Calendar as CalendarPicker } from '@/components/ui/calendar'
 import {
@@ -27,20 +41,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { cn } from '@/lib/utils'
-import type { NPOBranding } from '@/services/event-service'
-import type {
-  EventCreateRequest,
-  EventDetail,
-  EventUpdateRequest,
-} from '@/types/event'
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { format, parse } from 'date-fns'
-import { CalendarIcon, MapPin } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 import { ColorPicker } from './ColorPicker.tsx'
 import { RichTextEditor } from './RichTextEditor.tsx'
 

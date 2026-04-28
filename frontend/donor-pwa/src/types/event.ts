@@ -64,6 +64,7 @@ export interface Event {
   created_at: string
   updated_at: string
   npo_name?: string
+  npo_slug?: string | null
 }
 
 export interface EventDetail extends Event {

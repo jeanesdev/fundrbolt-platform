@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { AuctionDashboardSummary } from '@/services/auction-dashboard'
 import { DollarSign, Gavel, Hash, TrendingUp } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface SummaryCardsProps {
   data: AuctionDashboardSummary | undefined
@@ -50,9 +50,7 @@ export function SummaryCards({ data, isLoading }: SummaryCardsProps) {
       {cards.map((card) => (
         <Card key={card.title}>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>
-              {card.title}
-            </CardTitle>
+            <CardTitle className='text-sm font-medium'>{card.title}</CardTitle>
             <card.icon className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>

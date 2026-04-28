@@ -5,20 +5,8 @@
  * Includes table setup configuration (table count and max guests per table).
  * Can be used both as a standalone page and within a tab.
  */
-import { TableDetailsPanel } from '@/components/admin/seating/TableDetailsPanel'
-import { AutoAssignButton } from '@/components/seating/AutoAssignButton'
-import { GuestCard } from '@/components/seating/GuestCard'
-import { SeatingLayoutModal } from '@/components/seating/SeatingLayoutModal'
-import { TableAssignmentModal } from '@/components/seating/TableAssignmentModal'
-import { TableCard } from '@/components/seating/TableCard'
-import { UnassignedSection } from '@/components/seating/UnassignedSection'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Skeleton } from '@/components/ui/skeleton'
-import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
+import { useEffect, useState } from 'react'
 import type { EventTableDetails } from '@/services/seating-service'
-import { useSeatingStore } from '@/stores/seating.store'
 import type { EventUpdateRequest } from '@/types/event'
 import {
   DndContext,
@@ -30,8 +18,20 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core'
 import { Image, LayoutGrid, RefreshCw, Save } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { useSeatingStore } from '@/stores/seating.store'
+import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
+import { TableDetailsPanel } from '@/components/admin/seating/TableDetailsPanel'
+import { AutoAssignButton } from '@/components/seating/AutoAssignButton'
+import { GuestCard } from '@/components/seating/GuestCard'
+import { SeatingLayoutModal } from '@/components/seating/SeatingLayoutModal'
+import { TableAssignmentModal } from '@/components/seating/TableAssignmentModal'
+import { TableCard } from '@/components/seating/TableCard'
+import { UnassignedSection } from '@/components/seating/UnassignedSection'
 
 interface SeatingTabContentProps {
   eventId: string

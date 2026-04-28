@@ -1,4 +1,4 @@
-import { SeatingTabContent } from '@/components/seating/SeatingTabContent'
+import { toast } from 'sonner'
 import {
   Card,
   CardContent,
@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { toast } from 'sonner'
+import { SeatingTabContent } from '@/components/seating/SeatingTabContent'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 export function EventSeatingSection() {

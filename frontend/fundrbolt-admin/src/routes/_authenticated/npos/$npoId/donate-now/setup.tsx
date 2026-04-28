@@ -1,14 +1,18 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useParams } from '@tanstack/react-router'
+import { eventApi } from '@/services/event-service'
 import { ExternalLink, Loader2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   donateNowAdminApi,
   type DonateNowConfigResponse,
   type DonateNowConfigUpdate,
+  type DonationTierResponse,
 } from '@/api/donateNow'
+import apiClient from '@/lib/axios'
 import { getDonorPwaUrl } from '@/lib/donor-portal'
+import { useEventContext } from '@/hooks/use-event-context'
 import { useNpoContext } from '@/hooks/use-npo-context'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,6 +27,7 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { DonationTierEditor } from '@/components/donate-now/DonationTierEditor'
 
 export const Route = createFileRoute(
   '/_authenticated/npos/$npoId/donate-now/setup'
@@ -30,32 +35,119 @@ export const Route = createFileRoute(
   component: DonateNowSetupPage,
 })
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 interface CardProps {
   npoId: string
   config: DonateNowConfigResponse
 }
 
+interface NpoListItem {
+  id: string
+  slug?: string | null
+}
+
 function DonateNowSetupPage() {
-  const { npoId: npoSlug } = useParams({
+  const { npoId: npoParam } = useParams({
     from: '/_authenticated/npos/$npoId/donate-now/setup',
   })
   const { availableNpos } = useNpoContext()
-  // Resolve slug -> UUID; undefined while availableNpos is still loading.
-  const resolvedNpoId = availableNpos.find((n) => n.slug === npoSlug)?.id
+  const {
+    selectedEventId,
+    availableEvents,
+    isLoading: isEventsLoading,
+  } = useEventContext()
+
+  const isUuid = UUID_PATTERN.test(npoParam)
+
+  const selectedEvent = selectedEventId
+    ? availableEvents.find((event) => event.id === selectedEventId)
+    : undefined
+
+  const {
+    data: selectedEventDetail,
+    isPending: isSelectedEventDetailPending,
+    isError: isSelectedEventDetailError,
+  } = useQuery({
+    queryKey: ['event-detail-for-donate-now', selectedEventId],
+    queryFn: () => eventApi.getEvent(selectedEventId as string),
+    enabled: !isUuid && !!selectedEventId && !selectedEvent?.npo_id,
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const npoIdFromEvent = selectedEvent?.npo_id ?? selectedEventDetail?.npo_id
+
+  const isWaitingForEventResolution =
+    !isUuid &&
+    !npoIdFromEvent &&
+    (isEventsLoading || (!!selectedEventId && isSelectedEventDetailPending))
+
+  const { data: nposList, isPending: isNposListPending } = useQuery({
+    queryKey: ['npos-resolve-slug'],
+    queryFn: async () => {
+      const response = await apiClient.get('/npos')
+      return (response.data.items as NpoListItem[]) || []
+    },
+    enabled:
+      !isUuid &&
+      !npoIdFromEvent &&
+      !isWaitingForEventResolution &&
+      (!selectedEventId || isSelectedEventDetailError),
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const resolvedNpoId = isUuid
+    ? npoParam
+    : (npoIdFromEvent ??
+      availableNpos.find((n) => n.slug === npoParam)?.id ??
+      nposList?.find((n) => n.slug === npoParam)?.id ??
+      null)
+
+  const resolvedNpoSlug = isUuid
+    ? (availableNpos.find((n) => n.id === npoParam)?.slug ??
+      nposList?.find((n) => n.id === npoParam)?.slug ??
+      null)
+    : npoIdFromEvent
+      ? (availableNpos.find((n) => n.id === npoIdFromEvent)?.slug ??
+        nposList?.find((n) => n.id === npoIdFromEvent)?.slug ??
+        null)
+      : npoParam
 
   const { data: config, isLoading } = useQuery({
     queryKey: ['donate-now-config', resolvedNpoId],
     queryFn: () =>
-      donateNowAdminApi.getConfig(resolvedNpoId!).then((r) => r.data),
+      donateNowAdminApi.getConfig(resolvedNpoId as string).then((r) => r.data),
     enabled: !!resolvedNpoId,
   })
 
-  if (!resolvedNpoId || isLoading) {
+  const { data: tiers, isLoading: isTiersLoading } = useQuery({
+    queryKey: ['donate-now-tiers', resolvedNpoId],
+    queryFn: () =>
+      donateNowAdminApi.getTiers(resolvedNpoId as string).then((r) => r.data),
+    enabled: !!resolvedNpoId,
+  })
+
+  const isResolvingSlug = !isUuid && !resolvedNpoId && isNposListPending
+
+  if (isWaitingForEventResolution || isResolvingSlug || isLoading) {
     return (
       <div className='space-y-4 p-6'>
         <Skeleton className='h-8 w-48' />
         <Skeleton className='h-64 w-full' />
         <Skeleton className='h-48 w-full' />
+      </div>
+    )
+  }
+
+  if (!resolvedNpoId) {
+    return (
+      <div className='space-y-3 p-6 text-center'>
+        <p className='text-muted-foreground text-sm'>
+          Could not resolve organization. Please go back and try again.
+        </p>
       </div>
     )
   }
@@ -94,8 +186,15 @@ function DonateNowSetupPage() {
   }
 
   const handlePreview = () => {
+    if (!resolvedNpoSlug) {
+      toast.error(
+        'Preview is not ready yet. Please wait for organization context to load.'
+      )
+      return
+    }
+
     const donorPwaUrl = getDonorPwaUrl()
-    const previewUrl = `${donorPwaUrl}/npo/${npoSlug}/donate-now`
+    const previewUrl = `${donorPwaUrl}/npo/${encodeURIComponent(resolvedNpoSlug)}/donate-now`
     const openMode = openPreview(previewUrl)
 
     if (openMode === 'popup') {
@@ -125,7 +224,42 @@ function DonateNowSetupPage() {
       <GeneralSettingsCard npoId={resolvedNpoId} config={config} />
       <BrandingCard npoId={resolvedNpoId} config={config} />
       <NpoInfoCard npoId={resolvedNpoId} config={config} />
+      <GivingLevelsCard
+        tiers={tiers ?? []}
+        isLoading={isTiersLoading}
+        npoId={resolvedNpoId}
+      />
     </div>
+  )
+}
+
+interface GivingLevelsCardProps {
+  npoId: string
+  tiers: DonationTierResponse[]
+  isLoading: boolean
+}
+
+function GivingLevelsCard({ npoId, tiers, isLoading }: GivingLevelsCardProps) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Giving Levels</CardTitle>
+        <CardDescription>
+          Configure donation amounts and impact statements shown to donors.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className='space-y-3'>
+            <Skeleton className='h-16 w-full' />
+            <Skeleton className='h-16 w-full' />
+            <Skeleton className='h-10 w-40' />
+          </div>
+        ) : (
+          <DonationTierEditor npoId={npoId} tiers={tiers} />
+        )}
+      </CardContent>
+    </Card>
   )
 }
 

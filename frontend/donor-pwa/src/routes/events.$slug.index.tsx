@@ -504,7 +504,7 @@ function RouteComponent() {
         {/* CTA — Purchase Tickets (authenticated, not registered) or Login / Register (unauthenticated) */}
         {isPast ? (
           <div
-            className='rounded-2xl border p-5 text-center'
+            className='space-y-3 rounded-2xl border p-5 text-center'
             style={{
               backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.06)',
               borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.2)',
@@ -516,6 +516,25 @@ function RouteComponent() {
             >
               This event has already taken place. Thank you for your interest!
             </p>
+            {event.npo_slug && (
+              <Link
+                to='/npo/$slug/donate-now'
+                params={{ slug: event.npo_slug }}
+                className='block'
+              >
+                <button
+                  className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'
+                  style={{
+                    background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
+                  }}
+                >
+                  <p className='text-lg font-black text-white'>Donate Now</p>
+                  <p className='text-sm text-white/80'>
+                    Support this cause with a direct donation →
+                  </p>
+                </button>
+              </Link>
+            )}
           </div>
         ) : isAuthenticated ? (
           // Authenticated but not registered — show ticket purchase CTA
@@ -534,6 +553,25 @@ function RouteComponent() {
                 ? 'You can purchase more tickets for this event.'
                 : 'You are not yet registered for this event.'}
             </p>
+            {event.npo_slug && (
+              <Link
+                to='/npo/$slug/donate-now'
+                params={{ slug: event.npo_slug }}
+                className='block'
+              >
+                <button
+                  className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'
+                  style={{
+                    background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
+                  }}
+                >
+                  <p className='text-lg font-black text-white'>Donate Now</p>
+                  <p className='text-sm text-white/80'>
+                    Support this cause with a direct donation →
+                  </p>
+                </button>
+              </Link>
+            )}
             {/* Link to ticket purchase page */}
             <Link to='/events/$slug/tickets' params={{ slug }}>
               <button
@@ -553,6 +591,26 @@ function RouteComponent() {
           </div>
         ) : (
           <div className='space-y-4'>
+            {event.npo_slug && (
+              <Link
+                to='/npo/$slug/donate-now'
+                params={{ slug: event.npo_slug }}
+                className='block'
+              >
+                <button
+                  className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'
+                  style={{
+                    background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
+                  }}
+                >
+                  <p className='text-lg font-black text-white'>Donate Now</p>
+                  <p className='text-sm text-white/80'>
+                    Support this cause with a direct donation →
+                  </p>
+                </button>
+              </Link>
+            )}
+
             <Link to='/sign-in' className='block'>
               <button
                 className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'

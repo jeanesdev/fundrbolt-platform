@@ -82,7 +82,6 @@ import { Route as AuthenticatedEventsEventIdAuctioneerIndexRouteImport } from '.
 import { Route as AuthenticatedEventsEventIdAuctionItemsIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-items/index'
 import { Route as AuthenticatedEventsEventIdAuctionDashboardIndexRouteImport } from './routes/_authenticated/events/$eventId/auction-dashboard/index'
 import { Route as AuthenticatedNposNpoIdDonateNowWallRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/wall'
-import { Route as AuthenticatedNposNpoIdDonateNowTiersRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/tiers'
 import { Route as AuthenticatedNposNpoIdDonateNowSetupRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/setup'
 import { Route as AuthenticatedNposNpoIdDonateNowInfoRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/info'
 import { Route as AuthenticatedNposNpoIdDonateNowHeroRouteImport } from './routes/_authenticated/npos/$npoId/donate-now/hero'
@@ -504,12 +503,6 @@ const AuthenticatedNposNpoIdDonateNowWallRoute =
     path: '/npos/$npoId/donate-now/wall',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedNposNpoIdDonateNowTiersRoute =
-  AuthenticatedNposNpoIdDonateNowTiersRouteImport.update({
-    id: '/npos/$npoId/donate-now/tiers',
-    path: '/npos/$npoId/donate-now/tiers',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedNposNpoIdDonateNowSetupRoute =
   AuthenticatedNposNpoIdDonateNowSetupRouteImport.update({
     id: '/npos/$npoId/donate-now/setup',
@@ -669,7 +662,6 @@ export interface FileRoutesByFullPath {
   '/npos/$npoId/donate-now/hero': typeof AuthenticatedNposNpoIdDonateNowHeroRoute
   '/npos/$npoId/donate-now/info': typeof AuthenticatedNposNpoIdDonateNowInfoRoute
   '/npos/$npoId/donate-now/setup': typeof AuthenticatedNposNpoIdDonateNowSetupRoute
-  '/npos/$npoId/donate-now/tiers': typeof AuthenticatedNposNpoIdDonateNowTiersRoute
   '/npos/$npoId/donate-now/wall': typeof AuthenticatedNposNpoIdDonateNowWallRoute
   '/events/$eventId/auction-dashboard/': typeof AuthenticatedEventsEventIdAuctionDashboardIndexRoute
   '/events/$eventId/auction-items/': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
@@ -751,7 +743,6 @@ export interface FileRoutesByTo {
   '/npos/$npoId/donate-now/hero': typeof AuthenticatedNposNpoIdDonateNowHeroRoute
   '/npos/$npoId/donate-now/info': typeof AuthenticatedNposNpoIdDonateNowInfoRoute
   '/npos/$npoId/donate-now/setup': typeof AuthenticatedNposNpoIdDonateNowSetupRoute
-  '/npos/$npoId/donate-now/tiers': typeof AuthenticatedNposNpoIdDonateNowTiersRoute
   '/npos/$npoId/donate-now/wall': typeof AuthenticatedNposNpoIdDonateNowWallRoute
   '/events/$eventId/auction-dashboard': typeof AuthenticatedEventsEventIdAuctionDashboardIndexRoute
   '/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
@@ -842,7 +833,6 @@ export interface FileRoutesById {
   '/_authenticated/npos/$npoId/donate-now/hero': typeof AuthenticatedNposNpoIdDonateNowHeroRoute
   '/_authenticated/npos/$npoId/donate-now/info': typeof AuthenticatedNposNpoIdDonateNowInfoRoute
   '/_authenticated/npos/$npoId/donate-now/setup': typeof AuthenticatedNposNpoIdDonateNowSetupRoute
-  '/_authenticated/npos/$npoId/donate-now/tiers': typeof AuthenticatedNposNpoIdDonateNowTiersRoute
   '/_authenticated/npos/$npoId/donate-now/wall': typeof AuthenticatedNposNpoIdDonateNowWallRoute
   '/_authenticated/events/$eventId/auction-dashboard/': typeof AuthenticatedEventsEventIdAuctionDashboardIndexRoute
   '/_authenticated/events/$eventId/auction-items/': typeof AuthenticatedEventsEventIdAuctionItemsIndexRoute
@@ -931,7 +921,6 @@ export interface FileRouteTypes {
     | '/npos/$npoId/donate-now/hero'
     | '/npos/$npoId/donate-now/info'
     | '/npos/$npoId/donate-now/setup'
-    | '/npos/$npoId/donate-now/tiers'
     | '/npos/$npoId/donate-now/wall'
     | '/events/$eventId/auction-dashboard/'
     | '/events/$eventId/auction-items/'
@@ -1013,7 +1002,6 @@ export interface FileRouteTypes {
     | '/npos/$npoId/donate-now/hero'
     | '/npos/$npoId/donate-now/info'
     | '/npos/$npoId/donate-now/setup'
-    | '/npos/$npoId/donate-now/tiers'
     | '/npos/$npoId/donate-now/wall'
     | '/events/$eventId/auction-dashboard'
     | '/events/$eventId/auction-items'
@@ -1103,7 +1091,6 @@ export interface FileRouteTypes {
     | '/_authenticated/npos/$npoId/donate-now/hero'
     | '/_authenticated/npos/$npoId/donate-now/info'
     | '/_authenticated/npos/$npoId/donate-now/setup'
-    | '/_authenticated/npos/$npoId/donate-now/tiers'
     | '/_authenticated/npos/$npoId/donate-now/wall'
     | '/_authenticated/events/$eventId/auction-dashboard/'
     | '/_authenticated/events/$eventId/auction-items/'
@@ -1655,13 +1642,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNposNpoIdDonateNowWallRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/npos/$npoId/donate-now/tiers': {
-      id: '/_authenticated/npos/$npoId/donate-now/tiers'
-      path: '/npos/$npoId/donate-now/tiers'
-      fullPath: '/npos/$npoId/donate-now/tiers'
-      preLoaderRoute: typeof AuthenticatedNposNpoIdDonateNowTiersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/npos/$npoId/donate-now/setup': {
       id: '/_authenticated/npos/$npoId/donate-now/setup'
       path: '/npos/$npoId/donate-now/setup'
@@ -1953,7 +1933,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNposNpoIdDonateNowHeroRoute: typeof AuthenticatedNposNpoIdDonateNowHeroRoute
   AuthenticatedNposNpoIdDonateNowInfoRoute: typeof AuthenticatedNposNpoIdDonateNowInfoRoute
   AuthenticatedNposNpoIdDonateNowSetupRoute: typeof AuthenticatedNposNpoIdDonateNowSetupRoute
-  AuthenticatedNposNpoIdDonateNowTiersRoute: typeof AuthenticatedNposNpoIdDonateNowTiersRoute
   AuthenticatedNposNpoIdDonateNowWallRoute: typeof AuthenticatedNposNpoIdDonateNowWallRoute
   AuthenticatedNposNpoIdDonateNowIndexRoute: typeof AuthenticatedNposNpoIdDonateNowIndexRoute
 }
@@ -1982,8 +1961,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedNposNpoIdDonateNowInfoRoute,
   AuthenticatedNposNpoIdDonateNowSetupRoute:
     AuthenticatedNposNpoIdDonateNowSetupRoute,
-  AuthenticatedNposNpoIdDonateNowTiersRoute:
-    AuthenticatedNposNpoIdDonateNowTiersRoute,
   AuthenticatedNposNpoIdDonateNowWallRoute:
     AuthenticatedNposNpoIdDonateNowWallRoute,
   AuthenticatedNposNpoIdDonateNowIndexRoute:

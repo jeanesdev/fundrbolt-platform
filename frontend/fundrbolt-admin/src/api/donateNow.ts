@@ -11,6 +11,19 @@ export interface DonationTierResponse extends DonationTierInput {
   config_id: string
 }
 
+export interface DonateNowMediaItem {
+  id: string
+  config_id: string
+  media_type: 'image' | 'video'
+  file_url: string
+  file_name: string
+  file_type: string
+  mime_type: string
+  file_size: number
+  display_order: number
+  created_at: string
+}
+
 export interface DonateNowConfigResponse {
   id: string
   npo_id: string
@@ -20,6 +33,13 @@ export interface DonateNowConfigResponse {
   hero_transition_style?: string
   processing_fee_pct: string
   npo_info_text?: string | null
+  page_logo_url?: string | null
+  brand_color_primary?: string | null
+  brand_color_secondary?: string | null
+  npo_brand_color_primary?: string | null
+  npo_brand_color_secondary?: string | null
+  npo_brand_logo_url?: string | null
+  media_items: DonateNowMediaItem[]
 }
 
 export interface DonateNowConfigUpdate {
@@ -29,6 +49,9 @@ export interface DonateNowConfigUpdate {
   hero_transition_style?: string
   processing_fee_pct?: string
   npo_info_text?: string | null
+  page_logo_url?: string | null
+  brand_color_primary?: string | null
+  brand_color_secondary?: string | null
 }
 
 export interface AdminSupportWallEntry {
@@ -72,16 +95,26 @@ export interface DonationsDashboardResponse {
 
 export const donateNowAdminApi = {
   getConfig: (npoId: string) =>
-    apiClient.get<DonateNowConfigResponse>(`/admin/npos/${npoId}/donate-now/config`),
+    apiClient.get<DonateNowConfigResponse>(
+      `/admin/npos/${npoId}/donate-now/config`
+    ),
 
   updateConfig: (npoId: string, data: DonateNowConfigUpdate) =>
-    apiClient.put<DonateNowConfigResponse>(`/admin/npos/${npoId}/donate-now/config`, data),
+    apiClient.put<DonateNowConfigResponse>(
+      `/admin/npos/${npoId}/donate-now/config`,
+      data
+    ),
 
   getTiers: (npoId: string) =>
-    apiClient.get<DonationTierResponse[]>(`/admin/npos/${npoId}/donate-now/tiers`),
+    apiClient.get<DonationTierResponse[]>(
+      `/admin/npos/${npoId}/donate-now/tiers`
+    ),
 
   updateTiers: (npoId: string, tiers: DonationTierInput[]) =>
-    apiClient.put<DonationTierResponse[]>(`/admin/npos/${npoId}/donate-now/tiers`, tiers),
+    apiClient.put<DonationTierResponse[]>(
+      `/admin/npos/${npoId}/donate-now/tiers`,
+      tiers
+    ),
 
   getHeroUploadUrl: (npoId: string, filename: string, contentType: string) =>
     apiClient.post<{ upload_url: string; blob_url: string }>(
@@ -90,15 +123,50 @@ export const donateNowAdminApi = {
       { params: { filename, content_type: contentType } }
     ),
 
-  getSupportWall: (npoId: string, params?: { page?: number; page_size?: number; include_hidden?: boolean }) =>
-    apiClient.get<AdminSupportWallPage>(`/admin/npos/${npoId}/donate-now/support-wall`, { params }),
+  getSupportWall: (
+    npoId: string,
+    params?: { page?: number; page_size?: number; include_hidden?: boolean }
+  ) =>
+    apiClient.get<AdminSupportWallPage>(
+      `/admin/npos/${npoId}/donate-now/support-wall`,
+      { params }
+    ),
 
   hideEntry: (npoId: string, entryId: string) =>
-    apiClient.post(`/admin/npos/${npoId}/donate-now/support-wall/${entryId}/hide`),
+    apiClient.post(
+      `/admin/npos/${npoId}/donate-now/support-wall/${entryId}/hide`
+    ),
 
   restoreEntry: (npoId: string, entryId: string) =>
-    apiClient.post(`/admin/npos/${npoId}/donate-now/support-wall/${entryId}/restore`),
+    apiClient.post(
+      `/admin/npos/${npoId}/donate-now/support-wall/${entryId}/restore`
+    ),
 
   getStats: (npoId: string) =>
-    apiClient.get<DonationsDashboardResponse>(`/admin/npos/${npoId}/donate-now/stats`),
+    apiClient.get<DonationsDashboardResponse>(
+      `/admin/npos/${npoId}/donate-now/stats`
+    ),
+
+  uploadHeroMedia: (npoId: string, file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiClient.post<DonateNowMediaItem>(
+      `/admin/npos/${npoId}/donate-now/media/upload`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    )
+  },
+
+  deleteHeroMedia: (npoId: string, mediaId: string) =>
+    apiClient.delete(`/admin/npos/${npoId}/donate-now/media/${mediaId}`),
+
+  uploadPageLogo: (npoId: string, file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiClient.post<DonateNowConfigResponse>(
+      `/admin/npos/${npoId}/donate-now/page-logo`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    )
+  },
 }

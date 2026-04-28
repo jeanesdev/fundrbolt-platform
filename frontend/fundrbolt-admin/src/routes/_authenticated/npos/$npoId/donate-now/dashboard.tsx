@@ -1,15 +1,23 @@
-import { donateNowAdminApi } from '@/api/donateNow'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Switch } from '@/components/ui/switch'
-import { useNpoContext } from '@/hooks/use-npo-context'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useParams } from '@tanstack/react-router'
 import { CalendarDays, Heart, RefreshCw, TrendingUp, Users } from 'lucide-react'
 import { toast } from 'sonner'
+import { donateNowAdminApi } from '@/api/donateNow'
+import { useNpoContext } from '@/hooks/use-npo-context'
+import { Badge } from '@/components/ui/badge'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Switch } from '@/components/ui/switch'
 
-export const Route = createFileRoute('/_authenticated/npos/$npoId/donate-now/dashboard')({
+export const Route = createFileRoute(
+  '/_authenticated/npos/$npoId/donate-now/dashboard'
+)({
   component: DonateNowDashboardPage,
 })
 
@@ -26,7 +34,9 @@ function formatDate(iso: string): string {
 }
 
 function DonateNowDashboardPage() {
-  const { npoId: npoSlug } = useParams({ from: '/_authenticated/npos/$npoId/donate-now/dashboard' })
+  const { npoId: npoSlug } = useParams({
+    from: '/_authenticated/npos/$npoId/donate-now/dashboard',
+  })
   const { availableNpos } = useNpoContext()
   // The URL param may be a slug (e.g. "hope-foundation") — resolve to UUID for API calls
   const npoId = availableNpos.find((n) => n.slug === npoSlug)?.id ?? npoSlug
@@ -44,13 +54,18 @@ function DonateNowDashboardPage() {
 
   const toggleMutation = useMutation({
     mutationFn: (enabled: boolean) =>
-      donateNowAdminApi.updateConfig(npoId, { is_enabled: enabled }).then((r) => r.data),
+      donateNowAdminApi
+        .updateConfig(npoId, { is_enabled: enabled })
+        .then((r) => r.data),
     onSuccess: (data) => {
       queryClient.setQueryData(['donate-now-config', npoId], data)
-      toast.success(data.is_enabled ? 'Donate Now page enabled' : 'Donate Now page disabled')
+      toast.success(
+        data.is_enabled ? 'Donate Now page enabled' : 'Donate Now page disabled'
+      )
     },
     onError: (err: unknown) => {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      const detail = (err as { response?: { data?: { detail?: string } } })
+        ?.response?.data?.detail
       toast.error(detail ?? 'Failed to update setting')
     },
   })
@@ -82,7 +97,9 @@ function DonateNowDashboardPage() {
           </div>
         </div>
         <div className='flex items-center gap-2 rounded-lg border px-3 py-2'>
-          <span className='text-sm font-medium'>Page {config?.is_enabled ? 'Live' : 'Disabled'}</span>
+          <span className='text-sm font-medium'>
+            Page {config?.is_enabled ? 'Live' : 'Disabled'}
+          </span>
           <Switch
             checked={config?.is_enabled ?? false}
             onCheckedChange={(checked) => toggleMutation.mutate(checked)}
@@ -133,7 +150,9 @@ function DonateNowDashboardPage() {
 
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Monthly Recurring</CardTitle>
+            <CardTitle className='text-sm font-medium'>
+              Monthly Recurring
+            </CardTitle>
             <RefreshCw className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
@@ -159,7 +178,9 @@ function DonateNowDashboardPage() {
             {statsLoading ? (
               <Skeleton className='h-7 w-24' />
             ) : (
-              <div className='text-2xl font-bold'>{stats?.total_count ?? 0}</div>
+              <div className='text-2xl font-bold'>
+                {stats?.total_count ?? 0}
+              </div>
             )}
             <p className='text-muted-foreground text-xs'>unique contributors</p>
           </CardContent>
@@ -170,7 +191,9 @@ function DonateNowDashboardPage() {
       <Card>
         <CardHeader>
           <CardTitle>Recent Donations</CardTitle>
-          <CardDescription>The 20 most recent captured donations</CardDescription>
+          <CardDescription>
+            The 20 most recent captured donations
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {statsLoading ? (
@@ -197,7 +220,9 @@ function DonateNowDashboardPage() {
                         <CalendarDays className='h-3 w-3' />
                         {formatDate(d.created_at)}
                         {d.event_id && (
-                          <span className='text-blue-500'>• Linked to event</span>
+                          <span className='text-blue-500'>
+                            • Linked to event
+                          </span>
                         )}
                       </div>
                     </div>
@@ -208,7 +233,9 @@ function DonateNowDashboardPage() {
                         Monthly
                       </Badge>
                     )}
-                    <span className='font-semibold'>{formatCents(d.amount_cents)}</span>
+                    <span className='font-semibold'>
+                      {formatCents(d.amount_cents)}
+                    </span>
                   </div>
                 </div>
               ))}

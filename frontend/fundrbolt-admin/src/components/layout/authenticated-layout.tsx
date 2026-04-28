@@ -44,7 +44,12 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
       // Add all NPOs user has access to
       nposData.items.forEach(
-        (npo: { id: string; name: string; slug?: string; logo_url?: string }) => {
+        (npo: {
+          id: string
+          name: string
+          slug?: string
+          logo_url?: string
+        }) => {
           npoOptions.push({
             id: npo.id,
             name: npo.name,

@@ -1,12 +1,16 @@
-import { donateNowAdminApi, type DonateNowConfigResponse, type DonateNowConfigUpdate } from '@/api/donateNow'
+import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Loader2, Upload } from 'lucide-react'
+import { toast } from 'sonner'
+import {
+  donateNowAdminApi,
+  type DonateNowConfigResponse,
+  type DonateNowConfigUpdate,
+} from '@/api/donateNow'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2, Upload } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
 
 interface DonateNowConfigFormProps {
   npoId: string
@@ -15,9 +19,15 @@ interface DonateNowConfigFormProps {
   infoTab?: boolean
 }
 
-export function DonateNowConfigForm({ npoId, config, infoTab = false }: DonateNowConfigFormProps) {
+export function DonateNowConfigForm({
+  npoId,
+  config,
+  infoTab = false,
+}: DonateNowConfigFormProps) {
   const queryClient = useQueryClient()
-  const [donaPleaText, setDonaPleaText] = useState(config.donate_plea_text ?? '')
+  const [donaPleaText, setDonaPleaText] = useState(
+    config.donate_plea_text ?? ''
+  )
   const [heroUrl, setHeroUrl] = useState(config.hero_media_url ?? '')
   const [npoInfoText, setNpoInfoText] = useState(config.npo_info_text ?? '')
   const [feePercent, setFeePercent] = useState(
@@ -40,8 +50,16 @@ export function DonateNowConfigForm({ npoId, config, infoTab = false }: DonateNo
     if (!file) return
     setUploading(true)
     try {
-      const { data } = await donateNowAdminApi.getHeroUploadUrl(npoId, file.name, file.type)
-      await fetch(data.upload_url, { method: 'PUT', body: file, headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': file.type } })
+      const { data } = await donateNowAdminApi.getHeroUploadUrl(
+        npoId,
+        file.name,
+        file.type
+      )
+      await fetch(data.upload_url, {
+        method: 'PUT',
+        body: file,
+        headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': file.type },
+      })
       setHeroUrl(data.blob_url)
       toast.success('Hero image uploaded — click Save to apply')
     } catch {
@@ -65,10 +83,14 @@ export function DonateNowConfigForm({ npoId, config, infoTab = false }: DonateNo
           />
         </div>
         <Button
-          onClick={() => saveMutation.mutate({ npo_info_text: npoInfoText || null })}
+          onClick={() =>
+            saveMutation.mutate({ npo_info_text: npoInfoText || null })
+          }
           disabled={saveMutation.isPending}
         >
-          {saveMutation.isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+          {saveMutation.isPending && (
+            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+          )}
           Save
         </Button>
       </div>
@@ -84,7 +106,7 @@ export function DonateNowConfigForm({ npoId, config, infoTab = false }: DonateNo
           value={donaPleaText}
           onChange={(e) => setDonaPleaText(e.target.value)}
           placeholder='Help us make a difference today...'
-          rows={3}
+          rows={4}
           maxLength={500}
         />
       </div>
@@ -92,7 +114,11 @@ export function DonateNowConfigForm({ npoId, config, infoTab = false }: DonateNo
       <div className='space-y-2'>
         <Label>Hero Image / Video</Label>
         {heroUrl && (
-          <img src={heroUrl} alt='Hero preview' className='h-40 w-full rounded-md object-cover' />
+          <img
+            src={heroUrl}
+            alt='Hero preview'
+            className='h-40 w-full rounded-md object-cover'
+          />
         )}
         <div className='flex gap-2'>
           <Input
@@ -104,10 +130,19 @@ export function DonateNowConfigForm({ npoId, config, infoTab = false }: DonateNo
           <label className='cursor-pointer'>
             <Button variant='outline' size='icon' asChild disabled={uploading}>
               <span>
-                {uploading ? <Loader2 className='h-4 w-4 animate-spin' /> : <Upload className='h-4 w-4' />}
+                {uploading ? (
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                ) : (
+                  <Upload className='h-4 w-4' />
+                )}
               </span>
             </Button>
-            <input type='file' accept='image/*,video/*' className='hidden' onChange={handleHeroUpload} />
+            <input
+              type='file'
+              accept='image/*,video/*'
+              className='hidden'
+              onChange={handleHeroUpload}
+            />
           </label>
         </div>
       </div>
@@ -124,7 +159,7 @@ export function DonateNowConfigForm({ npoId, config, infoTab = false }: DonateNo
           onChange={(e) => setFeePercent(e.target.value)}
           className='w-32'
         />
-        <p className='text-xs text-muted-foreground'>
+        <p className='text-muted-foreground text-xs'>
           When donor opts to cover fees, this % is added to their total.
         </p>
       </div>
@@ -139,7 +174,9 @@ export function DonateNowConfigForm({ npoId, config, infoTab = false }: DonateNo
         }
         disabled={saveMutation.isPending}
       >
-        {saveMutation.isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+        {saveMutation.isPending && (
+          <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+        )}
         Save Settings
       </Button>
     </div>

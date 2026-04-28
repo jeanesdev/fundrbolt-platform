@@ -1,4 +1,4 @@
-.PHONY: help install test lint format clean docker-up docker-down migrate dev-backend dev-frontend dev-fullstack validate-infra deploy-infra check-commits ngrok-start ngrok-stop ngrok-status ngrok-local smoke-donor-event-page test-checkin-e2e
+.PHONY: help install test lint format clean docker-up docker-down migrate dev-backend dev-frontend dev-fullstack validate-infra deploy-infra check-commits ngrok-start ngrok-stop ngrok-status ngrok-local smoke-donor-event-page test-checkin-e2e kill-debug
 
 # Default target
 help:
@@ -281,12 +281,12 @@ check-servers:
 
 kill-backend:
 	@echo "Stopping backend server..."
-	pkill -f 'uvicorn app.main:app' || echo "Backend not running"
+	@pkill -f '[u]vicorn app.main:app' || echo "Backend not running"
 
 kill-frontend:
 	@echo "Stopping frontend server..."
 	@pids=$$(ps -eo pid=,ppid=,cmd= | awk -v self=$$$$ -v parent=$$PPID ' \
-		$$1 != self && $$1 != parent && $$2 != self && $$2 != parent && ($$0 ~ /frontend\/fundrbolt-admin/ || $$0 ~ /\/bin\/pnpm dev$$/) { print $$1 }' ); \
+		$$1 != self && $$1 != parent && $$2 != self && $$2 != parent && ($$0 ~ /frontend\/fundrbolt-admin/ || $$0 ~ /pnpm dev$$/ || ($$0 ~ /vite\/bin\/vite\.js/ && $$0 !~ /--port 5174/)) { print $$1 }' ); \
 	if [ -n "$$pids" ]; then \
 		kill $$pids 2>/dev/null || true; \
 	else \
@@ -296,12 +296,18 @@ kill-frontend:
 kill-donor-pwa:
 	@echo "Stopping donor PWA server..."
 	@pids=$$(ps -eo pid=,ppid=,cmd= | awk -v self=$$$$ -v parent=$$PPID ' \
-		$$1 != self && $$1 != parent && $$2 != self && $$2 != parent && ($$0 ~ /frontend\/donor-pwa/ || $$0 ~ /\/bin\/pnpm dev --port 5174$$/ || $$0 ~ /vite\/bin\/vite\.js --port 5174$$/) { print $$1 }' ); \
+		$$1 != self && $$1 != parent && $$2 != self && $$2 != parent && ($$0 ~ /frontend\/donor-pwa/ || $$0 ~ /pnpm dev --port 5174$$/ || ($$0 ~ /vite\/bin\/vite\.js/ && $$0 ~ /--port 5174/)) { print $$1 }' ); \
 	if [ -n "$$pids" ]; then \
 		kill $$pids 2>/dev/null || true; \
 	else \
 		echo "Donor PWA not running"; \
 	fi
+
+kill-debug:
+	@echo "Stopping debug servers (frontend, donor PWA, backend)..."
+	@$(MAKE) kill-frontend
+	@$(MAKE) kill-donor-pwa
+	@$(MAKE) kill-backend
 
 kill-all: kill-backend kill-frontend
 

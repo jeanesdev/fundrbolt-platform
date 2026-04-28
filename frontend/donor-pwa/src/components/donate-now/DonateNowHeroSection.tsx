@@ -1,5 +1,5 @@
-import type { DonateNowHeroMediaItem } from '@/lib/api/donateNow'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import type { DonateNowHeroMediaItem } from '@/lib/api/donateNow'
 import { useAuthStore } from '@/stores/auth-store'
 import { Link } from '@tanstack/react-router'
 import { LogIn } from 'lucide-react'
@@ -190,4 +190,3 @@ export function DonateNowHeroSection({
     </div>
   )
 }
-

@@ -116,13 +116,6 @@ export function EventHomePage() {
   const isOnline = useOnlineStatus()
   const prevOnlineRef = useRef(isOnline)
 
-  const { data: ticketInventoryData } = useQuery({
-    queryKey: ['ticket-inventory', 'event-home-access'],
-    queryFn: getMyInventory,
-    enabled: !!eventSlug && !isPreviewMode,
-    staleTime: 5 * 60 * 1000,
-  })
-
   // Registrations data — used as fallback to find the event ID when
   // availableEvents (Zustand store) hasn't been populated yet (e.g.
   // direct navigation to /events/:slug outside the authenticated layout).
@@ -133,6 +126,43 @@ export function EventHomePage() {
     queryFn: getRegisteredEventsWithBranding,
     staleTime: 5 * 60 * 1000,
     enabled: !!eventSlug && !isPreviewMode,
+  })
+
+  const npoSlugForDonateNow = useMemo(() => {
+    const fromRecord = (record: Record<string, unknown> | null): string | null => {
+      if (!record) return null
+      const candidate = record.npo_slug ?? record.npoSlug
+      return typeof candidate === 'string' && candidate.trim().length > 0
+        ? candidate
+        : null
+    }
+
+    const fromCurrentEvent = currentEvent
+      ? fromRecord(currentEvent as unknown as Record<string, unknown>)
+      : null
+    if (fromCurrentEvent) return fromCurrentEvent
+
+    const registrationMatch = registrationsData?.events?.find(
+      (event) => event.slug === (eventSlug ?? currentEvent?.slug)
+    )
+    const fromRegistration = registrationMatch
+      ? fromRecord(registrationMatch as unknown as Record<string, unknown>)
+      : null
+    if (fromRegistration) return fromRegistration
+
+    const contextMatch = availableEvents.find(
+      (event) => event.slug === (eventSlug ?? currentEvent?.slug)
+    )
+    return contextMatch
+      ? fromRecord(contextMatch as unknown as Record<string, unknown>)
+      : null
+  }, [availableEvents, currentEvent, eventSlug, registrationsData])
+
+  const { data: ticketInventoryData } = useQuery({
+    queryKey: ['ticket-inventory', 'event-home-access'],
+    queryFn: getMyInventory,
+    enabled: !!eventSlug && !isPreviewMode,
+    staleTime: 5 * 60 * 1000,
   })
 
   // Refetch auction data when connectivity is restored (FR-017)
@@ -1233,9 +1263,38 @@ export function EventHomePage() {
           />
         </div>
 
+        {/* Donate CTA should always be visible, regardless of event timing. */}
+        {npoSlugForDonateNow && (
+          <div className='space-y-4'>
+            <Link
+              to='/npo/$slug/donate-now'
+              params={{ slug: npoSlugForDonateNow }}
+              className='block'
+            >
+              <button
+                className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'
+                style={{
+                  background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
+                }}
+              >
+                <div className='flex items-center gap-3'>
+                  <Ticket className='h-5 w-5 text-white' />
+                  <div>
+                    <p className='text-lg font-black text-white'>Donate Now</p>
+                    <p className='text-sm text-white/80'>
+                      Support this cause with a direct donation →
+                    </p>
+                  </div>
+                </div>
+              </button>
+            </Link>
+          </div>
+        )}
+
         {/* CTA for bidding */}
         {eventStatus !== 'past' && (
           <div className='space-y-4'>
+
             <Link
               to='/events/$slug/tickets'
               params={{ slug: currentEvent.slug }}

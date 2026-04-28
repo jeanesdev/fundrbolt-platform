@@ -5,8 +5,23 @@
  * Desktop: Logo | Nav dropdowns | Search | Profile
  * Mobile:  Logo | Hamburger (sheet) | Search | Profile
  */
-import { CommandMenu } from '@/components/command-menu'
-import { ProfileDropdown } from '@/components/profile-dropdown'
+import { useState } from 'react'
+import { Link, useLocation, useNavigate } from '@tanstack/react-router'
+import LogoWhiteGoldPng from '@fundrbolt/shared/assets/logos/fundrbolt-logo-white-gold.png'
+import {
+  BarChart3,
+  Calendar,
+  CreditCard,
+  Gavel,
+  Heart,
+  Menu,
+  SearchIcon,
+  Settings,
+  Users,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useSearch } from '@/context/search-provider'
+import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
 import { Button } from '@/components/ui/button'
 import {
   NavigationMenu,
@@ -23,23 +38,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { useSearch } from '@/context/search-provider'
-import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
-import { cn } from '@/lib/utils'
-import LogoWhiteGoldPng from '@fundrbolt/shared/assets/logos/fundrbolt-logo-white-gold.png'
-import { Link, useLocation, useNavigate } from '@tanstack/react-router'
-import {
-  BarChart3,
-  Calendar,
-  CreditCard,
-  Gavel,
-  Heart,
-  Menu,
-  SearchIcon,
-  Settings,
-  Users,
-} from 'lucide-react'
-import { useState } from 'react'
+import { CommandMenu } from '@/components/command-menu'
+import { ProfileDropdown } from '@/components/profile-dropdown'
 import { iconMap } from './icon-map'
 
 /** Map nav group titles to lucide icons for the trigger buttons */
@@ -50,7 +50,7 @@ const groupIconMap: Record<string, React.ElementType> = {
   Finance: CreditCard,
   Data: BarChart3,
   Auctioneer: Gavel,
-  'Donate': Heart,
+  Donate: Heart,
   Admin: Settings,
 }
 
@@ -89,15 +89,19 @@ function DesktopNav() {
         badge: i.badge,
       })),
     })),
-    ...(donateNowNavGroup ? [{
-      title: donateNowNavGroup.title,
-      items: donateNowNavGroup.items.map((i) => ({
-        title: i.title,
-        href: i.href,
-        icon: i.icon,
-        badge: i.badge,
-      })),
-    }] : []),
+    ...(donateNowNavGroup
+      ? [
+          {
+            title: donateNowNavGroup.title,
+            items: donateNowNavGroup.items.map((i) => ({
+              title: i.title,
+              href: i.href,
+              icon: i.icon,
+              badge: i.badge,
+            })),
+          },
+        ]
+      : []),
     adminGroup,
   ]
 
@@ -130,7 +134,7 @@ function DesktopNav() {
                             'flex flex-col items-center gap-1 rounded-sm px-3 py-2.5 text-sm transition-colors',
                             'hover:bg-accent hover:text-accent-foreground',
                             isActive &&
-                            'bg-accent/50 text-accent-foreground font-medium'
+                              'bg-accent/50 text-accent-foreground font-medium'
                           )}
                         >
                           {Icon && (
@@ -175,15 +179,19 @@ function MobileNav() {
         badge: i.badge,
       })),
     })),
-    ...(donateNowNavGroup ? [{
-      title: donateNowNavGroup.title,
-      items: donateNowNavGroup.items.map((i) => ({
-        title: i.title,
-        href: i.href,
-        icon: i.icon,
-        badge: i.badge,
-      })),
-    }] : []),
+    ...(donateNowNavGroup
+      ? [
+          {
+            title: donateNowNavGroup.title,
+            items: donateNowNavGroup.items.map((i) => ({
+              title: i.title,
+              href: i.href,
+              icon: i.icon,
+              badge: i.badge,
+            })),
+          },
+        ]
+      : []),
     {
       title: 'Admin',
       items: navItems.map((item) => ({
@@ -242,7 +250,7 @@ function MobileNav() {
                             'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
                             'hover:bg-accent hover:text-accent-foreground',
                             isActive &&
-                            'bg-accent text-accent-foreground font-medium'
+                              'bg-accent text-accent-foreground font-medium'
                           )}
                         >
                           {Icon && (
@@ -294,7 +302,11 @@ export function TopNavBar() {
 
         {/* Logo */}
         <Link to='/' className='flex shrink-0 items-center'>
-          <img src={LogoWhiteGoldPng} alt='FundrBolt' className='h-7 w-auto shrink-0' />
+          <img
+            src={LogoWhiteGoldPng}
+            alt='FundrBolt'
+            className='h-7 w-auto shrink-0'
+          />
         </Link>
 
         {/* Separator */}

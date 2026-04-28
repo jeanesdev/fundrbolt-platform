@@ -13,6 +13,13 @@ from app.models.donation_tier import DonationTier
 from app.models.npo import NPO
 from app.schemas.donate_now_config import DonateNowConfigUpdate, DonationTierInput
 
+_DEFAULT_TIERS = [
+    (2500, 0),
+    (5000, 1),
+    (10000, 2),
+    (25000, 3),
+]
+
 
 class DonateNowService:
     """Service for donate-now page configuration CRUD."""
@@ -23,7 +30,11 @@ class DonateNowService:
         stmt = (
             select(DonateNowPageConfig)
             .where(DonateNowPageConfig.npo_id == npo_id)
-            .options(selectinload(DonateNowPageConfig.tiers))
+            .options(
+                selectinload(DonateNowPageConfig.tiers),
+                selectinload(DonateNowPageConfig.media_items),
+                selectinload(DonateNowPageConfig.npo).selectinload(NPO.branding),
+            )
         )
         result = await db.execute(stmt)
         config = result.scalar_one_or_none()
@@ -34,6 +45,15 @@ class DonateNowService:
                 processing_fee_pct=Decimal("0.0290"),
             )
             db.add(config)
+            await db.flush()
+            for amount_cents, display_order in _DEFAULT_TIERS:
+                db.add(
+                    DonationTier(
+                        config_id=config.id,
+                        amount_cents=amount_cents,
+                        display_order=display_order,
+                    )
+                )
             await db.flush()
         return config
 
@@ -94,7 +114,11 @@ class DonateNowService:
         npo_stmt = (
             select(NPO)
             .where(NPO.slug == npo_slug)
-            .options(selectinload(NPO.donate_now_config).selectinload(DonateNowPageConfig.tiers))
+            .options(
+                selectinload(NPO.donate_now_config).selectinload(DonateNowPageConfig.tiers),
+                selectinload(NPO.donate_now_config).selectinload(DonateNowPageConfig.media_items),
+                selectinload(NPO.branding),
+            )
         )
         npo_result = await db.execute(npo_stmt)
         npo = npo_result.scalar_one_or_none()
