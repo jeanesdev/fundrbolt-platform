@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import math
 import uuid
+from pathlib import PurePath
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi import status as http_status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import get_settings
 from app.core.database import get_db
@@ -34,6 +36,12 @@ from app.services.donate_now_service import DonateNowService
 from app.services.media_service import MediaService
 
 router = APIRouter(prefix="/admin/npos/{npo_id}/donate-now", tags=["Admin Donate Now"])
+
+
+def _sanitize_upload_filename(filename: str, fallback: str) -> str:
+    candidate = PurePath(filename).name.strip()
+    sanitized = "".join(char if char.isalnum() or char in ".-_" else "_" for char in candidate)
+    return sanitized or fallback
 
 
 def _build_media_response(media: DonateNowMedia) -> DonateNowMediaResponse:
@@ -400,7 +408,7 @@ async def upload_hero_media(
     settings = get_settings()
 
     content_type = file.content_type or "application/octet-stream"
-    filename = file.filename or "upload.bin"
+    filename = _sanitize_upload_filename(file.filename or "upload.bin", "upload.bin")
 
     if content_type in _ALLOWED_IMAGE_TYPES:
         media_type = "image"
@@ -443,7 +451,8 @@ async def upload_hero_media(
 
     try:
         blob = blob_service.get_blob_client(container=container_name, blob=blob_name)
-        blob.upload_blob(
+        await run_in_threadpool(
+            blob.upload_blob,
             file_bytes,
             overwrite=True,
             content_settings=ContentSettings(content_type=content_type),
@@ -530,7 +539,7 @@ async def delete_hero_media(
             )
             container_name = settings.azure_storage_container_name or "event-media"
             blob = blob_service.get_blob_client(container=container_name, blob=media.blob_name)
-            blob.delete_blob()
+            await run_in_threadpool(blob.delete_blob)
         except Exception as exc:
             logger.error("Failed to delete blob %s: %s", media.blob_name, exc)
 
@@ -565,7 +574,7 @@ async def upload_page_logo(
     settings = get_settings()
 
     content_type = file.content_type or "application/octet-stream"
-    filename = file.filename or "logo.png"
+    filename = _sanitize_upload_filename(file.filename or "logo.png", "logo.png")
 
     if content_type not in _ALLOWED_LOGO_TYPES:
         raise HTTPException(
@@ -603,7 +612,8 @@ async def upload_page_logo(
 
     try:
         blob = blob_service.get_blob_client(container=container_name, blob=blob_name)
-        blob.upload_blob(
+        await run_in_threadpool(
+            blob.upload_blob,
             file_bytes,
             overwrite=True,
             content_settings=ContentSettings(content_type=content_type),

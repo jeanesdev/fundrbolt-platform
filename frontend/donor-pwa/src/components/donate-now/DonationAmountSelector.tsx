@@ -64,6 +64,8 @@ export function DonationAmountSelector({
     setSelectedAmount,
     customAmount,
     setCustomAmount,
+    isMonthly,
+    setIsMonthly,
     coversProcessingFee,
     setCoversProcessingFee,
     effectiveAmountCents,
@@ -73,10 +75,10 @@ export function DonationAmountSelector({
     isPending,
     wallMessage,
     setWallMessage,
-    donorName,
-    setDonorName,
     isAnonymous,
     setIsAnonymous,
+    showAmount,
+    setShowAmount,
   } = state
 
   const displayTiers = tiers.length > 0 ? tiers : FALLBACK_TIERS
@@ -353,6 +355,20 @@ export function DonationAmountSelector({
         </div>
       )}
 
+      <div className='flex items-center justify-between'>
+        <p
+          className='text-sm font-medium'
+          style={{ color: 'var(--event-text-on-primary, #FFFFFF)' }}
+        >
+          Make this monthly
+        </p>
+        <Switch
+          checked={isMonthly}
+          onCheckedChange={setIsMonthly}
+          className='border-white/80 data-[state=checked]:!bg-emerald-700 data-[state=unchecked]:!bg-white/35'
+        />
+      </div>
+
       {/* Total donation label */}
       <div
         className='text-center text-base font-semibold'
@@ -433,24 +449,6 @@ export function DonationAmountSelector({
           />
         </div>
 
-        <div>
-          <label
-            htmlFor='support-wall-name'
-            className='text-xs font-medium'
-            style={{ color: 'var(--event-text-on-primary, #FFFFFF)' }}
-          >
-            Name for support wall
-          </label>
-          <Input
-            id='support-wall-name'
-            type='text'
-            value={donorName}
-            onChange={(event) => setDonorName(event.target.value)}
-            placeholder='Your name'
-            className='mt-1 border-white/40 bg-white text-black placeholder:text-gray-500'
-          />
-        </div>
-
         <div className='flex items-center justify-between'>
           <p
             className='text-sm font-medium'
@@ -461,6 +459,20 @@ export function DonationAmountSelector({
           <Switch
             checked={isAnonymous}
             onCheckedChange={setIsAnonymous}
+            className='border-white/80 data-[state=checked]:!bg-emerald-700 data-[state=unchecked]:!bg-white/35'
+          />
+        </div>
+
+        <div className='flex items-center justify-between'>
+          <p
+            className='text-sm font-medium'
+            style={{ color: 'var(--event-text-on-primary, #FFFFFF)' }}
+          >
+            Show donation amount on wall
+          </p>
+          <Switch
+            checked={showAmount}
+            onCheckedChange={setShowAmount}
             className='border-white/80 data-[state=checked]:!bg-emerald-700 data-[state=unchecked]:!bg-white/35'
           />
         </div>
