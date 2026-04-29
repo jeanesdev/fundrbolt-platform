@@ -2,7 +2,14 @@
  * Profile Picture Upload Component
  * Allows users to upload and crop their profile picture
  */
-
+import { useCallback, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { Camera, Loader2, Upload, X } from 'lucide-react'
+import { useDropzone } from 'react-dropzone'
+import Cropper, { type Area } from 'react-easy-crop'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import apiClient from '@/lib/axios'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,14 +21,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import apiClient from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
-import { useQueryClient } from '@tanstack/react-query'
-import { Camera, Loader2, Upload, X } from 'lucide-react'
-import { useCallback, useState } from 'react'
-import { useDropzone } from 'react-dropzone'
-import Cropper, { type Area } from 'react-easy-crop'
-import { toast } from 'sonner'
 
 // Helper to create image from cropped area
 async function createCroppedImage(
@@ -140,9 +139,12 @@ export function ProfilePictureUpload({
     setCropDialogOpen(true)
   }, [])
 
-  const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
-    setCroppedAreaPixels(croppedAreaPixels)
-  }, [])
+  const onCropComplete = useCallback(
+    (_croppedArea: Area, croppedAreaPixels: Area) => {
+      setCroppedAreaPixels(croppedAreaPixels)
+    },
+    []
+  )
 
   const handleCropSave = useCallback(async () => {
     if (!imageToCrop || !croppedAreaPixels) return
@@ -169,11 +171,15 @@ export function ProfilePictureUpload({
       const formData = new FormData()
       formData.append('file', croppedFile)
 
-      const response = await apiClient.post(`/users/${userId}/profile-picture`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      })
+      const response = await apiClient.post(
+        `/users/${userId}/profile-picture`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      )
 
       const newPictureUrl = response.data.profile_picture_url
 
@@ -230,13 +236,16 @@ export function ProfilePictureUpload({
       <div className='flex flex-col items-center gap-4'>
         <div className='relative'>
           <Avatar className='h-32 w-32'>
-            <AvatarImage src={fullPictureUrl || undefined} alt='Profile picture' />
+            <AvatarImage
+              src={fullPictureUrl || undefined}
+              alt='Profile picture'
+            />
             <AvatarFallback className='text-2xl'>{userInitials}</AvatarFallback>
           </Avatar>
           <Button
             size='icon'
             variant='secondary'
-            className='absolute bottom-0 right-0 h-10 w-10 rounded-full border-2 border-background shadow-lg'
+            className='border-background absolute right-0 bottom-0 h-10 w-10 rounded-full border-2 shadow-lg'
             {...getRootProps()}
             disabled={uploading}
           >
@@ -247,18 +256,23 @@ export function ProfilePictureUpload({
 
         <div
           {...getRootProps()}
-          className={`flex w-full cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition-colors ${isDragActive
-            ? 'border-primary bg-primary/5'
-            : 'border-muted-foreground/25 hover:border-primary/50'
-            } ${uploading ? 'pointer-events-none opacity-50' : ''}`}
+          className={`flex w-full cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
+            isDragActive
+              ? 'border-primary bg-primary/5'
+              : 'border-muted-foreground/25 hover:border-primary/50'
+          } ${uploading ? 'pointer-events-none opacity-50' : ''}`}
         >
           <input {...getInputProps()} />
-          <Upload className='h-8 w-8 text-muted-foreground' />
+          <Upload className='text-muted-foreground h-8 w-8' />
           <div className='text-sm'>
             <p className='font-medium'>
-              {isDragActive ? 'Drop your image here' : 'Click to upload or drag and drop'}
+              {isDragActive
+                ? 'Drop your image here'
+                : 'Click to upload or drag and drop'}
             </p>
-            <p className='text-muted-foreground'>PNG, JPG, GIF or WebP (max 5MB)</p>
+            <p className='text-muted-foreground'>
+              PNG, JPG, GIF or WebP (max 5MB)
+            </p>
           </div>
         </div>
       </div>
@@ -269,12 +283,12 @@ export function ProfilePictureUpload({
           <DialogHeader>
             <DialogTitle>Crop Profile Picture</DialogTitle>
             <DialogDescription>
-              Adjust the crop area to select the portion of the image you want to use as your
-              profile picture.
+              Adjust the crop area to select the portion of the image you want
+              to use as your profile picture.
             </DialogDescription>
           </DialogHeader>
 
-          <div className='relative h-[400px] w-full bg-muted'>
+          <div className='bg-muted relative h-[400px] w-full'>
             {imageToCrop && (
               <Cropper
                 image={imageToCrop}
@@ -304,7 +318,11 @@ export function ProfilePictureUpload({
           </div>
 
           <DialogFooter>
-            <Button variant='outline' onClick={handleCropCancel} disabled={uploading}>
+            <Button
+              variant='outline'
+              onClick={handleCropCancel}
+              disabled={uploading}
+            >
               <X className='mr-2 h-4 w-4' />
               Cancel
             </Button>

@@ -1,26 +1,41 @@
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { donorSocialAuthApi } from '@/lib/axios'
-import { AppleIcon, FacebookIcon, GoogleIcon, MicrosoftIcon } from '@fundrbolt/shared'
+import { useCallback, useState, type ComponentType, type SVGProps } from 'react'
+import {
+  AppleIcon,
+  FacebookIcon,
+  GoogleIcon,
+  MicrosoftIcon,
+} from '@fundrbolt/shared'
 import type { SocialAuthProvider } from '@fundrbolt/shared/types'
 import { Loader2 } from 'lucide-react'
-import { useCallback, useState, type ComponentType, type SVGProps } from 'react'
+import { donorSocialAuthApi } from '@/lib/axios'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 
-const DEFAULT_PROVIDERS: { provider: SocialAuthProvider; display_name: string }[] = [
+const DEFAULT_PROVIDERS: {
+  provider: SocialAuthProvider
+  display_name: string
+}[] = [
   { provider: 'google', display_name: 'Google' },
   { provider: 'apple', display_name: 'Apple' },
   { provider: 'facebook', display_name: 'Facebook' },
   { provider: 'microsoft', display_name: 'Microsoft' },
 ]
 
-const providerIcons: Record<SocialAuthProvider, ComponentType<SVGProps<SVGSVGElement>>> = {
+const providerIcons: Record<
+  SocialAuthProvider,
+  ComponentType<SVGProps<SVGSVGElement>>
+> = {
   google: GoogleIcon,
   apple: AppleIcon,
   facebook: FacebookIcon,
   microsoft: MicrosoftIcon,
 }
 
-export function SocialLoginButtons({ redirectTo: _redirectTo }: { redirectTo?: string }) {
+export function SocialLoginButtons({
+  redirectTo: _redirectTo,
+}: {
+  redirectTo?: string
+}) {
   const [activeProvider, setActiveProvider] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -37,14 +52,15 @@ export function SocialLoginButtons({ redirectTo: _redirectTo }: { redirectTo?: s
         if (result.authorization_url) {
           sessionStorage.setItem(
             'social_auth_pending',
-            JSON.stringify({ provider, attempt_id: result.attempt_id }),
+            JSON.stringify({ provider, attempt_id: result.attempt_id })
           )
           window.location.href = result.authorization_url
         }
       } catch (err: unknown) {
         const message =
           (err as { response?: { data?: { detail?: { message?: string } } } })
-            ?.response?.data?.detail?.message || 'Social sign-in is not available right now'
+            ?.response?.data?.detail?.message ||
+          'Social sign-in is not available right now'
         setError(message)
         setActiveProvider(null)
       }
@@ -88,9 +104,7 @@ export function SocialLoginButtons({ redirectTo: _redirectTo }: { redirectTo?: s
         })}
       </div>
 
-      {error && (
-        <p className='text-destructive text-center text-sm'>{error}</p>
-      )}
+      {error && <p className='text-destructive text-center text-sm'>{error}</p>}
 
       <p className='text-muted-foreground text-center text-xs'>
         By using social sign-in, you agree to our processing of your identity

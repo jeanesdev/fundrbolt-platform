@@ -10,31 +10,36 @@
  * - Bidding activity
  * - Event performance
  */
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/hooks/use-auth'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 
 export function AuctioneerDashboard() {
   const { user } = useAuth()
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       <div>
-        <h1 className="text-3xl font-bold">Auctioneer Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className='text-3xl font-bold'>Auctioneer Dashboard</h1>
+        <p className='text-muted-foreground mt-2'>
           Welcome back, {user?.first_name}! Manage your events and auctions.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
         <Card>
           <CardHeader>
             <CardTitle>My Events</CardTitle>
             <CardDescription>Events you're coordinating</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <div className='text-4xl font-bold'>--</div>
+            <p className='text-muted-foreground mt-2 text-xs'>
               Active assignments
             </p>
           </CardContent>
@@ -46,8 +51,8 @@ export function AuctioneerDashboard() {
             <CardDescription>Items across your events</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <div className='text-4xl font-bold'>--</div>
+            <p className='text-muted-foreground mt-2 text-xs'>
               Total items listed
             </p>
           </CardContent>
@@ -59,8 +64,8 @@ export function AuctioneerDashboard() {
             <CardDescription>Current bidding activity</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">--</div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <div className='text-4xl font-bold'>--</div>
+            <p className='text-muted-foreground mt-2 text-xs'>
               Bids placed today
             </p>
           </CardContent>
@@ -73,11 +78,13 @@ export function AuctioneerDashboard() {
           <CardDescription>Common event coordinator tasks</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-2 md:grid-cols-2">
-            <p className="text-sm text-muted-foreground">• Manage my events</p>
-            <p className="text-sm text-muted-foreground">• Add auction items</p>
-            <p className="text-sm text-muted-foreground">• View NPOs (read-only)</p>
-            <p className="text-sm text-muted-foreground">• Monitor bidding</p>
+          <div className='grid gap-2 md:grid-cols-2'>
+            <p className='text-muted-foreground text-sm'>• Manage my events</p>
+            <p className='text-muted-foreground text-sm'>• Add auction items</p>
+            <p className='text-muted-foreground text-sm'>
+              • View NPOs (read-only)
+            </p>
+            <p className='text-muted-foreground text-sm'>• Monitor bidding</p>
           </div>
         </CardContent>
       </Card>

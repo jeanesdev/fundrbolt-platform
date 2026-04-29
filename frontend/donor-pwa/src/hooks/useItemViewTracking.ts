@@ -3,9 +3,8 @@
  *
  * Automatically tracks viewing duration and sends to API when unmounted
  */
-
-import auctionItemService from '@/services/auctionItemService'
 import { useEffect, useRef } from 'react'
+import auctionItemService from '@/services/auctionItemService'
 
 export interface UseItemViewTrackingOptions {
   eventId: string
@@ -45,13 +44,11 @@ export function useItemViewTracking({
 
         // Only track if viewed for at least 1 second
         if (durationSeconds >= 1) {
-          auctionItemService.trackItemView(
-            eventId,
-            trackedItemId,
-            durationSeconds,
-          ).catch((err) => {
-            console.error('[ViewTracking] Failed to record view:', err)
-          })
+          auctionItemService
+            .trackItemView(eventId, trackedItemId, durationSeconds)
+            .catch((err) => {
+              console.error('[ViewTracking] Failed to record view:', err)
+            })
         }
 
         // Reset refs

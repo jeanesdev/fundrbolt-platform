@@ -40,7 +40,7 @@ export function StaleDataIndicator({
   if (!isStale || !lastFetchedAt) return null
 
   return (
-    <p className="text-xs font-medium text-amber-600" role="status">
+    <p className='text-xs font-medium text-amber-600' role='status'>
       Data from {formatRelativeTime(lastFetchedAt)}
     </p>
   )

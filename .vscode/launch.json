@@ -20,7 +20,8 @@
       },
       "python": "${command:python.interpreterPath}",
       "console": "integratedTerminal",
-      "justMyCode": false
+      "justMyCode": false,
+      "postDebugTask": "kill-backend"
     },
     {
       "name": "Backend: Pytest Current File",
@@ -144,12 +145,12 @@
         "<node_internals>/**",
         "**/node_modules/**"
       ],
-      "preLaunchTask": "start-donor-pwa",
       "serverReadyAction": {
         "pattern": "Local:.*(http://localhost:[0-9]+)",
         "uriFormat": "%s",
         "action": "openExternally"
-      }
+      },
+      "postDebugTask": "kill-donor-pwa"
     },
     {
       "name": "Frontend: Landing Site - Testimonials (Chrome)",
@@ -191,8 +192,7 @@
     {
       "name": "Full Stack (Backend + Frontend)",
       "configurations": [
-        "Backend: FastAPI",
-        "Frontend: Donor PWA (Chrome)"
+        "Backend: FastAPI"
       ],
       "preLaunchTask": "start-fullstack-with-cleanup",
       "presentation": {

@@ -1,10 +1,10 @@
+import { useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { RefreshCw } from 'lucide-react'
+import { useEventContext } from '@/hooks/use-event-context'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScopeToggle } from '@/features/donor-dashboard/components/ScopeToggle'
-import { useEventContext } from '@/hooks/use-event-context'
-import { useQueryClient } from '@tanstack/react-query'
-import { RefreshCw } from 'lucide-react'
-import { useMemo, useState } from 'react'
 import { AuctionCharts } from './components/AuctionCharts'
 import { AuctionItemsTable } from './components/AuctionItemsTable'
 import { SummaryCards } from './components/SummaryCards'
@@ -19,21 +19,17 @@ export function AuctionDashboardPage() {
   const { selectedEventId } = useEventContext()
   const queryClient = useQueryClient()
   const [scopePreference, setScopePreference] = useState<Scope>(
-    selectedEventId ? 'event' : 'all',
+    selectedEventId ? 'event' : 'all'
   )
 
   const scope = useMemo<Scope>(
     () => (selectedEventId ? scopePreference : 'all'),
-    [selectedEventId, scopePreference],
+    [selectedEventId, scopePreference]
   )
 
-  const eventId =
-    scope === 'event' ? (selectedEventId ?? undefined) : undefined
+  const eventId = scope === 'event' ? (selectedEventId ?? undefined) : undefined
 
-  const params = useMemo(
-    () => ({ event_id: eventId }),
-    [eventId],
-  )
+  const params = useMemo(() => ({ event_id: eventId }), [eventId])
 
   const summaryQuery = useAuctionSummary(params)
   const chartsQuery = useAuctionCharts(params)

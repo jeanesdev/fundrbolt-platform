@@ -18,6 +18,7 @@ class DonationCreateRequest(BaseModel):
     is_monthly: bool = False
     recurrence_start: date | None = None
     recurrence_end: date | None = None
+    donor_name: str | None = Field(None, max_length=100)
     support_wall_message: str | None = Field(None, max_length=200)
     is_anonymous: bool = False
     show_amount: bool = True

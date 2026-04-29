@@ -1,4 +1,3 @@
-import { Logo } from '@/assets/logo'
 import {
   Building2,
   Calendar,
@@ -6,6 +5,7 @@ import {
   LayoutDashboard,
   Users,
 } from 'lucide-react'
+import { Logo } from '@/assets/logo'
 import { type SidebarData } from '../types'
 
 export const sidebarData: SidebarData = {

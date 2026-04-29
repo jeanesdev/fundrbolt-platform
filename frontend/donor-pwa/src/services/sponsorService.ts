@@ -1,4 +1,3 @@
-import apiClient from '@/lib/axios';
 import type {
   LogoUploadRequest,
   LogoUploadResponse,
@@ -7,7 +6,8 @@ import type {
   SponsorCreateRequest,
   SponsorCreateResponse,
   SponsorUpdateRequest,
-} from '@/types/sponsor';
+} from '@/types/sponsor'
+import apiClient from '@/lib/axios'
 
 /**
  * Sponsor Service
@@ -20,8 +20,8 @@ class SponsorService {
   async listSponsors(eventId: string): Promise<Sponsor[]> {
     const response = await apiClient.get<Sponsor[]>(
       `/events/${eventId}/sponsors`
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -30,8 +30,8 @@ class SponsorService {
   async getSponsor(eventId: string, sponsorId: string): Promise<Sponsor> {
     const response = await apiClient.get<Sponsor>(
       `/events/${eventId}/sponsors/${sponsorId}`
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -45,8 +45,8 @@ class SponsorService {
     const response = await apiClient.post<SponsorCreateResponse>(
       `/events/${eventId}/sponsors`,
       data
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -60,15 +60,15 @@ class SponsorService {
     const response = await apiClient.patch<Sponsor>(
       `/events/${eventId}/sponsors/${sponsorId}`,
       data
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
    * Delete a sponsor (cascade deletes logo blobs)
    */
   async deleteSponsor(eventId: string, sponsorId: string): Promise<void> {
-    await apiClient.delete(`/events/${eventId}/sponsors/${sponsorId}`);
+    await apiClient.delete(`/events/${eventId}/sponsors/${sponsorId}`)
   }
 
   /**
@@ -82,8 +82,8 @@ class SponsorService {
     const response = await apiClient.post<LogoUploadResponse>(
       `/events/${eventId}/sponsors/${sponsorId}/logo/upload-url`,
       request
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -97,8 +97,8 @@ class SponsorService {
     const response = await apiClient.post<Sponsor>(
       `/events/${eventId}/sponsors/${sponsorId}/logo/confirm`,
       { blob_name: blobName }
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -111,8 +111,8 @@ class SponsorService {
     const response = await apiClient.patch<Sponsor[]>(
       `/events/${eventId}/sponsors/reorder`,
       request
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -122,8 +122,8 @@ class SponsorService {
    */
   async uploadLogoToBlob(uploadUrl: string, file: File): Promise<void> {
     // Create an AbortController for timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
 
     try {
       // Direct PUT request to Azure Blob Storage (bypass apiClient)
@@ -135,20 +135,22 @@ class SponsorService {
         },
         body: file,
         signal: controller.signal,
-      });
+      })
 
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Logo upload failed: ${response.status} - ${errorText}`);
+        const errorText = await response.text()
+        throw new Error(`Logo upload failed: ${response.status} - ${errorText}`)
       }
     } catch (error) {
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId)
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Logo upload timed out after 60 seconds. Please try again with a smaller file.');
+        throw new Error(
+          'Logo upload timed out after 60 seconds. Please try again with a smaller file.'
+        )
       }
-      throw error;
+      throw error
     }
   }
 
@@ -162,26 +164,22 @@ class SponsorService {
     file: File
   ): Promise<Sponsor> {
     // Step 1: Request upload URL
-    const uploadResponse = await this.requestLogoUploadUrl(
-      eventId,
-      sponsorId,
-      {
-        file_name: file.name,
-        file_type: file.type,
-        file_size: file.size,
-      }
-    );
+    const uploadResponse = await this.requestLogoUploadUrl(eventId, sponsorId, {
+      file_name: file.name,
+      file_type: file.type,
+      file_size: file.size,
+    })
 
     // Step 2: Upload file to Azure Blob Storage
-    await this.uploadLogoToBlob(uploadResponse.upload_url, file);
+    await this.uploadLogoToBlob(uploadResponse.upload_url, file)
 
     // Step 3: Confirm upload (generates thumbnail)
     return await this.confirmLogoUpload(
       eventId,
       sponsorId,
       uploadResponse.blob_name
-    );
+    )
   }
 }
 
-export default new SponsorService();
+export default new SponsorService()

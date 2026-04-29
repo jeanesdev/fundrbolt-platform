@@ -2,9 +2,16 @@
  * NotificationCenter — slide-out panel showing all notifications
  * Uses Radix Sheet (right-anchored)
  */
-
-import { EmptyNotifications } from '@/components/notifications/EmptyNotifications'
-import { NotificationItem } from '@/components/notifications/NotificationItem'
+import { useCallback, useEffect, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { CheckCheck, Loader2 } from 'lucide-react'
+import { useNotificationStore } from '@/stores/notification-store'
+import {
+  useDeleteNotification,
+  useMarkAllRead,
+  useMarkRead,
+  useNotifications,
+} from '@/hooks/use-notifications'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -12,16 +19,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import {
-  useDeleteNotification,
-  useMarkAllRead,
-  useMarkRead,
-  useNotifications,
-} from '@/hooks/use-notifications'
-import { useNotificationStore } from '@/stores/notification-store'
-import { useQueryClient } from '@tanstack/react-query'
-import { CheckCheck, Loader2 } from 'lucide-react'
-import { useCallback, useEffect, useRef } from 'react'
+import { EmptyNotifications } from '@/components/notifications/EmptyNotifications'
+import { NotificationItem } from '@/components/notifications/NotificationItem'
 
 interface NotificationCenterProps {
   eventId: string
@@ -32,13 +31,8 @@ export function NotificationCenter({ eventId }: NotificationCenterProps) {
   const closePanel = useNotificationStore((s) => s.closePanel)
   const unreadCount = useNotificationStore((s) => s.unreadCount)
 
-  const {
-    data,
-    isLoading,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage,
-  } = useNotifications(eventId)
+  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } =
+    useNotifications(eventId)
 
   const queryClient = useQueryClient()
   const markReadMutation = useMarkRead()
@@ -58,7 +52,7 @@ export function NotificationCenter({ eventId }: NotificationCenterProps) {
     (id: string) => {
       markReadMutation.mutate(id)
     },
-    [markReadMutation],
+    [markReadMutation]
   )
 
   const handleMarkAllRead = useCallback(() => {
@@ -69,7 +63,7 @@ export function NotificationCenter({ eventId }: NotificationCenterProps) {
     (notificationId: string) => {
       deleteNotificationMutation.mutate({ notificationId, eventId })
     },
-    [deleteNotificationMutation, eventId],
+    [deleteNotificationMutation, eventId]
   )
 
   // Swipe-right-to-close
@@ -90,7 +84,7 @@ export function NotificationCenter({ eventId }: NotificationCenterProps) {
         closePanel()
       }
     },
-    [closePanel],
+    [closePanel]
   )
 
   return (
@@ -121,7 +115,7 @@ export function NotificationCenter({ eventId }: NotificationCenterProps) {
         <div className='flex-1 overflow-y-auto'>
           {isLoading ? (
             <div className='flex items-center justify-center py-16'>
-              <Loader2 className='h-6 w-6 animate-spin text-muted-foreground' />
+              <Loader2 className='text-muted-foreground h-6 w-6 animate-spin' />
             </div>
           ) : notifications.length === 0 ? (
             <EmptyNotifications />

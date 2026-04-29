@@ -13,8 +13,6 @@
  *   POST   /payments/checkout
  *   GET    /admin/events/{event_id}/promo-codes/validate/{code}
  */
-
-import apiClient from '@/lib/axios'
 import type {
   CheckoutRequest,
   CheckoutResponse,
@@ -25,6 +23,7 @@ import type {
   PaymentSessionResponse,
   PromoCodeValidation,
 } from '@/types/payment'
+import apiClient from '@/lib/axios'
 
 // ── HPF Session ───────────────────────────────────────────────────────────────
 
@@ -33,9 +32,12 @@ import type {
  * Returns the HPF URL to embed in an iframe.
  */
 export async function createPaymentSession(
-  data: PaymentSessionRequest,
+  data: PaymentSessionRequest
 ): Promise<PaymentSessionResponse> {
-  const response = await apiClient.post<PaymentSessionResponse>('/payments/session', data)
+  const response = await apiClient.post<PaymentSessionResponse>(
+    '/payments/session',
+    data
+  )
   return response.data
 }
 
@@ -44,7 +46,9 @@ export async function createPaymentSession(
 /**
  * List a donor's saved cards for a given NPO.
  */
-export async function listPaymentProfiles(npoId: string): Promise<PaymentProfile[]> {
+export async function listPaymentProfiles(
+  npoId: string
+): Promise<PaymentProfile[]> {
   const response = await apiClient.get<PaymentProfile[]>('/payments/profiles', {
     params: { npo_id: npoId },
   })
@@ -55,9 +59,12 @@ export async function listPaymentProfiles(npoId: string): Promise<PaymentProfile
  * Save a tokenised card vault reference after HPF completion.
  */
 export async function createPaymentProfile(
-  data: PaymentProfileCreate,
+  data: PaymentProfileCreate
 ): Promise<PaymentProfile> {
-  const response = await apiClient.post<PaymentProfile>('/payments/profiles', data)
+  const response = await apiClient.post<PaymentProfile>(
+    '/payments/profiles',
+    data
+  )
   return response.data
 }
 
@@ -67,11 +74,11 @@ export async function createPaymentProfile(
  */
 export async function deletePaymentProfile(
   profileId: string,
-  npoId: string,
+  npoId: string
 ): Promise<DeleteProfileResponse> {
   const response = await apiClient.delete<DeleteProfileResponse>(
     `/payments/profiles/${profileId}`,
-    { params: { npo_id: npoId } },
+    { params: { npo_id: npoId } }
   )
   return response.data
 }
@@ -81,12 +88,12 @@ export async function deletePaymentProfile(
  */
 export async function setDefaultPaymentProfile(
   profileId: string,
-  npoId: string,
+  npoId: string
 ): Promise<PaymentProfile> {
   const response = await apiClient.patch<PaymentProfile>(
     `/payments/profiles/${profileId}/default`,
     null,
-    { params: { npo_id: npoId } },
+    { params: { npo_id: npoId } }
   )
   return response.data
 }
@@ -97,8 +104,13 @@ export async function setDefaultPaymentProfile(
  * Submit a checkout using a saved payment profile.
  * Returns zero-balance response if no charge is needed.
  */
-export async function submitCheckout(data: CheckoutRequest): Promise<CheckoutResponse> {
-  const response = await apiClient.post<CheckoutResponse>('/payments/checkout', data)
+export async function submitCheckout(
+  data: CheckoutRequest
+): Promise<CheckoutResponse> {
+  const response = await apiClient.post<CheckoutResponse>(
+    '/payments/checkout',
+    data
+  )
   return response.data
 }
 
@@ -108,10 +120,10 @@ export async function submitCheckout(data: CheckoutRequest): Promise<CheckoutRes
  */
 export async function validatePromoCode(
   eventId: string,
-  code: string,
+  code: string
 ): Promise<PromoCodeValidation> {
   const response = await apiClient.post<PromoCodeValidation>(
-    `/admin/events/${eventId}/promo-codes/validate/${code}`,
+    `/admin/events/${eventId}/promo-codes/validate/${code}`
   )
   return response.data
 }
@@ -136,9 +148,11 @@ export interface TransactionDetail {
 /**
  * Fetch a transaction's full details (donor-own or admin).
  */
-export async function getTransaction(transactionId: string): Promise<TransactionDetail> {
+export async function getTransaction(
+  transactionId: string
+): Promise<TransactionDetail> {
   const response = await apiClient.get<TransactionDetail>(
-    `/payments/transactions/${transactionId}`,
+    `/payments/transactions/${transactionId}`
   )
   return response.data
 }
@@ -150,7 +164,7 @@ export async function getTransaction(transactionId: string): Promise<Transaction
  * Used to populate the end-of-night self-checkout screen.
  */
 export async function getCheckoutBalance(
-  eventId: string,
+  eventId: string
 ): Promise<import('@/types/payment').CheckoutBalanceResponse> {
   const response = await apiClient.get<
     import('@/types/payment').CheckoutBalanceResponse

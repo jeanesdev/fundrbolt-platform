@@ -7,7 +7,7 @@ describe('OfflineStatusBar', () => {
     render(<OfflineStatusBar isOnline={false} />)
     expect(screen.getByRole('alert')).toBeDefined()
     expect(
-      screen.getByText(/offline.*some features may be unavailable/i),
+      screen.getByText(/offline.*some features may be unavailable/i)
     ).toBeDefined()
   })
 
@@ -19,9 +19,7 @@ describe('OfflineStatusBar', () => {
   it('renders the correct message text', () => {
     render(<OfflineStatusBar isOnline={false} />)
     expect(
-      screen.getByText(
-        "You're offline — some features may be unavailable",
-      ),
+      screen.getByText("You're offline — some features may be unavailable")
     ).toBeDefined()
   })
 })

@@ -13,7 +13,6 @@ import { Route as PreviewRouteImport } from './routes/preview'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CheckinIndexRouteImport } from './routes/checkin.index'
-import { Route as NpoSlugDonateNowRouteImport } from './routes/npo.$slug.donate-now'
 import { Route as PreviewEventIdRouteImport } from './routes/preview.$eventId'
 import { Route as InvitationsAcceptRouteImport } from './routes/invitations/accept'
 import { Route as EventsSlugRouteImport } from './routes/events.$slug'
@@ -42,6 +41,7 @@ import { Route as EventsSlugIndexRouteImport } from './routes/events.$slug.index
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedNposIndexRouteImport } from './routes/_authenticated/npos/index'
 import { Route as AuthenticatedEventsIndexRouteImport } from './routes/_authenticated/events/index'
+import { Route as NpoSlugDonateNowRouteImport } from './routes/npo.$slug.donate-now'
 import { Route as EventsSlugTicketsRouteImport } from './routes/events.$slug.tickets'
 import { Route as EventsSlugRegisterRouteImport } from './routes/events.$slug.register'
 import { Route as EventsSlugCheckoutRouteImport } from './routes/events.$slug.checkout'
@@ -77,11 +77,6 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NpoSlugDonateNowRoute = NpoSlugDonateNowRouteImport.update({
-  id: '/npo/$slug/donate-now',
-  path: '/npo/$slug/donate-now',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckinIndexRoute = CheckinIndexRouteImport.update({
@@ -234,6 +229,11 @@ const AuthenticatedEventsIndexRoute =
     path: '/events/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const NpoSlugDonateNowRoute = NpoSlugDonateNowRouteImport.update({
+  id: '/npo/$slug/donate-now',
+  path: '/npo/$slug/donate-now',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EventsSlugTicketsRoute = EventsSlugTicketsRouteImport.update({
   id: '/tickets',
   path: '/tickets',
@@ -390,7 +390,6 @@ export interface FileRoutesByFullPath {
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/preview/$eventId': typeof PreviewEventIdRoute
   '/checkin/': typeof CheckinIndexRoute
-  '/npo/$slug/donate-now': typeof NpoSlugDonateNowRoute
   '/events/$eventSlug': typeof AuthenticatedEventsEventSlugRouteRouteWithChildren
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/events/create': typeof AuthenticatedEventsCreateRoute
@@ -403,6 +402,7 @@ export interface FileRoutesByFullPath {
   '/events/$slug/checkout': typeof EventsSlugCheckoutRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
   '/events/$slug/tickets': typeof EventsSlugTicketsRouteWithChildren
+  '/npo/$slug/donate-now': typeof NpoSlugDonateNowRoute
   '/events/': typeof AuthenticatedEventsIndexRoute
   '/npos/': typeof AuthenticatedNposIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -444,7 +444,6 @@ export interface FileRoutesByTo {
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/preview/$eventId': typeof PreviewEventIdRoute
   '/checkin': typeof CheckinIndexRoute
-  '/npo/$slug/donate-now': typeof NpoSlugDonateNowRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/events/create': typeof AuthenticatedEventsCreateRoute
   '/npos/create': typeof AuthenticatedNposCreateRoute
@@ -455,6 +454,7 @@ export interface FileRoutesByTo {
   '/tickets/history': typeof AuthenticatedTicketsHistoryRoute
   '/events/$slug/checkout': typeof EventsSlugCheckoutRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
+  '/npo/$slug/donate-now': typeof NpoSlugDonateNowRoute
   '/events': typeof AuthenticatedEventsIndexRoute
   '/npos': typeof AuthenticatedNposIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -500,7 +500,6 @@ export interface FileRoutesById {
   '/invitations/accept': typeof InvitationsAcceptRoute
   '/preview/$eventId': typeof PreviewEventIdRoute
   '/checkin/': typeof CheckinIndexRoute
-  '/npo/$slug/donate-now': typeof NpoSlugDonateNowRoute
   '/_authenticated/events/$eventSlug': typeof AuthenticatedEventsEventSlugRouteRouteWithChildren
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/events/create': typeof AuthenticatedEventsCreateRoute
@@ -513,6 +512,7 @@ export interface FileRoutesById {
   '/events/$slug/checkout': typeof EventsSlugCheckoutRoute
   '/events/$slug/register': typeof EventsSlugRegisterRoute
   '/events/$slug/tickets': typeof EventsSlugTicketsRouteWithChildren
+  '/npo/$slug/donate-now': typeof NpoSlugDonateNowRoute
   '/_authenticated/events/': typeof AuthenticatedEventsIndexRoute
   '/_authenticated/npos/': typeof AuthenticatedNposIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -558,8 +558,21 @@ export interface FileRouteTypes {
     | '/invitations/accept'
     | '/preview/$eventId'
     | '/checkin/'
-    | '/npo/$slug/donate-now'
     | '/events/$eventSlug'
+    | '/errors/$error'
+    | '/events/create'
+    | '/npos/create'
+    | '/settings/notifications'
+    | '/settings/other'
+    | '/settings/password'
+    | '/settings/payment'
+    | '/tickets/history'
+    | '/events/$slug/checkout'
+    | '/events/$slug/register'
+    | '/events/$slug/tickets'
+    | '/npo/$slug/donate-now'
+    | '/events/'
+    | '/npos/'
     | '/settings/'
     | '/events/$slug/'
     | '/events/$eventSlug/edit'
@@ -599,7 +612,6 @@ export interface FileRouteTypes {
     | '/invitations/accept'
     | '/preview/$eventId'
     | '/checkin'
-    | '/npo/$slug/donate-now'
     | '/errors/$error'
     | '/events/create'
     | '/npos/create'
@@ -610,6 +622,7 @@ export interface FileRouteTypes {
     | '/tickets/history'
     | '/events/$slug/checkout'
     | '/events/$slug/register'
+    | '/npo/$slug/donate-now'
     | '/events'
     | '/npos'
     | '/settings'
@@ -654,8 +667,8 @@ export interface FileRouteTypes {
     | '/invitations/accept'
     | '/preview/$eventId'
     | '/checkin/'
-    | '/npo/$slug/donate-now'
     | '/_authenticated/events/$eventSlug'
+    | '/_authenticated/errors/$error'
     | '/_authenticated/events/create'
     | '/_authenticated/npos/create'
     | '/_authenticated/settings/notifications'
@@ -666,6 +679,7 @@ export interface FileRouteTypes {
     | '/events/$slug/checkout'
     | '/events/$slug/register'
     | '/events/$slug/tickets'
+    | '/npo/$slug/donate-now'
     | '/_authenticated/events/'
     | '/_authenticated/npos/'
     | '/_authenticated/settings/'
@@ -737,13 +751,6 @@ declare module '@tanstack/react-router' {
       path: '/checkin'
       fullPath: '/checkin/'
       preLoaderRoute: typeof CheckinIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/npo/$slug/donate-now': {
-      id: '/npo/$slug/donate-now'
-      path: '/npo/$slug/donate-now'
-      fullPath: '/npo/$slug/donate-now'
-      preLoaderRoute: typeof NpoSlugDonateNowRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/preview/$eventId': {
@@ -941,6 +948,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/events/'
       preLoaderRoute: typeof AuthenticatedEventsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/npo/$slug/donate-now': {
+      id: '/npo/$slug/donate-now'
+      path: '/npo/$slug/donate-now'
+      fullPath: '/npo/$slug/donate-now'
+      preLoaderRoute: typeof NpoSlugDonateNowRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/events/$slug/tickets': {
       id: '/events/$slug/tickets'

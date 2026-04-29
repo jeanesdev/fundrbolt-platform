@@ -7,7 +7,8 @@
  * - NPO Admin/Staff: Shows only their NPO (non-clickable, disabled)
  * - Event Coordinator: Shows NPOs they're registered with
  */
-
+import { Building2, ChevronsUpDown } from 'lucide-react'
+import { useNpoContext } from '@/hooks/use-npo-context'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,8 +22,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { useNpoContext } from '@/hooks/use-npo-context'
-import { Building2, ChevronsUpDown } from 'lucide-react'
 
 export function NpoSelector() {
   const { isMobile } = useSidebar()
@@ -45,12 +44,8 @@ export function NpoSelector() {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton
-            size='lg'
-            className='cursor-default'
-            disabled
-          >
-            <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden'>
+          <SidebarMenuButton size='lg' className='cursor-default' disabled>
+            <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg'>
               {selectedNpoLogo ? (
                 <img
                   src={selectedNpoLogo}
@@ -62,9 +57,7 @@ export function NpoSelector() {
               )}
             </div>
             <div className='grid flex-1 text-start text-sm leading-tight'>
-              <span className='truncate font-semibold'>
-                {selectedNpoName}
-              </span>
+              <span className='truncate font-semibold'>{selectedNpoName}</span>
               <span className='truncate text-xs'>My Organization</span>
             </div>
           </SidebarMenuButton>
@@ -83,7 +76,7 @@ export function NpoSelector() {
               size='lg'
               className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
             >
-              <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden'>
+              <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg'>
                 {selectedNpoLogo ? (
                   <img
                     src={selectedNpoLogo}
@@ -99,7 +92,9 @@ export function NpoSelector() {
                   {selectedNpoName}
                 </span>
                 <span className='truncate text-xs'>
-                  {isFundrBoltPlatformView ? 'All Organizations' : 'Organization'}
+                  {isFundrBoltPlatformView
+                    ? 'All Organizations'
+                    : 'Organization'}
                 </span>
               </div>
               <ChevronsUpDown className='ms-auto' />
@@ -120,7 +115,7 @@ export function NpoSelector() {
                 onClick={() => selectNpo(npo.id, npo.name)}
                 className='gap-2 p-2'
               >
-                <div className='flex size-6 items-center justify-center rounded-sm border overflow-hidden'>
+                <div className='flex size-6 items-center justify-center overflow-hidden rounded-sm border'>
                   {npo.logo_url ? (
                     <img
                       src={npo.logo_url}
@@ -134,7 +129,9 @@ export function NpoSelector() {
                 <div className='flex-1'>
                   <div className='font-medium'>{npo.name}</div>
                   {npo.id === null && (
-                    <div className='text-muted-foreground text-xs'>View all organizations</div>
+                    <div className='text-muted-foreground text-xs'>
+                      View all organizations
+                    </div>
                   )}
                 </div>
                 {selectedNpoId === npo.id && (

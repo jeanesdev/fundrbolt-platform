@@ -2,6 +2,30 @@
  * Invitation Acceptance Page
  * Handles accepting ticket invitations via token from email
  */
+import { useState } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
+import {
+  CalendarDays,
+  CheckCircle,
+  Loader2,
+  LogIn,
+  Ticket,
+  UserPlus,
+  XCircle,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { useEventContextStore } from '@/stores/event-context-store'
+import {
+  getEventBySlug,
+  getEventCustomOptions,
+  type PublicTicketCustomOption,
+} from '@/lib/api/events'
+import {
+  registerViaInvitation,
+  validateInvitationToken,
+} from '@/lib/api/ticket-invitations'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,30 +47,6 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  getEventBySlug,
-  getEventCustomOptions,
-  type PublicTicketCustomOption,
-} from '@/lib/api/events'
-import {
-  registerViaInvitation,
-  validateInvitationToken,
-} from '@/lib/api/ticket-invitations'
-import { useAuthStore } from '@/stores/auth-store'
-import { useEventContextStore } from '@/stores/event-context-store'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import {
-  CalendarDays,
-  CheckCircle,
-  Loader2,
-  LogIn,
-  Ticket,
-  UserPlus,
-  XCircle,
-} from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
 
 type CustomResponseValue = string | string[] | boolean
 
@@ -451,7 +451,9 @@ export default function AcceptInvitationPage() {
                     id='inv-phone'
                     type='tel'
                     value={phone}
-                    onChange={(e) => setPhone(formatPhoneDisplay(e.target.value))}
+                    onChange={(e) =>
+                      setPhone(formatPhoneDisplay(e.target.value))
+                    }
                     placeholder='(555) 123-4567'
                   />
                 </div>
@@ -549,8 +551,8 @@ export default function AcceptInvitationPage() {
                                             [option.id]: checked
                                               ? [...prev, choice]
                                               : prev.filter(
-                                                (v) => v !== choice
-                                              ),
+                                                  (v) => v !== choice
+                                                ),
                                           }
                                         })
                                       }}

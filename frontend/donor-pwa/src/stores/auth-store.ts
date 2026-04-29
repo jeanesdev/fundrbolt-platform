@@ -1,11 +1,11 @@
+import { create } from 'zustand'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import apiClient from '@/lib/axios'
 import {
   clearRefreshToken,
   getRefreshToken,
   saveRefreshToken,
 } from '@/lib/storage/tokens'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { create } from 'zustand'
 
 interface AuthUser {
   id: string
@@ -108,7 +108,9 @@ const CACHED_USER_KEY = 'fundrbolt_cached_user'
 function cacheUser(user: AuthUser): void {
   try {
     localStorage.setItem(CACHED_USER_KEY, JSON.stringify(user))
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 function loadCachedUser(): AuthUser | null {
@@ -123,7 +125,9 @@ function loadCachedUser(): AuthUser | null {
 function clearCachedUser(): void {
   try {
     localStorage.removeItem(CACHED_USER_KEY)
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 // Read refresh token synchronously at store creation so the axios 401
@@ -291,7 +295,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       return pictureUrl
     }
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
+    const apiUrl =
+      import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
     const baseUrl = apiUrl.replace(/\/api\/v1$/, '')
     return `${baseUrl}${pictureUrl}`
   },

@@ -1,4 +1,15 @@
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useMemo, useState } from 'react'
+import { ArrowLeft, Filter, Mail, Phone, X } from 'lucide-react'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,18 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { ArrowLeft, Filter, Mail, Phone, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useDonorProfile } from '../hooks/useDonorDashboard'
 
 const fmt = (n: number) =>

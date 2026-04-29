@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router'
 import type { CommissionListItem } from '@/services/auctioneerService'
-import { DollarSign, Image } from 'lucide-react'
+import { Image } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
@@ -36,10 +36,7 @@ export function CommissionGallery({ commissions }: CommissionGalleryProps) {
     <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
       {commissions.map((item) => {
         const earning =
-          item.current_bid_amount != null
-            ? (item.current_bid_amount * item.commission_percent) / 100 +
-              item.flat_fee
-            : null
+          item.cost != null ? (item.cost * item.commission_percent) / 100 : null
 
         return (
           <Card
@@ -91,13 +88,6 @@ export function CommissionGallery({ commissions }: CommissionGalleryProps) {
             <CardContent className='space-y-1 text-sm'>
               <div className='flex items-center gap-1'>
                 <span>Commission: {item.commission_percent}%</span>
-                {item.flat_fee > 0 && (
-                  <>
-                    <span className='text-muted-foreground'>+</span>
-                    <DollarSign className='h-3 w-3' />
-                    <span>{formatCurrency(item.flat_fee)}</span>
-                  </>
-                )}
               </div>
               {item.quantity_available != null && (
                 <div className='text-muted-foreground'>

@@ -1,5 +1,13 @@
-import { TermsOfServiceModal } from '@/components/legal/terms-of-service-modal'
-import { PasswordInput } from '@/components/password-input'
+import { useEffect, useState } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate } from '@tanstack/react-router'
+import { consentService } from '@/services/consent-service'
+import { Info, Loader2, UserPlus } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { cn } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -12,16 +20,8 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
-import { consentService } from '@/services/consent-service'
-import { useAuthStore } from '@/stores/auth-store'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate } from '@tanstack/react-router'
-import { Info, Loader2, UserPlus } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
+import { TermsOfServiceModal } from '@/components/legal/terms-of-service-modal'
+import { PasswordInput } from '@/components/password-input'
 
 const formSchema = z
   .object({
@@ -232,8 +232,8 @@ export function SignUpForm({
         response?: {
           data?: {
             detail?:
-            | string
-            | { code?: string; message?: string; details?: unknown }
+              | string
+              | { code?: string; message?: string; details?: unknown }
             error?: { message?: string }
           }
         }

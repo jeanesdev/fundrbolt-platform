@@ -249,6 +249,7 @@ export function CustomOptionsManager({ packageId }: CustomOptionsManagerProps) {
         </div>
         <div className='flex items-center gap-2'>
           <Button
+            type='button'
             variant='ghost'
             size='sm'
             onClick={() => setEditingOption(option)}
@@ -256,6 +257,7 @@ export function CustomOptionsManager({ packageId }: CustomOptionsManagerProps) {
             <Pencil className='h-4 w-4' />
           </Button>
           <Button
+            type='button'
             variant='ghost'
             size='sm'
             onClick={() => handleDelete(option)}
@@ -279,6 +281,7 @@ export function CustomOptionsManager({ packageId }: CustomOptionsManagerProps) {
             </CardDescription>
           </div>
           <Button
+            type='button'
             onClick={() => setIsCreateOpen(true)}
             disabled={!canAddMore}
             size='sm'

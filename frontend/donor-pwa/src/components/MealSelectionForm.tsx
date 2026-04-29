@@ -3,7 +3,10 @@
  *
  * Form for selecting meal options for event attendees.
  */
-
+import * as z from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import type { FoodOption } from '@/lib/api/events'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -16,10 +19,6 @@ import {
 } from '@/components/ui/form'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import type { FoodOption } from '@/lib/api/events'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import * as z from 'zod'
 
 const mealSelectionSchema = z.object({
   food_option_id: z.string().min(1, 'Please select a meal option'),
@@ -53,38 +52,40 @@ export function MealSelectionForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Meal Selection for {attendeeName}</h3>
-          <p className="text-sm text-muted-foreground">
+      <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
+        <div className='space-y-4'>
+          <h3 className='text-lg font-semibold'>
+            Meal Selection for {attendeeName}
+          </h3>
+          <p className='text-muted-foreground text-sm'>
             Please select a meal option for this attendee.
           </p>
 
           <FormField
             control={form.control}
-            name="food_option_id"
+            name='food_option_id'
             render={({ field }) => (
-              <FormItem className="space-y-3">
+              <FormItem className='space-y-3'>
                 <FormLabel>Meal Options *</FormLabel>
                 <FormControl>
                   <RadioGroup
                     onValueChange={field.onChange}
                     value={field.value}
-                    className="space-y-3"
+                    className='space-y-3'
                   >
                     {foodOptions.map((option) => (
                       <div
                         key={option.id}
-                        className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-accent cursor-pointer"
+                        className='hover:bg-accent flex cursor-pointer items-start space-x-3 rounded-lg border p-4'
                       >
                         <RadioGroupItem value={option.id} id={option.id} />
                         <Label
                           htmlFor={option.id}
-                          className="flex-1 cursor-pointer space-y-1"
+                          className='flex-1 cursor-pointer space-y-1'
                         >
-                          <div className="font-medium">{option.name}</div>
+                          <div className='font-medium'>{option.name}</div>
                           {option.description && (
-                            <div className="text-sm text-muted-foreground">
+                            <div className='text-muted-foreground text-sm'>
                               {option.description}
                             </div>
                           )}
@@ -102,7 +103,7 @@ export function MealSelectionForm({
           />
         </div>
 
-        <Button type="submit" disabled={isLoading} className="w-full">
+        <Button type='submit' disabled={isLoading} className='w-full'>
           {isLoading ? 'Saving...' : submitButtonText}
         </Button>
       </form>

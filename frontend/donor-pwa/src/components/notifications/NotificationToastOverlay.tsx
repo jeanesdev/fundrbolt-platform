@@ -7,8 +7,8 @@
  * for dynamically-created elements outside of the React tree, so we use
  * inline styles + the keyframe animations defined in the global stylesheet).
  */
-import type { NotificationData } from '@/services/notification-service'
 import { useEffect } from 'react'
+import type { NotificationData } from '@/services/notification-service'
 
 const TOAST_DURATION = 5000
 const MAX_VISIBLE = 3
@@ -16,9 +16,7 @@ const TOAST_EVENT = 'fundrbolt:show-toast'
 
 /** Call this from anywhere to show a notification toast */
 export function triggerNotificationToast(notification: NotificationData) {
-  window.dispatchEvent(
-    new CustomEvent(TOAST_EVENT, { detail: notification }),
-  )
+  window.dispatchEvent(new CustomEvent(TOAST_EVENT, { detail: notification }))
 }
 
 // --- Module-level vanilla DOM toast renderer ---

@@ -1,5 +1,5 @@
-import { PreviewEventPage } from '@/features/preview/PreviewEventPage'
 import { Outlet, createFileRoute } from '@tanstack/react-router'
+import { PreviewEventPage } from '@/features/preview/PreviewEventPage'
 
 export const Route = createFileRoute('/preview')({
   validateSearch: (search: Record<string, unknown>) => ({

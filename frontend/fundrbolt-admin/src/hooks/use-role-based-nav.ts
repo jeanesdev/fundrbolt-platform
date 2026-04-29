@@ -43,12 +43,24 @@ export interface UseRoleBasedNavReturn {
   eventNavItems: EventNavItem[]
   eventNavGroups: EventNavGroup[]
   eventNavTitle: string | null
+  donateNowNavGroup: EventNavGroup | null
   canAccessNpos: boolean
   canAccessEvents: boolean
   canAccessUsers: boolean
   canModifyNpos: boolean
   canModifyEvents: boolean
   canModifyUsers: boolean
+}
+
+function canResolveNpoId(
+  npoId: string | null,
+  availableNpos: Array<{ id: string | null }>
+): npoId is string {
+  if (!npoId) return false
+  // Before NPO context finishes loading, keep prior behavior to avoid
+  // hiding links during initial hydration.
+  if (availableNpos.length === 0) return true
+  return availableNpos.some((npo) => npo.id === npoId)
 }
 
 export function useRoleBasedNav(): UseRoleBasedNavReturn {
@@ -60,14 +72,26 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
     isAuctioneer,
     isStaff,
   } = useAuth()
-  const { selectedNpoId } = useNpoContext()
-  const { selectedEventId, selectedEventName } = useEventContext()
+  const { selectedNpoId, availableNpos } = useNpoContext()
+  const { selectedEventId, selectedEventName, availableEvents } =
+    useEventContext()
   const { data: eventStats } = useEventStats(selectedEventId)
 
-  // Determine NPO link based on selected NPO
-  const npoHref = selectedNpoId ? `/npos/${selectedNpoId}` : '/npos'
-  // Change title based on whether specific NPO is selected
-  const npoTitle = selectedNpoId ? 'Organization' : 'Organizations'
+  // Resolve the effective NPO early so nav links can fall back to the event's NPO
+  // when no NPO is explicitly selected.
+  const selectedEventNpoId =
+    availableEvents.find((e) => e.id === selectedEventId)?.npo_id ?? null
+  const effectiveNpoId = canResolveNpoId(selectedNpoId, availableNpos)
+    ? selectedNpoId
+    : canResolveNpoId(selectedEventNpoId, availableNpos)
+      ? selectedEventNpoId
+      : null
+
+  // Determine NPO link: go straight to the detail page when an NPO can be resolved
+  // (either from an explicit selection or from the currently selected event).
+  const npoHref = effectiveNpoId ? `/npos/${effectiveNpoId}` : '/npos'
+  // Change title based on whether a specific NPO is resolved
+  const npoTitle = effectiveNpoId ? 'Organization' : 'Organizations'
 
   // Base navigation items available to all authenticated users
   const baseNavItems: NavItem[] = [
@@ -242,26 +266,69 @@ export function useRoleBasedNav(): UseRoleBasedNavReturn {
   // Grouped nav: Event, Guests, Auctions
   const eventNavGroups: EventNavGroup[] = selectedEventId
     ? EVENT_NAV_GROUPS.filter((group) => {
-      // Only show Auctioneer section for auctioneers and super admins
-      if (group.title === 'Auctioneer') {
-        return isAuctioneer || isSuperAdmin
-      }
-      return true
-    }).map((group) => ({
-      title: group.title,
-      items: group.sections.map(buildEventNavItem),
-    }))
+        // Only show Auctioneer section for auctioneers and super admins
+        if (group.title === 'Auctioneer') {
+          return isAuctioneer || isSuperAdmin
+        }
+        return true
+      }).map((group) => ({
+        title: group.title,
+        items: group.sections.map(buildEventNavItem),
+      }))
     : []
 
   const eventNavTitle = selectedEventId
     ? `Event${selectedEventName ? `: ${selectedEventName}` : ''}`
     : null
 
+  // Resolve effective NPO slug for slug-based donate-now URLs.
+  // Falls back to the UUID if no slug is available (e.g. NPO hasn't been slugified yet).
+  const effectiveNpoEntry = availableNpos.find((n) => n.id === effectiveNpoId)
+  const effectiveNpoSlug = effectiveNpoEntry?.slug ?? effectiveNpoId
+
+  // Donate Now nav group — visible for super admins and NPO admins always;
+  // when no NPO can be resolved, prompt the user to select one first
+  const donateNowNavGroup: EventNavGroup | null =
+    isSuperAdmin || isNpoAdmin
+      ? effectiveNpoSlug
+        ? {
+            title: 'Donate',
+            items: [
+              {
+                title: 'Dashboard',
+                href: `/npos/${effectiveNpoSlug}/donate-now/dashboard`,
+                icon: 'BarChart3',
+              },
+              {
+                title: 'Setup',
+                href: `/npos/${effectiveNpoSlug}/donate-now/setup`,
+                icon: 'Settings',
+              },
+              {
+                title: 'Support Wall',
+                href: `/npos/${effectiveNpoSlug}/donate-now/wall`,
+                icon: 'MessageSquare',
+              },
+            ],
+          }
+        : {
+            title: 'Donate',
+            items: [
+              {
+                title: 'Select an organization first',
+                href: '/npos',
+                icon: 'Building2',
+              },
+            ],
+          }
+      : null
+
   return {
     navItems,
     eventNavItems,
     eventNavGroups,
     eventNavTitle,
+    donateNowNavGroup,
     canAccessNpos,
     canAccessEvents,
     canAccessUsers,
@@ -372,48 +439,52 @@ const EVENT_NAV_GROUPS: Array<{
   title: string
   sections: EventSectionConfig[]
 }> = [
-    {
-      title: 'Event',
-      sections: [
-        sectionByPath('details'),
-        sectionByPath('checklist'),
-        sectionByPath('preview'),
-        sectionByPath('media'),
-        sectionByPath('links'),
-        sectionByPath('food'),
-        sectionByPath('tickets'),
-        sectionByPath('tickets/sales'),
-        sectionByPath('tickets/promos'),
-        sectionByPath('sponsors'),
-        sectionByPath('notifications'),
-      ],
-    },
-    {
-      title: 'Guests',
-      sections: [
-        sectionByPath('registrations'),
-        sectionByPath('checkin'),
-        sectionByPath('seating'),
-      ],
-    },
-    {
-      title: 'Auctions',
-      sections: [
-        sectionByPath('auction-items'),
-        sectionByPath('auction-bids'),
-        sectionByPath('quick-entry'),
-      ],
-    },
-    {
-      title: 'Finance',
-      sections: [sectionByPath('payments')],
-    },
-    {
-      title: 'Data',
-      sections: [sectionByPath('dashboard'), sectionByPath('donor-dashboard'), sectionByPath('auction-dashboard')],
-    },
-    {
-      title: 'Auctioneer',
-      sections: [sectionByPath('auctioneer')],
-    },
-  ]
+  {
+    title: 'Event',
+    sections: [
+      sectionByPath('details'),
+      sectionByPath('checklist'),
+      sectionByPath('preview'),
+      sectionByPath('media'),
+      sectionByPath('links'),
+      sectionByPath('food'),
+      sectionByPath('tickets'),
+      sectionByPath('tickets/sales'),
+      sectionByPath('tickets/promos'),
+      sectionByPath('sponsors'),
+      sectionByPath('notifications'),
+    ],
+  },
+  {
+    title: 'Guests',
+    sections: [
+      sectionByPath('registrations'),
+      sectionByPath('checkin'),
+      sectionByPath('seating'),
+    ],
+  },
+  {
+    title: 'Auctions',
+    sections: [
+      sectionByPath('auction-items'),
+      sectionByPath('auction-bids'),
+      sectionByPath('quick-entry'),
+    ],
+  },
+  {
+    title: 'Finance',
+    sections: [sectionByPath('payments')],
+  },
+  {
+    title: 'Data',
+    sections: [
+      sectionByPath('dashboard'),
+      sectionByPath('donor-dashboard'),
+      sectionByPath('auction-dashboard'),
+    ],
+  },
+  {
+    title: 'Auctioneer',
+    sections: [sectionByPath('auctioneer')],
+  },
+]

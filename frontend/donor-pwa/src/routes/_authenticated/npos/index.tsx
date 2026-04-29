@@ -5,5 +5,5 @@ import { createFileRoute, Navigate } from '@tanstack/react-router'
  * Redirects to home - donors view events, not NPOs directly
  */
 export const Route = createFileRoute('/_authenticated/npos/')({
-  component: () => <Navigate to="/home" />,
+  component: () => <Navigate to='/home' />,
 })

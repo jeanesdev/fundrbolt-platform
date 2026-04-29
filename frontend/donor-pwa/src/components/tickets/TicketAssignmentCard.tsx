@@ -1,11 +1,11 @@
 /**
  * TicketAssignmentCard — shows an assigned ticket with status and actions.
  */
+import { CheckCircle, Mail, MailPlus, Ticket, UserX } from 'lucide-react'
+import type { TicketDetail } from '@/lib/api/ticket-purchases'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import type { TicketDetail } from '@/lib/api/ticket-purchases'
-import { CheckCircle, Mail, MailPlus, Ticket, UserX } from 'lucide-react'
 
 interface TicketAssignmentCardProps {
   ticket: TicketDetail

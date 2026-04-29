@@ -9,9 +9,8 @@
  *  - < 15 minutes        → large red flashing badge
  *  - Closed              → static "Auction Closed" badge
  */
-
-import { Timer, TimerOff } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Timer, TimerOff } from 'lucide-react'
 import { useDebugSpoofStore } from '../../stores/debug-spoof-store'
 
 interface AuctionCountdownTimerProps {
@@ -44,16 +43,14 @@ export function AuctionCountdownTimer({
 
   const secondsRemaining = Math.max(
     0,
-    Math.floor((closeTimeMs - getEffectiveNowMs()) / 1000),
+    Math.floor((closeTimeMs - getEffectiveNowMs()) / 1000)
   )
 
   useEffect(() => {
     if (secondsRemaining <= 0) return
 
     const interval = setInterval(() => {
-      const remaining = Math.floor(
-        (closeTimeMs - getEffectiveNowMs()) / 1000,
-      )
+      const remaining = Math.floor((closeTimeMs - getEffectiveNowMs()) / 1000)
       if (remaining <= 0) {
         setTick((value) => value + 1)
         clearInterval(interval)
@@ -90,7 +87,7 @@ export function AuctionCountdownTimer({
   if (isFlashing) {
     return (
       <div
-        className={`flex items-center justify-center gap-2 rounded-lg border-2 border-red-500 px-5 py-3 text-base font-extrabold tabular-nums animate-auction-flash ${className}`}
+        className={`animate-auction-flash flex items-center justify-center gap-2 rounded-lg border-2 border-red-500 px-5 py-3 text-base font-extrabold tabular-nums ${className}`}
         style={{
           backgroundColor: 'rgba(239, 68, 68, 0.15)',
           color: '#DC2626',

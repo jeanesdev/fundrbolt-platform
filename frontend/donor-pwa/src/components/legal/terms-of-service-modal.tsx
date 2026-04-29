@@ -2,7 +2,8 @@
  * TermsOfServiceModal component
  * Modal for displaying and accepting Terms of Service
  */
-
+import { useState } from 'react'
+import { useLegalDocuments } from '@/hooks/use-legal-documents'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -13,8 +14,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { useLegalDocuments } from '@/hooks/use-legal-documents'
-import { useState } from 'react'
 import { LegalDocumentViewer } from './legal-document-viewer'
 
 interface TermsOfServiceModalProps {
@@ -59,7 +58,7 @@ export function TermsOfServiceModal({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <AlertDialogContent className='max-h-[90vh] max-w-4xl overflow-y-auto'>
         <AlertDialogHeader>
           <AlertDialogTitle>Legal Agreements</AlertDialogTitle>
           <AlertDialogDescription>
@@ -68,24 +67,26 @@ export function TermsOfServiceModal({
         </AlertDialogHeader>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-muted-foreground">Loading documents...</div>
+          <div className='flex items-center justify-center py-8'>
+            <div className='text-muted-foreground'>Loading documents...</div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className='space-y-6'>
             {/* Terms of Service */}
             {termsOfService && (
-              <div className="space-y-3">
+              <div className='space-y-3'>
                 <LegalDocumentViewer document={termsOfService} />
-                <div className="flex items-start space-x-2">
+                <div className='flex items-start space-x-2'>
                   <Checkbox
-                    id="tos-accept"
+                    id='tos-accept'
                     checked={tosAccepted}
-                    onCheckedChange={(checked) => setTosAccepted(checked === true)}
+                    onCheckedChange={(checked) =>
+                      setTosAccepted(checked === true)
+                    }
                   />
                   <label
-                    htmlFor="tos-accept"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    htmlFor='tos-accept'
+                    className='text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
                   >
                     I have read and accept the Terms of Service
                   </label>
@@ -95,17 +96,19 @@ export function TermsOfServiceModal({
 
             {/* Privacy Policy */}
             {showPrivacyPolicy && privacyPolicy && (
-              <div className="space-y-3">
+              <div className='space-y-3'>
                 <LegalDocumentViewer document={privacyPolicy} />
-                <div className="flex items-start space-x-2">
+                <div className='flex items-start space-x-2'>
                   <Checkbox
-                    id="privacy-accept"
+                    id='privacy-accept'
                     checked={privacyAccepted}
-                    onCheckedChange={(checked) => setPrivacyAccepted(checked === true)}
+                    onCheckedChange={(checked) =>
+                      setPrivacyAccepted(checked === true)
+                    }
                   />
                   <label
-                    htmlFor="privacy-accept"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    htmlFor='privacy-accept'
+                    className='text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
                   >
                     I have read and accept the Privacy Policy
                   </label>
@@ -117,7 +120,7 @@ export function TermsOfServiceModal({
 
         <AlertDialogFooter>
           <Button
-            variant="outline"
+            variant='outline'
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >

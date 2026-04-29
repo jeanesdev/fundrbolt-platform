@@ -11,6 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.donate_now_config import DonateNowPageConfig
+from app.models.event import Event, EventStatus
 from app.models.npo import NPO
 from app.models.npo_donation import NpoDonation, NpoDonationStatus, RecurrenceStatus
 from app.models.support_wall_entry import SupportWallEntry
@@ -35,8 +36,6 @@ class NpoDonationService:
 
         Raises:
             HTTPException 409: If the idempotency_key has already been used.
-            HTTPException 402: If the donor has no payment profile.
-            HTTPException 422: If payment is declined.
         """
         # Idempotency check
         if request.idempotency_key:
@@ -53,7 +52,8 @@ class NpoDonationService:
                     detail="Idempotency key already used for a completed donation.",
                 )
 
-        # Check donor has a payment profile for this NPO
+        # Temporary donate-now stub: until payment setup exists, treat the
+        # donation as captured even when there is no vaulted profile/gateway.
         from app.models.payment_profile import PaymentProfile
 
         profile_stmt = select(PaymentProfile).where(
@@ -63,12 +63,6 @@ class NpoDonationService:
         )
         profile_result = await db.execute(profile_stmt)
         profile = profile_result.scalar_one_or_none()
-
-        if profile is None:
-            raise HTTPException(
-                status_code=status.HTTP_402_PAYMENT_REQUIRED,
-                detail="No payment profile on file. Please add a payment method first.",
-            )
 
         # Compute fees
         fee_pct = config.processing_fee_pct or Decimal("0")
@@ -102,40 +96,30 @@ class NpoDonationService:
             recurrence_end=request.recurrence_end,
             recurrence_status=recurrence_status,
             next_charge_date=next_charge_date,
-            payment_profile_id=profile.id,
+            payment_profile_id=profile.id if profile is not None else None,
             status=NpoDonationStatus.PENDING,
             idempotency_key=request.idempotency_key,
         )
         db.add(donation)
         await db.flush()
 
-        # Charge via gateway
-        from app.core.payment_deps import get_npo_payment_gateway
-
-        try:
-            gateway = await get_npo_payment_gateway(str(npo.id), db)
-            result = await gateway.charge_profile(
-                transaction_id=donation.id,
-                gateway_profile_id=profile.gateway_profile_id,
-                amount=Decimal(total_charged_cents) / 100,
-                idempotency_key=request.idempotency_key,
-                metadata={"donation_id": str(donation.id), "npo_id": str(npo.id)},
+        # Auto-assign next upcoming event for this NPO
+        now_utc = datetime.now(UTC)
+        upcoming_stmt = (
+            select(Event)
+            .where(
+                Event.npo_id == npo.id,
+                Event.event_datetime >= now_utc,
+                Event.status == EventStatus.ACTIVE,
             )
-        except Exception:
-            donation.status = NpoDonationStatus.DECLINED
-            await db.flush()
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Payment could not be processed. Please try again.",
-            )
-
-        if result.status != "approved":
-            donation.status = NpoDonationStatus.DECLINED
-            await db.flush()
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=result.decline_reason or "Payment declined.",
-            )
+            .order_by(Event.event_datetime.asc())
+            .limit(1)
+        )
+        upcoming_result = await db.execute(upcoming_stmt)
+        upcoming_event = upcoming_result.scalar_one_or_none()
+        if upcoming_event is not None:
+            donation.event_id = upcoming_event.id
+        await db.flush()
 
         donation.status = NpoDonationStatus.CAPTURED
         if request.is_monthly and next_charge_date is not None:
@@ -152,7 +136,9 @@ class NpoDonationService:
 
         # Create support wall entry if requested
         if not request.is_anonymous or request.support_wall_message:
-            donor_name = f"{donor.first_name} {donor.last_name}".strip() or None
+            donor_name = (request.donor_name or "").strip() or (
+                f"{donor.first_name} {donor.last_name}".strip() or None
+            )
             entry = SupportWallEntry(
                 donation_id=donation.id,
                 npo_id=npo.id,

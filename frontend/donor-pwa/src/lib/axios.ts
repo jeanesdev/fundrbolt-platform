@@ -2,7 +2,7 @@
  * Axios HTTP client for donor PWA API requests.
  * Handles authentication tokens and token refresh automatically.
  */
-
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import type {
   SocialAuthCallbackRequest,
   SocialAuthCallbackResponse,
@@ -10,26 +10,24 @@ import type {
   SocialAuthProvidersResponse,
   SocialAuthStartRequest,
   SocialAuthStartResponse,
-} from '@fundrbolt/shared/types';
-import { sanitizeRequestPayload } from '@fundrbolt/shared/utils';
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
-
-import { useAuthStore } from '@/stores/auth-store';
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store';
+} from '@fundrbolt/shared/types'
+import { sanitizeRequestPayload } from '@fundrbolt/shared/utils'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 
 const resolveApiBaseUrl = () => {
-  const configuredApiUrl = import.meta.env.VITE_API_URL;
+  const configuredApiUrl = import.meta.env.VITE_API_URL
 
   if (
     import.meta.env.DEV &&
     typeof window !== 'undefined' &&
     ['localhost', '127.0.0.1'].includes(window.location.hostname)
   ) {
-    return '/api/v1';
+    return '/api/v1'
   }
 
-  return configuredApiUrl || 'http://localhost:8000/api/v1';
-};
+  return configuredApiUrl || 'http://localhost:8000/api/v1'
+}
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -38,103 +36,106 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 30000, // 30 seconds
-});
+})
 
 // Flag to prevent multiple simultaneous refresh requests
-let isRefreshing = false;
-let refreshSubscribers: Array<(token: string) => void> = [];
+let isRefreshing = false
+let refreshSubscribers: Array<(token: string) => void> = []
 
 // Add subscriber to queue waiting for token refresh
 const subscribeTokenRefresh = (callback: (token: string) => void) => {
-  refreshSubscribers.push(callback);
-};
+  refreshSubscribers.push(callback)
+}
 
 // Notify all subscribers when token is refreshed
 const onTokenRefreshed = (token: string) => {
-  refreshSubscribers.forEach((callback) => callback(token));
-  refreshSubscribers = [];
-};
+  refreshSubscribers.forEach((callback) => callback(token))
+  refreshSubscribers = []
+}
 
 // Request interceptor to add Authorization header
 apiClient.interceptors.request.use(
   (config) => {
     // Get access token from auth store
-    const token = useAuthStore.getState().accessToken;
+    const token = useAuthStore.getState().accessToken
 
     // Add Authorization header if token exists
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`
     }
 
     // Only send spoof headers for super_admin users
-    const currentUser = useAuthStore.getState().user;
+    const currentUser = useAuthStore.getState().user
     if (currentUser?.role === 'super_admin') {
-      const spoofedUser = useDebugSpoofStore.getState().spoofedUser;
-      const spoofedNowIso =
-        useDebugSpoofStore.getState().getEffectiveNowIso();
+      const spoofedUser = useDebugSpoofStore.getState().spoofedUser
+      const spoofedNowIso = useDebugSpoofStore.getState().getEffectiveNowIso()
 
       if (spoofedUser?.id) {
-        config.headers['X-Spoof-User-Id'] = spoofedUser.id;
+        config.headers['X-Spoof-User-Id'] = spoofedUser.id
       }
 
       if (spoofedNowIso) {
-        config.headers['X-Debug-Now'] = spoofedNowIso;
+        config.headers['X-Debug-Now'] = spoofedNowIso
       }
     }
 
     if (config.params) {
-      config.params = sanitizeRequestPayload(config.params);
+      config.params = sanitizeRequestPayload(config.params)
     }
 
     if (config.data instanceof FormData && config.headers) {
-      delete (config.headers as Record<string, string>)['Content-Type'];
-      delete (config.headers as Record<string, string>)['content-type'];
+      delete (config.headers as Record<string, string>)['Content-Type']
+      delete (config.headers as Record<string, string>)['content-type']
     } else if (config.data !== undefined) {
-      config.data = sanitizeRequestPayload(config.data);
+      config.data = sanitizeRequestPayload(config.data)
     }
 
-    return config;
+    return config
   },
   (error) => {
-    return Promise.reject(error);
-  },
-);
+    return Promise.reject(error)
+  }
+)
 
 // Response interceptor to handle errors and token refresh
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    };
+      _retry?: boolean
+    }
 
     // Handle 401 Unauthorized - token expired or invalid
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry
+    ) {
       // Don't retry refresh endpoint to avoid infinite loops
       if (originalRequest.url?.includes('/auth/refresh')) {
         // Explicit session-restore probes can fail on public routes.
         // Reset local auth state, but let the caller decide whether to redirect.
-        useAuthStore.getState().reset();
-        return Promise.reject(error);
+        useAuthStore.getState().reset()
+        return Promise.reject(error)
       }
 
-      const refreshToken = useAuthStore.getState().refreshToken;
+      const refreshToken = useAuthStore.getState().refreshToken
 
       if (!refreshToken) {
         // No refresh token, logout user
-        useAuthStore.getState().reset();
+        useAuthStore.getState().reset()
         if (!window.location.pathname.startsWith('/sign-in')) {
-          window.location.href = '/sign-in';
+          window.location.href = '/sign-in'
         }
-        return Promise.reject(error);
+        return Promise.reject(error)
       }
 
       // Mark this request as retried
-      originalRequest._retry = true;
+      originalRequest._retry = true
 
       if (!isRefreshing) {
         // Start refresh process
-        isRefreshing = true;
+        isRefreshing = true
 
         try {
           // Call refresh endpoint
@@ -145,82 +146,87 @@ apiClient.interceptors.response.use(
               headers: {
                 'Content-Type': 'application/json',
               },
-            },
-          );
+            }
+          )
 
-          const { access_token } = response.data;
+          const { access_token } = response.data
 
           // Update token in store
-          useAuthStore.getState().setAccessToken(access_token);
+          useAuthStore.getState().setAccessToken(access_token)
 
           // Notify all queued requests
-          onTokenRefreshed(access_token);
+          onTokenRefreshed(access_token)
 
-          isRefreshing = false;
+          isRefreshing = false
 
           // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${access_token}`;
-          return apiClient(originalRequest);
+          originalRequest.headers.Authorization = `Bearer ${access_token}`
+          return apiClient(originalRequest)
         } catch (refreshError) {
           // Refresh failed, logout user
-          isRefreshing = false;
-          refreshSubscribers = [];
-          useAuthStore.getState().reset();
+          isRefreshing = false
+          refreshSubscribers = []
+          useAuthStore.getState().reset()
 
           if (!window.location.pathname.startsWith('/sign-in')) {
-            window.location.href = '/sign-in';
+            window.location.href = '/sign-in'
           }
 
-          return Promise.reject(refreshError);
+          return Promise.reject(refreshError)
         }
       } else {
         // Another request is already refreshing, queue this request
         return new Promise((resolve) => {
           subscribeTokenRefresh((token: string) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            resolve(apiClient(originalRequest));
-          });
-        });
+            originalRequest.headers.Authorization = `Bearer ${token}`
+            resolve(apiClient(originalRequest))
+          })
+        })
       }
     }
 
     // Handle 429 Too Many Requests - extract retry-after if available
     if (error.response?.status === 429) {
-      const retryAfter = error.response.headers['retry-after'];
+      const retryAfter = error.response.headers['retry-after']
       if (retryAfter) {
-        (error as AxiosError & { retryAfter?: number }).retryAfter = parseInt(retryAfter, 10);
+        ;(error as AxiosError & { retryAfter?: number }).retryAfter = parseInt(
+          retryAfter,
+          10
+        )
       }
     }
 
-    return Promise.reject(error);
-  },
-);
+    return Promise.reject(error)
+  }
+)
 
 export const donorSocialAuthApi = {
   getProviders: async (): Promise<SocialAuthProvidersResponse> => {
-    const response = await apiClient.get<SocialAuthProvidersResponse>('/auth/social/providers');
-    return response.data;
+    const response = await apiClient.get<SocialAuthProvidersResponse>(
+      '/auth/social/providers'
+    )
+    return response.data
   },
   start: async (
     provider: SocialAuthProvider,
-    payload: SocialAuthStartRequest,
+    payload: SocialAuthStartRequest
   ): Promise<SocialAuthStartResponse> => {
     const response = await apiClient.post<SocialAuthStartResponse>(
       `/auth/social/${provider}/start`,
-      payload,
-    );
-    return response.data;
+      payload
+    )
+    return response.data
   },
   callback: async (
     provider: SocialAuthProvider,
-    payload: SocialAuthCallbackRequest,
+    payload: SocialAuthCallbackRequest
   ): Promise<SocialAuthCallbackResponse> => {
     const response = await apiClient.post<SocialAuthCallbackResponse>(
       `/auth/social/${provider}/callback`,
-      payload,
-    );
-    return response.data;
+      payload
+    )
+    return response.data
   },
-};
+}
 
-export default apiClient;
+export default apiClient

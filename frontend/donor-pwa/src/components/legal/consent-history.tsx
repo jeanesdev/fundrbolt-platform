@@ -3,10 +3,20 @@
  * Displays paginated table of user's consent acceptance history
  * Shows when user accepted terms/privacy policy and current status
  */
-
+import { useEffect, useState } from 'react'
+import { formatDistanceToNow } from 'date-fns'
+import { consentService } from '@/services/consent-service'
+import type { ConsentHistoryResponse } from '@/types/consent'
+import { ChevronLeft, ChevronRight, FileText, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -15,11 +25,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { consentService } from '@/services/consent-service'
-import type { ConsentHistoryResponse } from '@/types/consent'
-import { formatDistanceToNow } from 'date-fns'
-import { ChevronLeft, ChevronRight, FileText, Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
 
 export function ConsentHistory() {
   const [history, setHistory] = useState<ConsentHistoryResponse | null>(null)
@@ -76,29 +81,30 @@ export function ConsentHistory() {
     <Card>
       <CardHeader>
         <div className='flex items-center gap-2'>
-          <FileText className='h-5 w-5 text-muted-foreground' />
+          <FileText className='text-muted-foreground h-5 w-5' />
           <CardTitle>Consent History</CardTitle>
         </div>
         <CardDescription>
-          View your complete history of Terms of Service and Privacy Policy acceptances
+          View your complete history of Terms of Service and Privacy Policy
+          acceptances
         </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading && (
           <div className='flex items-center justify-center py-8'>
-            <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
+            <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
           </div>
         )}
 
         {error && (
-          <div className='rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive'>
+          <div className='border-destructive bg-destructive/10 text-destructive rounded-lg border p-4'>
             <p className='font-semibold'>Error</p>
             <p className='text-sm'>{error}</p>
           </div>
         )}
 
         {!isLoading && !error && history && history.consents.length === 0 && (
-          <div className='rounded-lg border border-muted bg-muted/10 p-8 text-center'>
+          <div className='border-muted bg-muted/10 rounded-lg border p-8 text-center'>
             <p className='text-muted-foreground'>No consent history found</p>
           </div>
         )}
@@ -130,11 +136,11 @@ export function ConsentHistory() {
                                 ? acceptedDate.toLocaleDateString()
                                 : 'Invalid date'}
                             </span>
-                            <span className='text-xs text-muted-foreground'>
+                            <span className='text-muted-foreground text-xs'>
                               {isValidDate
                                 ? formatDistanceToNow(acceptedDate, {
-                                  addSuffix: true,
-                                })
+                                    addSuffix: true,
+                                  })
                                 : 'N/A'}
                             </span>
                           </div>
@@ -146,7 +152,7 @@ export function ConsentHistory() {
                         <TableCell className='font-mono text-sm'>
                           {consent.privacy_document_id.slice(0, 8)}...
                         </TableCell>
-                        <TableCell className='text-sm text-muted-foreground'>
+                        <TableCell className='text-muted-foreground text-sm'>
                           N/A
                         </TableCell>
                       </TableRow>
@@ -158,9 +164,10 @@ export function ConsentHistory() {
 
             {/* Pagination */}
             <div className='mt-4 flex items-center justify-between'>
-              <div className='text-sm text-muted-foreground'>
+              <div className='text-muted-foreground text-sm'>
                 Showing {(currentPage - 1) * pageSize + 1} to{' '}
-                {Math.min(currentPage * pageSize, history.total)} of {history.total} entries
+                {Math.min(currentPage * pageSize, history.total)} of{' '}
+                {history.total} entries
               </div>
               <div className='flex items-center gap-2'>
                 <Button
@@ -169,10 +176,10 @@ export function ConsentHistory() {
                   onClick={handlePreviousPage}
                   disabled={currentPage === 1}
                 >
-                  <ChevronLeft className='h-4 w-4 mr-1' />
+                  <ChevronLeft className='mr-1 h-4 w-4' />
                   Previous
                 </Button>
-                <span className='text-sm text-muted-foreground'>
+                <span className='text-muted-foreground text-sm'>
                   Page {currentPage} of {totalPages}
                 </span>
                 <Button
@@ -182,7 +189,7 @@ export function ConsentHistory() {
                   disabled={currentPage >= totalPages}
                 >
                   Next
-                  <ChevronRight className='h-4 w-4 ml-1' />
+                  <ChevronRight className='ml-1 h-4 w-4' />
                 </Button>
               </div>
             </div>

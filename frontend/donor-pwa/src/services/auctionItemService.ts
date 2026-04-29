@@ -1,4 +1,3 @@
-import apiClient from '@/lib/axios';
 import type {
   AuctionItem,
   AuctionItemCreate,
@@ -8,7 +7,8 @@ import type {
   AuctionType,
   BidResponse,
   ItemStatus,
-} from '@/types/auction-item';
+} from '@/types/auction-item'
+import apiClient from '@/lib/axios'
 
 /**
  * Auction Item Service
@@ -21,18 +21,18 @@ class AuctionItemService {
   async listAuctionItems(
     eventId: string,
     params?: {
-      auctionType?: AuctionType;
-      status?: ItemStatus;
-      search?: string;
-      page?: number;
-      limit?: number;
+      auctionType?: AuctionType
+      status?: ItemStatus
+      search?: string
+      page?: number
+      limit?: number
     }
   ): Promise<AuctionItemListResponse> {
     const response = await apiClient.get<AuctionItemListResponse>(
       `/events/${eventId}/auction-items`,
       { params }
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -47,8 +47,8 @@ class AuctionItemService {
       {
         timeout: 15000,
       }
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -62,8 +62,8 @@ class AuctionItemService {
     const response = await apiClient.post<AuctionItem>(
       `/events/${eventId}/auction-items`,
       data
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -77,8 +77,8 @@ class AuctionItemService {
     const response = await apiClient.patch<AuctionItem>(
       `/events/${eventId}/auction-items/${itemId}`,
       data
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -86,7 +86,7 @@ class AuctionItemService {
    * Soft delete for published items, hard delete for drafts
    */
   async deleteAuctionItem(eventId: string, itemId: string): Promise<void> {
-    await apiClient.delete(`/events/${eventId}/auction-items/${itemId}`);
+    await apiClient.delete(`/events/${eventId}/auction-items/${itemId}`)
   }
 
   /**
@@ -97,16 +97,13 @@ class AuctionItemService {
     itemId: string,
     amount: number
   ): Promise<BidResponse> {
-    const response = await apiClient.post<BidResponse>(
-      '/auction/bids',
-      {
-        event_id: eventId,
-        auction_item_id: itemId,
-        bid_amount: amount,
-        bid_type: 'regular',
-      }
-    );
-    return response.data;
+    const response = await apiClient.post<BidResponse>('/auction/bids', {
+      event_id: eventId,
+      auction_item_id: itemId,
+      bid_amount: amount,
+      bid_type: 'regular',
+    })
+    return response.data
   }
 
   /**
@@ -117,17 +114,14 @@ class AuctionItemService {
     itemId: string,
     maxAmount: number
   ): Promise<BidResponse> {
-    const response = await apiClient.post<BidResponse>(
-      '/auction/bids',
-      {
-        event_id: eventId,
-        auction_item_id: itemId,
-        bid_amount: maxAmount,
-        max_bid: maxAmount,
-        bid_type: 'proxy_auto',
-      }
-    );
-    return response.data;
+    const response = await apiClient.post<BidResponse>('/auction/bids', {
+      event_id: eventId,
+      auction_item_id: itemId,
+      bid_amount: maxAmount,
+      max_bid: maxAmount,
+      bid_type: 'proxy_auto',
+    })
+    return response.data
   }
 
   /**
@@ -141,8 +135,8 @@ class AuctionItemService {
     const response = await apiClient.post(
       `/events/${eventId}/auction-items/${itemId}/buy-now`,
       { quantity }
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -153,16 +147,15 @@ class AuctionItemService {
     itemId: string,
     durationSeconds: number
   ): Promise<void> {
-    await apiClient.post(
-      `/auction/items/${itemId}/views`,
-      {
-        item_id: itemId,
-        view_started_at: new Date(Date.now() - durationSeconds * 1000).toISOString(),
-        view_duration_seconds: durationSeconds,
-      }
-    );
+    await apiClient.post(`/auction/items/${itemId}/views`, {
+      item_id: itemId,
+      view_started_at: new Date(
+        Date.now() - durationSeconds * 1000
+      ).toISOString(),
+      view_duration_seconds: durationSeconds,
+    })
   }
 }
 
-export const auctionItemService = new AuctionItemService();
-export default auctionItemService;
+export const auctionItemService = new AuctionItemService()
+export default auctionItemService

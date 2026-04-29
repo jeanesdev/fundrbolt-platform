@@ -1,20 +1,4 @@
-import {
-  DataTableCardView,
-  DataTablePagination,
-  DataTableToolbar,
-} from '@/components/data-table'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { cn } from '@/lib/utils'
+import { useEffect, useState } from 'react'
 import {
   type SortingState,
   type VisibilityState,
@@ -26,7 +10,23 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { useEffect, useState } from 'react'
+import { cn } from '@/lib/utils'
+import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  DataTableCardView,
+  DataTablePagination,
+  DataTableToolbar,
+} from '@/components/data-table'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { roles } from '../data/data'
 import { type User } from '../data/schema'
 import { DataTableBulkActions } from './data-table-bulk-actions'
@@ -156,9 +156,9 @@ export function UsersTable({
                         {header.isPlaceholder
                           ? null
                           : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
                       </TableHead>
                     )
                   })}

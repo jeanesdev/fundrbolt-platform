@@ -3,9 +3,8 @@
  *
  * Provides functions for managing meal selections for event attendees.
  */
-
-import apiClient from '@/lib/axios'
 import type { AxiosResponse } from 'axios'
+import apiClient from '@/lib/axios'
 
 // ================================
 // Types
@@ -58,9 +57,8 @@ export async function createMealSelection(
 export async function getRegistrationMealSelections(
   registrationId: string
 ): Promise<MealSelectionListResponse> {
-  const response: AxiosResponse<MealSelectionListResponse> = await apiClient.get(
-    `/registrations/${registrationId}/meal-selections`
-  )
+  const response: AxiosResponse<MealSelectionListResponse> =
+    await apiClient.get(`/registrations/${registrationId}/meal-selections`)
   return response.data
 }
 

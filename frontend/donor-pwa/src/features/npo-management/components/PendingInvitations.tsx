@@ -2,7 +2,13 @@
  * PendingInvitations Component
  * Displays list of pending member invitations with status and actions
  */
-
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { memberApi } from '@/services/npo-service'
+import type { MemberRole, PendingInvitation } from '@/types/npo'
+import { Clock, Mail, MailPlus, Trash2, UserPlus } from 'lucide-react'
+import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/error-utils'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +21,13 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
@@ -25,13 +37,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { getErrorMessage } from '@/lib/error-utils'
-import { memberApi } from '@/services/npo-service'
-import type { MemberRole, PendingInvitation } from '@/types/npo'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Clock, Mail, MailPlus, Trash2, UserPlus } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
 
 interface PendingInvitationsProps {
   npoId: string
@@ -53,9 +58,8 @@ const roleLabels: Record<MemberRole, string> = {
 
 export function PendingInvitations({ npoId }: PendingInvitationsProps) {
   const queryClient = useQueryClient()
-  const [invitationToRevoke, setInvitationToRevoke] = useState<PendingInvitation | null>(
-    null
-  )
+  const [invitationToRevoke, setInvitationToRevoke] =
+    useState<PendingInvitation | null>(null)
 
   // Fetch pending invitations
   const {
@@ -69,7 +73,8 @@ export function PendingInvitations({ npoId }: PendingInvitationsProps) {
 
   // Revoke invitation mutation
   const revokeMutation = useMutation({
-    mutationFn: (invitationId: string) => memberApi.revokeInvitation(npoId, invitationId),
+    mutationFn: (invitationId: string) =>
+      memberApi.revokeInvitation(npoId, invitationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['npo-invitations', npoId] })
       toast.success('Invitation revoked successfully')
@@ -83,7 +88,8 @@ export function PendingInvitations({ npoId }: PendingInvitationsProps) {
 
   // Resend invitation mutation
   const resendMutation = useMutation({
-    mutationFn: (invitationId: string) => memberApi.resendInvitation(npoId, invitationId),
+    mutationFn: (invitationId: string) =>
+      memberApi.resendInvitation(npoId, invitationId),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['npo-invitations', npoId] })
       toast.success(`Invitation resent to ${data.email}`)
@@ -114,15 +120,15 @@ export function PendingInvitations({ npoId }: PendingInvitationsProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
+          <CardTitle className='flex items-center gap-2'>
+            <Mail className='h-5 w-5' />
             Pending Invitations
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
+          <div className='space-y-4'>
+            <Skeleton className='h-10 w-full' />
+            <Skeleton className='h-10 w-full' />
           </div>
         </CardContent>
       </Card>
@@ -133,13 +139,13 @@ export function PendingInvitations({ npoId }: PendingInvitationsProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
+          <CardTitle className='flex items-center gap-2'>
+            <Mail className='h-5 w-5' />
             Pending Invitations
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-red-500">
+          <div className='py-8 text-center text-red-500'>
             Failed to load invitations. Please try again.
           </div>
         </CardContent>
@@ -154,8 +160,8 @@ export function PendingInvitations({ npoId }: PendingInvitationsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Mail className="h-5 w-5" />
+        <CardTitle className='flex items-center gap-2'>
+          <Mail className='h-5 w-5' />
           Pending Invitations
         </CardTitle>
         <CardDescription>
@@ -163,7 +169,7 @@ export function PendingInvitations({ npoId }: PendingInvitationsProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
+        <div className='rounded-md border'>
           <Table>
             <TableHeader>
               <TableRow>
@@ -171,7 +177,7 @@ export function PendingInvitations({ npoId }: PendingInvitationsProps) {
                 <TableHead>Role</TableHead>
                 <TableHead>Sent</TableHead>
                 <TableHead>Expires</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
+                <TableHead className='w-[100px]'>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -181,33 +187,38 @@ export function PendingInvitations({ npoId }: PendingInvitationsProps) {
                 const hoursUntilExpiry = Math.floor(
                   (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60)
                 )
-                const isExpiringSoon = hoursUntilExpiry < 24 && hoursUntilExpiry > 0
+                const isExpiringSoon =
+                  hoursUntilExpiry < 24 && hoursUntilExpiry > 0
 
                 return (
                   <TableRow key={invitation.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <UserPlus className="h-4 w-4 text-muted-foreground" />
+                    <TableCell className='font-medium'>
+                      <div className='flex items-center gap-2'>
+                        <UserPlus className='text-muted-foreground h-4 w-4' />
                         {invitation.email}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={roleColors[invitation.role as MemberRole]}>
+                      <Badge
+                        className={roleColors[invitation.role as MemberRole]}
+                      >
                         {roleLabels[invitation.role as MemberRole]}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className='text-muted-foreground'>
                       {new Date(invitation.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
+                      <div className='flex items-center gap-2'>
+                        <Clock className='text-muted-foreground h-4 w-4' />
                         <span
-                          className={isExpiringSoon ? 'text-orange-600 font-medium' : ''}
+                          className={
+                            isExpiringSoon ? 'font-medium text-orange-600' : ''
+                          }
                         >
                           {expiresAt.toLocaleDateString()}
                           {isExpiringSoon && (
-                            <span className="text-xs ml-1">
+                            <span className='ml-1 text-xs'>
                               ({hoursUntilExpiry}h left)
                             </span>
                           )}
@@ -215,26 +226,30 @@ export function PendingInvitations({ npoId }: PendingInvitationsProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
+                      <div className='flex items-center gap-1'>
                         <Button
-                          variant="ghost"
-                          size="sm"
+                          variant='ghost'
+                          size='sm'
                           onClick={() => handleResend(invitation.id)}
-                          disabled={resendMutation.isPending || revokeMutation.isPending}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          title="Resend invitation"
+                          disabled={
+                            resendMutation.isPending || revokeMutation.isPending
+                          }
+                          className='text-blue-600 hover:bg-blue-50 hover:text-blue-700'
+                          title='Resend invitation'
                         >
-                          <MailPlus className="h-4 w-4" />
+                          <MailPlus className='h-4 w-4' />
                         </Button>
                         <Button
-                          variant="ghost"
-                          size="sm"
+                          variant='ghost'
+                          size='sm'
                           onClick={() => handleRevoke(invitation)}
-                          disabled={resendMutation.isPending || revokeMutation.isPending}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          title="Revoke invitation"
+                          disabled={
+                            resendMutation.isPending || revokeMutation.isPending
+                          }
+                          className='text-red-600 hover:bg-red-50 hover:text-red-700'
+                          title='Revoke invitation'
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className='h-4 w-4' />
                         </Button>
                       </div>
                     </TableCell>
@@ -256,15 +271,15 @@ export function PendingInvitations({ npoId }: PendingInvitationsProps) {
             <AlertDialogTitle>Revoke Invitation</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to revoke the invitation for{' '}
-              <strong>{invitationToRevoke?.email}</strong>? The invitation link will no
-              longer work.
+              <strong>{invitationToRevoke?.email}</strong>? The invitation link
+              will no longer work.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmRevoke}
-              className="bg-red-600 hover:bg-red-700"
+              className='bg-red-600 hover:bg-red-700'
             >
               Revoke Invitation
             </AlertDialogAction>

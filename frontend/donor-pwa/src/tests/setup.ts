@@ -44,9 +44,9 @@ if (!HTMLElement.prototype.hasPointerCapture) {
 }
 
 if (!HTMLElement.prototype.setPointerCapture) {
-  HTMLElement.prototype.setPointerCapture = () => { }
+  HTMLElement.prototype.setPointerCapture = () => {}
 }
 
 if (!HTMLElement.prototype.releasePointerCapture) {
-  HTMLElement.prototype.releasePointerCapture = () => { }
+  HTMLElement.prototype.releasePointerCapture = () => {}
 }

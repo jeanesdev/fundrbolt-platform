@@ -9,7 +9,26 @@
  * - Empty state with Gavel icon
  * - Loading spinner for scroll trigger
  */
-import { StaleDataIndicator } from '@/components/pwa/stale-data-indicator'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import watchListService from '@/services/watchlistService'
+import type {
+  AuctionFilterType,
+  AuctionItemGalleryItem,
+  AuctionSortType,
+} from '@/types/auction-gallery'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
+import { Eye, Gavel, Loader2, RefreshCw } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import apiClient from '@/lib/axios'
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -18,28 +37,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import apiClient from '@/lib/axios'
-import { cn } from '@/lib/utils'
-import watchListService from '@/services/watchlistService'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import type {
-  AuctionFilterType,
-  AuctionItemGalleryItem,
-  AuctionSortType,
-} from '@/types/auction-gallery'
-import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
-import { Eye, Gavel, Loader2, RefreshCw } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { StaleDataIndicator } from '@/components/pwa/stale-data-indicator'
 import { AuctionItemCard } from './AuctionItemCard'
-
 
 function normalizeIdentifier(value: unknown): string | null {
   if (typeof value === 'string') {
@@ -282,14 +281,14 @@ export function AuctionGallery({
         (
           previous:
             | {
-              watch_list?: Array<{
-                id: string
-                user_id: string
-                auction_item_id: string
-                added_at: string
-              }>
-              total?: number
-            }
+                watch_list?: Array<{
+                  id: string
+                  user_id: string
+                  auction_item_id: string
+                  added_at: string
+                }>
+                total?: number
+              }
             | undefined
         ) => {
           const existing = previous?.watch_list ?? []
@@ -323,14 +322,14 @@ export function AuctionGallery({
         (
           previous:
             | {
-              watch_list?: Array<{
-                id: string
-                user_id: string
-                auction_item_id: string
-                added_at: string
-              }>
-              total?: number
-            }
+                watch_list?: Array<{
+                  id: string
+                  user_id: string
+                  auction_item_id: string
+                  added_at: string
+                }>
+                total?: number
+              }
             | undefined
         ) => {
           const existing = previous?.watch_list ?? []
@@ -687,10 +686,10 @@ export function AuctionGallery({
   // My Items: watched + bid on (max bid set)
   const myItemIds = isMyItemsMode
     ? new Set([
-      ...Array.from(watchedItemIds),
-      ...Object.keys(winningItemMap),
-      ...Object.keys(maxBidItemMap),
-    ])
+        ...Array.from(watchedItemIds),
+        ...Object.keys(winningItemMap),
+        ...Object.keys(maxBidItemMap),
+      ])
     : null
   const myItems = myItemIds
     ? items.filter((item) => myItemIds.has(item.id))
@@ -797,13 +796,13 @@ export function AuctionGallery({
                 style={
                   filter === option.value
                     ? {
-                      backgroundColor:
-                        'rgb(var(--event-primary, 59, 130, 246))',
-                      color: 'var(--event-text-on-primary, #FFFFFF)',
-                    }
+                        backgroundColor:
+                          'rgb(var(--event-primary, 59, 130, 246))',
+                        color: 'var(--event-text-on-primary, #FFFFFF)',
+                      }
                     : {
-                      color: 'var(--event-text-muted-on-background, #6B7280)',
-                    }
+                        color: 'var(--event-text-muted-on-background, #6B7280)',
+                      }
                 }
               >
                 {option.label}

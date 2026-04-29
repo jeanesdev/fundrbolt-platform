@@ -10,7 +10,6 @@
  * - event_coordinator: Dashboard, NPOs (read-only), Events (assigned), Users (event users, read-only)
  * - staff: Dashboard, NPO (read-only), Events (assigned), Users (event users, read-only)
  */
-
 import { useAuth } from './use-auth'
 import { useNpoContext } from './use-npo-context'
 
@@ -35,7 +34,8 @@ export interface UseRoleBasedNavReturn {
 }
 
 export function useRoleBasedNav(): UseRoleBasedNavReturn {
-  const { role, isSuperAdmin, isNpoAdmin, isEventCoordinator, isStaff } = useAuth()
+  const { role, isSuperAdmin, isNpoAdmin, isEventCoordinator, isStaff } =
+    useAuth()
   const { selectedNpoId } = useNpoContext()
 
   // Determine NPO link based on selected NPO

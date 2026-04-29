@@ -1,7 +1,8 @@
 'use client'
 
-import { PasswordInput } from '@/components/password-input'
-import { SelectDropdown } from '@/components/select-dropdown'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -20,9 +21,8 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
+import { PasswordInput } from '@/components/password-input'
+import { SelectDropdown } from '@/components/select-dropdown'
 import { roles } from '../data/data'
 import { type User } from '../data/schema'
 import { useCreateUser, useUpdateUser } from '../hooks/use-users'
@@ -130,25 +130,25 @@ export function UsersActionDialog({
     resolver: zodResolver(formSchema),
     defaultValues: isEdit
       ? {
-        firstName: currentRow.first_name,
-        lastName: currentRow.last_name,
-        email: currentRow.email,
-        role: currentRow.role,
-        phoneNumber: currentRow.phone || '',
-        password: '',
-        confirmPassword: '',
-        isEdit,
-      }
+          firstName: currentRow.first_name,
+          lastName: currentRow.last_name,
+          email: currentRow.email,
+          role: currentRow.role,
+          phoneNumber: currentRow.phone || '',
+          password: '',
+          confirmPassword: '',
+          isEdit,
+        }
       : {
-        firstName: '',
-        lastName: '',
-        email: '',
-        role: '',
-        phoneNumber: '',
-        password: '',
-        confirmPassword: '',
-        isEdit,
-      },
+          firstName: '',
+          lastName: '',
+          email: '',
+          role: '',
+          phoneNumber: '',
+          password: '',
+          confirmPassword: '',
+          isEdit,
+        },
   })
 
   const onSubmit = async (values: UserForm) => {

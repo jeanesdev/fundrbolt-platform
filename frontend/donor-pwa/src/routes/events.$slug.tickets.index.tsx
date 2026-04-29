@@ -2,19 +2,7 @@
  * Ticket Listing Page — /events/$slug/tickets
  * Public page showing available ticket packages for an event.
  */
-import { TicketPackageCard } from '@/components/tickets/TicketPackageCard'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  getEventBySlug,
-  getTicketPackages,
-  type PublicTicketPackage,
-} from '@/lib/api/events'
-import { hasValidRefreshToken } from '@/lib/storage/tokens'
-import { useAuthStore } from '@/stores/auth-store'
-import { useTicketCartStore } from '@/stores/ticket-cart-store'
+import { useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
@@ -25,7 +13,19 @@ import {
   ShoppingCart,
   Ticket,
 } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { useAuthStore } from '@/stores/auth-store'
+import { useTicketCartStore } from '@/stores/ticket-cart-store'
+import {
+  getEventBySlug,
+  getTicketPackages,
+  type PublicTicketPackage,
+} from '@/lib/api/events'
+import { hasValidRefreshToken } from '@/lib/storage/tokens'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { TicketPackageCard } from '@/components/tickets/TicketPackageCard'
 
 export const Route = createFileRoute('/events/$slug/tickets/')({
   component: TicketListingPage,
@@ -242,7 +242,13 @@ function TicketListingPage() {
 
       {/* Sticky Cart Bar */}
       {itemCount > 0 && (
-        <div className='fixed inset-x-0 bottom-0 z-50 border-t p-4 shadow-lg backdrop-blur' style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.95)' }}>
+        <div
+          className='fixed inset-x-0 bottom-0 z-50 border-t p-4 shadow-lg backdrop-blur'
+          style={{
+            backgroundColor:
+              'rgb(var(--event-background, 255, 255, 255) / 0.95)',
+          }}
+        >
           <div className='container mx-auto flex max-w-2xl items-center justify-between'>
             <div className='flex items-center gap-3'>
               <Badge variant='secondary' className='text-sm'>

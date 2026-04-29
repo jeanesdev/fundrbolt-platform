@@ -2,9 +2,8 @@
  * NotificationBell — bell icon button with unread badge
  * Opens/closes the NotificationCenter panel
  */
-
-import { useNotificationStore } from '@/stores/notification-store'
 import { Bell } from 'lucide-react'
+import { useNotificationStore } from '@/stores/notification-store'
 
 interface NotificationBellProps {
   /** 'hero' for transparent hero overlay (white text), 'header' for sticky headers (dark text) */
@@ -31,7 +30,7 @@ export function NotificationBell({ variant = 'hero' }: NotificationBellProps) {
     >
       <Bell className='h-5 w-5' />
       {unreadCount > 0 && (
-        <span className='absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white'>
+        <span className='absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] leading-none font-bold text-white'>
           {displayCount}
         </span>
       )}

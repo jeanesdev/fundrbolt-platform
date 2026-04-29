@@ -2,7 +2,6 @@
  * Event Zustand Store
  * Manages event state, media, links, and food options
  */
-
 import eventService, { type NPOBranding } from '@/services/event-service'
 import type {
   Event,
@@ -45,10 +44,12 @@ function getErrorMessage(error: unknown): string {
   return 'An unexpected error occurred'
 }
 
-export function getEventsWithDetails<T extends { event?: Event | null }>(registrations: T[]): Event[] {
+export function getEventsWithDetails<T extends { event?: Event | null }>(
+  registrations: T[]
+): Event[] {
   return registrations
     .map((registration) => registration.event)
-    .filter((event): event is Event => Boolean(event));
+    .filter((event): event is Event => Boolean(event))
 }
 
 interface EventState {
@@ -90,7 +91,10 @@ interface EventState {
   setUploadProgress: (fileId: string, progress: number) => void
 
   // Actions - Link Management
-  createLink: (eventId: string, data: EventLinkCreateRequest) => Promise<EventLink>
+  createLink: (
+    eventId: string,
+    data: EventLinkCreateRequest
+  ) => Promise<EventLink>
   updateLink: (
     eventId: string,
     linkId: string,
@@ -297,8 +301,10 @@ export const useEventStore = create<EventState>((set, get) => ({
       set((state) => ({
         events: state.events.filter((e) => e.id !== eventId),
         eventsTotalCount: state.eventsTotalCount - 1,
-        currentEvent: state.currentEventId === eventId ? null : state.currentEvent,
-        currentEventId: state.currentEventId === eventId ? null : state.currentEventId,
+        currentEvent:
+          state.currentEventId === eventId ? null : state.currentEvent,
+        currentEventId:
+          state.currentEventId === eventId ? null : state.currentEventId,
         eventsLoading: false,
       }))
     } catch (error) {
@@ -355,9 +361,12 @@ export const useEventStore = create<EventState>((set, get) => ({
           ? refreshedEvent
           : state.currentEvent
             ? {
-              ...state.currentEvent,
-              media: [...(state.currentEvent.media || []).filter(Boolean), media],
-            }
+                ...state.currentEvent,
+                media: [
+                  ...(state.currentEvent.media || []).filter(Boolean),
+                  media,
+                ],
+              }
             : null,
         uploadProgress: { ...state.uploadProgress, [fileId]: 100 },
         uploadingFiles: { ...state.uploadingFiles, [fileId]: false },
@@ -377,9 +386,9 @@ export const useEventStore = create<EventState>((set, get) => ({
       set((state) => ({
         currentEvent: state.currentEvent
           ? {
-            ...state.currentEvent,
-            media: state.currentEvent.media?.filter((m) => m.id !== mediaId),
-          }
+              ...state.currentEvent,
+              media: state.currentEvent.media?.filter((m) => m.id !== mediaId),
+            }
           : null,
       }))
     } catch (error) {
@@ -401,9 +410,9 @@ export const useEventStore = create<EventState>((set, get) => ({
       set((state) => ({
         currentEvent: state.currentEvent
           ? {
-            ...state.currentEvent,
-            links: [...(state.currentEvent.links || []), link],
-          }
+              ...state.currentEvent,
+              links: [...(state.currentEvent.links || []), link],
+            }
           : null,
       }))
       return link
@@ -419,9 +428,11 @@ export const useEventStore = create<EventState>((set, get) => ({
       set((state) => ({
         currentEvent: state.currentEvent
           ? {
-            ...state.currentEvent,
-            links: state.currentEvent.links?.map((l) => (l.id === linkId ? link : l)),
-          }
+              ...state.currentEvent,
+              links: state.currentEvent.links?.map((l) =>
+                l.id === linkId ? link : l
+              ),
+            }
           : null,
       }))
       return link
@@ -437,9 +448,9 @@ export const useEventStore = create<EventState>((set, get) => ({
       set((state) => ({
         currentEvent: state.currentEvent
           ? {
-            ...state.currentEvent,
-            links: state.currentEvent.links?.filter((l) => l.id !== linkId),
-          }
+              ...state.currentEvent,
+              links: state.currentEvent.links?.filter((l) => l.id !== linkId),
+            }
           : null,
       }))
     } catch (error) {
@@ -451,13 +462,19 @@ export const useEventStore = create<EventState>((set, get) => ({
   // Food Options Management Actions
   createFoodOption: async (eventId, data) => {
     try {
-      const foodOption = await eventService.foodOptions.createFoodOption(eventId, data)
+      const foodOption = await eventService.foodOptions.createFoodOption(
+        eventId,
+        data
+      )
       set((state) => ({
         currentEvent: state.currentEvent
           ? {
-            ...state.currentEvent,
-            food_options: [...(state.currentEvent.food_options || []), foodOption],
-          }
+              ...state.currentEvent,
+              food_options: [
+                ...(state.currentEvent.food_options || []),
+                foodOption,
+              ],
+            }
           : null,
       }))
       return foodOption
@@ -477,11 +494,11 @@ export const useEventStore = create<EventState>((set, get) => ({
       set((state) => ({
         currentEvent: state.currentEvent
           ? {
-            ...state.currentEvent,
-            food_options: state.currentEvent.food_options?.map((f) =>
-              f.id === optionId ? foodOption : f
-            ),
-          }
+              ...state.currentEvent,
+              food_options: state.currentEvent.food_options?.map((f) =>
+                f.id === optionId ? foodOption : f
+              ),
+            }
           : null,
       }))
       return foodOption
@@ -497,11 +514,11 @@ export const useEventStore = create<EventState>((set, get) => ({
       set((state) => ({
         currentEvent: state.currentEvent
           ? {
-            ...state.currentEvent,
-            food_options: state.currentEvent.food_options?.filter(
-              (f) => f.id !== optionId
-            ),
-          }
+              ...state.currentEvent,
+              food_options: state.currentEvent.food_options?.filter(
+                (f) => f.id !== optionId
+              ),
+            }
           : null,
       }))
     } catch (error) {
@@ -516,7 +533,9 @@ export const useEventStore = create<EventState>((set, get) => ({
   },
 
   getPublishedEvents: () => {
-    return get().events.filter((e) => e.status === 'active' || e.status === 'closed')
+    return get().events.filter(
+      (e) => e.status === 'active' || e.status === 'closed'
+    )
   },
 
   getDraftEvents: () => {

@@ -5,10 +5,10 @@
  * - Bidding and registration actions are disabled
  * - Seating shows a placeholder instead of querying user-specific data
  */
-import type { Sponsor } from '@/lib/api/sponsors'
+import { createContext, useContext } from 'react'
 import type { AuctionItemDetail } from '@/types/auction-item'
 import type { EventDetail } from '@/types/event'
-import { createContext, useContext } from 'react'
+import type { Sponsor } from '@/lib/api/sponsors'
 
 export interface PreviewEventData {
   event: EventDetail

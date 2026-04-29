@@ -11,7 +11,6 @@
  *
  * Email is NOT editable via profile form (requires separate verification flow)
  */
-
 import { z } from 'zod'
 
 // E.164 phone format regex: +[country code][number]
@@ -36,7 +35,7 @@ export const profileUpdateSchema = z.object({
     .regex(phoneRegex, 'Phone must be in E.164 format (e.g., +14155552671)')
     .optional()
     .or(z.literal(''))
-    .transform(val => val === '' ? undefined : val),
+    .transform((val) => (val === '' ? undefined : val)),
 
   organization_name: z
     .string()
@@ -44,7 +43,7 @@ export const profileUpdateSchema = z.object({
     .trim()
     .optional()
     .or(z.literal(''))
-    .transform(val => val === '' ? undefined : val),
+    .transform((val) => (val === '' ? undefined : val)),
 
   address_line1: z
     .string()
@@ -52,7 +51,7 @@ export const profileUpdateSchema = z.object({
     .trim()
     .optional()
     .or(z.literal(''))
-    .transform(val => val === '' ? undefined : val),
+    .transform((val) => (val === '' ? undefined : val)),
 
   address_line2: z
     .string()
@@ -60,7 +59,7 @@ export const profileUpdateSchema = z.object({
     .trim()
     .optional()
     .or(z.literal(''))
-    .transform(val => val === '' ? undefined : val),
+    .transform((val) => (val === '' ? undefined : val)),
 
   city: z
     .string()
@@ -68,7 +67,7 @@ export const profileUpdateSchema = z.object({
     .trim()
     .optional()
     .or(z.literal(''))
-    .transform(val => val === '' ? undefined : val),
+    .transform((val) => (val === '' ? undefined : val)),
 
   state: z
     .string()
@@ -76,7 +75,7 @@ export const profileUpdateSchema = z.object({
     .trim()
     .optional()
     .or(z.literal(''))
-    .transform(val => val === '' ? undefined : val),
+    .transform((val) => (val === '' ? undefined : val)),
 
   postal_code: z
     .string()
@@ -84,7 +83,7 @@ export const profileUpdateSchema = z.object({
     .trim()
     .optional()
     .or(z.literal(''))
-    .transform(val => val === '' ? undefined : val),
+    .transform((val) => (val === '' ? undefined : val)),
 
   country: z
     .string()
@@ -92,7 +91,7 @@ export const profileUpdateSchema = z.object({
     .trim()
     .optional()
     .or(z.literal(''))
-    .transform(val => val === '' ? undefined : val),
+    .transform((val) => (val === '' ? undefined : val)),
 
   social_media_links: z.record(z.string(), z.string()).optional(),
 })

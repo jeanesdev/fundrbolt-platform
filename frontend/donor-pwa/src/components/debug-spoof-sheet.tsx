@@ -6,24 +6,17 @@
  * - Swipe down to dismiss the sheet
  * - Only visible to super_admin users
  */
-
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import apiClient from '@/lib/axios'
-import { cn } from '@/lib/utils'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { useEventStore } from '@/stores/event-store'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Clock, User, X } from 'lucide-react'
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { useEventStore } from '@/stores/event-store'
+import apiClient from '@/lib/axios'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -45,7 +38,7 @@ function toDateTimeLocalInputValue(date: Date): string {
 
 function parseEventStartForSpoof(
   eventDateTime: string | null | undefined,
-  eventTimezone: string | null | undefined,
+  eventTimezone: string | null | undefined
 ): Date | null {
   if (!eventDateTime) return null
 
@@ -56,7 +49,7 @@ function parseEventStartForSpoof(
   }
 
   const localMatch = eventDateTime.match(
-    /^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2}))?/,
+    /^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2}))?/
   )
   if (!localMatch) {
     const fallbackParsed = new Date(eventDateTime)
@@ -115,7 +108,7 @@ function parseEventStartForSpoof(
         zoned.day,
         zoned.hour,
         zoned.minute,
-        zoned.second,
+        zoned.second
       )
       const diffMs = targetAsUtcMs - guessAsLocalUtcMs
       if (diffMs === 0) break
@@ -150,7 +143,7 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
 
   // Touch tracking
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(
-    null,
+    null
   )
 
   // Store access
@@ -194,7 +187,7 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
 
     const timeoutId = window.setTimeout(() => {
       setSpoofTimeInput(
-        toDateTimeLocalInputValue(new Date(getEffectiveNowMs())),
+        toDateTimeLocalInputValue(new Date(getEffectiveNowMs()))
       )
     }, 0)
 
@@ -249,7 +242,7 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
 
   const eventStartDate = parseEventStartForSpoof(
     resolvedEventDateTime,
-    resolvedEventTimezone,
+    resolvedEventTimezone
   )
   const hasValidEventStart =
     !!eventStartDate && !Number.isNaN(eventStartDate.getTime())
@@ -280,10 +273,7 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
     }
     const match = usersData?.items?.find((c) => c.id === userId)
     if (!match) return
-    setSpoofedUser(
-      userId,
-      `${match.first_name} ${match.last_name}`.trim(),
-    )
+    setSpoofedUser(userId, `${match.first_name} ${match.last_name}`.trim())
     toast.success('User spoof enabled')
   }
 
@@ -339,7 +329,7 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
 
       touchStartRef.current = null
     },
-    [onOpenChange],
+    [onOpenChange]
   )
 
   // ── Render ──────────────────────────────────────────────────────────────
@@ -360,29 +350,31 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
     >
       {/* Backdrop */}
       <div
-        className='absolute inset-0 bg-black/50 animate-in fade-in-0'
+        className='animate-in fade-in-0 absolute inset-0 bg-black/50'
         onClick={() => onOpenChange(false)}
         aria-hidden='true'
       />
 
       {/* Sheet — force light-theme variables so inputs/buttons are readable on white */}
       <div
-        className='absolute inset-x-0 bottom-0 z-50 flex h-[85vh] flex-col rounded-t-2xl bg-white shadow-xl animate-in slide-in-from-bottom duration-300'
-        style={{
-          '--foreground': 'oklch(0.18 0.06 250)',
-          '--background': 'oklch(0.98 0.008 250)',
-          '--muted-foreground': 'oklch(0.50 0.06 250)',
-          '--border': 'oklch(0.88 0.03 250)',
-          '--input': 'oklch(0.88 0.03 250)',
-          '--ring': 'oklch(0.50 0.10 250)',
-          '--primary': 'oklch(0.35 0.12 250)',
-          '--primary-foreground': 'oklch(0.98 0.008 250)',
-          '--secondary': 'oklch(0.92 0.02 250)',
-          '--secondary-foreground': 'oklch(0.25 0.08 250)',
-          '--accent': 'oklch(0.88 0.04 250)',
-          '--accent-foreground': 'oklch(0.25 0.08 250)',
-          color: 'oklch(0.18 0.06 250)',
-        } as React.CSSProperties}
+        className='animate-in slide-in-from-bottom absolute inset-x-0 bottom-0 z-50 flex h-[85vh] flex-col rounded-t-2xl bg-white shadow-xl duration-300'
+        style={
+          {
+            '--foreground': 'oklch(0.18 0.06 250)',
+            '--background': 'oklch(0.98 0.008 250)',
+            '--muted-foreground': 'oklch(0.50 0.06 250)',
+            '--border': 'oklch(0.88 0.03 250)',
+            '--input': 'oklch(0.88 0.03 250)',
+            '--ring': 'oklch(0.50 0.10 250)',
+            '--primary': 'oklch(0.35 0.12 250)',
+            '--primary-foreground': 'oklch(0.98 0.008 250)',
+            '--secondary': 'oklch(0.92 0.02 250)',
+            '--secondary-foreground': 'oklch(0.25 0.08 250)',
+            '--accent': 'oklch(0.88 0.04 250)',
+            '--accent-foreground': 'oklch(0.25 0.08 250)',
+            color: 'oklch(0.18 0.06 250)',
+          } as React.CSSProperties
+        }
       >
         {/* Drag handle */}
         <div className='flex justify-center pt-3 pb-1'>
@@ -410,7 +402,7 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
               'flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
               page === 'time'
                 ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500',
+                : 'text-gray-500'
             )}
             onClick={() => setPage('time')}
           >
@@ -423,7 +415,7 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
               'flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
               page === 'user'
                 ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500',
+                : 'text-gray-500'
             )}
             onClick={() => setPage('user')}
           >
@@ -471,7 +463,11 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
                 )}
 
                 <div className='flex flex-wrap gap-2'>
-                  <Button type='button' size='sm' onClick={handleSpoofTimeApply}>
+                  <Button
+                    type='button'
+                    size='sm'
+                    onClick={handleSpoofTimeApply}
+                  >
                     Apply
                   </Button>
                   <Button
@@ -483,7 +479,7 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
                       if (!eventStartDate) return
                       setSpoofedTime(eventStartDate)
                       setSpoofTimeInput(
-                        toDateTimeLocalInputValue(eventStartDate),
+                        toDateTimeLocalInputValue(eventStartDate)
                       )
                       toast.success('Time spoof set to event start')
                     }}
@@ -549,7 +545,7 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
                       'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
                       !spoofedUser
                         ? 'bg-blue-50 font-medium text-blue-700'
-                        : 'text-gray-700 hover:bg-gray-50',
+                        : 'text-gray-700 hover:bg-gray-50'
                     )}
                     onClick={() => handleSelectUser('__none__')}
                   >
@@ -574,7 +570,8 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
                   {!usersLoading &&
                     filteredUsers.map((candidate) => {
                       const isActive = spoofedUser?.id === candidate.id
-                      const initials = `${candidate.first_name?.[0] ?? ''}${candidate.last_name?.[0] ?? ''}`.toUpperCase()
+                      const initials =
+                        `${candidate.first_name?.[0] ?? ''}${candidate.last_name?.[0] ?? ''}`.toUpperCase()
                       return (
                         <button
                           key={candidate.id}
@@ -583,7 +580,7 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
                             'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
                             isActive
                               ? 'bg-blue-50 font-medium text-blue-700'
-                              : 'text-gray-700 hover:bg-gray-50',
+                              : 'text-gray-700 hover:bg-gray-50'
                           )}
                           onClick={() => handleSelectUser(candidate.id)}
                         >
@@ -608,19 +605,19 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
         </div>
 
         {/* Page indicator dots */}
-        <div className='flex justify-center gap-2 pb-4 pt-2'>
+        <div className='flex justify-center gap-2 pt-2 pb-4'>
           {PAGES.map((p) => (
             <div
               key={p}
               className={cn(
                 'h-1.5 rounded-full transition-all duration-300',
-                page === p ? 'w-6 bg-gray-800' : 'w-1.5 bg-gray-300',
+                page === p ? 'w-6 bg-gray-800' : 'w-1.5 bg-gray-300'
               )}
             />
           ))}
         </div>
       </div>
     </div>,
-    document.body,
+    document.body
   )
 }

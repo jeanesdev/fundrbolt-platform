@@ -2,8 +2,30 @@
  * Ticket Inventory Page — /_authenticated/tickets
  * Shows all tickets the user has purchased across events.
  */
-import { TicketAssignmentCard } from '@/components/tickets/TicketAssignmentCard'
-import { TicketAssignmentForm } from '@/components/tickets/TicketAssignmentForm'
+import { useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import {
+  AlertCircle,
+  CalendarDays,
+  ChevronDown,
+  Ticket,
+  TicketCheck,
+  UserPlus,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import {
+  cancelAssignment,
+  cancelRegistration,
+} from '@/lib/api/ticket-assignments'
+import { resendInvitation, sendInvitation } from '@/lib/api/ticket-invitations'
+import {
+  getMyInventory,
+  type EventTicketSummary,
+  type TicketDetail,
+} from '@/lib/api/ticket-purchases'
+import apiClient from '@/lib/axios'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,31 +45,9 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import { Skeleton } from '@/components/ui/skeleton'
+import { TicketAssignmentCard } from '@/components/tickets/TicketAssignmentCard'
+import { TicketAssignmentForm } from '@/components/tickets/TicketAssignmentForm'
 import { SelfRegistrationFlow } from '@/features/tickets/SelfRegistrationFlow'
-import {
-  cancelAssignment,
-  cancelRegistration,
-} from '@/lib/api/ticket-assignments'
-import { resendInvitation, sendInvitation } from '@/lib/api/ticket-invitations'
-import {
-  getMyInventory,
-  type EventTicketSummary,
-  type TicketDetail,
-} from '@/lib/api/ticket-purchases'
-import apiClient from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import {
-  AlertCircle,
-  CalendarDays,
-  ChevronDown,
-  Ticket,
-  TicketCheck,
-  UserPlus,
-} from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
 
 export const Route = createFileRoute('/_authenticated/tickets')({
   component: TicketInventoryPage,
@@ -286,8 +286,9 @@ function TicketInventoryPage() {
                   <div className='flex items-center gap-2'>
                     <Badge variant='outline'>{evt.total_tickets} tickets</Badge>
                     <ChevronDown
-                      className={`h-5 w-5 transition-transform ${openSections.has(evt.event_id) ? 'rotate-180' : ''
-                        }`}
+                      className={`h-5 w-5 transition-transform ${
+                        openSections.has(evt.event_id) ? 'rotate-180' : ''
+                      }`}
                     />
                   </div>
                 </div>
@@ -399,7 +400,8 @@ function TicketInventoryPage() {
                                   ticketNumber: ticket.ticket_number,
                                   eventName: evt.event_name,
                                   guestName:
-                                    ticket.assignment?.guest_name ?? 'This guest',
+                                    ticket.assignment?.guest_name ??
+                                    'This guest',
                                   guestEmail:
                                     ticket.assignment?.guest_email ?? '',
                                   isSelfRegistration:
@@ -409,23 +411,20 @@ function TicketInventoryPage() {
                               onResendInvite={(id) =>
                                 resendInviteMutation.mutate(id)
                               }
-                              isResendingInvite={
-                                resendInviteMutation.isPending
-                              }
+                              isResendingInvite={resendInviteMutation.isPending}
                               onCancelAssignment={(id) =>
                                 setPendingAssignmentCancel({
                                   assignmentId: id,
                                   ticketNumber: ticket.ticket_number,
                                   eventName: evt.event_name,
                                   guestName:
-                                    ticket.assignment?.guest_name ?? 'This guest',
+                                    ticket.assignment?.guest_name ??
+                                    'This guest',
                                   guestEmail:
                                     ticket.assignment?.guest_email ?? '',
                                 })
                               }
-                              isCancellingAssignment={
-                                cancelMutation.isPending
-                              }
+                              isCancellingAssignment={cancelMutation.isPending}
                               isCancellingRegistration={
                                 cancelRegistrationMutation.isPending
                               }
@@ -486,11 +485,11 @@ function TicketInventoryPage() {
                 : 'This will revoke the ticket and prevent that guest from registering.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className='rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm'>
-            <p className='font-medium text-destructive'>Important</p>
+          <div className='border-destructive/30 bg-destructive/5 rounded-lg border p-4 text-sm'>
+            <p className='text-destructive font-medium'>Important</p>
             <p className='text-muted-foreground mt-1'>
-              Any invitation link already sent for this ticket will stop
-              working after you revoke it.
+              Any invitation link already sent for this ticket will stop working
+              after you revoke it.
             </p>
           </div>
           <AlertDialogFooter>
@@ -538,8 +537,8 @@ function TicketInventoryPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           {!pendingRegistrationCancel?.isSelfRegistration && (
-            <div className='rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm'>
-              <p className='font-medium text-destructive'>Important</p>
+            <div className='border-destructive/30 bg-destructive/5 rounded-lg border p-4 text-sm'>
+              <p className='text-destructive font-medium'>Important</p>
               <p className='text-muted-foreground mt-1'>
                 The guest will receive an email confirming that their
                 registration was cancelled and their ticket was revoked.

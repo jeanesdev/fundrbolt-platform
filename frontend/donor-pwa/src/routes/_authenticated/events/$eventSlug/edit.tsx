@@ -8,7 +8,7 @@ function RedirectToView() {
   const { eventSlug } = useParams({
     from: '/_authenticated/events/$eventSlug/edit',
   })
-  return <Navigate to="/events/$slug" params={{ slug: eventSlug }} />
+  return <Navigate to='/events/$slug' params={{ slug: eventSlug }} />
 }
 
 export const Route = createFileRoute('/_authenticated/events/$eventSlug/edit')({

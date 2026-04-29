@@ -1,3 +1,13 @@
+import { useState } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Link } from '@tanstack/react-router'
+import { ChevronDown, Eye, EyeOff, Loader2, LockKeyhole } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import apiClient from '@/lib/axios'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Collapsible,
@@ -14,16 +24,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import apiClient from '@/lib/axios'
-import { cn } from '@/lib/utils'
-import { useAuthStore } from '@/stores/auth-store'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Link } from '@tanstack/react-router'
-import { ChevronDown, Eye, EyeOff, Loader2, LockKeyhole } from 'lucide-react'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
 
 type PasswordChangeFormValues = {
   current_password?: string
@@ -269,7 +269,9 @@ export function PasswordChangeForm({
         <div className='mt-2 flex flex-col items-start gap-2'>
           <Button className='w-full sm:w-auto' disabled={isLoading}>
             {isLoading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-            {isBackupPasswordMode ? 'Save recovery password' : 'Change password'}
+            {isBackupPasswordMode
+              ? 'Save recovery password'
+              : 'Change password'}
           </Button>
           {!isBackupPasswordMode && (
             <Button asChild variant='link' className='h-auto px-0'>

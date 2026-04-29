@@ -3,25 +3,44 @@
  *
  * Multi-step registration wizard for event registration with guest and meal selection.
  */
-
-import { GuestForm, type GuestFormData } from '@/components/GuestForm'
-import { MealSelectionForm, type MealSelectionFormData } from '@/components/MealSelectionForm'
+import { useEffect, useState } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import {
+  createFileRoute,
+  Link,
+  useLocation,
+  useNavigate,
+} from '@tanstack/react-router'
+import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { getEventBySlug } from '@/lib/api/events'
+import { addGuest } from '@/lib/api/guests'
+import {
+  createMealSelection,
+  getRegistrationMealSelections,
+} from '@/lib/api/meal-selections'
+import {
+  createRegistration,
+  getUserRegistrations,
+} from '@/lib/api/registrations'
+import { useEventBranding } from '@/hooks/use-event-branding'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
-import { useEventBranding } from '@/hooks/use-event-branding'
-import { getEventBySlug } from '@/lib/api/events'
-import { addGuest } from '@/lib/api/guests'
-import { createMealSelection, getRegistrationMealSelections } from '@/lib/api/meal-selections'
-import { createRegistration, getUserRegistrations } from '@/lib/api/registrations'
-import { useAuthStore } from '@/stores/auth-store'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link, useLocation, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { GuestForm, type GuestFormData } from '@/components/GuestForm'
+import {
+  MealSelectionForm,
+  type MealSelectionFormData,
+} from '@/components/MealSelectionForm'
 
 export const Route = createFileRoute('/events/$slug/register')({
   validateSearch: (search: Record<string, unknown>) => {
@@ -32,21 +51,33 @@ export const Route = createFileRoute('/events/$slug/register')({
   component: EventRegistration,
 })
 
-type RegistrationStep = 'guest-count' | 'guest-details' | 'meal-selections' | 'complete'
+type RegistrationStep =
+  | 'guest-count'
+  | 'guest-details'
+  | 'meal-selections'
+  | 'complete'
 
 interface GuestData extends GuestFormData {
   index: number
 }
 
 function getApiErrorMessage(error: unknown, fallback: string): string {
-  const detail = (error as { response?: { data?: { detail?: string | { message?: string } } } })
-    ?.response?.data?.detail
+  const detail = (
+    error as {
+      response?: { data?: { detail?: string | { message?: string } } }
+    }
+  )?.response?.data?.detail
 
   if (typeof detail === 'string') {
     return detail
   }
 
-  if (detail && typeof detail === 'object' && 'message' in detail && typeof detail.message === 'string') {
+  if (
+    detail &&
+    typeof detail === 'object' &&
+    'message' in detail &&
+    typeof detail.message === 'string'
+  ) {
     return detail.message
   }
 
@@ -59,14 +90,18 @@ function EventRegistration() {
   const location = useLocation()
   const user = useAuthStore((state) => state.user)
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
-  const restoreUserFromRefreshToken = useAuthStore((state) => state.restoreUserFromRefreshToken)
+  const restoreUserFromRefreshToken = useAuthStore(
+    (state) => state.restoreUserFromRefreshToken
+  )
   const { applyBranding } = useEventBranding()
 
   const [step, setStep] = useState<RegistrationStep>('guest-count')
   const [guestCount, setGuestCount] = useState(1)
   const [guests, setGuests] = useState<GuestData[]>([])
   const [currentGuestIndex, setCurrentGuestIndex] = useState(0)
-  const [mealSelections, setMealSelections] = useState<Record<string, string>>({})
+  const [mealSelections, setMealSelections] = useState<Record<string, string>>(
+    {}
+  )
   const [currentMealIndex, setCurrentMealIndex] = useState(0)
   const [registrationId, setRegistrationId] = useState<string | null>(null)
   const [guestIds, setGuestIds] = useState<string[]>([])
@@ -116,10 +151,18 @@ function EventRegistration() {
 
   // Add guest mutation
   const addGuestMutation = useMutation({
-    mutationFn: ({ registrationId, guestData }: { registrationId: string; guestData: GuestFormData }) =>
-      addGuest(registrationId, guestData),
+    mutationFn: ({
+      registrationId,
+      guestData,
+    }: {
+      registrationId: string
+      guestData: GuestFormData
+    }) => addGuest(registrationId, guestData),
     onSuccess: (data, variables) => {
-      const newGuests = [...guests, { ...variables.guestData, index: currentGuestIndex }]
+      const newGuests = [
+        ...guests,
+        { ...variables.guestData, index: currentGuestIndex },
+      ]
       setGuests(newGuests)
       setGuestIds([...guestIds, data.id])
       toast.success(`Guest ${currentGuestIndex + 1} added!`)
@@ -246,7 +289,9 @@ function EventRegistration() {
       if (actualMealSelections >= expectedMealSelections) {
         // User has already completed all meal selections
         setStep('complete')
-        toast.info('You have already completed your registration for this event.')
+        toast.info(
+          'You have already completed your registration for this event.'
+        )
       } else if (event.food_options && event.food_options.length > 0) {
         // User needs to complete meal selections
         setStep('meal-selections')
@@ -258,7 +303,7 @@ function EventRegistration() {
         toast.info('You are already registered for this event.')
       }
     }
-  }, [registrationId, event, existingMealSelections, guestCount])  // Step handlers
+  }, [registrationId, event, existingMealSelections, guestCount]) // Step handlers
   const handleGuestCountSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
@@ -313,7 +358,8 @@ function EventRegistration() {
   const handleMealSubmit = (data: MealSelectionFormData) => {
     if (!registrationId) return
 
-    const guestId = currentMealIndex === 0 ? null : guestIds[currentMealIndex - 1]
+    const guestId =
+      currentMealIndex === 0 ? null : guestIds[currentMealIndex - 1]
 
     createMealMutation.mutate({
       registrationId,
@@ -325,10 +371,10 @@ function EventRegistration() {
   // Show loading while restoring user
   if (isRestoring) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
+      <div className='flex min-h-screen items-center justify-center'>
+        <div className='text-center'>
+          <div className='border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2'></div>
+          <p className='text-muted-foreground'>Loading...</p>
         </div>
       </div>
     )
@@ -346,23 +392,24 @@ function EventRegistration() {
       : location.pathname
 
     return (
-      <div className="container max-w-2xl mx-auto py-12">
+      <div className='container mx-auto max-w-2xl py-12'>
         <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Event Registration</CardTitle>
+          <CardHeader className='text-center'>
+            <CardTitle className='text-2xl'>Event Registration</CardTitle>
             <CardDescription>
               {event ? `Register for ${event.name}` : 'Loading event...'}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="text-center space-y-4">
-              <p className="text-muted-foreground">
-                To register for this event, please sign in to your account or create a new one.
+          <CardContent className='space-y-6'>
+            <div className='space-y-4 text-center'>
+              <p className='text-muted-foreground'>
+                To register for this event, please sign in to your account or
+                create a new one.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button asChild size="lg">
+              <div className='flex flex-col justify-center gap-3 sm:flex-row'>
+                <Button asChild size='lg'>
                   <Link
-                    to="/sign-in"
+                    to='/sign-in'
                     search={{
                       redirect: fullRedirectUrl,
                     }}
@@ -370,9 +417,9 @@ function EventRegistration() {
                     Sign In
                   </Link>
                 </Button>
-                <Button asChild variant="outline" size="lg">
+                <Button asChild variant='outline' size='lg'>
                   <Link
-                    to="/sign-up"
+                    to='/sign-up'
                     search={{
                       redirect: fullRedirectUrl,
                     }}
@@ -391,9 +438,11 @@ function EventRegistration() {
   // Loading state
   if (isLoadingEvent || isCheckingRegistration) {
     return (
-      <div className="container max-w-2xl mx-auto py-12">
-        <div className="text-center">
-          {isLoadingEvent ? 'Loading event...' : 'Checking registration status...'}
+      <div className='container mx-auto max-w-2xl py-12'>
+        <div className='text-center'>
+          {isLoadingEvent
+            ? 'Loading event...'
+            : 'Checking registration status...'}
         </div>
       </div>
     )
@@ -401,11 +450,13 @@ function EventRegistration() {
 
   if (!event) {
     return (
-      <div className="container max-w-2xl mx-auto py-12">
+      <div className='container mx-auto max-w-2xl py-12'>
         <Card>
           <CardHeader>
             <CardTitle>Event Not Found</CardTitle>
-            <CardDescription>The event you're looking for doesn't exist.</CardDescription>
+            <CardDescription>
+              The event you're looking for doesn't exist.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => navigate({ to: '/events' })}>
@@ -419,7 +470,12 @@ function EventRegistration() {
 
   // Calculate progress
   const getProgress = () => {
-    const steps = ['guest-count', 'guest-details', 'meal-selections', 'complete']
+    const steps = [
+      'guest-count',
+      'guest-details',
+      'meal-selections',
+      'complete',
+    ]
     const currentIndex = steps.indexOf(step)
     return ((currentIndex + 1) / steps.length) * 100
   }
@@ -433,20 +489,20 @@ function EventRegistration() {
   }
 
   return (
-    <div className="container max-w-2xl mx-auto py-12">
+    <div className='container mx-auto max-w-2xl py-12'>
       {/* Header */}
-      <div className="mb-8">
+      <div className='mb-8'>
         <Button
-          variant="ghost"
+          variant='ghost'
           onClick={() => navigate({ to: '/' })}
-          className="mb-4"
+          className='mb-4'
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className='mr-2 h-4 w-4' />
           Back to Home
         </Button>
-        <h1 className="text-3xl font-bold mb-2">Event Registration</h1>
-        <p className="text-muted-foreground">{event.name}</p>
-        <Progress value={getProgress()} className="mt-4" />
+        <h1 className='mb-2 text-3xl font-bold'>Event Registration</h1>
+        <p className='text-muted-foreground'>{event.name}</p>
+        <Progress value={getProgress()} className='mt-4' />
       </div>
 
       {/* Step 1: Guest Count */}
@@ -459,25 +515,27 @@ function EventRegistration() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleGuestCountSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="guestCount">Number of Attendees *</Label>
+            <form onSubmit={handleGuestCountSubmit} className='space-y-6'>
+              <div className='space-y-2'>
+                <Label htmlFor='guestCount'>Number of Attendees *</Label>
                 <Input
-                  id="guestCount"
-                  type="number"
-                  min="1"
+                  id='guestCount'
+                  type='number'
+                  min='1'
                   value={guestCount}
                   onChange={(e) => setGuestCount(parseInt(e.target.value) || 1)}
                   required
                 />
               </div>
               <Button
-                type="submit"
-                className="w-full"
+                type='submit'
+                className='w-full'
                 disabled={createRegistrationMutation.isPending}
               >
-                {createRegistrationMutation.isPending ? 'Creating...' : 'Continue'}
-                <ArrowRight className="ml-2 h-4 w-4" />
+                {createRegistrationMutation.isPending
+                  ? 'Creating...'
+                  : 'Continue'}
+                <ArrowRight className='ml-2 h-4 w-4' />
               </Button>
             </form>
           </CardContent>
@@ -490,7 +548,8 @@ function EventRegistration() {
           <CardHeader>
             <CardTitle>Guest {currentGuestIndex + 1} Details</CardTitle>
             <CardDescription>
-              Please provide information for guest {currentGuestIndex + 1} of {guestCount - 1}
+              Please provide information for guest {currentGuestIndex + 1} of{' '}
+              {guestCount - 1}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -506,56 +565,58 @@ function EventRegistration() {
       )}
 
       {/* Step 3: Meal Selections */}
-      {step === 'meal-selections' && event.food_options && event.food_options.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Meal Selection</CardTitle>
-            <CardDescription>
-              {guestCount > 1 ? `Selection ${currentMealIndex + 1} of ${guestCount}` : 'Select your meal preference'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <MealSelectionForm
-              attendeeName={getCurrentAttendeeName()}
-              foodOptions={event.food_options}
-              onSubmit={handleMealSubmit}
-              isLoading={createMealMutation.isPending}
-              submitButtonText={
-                currentMealIndex < guestCount - 1 ? 'Next Attendee' : 'Complete Registration'
-              }
-            />
-          </CardContent>
-        </Card>
-      )}
+      {step === 'meal-selections' &&
+        event.food_options &&
+        event.food_options.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Meal Selection</CardTitle>
+              <CardDescription>
+                {guestCount > 1
+                  ? `Selection ${currentMealIndex + 1} of ${guestCount}`
+                  : 'Select your meal preference'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MealSelectionForm
+                attendeeName={getCurrentAttendeeName()}
+                foodOptions={event.food_options}
+                onSubmit={handleMealSubmit}
+                isLoading={createMealMutation.isPending}
+                submitButtonText={
+                  currentMealIndex < guestCount - 1
+                    ? 'Next Attendee'
+                    : 'Complete Registration'
+                }
+              />
+            </CardContent>
+          </Card>
+        )}
 
       {/* Step 4: Complete */}
       {step === 'complete' && (
         <Card>
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <CheckCircle className="h-16 w-16 text-green-500" />
+          <CardHeader className='text-center'>
+            <div className='mb-4 flex justify-center'>
+              <CheckCircle className='h-16 w-16 text-green-500' />
             </div>
-            <CardTitle className="text-2xl">Registration Complete!</CardTitle>
-            <CardDescription>
-              You're all set for {event.name}
-            </CardDescription>
+            <CardTitle className='text-2xl'>Registration Complete!</CardTitle>
+            <CardDescription>You're all set for {event.name}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-center text-sm text-muted-foreground">
-              We've sent a confirmation email with event details and your registration information.
+          <CardContent className='space-y-4'>
+            <p className='text-muted-foreground text-center text-sm'>
+              We've sent a confirmation email with event details and your
+              registration information.
             </p>
-            <div className="flex gap-3">
+            <div className='flex gap-3'>
               <Button
-                variant="outline"
+                variant='outline'
                 onClick={() => navigate({ to: '/registrations' })}
-                className="flex-1"
+                className='flex-1'
               >
                 View My Registrations
               </Button>
-              <Button
-                onClick={() => navigate({ to: '/' })}
-                className="flex-1"
-              >
+              <Button onClick={() => navigate({ to: '/' })} className='flex-1'>
                 Back to Home
               </Button>
             </div>

@@ -2,13 +2,12 @@
  * NPOLegalAgreementModal component
  * Modal for accepting legal agreements before NPO submission
  */
-
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { Check, Loader2 } from 'lucide-react'
 import { useState } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { consentService } from '@/services/consent-service'
+import { legalService } from '@/services/legal-service'
+import { Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-
-import { LegalDocumentViewer } from '@/components/legal/legal-document-viewer'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -22,8 +21,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { consentService } from '@/services/consent-service'
-import { legalService } from '@/services/legal-service'
+import { LegalDocumentViewer } from '@/components/legal/legal-document-viewer'
 
 interface NPOLegalAgreementModalProps {
   open: boolean
@@ -46,8 +44,12 @@ export function NPOLegalAgreementModal({
     enabled: open,
   })
 
-  const termsDocument = documents?.find((doc) => doc.document_type === 'terms_of_service')
-  const privacyDocument = documents?.find((doc) => doc.document_type === 'privacy_policy')
+  const termsDocument = documents?.find(
+    (doc) => doc.document_type === 'terms_of_service'
+  )
+  const privacyDocument = documents?.find(
+    (doc) => doc.document_type === 'privacy_policy'
+  )
 
   // Accept consent mutation
   const acceptMutation = useMutation({
@@ -87,50 +89,57 @@ export function NPOLegalAgreementModal({
     }
   }
 
-  const canSubmit = acceptedTerms && acceptedPrivacy && !acceptMutation.isPending
+  const canSubmit =
+    acceptedTerms && acceptedPrivacy && !acceptMutation.isPending
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className='flex max-h-[90vh] max-w-4xl flex-col'>
         <DialogHeader>
           <DialogTitle>Legal Agreements Required</DialogTitle>
           <DialogDescription>
-            Before submitting your NPO application for approval, you must review and accept our
-            Terms of Service and Privacy Policy.
+            Before submitting your NPO application for approval, you must review
+            and accept our Terms of Service and Privacy Policy.
           </DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className='flex items-center justify-center py-8'>
+            <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
           </div>
         ) : (
-          <ScrollArea className="flex-1 pr-4">
-            <div className="space-y-6">
+          <ScrollArea className='flex-1 pr-4'>
+            <div className='space-y-6'>
               {/* Terms of Service */}
               {termsDocument && (
-                <div className="space-y-3">
+                <div className='space-y-3'>
                   <LegalDocumentViewer document={termsDocument} />
-                  <div className="flex items-start space-x-3 rounded-lg border p-4">
+                  <div className='flex items-start space-x-3 rounded-lg border p-4'>
                     <Checkbox
-                      id="accept-terms"
+                      id='accept-terms'
                       checked={acceptedTerms}
-                      onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                      onCheckedChange={(checked) =>
+                        setAcceptedTerms(checked as boolean)
+                      }
                       disabled={acceptMutation.isPending}
                     />
-                    <div className="grid gap-1.5 leading-none">
+                    <div className='grid gap-1.5 leading-none'>
                       <Label
-                        htmlFor="accept-terms"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        htmlFor='accept-terms'
+                        className='cursor-pointer text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
                       >
                         I have read and accept the Terms of Service
                       </Label>
-                      <p className="text-sm text-muted-foreground">
+                      <p className='text-muted-foreground text-sm'>
                         Version {termsDocument.version} • Published{' '}
-                        {new Date(termsDocument.published_at).toLocaleDateString()}
+                        {new Date(
+                          termsDocument.published_at
+                        ).toLocaleDateString()}
                       </p>
                     </div>
-                    {acceptedTerms && <Check className="h-5 w-5 text-green-600 ml-auto" />}
+                    {acceptedTerms && (
+                      <Check className='ml-auto h-5 w-5 text-green-600' />
+                    )}
                   </div>
                 </div>
               )}
@@ -139,28 +148,34 @@ export function NPOLegalAgreementModal({
 
               {/* Privacy Policy */}
               {privacyDocument && (
-                <div className="space-y-3">
+                <div className='space-y-3'>
                   <LegalDocumentViewer document={privacyDocument} />
-                  <div className="flex items-start space-x-3 rounded-lg border p-4">
+                  <div className='flex items-start space-x-3 rounded-lg border p-4'>
                     <Checkbox
-                      id="accept-privacy"
+                      id='accept-privacy'
                       checked={acceptedPrivacy}
-                      onCheckedChange={(checked) => setAcceptedPrivacy(checked as boolean)}
+                      onCheckedChange={(checked) =>
+                        setAcceptedPrivacy(checked as boolean)
+                      }
                       disabled={acceptMutation.isPending}
                     />
-                    <div className="grid gap-1.5 leading-none">
+                    <div className='grid gap-1.5 leading-none'>
                       <Label
-                        htmlFor="accept-privacy"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        htmlFor='accept-privacy'
+                        className='cursor-pointer text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
                       >
                         I have read and accept the Privacy Policy
                       </Label>
-                      <p className="text-sm text-muted-foreground">
+                      <p className='text-muted-foreground text-sm'>
                         Version {privacyDocument.version} • Published{' '}
-                        {new Date(privacyDocument.published_at).toLocaleDateString()}
+                        {new Date(
+                          privacyDocument.published_at
+                        ).toLocaleDateString()}
                       </p>
                     </div>
-                    {acceptedPrivacy && <Check className="h-5 w-5 text-green-600 ml-auto" />}
+                    {acceptedPrivacy && (
+                      <Check className='ml-auto h-5 w-5 text-green-600' />
+                    )}
                   </div>
                 </div>
               )}
@@ -168,12 +183,18 @@ export function NPOLegalAgreementModal({
           </ScrollArea>
         )}
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={handleClose} disabled={acceptMutation.isPending}>
+        <DialogFooter className='gap-2'>
+          <Button
+            variant='outline'
+            onClick={handleClose}
+            disabled={acceptMutation.isPending}
+          >
             Cancel
           </Button>
           <Button onClick={handleAccept} disabled={!canSubmit}>
-            {acceptMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {acceptMutation.isPending && (
+              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+            )}
             Accept and Continue
           </Button>
         </DialogFooter>

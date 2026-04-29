@@ -1,3 +1,6 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { donateNowAdminApi } from '@/api/donateNow'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -10,25 +13,27 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
 
 interface SupportWallModerationTableProps {
   npoId: string
 }
 
-export function SupportWallModerationTable({ npoId }: SupportWallModerationTableProps) {
+export function SupportWallModerationTable({
+  npoId,
+}: SupportWallModerationTableProps) {
   const queryClient = useQueryClient()
 
   const { data, isLoading } = useQuery({
     queryKey: ['support-wall-admin', npoId],
     queryFn: () =>
-      donateNowAdminApi.getSupportWall(npoId, { include_hidden: true, page_size: 50 }).then((r) => r.data),
+      donateNowAdminApi
+        .getSupportWall(npoId, { include_hidden: true, page_size: 50 })
+        .then((r) => r.data),
   })
 
   const hideMutation = useMutation({
-    mutationFn: (entryId: string) => donateNowAdminApi.hideEntry(npoId, entryId),
+    mutationFn: (entryId: string) =>
+      donateNowAdminApi.hideEntry(npoId, entryId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['support-wall-admin', npoId] })
       toast.success('Entry hidden')
@@ -37,7 +42,8 @@ export function SupportWallModerationTable({ npoId }: SupportWallModerationTable
   })
 
   const restoreMutation = useMutation({
-    mutationFn: (entryId: string) => donateNowAdminApi.restoreEntry(npoId, entryId),
+    mutationFn: (entryId: string) =>
+      donateNowAdminApi.restoreEntry(npoId, entryId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['support-wall-admin', npoId] })
       toast.success('Entry restored')
@@ -53,12 +59,15 @@ export function SupportWallModerationTable({ npoId }: SupportWallModerationTable
 
   return (
     <div className='space-y-4'>
-      <p className='text-sm text-muted-foreground'>
-        {data?.total ?? 0} entries total. Hide entries that violate community guidelines.
+      <p className='text-muted-foreground text-sm'>
+        {data?.total ?? 0} entries total. Hide entries that violate community
+        guidelines.
       </p>
 
       {entries.length === 0 ? (
-        <p className='text-sm text-muted-foreground'>No support wall entries yet.</p>
+        <p className='text-muted-foreground text-sm'>
+          No support wall entries yet.
+        </p>
       ) : (
         <Table>
           <TableHeader>
@@ -71,15 +80,22 @@ export function SupportWallModerationTable({ npoId }: SupportWallModerationTable
           </TableHeader>
           <TableBody>
             {entries.map((entry) => (
-              <TableRow key={entry.id} className={entry.is_hidden ? 'opacity-50' : ''}>
+              <TableRow
+                key={entry.id}
+                className={entry.is_hidden ? 'opacity-50' : ''}
+              >
                 <TableCell>
                   {entry.is_anonymous ? (
-                    <span className='text-muted-foreground italic'>Anonymous</span>
+                    <span className='text-muted-foreground italic'>
+                      Anonymous
+                    </span>
                   ) : (
-                    entry.display_name ?? '—'
+                    (entry.display_name ?? '—')
                   )}
                 </TableCell>
-                <TableCell className='max-w-xs truncate'>{entry.message ?? '—'}</TableCell>
+                <TableCell className='max-w-xs truncate'>
+                  {entry.message ?? '—'}
+                </TableCell>
                 <TableCell>
                   {entry.is_hidden ? (
                     <Badge variant='secondary'>Hidden</Badge>
