@@ -2,12 +2,11 @@
  * Terms of Service Page
  * Standalone page to view the current Terms of Service document
  */
-
-import { LegalDocumentViewer } from '@/components/legal/legal-document-viewer'
-import { Button } from '@/components/ui/button'
-import { useLegalDocuments } from '@/hooks/use-legal-documents'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeft, Loader2 } from 'lucide-react'
+import { useLegalDocuments } from '@/hooks/use-legal-documents'
+import { Button } from '@/components/ui/button'
+import { LegalDocumentViewer } from '@/components/legal/legal-document-viewer'
 
 export function TermsOfServicePage() {
   const { termsOfService, isLoading, error } = useLegalDocuments()
@@ -22,19 +21,19 @@ export function TermsOfServicePage() {
           </Link>
         </Button>
         <h1 className='text-3xl font-bold'>Terms of Service</h1>
-        <p className='mt-2 text-muted-foreground'>
+        <p className='text-muted-foreground mt-2'>
           Please read these terms carefully before using our platform.
         </p>
       </div>
 
       {isLoading && (
         <div className='flex items-center justify-center py-12'>
-          <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
+          <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
         </div>
       )}
 
       {error && (
-        <div className='rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive'>
+        <div className='border-destructive bg-destructive/10 text-destructive rounded-lg border p-4'>
           <p className='font-semibold'>Error loading Terms of Service</p>
           <p className='text-sm'>{error}</p>
         </div>
@@ -47,7 +46,7 @@ export function TermsOfServicePage() {
       )}
 
       {!termsOfService && !isLoading && !error && (
-        <div className='rounded-lg border border-muted bg-muted/10 p-8 text-center'>
+        <div className='border-muted bg-muted/10 rounded-lg border p-8 text-center'>
           <p className='text-muted-foreground'>
             Terms of Service document is not currently available.
           </p>
@@ -55,7 +54,7 @@ export function TermsOfServicePage() {
       )}
 
       <div className='mt-8 border-t pt-6'>
-        <p className='text-sm text-muted-foreground'>
+        <p className='text-muted-foreground text-sm'>
           Questions about our Terms of Service? Contact us for assistance.
         </p>
       </div>

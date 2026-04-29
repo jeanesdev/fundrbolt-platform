@@ -1,5 +1,14 @@
-import { TermsOfServiceModal } from '@/components/legal/terms-of-service-modal'
-import { PasswordInput } from '@/components/password-input'
+import { useEffect, useRef, useState } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate } from '@tanstack/react-router'
+import { consentService } from '@/services/consent-service'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
+import { Info, Loader2, UserPlus } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { cn } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -19,17 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { cn } from '@/lib/utils'
-import { consentService } from '@/services/consent-service'
-import { useAuthStore } from '@/stores/auth-store'
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate } from '@tanstack/react-router'
-import { Info, Loader2, UserPlus } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
+import { TermsOfServiceModal } from '@/components/legal/terms-of-service-modal'
+import { PasswordInput } from '@/components/password-input'
 
 // US States
 const US_STATES = [
@@ -156,10 +156,7 @@ const formSchema = z
       .string()
       .max(255, 'Street address must not exceed 255 characters')
       .optional(),
-    city: z
-      .string()
-      .max(100, 'City must not exceed 100 characters')
-      .optional(),
+    city: z.string().max(100, 'City must not exceed 100 characters').optional(),
     state: z
       .string()
       .max(100, 'State must not exceed 100 characters')
@@ -207,8 +204,15 @@ export function SignUpForm({
 }: React.HTMLAttributes<HTMLFormElement>) {
   const [isLoading, setIsLoading] = useState(false)
   const [showLegalModal, setShowLegalModal] = useState(false)
-  const [legalDocumentIds, setLegalDocumentIds] = useState<{ tosId: string; privacyId: string } | null>(null)
-  const [invitationContext, setInvitationContext] = useState<{ email: string; npo_name: string; token: string } | null>(null)
+  const [legalDocumentIds, setLegalDocumentIds] = useState<{
+    tosId: string
+    privacyId: string
+  } | null>(null)
+  const [invitationContext, setInvitationContext] = useState<{
+    email: string
+    npo_name: string
+    token: string
+  } | null>(null)
   const navigate = useNavigate()
   const register = useAuthStore((state) => state.register)
 
@@ -282,7 +286,8 @@ export function SignUpForm({
   useEffect(() => {
     const initAutocomplete = async () => {
       // Check if feature is enabled
-      const isEnabled = import.meta.env.VITE_ENABLE_ADDRESS_AUTOCOMPLETE === 'true'
+      const isEnabled =
+        import.meta.env.VITE_ENABLE_ADDRESS_AUTOCOMPLETE === 'true'
       if (!isEnabled) {
         return
       }
@@ -316,7 +321,12 @@ export function SignUpForm({
         const autocomplete = new Autocomplete(addressInputRef.current, {
           types: ['address'],
           componentRestrictions: { country: 'us' },
-          fields: ['address_components', 'formatted_address', 'geometry', 'name'],
+          fields: [
+            'address_components',
+            'formatted_address',
+            'geometry',
+            'name',
+          ],
         })
 
         autocomplete.addListener('place_changed', () => {
@@ -352,11 +362,26 @@ export function SignUpForm({
           }
 
           // Update form values
-          form.setValue('address_line1', street.trim(), { shouldValidate: true, shouldDirty: true })
-          form.setValue('city', city, { shouldValidate: true, shouldDirty: true })
-          form.setValue('state', state, { shouldValidate: true, shouldDirty: true })
-          form.setValue('postal_code', postalCode, { shouldValidate: true, shouldDirty: true })
-          form.setValue('country', country, { shouldValidate: true, shouldDirty: true })
+          form.setValue('address_line1', street.trim(), {
+            shouldValidate: true,
+            shouldDirty: true,
+          })
+          form.setValue('city', city, {
+            shouldValidate: true,
+            shouldDirty: true,
+          })
+          form.setValue('state', state, {
+            shouldValidate: true,
+            shouldDirty: true,
+          })
+          form.setValue('postal_code', postalCode, {
+            shouldValidate: true,
+            shouldDirty: true,
+          })
+          form.setValue('country', country, {
+            shouldValidate: true,
+            shouldDirty: true,
+          })
         })
 
         autocompleteRef.current = autocomplete
@@ -393,16 +418,24 @@ export function SignUpForm({
 
       // For invitation registrations, let the user know they must verify first
       if (invitationContext) {
-        toast.info(`Please verify your email first, then sign in to accept your invitation to ${invitationContext.npo_name}`)
+        toast.info(
+          `Please verify your email first, then sign in to accept your invitation to ${invitationContext.npo_name}`
+        )
       }
 
       // Always send new users to the verify-email page
-      navigate({ to: '/verify-email', search: { email: data.email }, replace: true })
+      navigate({
+        to: '/verify-email',
+        search: { email: data.email },
+        replace: true,
+      })
     } catch (err: unknown) {
       const error = err as {
         response?: {
           data?: {
-            detail?: string | { code?: string; message?: string; details?: unknown }
+            detail?:
+              | string
+              | { code?: string; message?: string; details?: unknown }
             error?: { message?: string }
           }
         }
@@ -419,7 +452,8 @@ export function SignUpForm({
 
           // Special handling for duplicate email
           if (error.response.data.detail.code === 'DUPLICATE_EMAIL') {
-            errorMessage = 'This email is already registered. Please use the "Log in to accept" link instead.'
+            errorMessage =
+              'This email is already registered. Please use the "Log in to accept" link instead.'
           }
         }
       } else if (error.response?.data?.error?.message) {
@@ -447,11 +481,12 @@ export function SignUpForm({
       >
         {/* Invitation Context Alert */}
         {invitationContext && (
-          <Alert className='bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800'>
+          <Alert className='border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20'>
             <Info className='h-4 w-4 text-blue-600 dark:text-blue-400' />
             <AlertDescription className='text-blue-900 dark:text-blue-100'>
-              You're creating an account to join <strong>{invitationContext.npo_name}</strong>.
-              After registration, you'll be prompted to sign in and accept the invitation.
+              You're creating an account to join{' '}
+              <strong>{invitationContext.npo_name}</strong>. After registration,
+              you'll be prompted to sign in and accept the invitation.
             </AlertDescription>
           </Alert>
         )}
@@ -508,7 +543,7 @@ export function SignUpForm({
                 />
               </FormControl>
               {invitationContext && (
-                <p className='text-xs text-muted-foreground'>
+                <p className='text-muted-foreground text-xs'>
                   Email from invitation (cannot be changed)
                 </p>
               )}
@@ -715,7 +750,7 @@ export function SignUpForm({
           control={form.control}
           name='acceptedTerms'
           render={({ field }) => (
-            <FormItem className='flex flex-row items-start space-x-3 space-y-0'>
+            <FormItem className='flex flex-row items-start space-y-0 space-x-3'>
               <FormControl>
                 <Checkbox
                   checked={field.value}
@@ -725,12 +760,12 @@ export function SignUpForm({
                 />
               </FormControl>
               <div className='flex-1 space-y-1'>
-                <FormLabel className='text-sm font-normal leading-relaxed'>
+                <FormLabel className='text-sm leading-relaxed font-normal'>
                   <span className='block'>I accept the</span>
                   <Button
                     type='button'
                     variant='link'
-                    className='h-auto p-0 text-sm font-normal underline -ml-1'
+                    className='-ml-1 h-auto p-0 text-sm font-normal underline'
                     onClick={() => setShowLegalModal(true)}
                   >
                     Terms of Service and Privacy Policy

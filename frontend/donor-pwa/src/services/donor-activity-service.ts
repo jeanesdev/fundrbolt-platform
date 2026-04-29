@@ -24,7 +24,9 @@ export interface EventGuestsResponse {
   total: number
 }
 
-export async function getEventGuests(eventId: string): Promise<EventGuestsResponse> {
+export async function getEventGuests(
+  eventId: string
+): Promise<EventGuestsResponse> {
   const res = await apiClient.get<EventGuestsResponse>(
     `/donor/events/${eventId}/guests`
   )
@@ -64,7 +66,9 @@ export interface DonorActivityResponse {
   donations: DonorDonationItem[]
 }
 
-export async function getMyActivity(eventId: string): Promise<DonorActivityResponse> {
+export async function getMyActivity(
+  eventId: string
+): Promise<DonorActivityResponse> {
   const res = await apiClient.get<DonorActivityResponse>(
     `/donor/events/${eventId}/my-activity`
   )

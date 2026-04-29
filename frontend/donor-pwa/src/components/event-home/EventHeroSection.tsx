@@ -8,14 +8,22 @@
  * - Date + venue chips
  * - EventSwitcher dropdown + Profile button in top corners
  */
-
-import { Calendar, MapPin, Radio } from 'lucide-react'
 import { type ReactNode, useEffect, useState } from 'react'
+import { Calendar, MapPin, Radio } from 'lucide-react'
 
 export type EventStatus = 'live' | 'upcoming' | 'past'
-export type HeroTransitionStyle = 'documentary_style' | 'fade' | 'swipe' | 'simple'
+export type HeroTransitionStyle =
+  | 'documentary_style'
+  | 'fade'
+  | 'swipe'
+  | 'simple'
 
-const documentaryKeyframes = ['heroKenBurnsA', 'heroKenBurnsB', 'heroKenBurnsC', 'heroKenBurnsD'] as const
+const documentaryKeyframes = [
+  'heroKenBurnsA',
+  'heroKenBurnsB',
+  'heroKenBurnsC',
+  'heroKenBurnsD',
+] as const
 
 function hashString(value: string): number {
   let hash = 0
@@ -57,7 +65,7 @@ function StatusBadge({ status }: { status: EventStatus }) {
   if (status === 'live') {
     return (
       <span
-        className='animate-live-glow inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg'
+        className='animate-live-glow inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold tracking-wider text-white uppercase shadow-lg'
         style={{ backgroundColor: 'rgb(239, 68, 68)' }}
       >
         <Radio className='h-3 w-3 animate-pulse' />
@@ -69,7 +77,7 @@ function StatusBadge({ status }: { status: EventStatus }) {
   if (status === 'upcoming') {
     return (
       <span
-        className='inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg'
+        className='inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold tracking-wider text-white uppercase shadow-lg'
         style={{
           backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.9)',
         }}
@@ -98,12 +106,16 @@ export function EventHeroSection({
   profileSlot,
 }: EventHeroSectionProps) {
   const [activeBannerIndex, setActiveBannerIndex] = useState(0)
-  const [failedBannerUrls, setFailedBannerUrls] = useState<Record<string, true>>({})
+  const [failedBannerUrls, setFailedBannerUrls] = useState<
+    Record<string, true>
+  >({})
 
   const sourceBannerImages =
     bannerImages?.filter((url) => !!url) ?? (bannerUrl ? [bannerUrl] : [])
 
-  const visibleBannerImages = sourceBannerImages.filter((url) => !failedBannerUrls[url])
+  const visibleBannerImages = sourceBannerImages.filter(
+    (url) => !failedBannerUrls[url]
+  )
   const showBanner = visibleBannerImages.length > 0
   const safeActiveBannerIndex =
     visibleBannerImages.length > 0
@@ -137,9 +149,9 @@ export function EventHeroSection({
     const animationDuration = `${7.2 + (seed % 4) * 0.45}s`
     const offsetX = 48 + (seed % 5)
     const offsetY = 48 + ((seed >> 3) % 5)
-    const brightness = 0.97 + ((seed % 5) * 0.015)
-    const saturate = 0.98 + (((seed >> 2) % 5) * 0.03)
-    const contrast = 0.98 + (((seed >> 4) % 4) * 0.02)
+    const brightness = 0.97 + (seed % 5) * 0.015
+    const saturate = 0.98 + ((seed >> 2) % 5) * 0.03
+    const contrast = 0.98 + ((seed >> 4) % 4) * 0.02
 
     return {
       opacity: isActive ? 1 : 0,
@@ -159,13 +171,16 @@ export function EventHeroSection({
     if (isSwipe) {
       const distance =
         visibleBannerImages.length > 0
-          ? (index - safeActiveBannerIndex + visibleBannerImages.length) % visibleBannerImages.length
+          ? (index - safeActiveBannerIndex + visibleBannerImages.length) %
+            visibleBannerImages.length
           : 0
       const swipeOffset = distance === 1 ? '10%' : '-10%'
 
       return {
         opacity: isActive ? 1 : 0,
-        transform: isActive ? 'translateX(0%) scale(1.02)' : `translateX(${swipeOffset}) scale(1.02)`,
+        transform: isActive
+          ? 'translateX(0%) scale(1.02)'
+          : `translateX(${swipeOffset}) scale(1.02)`,
         transition: `opacity ${duration} ease, transform ${duration} ease`,
       }
     }
@@ -253,12 +268,15 @@ export function EventHeroSection({
 
       {/* If there's a logo image, show it as a small badge in top-left */}
       {logoUrl && (
-        <div className='absolute left-3 z-10' style={{ top: 'calc(env(safe-area-inset-top, 0px) + 2.5rem)' }}>
+        <div
+          className='absolute left-3 z-10'
+          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 2.5rem)' }}
+        >
           <div className='animate-float'>
             <img
               src={logoUrl}
               alt={eventName}
-              className='h-14 w-14 rounded-xl border-2 border-white/60 shadow-2xl object-cover'
+              className='h-14 w-14 rounded-xl border-2 border-white/60 object-cover shadow-2xl'
             />
           </div>
         </div>
@@ -266,44 +284,44 @@ export function EventHeroSection({
 
       {/* Top bar: switcher left, profile right */}
       <div
-        className='absolute top-0 left-0 right-0 flex items-start justify-between px-3 z-20'
+        className='absolute top-0 right-0 left-0 z-20 flex items-start justify-between px-3'
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
       >
         {switcherSlot ? (
-          <div className='rounded-xl bg-black/40 backdrop-blur-md shadow-lg'>
+          <div className='rounded-xl bg-black/40 shadow-lg backdrop-blur-md'>
             {switcherSlot}
           </div>
         ) : (
           <div />
         )}
         {profileSlot && (
-          <div className='rounded-xl bg-black/40 backdrop-blur-md shadow-lg overflow-visible'>
+          <div className='overflow-visible rounded-xl bg-black/40 shadow-lg backdrop-blur-md'>
             {profileSlot}
           </div>
         )}
       </div>
 
       {/* Bottom: event name + meta — main content area */}
-      <div className='absolute bottom-0 left-0 right-0 px-4 pb-4 z-10'>
+      <div className='absolute right-0 bottom-0 left-0 z-10 px-4 pb-4'>
         {/* gradient scrim for text legibility */}
-        <div className='absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black/70 to-transparent -z-10 pointer-events-none' />
+        <div className='pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-36 bg-gradient-to-t from-black/70 to-transparent' />
 
         <div className='animate-hero-enter stagger-1'>
           <div className='mb-2'>
             <StatusBadge status={status} />
           </div>
           {npoName && (
-            <p className='mb-0.5 text-xs font-semibold uppercase tracking-widest text-white/70'>
+            <p className='mb-0.5 text-xs font-semibold tracking-widest text-white/70 uppercase'>
               {npoName}
             </p>
           )}
-          <h1 className='text-2xl font-black leading-tight text-white drop-shadow-lg sm:text-3xl'>
+          <h1 className='text-2xl leading-tight font-black text-white drop-shadow-lg sm:text-3xl'>
             {eventName}
           </h1>
         </div>
 
         {/* Date + venue chips */}
-        <div className='mt-2.5 flex flex-wrap items-center gap-2 animate-hero-enter stagger-2'>
+        <div className='animate-hero-enter stagger-2 mt-2.5 flex flex-wrap items-center gap-2'>
           {eventDate && (
             <button
               onClick={onAddToCalendar}

@@ -1,4 +1,7 @@
-import { SignOutDialog } from '@/components/sign-out-dialog'
+import { Link } from '@tanstack/react-router'
+import { ChevronsUpDown, LogOut } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import useDialogState from '@/hooks/use-dialog-state'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -14,10 +17,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import useDialogState from '@/hooks/use-dialog-state'
-import { useAuthStore } from '@/stores/auth-store'
-import { Link } from '@tanstack/react-router'
-import { ChevronsUpDown, LogOut } from 'lucide-react'
+import { SignOutDialog } from '@/components/sign-out-dialog'
 
 type NavUserProps = {
   user: {

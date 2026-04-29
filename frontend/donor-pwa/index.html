@@ -1,68 +1,103 @@
 <!doctype html>
 <html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
 
-<head>
-  <meta charset="UTF-8" />
+    <!-- Favicon -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
 
-  <!-- Favicon -->
-  <link rel="icon" href="/favicon.ico" sizes="any" />
-  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="FundrBolt" />
+    <meta name="theme-color" content="#111827" />
 
-  <!-- PWA Meta Tags -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="FundrBolt" />
-  <meta name="theme-color" content="#111827" />
+    <!-- Apple Splash Screens -->
+    <link
+      rel="apple-touch-startup-image"
+      href="/images/apple-splash-828x1792.png"
+      media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="/images/apple-splash-1170x2532.png"
+      media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="/images/apple-splash-1179x2556.png"
+      media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="/images/apple-splash-1284x2778.png"
+      media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="/images/apple-splash-1290x2796.png"
+      media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="/images/apple-splash-2048x2732.png"
+      media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)"
+    />
 
-  <!-- Apple Splash Screens -->
-  <link rel="apple-touch-startup-image" href="/images/apple-splash-828x1792.png"
-    media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" />
-  <link rel="apple-touch-startup-image" href="/images/apple-splash-1170x2532.png"
-    media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" />
-  <link rel="apple-touch-startup-image" href="/images/apple-splash-1179x2556.png"
-    media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" />
-  <link rel="apple-touch-startup-image" href="/images/apple-splash-1284x2778.png"
-    media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" />
-  <link rel="apple-touch-startup-image" href="/images/apple-splash-1290x2796.png"
-    media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" />
-  <link rel="apple-touch-startup-image" href="/images/apple-splash-2048x2732.png"
-    media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" />
+    <!-- Primary Meta Tags -->
+    <title>FundrBolt Donor Portal</title>
+    <meta name="title" content="FundrBolt Donor Portal" />
+    <meta
+      name="description"
+      content="FundrBolt Donor Portal - Support nonprofits, attend events, and make a difference."
+    />
 
-  <!-- Primary Meta Tags -->
-  <title>FundrBolt Donor Portal</title>
-  <meta name="title" content="FundrBolt Donor Portal" />
-  <meta name="description"
-    content="FundrBolt Donor Portal - Support nonprofits, attend events, and make a difference." />
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://app.fundrbolt.com" />
+    <meta property="og:title" content="FundrBolt Donor Portal" />
+    <meta
+      property="og:description"
+      content="FundrBolt Donor Portal - Support nonprofits, attend events, and make a difference."
+    />
+    <meta
+      property="og:image"
+      content="https://app.fundrbolt.com/images/fundrbolt-donor.png"
+    />
 
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://app.fundrbolt.com" />
-  <meta property="og:title" content="FundrBolt Donor Portal" />
-  <meta property="og:description"
-    content="FundrBolt Donor Portal - Support nonprofits, attend events, and make a difference." />
-  <meta property="og:image" content="https://app.fundrbolt.com/images/fundrbolt-donor.png" />
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://app.fundrbolt.com" />
+    <meta property="twitter:title" content="FundrBolt Donor Portal" />
+    <meta
+      property="twitter:description"
+      content="FundrBolt Donor Portal - Support nonprofits, attend events, and make a difference."
+    />
+    <meta
+      property="twitter:image"
+      content="https://app.fundrbolt.com/images/fundrbolt-donor.png"
+    />
 
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:url" content="https://app.fundrbolt.com" />
-  <meta property="twitter:title" content="FundrBolt Donor Portal" />
-  <meta property="twitter:description"
-    content="FundrBolt Donor Portal - Support nonprofits, attend events, and make a difference." />
-  <meta property="twitter:image" content="https://app.fundrbolt.com/images/fundrbolt-donor.png" />
+    <!-- font family -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@200..800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
 
-  <!-- font family -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@200..800&display=swap"
-    rel="stylesheet" />
-</head>
-
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
-
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

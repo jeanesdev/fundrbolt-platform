@@ -2,7 +2,12 @@
  * MemberList Component
  * Displays current NPO members with role management and removal actions
  */
-
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { memberApi } from '@/services/npo-service'
+import type { MemberRole, NPOMember } from '@/types/npo'
+import { MoreVertical, Shield, UserCog, UserMinus } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,12 +35,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { memberApi } from '@/services/npo-service'
-import type { MemberRole, NPOMember } from '@/types/npo'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { MoreVertical, Shield, UserCog, UserMinus } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
 
 interface MemberListProps {
   npoId: string
@@ -56,7 +55,10 @@ const roleLabels: Record<MemberRole, string> = {
   staff: 'Staff',
 }
 
-export function MemberList({ npoId, canManageMembers = false }: MemberListProps) {
+export function MemberList({
+  npoId,
+  canManageMembers = false,
+}: MemberListProps) {
   const queryClient = useQueryClient()
   const [memberToRemove, setMemberToRemove] = useState<NPOMember | null>(null)
 
@@ -120,17 +122,17 @@ export function MemberList({ npoId, canManageMembers = false }: MemberListProps)
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
+      <div className='space-y-4'>
+        <Skeleton className='h-10 w-full' />
+        <Skeleton className='h-10 w-full' />
+        <Skeleton className='h-10 w-full' />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="text-center py-8 text-red-500">
+      <div className='py-8 text-center text-red-500'>
         Failed to load members. Please try again.
       </div>
     )
@@ -140,7 +142,7 @@ export function MemberList({ npoId, canManageMembers = false }: MemberListProps)
 
   if (members.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className='text-muted-foreground py-8 text-center'>
         No members found. Invite your first team member above.
       </div>
     )
@@ -148,7 +150,7 @@ export function MemberList({ npoId, canManageMembers = false }: MemberListProps)
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className='rounded-md border'>
         <Table>
           <TableHeader>
             <TableRow>
@@ -156,17 +158,19 @@ export function MemberList({ npoId, canManageMembers = false }: MemberListProps)
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Joined</TableHead>
-              {canManageMembers && <TableHead className="w-[50px]"></TableHead>}
+              {canManageMembers && <TableHead className='w-[50px]'></TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {members.map((member) => (
               <TableRow key={member.id}>
-                <TableCell className="font-medium">
+                <TableCell className='font-medium'>
                   {member.user_full_name ||
                     (member.user_first_name && member.user_last_name
                       ? `${member.user_first_name} ${member.user_last_name}`
-                      : member.user_first_name || member.user_last_name || 'N/A')}
+                      : member.user_first_name ||
+                        member.user_last_name ||
+                        'N/A')}
                 </TableCell>
                 <TableCell>{member.user_email}</TableCell>
                 <TableCell>
@@ -184,40 +188,40 @@ export function MemberList({ npoId, canManageMembers = false }: MemberListProps)
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
-                          variant="ghost"
-                          size="sm"
+                          variant='ghost'
+                          size='sm'
                           disabled={member.role === 'admin'}
                         >
-                          <MoreVertical className="h-4 w-4" />
+                          <MoreVertical className='h-4 w-4' />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align='end'>
                         <DropdownMenuItem
                           onClick={() => handleRoleUpdate(member, 'admin')}
                           disabled={member.role === 'admin'}
                         >
-                          <Shield className="mr-2 h-4 w-4" />
+                          <Shield className='mr-2 h-4 w-4' />
                           Make Admin
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleRoleUpdate(member, 'co_admin')}
                           disabled={member.role === 'co_admin'}
                         >
-                          <UserCog className="mr-2 h-4 w-4" />
+                          <UserCog className='mr-2 h-4 w-4' />
                           Make Co-Admin
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleRoleUpdate(member, 'staff')}
                           disabled={member.role === 'staff'}
                         >
-                          <UserCog className="mr-2 h-4 w-4" />
+                          <UserCog className='mr-2 h-4 w-4' />
                           Make Staff
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleRemoveMember(member)}
-                          className="text-red-600"
+                          className='text-red-600'
                         >
-                          <UserMinus className="mr-2 h-4 w-4" />
+                          <UserMinus className='mr-2 h-4 w-4' />
                           Remove Member
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -239,15 +243,15 @@ export function MemberList({ npoId, canManageMembers = false }: MemberListProps)
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Member</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove {memberToRemove?.user_full_name} from the
-              organization? They will lose access immediately.
+              Are you sure you want to remove {memberToRemove?.user_full_name}{' '}
+              from the organization? They will lose access immediately.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmRemove}
-              className="bg-red-600 hover:bg-red-700"
+              className='bg-red-600 hover:bg-red-700'
             >
               Remove
             </AlertDialogAction>

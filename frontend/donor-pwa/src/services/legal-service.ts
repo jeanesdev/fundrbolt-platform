@@ -2,19 +2,16 @@
  * Legal document service
  * API client for fetching legal documents (Terms of Service, Privacy Policy)
  */
-
+import type { LegalDocumentPublic, LegalDocumentType } from '@/types/legal'
 import apiClient from '@/lib/axios'
-import type {
-  LegalDocumentPublic,
-  LegalDocumentType,
-} from '@/types/legal'
 
 export const legalService = {
   /**
    * Fetch all currently published legal documents
    */
   async fetchAllDocuments(): Promise<LegalDocumentPublic[]> {
-    const response = await apiClient.get<LegalDocumentPublic[]>('/legal/documents')
+    const response =
+      await apiClient.get<LegalDocumentPublic[]>('/legal/documents')
     return response.data
   },
 
@@ -22,7 +19,9 @@ export const legalService = {
    * Fetch a specific legal document by type
    * @param type - 'terms_of_service' or 'privacy_policy'
    */
-  async fetchDocumentByType(type: LegalDocumentType): Promise<LegalDocumentPublic> {
+  async fetchDocumentByType(
+    type: LegalDocumentType
+  ): Promise<LegalDocumentPublic> {
     const response = await apiClient.get<LegalDocumentPublic>(
       `/legal/documents/${type}`
     )

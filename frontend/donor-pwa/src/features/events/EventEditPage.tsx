@@ -2,22 +2,27 @@
  * EventEditPage
  * Page for editing an existing event with media, links, and food options
  */
-
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useAuctionItemStore } from '@/stores/auctionItemStore'
-import { useEventStore } from '@/stores/event-store'
-import { useSponsorStore } from '@/stores/sponsorStore'
+import { useCallback, useEffect, useState } from 'react'
+import { useNavigate, useParams } from '@tanstack/react-router'
 import type {
   EventLinkCreateRequest,
   EventUpdateRequest,
   FoodOptionCreateRequest,
 } from '@/types/event'
-import { useNavigate, useParams } from '@tanstack/react-router'
 import { ArrowLeft, Clock } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import { useEventStore } from '@/stores/event-store'
+import { useSponsorStore } from '@/stores/sponsorStore'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AuctionItemList } from './components/AuctionItemList'
 import { EventForm } from './components/EventForm'
 import { EventLinkForm } from './components/EventLinkForm'
@@ -98,7 +103,9 @@ export function EventEditPage() {
     } catch (err: unknown) {
       const error = err as { response?: { status: number } }
       if (error?.response?.status === 409) {
-        toast.error('Event was modified by another user. Please refresh and try again.')
+        toast.error(
+          'Event was modified by another user. Please refresh and try again.'
+        )
       } else {
         toast.error('Failed to update event')
       }
@@ -112,14 +119,20 @@ export function EventEditPage() {
   }
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) return
+    if (
+      !confirm(
+        'Are you sure you want to delete this event? This action cannot be undone.'
+      )
+    )
+      return
 
     try {
       await deleteEvent(resolvedEventId)
       toast.success('Event deleted successfully')
       navigate({ to: '/events' })
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete event'
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to delete event'
       toast.error(errorMessage)
     }
   }
@@ -150,7 +163,8 @@ export function EventEditPage() {
       await deleteLink(resolvedEventId, linkId)
       toast.success('Link deleted successfully!')
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete link'
+      const message =
+        err instanceof Error ? err.message : 'Failed to delete link'
       toast.error(message)
     }
   }
@@ -160,7 +174,8 @@ export function EventEditPage() {
       await createFoodOption(resolvedEventId, data)
       toast.success('Food option added successfully!')
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to add food option'
+      const message =
+        err instanceof Error ? err.message : 'Failed to add food option'
       toast.error(message)
     }
   }
@@ -170,59 +185,72 @@ export function EventEditPage() {
       await deleteFoodOption(resolvedEventId, optionId)
       toast.success('Food option deleted successfully!')
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete food option'
+      const message =
+        err instanceof Error ? err.message : 'Failed to delete food option'
       toast.error(message)
     }
   }
 
   if (eventsLoading || !currentEvent) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Clock className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className='flex h-96 items-center justify-center'>
+        <Clock className='text-muted-foreground h-8 w-8 animate-spin' />
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto px-2 py-3 sm:px-6 sm:py-4 md:py-8 max-w-6xl">
-      <div className="mb-4 md:mb-6 space-y-4">
-        <Button variant="ghost" onClick={handleCancel} className="px-0 hover:bg-transparent">
-          <ArrowLeft className="h-4 w-4 mr-2" />
+    <div className='container mx-auto max-w-6xl px-2 py-3 sm:px-6 sm:py-4 md:py-8'>
+      <div className='mb-4 space-y-4 md:mb-6'>
+        <Button
+          variant='ghost'
+          onClick={handleCancel}
+          className='px-0 hover:bg-transparent'
+        >
+          <ArrowLeft className='mr-2 h-4 w-4' />
           Back to Events
         </Button>
 
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl md:text-3xl font-bold truncate">{currentEvent.name}</h1>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
+        <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
+          <div className='min-w-0 flex-1'>
+            <h1 className='truncate text-2xl font-bold md:text-3xl'>
+              {currentEvent.name}
+            </h1>
+            <div className='mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4'>
               {currentEvent.npo_name && (
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-medium">Organization:</span> {currentEvent.npo_name}
+                <p className='text-muted-foreground text-sm'>
+                  <span className='font-medium'>Organization:</span>{' '}
+                  {currentEvent.npo_name}
                 </p>
               )}
-              <p className="text-sm text-muted-foreground hidden sm:block">Edit event details and content</p>
+              <p className='text-muted-foreground hidden text-sm sm:block'>
+                Edit event details and content
+              </p>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Status:</span>
+          <div className='flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4'>
+            <div className='flex items-center gap-2'>
+              <span className='text-muted-foreground text-sm'>Status:</span>
               <span
-                className={`text-xs px-2 py-1 rounded whitespace-nowrap ${currentEvent.status === 'draft'
-                  ? 'bg-gray-100 text-gray-800'
-                  : currentEvent.status === 'active'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                  }`}
+                className={`rounded px-2 py-1 text-xs whitespace-nowrap ${
+                  currentEvent.status === 'draft'
+                    ? 'bg-gray-100 text-gray-800'
+                    : currentEvent.status === 'active'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                }`}
               >
-                {currentEvent.status.charAt(0).toUpperCase() + currentEvent.status.slice(1)}
+                {currentEvent.status.charAt(0).toUpperCase() +
+                  currentEvent.status.slice(1)}
               </span>
             </div>
-            {(currentEvent.status === 'draft' || currentEvent.status === 'closed') && (
+            {(currentEvent.status === 'draft' ||
+              currentEvent.status === 'closed') && (
               <Button
-                variant="destructive"
-                size="sm"
+                variant='destructive'
+                size='sm'
                 onClick={handleDelete}
-                className="w-full sm:w-auto"
+                className='w-full sm:w-auto'
               >
                 Delete Event
               </Button>
@@ -231,30 +259,42 @@ export function EventEditPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="details" className="space-y-4 md:space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 h-auto">
-          <TabsTrigger value="details" className="text-xs sm:text-sm">
-            <span className="hidden sm:inline">Event </span>Details
+      <Tabs defaultValue='details' className='space-y-4 md:space-y-6'>
+        <TabsList className='grid h-auto w-full grid-cols-2 lg:grid-cols-6'>
+          <TabsTrigger value='details' className='text-xs sm:text-sm'>
+            <span className='hidden sm:inline'>Event </span>Details
           </TabsTrigger>
-          <TabsTrigger value="media" className="text-xs sm:text-sm">
-            Media <span className="hidden sm:inline">({currentEvent.media?.length || 0})</span>
+          <TabsTrigger value='media' className='text-xs sm:text-sm'>
+            Media{' '}
+            <span className='hidden sm:inline'>
+              ({currentEvent.media?.length || 0})
+            </span>
           </TabsTrigger>
-          <TabsTrigger value="links" className="text-xs sm:text-sm">
-            Links <span className="hidden sm:inline">({currentEvent.links?.length || 0})</span>
+          <TabsTrigger value='links' className='text-xs sm:text-sm'>
+            Links{' '}
+            <span className='hidden sm:inline'>
+              ({currentEvent.links?.length || 0})
+            </span>
           </TabsTrigger>
-          <TabsTrigger value="food" className="text-xs sm:text-sm">
-            <span className="hidden md:inline">Food </span>Options<span className="hidden sm:inline"> ({currentEvent.food_options?.length || 0})</span>
+          <TabsTrigger value='food' className='text-xs sm:text-sm'>
+            <span className='hidden md:inline'>Food </span>Options
+            <span className='hidden sm:inline'>
+              {' '}
+              ({currentEvent.food_options?.length || 0})
+            </span>
           </TabsTrigger>
-          <TabsTrigger value="sponsors" className="text-xs sm:text-sm">
-            Sponsors<span className="hidden sm:inline"> ({sponsors.length})</span>
+          <TabsTrigger value='sponsors' className='text-xs sm:text-sm'>
+            Sponsors
+            <span className='hidden sm:inline'> ({sponsors.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="auction-items" className="text-xs sm:text-sm">
-            <span className="hidden md:inline">Auction </span>Items<span className="hidden sm:inline"> ({auctionItems.length})</span>
+          <TabsTrigger value='auction-items' className='text-xs sm:text-sm'>
+            <span className='hidden md:inline'>Auction </span>Items
+            <span className='hidden sm:inline'> ({auctionItems.length})</span>
           </TabsTrigger>
         </TabsList>
 
         {/* Event Details Tab */}
-        <TabsContent value="details">
+        <TabsContent value='details'>
           <Card>
             <CardHeader>
               <CardTitle>Event Information</CardTitle>
@@ -276,7 +316,7 @@ export function EventEditPage() {
         </TabsContent>
 
         {/* Media Tab */}
-        <TabsContent value="media">
+        <TabsContent value='media'>
           <Card>
             <CardHeader>
               <CardTitle>Event Media</CardTitle>
@@ -297,31 +337,38 @@ export function EventEditPage() {
         </TabsContent>
 
         {/* Links Tab */}
-        <TabsContent value="links">
+        <TabsContent value='links'>
           <Card>
             <CardHeader>
               <CardTitle>Event Links</CardTitle>
               <CardDescription>
-                Add videos, websites, and social media links related to your event
+                Add videos, websites, and social media links related to your
+                event
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className='space-y-4'>
                 {/* Existing Links */}
                 {currentEvent.links && currentEvent.links.length > 0 && (
-                  <div className="space-y-2">
+                  <div className='space-y-2'>
                     {currentEvent.links.map((link) => (
                       <Card key={link.id}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <p className="font-medium">{link.label || 'Untitled Link'}</p>
-                              <p className="text-sm text-muted-foreground truncate">{link.url}</p>
-                              <p className="text-xs text-muted-foreground capitalize">{link.link_type.replace('_', ' ')}</p>
+                        <CardContent className='p-4'>
+                          <div className='flex items-center justify-between'>
+                            <div className='flex-1'>
+                              <p className='font-medium'>
+                                {link.label || 'Untitled Link'}
+                              </p>
+                              <p className='text-muted-foreground truncate text-sm'>
+                                {link.url}
+                              </p>
+                              <p className='text-muted-foreground text-xs capitalize'>
+                                {link.link_type.replace('_', ' ')}
+                              </p>
                             </div>
                             <Button
-                              variant="ghost"
-                              size="sm"
+                              variant='ghost'
+                              size='sm'
                               onClick={() => handleLinkDelete(link.id)}
                             >
                               Delete
@@ -341,7 +388,7 @@ export function EventEditPage() {
         </TabsContent>
 
         {/* Food Options Tab */}
-        <TabsContent value="food">
+        <TabsContent value='food'>
           <Card>
             <CardHeader>
               <CardTitle>Food & Dietary Options</CardTitle>
@@ -360,7 +407,7 @@ export function EventEditPage() {
         </TabsContent>
 
         {/* Sponsors Tab */}
-        <TabsContent value="sponsors">
+        <TabsContent value='sponsors'>
           <Card>
             <CardHeader>
               <CardTitle>Event Sponsors</CardTitle>
@@ -375,7 +422,7 @@ export function EventEditPage() {
         </TabsContent>
 
         {/* Auction Items Tab */}
-        <TabsContent value="auction-items">
+        <TabsContent value='auction-items'>
           <Card>
             <CardHeader>
               <CardTitle>Auction Items</CardTitle>
@@ -387,20 +434,41 @@ export function EventEditPage() {
               <AuctionItemList
                 items={auctionItems}
                 isLoading={false}
-                onAdd={() => navigate({ to: '/events/$eventSlug/auction-items/create', params: { eventSlug } })}
-                onEdit={(item) => navigate({ to: '/events/$eventSlug/auction-items/$itemId/edit', params: { eventSlug, itemId: item.id } })}
-                onView={(item) => navigate({ to: '/events/$eventSlug/auction-items/$itemId', params: { eventSlug, itemId: item.id } })}
+                onAdd={() =>
+                  navigate({
+                    to: '/events/$eventSlug/auction-items/create',
+                    params: { eventSlug },
+                  })
+                }
+                onEdit={(item) =>
+                  navigate({
+                    to: '/events/$eventSlug/auction-items/$itemId/edit',
+                    params: { eventSlug, itemId: item.id },
+                  })
+                }
+                onView={(item) =>
+                  navigate({
+                    to: '/events/$eventSlug/auction-items/$itemId',
+                    params: { eventSlug, itemId: item.id },
+                  })
+                }
                 onDelete={async (item) => {
-                  if (!confirm(`Are you sure you want to delete "${item.title}"?`)) return;
-                  const { deleteAuctionItem } = useAuctionItemStore.getState();
+                  if (
+                    !confirm(`Are you sure you want to delete "${item.title}"?`)
+                  )
+                    return
+                  const { deleteAuctionItem } = useAuctionItemStore.getState()
                   try {
-                    await deleteAuctionItem(resolvedEventId, item.id);
-                    toast.success('Auction item deleted successfully');
+                    await deleteAuctionItem(resolvedEventId, item.id)
+                    toast.success('Auction item deleted successfully')
                     // Refresh the list
-                    fetchAuctionItems(resolvedEventId);
+                    fetchAuctionItems(resolvedEventId)
                   } catch (err) {
-                    const message = err instanceof Error ? err.message : 'Failed to delete auction item';
-                    toast.error(message);
+                    const message =
+                      err instanceof Error
+                        ? err.message
+                        : 'Failed to delete auction item'
+                    toast.error(message)
                   }
                 }}
               />

@@ -8,14 +8,13 @@
  * - Changes to event selection navigate to that event's page
  * - Invalidates TanStack Query cache on event change
  */
-
+import { useCallback, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 import {
   useEventContextStore,
   type EventContextOption,
 } from '@/stores/event-context-store'
-import { useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import { useCallback, useEffect } from 'react'
 
 export interface UseEventContextReturn {
   selectedEventId: string | null

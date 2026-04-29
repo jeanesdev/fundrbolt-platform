@@ -1,16 +1,7 @@
-import { PublicDirectoryExplorer } from '@/components/home/public-directory-explorer'
-import { LegalFooter } from '@/components/legal/legal-footer'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Button } from '@/components/ui/button'
-import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
-import { getMyInventory } from '@/lib/api/ticket-purchases'
-import { useAuthStore } from '@/stores/auth-store'
-import { getEffectiveNow } from '@/stores/debug-spoof-store'
-import { useEventContextStore } from '@/stores/event-context-store'
-import type { RegisteredEventWithBranding } from '@/types/event-branding'
-import { colors, LogoWhiteGold } from '@fundrbolt/shared/assets'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import type { RegisteredEventWithBranding } from '@/types/event-branding'
+import { colors, LogoWhiteGold } from '@fundrbolt/shared/assets'
 import {
   Calendar,
   ChevronRight,
@@ -19,6 +10,15 @@ import {
   TicketCheck,
   Users,
 } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { getEffectiveNow } from '@/stores/debug-spoof-store'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { getMyInventory } from '@/lib/api/ticket-purchases'
+import { Button } from '@/components/ui/button'
+import { PublicDirectoryExplorer } from '@/components/home/public-directory-explorer'
+import { LegalFooter } from '@/components/legal/legal-footer'
+import { ProfileDropdown } from '@/components/profile-dropdown'
 
 // Unified display type — registered events plus admin-only events mapped to same shape
 type DisplayEvent = RegisteredEventWithBranding & { has_admin_access?: boolean }
@@ -39,8 +39,7 @@ function getStatus(event: DisplayEvent): { label: string; bg: string } {
   const start = new Date(event.event_datetime)
   const hoursUntil = (start.getTime() - now.getTime()) / (1000 * 60 * 60)
   if (hoursUntil <= -24) return { label: 'Past', bg: colors.secondary.gray }
-  if (hoursUntil <= 0)
-    return { label: 'Live', bg: colors.status.error }
+  if (hoursUntil <= 0) return { label: 'Live', bg: colors.status.error }
   return { label: 'Upcoming', bg: colors.status.success }
 }
 
@@ -256,11 +255,15 @@ function DonorHomePage() {
     <div className='flex min-h-screen flex-col bg-slate-950 text-white'>
       {/* Navy header with white/gold logo */}
       <header
-        className='sticky top-0 z-50 pt-safe-top'
+        className='pt-safe-top sticky top-0 z-50'
         style={{ backgroundColor: colors.primary.navy }}
       >
         <div className='relative flex h-16 items-center justify-center px-5'>
-          <img src={LogoWhiteGold} alt='FundrBolt' className='h-8 w-auto shrink-0' />
+          <img
+            src={LogoWhiteGold}
+            alt='FundrBolt'
+            className='h-8 w-auto shrink-0'
+          />
           <div className='absolute right-5'>
             <ProfileDropdown />
           </div>

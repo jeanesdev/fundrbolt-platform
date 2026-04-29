@@ -8,7 +8,14 @@ interface SupportWallMessageFormProps {
 }
 
 export function SupportWallMessageForm({ state }: SupportWallMessageFormProps) {
-  const { isAnonymous, setIsAnonymous, showAmount, setShowAmount, wallMessage, setWallMessage } = state
+  const {
+    isAnonymous,
+    setIsAnonymous,
+    showAmount,
+    setShowAmount,
+    wallMessage,
+    setWallMessage,
+  } = state
 
   return (
     <section

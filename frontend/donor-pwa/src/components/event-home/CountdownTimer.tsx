@@ -4,16 +4,15 @@
  * Dramatic, large countdown with animated digit transitions.
  * Uses event brand gradient background.
  */
-
-import { useCountdown } from '@/hooks/use-countdown';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils'
+import { useCountdown } from '@/hooks/use-countdown'
 
 export interface CountdownTimerProps {
-  targetDate: string | Date | null | undefined;
-  eventName?: string;
-  hideOnExpire?: boolean;
-  onExpire?: () => void;
-  className?: string;
+  targetDate: string | Date | null | undefined
+  eventName?: string
+  hideOnExpire?: boolean
+  onExpire?: () => void
+  className?: string
 }
 
 /**
@@ -24,33 +23,35 @@ function DigitBlock({
   label,
   urgent,
 }: {
-  value: number;
-  label: string;
-  urgent?: boolean;
+  value: number
+  label: string
+  urgent?: boolean
 }) {
-  const displayValue = String(value).padStart(2, '0');
+  const displayValue = String(value).padStart(2, '0')
 
   return (
     <div className='flex min-w-0 flex-col items-center gap-1'>
       <div
         className={cn(
           'relative flex h-[clamp(2.75rem,15vw,4rem)] w-[clamp(2.75rem,15vw,4rem)] items-center justify-center rounded-xl sm:h-20 sm:w-20 sm:rounded-2xl',
-          'shadow-lg backdrop-blur-sm border',
-          urgent ? 'border-red-200/70 bg-black/35' : 'border-white/30 bg-black/35'
+          'border shadow-lg backdrop-blur-sm',
+          urgent
+            ? 'border-red-200/70 bg-black/35'
+            : 'border-white/30 bg-black/35'
         )}
       >
         <span
           key={displayValue}
-          className='text-[clamp(1.25rem,7vw,1.875rem)] leading-none font-black tabular-nums text-white sm:text-4xl'
+          className='text-[clamp(1.25rem,7vw,1.875rem)] leading-none font-black text-white tabular-nums sm:text-4xl'
         >
           {displayValue}
         </span>
       </div>
-      <span className='text-[9px] leading-tight font-semibold uppercase tracking-[0.18em] text-white/85 sm:text-[10px] sm:tracking-widest'>
+      <span className='text-[9px] leading-tight font-semibold tracking-[0.18em] text-white/85 uppercase sm:text-[10px] sm:tracking-widest'>
         {label}
       </span>
     </div>
-  );
+  )
 }
 
 function Dot({ urgent }: { urgent?: boolean }) {
@@ -58,13 +59,13 @@ function Dot({ urgent }: { urgent?: boolean }) {
     <span
       aria-hidden='true'
       className={cn(
-        'pb-5 text-base font-black leading-none sm:pb-7 sm:text-2xl',
+        'pb-5 text-base leading-none font-black sm:pb-7 sm:text-2xl',
         urgent ? 'text-red-200/80' : 'text-white/65'
       )}
     >
       :
     </span>
-  );
+  )
 }
 
 export function CountdownTimer({
@@ -74,12 +75,12 @@ export function CountdownTimer({
   onExpire,
   className,
 }: CountdownTimerProps) {
-  const countdown = useCountdown(targetDate, { onExpire });
+  const countdown = useCountdown(targetDate, { onExpire })
 
-  if (countdown.isExpired && hideOnExpire) return null;
+  if (countdown.isExpired && hideOnExpire) return null
 
-  const { days, hours, minutes, seconds, isWithin1Hour, isExpired } = countdown;
-  const urgent = isWithin1Hour && !isExpired;
+  const { days, hours, minutes, seconds, isWithin1Hour, isExpired } = countdown
+  const urgent = isWithin1Hour && !isExpired
 
   const label = isExpired
     ? 'Event is live'
@@ -87,7 +88,7 @@ export function CountdownTimer({
       ? '⚡ Starting very soon!'
       : eventName
         ? `Countdown to ${eventName}`
-        : 'Event Countdown';
+        : 'Event Countdown'
 
   return (
     <div
@@ -110,7 +111,7 @@ export function CountdownTimer({
       <div className='pointer-events-none absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-white/5 blur-2xl' />
 
       <div className='relative z-10'>
-        <p className='mb-3 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white sm:mb-4 sm:text-xs sm:tracking-widest'>
+        <p className='mb-3 text-center text-[11px] font-semibold tracking-[0.18em] text-white uppercase sm:mb-4 sm:text-xs sm:tracking-widest'>
           {label}
         </p>
 
@@ -129,13 +130,11 @@ export function CountdownTimer({
             <DigitBlock value={seconds} label='Secs' urgent={urgent} />
           </div>
         ) : (
-          <p className='text-center text-2xl font-black text-white'>
-            Live now
-          </p>
+          <p className='text-center text-2xl font-black text-white'>Live now</p>
         )}
       </div>
     </div>
-  );
+  )
 }
 
-export default CountdownTimer;
+export default CountdownTimer

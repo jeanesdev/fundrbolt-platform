@@ -102,9 +102,8 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
 async function setupWorkboxCaching() {
   const { precacheAndRoute } = await import('workbox-precaching')
   const { registerRoute } = await import('workbox-routing')
-  const { CacheFirst, NetworkFirst, StaleWhileRevalidate } = await import(
-    'workbox-strategies'
-  )
+  const { CacheFirst, NetworkFirst, StaleWhileRevalidate } =
+    await import('workbox-strategies')
   const { ExpirationPlugin } = await import('workbox-expiration')
 
   // Precache static assets injected by vite-plugin-pwa

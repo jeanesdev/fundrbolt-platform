@@ -3,13 +3,13 @@
  * Renders the ticket listing index route and checkout child routes.
  * Provides a sticky header with back, home, and profile navigation.
  */
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Button } from '@/components/ui/button'
-import { hasValidRefreshToken } from '@/lib/storage/tokens'
-import { useAuthStore } from '@/stores/auth-store'
-import { colors, LogoWhiteGold } from '@fundrbolt/shared/assets'
 import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router'
+import { colors, LogoWhiteGold } from '@fundrbolt/shared/assets'
 import { ArrowLeft, Home } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { hasValidRefreshToken } from '@/lib/storage/tokens'
+import { Button } from '@/components/ui/button'
+import { ProfileDropdown } from '@/components/profile-dropdown'
 
 export const Route = createFileRoute('/events/$slug/tickets')({
   component: TicketListingPage,
@@ -25,7 +25,7 @@ function TicketListingPage() {
   return (
     <div className='flex min-h-screen flex-col'>
       <header
-        className='sticky top-0 z-50 min-h-16 border-b border-white/10 pt-safe-top text-white'
+        className='pt-safe-top sticky top-0 z-50 min-h-16 border-b border-white/10 text-white'
         style={{ backgroundColor: colors.primary.navy }}
       >
         <div className='flex h-full items-center justify-between px-4'>

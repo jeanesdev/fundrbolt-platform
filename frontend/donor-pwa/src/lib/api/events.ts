@@ -3,8 +3,8 @@
  *
  * Provides functions for accessing public event data (no authentication required).
  */
-import apiClient from '@/lib/axios'
 import type { AxiosResponse } from 'axios'
+import apiClient from '@/lib/axios'
 
 // ================================
 // Types

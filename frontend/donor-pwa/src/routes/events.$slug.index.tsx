@@ -1,3 +1,26 @@
+import { useCallback, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
+import {
+  ArrowLeft,
+  CalendarPlus,
+  Home,
+  ImageOff,
+  Loader2,
+  Ticket,
+} from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { type EventContextOption } from '@/stores/event-context-store'
+import { getEventBySlug, type EventMediaUsageTag } from '@/lib/api/events'
+import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { getMyInventory } from '@/lib/api/ticket-purchases'
+import apiClient from '@/lib/axios'
+import { hasValidRefreshToken } from '@/lib/storage/tokens'
+import { useEventBranding } from '@/hooks/use-event-branding'
+import { useEventContext } from '@/hooks/use-event-context'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CountdownTimer } from '@/components/event-home/CountdownTimer'
 import { EventDetails } from '@/components/event-home/EventDetails'
 import {
@@ -7,30 +30,7 @@ import {
 } from '@/components/event-home/EventHeroSection'
 import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EventHomePage } from '@/features/events/EventHomePage'
-import { useEventBranding } from '@/hooks/use-event-branding'
-import { useEventContext } from '@/hooks/use-event-context'
-import { getEventBySlug, type EventMediaUsageTag } from '@/lib/api/events'
-import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
-import { getMyInventory } from '@/lib/api/ticket-purchases'
-import apiClient from '@/lib/axios'
-import { hasValidRefreshToken } from '@/lib/storage/tokens'
-import { useAuthStore } from '@/stores/auth-store'
-import { type EventContextOption } from '@/stores/event-context-store'
-import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
-import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import {
-  ArrowLeft,
-  CalendarPlus,
-  Home,
-  ImageOff,
-  Loader2,
-  Ticket,
-} from 'lucide-react'
-import { useCallback, useEffect } from 'react'
 
 interface PublicAuctionPreviewItem {
   id: string

@@ -5,9 +5,9 @@
  * - Shows bidder number if user is checked in
  * - Shows "Check in at event" message if not checked in
  */
+import { Info } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Info } from 'lucide-react'
 
 interface BidderNumberBadgeProps {
   bidderNumber: number | null

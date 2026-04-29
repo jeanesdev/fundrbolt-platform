@@ -2,7 +2,6 @@
  * Cookie Manager Utility
  * Handles localStorage operations and session ID generation for cookie consent
  */
-
 import type { CookieConsentPreferences } from '@/types/cookie'
 
 const STORAGE_KEY = 'cookie-consent'
@@ -37,7 +36,9 @@ export function clearSessionId(): void {
 /**
  * Save cookie preferences to localStorage
  */
-export function saveCookiePreferences(preferences: CookieConsentPreferences): void {
+export function saveCookiePreferences(
+  preferences: CookieConsentPreferences
+): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences))
 }
 

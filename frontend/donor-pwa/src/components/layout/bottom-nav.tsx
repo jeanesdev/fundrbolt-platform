@@ -5,10 +5,17 @@
  * Direct tabs: Profile | Password | Privacy | Payment | Sign Out
  * Events navigation is handled by a top back button in the layout header.
  */
-import { SignOutDialog } from '@/components/sign-out-dialog'
-import useDialogState from '@/hooks/use-dialog-state'
 import { Link, useLocation } from '@tanstack/react-router'
-import { Bell, CreditCard, KeyRound, LogOut, MoreHorizontal, UserCog } from 'lucide-react'
+import {
+  Bell,
+  CreditCard,
+  KeyRound,
+  LogOut,
+  MoreHorizontal,
+  UserCog,
+} from 'lucide-react'
+import useDialogState from '@/hooks/use-dialog-state'
+import { SignOutDialog } from '@/components/sign-out-dialog'
 
 function NavTab({
   to,
@@ -24,8 +31,9 @@ function NavTab({
   return (
     <Link
       to={to}
-      className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'
-        }`}
+      className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors ${
+        isActive ? 'text-primary' : 'text-muted-foreground'
+      }`}
     >
       <Icon className='h-6 w-6' />
       <span>{label}</span>
@@ -40,7 +48,7 @@ export function BottomNav() {
   return (
     <>
       <nav
-        className='bg-background fixed bottom-0 left-0 right-0 z-50 flex h-20 items-stretch border-t'
+        className='bg-background fixed right-0 bottom-0 left-0 z-50 flex h-20 items-stretch border-t'
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
@@ -77,7 +85,7 @@ export function BottomNav() {
         />
 
         <button
-          className='flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium text-muted-foreground transition-colors'
+          className='text-muted-foreground flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors'
           onClick={() => setSignOutOpen(true)}
           aria-label='Sign out'
         >

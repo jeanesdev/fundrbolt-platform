@@ -4,14 +4,14 @@
  * Connects to the backend Socket.IO server and listens for new notifications.
  * Manages room joining, reconnection, and store/query cache syncing.
  */
-import { triggerNotificationToast } from '@/components/notifications/NotificationToastOverlay'
+import { useEffect, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import type { NotificationData } from '@/services/notification-service'
+import { io, type Socket } from 'socket.io-client'
 import { useAuthStore } from '@/stores/auth-store'
 import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { useNotificationStore } from '@/stores/notification-store'
-import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef, useState } from 'react'
-import { io, type Socket } from 'socket.io-client'
+import { triggerNotificationToast } from '@/components/notifications/NotificationToastOverlay'
 
 /** Derive Socket.IO URL.
  *  In development the Vite proxy forwards /ws to the backend on the same
@@ -97,8 +97,8 @@ export function useNotificationSocket(
 
     socketRef.current = socket
 
-      // Expose for debugging
-      ; (window as unknown as Record<string, unknown>).__debugSocket = socket
+    // Expose for debugging
+    ;(window as unknown as Record<string, unknown>).__debugSocket = socket
 
     socket.on('connect', () => {
       console.log('[SIO] connected, id=', socket.id)
@@ -146,7 +146,9 @@ export function useNotificationSocket(
         data.notification_type === 'item_won'
       ) {
         void queryClient.invalidateQueries({ queryKey: ['auction-items'] })
-        void queryClient.invalidateQueries({ queryKey: ['auction-item-detail'] })
+        void queryClient.invalidateQueries({
+          queryKey: ['auction-item-detail'],
+        })
         void queryClient.invalidateQueries({ queryKey: ['auction-item-bids'] })
       }
 

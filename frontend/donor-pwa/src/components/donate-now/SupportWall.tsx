@@ -1,5 +1,5 @@
-import { donateNowApi } from '@/lib/api/donateNow'
 import { useQuery } from '@tanstack/react-query'
+import { donateNowApi } from '@/lib/api/donateNow'
 import { SupportWallEntry } from './SupportWallEntry'
 
 interface SupportWallProps {
@@ -22,11 +22,17 @@ export function SupportWall({ npoSlug }: SupportWallProps) {
     >
       <h2 className='text-lg font-semibold'>Support Wall</h2>
       {isLoading ? (
-        <p className='text-sm' style={{ color: 'var(--event-text-muted-on-background, #4B5563)' }}>
+        <p
+          className='text-sm'
+          style={{ color: 'var(--event-text-muted-on-background, #4B5563)' }}
+        >
           Loading support wall...
         </p>
       ) : !data || data.entries.length === 0 ? (
-        <p className='text-sm' style={{ color: 'var(--event-text-muted-on-background, #4B5563)' }}>
+        <p
+          className='text-sm'
+          style={{ color: 'var(--event-text-muted-on-background, #4B5563)' }}
+        >
           Be the first to donate!
         </p>
       ) : (

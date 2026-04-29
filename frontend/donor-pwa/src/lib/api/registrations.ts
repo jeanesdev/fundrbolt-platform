@@ -3,10 +3,9 @@
  *
  * Provides functions for managing event registrations in the donor PWA.
  */
-
-import apiClient from '@/lib/axios'
-import type { RegisteredEventsResponse } from '@/types/event-branding'
 import type { AxiosResponse } from 'axios'
+import type { RegisteredEventsResponse } from '@/types/event-branding'
+import apiClient from '@/lib/axios'
 
 // ================================
 // Types
@@ -53,10 +52,8 @@ export interface EventRegistrationListResponse {
 export async function createRegistration(
   data: EventRegistrationCreateRequest
 ): Promise<EventRegistrationResponse> {
-  const response: AxiosResponse<EventRegistrationResponse> = await apiClient.post(
-    '/registrations',
-    data
-  )
+  const response: AxiosResponse<EventRegistrationResponse> =
+    await apiClient.post('/registrations', data)
   return response.data
 }
 
@@ -68,10 +65,8 @@ export async function getUserRegistrations(params?: {
   page?: number
   per_page?: number
 }): Promise<EventRegistrationListResponse> {
-  const response: AxiosResponse<EventRegistrationListResponse> = await apiClient.get(
-    '/registrations',
-    { params }
-  )
+  const response: AxiosResponse<EventRegistrationListResponse> =
+    await apiClient.get('/registrations', { params })
   return response.data
 }
 
@@ -81,9 +76,8 @@ export async function getUserRegistrations(params?: {
 export async function getRegistration(
   registrationId: string
 ): Promise<EventRegistrationResponse> {
-  const response: AxiosResponse<EventRegistrationResponse> = await apiClient.get(
-    `/registrations/${registrationId}`
-  )
+  const response: AxiosResponse<EventRegistrationResponse> =
+    await apiClient.get(`/registrations/${registrationId}`)
   return response.data
 }
 
@@ -94,10 +88,8 @@ export async function updateRegistration(
   registrationId: string,
   data: EventRegistrationUpdateRequest
 ): Promise<EventRegistrationResponse> {
-  const response: AxiosResponse<EventRegistrationResponse> = await apiClient.patch(
-    `/registrations/${registrationId}`,
-    data
-  )
+  const response: AxiosResponse<EventRegistrationResponse> =
+    await apiClient.patch(`/registrations/${registrationId}`, data)
   return response.data
 }
 
@@ -107,9 +99,8 @@ export async function updateRegistration(
 export async function cancelRegistration(
   registrationId: string
 ): Promise<EventRegistrationResponse> {
-  const response: AxiosResponse<EventRegistrationResponse> = await apiClient.delete(
-    `/registrations/${registrationId}`
-  )
+  const response: AxiosResponse<EventRegistrationResponse> =
+    await apiClient.delete(`/registrations/${registrationId}`)
   return response.data
 }
 

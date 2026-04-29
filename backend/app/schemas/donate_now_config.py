@@ -105,6 +105,8 @@ class UpcomingEventSummary(BaseModel):
     name: str
     slug: str
     start_date: date | None
+    location: str | None = None
+    logo_url: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

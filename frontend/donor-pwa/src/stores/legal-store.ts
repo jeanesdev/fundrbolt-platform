@@ -2,7 +2,6 @@
  * Legal documents store
  * Manages legal documents state (Terms of Service, Privacy Policy)
  */
-
 import { legalService } from '@/services/legal-service'
 import type { LegalDocumentPublic, LegalDocumentType } from '@/types/legal'
 import { create } from 'zustand'
@@ -14,7 +13,9 @@ interface LegalState {
   error: string | null
 
   // Actions
-  setDocuments: (documents: Record<LegalDocumentType, LegalDocumentPublic | null>) => void
+  setDocuments: (
+    documents: Record<LegalDocumentType, LegalDocumentPublic | null>
+  ) => void
   setDocument: (type: LegalDocumentType, document: LegalDocumentPublic) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
@@ -62,7 +63,10 @@ export const useLegalStore = create<LegalState>((set) => ({
       const documents = await legalService.fetchAllDocuments()
 
       // Convert array to record by document_type
-      const documentsRecord: Record<LegalDocumentType, LegalDocumentPublic | null> = {
+      const documentsRecord: Record<
+        LegalDocumentType,
+        LegalDocumentPublic | null
+      > = {
         terms_of_service: null,
         privacy_policy: null,
       }
@@ -73,7 +77,8 @@ export const useLegalStore = create<LegalState>((set) => ({
 
       set({ documents: documentsRecord, isLoading: false })
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch documents'
+      const message =
+        error instanceof Error ? error.message : 'Failed to fetch documents'
       set({ error: message, isLoading: false })
       throw error
     }
@@ -95,7 +100,8 @@ export const useLegalStore = create<LegalState>((set) => ({
 
       return document
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch document'
+      const message =
+        error instanceof Error ? error.message : 'Failed to fetch document'
       set({ error: message, isLoading: false })
       throw error
     }

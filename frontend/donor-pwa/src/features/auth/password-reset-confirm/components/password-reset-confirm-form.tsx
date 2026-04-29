@@ -35,8 +35,7 @@ const formSchema = z
     path: ['confirm_password'],
   })
 
-interface PasswordResetConfirmFormProps
-  extends React.HTMLAttributes<HTMLFormElement> {
+interface PasswordResetConfirmFormProps extends React.HTMLAttributes<HTMLFormElement> {
   token?: string
 }
 

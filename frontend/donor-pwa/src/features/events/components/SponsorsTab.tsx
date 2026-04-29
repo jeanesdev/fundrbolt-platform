@@ -2,7 +2,14 @@
  * SponsorsTab
  * Tab content for managing event sponsors with create/edit/delete
  */
-
+import { useEffect, useState } from 'react'
+import type {
+  Sponsor,
+  SponsorCreateRequest,
+  SponsorUpdateRequest,
+} from '@/types/sponsor'
+import { toast } from 'sonner'
+import { useSponsorStore } from '@/stores/sponsorStore'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,10 +27,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { useSponsorStore } from '@/stores/sponsorStore'
-import type { Sponsor, SponsorCreateRequest, SponsorUpdateRequest } from '@/types/sponsor'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
 import { SponsorForm } from './SponsorForm'
 import { SponsorList } from './SponsorList'
 
@@ -84,18 +87,27 @@ export function SponsorsTab({ eventId }: SponsorsTabProps) {
       toast.success('Sponsor deleted successfully')
       setDeletingSponsor(null)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete sponsor')
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to delete sponsor'
+      )
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const handleSubmit = async (data: SponsorCreateRequest | SponsorUpdateRequest, logoFile?: File) => {
+  const handleSubmit = async (
+    data: SponsorCreateRequest | SponsorUpdateRequest,
+    logoFile?: File
+  ) => {
     setIsSubmitting(true)
     try {
       if (editingSponsor) {
         // Update existing sponsor
-        await updateSponsor(eventId, editingSponsor.id, data as SponsorUpdateRequest)
+        await updateSponsor(
+          eventId,
+          editingSponsor.id,
+          data as SponsorUpdateRequest
+        )
 
         // If logo file provided, upload it separately
         if (logoFile) {
@@ -107,7 +119,13 @@ export function SponsorsTab({ eventId }: SponsorsTabProps) {
       } else {
         // Create new sponsor (with logo upload)
         // eslint-disable-next-line no-console
-        console.log('Creating sponsor with data:', data, 'Logo file:', logoFile?.name, logoFile?.size)
+        console.log(
+          'Creating sponsor with data:',
+          data,
+          'Logo file:',
+          logoFile?.name,
+          logoFile?.size
+        )
         await createSponsor(eventId, data as SponsorCreateRequest, logoFile)
         toast.success('Sponsor created successfully')
       }
@@ -117,7 +135,8 @@ export function SponsorsTab({ eventId }: SponsorsTabProps) {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Sponsor save error:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Failed to save sponsor'
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to save sponsor'
       toast.error(errorMessage)
       // Don't close dialog on error so user can retry
     } finally {
@@ -131,7 +150,7 @@ export function SponsorsTab({ eventId }: SponsorsTabProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       <SponsorList
         sponsors={sponsors}
         isLoading={isLoading}
@@ -143,9 +162,11 @@ export function SponsorsTab({ eventId }: SponsorsTabProps) {
 
       {/* Create/Edit Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className='max-h-[90vh] max-w-3xl overflow-y-auto'>
           <DialogHeader>
-            <DialogTitle>{editingSponsor ? 'Edit Sponsor' : 'Add Sponsor'}</DialogTitle>
+            <DialogTitle>
+              {editingSponsor ? 'Edit Sponsor' : 'Add Sponsor'}
+            </DialogTitle>
             <DialogDescription>
               {editingSponsor
                 ? 'Update sponsor information and logo'
@@ -162,21 +183,27 @@ export function SponsorsTab({ eventId }: SponsorsTabProps) {
       </Dialog>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingSponsor} onOpenChange={(open) => !open && setDeletingSponsor(null)}>
+      <AlertDialog
+        open={!!deletingSponsor}
+        onOpenChange={(open) => !open && setDeletingSponsor(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Sponsor</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <strong>{deletingSponsor?.name}</strong>?
-              This will permanently remove the sponsor and their logo. This action cannot be undone.
+              Are you sure you want to delete{' '}
+              <strong>{deletingSponsor?.name}</strong>? This will permanently
+              remove the sponsor and their logo. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSubmitting}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={isSubmitting}
-              className="bg-destructive hover:bg-destructive/90"
+              className='bg-destructive hover:bg-destructive/90'
             >
               {isSubmitting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>

@@ -1,3 +1,8 @@
+import { useMemo, useState } from 'react'
+import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
+import '@ncdai/react-wheel-picker/style.css'
+import { ArrowRight } from 'lucide-react'
+import type { DonationTier } from '@/lib/api/donateNow'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -12,11 +17,6 @@ import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import type { useDonateNow } from '@/features/donate-now/useDonateNow'
-import type { DonationTier } from '@/lib/api/donateNow'
-import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
-import '@ncdai/react-wheel-picker/style.css'
-import { ArrowRight } from 'lucide-react'
-import { useMemo, useState } from 'react'
 
 interface DonationAmountSelectorProps {
   state: ReturnType<typeof useDonateNow>
@@ -73,6 +73,8 @@ export function DonationAmountSelector({
     feePercent,
     setShowConfirm,
     isPending,
+    donorName,
+    setDonorName,
     wallMessage,
     setWallMessage,
     isAnonymous,
@@ -90,7 +92,9 @@ export function DonationAmountSelector({
     )
 
   const [spinnerAmountCents, setSpinnerAmountCents] = useState<number>(
-    normalizeWheelAmount(Math.max(effectiveAmountCents || 2500, WHEEL_MIN_CENTS))
+    normalizeWheelAmount(
+      Math.max(effectiveAmountCents || 2500, WHEEL_MIN_CENTS)
+    )
   )
   const [wheelMaxCents, setWheelMaxCents] = useState<number>(
     normalizeWheelAmount(
@@ -147,8 +151,8 @@ export function DonationAmountSelector({
       normalized >=
       wheelMaxCents - WHEEL_STEP_CENTS * WHEEL_EXTEND_THRESHOLD_STEPS
     ) {
-      setWheelMaxCents((prev) =>
-        prev + WHEEL_STEP_CENTS * WHEEL_EXTEND_BY_STEPS
+      setWheelMaxCents(
+        (prev) => prev + WHEEL_STEP_CENTS * WHEEL_EXTEND_BY_STEPS
       )
     }
 
@@ -168,7 +172,10 @@ export function DonationAmountSelector({
 
   const handleSelectCustom = () => {
     const initialAmount = customAmount
-      ? Math.max(Math.round(parseFloat(customAmount || '0') * 100), WHEEL_MIN_CENTS)
+      ? Math.max(
+          Math.round(parseFloat(customAmount || '0') * 100),
+          WHEEL_MIN_CENTS
+        )
       : Math.max(effectiveAmountCents || selectedAmount, WHEEL_MIN_CENTS)
     setOtherAmountInput((initialAmount / 100).toFixed(2).replace(/\.00$/, ''))
     setIsOtherModalOpen(true)
@@ -190,8 +197,8 @@ export function DonationAmountSelector({
         normalized >=
         wheelMaxCents - WHEEL_STEP_CENTS * WHEEL_EXTEND_THRESHOLD_STEPS
       ) {
-        setWheelMaxCents((prev) =>
-          prev + WHEEL_STEP_CENTS * WHEEL_EXTEND_BY_STEPS
+        setWheelMaxCents(
+          (prev) => prev + WHEEL_STEP_CENTS * WHEEL_EXTEND_BY_STEPS
         )
       }
     }
@@ -219,7 +226,7 @@ export function DonationAmountSelector({
 
   return (
     <div
-      className='rounded-xl p-4 space-y-3'
+      className='space-y-3 rounded-xl p-4'
       style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))' }}
     >
       <Dialog open={isOtherModalOpen} onOpenChange={setIsOtherModalOpen}>
@@ -268,15 +275,15 @@ export function DonationAmountSelector({
               style={
                 isSelected
                   ? {
-                    borderColor: 'rgba(255,255,255,0.9)',
-                    backgroundColor: 'rgba(255,255,255,0.25)',
-                    color: 'var(--event-text-on-primary, #FFFFFF)',
-                  }
+                      borderColor: 'rgba(255,255,255,0.9)',
+                      backgroundColor: 'rgba(255,255,255,0.25)',
+                      color: 'var(--event-text-on-primary, #FFFFFF)',
+                    }
                   : {
-                    borderColor: 'rgba(255,255,255,0.35)',
-                    backgroundColor: 'rgba(255,255,255,0.1)',
-                    color: 'var(--event-text-on-primary, #FFFFFF)',
-                  }
+                      borderColor: 'rgba(255,255,255,0.35)',
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      color: 'var(--event-text-on-primary, #FFFFFF)',
+                    }
               }
             >
               <div className='text-lg font-bold'>
@@ -296,15 +303,15 @@ export function DonationAmountSelector({
           style={
             isCustomSelected
               ? {
-                borderColor: 'rgba(255,255,255,0.9)',
-                backgroundColor: 'rgba(255,255,255,0.25)',
-                color: 'var(--event-text-on-primary, #FFFFFF)',
-              }
+                  borderColor: 'rgba(255,255,255,0.9)',
+                  backgroundColor: 'rgba(255,255,255,0.25)',
+                  color: 'var(--event-text-on-primary, #FFFFFF)',
+                }
               : {
-                borderColor: 'rgba(255,255,255,0.35)',
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                color: 'var(--event-text-on-primary, #FFFFFF)',
-              }
+                  borderColor: 'rgba(255,255,255,0.35)',
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  color: 'var(--event-text-on-primary, #FFFFFF)',
+                }
           }
         >
           <div className='text-lg font-bold'>
@@ -318,7 +325,9 @@ export function DonationAmountSelector({
       {/* Wheel picker */}
       <div
         className='relative h-[140px] overflow-hidden rounded-2xl px-3 py-2'
-        style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}
+        style={{
+          backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+        }}
       >
         <WheelPickerWrapper className='flex h-full items-center justify-center'>
           <WheelPicker
@@ -330,7 +339,7 @@ export function DonationAmountSelector({
             scrollSensitivity={1.0}
             optionItemHeight={28}
             classNames={{
-              optionItem: 'text-sm font-medium text-foreground/60',
+              optionItem: 'donate-now-wheel-option text-sm font-semibold',
               highlightWrapper: 'bg-muted/85 border-y border-border/70',
               highlightItem: 'text-base font-semibold text-foreground',
             }}
@@ -421,6 +430,13 @@ export function DonationAmountSelector({
 
               setSlideValue(v)
             }}
+            onValueCommit={() => {
+              if (isSlideConfirmed || isPending) {
+                return
+              }
+
+              setSlideValue([0])
+            }}
             min={0}
             max={100}
             step={1}
@@ -434,6 +450,29 @@ export function DonationAmountSelector({
       <div className='space-y-2 rounded-xl bg-white/10 p-3'>
         <div>
           <label
+            htmlFor='donation-from-name'
+            className='text-xs font-medium'
+            style={{ color: 'var(--event-text-on-primary, #FFFFFF)' }}
+          >
+            Donation from
+          </label>
+          <Input
+            id='donation-from-name'
+            value={donorName}
+            onChange={(event) => setDonorName(event.target.value)}
+            placeholder='Your name'
+            maxLength={100}
+            disabled={isAnonymous}
+            className={`mt-1 border-white/55 caret-white disabled:cursor-not-allowed disabled:opacity-100 ${
+              isAnonymous
+                ? 'bg-black/45 text-white/70 placeholder:text-white/55'
+                : 'bg-black/20 text-white placeholder:text-white/75'
+            }`}
+          />
+        </div>
+
+        <div>
+          <label
             htmlFor='support-wall-message'
             className='text-xs font-medium'
             style={{ color: 'var(--event-text-on-primary, #FFFFFF)' }}
@@ -445,7 +484,7 @@ export function DonationAmountSelector({
             value={wallMessage}
             onChange={(event) => setWallMessage(event.target.value)}
             placeholder='Share why you support this cause'
-            className='mt-1 border-white/40 bg-white text-black placeholder:text-gray-500'
+            className='mt-1 border-white/55 bg-black/20 text-white caret-white placeholder:text-white/75'
           />
         </div>
 

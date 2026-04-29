@@ -1,13 +1,24 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import type { DonateNowHeroMediaItem } from '@/lib/api/donateNow'
-import { useAuthStore } from '@/stores/auth-store'
-import { Link } from '@tanstack/react-router'
-import { LogIn } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { LogIn, Settings } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import type { DonateNowHeroMediaItem } from '@/lib/api/donateNow'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 type HeroTransitionStyle = 'documentary_style' | 'fade' | 'swipe' | 'simple'
 
-const documentaryKeyframes = ['heroKenBurnsA', 'heroKenBurnsB', 'heroKenBurnsC', 'heroKenBurnsD'] as const
+const documentaryKeyframes = [
+  'heroKenBurnsA',
+  'heroKenBurnsB',
+  'heroKenBurnsC',
+  'heroKenBurnsD',
+] as const
 
 function hashString(value: string): number {
   let hash = 0
@@ -34,6 +45,7 @@ export function DonateNowHeroSection({
   npoName,
 }: DonateNowHeroSectionProps) {
   const [activeBannerIndex, setActiveBannerIndex] = useState(0)
+  const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const getProfilePictureUrl = useAuthStore((s) => s.getProfilePictureUrl)
 
@@ -44,11 +56,29 @@ export function DonateNowHeroSection({
 
   // Prefer media_items (uploaded set) over legacy hero_media_url
   const bannerImages =
-    mediaItems.length > 0 ? mediaItems.map((m) => m.file_url) : heroMediaUrl ? [heroMediaUrl] : []
+    mediaItems.length > 0
+      ? mediaItems.map((m) => m.file_url)
+      : heroMediaUrl
+        ? [heroMediaUrl]
+        : []
 
   const showBanner = bannerImages.length > 0
-  const safeActiveBannerIndex = bannerImages.length > 0 ? activeBannerIndex % bannerImages.length : 0
+  const safeActiveBannerIndex =
+    bannerImages.length > 0 ? activeBannerIndex % bannerImages.length : 0
   const style = (transitionStyle ?? 'documentary_style') as HeroTransitionStyle
+
+  const handleOpenSettings = () => {
+    const slugMatch = window.location.pathname.match(
+      /^\/npo\/([^/]+)\/donate-now\/?$/
+    )
+    const donateNowSlug = slugMatch?.[1]
+
+    if (donateNowSlug) {
+      sessionStorage.setItem('settings:return-donate-now-slug', donateNowSlug)
+    }
+
+    void navigate({ to: '/settings' })
+  }
 
   useEffect(() => {
     if (bannerImages.length <= 1) return
@@ -90,26 +120,42 @@ export function DonateNowHeroSection({
     if (style === 'swipe') {
       const distance =
         bannerImages.length > 0
-          ? (index - safeActiveBannerIndex + bannerImages.length) % bannerImages.length
+          ? (index - safeActiveBannerIndex + bannerImages.length) %
+            bannerImages.length
           : 0
       const swipeOffset = distance === 1 ? '10%' : '-10%'
       return {
         opacity: isActive ? 1 : 0,
-        transform: isActive ? 'translateX(0%) scale(1.02)' : `translateX(${swipeOffset}) scale(1.02)`,
+        transform: isActive
+          ? 'translateX(0%) scale(1.02)'
+          : `translateX(${swipeOffset}) scale(1.02)`,
         transition: `opacity ${duration} ease, transform ${duration} ease`,
       }
     }
     if (style === 'simple') {
-      return { opacity: isActive ? 1 : 0, transform: 'scale(1)', transition: `opacity ${duration} linear` }
+      return {
+        opacity: isActive ? 1 : 0,
+        transform: 'scale(1)',
+        transition: `opacity ${duration} linear`,
+      }
     }
     if (style === 'fade') {
-      return { opacity: isActive ? 1 : 0, transform: 'scale(1)', transition: `opacity ${duration} ease`, animation: 'none', filter: 'none' }
+      return {
+        opacity: isActive ? 1 : 0,
+        transform: 'scale(1)',
+        transition: `opacity ${duration} ease`,
+        animation: 'none',
+        filter: 'none',
+      }
     }
     return getDocumentaryMotionStyle(imageUrl, isActive)
   }
 
   return (
-    <div className='relative overflow-hidden' style={{ minHeight: '180px', height: 'min(55vw, 260px)' }}>
+    <div
+      className='relative overflow-hidden'
+      style={{ minHeight: '180px', height: 'min(55vw, 260px)' }}
+    >
       <style>{`
         @keyframes heroKenBurnsA {
           0% { transform: scale(1.02) translate3d(-1.5%, -1%, 0); }
@@ -139,12 +185,15 @@ export function DonateNowHeroSection({
             <div
               key={url}
               className='absolute inset-0 bg-cover bg-center will-change-transform'
-              style={{ backgroundImage: `url(${url})`, ...getSlideStyle(index, url) }}
+              style={{
+                backgroundImage: `url(${url})`,
+                ...getSlideStyle(index, url),
+              }}
             />
           ))}
           <div className='pointer-events-none absolute inset-x-0 -bottom-px h-28 bg-gradient-to-t from-black/90 via-black/55 to-transparent' />
           {pageLogoUrl && (
-            <div className='absolute left-4 top-4 rounded-lg bg-white/90 p-2 shadow-sm backdrop-blur-sm'>
+            <div className='absolute top-4 left-4 rounded-lg bg-white/90 p-2 shadow-sm backdrop-blur-sm'>
               <img
                 src={pageLogoUrl}
                 alt={`${npoName} logo`}
@@ -152,25 +201,37 @@ export function DonateNowHeroSection({
               />
             </div>
           )}
-          <div className='absolute right-4 top-4'>
+          <div className='absolute top-4 right-4'>
             {user ? (
-              <Link
-                to='/settings'
-                className='flex h-11 w-11 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm'
-                aria-label='Profile settings'
-              >
-                <Avatar className='h-9 w-9'>
-                  <AvatarImage
-                    src={profilePictureUrl || undefined}
-                    alt='Profile picture'
-                  />
-                  <AvatarFallback>{initials}</AvatarFallback>
-                </Avatar>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type='button'
+                    className='flex h-11 w-11 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm'
+                    aria-label='Open profile menu'
+                  >
+                    <Avatar className='h-9 w-9'>
+                      <AvatarImage
+                        src={profilePictureUrl || undefined}
+                        alt='Profile picture'
+                      />
+                      <AvatarFallback>{initials}</AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end' className='w-44'>
+                  <DropdownMenuItem onClick={handleOpenSettings}>
+                    <Settings className='mr-2 h-4 w-4' />
+                    Settings
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Link
                 to='/sign-in'
-                search={{ redirect: window.location.pathname + window.location.search }}
+                search={{
+                  redirect: window.location.pathname + window.location.search,
+                }}
                 className='flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-sm backdrop-blur-sm'
                 aria-label='Login'
               >
@@ -178,13 +239,15 @@ export function DonateNowHeroSection({
               </Link>
             )}
           </div>
-          <div className='absolute bottom-0 left-0 right-0 px-4 py-5 text-white'>
+          <div className='absolute right-0 bottom-0 left-0 px-4 py-5 text-white'>
             <h1 className='text-2xl font-bold sm:text-3xl'>{npoName}</h1>
           </div>
         </>
       ) : (
         <div className='flex h-full flex-col items-center justify-center bg-gradient-to-b from-gray-100 to-gray-200 px-4 py-6 text-center'>
-          <h1 className='text-2xl font-bold text-gray-800 sm:text-3xl'>{npoName}</h1>
+          <h1 className='text-2xl font-bold text-gray-800 sm:text-3xl'>
+            {npoName}
+          </h1>
         </div>
       )}
     </div>

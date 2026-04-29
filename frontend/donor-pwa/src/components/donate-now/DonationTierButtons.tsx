@@ -29,18 +29,18 @@ export function DonationTierButtons({
             style={
               isSelected
                 ? {
-                  borderColor: 'rgb(var(--event-primary, 59, 130, 246))',
-                  backgroundColor:
-                    'rgb(var(--event-primary, 59, 130, 246) / 0.1)',
-                  color: 'rgb(var(--event-primary, 59, 130, 246))',
-                }
+                    borderColor: 'rgb(var(--event-primary, 59, 130, 246))',
+                    backgroundColor:
+                      'rgb(var(--event-primary, 59, 130, 246) / 0.1)',
+                    color: 'rgb(var(--event-primary, 59, 130, 246))',
+                  }
                 : {
-                  borderColor:
-                    'rgb(var(--event-primary, 59, 130, 246) / 0.28)',
-                  backgroundColor:
-                    'rgb(var(--event-background, 255, 255, 255))',
-                  color: 'var(--event-text-on-background, #000000)',
-                }
+                    borderColor:
+                      'rgb(var(--event-primary, 59, 130, 246) / 0.28)',
+                    backgroundColor:
+                      'rgb(var(--event-background, 255, 255, 255))',
+                    color: 'var(--event-text-on-background, #000000)',
+                  }
             }
           >
             <div className='text-lg font-bold'>
@@ -66,16 +66,16 @@ export function DonationTierButtons({
         style={
           isCustomSelected
             ? {
-              borderColor: 'rgb(var(--event-primary, 59, 130, 246))',
-              backgroundColor:
-                'rgb(var(--event-primary, 59, 130, 246) / 0.1)',
-              color: 'rgb(var(--event-primary, 59, 130, 246))',
-            }
+                borderColor: 'rgb(var(--event-primary, 59, 130, 246))',
+                backgroundColor:
+                  'rgb(var(--event-primary, 59, 130, 246) / 0.1)',
+                color: 'rgb(var(--event-primary, 59, 130, 246))',
+              }
             : {
-              borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.28)',
-              backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
-              color: 'var(--event-text-on-background, #000000)',
-            }
+                borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.28)',
+                backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                color: 'var(--event-text-on-background, #000000)',
+              }
         }
       >
         <div className='text-lg font-bold'>Custom</div>

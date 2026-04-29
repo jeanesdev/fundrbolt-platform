@@ -5,7 +5,9 @@ interface MonthlyRecurrenceFieldsProps {
   state: ReturnType<typeof useDonateNow>
 }
 
-export function MonthlyRecurrenceFields({ state }: MonthlyRecurrenceFieldsProps) {
+export function MonthlyRecurrenceFields({
+  state,
+}: MonthlyRecurrenceFieldsProps) {
   const { isMonthly, setIsMonthly } = state
 
   return (

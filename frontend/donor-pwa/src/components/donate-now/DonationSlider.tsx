@@ -1,8 +1,8 @@
+import { useEffect, useMemo, useState } from 'react'
+import { ArrowRight, Check } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Slider } from '@/components/ui/slider'
 import type { useDonateNow } from '@/features/donate-now/useDonateNow'
-import { cn } from '@/lib/utils'
-import { ArrowRight, Check } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
 
 interface DonationSliderProps {
   state: ReturnType<typeof useDonateNow>
@@ -48,13 +48,19 @@ export function DonationSlider({ state }: DonationSliderProps) {
       }}
     >
       <h3 className='text-lg font-semibold'>Swipe to Donate</h3>
-      <div className='text-sm font-medium' style={{ color: 'var(--event-text-muted-on-background, #4B5563)' }}>
+      <div
+        className='text-sm font-medium'
+        style={{ color: 'var(--event-text-muted-on-background, #4B5563)' }}
+      >
         {amountLabel}
       </div>
 
       <div className='relative'>
         <div
-          className={cn('relative rounded-full p-1 transition-all duration-300', isConfirmed ? 'opacity-100' : 'opacity-90')}
+          className={cn(
+            'relative rounded-full p-1 transition-all duration-300',
+            isConfirmed ? 'opacity-100' : 'opacity-90'
+          )}
           style={{
             background: isConfirmed
               ? 'rgb(34, 197, 94)'
@@ -66,8 +72,16 @@ export function DonationSlider({ state }: DonationSliderProps) {
           }}
         >
           <div className='flex items-center justify-between px-4 py-3'>
-            <div className={cn('transition-opacity duration-300', slidePercent > 30 ? 'opacity-0' : 'opacity-100')}>
-              <ArrowRight className='h-5 w-5' style={{ color: 'var(--event-text-on-secondary, #FFFFFF)' }} />
+            <div
+              className={cn(
+                'transition-opacity duration-300',
+                slidePercent > 30 ? 'opacity-0' : 'opacity-100'
+              )}
+            >
+              <ArrowRight
+                className='h-5 w-5'
+                style={{ color: 'var(--event-text-on-secondary, #FFFFFF)' }}
+              />
             </div>
 
             <div
@@ -83,8 +97,16 @@ export function DonationSlider({ state }: DonationSliderProps) {
               {isConfirmed ? 'Confirmed!' : 'Slide to Confirm'}
             </div>
 
-            <div className={cn('transition-opacity duration-300', isConfirmed ? 'opacity-100' : 'opacity-0')}>
-              <Check className='h-5 w-5' style={{ color: 'var(--event-text-on-primary, #FFFFFF)' }} />
+            <div
+              className={cn(
+                'transition-opacity duration-300',
+                isConfirmed ? 'opacity-100' : 'opacity-0'
+              )}
+            >
+              <Check
+                className='h-5 w-5'
+                style={{ color: 'var(--event-text-on-primary, #FFFFFF)' }}
+              />
             </div>
           </div>
         </div>

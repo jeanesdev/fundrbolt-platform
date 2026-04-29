@@ -7,36 +7,35 @@
  * @param targetDate - The date/time to count down to
  * @returns Countdown values (days, hours, minutes, seconds) and state flags
  */
-
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 
 export interface CountdownValues {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
+  days: number
+  hours: number
+  minutes: number
+  seconds: number
   /** Total milliseconds remaining */
-  totalMs: number;
+  totalMs: number
   /** Whether the countdown has expired (reached zero) */
-  isExpired: boolean;
+  isExpired: boolean
   /** Whether the event is within 24 hours (for emphasized styling) */
-  isWithin24Hours: boolean;
+  isWithin24Hours: boolean
   /** Whether the event is within 1 hour (for urgent styling) */
-  isWithin1Hour: boolean;
+  isWithin1Hour: boolean
 }
 
-const SECOND = 1000;
-const MINUTE = SECOND * 60;
-const HOUR = MINUTE * 60;
-const DAY = HOUR * 24;
+const SECOND = 1000
+const MINUTE = SECOND * 60
+const HOUR = MINUTE * 60
+const DAY = HOUR * 24
 
 /**
  * Calculate countdown values from milliseconds remaining
  */
 function calculateCountdown(targetTime: number, now: number): CountdownValues {
-  const totalMs = Math.max(0, targetTime - now);
-  const isExpired = totalMs <= 0;
+  const totalMs = Math.max(0, targetTime - now)
+  const isExpired = totalMs <= 0
 
   if (isExpired) {
     return {
@@ -48,13 +47,13 @@ function calculateCountdown(targetTime: number, now: number): CountdownValues {
       isExpired: true,
       isWithin24Hours: false,
       isWithin1Hour: false,
-    };
+    }
   }
 
-  const days = Math.floor(totalMs / DAY);
-  const hours = Math.floor((totalMs % DAY) / HOUR);
-  const minutes = Math.floor((totalMs % HOUR) / MINUTE);
-  const seconds = Math.floor((totalMs % MINUTE) / SECOND);
+  const days = Math.floor(totalMs / DAY)
+  const hours = Math.floor((totalMs % DAY) / HOUR)
+  const minutes = Math.floor((totalMs % HOUR) / MINUTE)
+  const seconds = Math.floor((totalMs % MINUTE) / SECOND)
 
   return {
     days,
@@ -65,7 +64,7 @@ function calculateCountdown(targetTime: number, now: number): CountdownValues {
     isExpired: false,
     isWithin24Hours: totalMs <= DAY,
     isWithin1Hour: totalMs <= HOUR,
-  };
+  }
 }
 
 /**
@@ -87,64 +86,67 @@ export function useCountdown(
   targetDate: string | Date | null | undefined,
   options?: {
     /** Update interval in ms (default: 1000) */
-    updateInterval?: number;
+    updateInterval?: number
     /** Callback when countdown expires */
-    onExpire?: () => void;
+    onExpire?: () => void
   }
 ): CountdownValues {
-  const { updateInterval = 1000, onExpire } = options || {};
-  const getEffectiveNowMs = useDebugSpoofStore((state) => state.getEffectiveNowMs);
+  const { updateInterval = 1000, onExpire } = options || {}
+  const getEffectiveNowMs = useDebugSpoofStore(
+    (state) => state.getEffectiveNowMs
+  )
 
   // Memoize target timestamp
   const targetTime = useMemo(() => {
-    if (!targetDate) return 0;
-    const date = typeof targetDate === 'string' ? new Date(targetDate) : targetDate;
-    const timestamp = date.getTime();
-    return Number.isNaN(timestamp) ? 0 : timestamp;
-  }, [targetDate]);
+    if (!targetDate) return 0
+    const date =
+      typeof targetDate === 'string' ? new Date(targetDate) : targetDate
+    const timestamp = date.getTime()
+    return Number.isNaN(timestamp) ? 0 : timestamp
+  }, [targetDate])
 
   // Initialize state
   const [countdown, setCountdown] = useState<CountdownValues>(() =>
     calculateCountdown(targetTime, getEffectiveNowMs())
-  );
+  )
 
   // Update callback
   const updateCountdown = useCallback(() => {
-    const newCountdown = calculateCountdown(targetTime, getEffectiveNowMs());
+    const newCountdown = calculateCountdown(targetTime, getEffectiveNowMs())
     setCountdown((prev) => {
       // Only trigger onExpire once when transitioning to expired
       if (!prev.isExpired && newCountdown.isExpired && onExpire) {
-        onExpire();
+        onExpire()
       }
-      return newCountdown;
-    });
-  }, [targetTime, onExpire, getEffectiveNowMs]);
+      return newCountdown
+    })
+  }, [targetTime, onExpire, getEffectiveNowMs])
 
   // Setup interval
   useEffect(() => {
     // Don't start timer if no target date or already expired
     if (!targetTime || countdown.isExpired) {
-      return;
+      return
     }
 
     // Update immediately
-    updateCountdown();
+    updateCountdown()
 
     // Start interval
-    const intervalId = setInterval(updateCountdown, updateInterval);
+    const intervalId = setInterval(updateCountdown, updateInterval)
 
     // Cleanup
     return () => {
-      clearInterval(intervalId);
-    };
-  }, [targetTime, updateInterval, updateCountdown, countdown.isExpired]);
+      clearInterval(intervalId)
+    }
+  }, [targetTime, updateInterval, updateCountdown, countdown.isExpired])
 
   // Recalculate when targetDate changes
   useEffect(() => {
-    setCountdown(calculateCountdown(targetTime, getEffectiveNowMs()));
-  }, [targetTime, getEffectiveNowMs]);
+    setCountdown(calculateCountdown(targetTime, getEffectiveNowMs()))
+  }, [targetTime, getEffectiveNowMs])
 
-  return countdown;
+  return countdown
 }
 
-export default useCountdown;
+export default useCountdown

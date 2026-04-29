@@ -3,9 +3,8 @@
  *
  * Provides functions for managing guest information for event registrations.
  */
-
-import apiClient from '@/lib/axios'
 import type { AxiosResponse } from 'axios'
+import apiClient from '@/lib/axios'
 
 // ================================
 // Types
@@ -59,10 +58,8 @@ export async function addGuest(
   registrationId: string,
   data: Omit<RegistrationGuestCreateRequest, 'registration_id'>
 ): Promise<RegistrationGuestResponse> {
-  const response: AxiosResponse<RegistrationGuestResponse> = await apiClient.post(
-    `/registrations/${registrationId}/guests`,
-    data
-  )
+  const response: AxiosResponse<RegistrationGuestResponse> =
+    await apiClient.post(`/registrations/${registrationId}/guests`, data)
   return response.data
 }
 
@@ -72,9 +69,8 @@ export async function addGuest(
 export async function getRegistrationGuests(
   registrationId: string
 ): Promise<RegistrationGuestListResponse> {
-  const response: AxiosResponse<RegistrationGuestListResponse> = await apiClient.get(
-    `/registrations/${registrationId}/guests`
-  )
+  const response: AxiosResponse<RegistrationGuestListResponse> =
+    await apiClient.get(`/registrations/${registrationId}/guests`)
   return response.data
 }
 
@@ -86,10 +82,11 @@ export async function updateGuest(
   guestId: string,
   data: RegistrationGuestUpdateRequest
 ): Promise<RegistrationGuestResponse> {
-  const response: AxiosResponse<RegistrationGuestResponse> = await apiClient.patch(
-    `/registrations/${registrationId}/guests/${guestId}`,
-    data
-  )
+  const response: AxiosResponse<RegistrationGuestResponse> =
+    await apiClient.patch(
+      `/registrations/${registrationId}/guests/${guestId}`,
+      data
+    )
   return response.data
 }
 

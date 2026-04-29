@@ -11,29 +11,14 @@
  * - Donated by / item webpage
  * - View tracking
  */
-import { WatchListButton } from '@/components/auction/WatchListButton'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Slider } from '@/components/ui/slider'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { usePreviewMode } from '@/contexts/PreviewContext'
-import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
-import { useItemViewTracking } from '@/hooks/useItemViewTracking'
-import { cn } from '@/lib/utils'
 import auctionItemService from '@/services/auctionItemService'
-import { useAuthStore } from '@/stores/auth-store'
-import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import type { AuctionItemDetail } from '@/types/auction-item'
 import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
 import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
 import '@ncdai/react-wheel-picker/style.css'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowRight,
   ChevronLeft,
@@ -44,7 +29,22 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useAuthStore } from '@/stores/auth-store'
+import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { cn } from '@/lib/utils'
+import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
+import { useItemViewTracking } from '@/hooks/useItemViewTracking'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Slider } from '@/components/ui/slider'
+import { WatchListButton } from '@/components/auction/WatchListButton'
 
 export interface AuctionItemDetailModalProps {
   eventId: string
@@ -835,9 +835,9 @@ export function AuctionItemDetailModal({
 
                   {/* Bidding Controls — only show when auction is open */}
                   {!isLiveAuctionItem &&
-                    isBiddingOpen &&
-                    eventStatus === 'active' &&
-                    !isEventInFuture ? (
+                  isBiddingOpen &&
+                  eventStatus === 'active' &&
+                  !isEventInFuture ? (
                     <div className='space-y-3'>
                       <div
                         className='relative h-[140px] overflow-hidden rounded-2xl border px-3 py-2'

@@ -2,37 +2,36 @@
  * AuctionItemForm
  * Form for creating or editing an auction item
  */
-
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import auctionItemMediaService from '@/services/auctionItemMediaService';
+import { useEffect, useState } from 'react'
+import auctionItemMediaService from '@/services/auctionItemMediaService'
 import {
   AuctionType,
   type AuctionItem,
   type AuctionItemCreate,
   type AuctionItemMedia,
   type AuctionItemUpdate,
-} from '@/types/auction-item';
-import { useEffect, useState } from 'react';
-import { MediaGallery } from './MediaGallery';
-import { MediaUploadZone } from './MediaUploadZone';
+} from '@/types/auction-item'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
+import { MediaGallery } from './MediaGallery'
+import { MediaUploadZone } from './MediaUploadZone'
 
 interface AuctionItemFormProps {
-  item?: AuctionItem;
-  eventId: string;
-  onSubmit: (data: AuctionItemCreate | AuctionItemUpdate) => Promise<void>;
-  onCancel: () => void;
-  isSubmitting?: boolean;
+  item?: AuctionItem
+  eventId: string
+  onSubmit: (data: AuctionItemCreate | AuctionItemUpdate) => Promise<void>
+  onCancel: () => void
+  isSubmitting?: boolean
 }
 
 export function AuctionItemForm({
@@ -42,33 +41,33 @@ export function AuctionItemForm({
   onCancel,
   isSubmitting = false,
 }: AuctionItemFormProps) {
-  const isEdit = !!item;
+  const isEdit = !!item
 
   // Function to calculate bid increment based on starting bid
   const calculateBidIncrement = (startingBid: number): string => {
-    if (startingBid <= 50) return '5.00';
-    if (startingBid <= 150) return '10.00';
-    if (startingBid <= 500) return '25.00';
-    if (startingBid <= 1000) return '50.00';
-    if (startingBid <= 2500) return '100.00';
-    return '250.00';
-  };
+    if (startingBid <= 50) return '5.00'
+    if (startingBid <= 150) return '10.00'
+    if (startingBid <= 500) return '25.00'
+    if (startingBid <= 1000) return '50.00'
+    if (startingBid <= 2500) return '100.00'
+    return '250.00'
+  }
 
   interface FormData {
-    title: string;
-    description: string;
-    auction_type: AuctionType;
-    starting_bid: string;
-    bid_increment: string;
-    donor_value: string;
-    cost: string;
-    buy_now_price: string;
-    buy_now_enabled: boolean;
-    quantity_available: string;
-    donated_by: string;
-    sponsor_id: string;
-    item_webpage: string;
-    display_priority: string;
+    title: string
+    description: string
+    auction_type: AuctionType
+    starting_bid: string
+    bid_increment: string
+    donor_value: string
+    cost: string
+    buy_now_price: string
+    buy_now_enabled: boolean
+    quantity_available: string
+    donated_by: string
+    sponsor_id: string
+    item_webpage: string
+    display_priority: string
   }
 
   const [formData, setFormData] = useState<FormData>({
@@ -78,9 +77,7 @@ export function AuctionItemForm({
     starting_bid: item?.starting_bid?.toString() || '',
     bid_increment:
       item?.bid_increment?.toString() ||
-      (item?.starting_bid
-        ? calculateBidIncrement(item.starting_bid)
-        : '50.00'),
+      (item?.starting_bid ? calculateBidIncrement(item.starting_bid) : '50.00'),
     donor_value: item?.donor_value?.toString() || '',
     cost: item?.cost?.toString() || '',
     buy_now_price: item?.buy_now_price?.toString() || '',
@@ -90,49 +87,52 @@ export function AuctionItemForm({
     sponsor_id: item?.sponsor_id || '',
     item_webpage: item?.item_webpage || '',
     display_priority: item?.display_priority?.toString() || '',
-  });
+  })
 
   // Validation errors
-  const [urlError, setUrlError] = useState<string | null>(null);
+  const [urlError, setUrlError] = useState<string | null>(null)
   const [numericErrors, setNumericErrors] = useState<{
-    starting_bid?: string;
-    bid_increment?: string;
-    donor_value?: string;
-    cost?: string;
-    buy_now_price?: string;
-    quantity_available?: string;
-    display_priority?: string;
-  }>({});
+    starting_bid?: string
+    bid_increment?: string
+    donor_value?: string
+    cost?: string
+    buy_now_price?: string
+    quantity_available?: string
+    display_priority?: string
+  }>({})
 
   // Media management
-  const [media, setMedia] = useState<AuctionItemMedia[]>([]);
-  const [isLoadingMedia, setIsLoadingMedia] = useState(false);
+  const [media, setMedia] = useState<AuctionItemMedia[]>([])
+  const [isLoadingMedia, setIsLoadingMedia] = useState(false)
 
   // Load media when editing an existing item
   useEffect(() => {
     if (item?.id) {
-      loadMedia();
+      loadMedia()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item?.id]);
+  }, [item?.id])
 
   const loadMedia = async () => {
-    if (!item?.id) return;
+    if (!item?.id) return
 
-    setIsLoadingMedia(true);
+    setIsLoadingMedia(true)
     try {
-      const response = await auctionItemMediaService.listMedia(eventId, item.id);
-      setMedia(response.items);
+      const response = await auctionItemMediaService.listMedia(eventId, item.id)
+      setMedia(response.items)
     } catch {
       // Error loading media - silent fail, user can retry
     } finally {
-      setIsLoadingMedia(false);
+      setIsLoadingMedia(false)
     }
-  };
+  }
 
-  const handleMediaUpload = async (file: File, mediaType: 'image' | 'video') => {
+  const handleMediaUpload = async (
+    file: File,
+    mediaType: 'image' | 'video'
+  ) => {
     if (!item?.id) {
-      throw new Error('Please save the item first before uploading media');
+      throw new Error('Please save the item first before uploading media')
     }
 
     const newMedia = await auctionItemMediaService.uploadMedia(
@@ -140,192 +140,212 @@ export function AuctionItemForm({
       item.id,
       file,
       mediaType
-    );
-    setMedia((prev) => [...prev, newMedia]);
-  };
+    )
+    setMedia((prev) => [...prev, newMedia])
+  }
 
   const handleMediaReorder = async (mediaIds: string[]) => {
-    if (!item?.id) return;
+    if (!item?.id) return
 
     const response = await auctionItemMediaService.reorderMedia(
       eventId,
       item.id,
       { media_order: mediaIds }
-    );
-    setMedia(response.items);
-  };
+    )
+    setMedia(response.items)
+  }
 
   const handleMediaDelete = async (mediaId: string) => {
-    if (!item?.id) return;
+    if (!item?.id) return
 
-    await auctionItemMediaService.deleteMedia(eventId, item.id, mediaId);
-    setMedia((prev) => prev.filter((m) => m.id !== mediaId));
-  };
+    await auctionItemMediaService.deleteMedia(eventId, item.id, mediaId)
+    setMedia((prev) => prev.filter((m) => m.id !== mediaId))
+  }
 
   const isValidUrl = (url: string): boolean => {
-    if (!url) return true; // Empty is valid (optional field)
+    if (!url) return true // Empty is valid (optional field)
     try {
-      const urlObj = new URL(url);
-      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+      const urlObj = new URL(url)
+      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:'
     } catch {
-      return false;
+      return false
     }
-  };
+  }
 
   const handleUrlBlur = () => {
     if (formData.item_webpage && !isValidUrl(formData.item_webpage)) {
-      setUrlError('Please enter a valid URL (e.g., https://example.com)');
+      setUrlError('Please enter a valid URL (e.g., https://example.com)')
     } else {
-      setUrlError(null);
+      setUrlError(null)
     }
-  };
+  }
 
-  const handleNumericBlur = (field: keyof typeof numericErrors, value: string, isInteger = false) => {
+  const handleNumericBlur = (
+    field: keyof typeof numericErrors,
+    value: string,
+    isInteger = false
+  ) => {
     if (!value) {
       // Empty is allowed for optional fields
-      setNumericErrors((prev) => ({ ...prev, [field]: undefined }));
-      return;
+      setNumericErrors((prev) => ({ ...prev, [field]: undefined }))
+      return
     }
 
-    const num = isInteger ? parseInt(value, 10) : parseFloat(value);
+    const num = isInteger ? parseInt(value, 10) : parseFloat(value)
 
     if (isNaN(num)) {
-      setNumericErrors((prev) => ({ ...prev, [field]: 'Please enter a valid number' }));
+      setNumericErrors((prev) => ({
+        ...prev,
+        [field]: 'Please enter a valid number',
+      }))
     } else if (field === 'bid_increment' && num <= 0) {
       // bid_increment must be positive (> 0)
-      setNumericErrors((prev) => ({ ...prev, [field]: 'Bid increment must be greater than zero' }));
+      setNumericErrors((prev) => ({
+        ...prev,
+        [field]: 'Bid increment must be greater than zero',
+      }))
     } else if (num < 0) {
-      setNumericErrors((prev) => ({ ...prev, [field]: 'Value cannot be negative' }));
+      setNumericErrors((prev) => ({
+        ...prev,
+        [field]: 'Value cannot be negative',
+      }))
     } else if (isInteger && !Number.isInteger(num)) {
-      setNumericErrors((prev) => ({ ...prev, [field]: 'Please enter a whole number' }));
+      setNumericErrors((prev) => ({
+        ...prev,
+        [field]: 'Please enter a whole number',
+      }))
     } else {
-      setNumericErrors((prev) => ({ ...prev, [field]: undefined }));
+      setNumericErrors((prev) => ({ ...prev, [field]: undefined }))
     }
-  };
+  }
 
   // Special handler for starting_bid changes - auto-calculate bid_increment
   const handleStartingBidChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, starting_bid: value }));
+    setFormData((prev) => ({ ...prev, starting_bid: value }))
 
     // Auto-calculate bid_increment when starting_bid changes
     if (value) {
-      const num = parseFloat(value);
+      const num = parseFloat(value)
       if (!isNaN(num) && num >= 0) {
-        const newIncrement = calculateBidIncrement(num);
-        setFormData((prev) => ({ ...prev, bid_increment: newIncrement }));
+        const newIncrement = calculateBidIncrement(num)
+        setFormData((prev) => ({ ...prev, bid_increment: newIncrement }))
       }
     }
-  };
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
 
     // Validate URL before submitting
     if (formData.item_webpage && !isValidUrl(formData.item_webpage)) {
-      setUrlError('Please enter a valid URL (e.g., https://example.com)');
-      return;
+      setUrlError('Please enter a valid URL (e.g., https://example.com)')
+      return
     }
 
     // Check for any numeric validation errors
-    const hasNumericErrors = Object.values(numericErrors).some((error) => error !== undefined);
+    const hasNumericErrors = Object.values(numericErrors).some(
+      (error) => error !== undefined
+    )
     if (hasNumericErrors) {
-      return;
+      return
     }
 
     const data = isEdit
       ? ({
-        title: formData.title || undefined,
-        description: formData.description || undefined,
-        auction_type: formData.auction_type,
-        starting_bid: formData.starting_bid
-          ? parseFloat(formData.starting_bid)
-          : undefined,
-        bid_increment: formData.bid_increment
-          ? parseFloat(formData.bid_increment)
-          : undefined,
-        donor_value: formData.donor_value
-          ? parseFloat(formData.donor_value)
-          : null,
-        cost: formData.cost ? parseFloat(formData.cost) : null,
-        buy_now_price: formData.buy_now_price
-          ? parseFloat(formData.buy_now_price)
-          : null,
-        buy_now_enabled: formData.buy_now_enabled,
-        quantity_available: formData.quantity_available
-          ? parseInt(formData.quantity_available, 10)
-          : undefined,
-        donated_by: formData.donated_by || null,
-        sponsor_id: formData.sponsor_id || null,
-        item_webpage: formData.item_webpage || null,
-        display_priority: formData.display_priority
-          ? parseInt(formData.display_priority, 10)
-          : null,
-      } as AuctionItemUpdate)
+          title: formData.title || undefined,
+          description: formData.description || undefined,
+          auction_type: formData.auction_type,
+          starting_bid: formData.starting_bid
+            ? parseFloat(formData.starting_bid)
+            : undefined,
+          bid_increment: formData.bid_increment
+            ? parseFloat(formData.bid_increment)
+            : undefined,
+          donor_value: formData.donor_value
+            ? parseFloat(formData.donor_value)
+            : null,
+          cost: formData.cost ? parseFloat(formData.cost) : null,
+          buy_now_price: formData.buy_now_price
+            ? parseFloat(formData.buy_now_price)
+            : null,
+          buy_now_enabled: formData.buy_now_enabled,
+          quantity_available: formData.quantity_available
+            ? parseInt(formData.quantity_available, 10)
+            : undefined,
+          donated_by: formData.donated_by || null,
+          sponsor_id: formData.sponsor_id || null,
+          item_webpage: formData.item_webpage || null,
+          display_priority: formData.display_priority
+            ? parseInt(formData.display_priority, 10)
+            : null,
+        } as AuctionItemUpdate)
       : ({
-        title: formData.title,
-        description: formData.description,
-        auction_type: formData.auction_type,
-        starting_bid: parseFloat(formData.starting_bid),
-        bid_increment: parseFloat(formData.bid_increment),
-        donor_value: formData.donor_value
-          ? parseFloat(formData.donor_value)
-          : null,
-        cost: formData.cost ? parseFloat(formData.cost) : null,
-        buy_now_price: formData.buy_now_price
-          ? parseFloat(formData.buy_now_price)
-          : null,
-        buy_now_enabled: formData.buy_now_enabled,
-        quantity_available: parseInt(formData.quantity_available, 10),
-        donated_by: formData.donated_by || undefined,
-        sponsor_id: formData.sponsor_id || undefined,
-        item_webpage: formData.item_webpage || undefined,
-        display_priority: formData.display_priority
-          ? parseInt(formData.display_priority, 10)
-          : undefined,
-      } as AuctionItemCreate);
+          title: formData.title,
+          description: formData.description,
+          auction_type: formData.auction_type,
+          starting_bid: parseFloat(formData.starting_bid),
+          bid_increment: parseFloat(formData.bid_increment),
+          donor_value: formData.donor_value
+            ? parseFloat(formData.donor_value)
+            : null,
+          cost: formData.cost ? parseFloat(formData.cost) : null,
+          buy_now_price: formData.buy_now_price
+            ? parseFloat(formData.buy_now_price)
+            : null,
+          buy_now_enabled: formData.buy_now_enabled,
+          quantity_available: parseInt(formData.quantity_available, 10),
+          donated_by: formData.donated_by || undefined,
+          sponsor_id: formData.sponsor_id || undefined,
+          item_webpage: formData.item_webpage || undefined,
+          display_priority: formData.display_priority
+            ? parseInt(formData.display_priority, 10)
+            : undefined,
+        } as AuctionItemCreate)
 
-    await onSubmit(data);
-  };
+    await onSubmit(data)
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className='space-y-6'>
       {/* Basic Info */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="title">
-            Item Title <span className="text-destructive">*</span>
+      <div className='grid gap-4 sm:grid-cols-2'>
+        <div className='space-y-2 sm:col-span-2'>
+          <Label htmlFor='title'>
+            Item Title <span className='text-destructive'>*</span>
           </Label>
           <Input
-            id="title"
+            id='title'
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.target.value })
+            }
             required
             disabled={isSubmitting}
-            placeholder="e.g., Weekend Getaway in Napa Valley"
+            placeholder='e.g., Weekend Getaway in Napa Valley'
             maxLength={200}
           />
         </div>
 
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="description">
-            Description <span className="text-destructive">*</span>
+        <div className='space-y-2 sm:col-span-2'>
+          <Label htmlFor='description'>
+            Description <span className='text-destructive'>*</span>
           </Label>
           <Textarea
-            id="description"
+            id='description'
             value={formData.description}
             onChange={(e) =>
               setFormData({ ...formData, description: e.target.value })
             }
             required
             disabled={isSubmitting}
-            placeholder="Provide a detailed description of the auction item..."
+            placeholder='Provide a detailed description of the auction item...'
             rows={4}
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="auction_type">
-            Auction Type <span className="text-destructive">*</span>
+        <div className='space-y-2'>
+          <Label htmlFor='auction_type'>
+            Auction Type <span className='text-destructive'>*</span>
           </Label>
           <Select
             value={formData.auction_type}
@@ -334,7 +354,7 @@ export function AuctionItemForm({
             }
             disabled={isSubmitting}
           >
-            <SelectTrigger id="auction_type">
+            <SelectTrigger id='auction_type'>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -344,63 +364,69 @@ export function AuctionItemForm({
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="quantity_available">
-            Quantity Available <span className="text-destructive">*</span>
+        <div className='space-y-2'>
+          <Label htmlFor='quantity_available'>
+            Quantity Available <span className='text-destructive'>*</span>
           </Label>
           <Input
-            id="quantity_available"
-            type="number"
-            min="1"
-            step="1"
+            id='quantity_available'
+            type='number'
+            min='1'
+            step='1'
             value={formData.quantity_available}
             onChange={(e) =>
               setFormData({ ...formData, quantity_available: e.target.value })
             }
-            onBlur={(e) => handleNumericBlur('quantity_available', e.target.value, true)}
+            onBlur={(e) =>
+              handleNumericBlur('quantity_available', e.target.value, true)
+            }
             required
             disabled={isSubmitting}
           />
           {numericErrors.quantity_available && (
-            <p className="text-xs text-destructive">{numericErrors.quantity_available}</p>
+            <p className='text-destructive text-xs'>
+              {numericErrors.quantity_available}
+            </p>
           )}
         </div>
       </div>
 
       {/* Pricing */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold">Pricing Information</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="starting_bid">
-              Starting Bid ($) <span className="text-destructive">*</span>
+      <div className='space-y-4'>
+        <h3 className='text-sm font-semibold'>Pricing Information</h3>
+        <div className='grid gap-4 sm:grid-cols-2'>
+          <div className='space-y-2'>
+            <Label htmlFor='starting_bid'>
+              Starting Bid ($) <span className='text-destructive'>*</span>
             </Label>
             <Input
-              id="starting_bid"
-              type="number"
-              step="0.01"
-              min="0"
+              id='starting_bid'
+              type='number'
+              step='0.01'
+              min='0'
               value={formData.starting_bid}
               onChange={(e) => handleStartingBidChange(e.target.value)}
               onBlur={(e) => handleNumericBlur('starting_bid', e.target.value)}
               required
               disabled={isSubmitting}
-              placeholder="0.00"
+              placeholder='0.00'
             />
             {numericErrors.starting_bid && (
-              <p className="text-xs text-destructive">{numericErrors.starting_bid}</p>
+              <p className='text-destructive text-xs'>
+                {numericErrors.starting_bid}
+              </p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="bid_increment">
-              Bid Increment ($) <span className="text-destructive">*</span>
+          <div className='space-y-2'>
+            <Label htmlFor='bid_increment'>
+              Bid Increment ($) <span className='text-destructive'>*</span>
             </Label>
             <Input
-              id="bid_increment"
-              type="number"
-              step="0.01"
-              min="0.01"
+              id='bid_increment'
+              type='number'
+              step='0.01'
+              min='0.01'
               value={formData.bid_increment}
               onChange={(e) =>
                 setFormData({ ...formData, bid_increment: e.target.value })
@@ -408,90 +434,98 @@ export function AuctionItemForm({
               onBlur={(e) => handleNumericBlur('bid_increment', e.target.value)}
               required
               disabled={isSubmitting}
-              placeholder="50.00"
+              placeholder='50.00'
             />
             {numericErrors.bid_increment && (
-              <p className="text-xs text-destructive">{numericErrors.bid_increment}</p>
+              <p className='text-destructive text-xs'>
+                {numericErrors.bid_increment}
+              </p>
             )}
-            <p className="text-xs text-muted-foreground">
+            <p className='text-muted-foreground text-xs'>
               Auto-calculated based on starting bid (can be adjusted)
             </p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="donor_value">Donor Value ($)</Label>
+          <div className='space-y-2'>
+            <Label htmlFor='donor_value'>Fair Market Value ($)</Label>
             <Input
-              id="donor_value"
-              type="number"
-              step="0.01"
-              min="0"
+              id='donor_value'
+              type='number'
+              step='0.01'
+              min='0'
               value={formData.donor_value}
               onChange={(e) =>
                 setFormData({ ...formData, donor_value: e.target.value })
               }
               onBlur={(e) => handleNumericBlur('donor_value', e.target.value)}
               disabled={isSubmitting}
-              placeholder="0.00"
+              placeholder='0.00'
             />
             {numericErrors.donor_value && (
-              <p className="text-xs text-destructive">{numericErrors.donor_value}</p>
+              <p className='text-destructive text-xs'>
+                {numericErrors.donor_value}
+              </p>
             )}
-            <p className="text-xs text-muted-foreground">
+            <p className='text-muted-foreground text-xs'>
               The value declared by the donor
             </p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="cost">Cost to NPO ($)</Label>
+          <div className='space-y-2'>
+            <Label htmlFor='cost'>Consignment Cost ($)</Label>
             <Input
-              id="cost"
-              type="number"
-              step="0.01"
-              min="0"
+              id='cost'
+              type='number'
+              step='0.01'
+              min='0'
               value={formData.cost}
-              onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, cost: e.target.value })
+              }
               onBlur={(e) => handleNumericBlur('cost', e.target.value)}
               disabled={isSubmitting}
-              placeholder="0.00"
+              placeholder='0.00'
             />
             {numericErrors.cost && (
-              <p className="text-xs text-destructive">{numericErrors.cost}</p>
+              <p className='text-destructive text-xs'>{numericErrors.cost}</p>
             )}
-            <p className="text-xs text-muted-foreground">
+            <p className='text-muted-foreground text-xs'>
               Internal cost tracking (not shown to bidders)
             </p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="buy_now_price">Buy Now Price ($)</Label>
+          <div className='space-y-2'>
+            <Label htmlFor='buy_now_price'>Buy Now Price ($)</Label>
             <Input
-              id="buy_now_price"
-              type="number"
-              step="0.01"
-              min="0"
+              id='buy_now_price'
+              type='number'
+              step='0.01'
+              min='0'
               value={formData.buy_now_price}
               onChange={(e) =>
                 setFormData({ ...formData, buy_now_price: e.target.value })
               }
               onBlur={(e) => handleNumericBlur('buy_now_price', e.target.value)}
               disabled={isSubmitting}
-              placeholder="0.00"
+              placeholder='0.00'
             />
             {numericErrors.buy_now_price && (
-              <p className="text-xs text-destructive">{numericErrors.buy_now_price}</p>
+              <p className='text-destructive text-xs'>
+                {numericErrors.buy_now_price}
+              </p>
             )}
           </div>
 
-          <div className="flex items-center space-x-2 sm:col-span-2">
+          <div className='flex items-center space-x-2 sm:col-span-2'>
             <Switch
-              id="buy_now_enabled"
+              id='buy_now_enabled'
               checked={formData.buy_now_enabled}
               onCheckedChange={(checked) =>
                 setFormData({ ...formData, buy_now_enabled: checked })
               }
               disabled={isSubmitting}
             />
-            <Label htmlFor="buy_now_enabled" className="cursor-pointer">
+            <Label htmlFor='buy_now_enabled' className='cursor-pointer'>
               Enable "Buy Now" option
             </Label>
           </div>
@@ -499,61 +533,65 @@ export function AuctionItemForm({
       </div>
 
       {/* Additional Info */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold">Additional Information</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="donated_by">Donated By</Label>
+      <div className='space-y-4'>
+        <h3 className='text-sm font-semibold'>Additional Information</h3>
+        <div className='grid gap-4 sm:grid-cols-2'>
+          <div className='space-y-2'>
+            <Label htmlFor='donated_by'>Donated By</Label>
             <Input
-              id="donated_by"
+              id='donated_by'
               value={formData.donated_by}
               onChange={(e) =>
                 setFormData({ ...formData, donated_by: e.target.value })
               }
               disabled={isSubmitting}
-              placeholder="Donor name or organization"
+              placeholder='Donor name or organization'
               maxLength={200}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="item_webpage">Item Webpage URL</Label>
+          <div className='space-y-2'>
+            <Label htmlFor='item_webpage'>Item Webpage URL</Label>
             <Input
-              id="item_webpage"
-              type="url"
+              id='item_webpage'
+              type='url'
               value={formData.item_webpage}
               onChange={(e) =>
                 setFormData({ ...formData, item_webpage: e.target.value })
               }
               onBlur={handleUrlBlur}
               disabled={isSubmitting}
-              placeholder="https://example.com/item"
+              placeholder='https://example.com/item'
               className={urlError ? 'border-red-500' : ''}
             />
-            {urlError && <p className="text-sm text-red-500">{urlError}</p>}
-            <p className="text-xs text-muted-foreground">
+            {urlError && <p className='text-sm text-red-500'>{urlError}</p>}
+            <p className='text-muted-foreground text-xs'>
               Link to more information about this item
             </p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="display_priority">Display Priority</Label>
+          <div className='space-y-2'>
+            <Label htmlFor='display_priority'>Display Priority</Label>
             <Input
-              id="display_priority"
-              type="number"
-              step="1"
+              id='display_priority'
+              type='number'
+              step='1'
               value={formData.display_priority}
               onChange={(e) =>
                 setFormData({ ...formData, display_priority: e.target.value })
               }
-              onBlur={(e) => handleNumericBlur('display_priority', e.target.value, true)}
+              onBlur={(e) =>
+                handleNumericBlur('display_priority', e.target.value, true)
+              }
               disabled={isSubmitting}
-              placeholder="0"
+              placeholder='0'
             />
             {numericErrors.display_priority && (
-              <p className="text-xs text-destructive">{numericErrors.display_priority}</p>
+              <p className='text-destructive text-xs'>
+                {numericErrors.display_priority}
+              </p>
             )}
-            <p className="text-xs text-muted-foreground">
+            <p className='text-muted-foreground text-xs'>
               Higher numbers appear first (default: 0)
             </p>
           </div>
@@ -562,11 +600,13 @@ export function AuctionItemForm({
 
       {/* Media Management */}
       {isEdit && item?.id && (
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold">Media (Images & Videos)</h3>
+        <div className='space-y-4'>
+          <h3 className='text-sm font-semibold'>Media (Images & Videos)</h3>
 
           {isLoadingMedia ? (
-            <div className="text-sm text-muted-foreground">Loading media...</div>
+            <div className='text-muted-foreground text-sm'>
+              Loading media...
+            </div>
           ) : (
             <>
               {/* Upload Zone */}
@@ -577,8 +617,8 @@ export function AuctionItemForm({
 
               {/* Media Gallery */}
               {media.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">
+                <div className='space-y-2'>
+                  <p className='text-muted-foreground text-xs'>
                     Drag to reorder. First image will be the primary thumbnail.
                   </p>
                   <MediaGallery
@@ -595,24 +635,24 @@ export function AuctionItemForm({
       )}
 
       {!isEdit && (
-        <div className="rounded-lg border border-dashed border-muted-foreground/25 p-6">
-          <p className="text-sm text-muted-foreground text-center">
+        <div className='border-muted-foreground/25 rounded-lg border border-dashed p-6'>
+          <p className='text-muted-foreground text-center text-sm'>
             Save the item first to upload images and videos
           </p>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex gap-3 justify-end">
+      <div className='flex justify-end gap-3'>
         <Button
-          type="button"
-          variant="outline"
+          type='button'
+          variant='outline'
           onClick={onCancel}
           disabled={isSubmitting}
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type='submit' disabled={isSubmitting}>
           {isSubmitting
             ? isEdit
               ? 'Updating...'
@@ -623,5 +663,5 @@ export function AuctionItemForm({
         </Button>
       </div>
     </form>
-  );
+  )
 }

@@ -137,7 +137,6 @@ const eventFormSchema = z.object({
   background_color: z.string().optional(),
   accent_color: z.string().optional(),
   table_count: z.number().nullable().optional(),
-  max_guests_per_table: z.number().nullable().optional(),
 })
 
 type EventFormValues = z.infer<typeof eventFormSchema>
@@ -209,7 +208,6 @@ export function EventForm({
         event?.background_color || npoBranding?.background_color || '',
       accent_color: event?.accent_color || npoBranding?.accent_color || '',
       table_count: event?.table_count ?? null,
-      max_guests_per_table: event?.max_guests_per_table ?? null,
     },
   })
 
@@ -366,7 +364,6 @@ export function EventForm({
       // Convert datetime-local to ISO string
       event_datetime: new Date(values.event_datetime).toISOString(),
       table_count: values.table_count,
-      max_guests_per_table: values.max_guests_per_table,
       fundraising_goal: values.fundraising_goal ?? null,
       live_auction_start_datetime: values.live_auction_start_datetime
         ? new Date(values.live_auction_start_datetime).toISOString()
@@ -1302,43 +1299,6 @@ export function EventForm({
                       }}
                       onBlur={field.onBlur}
                       maxLength={17}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        {/* Max Guests Per Table */}
-        <div className='space-y-4'>
-          <h3 className='text-base font-semibold md:text-lg'>
-            Seating Capacity
-          </h3>
-          <p className='text-muted-foreground text-xs md:text-sm'>
-            Set the default maximum number of guests per table. Table count and
-            assignments are managed on the Seating page.
-          </p>
-          <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-            <FormField
-              control={form.control}
-              name='max_guests_per_table'
-              render={({ field }) => (
-                <FormItem>
-                  <Label>Max Guests Per Table</Label>
-                  <FormControl>
-                    <Input
-                      type='number'
-                      min='1'
-                      max='50'
-                      placeholder='e.g., 8'
-                      value={field.value ?? ''}
-                      onChange={(e) => {
-                        const val = e.target.value
-                        field.onChange(val === '' ? null : parseInt(val, 10))
-                      }}
-                      disabled={isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />

@@ -88,13 +88,13 @@ export default defineConfig({
   plugins: [
     TanStackRouterVite({ autoCodeSplitting: true }),
     react(),
-    tailwindcss()
+    tailwindcss(),
   ],
   server: {
     proxy: {
-      '/api': 'http://localhost:8000'
-    }
-  }
+      '/api': 'http://localhost:8000',
+    },
+  },
 })
 ```
 
@@ -105,7 +105,12 @@ export default defineConfig({
   "style": "new-york",
   "rsc": false,
   "tsx": true,
-  "tailwind": { "config": "", "css": "src/styles/index.css", "baseColor": "slate", "cssVariables": true }
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/index.css",
+    "baseColor": "slate",
+    "cssVariables": true
+  }
 }
 ```
 
@@ -169,12 +174,12 @@ import { Input } from '@/components/ui/input'
 
 export function RegistrationForm() {
   return (
-    <Card className="space-y-6">
+    <Card className='space-y-6'>
       <CardHeader>
         <CardTitle>Register for Event</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <Input placeholder="Full Name" />
+      <CardContent className='space-y-4'>
+        <Input placeholder='Full Name' />
         <Button>Submit</Button>
       </CardContent>
     </Card>
@@ -241,10 +246,10 @@ export const Route = createFileRoute('/events/$slug/register')({
     if (!isAuthenticated && !hasRefreshToken) {
       throw redirect({
         to: '/sign-in',
-        search: { redirect: location.pathname }
+        search: { redirect: location.pathname },
       })
     }
-  }
+  },
 })
 ```
 
@@ -327,7 +332,7 @@ routes/
 ```typescript
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
-  headers: { 'Content-Type': 'application/json' }
+  headers: { 'Content-Type': 'application/json' },
 })
 
 // Request interceptor: Add auth token
@@ -346,7 +351,9 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       const refreshToken = getRefreshToken()
       if (refreshToken) {
-        const { data } = await axios.post('/api/v1/auth/refresh', { refresh_token: refreshToken })
+        const { data } = await axios.post('/api/v1/auth/refresh', {
+          refresh_token: refreshToken,
+        })
         useAuthStore.getState().setTokens(data.access_token, data.refresh_token)
         // Retry original request
         return api(error.config)
@@ -738,6 +745,7 @@ Each dashboard shows role-appropriate data and actions.
    - Copyright with dynamic year
 
 **Components**:
+
 - `components/legal/tos-modal.tsx` - Terms acceptance modal
 - `components/legal/cookie-banner.tsx` - First-visit cookie consent
 - `components/legal/consent-history.tsx` - History table
@@ -745,19 +753,23 @@ Each dashboard shows role-appropriate data and actions.
 - `components/legal/legal-footer.tsx` - Footer with legal links
 
 **Pages**:
+
 - `pages/legal/terms-of-service.tsx` - Full TOS document
 - `pages/legal/privacy-policy.tsx` - Full privacy policy
 - `pages/legal/cookie-policy.tsx` - Cookie preferences
 - `pages/legal/consent-settings.tsx` - Consent history + data rights
 
 **Hooks**:
+
 - `hooks/use-tos.ts` - TOS loading, acceptance, versioning
 - `hooks/use-cookies.ts` - Cookie consent, preferences
 
 **Stores**:
+
 - `stores/tos-store.ts` - TOS state (current version, user acceptance)
 
 **Routes**:
+
 - `/terms-of-service` - Public TOS page
 - `/privacy-policy` - Public privacy page
 - `/settings/cookies` - Cookie preferences (authenticated)

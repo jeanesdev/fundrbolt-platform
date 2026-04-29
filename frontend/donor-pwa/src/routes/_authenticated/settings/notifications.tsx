@@ -1,13 +1,13 @@
+import { useState } from 'react'
+import { AxiosError } from 'axios'
+import { createFileRoute } from '@tanstack/react-router'
+import { Send } from 'lucide-react'
+import { toast } from 'sonner'
+import apiClient from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import { ContentSection } from '@/features/settings/components/content-section'
 import { NotificationPreferencesForm } from '@/features/settings/components/notification-preferences-form'
 import { PushNotificationToggle } from '@/features/settings/components/push-notification-toggle'
-import apiClient from '@/lib/axios'
-import { createFileRoute } from '@tanstack/react-router'
-import { AxiosError } from 'axios'
-import { Send } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
 
 function TestNotificationButton() {
   const [sending, setSending] = useState(false)
@@ -31,7 +31,8 @@ function TestNotificationButton() {
       }
     } catch (err: unknown) {
       const detail =
-        err instanceof AxiosError && typeof err.response?.data?.detail === 'string'
+        err instanceof AxiosError &&
+        typeof err.response?.data?.detail === 'string'
           ? err.response.data.detail
           : 'Failed to send test notification.'
       toast.error(detail)

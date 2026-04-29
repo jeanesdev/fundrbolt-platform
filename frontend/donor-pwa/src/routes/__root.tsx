@@ -1,23 +1,23 @@
-import { CookieConsentWrapper } from '@/components/legal/cookie-consent-wrapper'
-import { NavigationProgress } from '@/components/navigation-progress'
-import { NotificationToastOverlay } from '@/components/notifications/NotificationToastOverlay'
-import { OfflineStatusBar } from '@/components/pwa/offline-status-bar'
-import { SessionExpirationWarning } from '@/components/session-expiration-warning'
-import { Toaster } from '@/components/ui/sonner'
-import { GeneralError } from '@/features/errors/general-error'
-import { NotFoundError } from '@/features/errors/not-found-error'
-import { useIsMobile } from '@/hooks/use-mobile'
-import { InstallPromptBanner } from '@fundrbolt/shared/pwa/install-prompt-banner'
-import { UpdateNotification } from '@fundrbolt/shared/pwa/update-notification'
-import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
-import { useServiceWorker } from '@fundrbolt/shared/pwa/use-service-worker'
+import { useEffect } from 'react'
 import { type QueryClient } from '@tanstack/react-query'
 import {
   createRootRouteWithContext,
   Outlet,
   useRouterState,
 } from '@tanstack/react-router'
-import { useEffect } from 'react'
+import { InstallPromptBanner } from '@fundrbolt/shared/pwa/install-prompt-banner'
+import { UpdateNotification } from '@fundrbolt/shared/pwa/update-notification'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
+import { useServiceWorker } from '@fundrbolt/shared/pwa/use-service-worker'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { Toaster } from '@/components/ui/sonner'
+import { CookieConsentWrapper } from '@/components/legal/cookie-consent-wrapper'
+import { NavigationProgress } from '@/components/navigation-progress'
+import { NotificationToastOverlay } from '@/components/notifications/NotificationToastOverlay'
+import { OfflineStatusBar } from '@/components/pwa/offline-status-bar'
+import { SessionExpirationWarning } from '@/components/session-expiration-warning'
+import { GeneralError } from '@/features/errors/general-error'
+import { NotFoundError } from '@/features/errors/not-found-error'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -29,8 +29,7 @@ export const Route = createRootRouteWithContext<{
 
 function RootComponent() {
   const isMobile = useIsMobile()
-  const { needRefresh, updateServiceWorker, dismissUpdate } =
-    useServiceWorker()
+  const { needRefresh, updateServiceWorker, dismissUpdate } = useServiceWorker()
   const isOnline = useOnlineStatus()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
 
@@ -51,9 +50,9 @@ function RootComponent() {
         onDismiss={dismissUpdate}
       />
       <Outlet />
-      <Toaster duration={5000} position="top-center" />
+      <Toaster duration={5000} position='top-center' />
       <NotificationToastOverlay />
-      {isMobile && <InstallPromptBanner appId="donor" />}
+      {isMobile && <InstallPromptBanner appId='donor' />}
     </>
   )
 }

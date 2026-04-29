@@ -1,7 +1,7 @@
-import { CompleteProfile } from '@/features/auth/complete-profile'
-import { useAuthStore } from '@/stores/auth-store'
-import { createFileRoute, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { useAuthStore } from '@/stores/auth-store'
+import { CompleteProfile } from '@/features/auth/complete-profile'
 
 const PENDING_COMMS_EMAIL_KEY = 'pending_comms_email_verification'
 

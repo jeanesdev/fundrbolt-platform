@@ -1,3 +1,10 @@
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import type { SocialAuthProvider } from '@fundrbolt/shared/types'
+import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { donorSocialAuthApi } from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -7,13 +14,6 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { AuthLayout } from '@/features/auth/auth-layout'
-import { donorSocialAuthApi } from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
-import type { SocialAuthProvider } from '@fundrbolt/shared/types'
-import { useNavigate, useSearch } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
 
 type PendingInfo = {
   reason: string
@@ -21,7 +21,11 @@ type PendingInfo = {
 }
 
 export function SocialCallback() {
-  const { code, state, error: urlError } = useSearch({ from: '/(auth)/social-callback' })
+  const {
+    code,
+    state,
+    error: urlError,
+  } = useSearch({ from: '/(auth)/social-callback' })
   const navigate = useNavigate()
   const { handleSocialAuthSuccess } = useAuthStore()
   const [error, setError] = useState<string | null>(urlError || null)
@@ -36,7 +40,7 @@ export function SocialCallback() {
     const handleCallback = async () => {
       try {
         const pending = JSON.parse(
-          sessionStorage.getItem('social_auth_pending') ?? 'null',
+          sessionStorage.getItem('social_auth_pending') ?? 'null'
         ) as { provider: SocialAuthProvider; attempt_id: string } | null
         sessionStorage.removeItem('social_auth_pending')
 
@@ -60,7 +64,9 @@ export function SocialCallback() {
             app_context: 'donor',
           })
           if (result.is_new_account) {
-            toast.success('Welcome to FundrBolt! Your account has been created.')
+            toast.success(
+              'Welcome to FundrBolt! Your account has been created.'
+            )
             navigate({ to: '/complete-profile', search: { redirect: '/home' } })
           } else {
             navigate({ to: '/' })
@@ -121,13 +127,15 @@ export function SocialCallback() {
             )}
             {pending.reason === 'email_verification_required' && (
               <p className='text-muted-foreground text-sm'>
-                Please verify your email address to complete sign-in.
-                Check your inbox for a verification link.
+                Please verify your email address to complete sign-in. Check your
+                inbox for a verification link.
               </p>
             )}
             <Button
               className='w-full'
-              onClick={() => navigate({ to: '/sign-in', search: { redirect: undefined } })}
+              onClick={() =>
+                navigate({ to: '/sign-in', search: { redirect: undefined } })
+              }
             >
               Back to Sign In
             </Button>
@@ -149,7 +157,9 @@ export function SocialCallback() {
         <CardContent>
           <Button
             className='w-full'
-            onClick={() => navigate({ to: '/sign-in', search: { redirect: undefined } })}
+            onClick={() =>
+              navigate({ to: '/sign-in', search: { redirect: undefined } })
+            }
           >
             Back to Sign In
           </Button>

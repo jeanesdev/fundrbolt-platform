@@ -1,3 +1,6 @@
+import { useNavigate } from '@tanstack/react-router'
+import { Loader2 } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -8,16 +11,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import type { useDonateNow } from '@/features/donate-now/useDonateNow'
-import { useAuthStore } from '@/stores/auth-store'
-import { useNavigate } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
 
 interface DonationConfirmDialogProps {
   state: ReturnType<typeof useDonateNow>
   npoName: string
 }
 
-export function DonationConfirmDialog({ state, npoName }: DonationConfirmDialogProps) {
+export function DonationConfirmDialog({
+  state,
+  npoName,
+}: DonationConfirmDialogProps) {
   const {
     showConfirm,
     setShowConfirm,
@@ -64,14 +67,18 @@ export function DonationConfirmDialog({ state, npoName }: DonationConfirmDialogP
         </DialogHeader>
 
         {donateError && (
-          <p className='text-sm text-destructive'>
-            {(donateError as { response?: { data?: { detail?: string } } }).response?.data?.detail ??
-              'Payment failed. Please try again.'}
+          <p className='text-destructive text-sm'>
+            {(donateError as { response?: { data?: { detail?: string } } })
+              .response?.data?.detail ?? 'Payment failed. Please try again.'}
           </p>
         )}
 
         <DialogFooter>
-          <Button variant='outline' onClick={() => setShowConfirm(false)} disabled={isPending}>
+          <Button
+            variant='outline'
+            onClick={() => setShowConfirm(false)}
+            disabled={isPending}
+          >
             Cancel
           </Button>
           {isAuthenticated ? (
@@ -81,7 +88,10 @@ export function DonationConfirmDialog({ state, npoName }: DonationConfirmDialogP
             </Button>
           ) : (
             <>
-              <Button variant='outline' onClick={() => handleAuthRedirect('sign-up')}>
+              <Button
+                variant='outline'
+                onClick={() => handleAuthRedirect('sign-up')}
+              >
                 Register
               </Button>
               <Button onClick={() => handleAuthRedirect('sign-in')}>

@@ -2,10 +2,9 @@
  * ColorPicker Component
  * Simple color picker with hex input and visual preview
  */
-
+import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useState } from 'react'
 
 interface ColorPickerProps {
   value: string
@@ -32,36 +31,36 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
   }
 
   return (
-    <div className="flex gap-2 items-center">
+    <div className='flex items-center gap-2'>
       {/* Color preview with native color picker */}
-      <div className="flex items-center gap-2">
-        <Label htmlFor={`color-${label}`} className="sr-only">
+      <div className='flex items-center gap-2'>
+        <Label htmlFor={`color-${label}`} className='sr-only'>
           Pick {label} Color
         </Label>
         <input
           id={`color-${label}`}
-          type="color"
+          type='color'
           value={hexInput || '#000000'}
           onChange={(e) => handleColorChange(e.target.value)}
-          className="h-10 w-10 rounded border border-input cursor-pointer"
+          className='border-input h-10 w-10 cursor-pointer rounded border'
           title={`Pick ${label} Color`}
         />
       </div>
 
       {/* Hex code input */}
       <Input
-        type="text"
-        placeholder="#000000"
+        type='text'
+        placeholder='#000000'
         value={hexInput}
         onChange={(e) => handleHexChange(e.target.value)}
-        className="flex-1 font-mono"
+        className='flex-1 font-mono'
         maxLength={7}
       />
 
       {/* Color preview swatch */}
       {hexInput && /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hexInput) && (
         <div
-          className="h-10 w-20 rounded border border-input"
+          className='border-input h-10 w-20 rounded border'
           style={{ backgroundColor: hexInput }}
           title={hexInput}
         />

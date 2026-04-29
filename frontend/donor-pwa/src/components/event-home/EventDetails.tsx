@@ -10,7 +10,7 @@
  * Expanded by default for upcoming events (within 30 days),
  * collapsed for past events.
  */
-import { cn, formatPhoneNumber } from '@/lib/utils'
+import { useMemo, useState } from 'react'
 import * as Collapsible from '@radix-ui/react-collapsible'
 import {
   Calendar,
@@ -22,7 +22,7 @@ import {
   Phone,
   Shirt,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { cn, formatPhoneNumber } from '@/lib/utils'
 
 export interface EventDetailsProps {
   /** Event date/time */

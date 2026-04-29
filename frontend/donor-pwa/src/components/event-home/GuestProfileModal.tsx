@@ -4,8 +4,14 @@
  * Shown when a donor taps on a tablemate or on a card in the "Other Guests"
  * section.  All data is supplied by the caller; no API calls are made here.
  */
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet'
 import { Crown, MapPin, X } from 'lucide-react'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetClose,
+} from '@/components/ui/sheet'
 
 export interface GuestProfileData {
   guestId: string
@@ -31,7 +37,11 @@ function getInitials(name: string | null | undefined): string {
   return `${parts[0]?.[0] ?? ''}${parts[parts.length - 1]?.[0] ?? ''}`.toUpperCase()
 }
 
-export function GuestProfileModal({ guest, open, onOpenChange }: GuestProfileModalProps) {
+export function GuestProfileModal({
+  guest,
+  open,
+  onOpenChange,
+}: GuestProfileModalProps) {
   if (!guest) return null
 
   return (
@@ -39,7 +49,9 @@ export function GuestProfileModal({ guest, open, onOpenChange }: GuestProfileMod
       <SheetContent
         side='bottom'
         className='mx-auto max-w-lg rounded-t-3xl pb-8 outline-none [&>button:last-of-type]:hidden'
-        style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}
+        style={{
+          backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+        }}
       >
         <SheetHeader className='sr-only'>
           <SheetTitle>{guest.name ?? 'Guest Profile'}</SheetTitle>
@@ -64,7 +76,8 @@ export function GuestProfileModal({ guest, open, onOpenChange }: GuestProfileMod
               className='flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-4 text-xl font-bold shadow-md'
               style={{
                 borderColor: 'rgb(var(--event-primary, 59, 130, 246))',
-                backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.12)',
+                backgroundColor:
+                  'rgb(var(--event-primary, 59, 130, 246) / 0.12)',
                 color: 'rgb(var(--event-primary, 59, 130, 246))',
               }}
             >
@@ -82,7 +95,7 @@ export function GuestProfileModal({ guest, open, onOpenChange }: GuestProfileMod
             </div>
             {guest.isTableCaptain && (
               <span
-                className='absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white shadow-sm'
+                className='absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white shadow-sm'
                 style={{
                   backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
                   color: '#fff',
@@ -97,7 +110,7 @@ export function GuestProfileModal({ guest, open, onOpenChange }: GuestProfileMod
           {/* Name */}
           <div className='text-center'>
             <h2
-              className='text-xl font-bold leading-tight'
+              className='text-xl leading-tight font-bold'
               style={{ color: 'var(--event-text-on-background, #111827)' }}
             >
               {guest.name ?? 'Guest'}
@@ -105,7 +118,9 @@ export function GuestProfileModal({ guest, open, onOpenChange }: GuestProfileMod
             {guest.company && (
               <p
                 className='mt-0.5 text-sm'
-                style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+                style={{
+                  color: 'var(--event-text-muted-on-background, #6B7280)',
+                }}
               >
                 {guest.company}
               </p>
@@ -114,7 +129,8 @@ export function GuestProfileModal({ guest, open, onOpenChange }: GuestProfileMod
               <span
                 className='mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold'
                 style={{
-                  backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.12)',
+                  backgroundColor:
+                    'rgb(var(--event-primary, 59, 130, 246) / 0.12)',
                   color: 'rgb(var(--event-primary, 59, 130, 246))',
                 }}
               >
@@ -131,7 +147,8 @@ export function GuestProfileModal({ guest, open, onOpenChange }: GuestProfileMod
                 className='flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold'
                 style={{
                   borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.3)',
-                  backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.07)',
+                  backgroundColor:
+                    'rgb(var(--event-primary, 59, 130, 246) / 0.07)',
                   color: 'rgb(var(--event-primary, 59, 130, 246))',
                 }}
               >
@@ -143,12 +160,15 @@ export function GuestProfileModal({ guest, open, onOpenChange }: GuestProfileMod
                 className='flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold'
                 style={{
                   borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.3)',
-                  backgroundColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.07)',
+                  backgroundColor:
+                    'rgb(var(--event-primary, 59, 130, 246) / 0.07)',
                   color: 'rgb(var(--event-primary, 59, 130, 246))',
                 }}
               >
                 <MapPin className='h-3.5 w-3.5' />
-                {guest.tableName ? `${guest.tableName} (Table ${guest.tableNumber})` : `Table ${guest.tableNumber}`}
+                {guest.tableName
+                  ? `${guest.tableName} (Table ${guest.tableNumber})`
+                  : `Table ${guest.tableNumber}`}
               </div>
             )}
           </div>

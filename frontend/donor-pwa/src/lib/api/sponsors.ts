@@ -2,7 +2,6 @@
  * Sponsors API Client
  * Endpoints for fetching event sponsors (public and authenticated)
  */
-
 import apiClient from '@/lib/axios'
 
 export interface Sponsor {
@@ -33,6 +32,8 @@ export async function getEventSponsors(eventId: string): Promise<Sponsor[]> {
  * Get all sponsors for a public event by slug (no authentication required)
  */
 export async function getPublicEventSponsors(slug: string): Promise<Sponsor[]> {
-  const response = await apiClient.get<Sponsor[]>(`/events/public/${slug}/sponsors`)
+  const response = await apiClient.get<Sponsor[]>(
+    `/events/public/${slug}/sponsors`
+  )
   return response.data
 }

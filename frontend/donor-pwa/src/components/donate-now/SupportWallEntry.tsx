@@ -5,7 +5,9 @@ interface SupportWallEntryProps {
 }
 
 export function SupportWallEntry({ entry }: SupportWallEntryProps) {
-  const name = entry.is_anonymous ? 'Anonymous' : (entry.display_name ?? 'Someone')
+  const name = entry.is_anonymous
+    ? 'Anonymous'
+    : (entry.display_name ?? 'Someone')
   const dateStr = new Date(entry.created_at).toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
@@ -22,7 +24,10 @@ export function SupportWallEntry({ entry }: SupportWallEntryProps) {
     >
       <div className='flex items-center justify-between'>
         <span className='font-medium'>{name}</span>
-        <span className='text-sm' style={{ color: 'var(--event-text-muted-on-background, #4B5563)' }}>
+        <span
+          className='text-sm'
+          style={{ color: 'var(--event-text-muted-on-background, #4B5563)' }}
+        >
           {dateStr}
         </span>
       </div>
@@ -36,7 +41,10 @@ export function SupportWallEntry({ entry }: SupportWallEntryProps) {
         </p>
       )}
       {entry.message && (
-        <p className='text-sm' style={{ color: 'var(--event-text-muted-on-background, #4B5563)' }}>
+        <p
+          className='text-sm'
+          style={{ color: 'var(--event-text-muted-on-background, #4B5563)' }}
+        >
           {entry.message}
         </p>
       )}

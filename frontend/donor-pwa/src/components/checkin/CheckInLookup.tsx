@@ -2,14 +2,19 @@
  * CheckInLookup Component
  * Allows staff to lookup registrations by confirmation code or email
  */
-
+import { useState } from 'react'
+import { checkinApi, type CheckInLookupResponse } from '@/lib/api/checkin'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { checkinApi, type CheckInLookupResponse } from '@/lib/api/checkin'
-import { useState } from 'react'
 
 interface CheckInLookupProps {
   onRegistrationFound: (data: CheckInLookupResponse) => void
@@ -32,7 +37,9 @@ export function CheckInLookup({ onRegistrationFound }: CheckInLookupProps) {
     setError(null)
 
     try {
-      const data = await checkinApi.lookup({ confirmation_code: confirmationCode })
+      const data = await checkinApi.lookup({
+        confirmation_code: confirmationCode,
+      })
 
       if (data.total === 0) {
         setError('No registration found with this confirmation code')
@@ -72,7 +79,7 @@ export function CheckInLookup({ onRegistrationFound }: CheckInLookupProps) {
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className='mx-auto w-full max-w-2xl'>
       <CardHeader>
         <CardTitle>Event Check-In</CardTitle>
         <CardDescription>
@@ -80,65 +87,65 @@ export function CheckInLookup({ onRegistrationFound }: CheckInLookupProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="code" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="code">Confirmation Code</TabsTrigger>
-            <TabsTrigger value="email">Email Address</TabsTrigger>
+        <Tabs defaultValue='code' className='w-full'>
+          <TabsList className='grid w-full grid-cols-2'>
+            <TabsTrigger value='code'>Confirmation Code</TabsTrigger>
+            <TabsTrigger value='email'>Email Address</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="code">
-            <form onSubmit={handleLookupByCode} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="confirmation-code">Confirmation Code</Label>
+          <TabsContent value='code'>
+            <form onSubmit={handleLookupByCode} className='space-y-4'>
+              <div className='space-y-2'>
+                <Label htmlFor='confirmation-code'>Confirmation Code</Label>
                 <Input
-                  id="confirmation-code"
-                  type="text"
-                  placeholder="Enter confirmation code"
+                  id='confirmation-code'
+                  type='text'
+                  placeholder='Enter confirmation code'
                   value={confirmationCode}
                   onChange={(e) => setConfirmationCode(e.target.value)}
                   disabled={loading}
                 />
-                <p className="text-sm text-muted-foreground">
+                <p className='text-muted-foreground text-sm'>
                   The confirmation code can be found in the registration email
                 </p>
               </div>
 
               {error && (
-                <div className="p-3 text-sm bg-destructive/10 text-destructive rounded-md">
+                <div className='bg-destructive/10 text-destructive rounded-md p-3 text-sm'>
                   {error}
                 </div>
               )}
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type='submit' className='w-full' disabled={loading}>
                 {loading ? 'Looking up...' : 'Look Up Registration'}
               </Button>
             </form>
           </TabsContent>
 
-          <TabsContent value="email">
-            <form onSubmit={handleLookupByEmail} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+          <TabsContent value='email'>
+            <form onSubmit={handleLookupByEmail} className='space-y-4'>
+              <div className='space-y-2'>
+                <Label htmlFor='email'>Email Address</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter email address"
+                  id='email'
+                  type='email'
+                  placeholder='Enter email address'
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
                 />
-                <p className="text-sm text-muted-foreground">
+                <p className='text-muted-foreground text-sm'>
                   Enter the email address used for registration
                 </p>
               </div>
 
               {error && (
-                <div className="p-3 text-sm bg-destructive/10 text-destructive rounded-md">
+                <div className='bg-destructive/10 text-destructive rounded-md p-3 text-sm'>
                   {error}
                 </div>
               )}
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type='submit' className='w-full' disabled={loading}>
                 {loading ? 'Looking up...' : 'Look Up Registration'}
               </Button>
             </form>

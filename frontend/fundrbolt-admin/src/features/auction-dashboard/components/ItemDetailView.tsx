@@ -95,7 +95,7 @@ export function ItemDetailView({ data, onBack }: ItemDetailViewProps) {
               }
             />
             <DetailField
-              label='Donor Value'
+              label='Fair Market Value'
               value={item.donor_value != null ? fmt(item.donor_value) : '—'}
             />
             <DetailField label='Donated By' value={item.donated_by ?? '—'} />

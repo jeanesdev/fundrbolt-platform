@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import { useAuthStore } from '@/stores/auth-store'
 import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 
@@ -40,7 +39,9 @@ describe('debug-spoof-store', () => {
 
   it('returns real time for non-super_admin even when spoof is set', () => {
     setAuthRole('donor')
-    useDebugSpoofStore.getState().setSpoofedTime(new Date('2026-02-19T12:00:00.000Z'))
+    useDebugSpoofStore
+      .getState()
+      .setSpoofedTime(new Date('2026-02-19T12:00:00.000Z'))
 
     const now = Date.now()
     const effectiveNow = useDebugSpoofStore.getState().getEffectiveNowMs()
@@ -49,7 +50,9 @@ describe('debug-spoof-store', () => {
 
   it('returns null ISO for non-super_admin even when spoof is set', () => {
     setAuthRole('donor')
-    useDebugSpoofStore.getState().setSpoofedTime(new Date('2026-02-19T12:00:00.000Z'))
+    useDebugSpoofStore
+      .getState()
+      .setSpoofedTime(new Date('2026-02-19T12:00:00.000Z'))
 
     expect(useDebugSpoofStore.getState().getEffectiveNowIso()).toBeNull()
   })

@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-
 import { useAuthStore } from './auth-store'
 
 const STORAGE_KEY = 'fundrbolt-debug-spoof-storage'
