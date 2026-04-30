@@ -31,7 +31,11 @@ from app.schemas.donate_now_config import (
     DonationTierResponse,
     RecentDonationItem,
 )
-from app.schemas.support_wall_entry import AdminSupportWallEntryResponse, AdminSupportWallPage
+from app.schemas.support_wall_entry import (
+    AdminSupportWallEntryResponse,
+    AdminSupportWallPage,
+    SupportWallBulkModerationRequest,
+)
 from app.services.donate_now_service import DonateNowService
 from app.services.media_service import MediaService
 
@@ -71,6 +75,63 @@ def _build_config_response(config: DonateNowPageConfig) -> DonateNowConfigRespon
             "npo_brand_logo_url": npo_branding.logo_url if npo_branding else None,
         }
     )
+
+
+async def _get_support_wall_entry_or_404(
+    db: AsyncSession,
+    *,
+    npo_id: uuid.UUID,
+    entry_id: uuid.UUID,
+) -> SupportWallEntry:
+    stmt = select(SupportWallEntry).where(
+        SupportWallEntry.id == entry_id,
+        SupportWallEntry.npo_id == npo_id,
+    )
+    result = await db.execute(stmt)
+    entry = result.scalar_one_or_none()
+    if entry is None:
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Entry not found")
+    return entry
+
+
+def _get_moderation_status(entry: SupportWallEntry) -> str:
+    """Return the moderation status for a support wall entry."""
+    if entry.is_hidden:
+        return "hidden"
+    if entry.is_reviewed:
+        return "approved"
+    return "unreviewed"
+
+
+async def _get_support_wall_entries_or_404(
+    db: AsyncSession,
+    *,
+    npo_id: uuid.UUID,
+    entry_ids: list[uuid.UUID],
+) -> list[SupportWallEntry]:
+    """Return support wall entries for the given IDs or raise if any are missing."""
+    if not entry_ids:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="At least one support wall entry ID is required.",
+        )
+
+    stmt = select(SupportWallEntry).where(
+        SupportWallEntry.npo_id == npo_id,
+        SupportWallEntry.id.in_(entry_ids),
+    )
+    result = await db.execute(stmt)
+    entries = result.scalars().all()
+
+    found_ids = {entry.id for entry in entries}
+    missing_ids = [str(entry_id) for entry_id in entry_ids if entry_id not in found_ids]
+    if missing_ids:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail=f"Entries not found: {', '.join(missing_ids)}",
+        )
+
+    return list(entries)
 
 
 # ── Config endpoints ─────────────────────────────────────────────────────────
@@ -266,7 +327,9 @@ async def admin_list_support_wall(
     total = total_result.scalar_one()
 
     stmt = stmt.offset((page - 1) * per_page).limit(per_page)
-    result = await db.execute(stmt.options(selectinload(SupportWallEntry.donation)))
+    result = await db.execute(
+        stmt.options(selectinload(SupportWallEntry.donation).selectinload(NpoDonation.donor))
+    )
     entries = result.scalars().all()
 
     entry_responses = [
@@ -275,11 +338,32 @@ async def admin_list_support_wall(
             donation_id=e.donation_id,
             npo_id=e.npo_id,
             donor_user_id=e.donation.donor_user_id if e.donation else None,
-            display_name=e.display_name,
+            donor_name=(
+                f"{e.donation.donor.first_name} {e.donation.donor.last_name}".strip()
+                if e.donation and e.donation.donor
+                else None
+            ),
+            donor_email=e.donation.donor.email if e.donation and e.donation.donor else None,
+            public_display_name=e.display_name,
             is_anonymous=e.is_anonymous,
             show_amount=e.show_amount,
             amount_cents=e.donation.amount_cents if e.donation else None,
+            covers_processing_fee=e.donation.covers_processing_fee if e.donation else False,
+            processing_fee_cents=e.donation.processing_fee_cents if e.donation else 0,
+            total_charged_cents=e.donation.total_charged_cents if e.donation else 0,
+            is_monthly=e.donation.is_monthly if e.donation else False,
+            recurrence_status=(
+                e.donation.recurrence_status.value
+                if e.donation and e.donation.recurrence_status
+                else None
+            ),
+            next_charge_date=e.donation.next_charge_date if e.donation else None,
+            donation_status=e.donation.status.value
+            if e.donation
+            else NpoDonationStatus.PENDING.value,
             message=e.message,
+            moderation_status=_get_moderation_status(e),
+            is_reviewed=e.is_reviewed,
             is_hidden=e.is_hidden,
             created_at=e.created_at,
         )
@@ -308,18 +392,28 @@ async def hide_wall_entry(
     current_user: User = Depends(get_current_user),
 ) -> None:
     """Hide a support wall entry from the public wall."""
-    from fastapi import HTTPException
-    from fastapi import status as http_status
-
-    stmt = select(SupportWallEntry).where(
-        SupportWallEntry.id == entry_id,
-        SupportWallEntry.npo_id == npo_id,
-    )
-    result = await db.execute(stmt)
-    entry = result.scalar_one_or_none()
-    if entry is None:
-        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Entry not found")
+    entry = await _get_support_wall_entry_or_404(db, npo_id=npo_id, entry_id=entry_id)
+    entry.is_reviewed = True
     entry.is_hidden = True
+    await db.commit()
+
+
+@router.post(
+    "/support-wall/{entry_id}/approve",
+    status_code=204,
+    summary="Approve a support wall entry (admin)",
+)
+@require_role("super_admin", "npo_admin")
+async def approve_wall_entry(
+    npo_id: uuid.UUID,
+    entry_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """Mark a support wall entry as approved and visible on the public wall."""
+    entry = await _get_support_wall_entry_or_404(db, npo_id=npo_id, entry_id=entry_id)
+    entry.is_reviewed = True
+    entry.is_hidden = False
     await db.commit()
 
 
@@ -336,18 +430,59 @@ async def restore_wall_entry(
     current_user: User = Depends(get_current_user),
 ) -> None:
     """Restore a hidden support wall entry to the public wall."""
-    from fastapi import HTTPException
-    from fastapi import status as http_status
-
-    stmt = select(SupportWallEntry).where(
-        SupportWallEntry.id == entry_id,
-        SupportWallEntry.npo_id == npo_id,
+    await approve_wall_entry(
+        npo_id=npo_id,
+        entry_id=entry_id,
+        db=db,
+        current_user=current_user,
     )
-    result = await db.execute(stmt)
-    entry = result.scalar_one_or_none()
-    if entry is None:
-        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Entry not found")
-    entry.is_hidden = False
+
+
+@router.post(
+    "/support-wall/bulk-approve",
+    status_code=204,
+    summary="Approve multiple support wall entries (admin)",
+)
+@require_role("super_admin", "npo_admin")
+async def bulk_approve_wall_entries(
+    npo_id: uuid.UUID,
+    payload: SupportWallBulkModerationRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """Mark multiple support wall entries as approved and visible."""
+    entries = await _get_support_wall_entries_or_404(
+        db,
+        npo_id=npo_id,
+        entry_ids=payload.entry_ids,
+    )
+    for entry in entries:
+        entry.is_reviewed = True
+        entry.is_hidden = False
+    await db.commit()
+
+
+@router.post(
+    "/support-wall/bulk-hide",
+    status_code=204,
+    summary="Hide multiple support wall entries (admin)",
+)
+@require_role("super_admin", "npo_admin")
+async def bulk_hide_wall_entries(
+    npo_id: uuid.UUID,
+    payload: SupportWallBulkModerationRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """Hide multiple support wall entries from the public wall."""
+    entries = await _get_support_wall_entries_or_404(
+        db,
+        npo_id=npo_id,
+        entry_ids=payload.entry_ids,
+    )
+    for entry in entries:
+        entry.is_reviewed = True
+        entry.is_hidden = True
     await db.commit()
 
 

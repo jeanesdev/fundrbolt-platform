@@ -36,6 +36,7 @@ class SupportWallEntry(Base, UUIDMixin):
     is_anonymous: Mapped[bool] = mapped_column(Boolean(), nullable=False, default=False)
     show_amount: Mapped[bool] = mapped_column(Boolean(), nullable=False, default=True)
     message: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    is_reviewed: Mapped[bool] = mapped_column(Boolean(), nullable=False, default=False)
     is_hidden: Mapped[bool] = mapped_column(Boolean(), nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

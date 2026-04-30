@@ -1,8 +1,15 @@
 import { useState } from 'react'
 import { AxiosError } from 'axios'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/auth-store'
-import { donateNowApi, type DonationCreateRequest } from '@/lib/api/donateNow'
+import {
+  donateNowApi,
+  type DonationCreateRequest,
+  type DonationResponse,
+  SUPPORT_WALL_PAGE_SIZE,
+  type SupportWallEntry,
+  type SupportWallPage,
+} from '@/lib/api/donateNow'
 
 interface PendingDonationDraft {
   npo_slug: string
@@ -23,6 +30,7 @@ function getPendingDonationStorageKey(npoSlug: string): string {
 }
 
 export function useDonateNow(npoSlug: string) {
+  const queryClient = useQueryClient()
   const user = useAuthStore((s) => s.user)
   const defaultDonorName =
     `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim()
@@ -50,10 +58,67 @@ export function useDonateNow(npoSlug: string) {
     queryFn: () => donateNowApi.getPage(npoSlug).then((r) => r.data),
   })
 
+  const buildSupportWallEntry = (
+    donation: DonationResponse,
+    request: DonationCreateRequest
+  ): SupportWallEntry | null => {
+    const trimmedMessage = request.support_wall_message?.trim() || null
+    if (request.is_anonymous && !trimmedMessage) {
+      return null
+    }
+
+    const resolvedDisplayName = request.is_anonymous
+      ? null
+      : request.donor_name?.trim() || defaultDonorName || null
+
+    return {
+      id: donation.id,
+      display_name: resolvedDisplayName,
+      is_anonymous: request.is_anonymous ?? false,
+      show_amount: request.show_amount ?? true,
+      amount_cents:
+        request.show_amount === false ? null : donation.amount_cents,
+      is_monthly: request.is_monthly ?? false,
+      tier_label: null,
+      message: trimmedMessage,
+      created_at: donation.created_at,
+    }
+  }
+
+  const updateSupportWallCache = (
+    donation: DonationResponse,
+    request: DonationCreateRequest
+  ) => {
+    const nextEntry = buildSupportWallEntry(donation, request)
+    if (!nextEntry) {
+      return
+    }
+
+    queryClient.setQueryData<SupportWallPage>(
+      ['support-wall', npoSlug, 1],
+      (current) => {
+        const perPage = current?.per_page ?? SUPPORT_WALL_PAGE_SIZE
+        const total = (current?.total ?? 0) + 1
+
+        return {
+          entries: [nextEntry, ...(current?.entries ?? [])].slice(0, perPage),
+          total,
+          page: 1,
+          per_page: perPage,
+          pages: Math.max(1, Math.ceil(total / perPage)),
+        }
+      }
+    )
+  }
+
   const donateMutation = useMutation({
     mutationFn: (req: DonationCreateRequest) =>
       donateNowApi.createDonation(npoSlug, req),
-    onSuccess: (res) => {
+    onSuccess: (res, request) => {
+      updateSupportWallCache(res.data, request)
+      void queryClient.invalidateQueries({
+        queryKey: ['support-wall', npoSlug],
+      })
       setLastDonation(res.data)
       setDonationSuccess(true)
       setShowConfirm(false)

@@ -93,6 +93,7 @@ class NpoDonation(Base, UUIDMixin):
         Enum(
             RecurrenceStatus,
             name="recurrence_status_enum",
+            native_enum=False,
             values_callable=lambda x: [e.value for e in x],
         ),
         nullable=True,
@@ -112,6 +113,7 @@ class NpoDonation(Base, UUIDMixin):
         Enum(
             NpoDonationStatus,
             name="npo_donation_status_enum",
+            native_enum=False,
             values_callable=lambda x: [e.value for e in x],
         ),
         nullable=False,

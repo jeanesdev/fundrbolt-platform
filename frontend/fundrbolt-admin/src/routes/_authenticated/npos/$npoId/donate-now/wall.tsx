@@ -2,6 +2,9 @@ import { createFileRoute, useParams } from '@tanstack/react-router'
 import { useNpoContext } from '@/hooks/use-npo-context'
 import { SupportWallModerationTable } from '@/components/donate-now/SupportWallModerationTable'
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 export const Route = createFileRoute(
   '/_authenticated/npos/$npoId/donate-now/wall'
 )({
@@ -13,8 +16,9 @@ function DonateNowWallPage() {
     from: '/_authenticated/npos/$npoId/donate-now/wall',
   })
   const { availableNpos } = useNpoContext()
-  // The URL param may be a slug (e.g. "hope-foundation") — resolve to UUID for API calls
-  const npoId = availableNpos.find((n) => n.slug === npoSlug)?.id ?? npoSlug
+  const resolvedNpoId = UUID_PATTERN.test(npoSlug)
+    ? npoSlug
+    : (availableNpos.find((n) => n.slug === npoSlug)?.id ?? null)
 
   return (
     <div className='space-y-6 p-6'>
@@ -24,7 +28,7 @@ function DonateNowWallPage() {
           Moderate donor messages shown on the public support wall
         </p>
       </div>
-      <SupportWallModerationTable npoId={npoId} />
+      <SupportWallModerationTable npoId={resolvedNpoId} />
     </div>
   )
 }

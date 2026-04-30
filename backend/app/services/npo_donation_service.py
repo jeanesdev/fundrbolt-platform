@@ -146,6 +146,7 @@ class NpoDonationService:
                 is_anonymous=request.is_anonymous,
                 show_amount=request.show_amount,
                 message=request.support_wall_message,
+                is_reviewed=False,
                 is_hidden=False,
             )
             db.add(entry)
@@ -198,6 +199,7 @@ class NpoDonationService:
                 is_anonymous=e.is_anonymous,
                 show_amount=e.show_amount,
                 amount_cents=e.donation.amount_cents if e.show_amount and e.donation else None,
+                is_monthly=e.donation.is_monthly if e.donation else False,
                 tier_label=None,
                 message=e.message,
                 created_at=e.created_at,

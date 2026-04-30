@@ -29,10 +29,18 @@ export function LiveBidEntryForm({
 }: LiveBidEntryFormProps) {
   const amountRef = useRef<HTMLInputElement>(null)
   const bidderRef = useRef<HTMLInputElement>(null)
+  const hasInitializedFocusRef = useRef(false)
 
   useEffect(() => {
-    amountRef.current?.focus()
-    amountRef.current?.select()
+    if (!hasInitializedFocusRef.current) {
+      hasInitializedFocusRef.current = true
+      amountRef.current?.focus()
+      amountRef.current?.select()
+      return
+    }
+
+    bidderRef.current?.focus()
+    bidderRef.current?.select()
   }, [focusAmountToken])
 
   const handleAmountKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {

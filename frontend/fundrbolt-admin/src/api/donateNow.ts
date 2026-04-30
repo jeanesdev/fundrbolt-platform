@@ -58,19 +58,33 @@ export interface AdminSupportWallEntry {
   id: string
   donation_id: string
   npo_id: string
-  display_name?: string
+  donor_user_id?: string | null
+  donor_name?: string | null
+  donor_email?: string | null
+  public_display_name?: string | null
   is_anonymous: boolean
   show_amount: boolean
+  amount_cents?: number | null
+  covers_processing_fee: boolean
+  processing_fee_cents: number
+  total_charged_cents: number
+  is_monthly: boolean
+  recurrence_status?: string | null
+  next_charge_date?: string | null
+  donation_status: string
   message?: string
+  moderation_status: 'unreviewed' | 'approved' | 'hidden'
+  is_reviewed: boolean
   is_hidden: boolean
   created_at: string
 }
 
 export interface AdminSupportWallPage {
-  items: AdminSupportWallEntry[]
+  entries: AdminSupportWallEntry[]
   total: number
   page: number
-  page_size: number
+  per_page: number
+  pages: number
 }
 
 export interface RecentDonationItem {
@@ -125,7 +139,7 @@ export const donateNowAdminApi = {
 
   getSupportWall: (
     npoId: string,
-    params?: { page?: number; page_size?: number; include_hidden?: boolean }
+    params?: { page?: number; per_page?: number; include_hidden?: boolean }
   ) =>
     apiClient.get<AdminSupportWallPage>(
       `/admin/npos/${npoId}/donate-now/support-wall`,
@@ -136,6 +150,24 @@ export const donateNowAdminApi = {
     apiClient.post(
       `/admin/npos/${npoId}/donate-now/support-wall/${entryId}/hide`
     ),
+
+  approveEntry: (npoId: string, entryId: string) =>
+    apiClient.post(
+      `/admin/npos/${npoId}/donate-now/support-wall/${entryId}/approve`
+    ),
+
+  bulkApproveEntries: (npoId: string, entryIds: string[]) =>
+    apiClient.post(
+      `/admin/npos/${npoId}/donate-now/support-wall/bulk-approve`,
+      {
+        entry_ids: entryIds,
+      }
+    ),
+
+  bulkHideEntries: (npoId: string, entryIds: string[]) =>
+    apiClient.post(`/admin/npos/${npoId}/donate-now/support-wall/bulk-hide`, {
+      entry_ids: entryIds,
+    }),
 
   restoreEntry: (npoId: string, entryId: string) =>
     apiClient.post(

@@ -310,7 +310,7 @@ export function DonateNowPage() {
         <DonationAmountSelector state={state} tiers={pageData.tiers} />
 
         {/* Support wall */}
-        <SupportWall npoSlug={slug} />
+        <SupportWall key={lastDonation?.id ?? 'support-wall'} npoSlug={slug} />
       </div>
     </div>
   )

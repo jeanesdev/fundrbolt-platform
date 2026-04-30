@@ -78,6 +78,7 @@ export interface SupportWallEntry {
   is_anonymous: boolean
   show_amount: boolean
   amount_cents: number | null
+  is_monthly: boolean
   tier_label: string | null
   message: string | null
   created_at: string
@@ -91,6 +92,8 @@ export interface SupportWallPage {
   pages: number
 }
 
+export const SUPPORT_WALL_PAGE_SIZE = 10
+
 export const donateNowApi = {
   getPage: (npoSlug: string) =>
     apiClient.get<DonateNowPageData>(`/npos/${npoSlug}/donate-now`),
@@ -101,7 +104,11 @@ export const donateNowApi = {
       data
     ),
 
-  getSupportWall: (npoSlug: string, page = 1, pageSize = 20) =>
+  getSupportWall: (
+    npoSlug: string,
+    page = 1,
+    pageSize = SUPPORT_WALL_PAGE_SIZE
+  ) =>
     apiClient.get<SupportWallPage>(`/npos/${npoSlug}/donate-now/support-wall`, {
       params: { page, page_size: pageSize },
     }),
