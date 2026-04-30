@@ -4,11 +4,10 @@
  * Redirects unauthenticated users to sign-in page.
  * Used to protect routes that require authentication.
  */
-
-import { hasValidRefreshToken } from '@/lib/storage/tokens'
-import { useAuthStore } from '@/stores/auth-store'
-import { Navigate, Outlet, useLocation } from '@tanstack/react-router'
 import { useEffect } from 'react'
+import { Navigate, Outlet, useLocation } from '@tanstack/react-router'
+import { useAuthStore } from '@/stores/auth-store'
+import { hasValidRefreshToken } from '@/lib/storage/tokens'
 
 export function ProtectedRoute() {
   const { isAuthenticated, accessToken } = useAuthStore()
@@ -33,7 +32,7 @@ export function ProtectedRoute() {
   if (!isAuthorized) {
     // Redirect to sign-in, preserving the intended destination
     const redirect = location.pathname + location.search
-    return <Navigate to="/sign-in" search={{ redirect }} />
+    return <Navigate to='/sign-in' search={{ redirect }} />
   }
 
   // Render child routes

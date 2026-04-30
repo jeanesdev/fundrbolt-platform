@@ -1,9 +1,9 @@
+import { useQuery } from '@tanstack/react-query'
 import {
   auctionDashboardService,
   type AuctionDashboardParams,
   type AuctionItemsParams,
 } from '@/services/auction-dashboard'
-import { useQuery } from '@tanstack/react-query'
 
 export function useAuctionSummary(params: AuctionDashboardParams) {
   return useQuery({

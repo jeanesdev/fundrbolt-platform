@@ -5,10 +5,9 @@
  * bold total footer.  Reusable for both the ticket checkout (US4) and
  * the end-of-night self-checkout (US5).
  */
-
-import { Separator } from '@/components/ui/separator'
 import type { LineItem } from '@/types/payment'
 import { Tag } from 'lucide-react'
+import { Separator } from '@/components/ui/separator'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -40,7 +39,10 @@ const LINE_ITEM_TYPE_LABELS: Record<string, string> = {
 }
 
 function fmtCurrency(amount: number, currency = 'USD'): string {
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount)
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency,
+  }).format(amount)
 }
 
 /** Item type badge label */
@@ -60,17 +62,17 @@ export function CheckoutSummary({
 }: CheckoutSummaryProps) {
   if (isLoading) {
     return (
-      <div className={`space-y-2 animate-pulse ${className}`}>
+      <div className={`animate-pulse space-y-2 ${className}`}>
         {[1, 2, 3].map((i) => (
-          <div key={i} className="flex justify-between text-sm py-1">
-            <div className="h-4 bg-muted rounded w-2/3" />
-            <div className="h-4 bg-muted rounded w-16" />
+          <div key={i} className='flex justify-between py-1 text-sm'>
+            <div className='bg-muted h-4 w-2/3 rounded' />
+            <div className='bg-muted h-4 w-16 rounded' />
           </div>
         ))}
-        <div className="h-px bg-muted" />
-        <div className="flex justify-between font-semibold">
-          <div className="h-4 bg-muted rounded w-1/4" />
-          <div className="h-4 bg-muted rounded w-20" />
+        <div className='bg-muted h-px' />
+        <div className='flex justify-between font-semibold'>
+          <div className='bg-muted h-4 w-1/4 rounded' />
+          <div className='bg-muted h-4 w-20 rounded' />
         </div>
       </div>
     )
@@ -80,14 +82,21 @@ export function CheckoutSummary({
     <div className={`space-y-1 ${className}`}>
       {/* Line items */}
       {lineItems.map((item, idx) => (
-        <div key={idx} className="flex items-start justify-between gap-2 py-1 text-sm">
-          <div className="flex-1 min-w-0">
-            <span className="text-foreground">{item.label}</span>
-            <span className="ml-2 text-xs text-muted-foreground">{typeBadge(item.type)}</span>
+        <div
+          key={idx}
+          className='flex items-start justify-between gap-2 py-1 text-sm'
+        >
+          <div className='min-w-0 flex-1'>
+            <span className='text-foreground'>{item.label}</span>
+            <span className='text-muted-foreground ml-2 text-xs'>
+              {typeBadge(item.type)}
+            </span>
           </div>
           <span
             className={
-              item.type === 'fee_coverage' ? 'text-muted-foreground' : 'font-medium text-foreground'
+              item.type === 'fee_coverage'
+                ? 'text-muted-foreground'
+                : 'text-foreground font-medium'
             }
           >
             {fmtCurrency(Number(item.amount), currency)}
@@ -97,23 +106,23 @@ export function CheckoutSummary({
 
       {/* Promo discount */}
       {promoDiscount && (
-        <div className="flex items-center justify-between gap-2 py-1 text-sm text-green-700 dark:text-green-400">
-          <div className="flex items-center gap-1">
-            <Tag className="w-3.5 h-3.5" />
+        <div className='flex items-center justify-between gap-2 py-1 text-sm text-green-700 dark:text-green-400'>
+          <div className='flex items-center gap-1'>
+            <Tag className='h-3.5 w-3.5' />
             <span>Promo: {promoDiscount.code}</span>
           </div>
-          <span className="font-medium">
+          <span className='font-medium'>
             -{fmtCurrency(Math.abs(promoDiscount.amount), currency)}
           </span>
         </div>
       )}
 
-      <Separator className="my-2" />
+      <Separator className='my-2' />
 
       {/* Total */}
-      <div className="flex items-center justify-between py-1">
-        <span className="font-semibold text-base">Total</span>
-        <span className="font-bold text-base text-primary">
+      <div className='flex items-center justify-between py-1'>
+        <span className='text-base font-semibold'>Total</span>
+        <span className='text-primary text-base font-bold'>
           {fmtCurrency(total, currency)}
         </span>
       </div>

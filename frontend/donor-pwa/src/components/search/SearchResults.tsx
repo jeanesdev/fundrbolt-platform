@@ -6,9 +6,8 @@
  * T079: "No results found" message
  * T080: Clickable result items with navigation
  */
-
-import type { SearchResponse } from '@/services/search'
 import { Link } from '@tanstack/react-router'
+import type { SearchResponse } from '@/services/search'
 import { Building2, Calendar, Gavel, User } from 'lucide-react'
 
 interface SearchResultsProps {
@@ -17,16 +16,20 @@ interface SearchResultsProps {
   onClose: () => void
 }
 
-export function SearchResults({ results, isLoading, onClose }: SearchResultsProps) {
+export function SearchResults({
+  results,
+  isLoading,
+  onClose,
+}: SearchResultsProps) {
   // T081: Loading skeleton
   if (isLoading) {
     return (
-      <div className='p-4 space-y-2'>
+      <div className='space-y-2 p-4'>
         {[1, 2, 3].map((i) => (
-          <div key={i} className='animate-pulse flex items-center gap-3 p-2'>
+          <div key={i} className='flex animate-pulse items-center gap-3 p-2'>
             <div className='bg-muted h-8 w-8 rounded' />
             <div className='flex-1'>
-              <div className='bg-muted h-4 w-3/4 rounded mb-2' />
+              <div className='bg-muted mb-2 h-4 w-3/4 rounded' />
               <div className='bg-muted h-3 w-1/2 rounded' />
             </div>
           </div>
@@ -41,7 +44,7 @@ export function SearchResults({ results, isLoading, onClose }: SearchResultsProp
       <div className='text-muted-foreground p-8 text-center'>
         <p>No results found</p>
         {results?.query && (
-          <p className='text-sm mt-1'>Try a different search term</p>
+          <p className='mt-1 text-sm'>Try a different search term</p>
         )}
       </div>
     )
@@ -52,7 +55,7 @@ export function SearchResults({ results, isLoading, onClose }: SearchResultsProp
       {/* Users Section */}
       {results.users.length > 0 && (
         <div className='mb-4'>
-          <h3 className='text-muted-foreground px-2 mb-2 text-xs font-semibold uppercase'>
+          <h3 className='text-muted-foreground mb-2 px-2 text-xs font-semibold uppercase'>
             Users ({results.users.length})
           </h3>
           {results.users.map((user) => (
@@ -65,11 +68,11 @@ export function SearchResults({ results, isLoading, onClose }: SearchResultsProp
               <div className='bg-muted flex h-8 w-8 items-center justify-center rounded'>
                 <User className='h-4 w-4' />
               </div>
-              <div className='flex-1 min-w-0'>
-                <p className='font-medium truncate'>
+              <div className='min-w-0 flex-1'>
+                <p className='truncate font-medium'>
                   {user.first_name} {user.last_name}
                 </p>
-                <p className='text-muted-foreground text-xs truncate'>
+                <p className='text-muted-foreground truncate text-xs'>
                   {user.email} • {user.role}
                 </p>
               </div>
@@ -81,7 +84,7 @@ export function SearchResults({ results, isLoading, onClose }: SearchResultsProp
       {/* NPOs Section */}
       {results.npos.length > 0 && (
         <div className='mb-4'>
-          <h3 className='text-muted-foreground px-2 mb-2 text-xs font-semibold uppercase'>
+          <h3 className='text-muted-foreground mb-2 px-2 text-xs font-semibold uppercase'>
             Organizations ({results.npos.length})
           </h3>
           {results.npos.map((npo) => (
@@ -95,9 +98,9 @@ export function SearchResults({ results, isLoading, onClose }: SearchResultsProp
               <div className='bg-muted flex h-8 w-8 items-center justify-center rounded'>
                 <Building2 className='h-4 w-4' />
               </div>
-              <div className='flex-1 min-w-0'>
-                <p className='font-medium truncate'>{npo.name}</p>
-                <p className='text-muted-foreground text-xs truncate'>
+              <div className='min-w-0 flex-1'>
+                <p className='truncate font-medium'>{npo.name}</p>
+                <p className='text-muted-foreground truncate text-xs'>
                   {npo.tagline || npo.status}
                 </p>
               </div>
@@ -109,7 +112,7 @@ export function SearchResults({ results, isLoading, onClose }: SearchResultsProp
       {/* Events Section */}
       {results.events.length > 0 && (
         <div className='mb-4'>
-          <h3 className='text-muted-foreground px-2 mb-2 text-xs font-semibold uppercase'>
+          <h3 className='text-muted-foreground mb-2 px-2 text-xs font-semibold uppercase'>
             Events ({results.events.length})
           </h3>
           {results.events.map((event) => (
@@ -123,9 +126,9 @@ export function SearchResults({ results, isLoading, onClose }: SearchResultsProp
               <div className='bg-muted flex h-8 w-8 items-center justify-center rounded'>
                 <Calendar className='h-4 w-4' />
               </div>
-              <div className='flex-1 min-w-0'>
-                <p className='font-medium truncate'>{event.name}</p>
-                <p className='text-muted-foreground text-xs truncate'>
+              <div className='min-w-0 flex-1'>
+                <p className='truncate font-medium'>{event.name}</p>
+                <p className='text-muted-foreground truncate text-xs'>
                   {event.npo_name} • {event.event_type}
                 </p>
               </div>
@@ -137,30 +140,36 @@ export function SearchResults({ results, isLoading, onClose }: SearchResultsProp
       {/* Auction Items Section */}
       {results.auction_items.length > 0 && (
         <div className='mb-4'>
-          <h3 className='text-muted-foreground px-2 mb-2 text-xs font-semibold uppercase'>
+          <h3 className='text-muted-foreground mb-2 px-2 text-xs font-semibold uppercase'>
             Auction Items ({results.auction_items.length})
           </h3>
           {results.auction_items.map((item) => (
             <Link
               key={item.id}
               to='/events/$eventSlug/auction-items/$itemId'
-              params={{ eventSlug: item.event_slug ?? item.event_id, itemId: item.id }}
+              params={{
+                eventSlug: item.event_slug ?? item.event_id,
+                itemId: item.id,
+              }}
               onClick={onClose}
               className='hover:bg-accent flex items-center gap-3 rounded p-2 transition-colors'
             >
               <div className='bg-muted flex h-8 w-8 items-center justify-center rounded'>
                 <Gavel className='h-4 w-4' />
               </div>
-              <div className='flex-1 min-w-0'>
-                <p className='font-medium truncate'>
+              <div className='min-w-0 flex-1'>
+                <p className='truncate font-medium'>
                   {item.bid_number != null && (
-                    <span className='text-muted-foreground font-normal'>#{item.bid_number} </span>
+                    <span className='text-muted-foreground font-normal'>
+                      #{item.bid_number}{' '}
+                    </span>
                   )}
                   {item.name}
                 </p>
-                <p className='text-muted-foreground text-xs truncate'>
+                <p className='text-muted-foreground truncate text-xs'>
                   {item.event_name} • {item.category}
-                  {item.starting_bid && ` • $${item.starting_bid.toLocaleString()}`}
+                  {item.starting_bid &&
+                    ` • $${item.starting_bid.toLocaleString()}`}
                 </p>
               </div>
             </Link>

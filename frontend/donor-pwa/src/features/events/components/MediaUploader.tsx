@@ -2,7 +2,17 @@
  * MediaUploader Component
  * Drag-and-drop file uploader with progress tracking
  */
-
+import { useCallback, useState } from 'react'
+import type { EventMedia } from '@/types/event'
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileImage,
+  Trash2,
+  Upload,
+  X,
+} from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -11,10 +21,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import type { EventMedia } from '@/types/event'
-import { ChevronLeft, ChevronRight, FileImage, Trash2, Upload, X } from 'lucide-react'
-import { useCallback, useState } from 'react'
-import { toast } from 'sonner'
 
 interface MediaUploaderProps {
   media: EventMedia[]
@@ -56,9 +62,10 @@ export function MediaUploader({
       'response' in error &&
       typeof (error as { response?: unknown }).response === 'object' &&
       (error as { response?: unknown }).response !== null &&
-      'data' in ((error as { response: { data?: unknown } }).response)
+      'data' in (error as { response: { data?: unknown } }).response
     ) {
-      const data = (error as { response: { data?: { detail?: unknown } } }).response.data
+      const data = (error as { response: { data?: { detail?: unknown } } })
+        .response.data
       const detail = data?.detail
       if (typeof detail === 'string') return detail
       if (
@@ -99,60 +106,71 @@ export function MediaUploader({
     setFailedImages((prev) => ({ ...prev, [file.id]: true }))
   }
 
-  const validateFile = useCallback((file: File): string | null => {
-    if (file.size > maxFileSize * 1024 * 1024) {
-      return `File size must be under ${maxFileSize}MB`
-    }
-    if (!acceptedTypes.includes(file.type)) {
-      return `File type not accepted. Allowed: ${acceptedTypes.join(', ')}`
-    }
-    return null
-  }, [maxFileSize, acceptedTypes])
+  const validateFile = useCallback(
+    (file: File): string | null => {
+      if (file.size > maxFileSize * 1024 * 1024) {
+        return `File size must be under ${maxFileSize}MB`
+      }
+      if (!acceptedTypes.includes(file.type)) {
+        return `File type not accepted. Allowed: ${acceptedTypes.join(', ')}`
+      }
+      return null
+    },
+    [maxFileSize, acceptedTypes]
+  )
 
-  const handleFiles = useCallback(async (files: FileList | File[]) => {
-    const fileArray = Array.from(files)
-    let uploadedCount = 0
-    let failedCount = 0
-    const failureReasons: string[] = []
+  const handleFiles = useCallback(
+    async (files: FileList | File[]) => {
+      const fileArray = Array.from(files)
+      let uploadedCount = 0
+      let failedCount = 0
+      const failureReasons: string[] = []
 
-    for (const file of fileArray) {
-      const error = validateFile(file)
-      if (error) {
-        failedCount += 1
-        failureReasons.push(`${file.name}: ${error}`)
-        continue
+      for (const file of fileArray) {
+        const error = validateFile(file)
+        if (error) {
+          failedCount += 1
+          failureReasons.push(`${file.name}: ${error}`)
+          continue
+        }
+
+        try {
+          await onUpload(file)
+          uploadedCount += 1
+        } catch (err) {
+          failedCount += 1
+          failureReasons.push(`${file.name}: ${getUploadErrorMessage(err)}`)
+        }
       }
 
-      try {
-        await onUpload(file)
-        uploadedCount += 1
-      } catch (err) {
-        failedCount += 1
-        failureReasons.push(`${file.name}: ${getUploadErrorMessage(err)}`)
+      if (uploadedCount > 0) {
+        toast.success(
+          `Uploaded ${uploadedCount} file${uploadedCount === 1 ? '' : 's'} successfully`
+        )
       }
-    }
 
-    if (uploadedCount > 0) {
-      toast.success(
-        `Uploaded ${uploadedCount} file${uploadedCount === 1 ? '' : 's'} successfully`
-      )
-    }
+      if (failedCount > 0) {
+        toast.error(
+          `Failed to upload ${failedCount} file${failedCount === 1 ? '' : 's'}`
+        )
+        failureReasons.slice(0, 3).forEach((reason) => toast.error(reason))
+      }
+    },
+    [onUpload, validateFile]
+  )
 
-    if (failedCount > 0) {
-      toast.error(`Failed to upload ${failedCount} file${failedCount === 1 ? '' : 's'}`)
-      failureReasons.slice(0, 3).forEach((reason) => toast.error(reason))
-    }
-  }, [onUpload, validateFile])
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setDragActive(false)
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      void handleFiles(e.dataTransfer.files)
-    }
-  }, [handleFiles])
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        void handleFiles(e.dataTransfer.files)
+      }
+    },
+    [handleFiles]
+  )
 
   const handleDrag = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -187,9 +205,9 @@ export function MediaUploader({
 
   const getFileIcon = (fileType: string) => {
     if (fileType.startsWith('image/')) {
-      return <FileImage className="h-5 w-5" />
+      return <FileImage className='h-5 w-5' />
     }
-    return <Upload className="h-5 w-5" />
+    return <Upload className='h-5 w-5' />
   }
 
   const formatFileSize = (bytes: number) => {
@@ -199,63 +217,66 @@ export function MediaUploader({
   }
 
   const handleNextMedia = () => {
-    if (!viewMedia) return;
-    const currentIndex = media.findIndex((item) => item.id === viewMedia.id);
-    const nextIndex = (currentIndex + 1) % media.length;
-    setViewMedia(media[nextIndex]);
-  };
+    if (!viewMedia) return
+    const currentIndex = media.findIndex((item) => item.id === viewMedia.id)
+    const nextIndex = (currentIndex + 1) % media.length
+    setViewMedia(media[nextIndex])
+  }
 
   const handlePrevMedia = () => {
-    if (!viewMedia) return;
-    const currentIndex = media.findIndex((item) => item.id === viewMedia.id);
-    const prevIndex = (currentIndex - 1 + media.length) % media.length;
-    setViewMedia(media[prevIndex]);
-  };
+    if (!viewMedia) return
+    const currentIndex = media.findIndex((item) => item.id === viewMedia.id)
+    const prevIndex = (currentIndex - 1 + media.length) % media.length
+    setViewMedia(media[prevIndex])
+  }
 
   const getCurrentMediaIndex = () => {
-    if (!viewMedia) return { current: 0, total: 0 };
-    const currentIndex = media.findIndex((item) => item.id === viewMedia.id);
-    return { current: currentIndex + 1, total: media.length };
-  };
+    if (!viewMedia) return { current: 0, total: 0 }
+    const currentIndex = media.findIndex((item) => item.id === viewMedia.id)
+    return { current: currentIndex + 1, total: media.length }
+  }
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       {/* Upload Zone */}
       <Card
-        className={`border-2 border-dashed transition-colors ${dragActive ? 'border-primary bg-primary/5' : 'border-muted'
-          }`}
+        className={`border-2 border-dashed transition-colors ${
+          dragActive ? 'border-primary bg-primary/5' : 'border-muted'
+        }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
       >
-        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-          <Upload className={`h-12 w-12 mb-4 ${dragActive ? 'text-primary' : 'text-muted-foreground'}`} />
+        <CardContent className='flex flex-col items-center justify-center p-8 text-center'>
+          <Upload
+            className={`mb-4 h-12 w-12 ${dragActive ? 'text-primary' : 'text-muted-foreground'}`}
+          />
 
-          <h3 className="text-lg font-semibold mb-2">
+          <h3 className='mb-2 text-lg font-semibold'>
             {dragActive ? 'Drop files here' : 'Upload Event Media'}
           </h3>
 
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className='text-muted-foreground mb-4 text-sm'>
             Drag and drop files here, or click to browse
           </p>
 
           <input
-            id="file-upload"
-            type="file"
+            id='file-upload'
+            type='file'
             multiple
             accept={acceptedTypes.join(',')}
             onChange={handleChange}
-            className="hidden"
+            className='hidden'
           />
 
-          <Button type="button" variant="outline" asChild>
-            <label htmlFor="file-upload" className="cursor-pointer">
+          <Button type='button' variant='outline' asChild>
+            <label htmlFor='file-upload' className='cursor-pointer'>
               Choose Files
             </label>
           </Button>
 
-          <p className="text-xs text-muted-foreground mt-4">
+          <p className='text-muted-foreground mt-4 text-xs'>
             Max file size: {maxFileSize}MB | Accepted: Images, Videos, PDFs
           </p>
         </CardContent>
@@ -263,53 +284,63 @@ export function MediaUploader({
 
       {/* Uploaded Files List */}
       {media.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-semibold">Uploaded Files ({media.length})</h4>
+        <div className='space-y-2'>
+          <h4 className='text-sm font-semibold'>
+            Uploaded Files ({media.length})
+          </h4>
 
           {media.filter(Boolean).map((file) => (
             <Card key={file.id}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
+              <CardContent className='p-4'>
+                <div className='flex items-center gap-4'>
                   {/* Thumbnail or File Icon */}
                   <div
-                    className="flex-shrink-0 cursor-pointer"
+                    className='flex-shrink-0 cursor-pointer'
                     onClick={() => isImageMedia(file) && setViewMedia(file)}
                   >
                     {isImageMedia(file) && !failedImages[file.id] ? (
                       <img
                         src={getImageSrc(file)}
                         alt={file.file_name}
-                        className="h-16 w-16 object-cover rounded border hover:opacity-80 transition-opacity"
+                        className='h-16 w-16 rounded border object-cover transition-opacity hover:opacity-80'
                         onError={() => handleImageError(file)}
                       />
                     ) : null}
-                    <div className={isImageMedia(file) && !failedImages[file.id] ? 'hidden' : ''}>
+                    <div
+                      className={
+                        isImageMedia(file) && !failedImages[file.id]
+                          ? 'hidden'
+                          : ''
+                      }
+                    >
                       {getFileIcon(file.file_type)}
                     </div>
                   </div>
 
                   {/* File Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{file.file_name}</p>
-                    <p className="text-xs text-muted-foreground">
+                  <div className='min-w-0 flex-1'>
+                    <p className='truncate text-sm font-medium'>
+                      {file.file_name}
+                    </p>
+                    <p className='text-muted-foreground text-xs'>
                       {formatFileSize(file.file_size)} • {file.status}
                     </p>
                   </div>
 
                   {/* Status Badge */}
-                  <div className="flex-shrink-0">
+                  <div className='flex-shrink-0'>
                     {file.status === 'scanning' && (
-                      <span className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800">
+                      <span className='rounded bg-yellow-100 px-2 py-1 text-xs text-yellow-800'>
                         Scanning...
                       </span>
                     )}
                     {file.status === 'approved' && (
-                      <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800">
+                      <span className='rounded bg-green-100 px-2 py-1 text-xs text-green-800'>
                         Approved
                       </span>
                     )}
                     {file.status === 'rejected' && (
-                      <span className="text-xs px-2 py-1 rounded bg-red-100 text-red-800">
+                      <span className='rounded bg-red-100 px-2 py-1 text-xs text-red-800'>
                         Rejected
                       </span>
                     )}
@@ -317,16 +348,16 @@ export function MediaUploader({
 
                   {/* Delete Button */}
                   <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
+                    type='button'
+                    variant='ghost'
+                    size='sm'
                     onClick={() => handleDeleteClick(file.id)}
                     disabled={deletingId === file.id}
                   >
                     {deletingId === file.id ? (
-                      <X className="h-4 w-4 animate-spin" />
+                      <X className='h-4 w-4 animate-spin' />
                     ) : (
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className='h-4 w-4' />
                     )}
                   </Button>
                 </div>
@@ -338,24 +369,26 @@ export function MediaUploader({
 
       {/* Upload Progress */}
       {Object.entries(uploadingFiles).some(([_, uploading]) => uploading) && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-semibold">Uploading...</h4>
+        <div className='space-y-2'>
+          <h4 className='text-sm font-semibold'>Uploading...</h4>
 
           {Object.entries(uploadingFiles)
             .filter(([_, uploading]) => uploading)
             .map(([fileId]) => (
               <Card key={fileId}>
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">{fileId.split('-')[0]}</p>
-                      <p className="text-sm text-muted-foreground">
+                <CardContent className='p-4'>
+                  <div className='space-y-2'>
+                    <div className='flex items-center justify-between'>
+                      <p className='text-sm font-medium'>
+                        {fileId.split('-')[0]}
+                      </p>
+                      <p className='text-muted-foreground text-sm'>
                         {uploadProgress[fileId] || 0}%
                       </p>
                     </div>
-                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                    <div className='bg-muted h-2 w-full overflow-hidden rounded-full'>
                       <div
-                        className="h-full bg-primary transition-all"
+                        className='bg-primary h-full transition-all'
                         style={{ width: `${uploadProgress[fileId] || 0}%` }}
                       />
                     </div>
@@ -367,33 +400,39 @@ export function MediaUploader({
       )}
 
       {/* Full-Size Media Modal */}
-      <Dialog open={!!viewMedia} onOpenChange={(open) => !open && setViewMedia(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+      <Dialog
+        open={!!viewMedia}
+        onOpenChange={(open) => !open && setViewMedia(null)}
+      >
+        <DialogContent className='max-h-[90vh] max-w-4xl overflow-hidden p-0'>
           {viewMedia && (
             <>
-              <DialogHeader className="p-6 pb-0">
-                <div className="flex items-center justify-between">
+              <DialogHeader className='p-6 pb-0'>
+                <div className='flex items-center justify-between'>
                   <DialogTitle>{viewMedia.file_name}</DialogTitle>
-                  <span className="text-sm text-muted-foreground">
-                    {getCurrentMediaIndex().current} / {getCurrentMediaIndex().total}
+                  <span className='text-muted-foreground text-sm'>
+                    {getCurrentMediaIndex().current} /{' '}
+                    {getCurrentMediaIndex().total}
                   </span>
                 </div>
               </DialogHeader>
 
-              <div className="relative group">
+              <div className='group relative'>
                 {/* Media Display */}
-                <div className="flex items-center justify-center bg-muted min-h-[400px] max-h-[60vh]">
+                <div className='bg-muted flex max-h-[60vh] min-h-[400px] items-center justify-center'>
                   {isImageMedia(viewMedia) && !failedImages[viewMedia.id] ? (
                     <img
                       src={getImageSrc(viewMedia)}
                       alt={viewMedia.file_name}
-                      className="max-w-full max-h-[60vh] object-contain"
+                      className='max-h-[60vh] max-w-full object-contain'
                       onError={() => handleImageError(viewMedia)}
                     />
                   ) : (
-                    <div className="text-center p-8">
-                      <FileImage className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-muted-foreground">Preview not available for this file type</p>
+                    <div className='p-8 text-center'>
+                      <FileImage className='text-muted-foreground mx-auto mb-4 h-16 w-16' />
+                      <p className='text-muted-foreground'>
+                        Preview not available for this file type
+                      </p>
                     </div>
                   )}
                 </div>
@@ -402,31 +441,40 @@ export function MediaUploader({
                 {media.length > 1 && (
                   <>
                     <Button
-                      variant="secondary"
-                      size="icon"
-                      className="absolute left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      variant='secondary'
+                      size='icon'
+                      className='absolute top-1/2 left-4 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100'
                       onClick={handlePrevMedia}
                     >
-                      <ChevronLeft className="h-6 w-6" />
+                      <ChevronLeft className='h-6 w-6' />
                     </Button>
                     <Button
-                      variant="secondary"
-                      size="icon"
-                      className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      variant='secondary'
+                      size='icon'
+                      className='absolute top-1/2 right-4 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100'
                       onClick={handleNextMedia}
                     >
-                      <ChevronRight className="h-6 w-6" />
+                      <ChevronRight className='h-6 w-6' />
                     </Button>
                   </>
                 )}
               </div>
 
               {/* File Details */}
-              <div className="p-6 pt-4 text-sm text-muted-foreground space-y-1">
-                <p><strong>File:</strong> {viewMedia.file_name}</p>
-                <p><strong>Size:</strong> {formatFileSize(viewMedia.file_size)}</p>
-                <p><strong>Type:</strong> {viewMedia.mime_type || viewMedia.file_type}</p>
-                <p><strong>Status:</strong> {viewMedia.status}</p>
+              <div className='text-muted-foreground space-y-1 p-6 pt-4 text-sm'>
+                <p>
+                  <strong>File:</strong> {viewMedia.file_name}
+                </p>
+                <p>
+                  <strong>Size:</strong> {formatFileSize(viewMedia.file_size)}
+                </p>
+                <p>
+                  <strong>Type:</strong>{' '}
+                  {viewMedia.mime_type || viewMedia.file_type}
+                </p>
+                <p>
+                  <strong>Status:</strong> {viewMedia.status}
+                </p>
               </div>
             </>
           )}

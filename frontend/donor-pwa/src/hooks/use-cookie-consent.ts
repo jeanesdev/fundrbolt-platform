@@ -2,9 +2,8 @@
  * useCookieConsent hook
  * Hook for managing cookie consent in components
  */
-
-import { useCookieStore } from '@/stores/cookie-store'
 import { useEffect } from 'react'
+import { useCookieStore } from '@/stores/cookie-store'
 
 export function useCookieConsent() {
   const {

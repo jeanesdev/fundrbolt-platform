@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import {
   Card,
   CardContent,
@@ -6,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Link } from '@tanstack/react-router'
 import { AuthLayout } from '../auth-layout'
 import { EmailVerificationForm } from './components/email-verification-form'
 

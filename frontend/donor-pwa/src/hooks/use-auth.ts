@@ -9,7 +9,6 @@
  * - staff: Donor registration/check-in within assigned events
  * - donor: Bidding and profile management only (NOT allowed in admin PWA)
  */
-
 import { useAuthStore } from '@/stores/auth-store'
 
 export type UserRole =

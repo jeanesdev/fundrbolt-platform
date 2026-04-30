@@ -4,13 +4,16 @@
  * Attach the returned `onTouchStart` and `onTouchEnd` handlers to the
  * scrollable container (or its wrapper) of a dialog / modal.
  */
-
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef } from 'react'
 
 const SWIPE_THRESHOLD_Y = 80
 
 export function useSwipeDownToClose(onClose: () => void) {
-  const touchStartRef = useRef<{ x: number; y: number; scrollTop: number } | null>(null)
+  const touchStartRef = useRef<{
+    x: number
+    y: number
+    scrollTop: number
+  } | null>(null)
 
   const onTouchStart = useCallback((e: React.TouchEvent<HTMLElement>) => {
     const touch = e.touches[0]
@@ -52,7 +55,7 @@ export function useSwipeDownToClose(onClose: () => void) {
 
       touchStartRef.current = null
     },
-    [onClose],
+    [onClose]
   )
 
   return { onTouchStart, onTouchEnd }

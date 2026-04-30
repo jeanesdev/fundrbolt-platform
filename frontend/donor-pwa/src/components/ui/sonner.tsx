@@ -1,5 +1,5 @@
-import { useTheme } from '@/context/theme-provider'
 import { Toaster as Sonner, toast, ToasterProps } from 'sonner'
+import { useTheme } from '@/context/theme-provider'
 
 export { toast }
 

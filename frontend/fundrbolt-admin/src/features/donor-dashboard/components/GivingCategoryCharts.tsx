@@ -1,5 +1,3 @@
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { colors as brandColors } from '@fundrbolt/shared/assets'
 import {
   Bar,
@@ -14,6 +12,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCategoryBreakdown } from '../hooks/useDonorDashboard'
 
 const COLORS = [

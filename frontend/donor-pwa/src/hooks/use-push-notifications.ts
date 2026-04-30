@@ -3,9 +3,9 @@
  *
  * Provides subscribe/unsubscribe functionality and subscription state.
  */
-import apiClient from '@/lib/axios'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import apiClient from '@/lib/axios'
 
 interface UsePushNotificationsOptions {
   /** Whether the hook should run (defaults to true). Set false for unauthenticated contexts. */

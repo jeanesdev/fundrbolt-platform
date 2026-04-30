@@ -11,7 +11,8 @@
  * - Events sorted: upcoming first (date ASC), then past (date DESC)
  * - Conditional dropdown (only shows chevron if multiple events)
  */
-
+import type { RegisteredEventWithBranding } from '@/types/event-branding'
+import { Calendar, Check, ChevronDown } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -22,8 +23,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import type { RegisteredEventWithBranding } from '@/types/event-branding'
-import { Calendar, Check, ChevronDown } from 'lucide-react'
 
 export interface EventSwitcherProps {
   /** Currently selected event */
@@ -104,35 +103,37 @@ export function EventSwitcher({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          aria-label="Switch event"
+          className='hover:bg-accent focus:ring-ring flex items-center gap-3 rounded-md px-2 py-1.5 focus:ring-2 focus:ring-offset-2 focus:outline-none'
+          aria-label='Switch event'
         >
           <EventThumbnail event={currentEvent} />
-          <div className="flex flex-col text-left">
+          <div className='flex flex-col text-left'>
             <span
-              className="font-semibold text-sm leading-tight"
+              className='text-sm leading-tight font-semibold'
               style={{ color: 'var(--event-text-on-background, #000000)' }}
             >
               {currentEvent.name}
             </span>
             <span
-              className="text-xs"
-              style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+              className='text-xs'
+              style={{
+                color: 'var(--event-text-muted-on-background, #6B7280)',
+              }}
             >
               {currentEvent.npo_name}
             </span>
           </div>
           <ChevronDown
-            className="h-4 w-4"
+            className='h-4 w-4'
             style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
           />
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="start" className="w-72">
+      <DropdownMenuContent align='start' className='w-72'>
         {hasMultipleEvents ? (
           <>
-            <DropdownMenuLabel className="text-xs text-muted-foreground">
+            <DropdownMenuLabel className='text-muted-foreground text-xs'>
               Your Events
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -144,29 +145,32 @@ export function EventSwitcher({
                 <DropdownMenuItem
                   key={event.id}
                   onClick={() => onEventSelect(event)}
-                  className="flex items-center gap-3 cursor-pointer"
+                  className='flex cursor-pointer items-center gap-3'
                 >
-                  <EventThumbnail event={event} size="small" />
+                  <EventThumbnail event={event} size='small' />
 
-                  <div className="flex flex-col flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm truncate">
+                  <div className='flex min-w-0 flex-1 flex-col'>
+                    <div className='flex items-center gap-2'>
+                      <span className='truncate text-sm font-medium'>
                         {event.name}
                       </span>
                       {event.is_past && (
-                        <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                        <Badge
+                          variant='secondary'
+                          className='px-1.5 py-0 text-xs'
+                        >
                           Past
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
+                    <div className='text-muted-foreground flex items-center gap-1 text-xs'>
+                      <Calendar className='h-3 w-3' />
                       <span>{formatEventDate(event.event_datetime)}</span>
                     </div>
                   </div>
 
                   {isSelected && (
-                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <Check className='text-primary h-4 w-4 flex-shrink-0' />
                   )}
                 </DropdownMenuItem>
               )
@@ -174,18 +178,18 @@ export function EventSwitcher({
           </>
         ) : (
           <>
-            <DropdownMenuItem disabled className="flex items-center gap-3">
-              <EventThumbnail event={currentEvent} size="small" />
-              <div className="flex flex-col flex-1 min-w-0">
-                <span className="font-medium text-sm truncate">
+            <DropdownMenuItem disabled className='flex items-center gap-3'>
+              <EventThumbnail event={currentEvent} size='small' />
+              <div className='flex min-w-0 flex-1 flex-col'>
+                <span className='truncate text-sm font-medium'>
                   {currentEvent.name}
                 </span>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Calendar className="h-3 w-3" />
+                <div className='text-muted-foreground flex items-center gap-1 text-xs'>
+                  <Calendar className='h-3 w-3' />
                   <span>{formatEventDate(currentEvent.event_datetime)}</span>
                 </div>
               </div>
-              <Check className="h-4 w-4 text-primary flex-shrink-0" />
+              <Check className='text-primary h-4 w-4 flex-shrink-0' />
             </DropdownMenuItem>
           </>
         )}

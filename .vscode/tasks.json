@@ -4,7 +4,7 @@
     {
       "label": "kill-backend",
       "type": "shell",
-      "command": "pkill -f 'uvicorn app.main:app' || true",
+      "command": "pkill -f '[u]vicorn app.main:app' || true",
       "presentation": {
         "echo": true,
         "reveal": "silent",
@@ -18,7 +18,7 @@
     {
       "label": "kill-frontend",
       "type": "shell",
-      "command": "pids=$(ps -eo pid=,ppid=,cmd= | awk -v self=$$ -v parent=$PPID '$1 != self && $1 != parent && $2 != self && $2 != parent && ($0 ~ /frontend\\/fundrbolt-admin/ || $0 ~ /\\/bin\\/pnpm dev$$/) { print $1 }'); if [ -n \"$pids\" ]; then kill $pids 2>/dev/null || true; fi",
+      "command": "pids=$(ps -eo pid=,ppid=,cmd= | awk -v self=$$ -v parent=$PPID '$1 != self && $1 != parent && $2 != self && $2 != parent && ($0 ~ /frontend\\/fundrbolt-admin/ || $0 ~ /pnpm dev$$/ || ($0 ~ /vite\\/bin\\/vite\\.js/ && $0 !~ /--port 5174/)) { print $1 }'); if [ -n \"$pids\" ]; then kill $pids 2>/dev/null || true; fi",
       "presentation": {
         "echo": true,
         "reveal": "silent",
@@ -32,7 +32,7 @@
     {
       "label": "kill-donor-pwa",
       "type": "shell",
-      "command": "pids=$(ps -eo pid=,ppid=,cmd= | awk -v self=$$ -v parent=$PPID '$1 != self && $1 != parent && $2 != self && $2 != parent && ($0 ~ /frontend\\/donor-pwa/ || $0 ~ /\\/bin\\/pnpm dev --port 5174$$/ || $0 ~ /vite\\/bin\\/vite\\.js --port 5174$$/) { print $1 }'); if [ -n \"$pids\" ]; then kill $pids 2>/dev/null || true; fi",
+      "command": "pids=$(ps -eo pid=,ppid=,cmd= | awk -v self=$$ -v parent=$PPID '$1 != self && $1 != parent && $2 != self && $2 != parent && ($0 ~ /frontend\\/donor-pwa/ || $0 ~ /pnpm dev --port 5174$$/ || ($0 ~ /vite\\/bin\\/vite\\.js/ && $0 ~ /--port 5174/)) { print $1 }'); if [ -n \"$pids\" ]; then kill $pids 2>/dev/null || true; fi",
       "presentation": {
         "echo": true,
         "reveal": "silent",
@@ -47,7 +47,8 @@
       "label": "kill-all-servers",
       "dependsOn": [
         "kill-backend",
-        "kill-frontend"
+        "kill-frontend",
+        "kill-donor-pwa"
       ],
       "dependsOrder": "parallel",
       "presentation": {
@@ -65,7 +66,7 @@
       "dependsOn": [
         "kill-all-servers",
         "poetry-install-backend",
-        "pnpm-dev-frontend"
+        "start-donor-pwa"
       ],
       "dependsOrder": "sequence",
       "presentation": {

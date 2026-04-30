@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { AuctionDashboardCharts } from '@/services/auction-dashboard'
 import { colors } from '@fundrbolt/shared/assets'
 import {
@@ -14,6 +13,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 const COLORS = [
   colors.status.info,
@@ -37,9 +37,7 @@ const fmt = (n: number) =>
 
 /** Convert snake_case / lowercase labels to Title Case ("buy_now" → "Buy Now") */
 const titleCase = (s: string) =>
-  s
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
+  s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 
 /** Apply titleCase to the label field of chart data */
 const withTitleLabels = (data: { label: string; value: number }[]) =>
@@ -105,10 +103,7 @@ export function AuctionCharts({ data, isLoading }: AuctionChartsProps) {
                   outerRadius={70}
                 >
                   {data.revenue_by_type.map((_, i) => (
-                    <Cell
-                      key={i}
-                      fill={COLORS[i % COLORS.length]}
-                    />
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(v) => fmt(Number(v))} />
@@ -141,10 +136,7 @@ export function AuctionCharts({ data, isLoading }: AuctionChartsProps) {
                   outerRadius={70}
                 >
                   {data.revenue_by_category.map((_, i) => (
-                    <Cell
-                      key={i}
-                      fill={COLORS[i % COLORS.length]}
-                    />
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(v) => fmt(Number(v))} />
@@ -176,7 +168,11 @@ export function AuctionCharts({ data, isLoading }: AuctionChartsProps) {
                 <XAxis type='number' tickFormatter={(v) => fmt(Number(v))} />
                 <YAxis {...yAxisProps} />
                 <Tooltip formatter={(v) => fmt(Number(v))} />
-                <Bar dataKey='value' fill={colors.status.info} radius={[0, 4, 4, 0]} />
+                <Bar
+                  dataKey='value'
+                  fill={colors.status.info}
+                  radius={[0, 4, 4, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -188,9 +184,7 @@ export function AuctionCharts({ data, isLoading }: AuctionChartsProps) {
       {/* Bid Count by Type (Bar) */}
       <Card>
         <CardHeader>
-          <CardTitle className='text-sm font-medium'>
-            Bids by Type
-          </CardTitle>
+          <CardTitle className='text-sm font-medium'>Bids by Type</CardTitle>
         </CardHeader>
         <CardContent>
           {data.bid_count_by_type.length > 0 ? (
@@ -200,7 +194,11 @@ export function AuctionCharts({ data, isLoading }: AuctionChartsProps) {
                 <XAxis dataKey='label' />
                 <YAxis allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey='value' fill={colors.accent.violet} radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey='value'
+                  fill={colors.accent.violet}
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -228,7 +226,11 @@ export function AuctionCharts({ data, isLoading }: AuctionChartsProps) {
                 <XAxis type='number' allowDecimals={false} />
                 <YAxis {...yAxisProps} />
                 <Tooltip />
-                <Bar dataKey='value' fill={colors.status.success} radius={[0, 4, 4, 0]} />
+                <Bar
+                  dataKey='value'
+                  fill={colors.status.success}
+                  radius={[0, 4, 4, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -256,7 +258,11 @@ export function AuctionCharts({ data, isLoading }: AuctionChartsProps) {
                 <XAxis type='number' allowDecimals={false} />
                 <YAxis {...yAxisProps} />
                 <Tooltip />
-                <Bar dataKey='value' fill={colors.status.warning} radius={[0, 4, 4, 0]} />
+                <Bar
+                  dataKey='value'
+                  fill={colors.status.warning}
+                  radius={[0, 4, 4, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           ) : (

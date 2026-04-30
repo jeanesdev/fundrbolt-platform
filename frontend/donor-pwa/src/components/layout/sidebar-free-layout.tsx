@@ -10,21 +10,21 @@
  * - ProfileDropdown in header
  * - Back navigation
  */
+import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Outlet, useNavigate } from '@tanstack/react-router'
+import { colors, LogoWhiteGold } from '@fundrbolt/shared/assets'
+import { ArrowLeft, Home } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { cn } from '@/lib/utils'
+import { SearchProvider } from '@/context/search-provider'
+import { useAuth } from '@/hooks/use-auth'
+import { Button } from '@/components/ui/button'
 import { LegalFooter } from '@/components/legal/legal-footer'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { SkipToMain } from '@/components/skip-to-main'
-import { Button } from '@/components/ui/button'
-import { SearchProvider } from '@/context/search-provider'
-import { useAuth } from '@/hooks/use-auth'
-import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
-import { cn } from '@/lib/utils'
-import { useAuthStore } from '@/stores/auth-store'
-import { colors, LogoWhiteGold } from '@fundrbolt/shared/assets'
-import { useQuery } from '@tanstack/react-query'
-import { Outlet, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Home } from 'lucide-react'
-import { useEffect, useState } from 'react'
 
 type SidebarFreeLayoutProps = {
   children?: React.ReactNode
@@ -96,7 +96,7 @@ export function SidebarFreeLayout({
         {/* Compact header - no sidebar trigger */}
         <header
           className={cn(
-            'sticky top-0 z-50 border-b pt-safe-top',
+            'pt-safe-top sticky top-0 z-50 border-b',
             headerVariant === 'brand'
               ? 'min-h-16 border-white/10 text-white'
               : 'bg-background/95 supports-[backdrop-filter]:bg-background/60 min-h-14 backdrop-blur'
@@ -118,7 +118,7 @@ export function SidebarFreeLayout({
                   aria-label='Go back'
                   className={cn(
                     headerVariant === 'brand' &&
-                    'text-white hover:bg-white/10 hover:text-white'
+                      'text-white hover:bg-white/10 hover:text-white'
                   )}
                 >
                   <ArrowLeft className='h-5 w-5' />
@@ -132,7 +132,7 @@ export function SidebarFreeLayout({
                   aria-label='Go to home'
                   className={cn(
                     headerVariant === 'brand' &&
-                    'text-white hover:bg-white/10 hover:text-white'
+                      'text-white hover:bg-white/10 hover:text-white'
                   )}
                 >
                   <Home className='h-5 w-5' />
@@ -141,11 +141,11 @@ export function SidebarFreeLayout({
             </div>
 
             {headerVariant === 'brand' && (
-              <div className='pointer-events-none absolute inset-x-0 flex justify-center px-16'>
+              <div className='pointer-events-none absolute inset-x-0 flex items-center justify-center px-16'>
                 <img
                   src={LogoWhiteGold}
                   alt='FundrBolt'
-                  className='h-10 max-w-full'
+                  className='h-8 w-auto shrink-0'
                 />
               </div>
             )}

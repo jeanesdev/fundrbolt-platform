@@ -1,5 +1,7 @@
-import { PublicDirectoryExplorer } from '@/components/home/public-directory-explorer'
-import { LegalFooter } from '@/components/legal/legal-footer'
+import { createFileRoute, Link, redirect } from '@tanstack/react-router'
+import LogoWhiteGold from '@fundrbolt/shared/assets/logos/fundrbolt-logo-white-gold.svg'
+import { useAuthStore } from '@/stores/auth-store'
+import { hasValidRefreshToken } from '@/lib/storage/tokens'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -8,10 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { hasValidRefreshToken } from '@/lib/storage/tokens'
-import { useAuthStore } from '@/stores/auth-store'
-import LogoWhiteGold from '@fundrbolt/shared/assets/logos/fundrbolt-logo-white-gold.svg'
-import { createFileRoute, Link, redirect } from '@tanstack/react-router'
+import { PublicDirectoryExplorer } from '@/components/home/public-directory-explorer'
+import { LegalFooter } from '@/components/legal/legal-footer'
 
 function HomePage() {
   return (

@@ -1,10 +1,10 @@
-import { DataTableColumnHeader } from '@/components/data-table'
-import { LongText } from '@/components/long-text'
-import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
-import { cn } from '@/lib/utils'
 import { Link } from '@tanstack/react-router'
 import { type ColumnDef } from '@tanstack/react-table'
+import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import { DataTableColumnHeader } from '@/components/data-table'
+import { LongText } from '@/components/long-text'
 import { callTypes, roles } from '../data/data'
 import { type User } from '../data/schema'
 import { DataTableRowActions } from './data-table-row-actions'
@@ -256,10 +256,10 @@ export const usersColumns: ColumnDef<User>[] = [
               style={
                 label.color
                   ? {
-                    backgroundColor: `${label.color}20`,
-                    borderColor: `${label.color}60`,
-                    color: label.color,
-                  }
+                      backgroundColor: `${label.color}20`,
+                      borderColor: `${label.color}60`,
+                      color: label.color,
+                    }
                   : {}
               }
             >

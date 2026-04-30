@@ -64,7 +64,9 @@ export function AuctionItemDetailPage() {
 
                 {selectedItem.donor_value && (
                   <div>
-                    <p className='text-muted-foreground text-sm'>Donor Value</p>
+                    <p className='text-muted-foreground text-sm'>
+                      Fair Market Value
+                    </p>
                     <p className='text-lg font-semibold'>
                       {formatCurrency(selectedItem.donor_value)}
                     </p>
@@ -73,7 +75,9 @@ export function AuctionItemDetailPage() {
 
                 {selectedItem.cost && (
                   <div>
-                    <p className='text-muted-foreground text-sm'>Cost to NPO</p>
+                    <p className='text-muted-foreground text-sm'>
+                      Consignment Cost
+                    </p>
                     <p className='text-lg font-semibold'>
                       {formatCurrency(selectedItem.cost)}
                     </p>
@@ -169,6 +173,7 @@ export function AuctionItemDetailPage() {
               eventId={currentEvent.id}
               auctionItemId={selectedItem.id}
               existing={existingCommission ?? null}
+              consignmentCost={selectedItem.cost ?? null}
             />
           )}
         </div>

@@ -2,24 +2,30 @@
  * Edit NPO Page
  * Page for editing an existing non-profit organization (details + branding)
  */
-
-import { NPOBrandingSection } from '@/components/npo/npo-branding-section'
-import { NPOCreationForm } from '@/components/npo/npo-creation-form'
+import { useEffect } from 'react'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
+import type { NPOCreateRequest } from '@/types/npo'
+import { AlertCircle, ArrowLeft, Building2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { useNPOStore } from '@/stores/npo-store'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useNPOStore } from '@/stores/npo-store'
-import type { NPOCreateRequest } from '@/types/npo'
-import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import { AlertCircle, ArrowLeft, Building2 } from 'lucide-react'
-import { useEffect } from 'react'
-import { toast } from 'sonner'
+import { NPOBrandingSection } from '@/components/npo/npo-branding-section'
+import { NPOCreationForm } from '@/components/npo/npo-creation-form'
 
 export default function EditNPOPage() {
   const { npoId } = useParams({ from: '/_authenticated/npos/$npoId/edit' })
   const navigate = useNavigate()
-  const { currentNPO, nposLoading, nposError, loadNPOById, updateNPO } = useNPOStore()
+  const { currentNPO, nposLoading, nposError, loadNPOById, updateNPO } =
+    useNPOStore()
 
   useEffect(() => {
     if (npoId) {
@@ -33,7 +39,9 @@ export default function EditNPOPage() {
       toast.success('Organization updated successfully')
       navigate({ to: '/npos/$npoId', params: { npoId } })
     } catch (error: unknown) {
-      const errorMessage = (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Failed to update organization'
+      const errorMessage =
+        (error as { response?: { data?: { detail?: string } } }).response?.data
+          ?.detail || 'Failed to update organization'
       toast.error(errorMessage)
       throw error
     }
@@ -47,10 +55,10 @@ export default function EditNPOPage() {
   // Loading state
   if (nposLoading && !currentNPO) {
     return (
-      <div className="container mx-auto space-y-4 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-6">
-        <Skeleton className="h-12 w-64" />
-        <Skeleton className="h-64 w-full" />
-        <Skeleton className="h-96 w-full" />
+      <div className='container mx-auto space-y-4 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-6'>
+        <Skeleton className='h-12 w-64' />
+        <Skeleton className='h-64 w-full' />
+        <Skeleton className='h-96 w-full' />
       </div>
     )
   }
@@ -58,15 +66,17 @@ export default function EditNPOPage() {
   // Error state
   if (nposError) {
     return (
-      <div className="container mx-auto space-y-4 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-6">
-        <Card className="border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-950/20">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <AlertCircle className="mb-4 h-12 w-12 text-red-600 dark:text-red-400" />
-            <h3 className="mb-2 text-lg font-semibold">Error Loading Organization</h3>
-            <p className="mb-4 text-sm text-muted-foreground">{nposError}</p>
-            <Link to="/npos">
+      <div className='container mx-auto space-y-4 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-6'>
+        <Card className='border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-950/20'>
+          <CardContent className='flex flex-col items-center justify-center py-12'>
+            <AlertCircle className='mb-4 h-12 w-12 text-red-600 dark:text-red-400' />
+            <h3 className='mb-2 text-lg font-semibold'>
+              Error Loading Organization
+            </h3>
+            <p className='text-muted-foreground mb-4 text-sm'>{nposError}</p>
+            <Link to='/npos'>
               <Button>
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <ArrowLeft className='mr-2 h-4 w-4' />
                 Back to Organizations
               </Button>
             </Link>
@@ -79,17 +89,20 @@ export default function EditNPOPage() {
   // Not found state
   if (!currentNPO) {
     return (
-      <div className="container mx-auto space-y-4 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-6">
+      <div className='container mx-auto space-y-4 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-6'>
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Building2 className="mb-4 h-12 w-12 text-muted-foreground" />
-            <h3 className="mb-2 text-lg font-semibold">Organization not found</h3>
-            <p className="mb-4 text-sm text-muted-foreground">
-              The organization you're trying to edit doesn't exist or has been deleted.
+          <CardContent className='flex flex-col items-center justify-center py-12'>
+            <Building2 className='text-muted-foreground mb-4 h-12 w-12' />
+            <h3 className='mb-2 text-lg font-semibold'>
+              Organization not found
+            </h3>
+            <p className='text-muted-foreground mb-4 text-sm'>
+              The organization you're trying to edit doesn't exist or has been
+              deleted.
             </p>
-            <Link to="/npos">
+            <Link to='/npos'>
               <Button>
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <ArrowLeft className='mr-2 h-4 w-4' />
                 Back to Organizations
               </Button>
             </Link>
@@ -114,20 +127,22 @@ export default function EditNPOPage() {
   }
 
   return (
-    <div className="container mx-auto space-y-4 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-6">
+    <div className='container mx-auto space-y-4 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-6'>
       {/* Page Header */}
-      <div className="flex items-center gap-3 sm:gap-4">
-        <Link to="/npos/$npoId" params={{ npoId }}>
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
+      <div className='flex items-center gap-3 sm:gap-4'>
+        <Link to='/npos/$npoId' params={{ npoId }}>
+          <Button variant='ghost' size='icon'>
+            <ArrowLeft className='h-5 w-5' />
           </Button>
         </Link>
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 sm:h-12 sm:w-12">
-          <Building2 className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
+        <div className='bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg sm:h-12 sm:w-12'>
+          <Building2 className='text-primary h-5 w-5 sm:h-6 sm:w-6' />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Edit Organization</h1>
-          <p className="text-sm text-muted-foreground sm:text-base">
+          <h1 className='text-2xl font-bold tracking-tight sm:text-3xl'>
+            Edit Organization
+          </h1>
+          <p className='text-muted-foreground text-sm sm:text-base'>
             Update your organization's information and branding
           </p>
         </div>
@@ -135,34 +150,35 @@ export default function EditNPOPage() {
 
       {/* Info Card */}
       {currentNPO.status !== 'draft' && (
-        <Card className="border-yellow-200 bg-yellow-50/50 dark:border-yellow-900 dark:bg-yellow-950/20">
+        <Card className='border-yellow-200 bg-yellow-50/50 dark:border-yellow-900 dark:bg-yellow-950/20'>
           <CardHeader>
-            <CardTitle className="text-base sm:text-lg">Note</CardTitle>
-            <CardDescription className="text-sm">
-              This organization is currently <strong>{currentNPO.status.toUpperCase()}</strong>.
-              Changes may require re-approval depending on your organization's policies.
+            <CardTitle className='text-base sm:text-lg'>Note</CardTitle>
+            <CardDescription className='text-sm'>
+              This organization is currently{' '}
+              <strong>{currentNPO.status.toUpperCase()}</strong>. Changes may
+              require re-approval depending on your organization's policies.
             </CardDescription>
           </CardHeader>
         </Card>
       )}
 
       {/* Tabs for Details and Branding */}
-      <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="branding">Branding</TabsTrigger>
+      <Tabs defaultValue='details' className='w-full'>
+        <TabsList className='grid w-full grid-cols-2'>
+          <TabsTrigger value='details'>Details</TabsTrigger>
+          <TabsTrigger value='branding'>Branding</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="details" className="mt-6">
+        <TabsContent value='details' className='mt-6'>
           <NPOCreationForm
             onSubmit={handleSubmit}
             isLoading={nposLoading}
             defaultValues={defaultValues}
-            submitButtonText="Save"
+            submitButtonText='Save'
           />
         </TabsContent>
 
-        <TabsContent value="branding" className="mt-6">
+        <TabsContent value='branding' className='mt-6'>
           <NPOBrandingSection npoId={npoId} onSave={handleBrandingSave} />
         </TabsContent>
       </Tabs>

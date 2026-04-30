@@ -2,10 +2,7 @@
  * SponsorList
  * Displays a grid of sponsors grouped by logo size with drag-and-drop reordering
  */
-
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
+import { useEffect, useState } from 'react'
 import type { Sponsor } from '@/types/sponsor'
 import {
   closestCenter,
@@ -24,7 +21,9 @@ import {
   SortableContext,
 } from '@dnd-kit/sortable'
 import { AlertCircle, Building2, Plus } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { SortableSponsorCard } from './SortableSponsorCard'
 import { SponsorCard } from './SponsorCard'
 
@@ -135,18 +134,18 @@ export function SponsorList({
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-32 w-full" />
+      <div className='space-y-4'>
+        <Skeleton className='h-32 w-full' />
+        <Skeleton className='h-32 w-full' />
+        <Skeleton className='h-32 w-full' />
       </div>
     )
   }
 
   if (error) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
+      <Alert variant='destructive'>
+        <AlertCircle className='h-4 w-4' />
         <AlertDescription>{error}</AlertDescription>
       </Alert>
     )
@@ -154,15 +153,15 @@ export function SponsorList({
 
   if (sponsors.length === 0) {
     return (
-      <div className="text-center py-12">
-        <Building2 className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold mb-2">No sponsors yet</h3>
-        <p className="text-muted-foreground mb-6">
+      <div className='py-12 text-center'>
+        <Building2 className='text-muted-foreground mx-auto mb-4 h-16 w-16' />
+        <h3 className='mb-2 text-lg font-semibold'>No sponsors yet</h3>
+        <p className='text-muted-foreground mb-6'>
           Add sponsors to showcase their support for your event
         </p>
         {!readOnly && onAdd && (
           <Button onClick={onAdd}>
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className='mr-2 h-4 w-4' />
             Add First Sponsor
           </Button>
         )}
@@ -178,12 +177,12 @@ export function SponsorList({
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="space-y-8">
+      <div className='space-y-8'>
         {/* Add Button */}
         {!readOnly && onAdd && (
-          <div className="flex justify-end">
+          <div className='flex justify-end'>
             <Button onClick={onAdd}>
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className='mr-2 h-4 w-4' />
               Add Sponsor
             </Button>
           </div>
@@ -195,20 +194,19 @@ export function SponsorList({
           if (!levelSponsors || levelSponsors.length === 0) return null
 
           // Format the level name for display
-          const displayName = level === 'other'
-            ? 'Other Sponsors'
-            : `${level} Sponsors`
+          const displayName =
+            level === 'other' ? 'Other Sponsors' : `${level} Sponsors`
 
           return (
-            <div key={level} className="space-y-4">
-              <h3 className="text-xl font-semibold border-b pb-2">
+            <div key={level} className='space-y-4'>
+              <h3 className='border-b pb-2 text-xl font-semibold'>
                 {displayName}
               </h3>
               <SortableContext
                 items={levelSponsors.map((s) => s.id)}
                 strategy={rectSortingStrategy}
               >
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className='grid gap-4 md:grid-cols-2'>
                   {levelSponsors.map((sponsor) =>
                     readOnly || !onReorder ? (
                       <SponsorCard
@@ -237,7 +235,7 @@ export function SponsorList({
       {/* Drag Overlay */}
       <DragOverlay>
         {activeSponsor && (
-          <div className="opacity-50">
+          <div className='opacity-50'>
             <SponsorCard sponsor={activeSponsor} readOnly />
           </div>
         )}

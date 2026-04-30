@@ -18,6 +18,7 @@ export interface EventContextOption {
   slug: string
   status: string
   event_datetime: string
+  npo_id?: string
 }
 
 interface EventContextState {

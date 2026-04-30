@@ -8,7 +8,6 @@
  * - Selection persists across sessions via localStorage
  * - Cleared on logout
  */
-
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -39,7 +38,11 @@ interface EventContextState {
   error: string | null
 
   // Actions
-  setSelectedEvent: (eventId: string | null, eventName: string, eventSlug: string | null) => void
+  setSelectedEvent: (
+    eventId: string | null,
+    eventName: string,
+    eventSlug: string | null
+  ) => void
   setAvailableEvents: (events: EventContextOption[]) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void

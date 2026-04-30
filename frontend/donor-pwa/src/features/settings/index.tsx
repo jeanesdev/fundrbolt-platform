@@ -1,8 +1,8 @@
-import { BottomNav } from '@/components/layout/bottom-nav'
-import { useTabSwipe } from '@/hooks/use-tab-swipe'
-import { useEventContextStore } from '@/stores/event-context-store'
 import { Outlet, useLocation, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { useTabSwipe } from '@/hooks/use-tab-swipe'
+import { BottomNav } from '@/components/layout/bottom-nav'
 
 const SETTINGS_TABS = [
   '/settings',
@@ -16,6 +16,25 @@ export function Settings() {
   const navigate = useNavigate()
   const pathname = useLocation({ select: (l) => l.pathname })
   const selectedEventSlug = useEventContextStore((s) => s.selectedEventSlug)
+
+  const goBackFromSettings = () => {
+    const donateNowSlug = sessionStorage.getItem(
+      'settings:return-donate-now-slug'
+    )
+    if (donateNowSlug) {
+      sessionStorage.removeItem('settings:return-donate-now-slug')
+      void navigate({
+        to: '/npo/$slug/donate-now',
+        params: { slug: donateNowSlug },
+      })
+      return
+    }
+
+    void navigate({
+      to: selectedEventSlug ? '/events/$slug' : '/home',
+      params: selectedEventSlug ? { slug: selectedEventSlug } : undefined,
+    })
+  }
 
   const currentIndex = SETTINGS_TABS.indexOf(
     pathname as (typeof SETTINGS_TABS)[number]
@@ -40,19 +59,10 @@ export function Settings() {
   return (
     <div className='bg-background flex min-h-screen flex-col'>
       {/* Compact header with back button */}
-      <header className='bg-background/95 sticky top-0 z-50 flex min-h-14 items-center border-b pt-safe-top backdrop-blur'>
+      <header className='bg-background/95 pt-safe-top sticky top-0 z-50 flex min-h-14 items-center border-b backdrop-blur'>
         <div className='flex w-full items-center px-4'>
           <button
-            onClick={() =>
-              void navigate({
-                to: selectedEventSlug
-                  ? '/events/$slug'
-                  : '/home',
-                params: selectedEventSlug
-                  ? { slug: selectedEventSlug }
-                  : undefined,
-              })
-            }
+            onClick={goBackFromSettings}
             className='text-muted-foreground hover:text-foreground flex items-center gap-1'
             aria-label='Back to event'
           >

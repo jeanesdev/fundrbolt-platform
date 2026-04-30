@@ -1,3 +1,6 @@
+import { createFileRoute } from '@tanstack/react-router'
+import { KeyRound } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
 import {
   Card,
   CardContent,
@@ -6,12 +9,11 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { PasswordChangeForm } from '@/features/settings/account/components/password-change-form'
-import { useAuthStore } from '@/stores/auth-store'
-import { createFileRoute } from '@tanstack/react-router'
-import { KeyRound } from 'lucide-react'
 
 function SettingsPassword() {
-  const hasLocalPassword = useAuthStore((state) => state.user?.has_local_password)
+  const hasLocalPassword = useAuthStore(
+    (state) => state.user?.has_local_password
+  )
   const isRecoveryPasswordMode = hasLocalPassword === false
 
   return (
@@ -20,7 +22,7 @@ function SettingsPassword() {
         <h3 className='text-lg font-medium'>
           {isRecoveryPasswordMode ? 'Set Recovery Password' : 'Change Password'}
         </h3>
-        <p className='text-sm text-muted-foreground'>
+        <p className='text-muted-foreground text-sm'>
           {isRecoveryPasswordMode
             ? 'Create a recovery password so you can sign in if OAuth is unavailable.'
             : 'Update your password to keep your account secure'}

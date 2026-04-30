@@ -2,7 +2,6 @@
  * SortableSponsorCard
  * Wraps SponsorCard with drag-and-drop functionality using dnd-kit
  */
-
 import type { Sponsor } from '@/types/sponsor'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -37,11 +36,7 @@ export function SortableSponsorCard({
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <SponsorCard
-        sponsor={sponsor}
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
+      <SponsorCard sponsor={sponsor} onEdit={onEdit} onDelete={onDelete} />
     </div>
   )
 }

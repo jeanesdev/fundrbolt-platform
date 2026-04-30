@@ -9,13 +9,11 @@
  * Fallback: If the iframe takes longer than 30 seconds to interact with,
  * an "Open in browser" link is shown.
  */
-
-import { AlertCircle, ExternalLink, Loader2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-
+import type { HpfCompletePayload } from '@/types/payment'
+import { AlertCircle, ExternalLink, Loader2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import type { HpfCompletePayload } from '@/types/payment'
 
 export interface HpfIframeProps {
   /** The HPF URL returned by POST /payments/session */
@@ -65,7 +63,8 @@ export function HpfIframe({
       }
 
       const data = event.data as Partial<HpfCompletePayload>
-      if (data?.source !== 'fundrbolt-hpf' || data?.type !== 'hpf_complete') return
+      if (data?.source !== 'fundrbolt-hpf' || data?.type !== 'hpf_complete')
+        return
 
       onCompleteRef.current(data as HpfCompletePayload)
     }
@@ -91,7 +90,8 @@ export function HpfIframe({
   }
 
   function handleError() {
-    const msg = 'Payment form failed to load. Please try again or use the link below.'
+    const msg =
+      'Payment form failed to load. Please try again or use the link below.'
     setLoadError(msg)
     setIsLoading(false)
     setShowFallback(true)
@@ -101,7 +101,7 @@ export function HpfIframe({
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
       {isLoading && (
-        <div className='flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground'>
+        <div className='text-muted-foreground flex items-center justify-center gap-2 py-8 text-sm'>
           <Loader2 className='h-4 w-4 animate-spin' />
           Loading secure payment form…
         </div>

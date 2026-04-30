@@ -9,19 +9,24 @@
  * - Delete button with a confirmation step (warns about outstanding balance)
  * - "Add card" callback button
  */
-
-import { AlertTriangle, CreditCard, Loader2, PlusCircle, Star, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import type { PaymentProfile } from '@/types/payment'
+import {
+  AlertTriangle,
+  CreditCard,
+  Loader2,
+  PlusCircle,
+  Star,
+  Trash2,
+} from 'lucide-react'
 import {
   deletePaymentProfile,
   setDefaultPaymentProfile,
 } from '@/lib/api/payments'
-import type { PaymentProfile } from '@/types/payment'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -35,7 +40,10 @@ function isExpiringSoon(month: number, year: number): boolean {
   const now = new Date()
   const expiry = new Date(year, month - 1, 1)
   const threeMonths = new Date(now.getFullYear(), now.getMonth() + 3, 1)
-  return expiry >= new Date(now.getFullYear(), now.getMonth(), 1) && expiry <= threeMonths
+  return (
+    expiry >= new Date(now.getFullYear(), now.getMonth(), 1) &&
+    expiry <= threeMonths
+  )
 }
 
 function cardBrandIcon(brand: string): string {
@@ -58,14 +66,21 @@ interface CardRowProps {
   isSettingDefault: boolean
 }
 
-function CardRow({ profile, npoId, onDeleted, onSetDefault, isSettingDefault }: CardRowProps) {
+function CardRow({
+  profile,
+  npoId,
+  onDeleted,
+  onSetDefault,
+  isSettingDefault,
+}: CardRowProps) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteWarning, setDeleteWarning] = useState<string | null>(null)
 
   const expired = isExpired(profile.card_expiry_month, profile.card_expiry_year)
   const expiringSoon =
-    !expired && isExpiringSoon(profile.card_expiry_month, profile.card_expiry_year)
+    !expired &&
+    isExpiringSoon(profile.card_expiry_month, profile.card_expiry_year)
 
   async function handleDeleteConfirm() {
     setIsDeleting(true)
@@ -83,7 +98,11 @@ function CardRow({ profile, npoId, onDeleted, onSetDefault, isSettingDefault }: 
   return (
     <Card className={`transition-opacity ${isDeleting ? 'opacity-50' : ''}`}>
       <CardContent className='flex items-start gap-3 p-4'>
-        <span className='mt-0.5 text-2xl' role='img' aria-label={profile.card_brand}>
+        <span
+          className='mt-0.5 text-2xl'
+          role='img'
+          aria-label={profile.card_brand}
+        >
           {cardBrandIcon(profile.card_brand)}
         </span>
 
@@ -93,7 +112,10 @@ function CardRow({ profile, npoId, onDeleted, onSetDefault, isSettingDefault }: 
               {profile.card_brand} •••• {profile.card_last4}
             </span>
             {profile.is_default && (
-              <Badge variant='secondary' className='flex items-center gap-1 text-xs'>
+              <Badge
+                variant='secondary'
+                className='flex items-center gap-1 text-xs'
+              >
                 <Star className='h-3 w-3 fill-yellow-400 text-yellow-400' />
                 Default
               </Badge>
@@ -104,12 +126,15 @@ function CardRow({ profile, npoId, onDeleted, onSetDefault, isSettingDefault }: 
               </Badge>
             )}
             {expiringSoon && !expired && (
-              <Badge variant='outline' className='border-amber-300 text-xs text-amber-700'>
+              <Badge
+                variant='outline'
+                className='border-amber-300 text-xs text-amber-700'
+              >
                 Expiring soon
               </Badge>
             )}
           </div>
-          <p className='mt-0.5 text-sm text-muted-foreground'>
+          <p className='text-muted-foreground mt-0.5 text-sm'>
             Expires {String(profile.card_expiry_month).padStart(2, '0')}/
             {String(profile.card_expiry_year).slice(-2)}
             {profile.billing_name && ` · ${profile.billing_name}`}
@@ -122,8 +147,10 @@ function CardRow({ profile, npoId, onDeleted, onSetDefault, isSettingDefault }: 
           )}
 
           {confirmDelete && (
-            <div className='mt-3 rounded-md border border-destructive/30 bg-destructive/5 p-3'>
-              <p className='text-sm font-medium text-destructive'>Remove this card?</p>
+            <div className='border-destructive/30 bg-destructive/5 mt-3 rounded-md border p-3'>
+              <p className='text-destructive text-sm font-medium'>
+                Remove this card?
+              </p>
               {deleteWarning && (
                 <p className='mt-1 text-sm text-amber-700'>⚠ {deleteWarning}</p>
               )}
@@ -218,8 +245,8 @@ export function SavedCardList({
       const updated = await setDefaultPaymentProfile(profileId, npoId)
       updateProfiles(
         profiles.map((p) =>
-          p.id === updated.id ? updated : { ...p, is_default: false },
-        ),
+          p.id === updated.id ? updated : { ...p, is_default: false }
+        )
       )
     } finally {
       setSettingDefaultId(null)
@@ -235,10 +262,10 @@ export function SavedCardList({
   if (profiles.length === 0) {
     return (
       <div className='flex flex-col items-center gap-4 rounded-lg border border-dashed p-8 text-center'>
-        <CreditCard className='h-10 w-10 text-muted-foreground/50' />
+        <CreditCard className='text-muted-foreground/50 h-10 w-10' />
         <div>
           <p className='font-medium'>No saved cards</p>
-          <p className='text-sm text-muted-foreground'>
+          <p className='text-muted-foreground text-sm'>
             Add a card to speed up future payments.
           </p>
         </div>
@@ -270,7 +297,12 @@ export function SavedCardList({
         />
       ))}
 
-      <Button variant='outline' size='sm' className='mt-1 self-start' onClick={onAddCard}>
+      <Button
+        variant='outline'
+        size='sm'
+        className='mt-1 self-start'
+        onClick={onAddCard}
+      >
         <PlusCircle className='mr-2 h-4 w-4' />
         Add another card
       </Button>

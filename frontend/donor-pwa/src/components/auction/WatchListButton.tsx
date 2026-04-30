@@ -7,21 +7,20 @@
  * - Optimistic updates with error rollback
  * - Event branding support
  */
-
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import watchListService from '@/services/watchlistService';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Heart, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import watchListService from '@/services/watchlistService'
+import { Heart, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 export interface WatchListButtonProps {
-  eventId: string;
-  itemId: string;
-  isWatching: boolean;
-  onToggle?: (isWatching: boolean) => void;
-  variant?: 'default' | 'icon';
-  className?: string;
+  eventId: string
+  itemId: string
+  isWatching: boolean
+  onToggle?: (isWatching: boolean) => void
+  variant?: 'default' | 'icon'
+  className?: string
 }
 
 /**
@@ -35,70 +34,70 @@ export function WatchListButton({
   variant = 'icon',
   className,
 }: WatchListButtonProps) {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
 
   // Add to watch list mutation
   const addMutation = useMutation({
     mutationFn: () => watchListService.addToWatchList(eventId, itemId),
     onMutate: async () => {
       // Optimistic update
-      await queryClient.cancelQueries({ queryKey: ['watchlist', eventId] });
-      const previousData = queryClient.getQueryData(['watchlist', eventId]);
-      onToggle?.(true);
-      return { previousData };
+      await queryClient.cancelQueries({ queryKey: ['watchlist', eventId] })
+      const previousData = queryClient.getQueryData(['watchlist', eventId])
+      onToggle?.(true)
+      return { previousData }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['watchlist', eventId] });
-      queryClient.invalidateQueries({ queryKey: ['auction-items', eventId] });
-      toast.success('Added to watch list');
+      queryClient.invalidateQueries({ queryKey: ['watchlist', eventId] })
+      queryClient.invalidateQueries({ queryKey: ['auction-items', eventId] })
+      toast.success('Added to watch list')
     },
     onError: (_error, _variables, context) => {
       // Rollback on error
       if (context?.previousData) {
-        queryClient.setQueryData(['watchlist', eventId], context.previousData);
+        queryClient.setQueryData(['watchlist', eventId], context.previousData)
       }
-      onToggle?.(false);
-      toast.error('Failed to add to watch list');
+      onToggle?.(false)
+      toast.error('Failed to add to watch list')
     },
-  });
+  })
 
   // Remove from watch list mutation
   const removeMutation = useMutation({
     mutationFn: () => watchListService.removeFromWatchList(eventId, itemId),
     onMutate: async () => {
       // Optimistic update
-      await queryClient.cancelQueries({ queryKey: ['watchlist', eventId] });
-      const previousData = queryClient.getQueryData(['watchlist', eventId]);
-      onToggle?.(false);
-      return { previousData };
+      await queryClient.cancelQueries({ queryKey: ['watchlist', eventId] })
+      const previousData = queryClient.getQueryData(['watchlist', eventId])
+      onToggle?.(false)
+      return { previousData }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['watchlist', eventId] });
-      queryClient.invalidateQueries({ queryKey: ['auction-items', eventId] });
-      toast.success('Removed from watch list');
+      queryClient.invalidateQueries({ queryKey: ['watchlist', eventId] })
+      queryClient.invalidateQueries({ queryKey: ['auction-items', eventId] })
+      toast.success('Removed from watch list')
     },
     onError: (_error, _variables, context) => {
       // Rollback on error
       if (context?.previousData) {
-        queryClient.setQueryData(['watchlist', eventId], context.previousData);
+        queryClient.setQueryData(['watchlist', eventId], context.previousData)
       }
-      onToggle?.(true);
-      toast.error('Failed to remove from watch list');
+      onToggle?.(true)
+      toast.error('Failed to remove from watch list')
     },
-  });
+  })
 
-  const isLoading = addMutation.isPending || removeMutation.isPending;
+  const isLoading = addMutation.isPending || removeMutation.isPending
 
   const handleToggle = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent parent click handlers
-    if (isLoading) return;
+    e.stopPropagation() // Prevent parent click handlers
+    if (isLoading) return
 
     if (initialIsWatching) {
-      removeMutation.mutate();
+      removeMutation.mutate()
     } else {
-      addMutation.mutate();
+      addMutation.mutate()
     }
-  };
+  }
 
   if (variant === 'icon') {
     return (
@@ -106,24 +105,29 @@ export function WatchListButton({
         onClick={handleToggle}
         disabled={isLoading}
         className={cn(
-          'rounded-full p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+          'rounded-full p-2 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
           'disabled:pointer-events-none disabled:opacity-50',
           initialIsWatching
             ? 'bg-red-100 hover:bg-red-200'
             : 'bg-gray-100 hover:bg-gray-200',
           className
         )}
-        aria-label={initialIsWatching ? 'Remove from watch list' : 'Add to watch list'}
+        aria-label={
+          initialIsWatching ? 'Remove from watch list' : 'Add to watch list'
+        }
       >
         {isLoading ? (
-          <Loader2 className="h-5 w-5 animate-spin text-gray-600" />
+          <Loader2 className='h-5 w-5 animate-spin text-gray-600' />
         ) : (
           <Heart
-            className={cn('h-5 w-5 transition-colors', initialIsWatching ? 'fill-red-500 text-red-500' : 'text-gray-600')}
+            className={cn(
+              'h-5 w-5 transition-colors',
+              initialIsWatching ? 'fill-red-500 text-red-500' : 'text-gray-600'
+            )}
           />
         )}
       </button>
-    );
+    )
   }
 
   return (
@@ -131,19 +135,19 @@ export function WatchListButton({
       onClick={handleToggle}
       disabled={isLoading}
       variant={initialIsWatching ? 'default' : 'outline'}
-      size="sm"
+      size='sm'
       className={className}
     >
       {isLoading ? (
-        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
       ) : (
         <Heart
-          className={cn('h-4 w-4 mr-2', initialIsWatching && 'fill-current')}
+          className={cn('mr-2 h-4 w-4', initialIsWatching && 'fill-current')}
         />
       )}
       {initialIsWatching ? 'Watching' : 'Watch'}
     </Button>
-  );
+  )
 }
 
-export default WatchListButton;
+export default WatchListButton

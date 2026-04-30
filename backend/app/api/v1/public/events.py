@@ -27,6 +27,7 @@ def _build_event_summary_response(event: Any) -> EventSummaryResponse:
         id=event.id,
         npo_id=event.npo_id,
         npo_name=getattr(getattr(event, "npo", None), "name", None),
+        npo_slug=getattr(getattr(event, "npo", None), "slug", None),
         name=event.name,
         slug=event.slug,
         tagline=event.tagline,
@@ -104,6 +105,7 @@ async def get_public_event_by_slug(
 
     response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
     response_dict["npo_name"] = event.npo.name if event.npo else None
+    response_dict["npo_slug"] = event.npo.slug if event.npo else None
     add_sas_urls_to_event_media(response_dict, list(event.media or []))
     return EventDetailResponse(**response_dict)
 

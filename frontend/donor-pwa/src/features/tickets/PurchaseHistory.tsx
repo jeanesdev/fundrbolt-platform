@@ -2,14 +2,7 @@
  * PurchaseHistory component — shows the user's ticket purchase history
  * with pagination.
  */
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  getPurchaseHistory,
-  type PurchaseHistoryItem,
-} from '@/lib/api/ticket-purchases'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import {
@@ -20,7 +13,14 @@ import {
   Tag,
   Ticket,
 } from 'lucide-react'
-import { useState } from 'react'
+import {
+  getPurchaseHistory,
+  type PurchaseHistoryItem,
+} from '@/lib/api/ticket-purchases'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
   completed: 'Paid',

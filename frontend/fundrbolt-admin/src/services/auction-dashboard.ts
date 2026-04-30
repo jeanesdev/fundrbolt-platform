@@ -112,7 +112,7 @@ class AuctionDashboardService {
   async getSummary(params: AuctionDashboardParams = {}) {
     const response = await apiClient.get<AuctionDashboardSummary>(
       '/admin/auction-dashboard/summary',
-      { params },
+      { params }
     )
     return response.data
   }
@@ -120,7 +120,7 @@ class AuctionDashboardService {
   async getItems(params: AuctionItemsParams = {}) {
     const response = await apiClient.get<AuctionItemsListResponse>(
       '/admin/auction-dashboard/items',
-      { params },
+      { params }
     )
     return response.data
   }
@@ -128,14 +128,14 @@ class AuctionDashboardService {
   async getCharts(params: AuctionDashboardParams = {}) {
     const response = await apiClient.get<AuctionDashboardCharts>(
       '/admin/auction-dashboard/charts',
-      { params },
+      { params }
     )
     return response.data
   }
 
   async getItemDetail(itemId: string) {
     const response = await apiClient.get<AuctionItemDetailResponse>(
-      `/admin/auction-dashboard/items/${itemId}`,
+      `/admin/auction-dashboard/items/${itemId}`
     )
     return response.data
   }
@@ -144,7 +144,8 @@ class AuctionDashboardService {
     const searchParams = new URLSearchParams()
     if (params.event_id) searchParams.set('event_id', params.event_id)
     if (params.npo_id) searchParams.set('npo_id', params.npo_id)
-    if (params.auction_type) searchParams.set('auction_type', params.auction_type)
+    if (params.auction_type)
+      searchParams.set('auction_type', params.auction_type)
     if (params.category) searchParams.set('category', params.category)
     if (params.search) searchParams.set('search', params.search)
     if (params.sort_by) searchParams.set('sort_by', params.sort_by)

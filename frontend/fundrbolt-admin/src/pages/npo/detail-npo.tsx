@@ -2,25 +2,9 @@
  * NPO Detail Page
  * Displays detailed information about a specific NPO with edit and delete actions
  */
-import { ApplicationReviewDialog } from '@/components/admin/application-review-dialog'
-import { ApplicationStatusBadge } from '@/components/npo/application-status-badge'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { Skeleton } from '@/components/ui/skeleton'
-import { MemberList } from '@/features/npo-management/components/MemberList'
-import { PendingInvitations } from '@/features/npo-management/components/PendingInvitations'
-import { StaffInvitation } from '@/features/npo-management/components/StaffInvitation'
-import apiClient from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
-import { useNPOStore } from '@/stores/npo-store'
+import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import type { NPOApplication } from '@/types/npo'
 import {
   type CredentialRead,
@@ -28,8 +12,6 @@ import {
   isConfigured,
 } from '@/types/payments'
 import { colors as brandColors } from '@fundrbolt/shared/assets'
-import { useQuery } from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
   ArrowLeft,
   Building2,
@@ -46,8 +28,27 @@ import {
   Trash2,
   Users,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { useNPOStore } from '@/stores/npo-store'
+import apiClient from '@/lib/axios'
+import { useNpoContext } from '@/hooks/use-npo-context'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ApplicationReviewDialog } from '@/components/admin/application-review-dialog'
+import { ApplicationStatusBadge } from '@/components/npo/application-status-badge'
+import { MemberList } from '@/features/npo-management/components/MemberList'
+import { PendingInvitations } from '@/features/npo-management/components/PendingInvitations'
+import { StaffInvitation } from '@/features/npo-management/components/StaffInvitation'
 
 // Helper to get full logo URL
 function getLogoUrl(logoPath: string | null): string | null {
@@ -97,8 +98,12 @@ const statusLabels = {
   rejected: 'Rejected',
 } as const
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 export default function NpoDetailPage() {
   const { npoId } = useParams({ from: '/_authenticated/npos/$npoId/' })
+  const { availableNpos } = useNpoContext()
   const navigate = useNavigate()
   const { currentNPO, nposLoading, nposError, loadNPOById, deleteNPO } =
     useNPOStore()
@@ -106,19 +111,25 @@ export default function NpoDetailPage() {
   const [showReviewDialog, setShowReviewDialog] = useState(false)
   const showPaymentSettings = user?.role === 'super_admin'
 
+  const isUuidParam = UUID_PATTERN.test(npoId)
+  const resolvedNpoId = isUuidParam
+    ? npoId
+    : (availableNpos.find((npo) => npo.slug === npoId)?.id ?? null)
+  const npoIdForApi = resolvedNpoId ?? (isUuidParam ? npoId : null)
+
   const {
     data: credentialResponse,
     isLoading: paymentSettingsLoading,
     error: paymentSettingsError,
   } = useQuery({
-    queryKey: ['npo-payment-credentials', npoId],
+    queryKey: ['npo-payment-credentials', npoIdForApi],
     queryFn: async () => {
       const res = await apiClient.get<CredentialResponse>(
-        `/admin/npos/${npoId}/payment-credentials`
+        `/admin/npos/${npoIdForApi}/payment-credentials`
       )
       return res.data
     },
-    enabled: showPaymentSettings,
+    enabled: showPaymentSettings && !!npoIdForApi,
   })
 
   const existingCredential: CredentialRead | null =
@@ -127,21 +138,21 @@ export default function NpoDetailPage() {
       : null
 
   useEffect(() => {
-    if (npoId) {
-      loadNPOById(npoId)
+    if (npoIdForApi) {
+      loadNPOById(npoIdForApi)
     }
-  }, [npoId, loadNPOById])
+  }, [npoIdForApi, loadNPOById])
 
   const handleReviewComplete = async () => {
     setShowReviewDialog(false)
     // Reload the NPO to get updated status
-    if (npoId) {
-      await loadNPOById(npoId)
+    if (npoIdForApi) {
+      await loadNPOById(npoIdForApi)
     }
   }
 
   const handleDelete = async () => {
-    if (!npoId) return
+    if (!npoIdForApi) return
 
     if (
       !confirm(
@@ -152,7 +163,7 @@ export default function NpoDetailPage() {
     }
 
     try {
-      await deleteNPO(npoId)
+      await deleteNPO(npoIdForApi)
       toast.success('Organization deleted successfully')
       navigate({ to: '/npos' })
     } catch (_error) {
@@ -188,6 +199,8 @@ export default function NpoDetailPage() {
 
   // Not found state
   if (!currentNPO) {
+    const isUnresolvableRouteParam = !npoIdForApi
+
     return (
       <div className='container mx-auto px-2 py-3 sm:px-6 sm:py-6'>
         <Card>
@@ -197,8 +210,9 @@ export default function NpoDetailPage() {
               Organization not found
             </h3>
             <p className='text-muted-foreground mb-4 text-sm'>
-              The organization you're looking for doesn't exist or has been
-              deleted.
+              {isUnresolvableRouteParam
+                ? 'This organization link is invalid or no longer available.'
+                : "The organization you're looking for doesn't exist or has been deleted."}
             </p>
             <Link to='/npos'>
               <Button>
@@ -213,6 +227,7 @@ export default function NpoDetailPage() {
   }
 
   const npo = currentNPO
+  const detailNpoId = npo.id
 
   return (
     <div className='container mx-auto space-y-4 px-2 py-3 sm:space-y-6 sm:px-6 sm:py-6'>
@@ -254,7 +269,7 @@ export default function NpoDetailPage() {
           {user?.role === 'super_admin' && (
             <Link
               to='/npos/$npoId/payment-settings'
-              params={{ npoId }}
+              params={{ npoId: detailNpoId }}
               className='flex-1 md:flex-none'
             >
               <Button variant='outline' className='w-full'>
@@ -265,7 +280,7 @@ export default function NpoDetailPage() {
           )}
           <Link
             to='/npos/$npoId/donate-now'
-            params={{ npoId }}
+            params={{ npoId: detailNpoId }}
             search={{ tab: 'config' }}
             className='flex-1 md:flex-none'
           >
@@ -276,7 +291,7 @@ export default function NpoDetailPage() {
           </Link>
           <Link
             to='/npos/$npoId/edit'
-            params={{ npoId }}
+            params={{ npoId: detailNpoId }}
             search={{ tab: 'details' }}
             className='flex-1 md:flex-none'
           >
@@ -305,7 +320,9 @@ export default function NpoDetailPage() {
           {/* Application Status Badge (only for draft NPOs) */}
           <ApplicationStatusBadge
             npo={npo}
-            onApplicationSubmitted={() => loadNPOById(npoId)}
+            onApplicationSubmitted={() =>
+              npoIdForApi && loadNPOById(npoIdForApi)
+            }
           />
 
           {npo.status === 'draft' && <Separator />}
@@ -551,13 +568,13 @@ export default function NpoDetailPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-6'>
-          <StaffInvitation npoId={npoId} />
+          <StaffInvitation npoId={detailNpoId} />
           <Separator />
-          <PendingInvitations npoId={npoId} />
+          <PendingInvitations npoId={detailNpoId} />
           <Separator />
           <div className='space-y-4'>
             <h3 className='text-lg font-semibold'>Current Members</h3>
-            <MemberList npoId={npoId} canManageMembers={true} />
+            <MemberList npoId={detailNpoId} canManageMembers={true} />
           </div>
         </CardContent>
       </Card>

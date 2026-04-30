@@ -1,5 +1,5 @@
-import { useEventContext } from '@/hooks/use-event-context'
 import { createFileRoute, Navigate } from '@tanstack/react-router'
+import { useEventContext } from '@/hooks/use-event-context'
 
 /**
  * Events Index Route
@@ -10,12 +10,12 @@ function EventsIndexPage() {
 
   // Redirect to selected event
   if (selectedEventSlug) {
-    return <Navigate to="/events/$slug" params={{ slug: selectedEventSlug }} />
+    return <Navigate to='/events/$slug' params={{ slug: selectedEventSlug }} />
   }
 
   // No events - redirect to home
   if (!hasEvents) {
-    return <Navigate to="/home" />
+    return <Navigate to='/home' />
   }
 
   return null

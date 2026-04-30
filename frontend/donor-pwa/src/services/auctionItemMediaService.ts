@@ -1,4 +1,3 @@
-import apiClient from '@/lib/axios';
 import type {
   AuctionItemMedia,
   MediaListResponse,
@@ -6,7 +5,8 @@ import type {
   MediaUploadConfirmRequest,
   MediaUploadRequest,
   MediaUploadResponse,
-} from '@/types/auction-item';
+} from '@/types/auction-item'
+import apiClient from '@/lib/axios'
 
 /**
  * Auction Item Media Service
@@ -24,8 +24,8 @@ class AuctionItemMediaService {
     const response = await apiClient.post<MediaUploadResponse>(
       `/events/${eventId}/auction-items/${itemId}/media/upload-url`,
       request
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -40,10 +40,10 @@ class AuctionItemMediaService {
         'Content-Type': file.type,
       },
       body: file,
-    });
+    })
 
     if (!response.ok) {
-      throw new Error(`Failed to upload file: ${response.statusText}`);
+      throw new Error(`Failed to upload file: ${response.statusText}`)
     }
   }
 
@@ -59,8 +59,8 @@ class AuctionItemMediaService {
     const response = await apiClient.post<AuctionItemMedia>(
       `/events/${eventId}/auction-items/${itemId}/media/confirm`,
       request
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -79,10 +79,10 @@ class AuctionItemMediaService {
       content_type: file.type,
       file_size: file.size,
       media_type: mediaType,
-    });
+    })
 
     // Step 2: Upload to Azure Blob Storage
-    await this.uploadToBlob(uploadResponse.upload_url, file);
+    await this.uploadToBlob(uploadResponse.upload_url, file)
 
     // Step 3: Confirm upload
     return await this.confirmUpload(eventId, itemId, {
@@ -92,7 +92,7 @@ class AuctionItemMediaService {
       content_type: file.type,
       media_type: mediaType,
       video_url: videoUrl || null,
-    });
+    })
   }
 
   /**
@@ -101,8 +101,8 @@ class AuctionItemMediaService {
   async listMedia(eventId: string, itemId: string): Promise<MediaListResponse> {
     const response = await apiClient.get<MediaListResponse>(
       `/events/${eventId}/auction-items/${itemId}/media`
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -116,8 +116,8 @@ class AuctionItemMediaService {
     const response = await apiClient.patch<MediaListResponse>(
       `/events/${eventId}/auction-items/${itemId}/media/reorder`,
       request
-    );
-    return response.data;
+    )
+    return response.data
   }
 
   /**
@@ -130,9 +130,9 @@ class AuctionItemMediaService {
   ): Promise<void> {
     await apiClient.delete(
       `/events/${eventId}/auction-items/${itemId}/media/${mediaId}`
-    );
+    )
   }
 }
 
-export const auctionItemMediaService = new AuctionItemMediaService();
-export default auctionItemMediaService;
+export const auctionItemMediaService = new AuctionItemMediaService()
+export default auctionItemMediaService

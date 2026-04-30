@@ -1,7 +1,6 @@
 /**
  * Check-in API client for donor PWA
  */
-
 import axiosClient from '../axios'
 
 export interface CheckInLookupRequest {
@@ -58,16 +57,25 @@ export const checkinApi = {
   /**
    * Lookup registration by confirmation code or email
    */
-  lookup: async (request: CheckInLookupRequest): Promise<CheckInLookupResponse> => {
-    const response = await axiosClient.post<CheckInLookupResponse>('/checkin/lookup', request)
+  lookup: async (
+    request: CheckInLookupRequest
+  ): Promise<CheckInLookupResponse> => {
+    const response = await axiosClient.post<CheckInLookupResponse>(
+      '/checkin/lookup',
+      request
+    )
     return response.data
   },
 
   /**
    * Check in a registration
    */
-  checkInRegistration: async (registrationId: string): Promise<CheckInResponse> => {
-    const response = await axiosClient.post<CheckInResponse>(`/checkin/registrations/${registrationId}`)
+  checkInRegistration: async (
+    registrationId: string
+  ): Promise<CheckInResponse> => {
+    const response = await axiosClient.post<CheckInResponse>(
+      `/checkin/registrations/${registrationId}`
+    )
     return response.data
   },
 
@@ -75,15 +83,21 @@ export const checkinApi = {
    * Check in a guest
    */
   checkInGuest: async (guestId: string): Promise<CheckInResponse> => {
-    const response = await axiosClient.post<CheckInResponse>(`/checkin/guests/${guestId}`)
+    const response = await axiosClient.post<CheckInResponse>(
+      `/checkin/guests/${guestId}`
+    )
     return response.data
   },
 
   /**
    * Undo check-in for a registration
    */
-  undoCheckInRegistration: async (registrationId: string): Promise<CheckInResponse> => {
-    const response = await axiosClient.delete<CheckInResponse>(`/checkin/registrations/${registrationId}`)
+  undoCheckInRegistration: async (
+    registrationId: string
+  ): Promise<CheckInResponse> => {
+    const response = await axiosClient.delete<CheckInResponse>(
+      `/checkin/registrations/${registrationId}`
+    )
     return response.data
   },
 
@@ -91,7 +105,9 @@ export const checkinApi = {
    * Undo check-in for a guest
    */
   undoCheckInGuest: async (guestId: string): Promise<CheckInResponse> => {
-    const response = await axiosClient.delete<CheckInResponse>(`/checkin/guests/${guestId}`)
+    const response = await axiosClient.delete<CheckInResponse>(
+      `/checkin/guests/${guestId}`
+    )
     return response.data
   },
 }

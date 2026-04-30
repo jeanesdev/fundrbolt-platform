@@ -4,8 +4,13 @@
  * Provides event branding state across the event detail routes.
  * Manages CSS variable injection for dynamic theming.
  */
-
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react'
 
 export interface EventBranding {
   primary_color?: string | null
@@ -20,7 +25,9 @@ interface EventBrandingContextValue {
   clearBranding: () => void
 }
 
-const EventBrandingContext = createContext<EventBrandingContextValue | undefined>(undefined)
+const EventBrandingContext = createContext<
+  EventBrandingContextValue | undefined
+>(undefined)
 
 /**
  * Convert hex color (#RRGGBB) to RGB tuple (r, g, b)
@@ -45,7 +52,9 @@ interface EventBrandingProviderProps {
   children: ReactNode
 }
 
-export function EventBrandingProvider({ children }: EventBrandingProviderProps) {
+export function EventBrandingProvider({
+  children,
+}: EventBrandingProviderProps) {
   const [branding, setBrandingState] = useState<EventBranding | null>(null)
 
   const setBranding = (newBranding: EventBranding | null) => {
@@ -89,7 +98,9 @@ export function EventBrandingProvider({ children }: EventBrandingProviderProps) 
   }, [])
 
   return (
-    <EventBrandingContext.Provider value={{ branding, setBranding, clearBranding }}>
+    <EventBrandingContext.Provider
+      value={{ branding, setBranding, clearBranding }}
+    >
       {children}
     </EventBrandingContext.Provider>
   )
@@ -101,7 +112,9 @@ export function EventBrandingProvider({ children }: EventBrandingProviderProps) 
 export function useEventBrandingContext() {
   const context = useContext(EventBrandingContext)
   if (context === undefined) {
-    throw new Error('useEventBrandingContext must be used within EventBrandingProvider')
+    throw new Error(
+      'useEventBrandingContext must be used within EventBrandingProvider'
+    )
   }
   return context
 }

@@ -1,7 +1,7 @@
 /**
  * NotificationItem — single notification row with swipe-to-reveal delete
  */
-
+import { useCallback, useRef, useState } from 'react'
 import type { NotificationData } from '@/services/notification-service'
 import {
   Bell,
@@ -15,7 +15,6 @@ import {
   Trash2,
   Trophy,
 } from 'lucide-react'
-import { useCallback, useRef, useState } from 'react'
 
 /**
  * Render the appropriate icon for a notification type
@@ -99,15 +98,12 @@ export function NotificationItem({
   const touchStartY = useRef(0)
   const swiping = useRef(false)
 
-  const onTouchStart = useCallback(
-    (e: React.TouchEvent) => {
-      touchStartX.current = e.touches[0].clientX
-      touchStartY.current = e.touches[0].clientY
-      swiping.current = false
-      setAnimating(false)
-    },
-    [],
-  )
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+    swiping.current = false
+    setAnimating(false)
+  }, [])
 
   const onTouchMove = useCallback(
     (e: React.TouchEvent) => {
@@ -123,7 +119,10 @@ export function NotificationItem({
 
       if (revealed) {
         // Already revealed — allow swiping back right
-        const newOffset = Math.min(0, Math.max(-DELETE_WIDTH, dx - DELETE_WIDTH))
+        const newOffset = Math.min(
+          0,
+          Math.max(-DELETE_WIDTH, dx - DELETE_WIDTH)
+        )
         setOffsetX(newOffset)
       } else {
         // Clamp to only allow leftward swipe
@@ -131,7 +130,7 @@ export function NotificationItem({
         setOffsetX(newOffset)
       }
     },
-    [revealed],
+    [revealed]
   )
 
   const onTouchEnd = useCallback(() => {
@@ -156,17 +155,17 @@ export function NotificationItem({
       e.stopPropagation()
       onDelete(notification.id)
     },
-    [notification.id, onDelete],
+    [notification.id, onDelete]
   )
 
   return (
     <div className='relative overflow-hidden'>
       {/* Delete action behind the item */}
-      <div className='absolute inset-y-0 right-0 flex w-[72px] items-center justify-center bg-destructive'>
+      <div className='bg-destructive absolute inset-y-0 right-0 flex w-[72px] items-center justify-center'>
         <button
           type='button'
           onClick={handleDelete}
-          className='flex h-full w-full items-center justify-center text-destructive-foreground'
+          className='text-destructive-foreground flex h-full w-full items-center justify-center'
           aria-label='Delete notification'
         >
           <Trash2 className='h-5 w-5' />
@@ -175,7 +174,7 @@ export function NotificationItem({
 
       {/* Sliding content */}
       <div
-        className='relative bg-background transition-transform duration-150 ease-out'
+        className='bg-background relative transition-transform duration-150 ease-out'
         style={{
           transform: `translateX(${offsetX}px)`,
           transitionDuration: animating ? '150ms' : '0ms',
@@ -188,8 +187,9 @@ export function NotificationItem({
         <button
           type='button'
           onClick={handleClick}
-          className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 ${!notification.is_read ? 'bg-primary/5' : ''
-            }`}
+          className={`hover:bg-muted/50 flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
+            !notification.is_read ? 'bg-primary/5' : ''
+          }`}
         >
           {/* Leading visual: thumbnail or icon */}
           {notification.data?.image_url ? (
@@ -217,10 +217,10 @@ export function NotificationItem({
                 <span className='mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500' />
               )}
             </div>
-            <p className='line-clamp-2 text-xs text-muted-foreground'>
+            <p className='text-muted-foreground line-clamp-2 text-xs'>
               {notification.body}
             </p>
-            <p className='mt-1 text-xs text-muted-foreground/70'>
+            <p className='text-muted-foreground/70 mt-1 text-xs'>
               {relativeTime(notification.created_at)}
             </p>
           </div>

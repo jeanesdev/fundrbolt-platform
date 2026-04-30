@@ -2,12 +2,11 @@
  * useNpoCreation hook
  * Hook for creating and managing NPO creation workflow
  */
-
-import { useNPOStore } from '@/stores/npo-store'
-import type { NPOCreateRequest } from '@/types/npo'
-import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import type { NPOCreateRequest } from '@/types/npo'
 import { toast } from 'sonner'
+import { useNPOStore } from '@/stores/npo-store'
 
 export function useNpoCreation() {
   const { createNPO, nposLoading, nposError } = useNPOStore()
@@ -28,8 +27,17 @@ export function useNpoCreation() {
     } catch (error: unknown) {
       // Extract error message from API response
       const errorMessage =
-        error instanceof Error && 'response' in error && typeof error.response === 'object' && error.response !== null && 'data' in error.response && typeof error.response.data === 'object' && error.response.data !== null && 'detail' in error.response.data
-          ? typeof error.response.data.detail === 'object' && error.response.data.detail !== null && 'message' in error.response.data.detail
+        error instanceof Error &&
+        'response' in error &&
+        typeof error.response === 'object' &&
+        error.response !== null &&
+        'data' in error.response &&
+        typeof error.response.data === 'object' &&
+        error.response.data !== null &&
+        'detail' in error.response.data
+          ? typeof error.response.data.detail === 'object' &&
+            error.response.data.detail !== null &&
+            'message' in error.response.data.detail
             ? String(error.response.data.detail.message)
             : typeof error.response.data.detail === 'string'
               ? error.response.data.detail

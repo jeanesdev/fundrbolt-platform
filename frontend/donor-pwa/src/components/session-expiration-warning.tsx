@@ -1,7 +1,7 @@
-import apiClient from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
-import { useRouter } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef } from 'react'
+import { useRouter } from '@tanstack/react-router'
+import { useAuthStore } from '@/stores/auth-store'
+import apiClient from '@/lib/axios'
 
 interface SessionExpirationWarningProps {
   /**
@@ -75,10 +75,19 @@ export function SessionExpirationWarning({
     if (!expiryTime) return
 
     const secondsUntilExpiry = Math.floor((expiryTime - Date.now()) / 1000)
-    if (secondsUntilExpiry <= autoRefreshThresholdSeconds && secondsUntilExpiry > 0) {
+    if (
+      secondsUntilExpiry <= autoRefreshThresholdSeconds &&
+      secondsUntilExpiry > 0
+    ) {
       void silentRefresh()
     }
-  }, [accessToken, autoRefreshThresholdSeconds, getTokenExpiry, refreshToken, silentRefresh])
+  }, [
+    accessToken,
+    autoRefreshThresholdSeconds,
+    getTokenExpiry,
+    refreshToken,
+    silentRefresh,
+  ])
 
   const trackActivity = useCallback(() => {
     const now = Date.now()
@@ -108,8 +117,13 @@ export function SessionExpirationWarning({
       'scroll',
     ]
 
-    activityEvents.forEach((e) => window.addEventListener(e, trackActivity, { passive: true }))
-    return () => activityEvents.forEach((e) => window.removeEventListener(e, trackActivity))
+    activityEvents.forEach((e) =>
+      window.addEventListener(e, trackActivity, { passive: true })
+    )
+    return () =>
+      activityEvents.forEach((e) =>
+        window.removeEventListener(e, trackActivity)
+      )
   }, [accessToken, refreshToken, trackActivity])
 
   // Automatically sign out after inactivity timeout

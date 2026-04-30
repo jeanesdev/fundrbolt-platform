@@ -4,7 +4,10 @@
  * Displays a warning modal 2 minutes before session expires,
  * allowing users to extend their session or logout gracefully.
  */
-
+import { useEffect, useState } from 'react'
+import { Clock } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { getRemainingSessionTime } from '@/lib/storage/tokens'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -14,10 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { getRemainingSessionTime } from '@/lib/storage/tokens'
-import { useAuthStore } from '@/stores/auth-store'
-import { Clock } from 'lucide-react'
-import { useEffect, useState } from 'react'
 
 const TWO_MINUTES_MS = 2 * 60 * 1000
 
@@ -103,33 +102,33 @@ export function SessionExpiryWarning() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className='sm:max-w-md'>
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <Clock className="h-6 w-6 text-warning" />
+          <div className='flex items-center gap-2'>
+            <Clock className='text-warning h-6 w-6' />
             <DialogTitle>Session Expiring Soon</DialogTitle>
           </div>
-          <DialogDescription className="space-y-2 pt-2">
+          <DialogDescription className='space-y-2 pt-2'>
             <p>Your session will expire in:</p>
-            <p className="text-2xl font-bold text-foreground">
+            <p className='text-foreground text-2xl font-bold'>
               {formatTime(remainingTime)}
             </p>
-            <p className="text-sm">
+            <p className='text-sm'>
               You'll be automatically logged out when the timer reaches zero.
               Click "Stay Signed In" to extend your session.
             </p>
           </DialogDescription>
         </DialogHeader>
 
-        <DialogFooter className="flex-col gap-2 sm:flex-row">
+        <DialogFooter className='flex-col gap-2 sm:flex-row'>
           <Button
-            variant="outline"
+            variant='outline'
             onClick={handleLogout}
-            className="w-full sm:w-auto"
+            className='w-full sm:w-auto'
           >
             Logout Now
           </Button>
-          <Button onClick={handleExtendSession} className="w-full sm:w-auto">
+          <Button onClick={handleExtendSession} className='w-full sm:w-auto'>
             Stay Signed In
           </Button>
         </DialogFooter>

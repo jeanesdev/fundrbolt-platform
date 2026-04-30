@@ -9,6 +9,44 @@
  * Branding CSS variables (injected by useEventBranding):
  *   --event-primary, --event-secondary, --event-background, --event-accent
  */
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { AxiosError } from 'axios'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
+import { usePreviewMode } from '@/contexts/PreviewContext'
+import auctionItemService from '@/services/auctionItemService'
+import {
+  getEventGuests,
+  getMyActivity,
+} from '@/services/donor-activity-service'
+import {
+  getMySeatingInfo,
+  type SeatingInfoResponse,
+} from '@/services/seating-service'
+import watchListService from '@/services/watchlistService'
+import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
+import type { EventMediaUsageTag } from '@/types/event'
+import type { RegisteredEventWithBranding } from '@/types/event-branding'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
+import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
+import { AlertCircle, Loader2, Ticket } from 'lucide-react'
+import { toast } from 'sonner'
+import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { useEventStore } from '@/stores/event-store'
+import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { getMyInventory } from '@/lib/api/ticket-purchases'
+import apiClient from '@/lib/axios'
+import { useEventBranding } from '@/hooks/use-event-branding'
+import { useEventContext } from '@/hooks/use-event-context'
+import { useUnreadCount } from '@/hooks/use-notifications'
+import { useTabSwipe } from '@/hooks/use-tab-swipe'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   AuctionGallery,
   EventDetails,
@@ -37,44 +75,6 @@ import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 import { PushOptInPrompt } from '@/components/notifications/PushOptInPrompt'
 import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { usePreviewMode } from '@/contexts/PreviewContext'
-import { useEventBranding } from '@/hooks/use-event-branding'
-import { useEventContext } from '@/hooks/use-event-context'
-import { useUnreadCount } from '@/hooks/use-notifications'
-import { useTabSwipe } from '@/hooks/use-tab-swipe'
-import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
-import { getMyInventory } from '@/lib/api/ticket-purchases'
-import apiClient from '@/lib/axios'
-import auctionItemService from '@/services/auctionItemService'
-import {
-  getEventGuests,
-  getMyActivity,
-} from '@/services/donor-activity-service'
-import {
-  getMySeatingInfo,
-  type SeatingInfoResponse,
-} from '@/services/seating-service'
-import watchListService from '@/services/watchlistService'
-import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { useEventContextStore } from '@/stores/event-context-store'
-import { useEventStore } from '@/stores/event-store'
-import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
-import type { EventMediaUsageTag } from '@/types/event'
-import type { RegisteredEventWithBranding } from '@/types/event-branding'
-import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
-import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import type { AxiosError } from 'axios'
-import { AlertCircle, Loader2, Ticket } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { toast } from 'sonner'
 
 export function EventHomePage() {
   const navigate = useNavigate()
@@ -116,13 +116,6 @@ export function EventHomePage() {
   const isOnline = useOnlineStatus()
   const prevOnlineRef = useRef(isOnline)
 
-  const { data: ticketInventoryData } = useQuery({
-    queryKey: ['ticket-inventory', 'event-home-access'],
-    queryFn: getMyInventory,
-    enabled: !!eventSlug && !isPreviewMode,
-    staleTime: 5 * 60 * 1000,
-  })
-
   // Registrations data — used as fallback to find the event ID when
   // availableEvents (Zustand store) hasn't been populated yet (e.g.
   // direct navigation to /events/:slug outside the authenticated layout).
@@ -133,6 +126,45 @@ export function EventHomePage() {
     queryFn: getRegisteredEventsWithBranding,
     staleTime: 5 * 60 * 1000,
     enabled: !!eventSlug && !isPreviewMode,
+  })
+
+  const npoSlugForDonateNow = useMemo(() => {
+    const fromRecord = (
+      record: Record<string, unknown> | null
+    ): string | null => {
+      if (!record) return null
+      const candidate = record.npo_slug ?? record.npoSlug
+      return typeof candidate === 'string' && candidate.trim().length > 0
+        ? candidate
+        : null
+    }
+
+    const fromCurrentEvent = currentEvent
+      ? fromRecord(currentEvent as unknown as Record<string, unknown>)
+      : null
+    if (fromCurrentEvent) return fromCurrentEvent
+
+    const registrationMatch = registrationsData?.events?.find(
+      (event) => event.slug === (eventSlug ?? currentEvent?.slug)
+    )
+    const fromRegistration = registrationMatch
+      ? fromRecord(registrationMatch as unknown as Record<string, unknown>)
+      : null
+    if (fromRegistration) return fromRegistration
+
+    const contextMatch = availableEvents.find(
+      (event) => event.slug === (eventSlug ?? currentEvent?.slug)
+    )
+    return contextMatch
+      ? fromRecord(contextMatch as unknown as Record<string, unknown>)
+      : null
+  }, [availableEvents, currentEvent, eventSlug, registrationsData])
+
+  const { data: ticketInventoryData } = useQuery({
+    queryKey: ['ticket-inventory', 'event-home-access'],
+    queryFn: getMyInventory,
+    enabled: !!eventSlug && !isPreviewMode,
+    staleTime: 5 * 60 * 1000,
   })
 
   // Refetch auction data when connectivity is restored (FR-017)
@@ -739,14 +771,14 @@ export function EventHomePage() {
           (
             previous:
               | {
-                watch_list?: Array<{
-                  id: string
-                  user_id: string
-                  auction_item_id: string
-                  added_at: string
-                }>
-                total?: number
-              }
+                  watch_list?: Array<{
+                    id: string
+                    user_id: string
+                    auction_item_id: string
+                    added_at: string
+                  }>
+                  total?: number
+                }
               | undefined
           ) => {
             const existing = previous?.watch_list ?? []
@@ -841,14 +873,14 @@ export function EventHomePage() {
             (
               previous:
                 | {
-                  watch_list?: Array<{
-                    id: string
-                    user_id: string
-                    auction_item_id: string
-                    added_at: string
-                  }>
-                  total?: number
-                }
+                    watch_list?: Array<{
+                      id: string
+                      user_id: string
+                      auction_item_id: string
+                      added_at: string
+                    }>
+                    total?: number
+                  }
                 | undefined
             ) => {
               const existing = previous?.watch_list ?? []
@@ -1219,7 +1251,7 @@ export function EventHomePage() {
         >
           {currentEvent.hashtag ? (
             <span
-              className='min-w-0 break-all text-base font-black tracking-wide sm:text-lg'
+              className='min-w-0 text-base font-black tracking-wide break-all sm:text-lg'
               style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
             >
               {currentEvent.hashtag}
@@ -1232,6 +1264,34 @@ export function EventHomePage() {
             className='w-full sm:w-auto'
           />
         </div>
+
+        {/* Donate CTA should always be visible, regardless of event timing. */}
+        {npoSlugForDonateNow && (
+          <div className='space-y-4'>
+            <Link
+              to='/npo/$slug/donate-now'
+              params={{ slug: npoSlugForDonateNow }}
+              className='block'
+            >
+              <button
+                className='w-full rounded-2xl p-4 text-left transition-all hover:shadow-md active:scale-[0.98]'
+                style={{
+                  background: `linear-gradient(135deg, rgb(var(--event-primary, 59, 130, 246)) 0%, rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
+                }}
+              >
+                <div className='flex items-center gap-3'>
+                  <Ticket className='h-5 w-5 text-white' />
+                  <div>
+                    <p className='text-lg font-black text-white'>Donate Now</p>
+                    <p className='text-sm text-white/80'>
+                      Support this cause with a direct donation →
+                    </p>
+                  </div>
+                </div>
+              </button>
+            </Link>
+          </div>
+        )}
 
         {/* CTA for bidding */}
         {eventStatus !== 'past' && (
@@ -1351,13 +1411,13 @@ export function EventHomePage() {
             </h2>
             {!!(currentEvent as unknown as Record<string, unknown>)
               .auction_close_datetime && (
-                <AuctionCountdownTimer
-                  closeDateTime={
-                    (currentEvent as unknown as Record<string, unknown>)
-                      .auction_close_datetime as string
-                  }
-                />
-              )}
+              <AuctionCountdownTimer
+                closeDateTime={
+                  (currentEvent as unknown as Record<string, unknown>)
+                    .auction_close_datetime as string
+                }
+              />
+            )}
           </div>
           <div className='flex items-center gap-2'>
             {eventStatus === 'live' && (

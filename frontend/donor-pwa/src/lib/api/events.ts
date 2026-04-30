@@ -3,8 +3,8 @@
  *
  * Provides functions for accessing public event data (no authentication required).
  */
-import apiClient from '@/lib/axios'
 import type { AxiosResponse } from 'axios'
+import apiClient from '@/lib/axios'
 
 // ================================
 // Types
@@ -14,6 +14,7 @@ export interface EventResponse {
   id: string
   npo_id: string
   npo_name: string | null
+  npo_slug?: string | null
   slug: string
   name: string
   tagline: string | null
@@ -98,6 +99,7 @@ export interface PublicTicketCustomOption {
 
 export interface EventDetailResponse extends EventResponse {
   npo_name: string | null
+  npo_slug?: string | null
   timezone: string
   location_name?: string | null
   location_address: string | null

@@ -2,13 +2,12 @@
  * RichTextEditor Component
  * Markdown-based rich text editor with sanitization for XSS prevention
  */
-
+import { useState } from 'react'
+import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
+import { Bold, Italic, Link, List, ListOrdered } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
-import { Bold, Italic, Link, List, ListOrdered } from 'lucide-react'
-import { useState } from 'react'
 
 interface RichTextEditorProps {
   value: string
@@ -16,7 +15,11 @@ interface RichTextEditorProps {
   placeholder?: string
 }
 
-export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
+export function RichTextEditor({
+  value,
+  onChange,
+  placeholder,
+}: RichTextEditorProps) {
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
 
   // Helper to insert markdown syntax
@@ -39,7 +42,8 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
     // Restore cursor position
     setTimeout(() => {
       textarea.focus()
-      const newCursorPos = start + before.length + (selectedText ? selectedText.length : 4)
+      const newCursorPos =
+        start + before.length + (selectedText ? selectedText.length : 4)
       textarea.setSelectionRange(newCursorPos, newCursorPos)
     }, 0)
   }
@@ -48,81 +52,86 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
   const hasPreviewContent = previewHtml.trim().length > 0
 
   return (
-    <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'edit' | 'preview')} className="w-full">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+    <Tabs
+      value={activeTab}
+      onValueChange={(v) => setActiveTab(v as 'edit' | 'preview')}
+      className='w-full'
+    >
+      <div className='mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
         <TabsList>
-          <TabsTrigger value="edit">Edit</TabsTrigger>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
+          <TabsTrigger value='edit'>Edit</TabsTrigger>
+          <TabsTrigger value='preview'>Preview</TabsTrigger>
         </TabsList>
 
         {/* Markdown toolbar (only show in edit mode) */}
         {activeTab === 'edit' && (
-          <div className="flex gap-1 flex-wrap">
+          <div className='flex flex-wrap gap-1'>
             <Button
-              type="button"
-              variant="ghost"
-              size="sm"
+              type='button'
+              variant='ghost'
+              size='sm'
               onClick={() => insertMarkdown('**', '**')}
-              title="Bold"
+              title='Bold'
             >
-              <Bold className="h-4 w-4" />
+              <Bold className='h-4 w-4' />
             </Button>
             <Button
-              type="button"
-              variant="ghost"
-              size="sm"
+              type='button'
+              variant='ghost'
+              size='sm'
               onClick={() => insertMarkdown('*', '*')}
-              title="Italic"
+              title='Italic'
             >
-              <Italic className="h-4 w-4" />
+              <Italic className='h-4 w-4' />
             </Button>
             <Button
-              type="button"
-              variant="ghost"
-              size="sm"
+              type='button'
+              variant='ghost'
+              size='sm'
               onClick={() => insertMarkdown('[', '](url)')}
-              title="Link"
+              title='Link'
             >
-              <Link className="h-4 w-4" />
+              <Link className='h-4 w-4' />
             </Button>
             <Button
-              type="button"
-              variant="ghost"
-              size="sm"
+              type='button'
+              variant='ghost'
+              size='sm'
               onClick={() => insertMarkdown('* ', '')}
-              title="Bullet List"
+              title='Bullet List'
             >
-              <List className="h-4 w-4" />
+              <List className='h-4 w-4' />
             </Button>
             <Button
-              type="button"
-              variant="ghost"
-              size="sm"
+              type='button'
+              variant='ghost'
+              size='sm'
               onClick={() => insertMarkdown('1. ', '')}
-              title="Numbered List"
+              title='Numbered List'
             >
-              <ListOrdered className="h-4 w-4" />
+              <ListOrdered className='h-4 w-4' />
             </Button>
           </div>
         )}
       </div>
 
-      <TabsContent value="edit" className="mt-0">
+      <TabsContent value='edit' className='mt-0'>
         <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="min-h-[200px] w-full font-mono text-sm resize-y"
+          className='min-h-[200px] w-full resize-y font-mono text-sm'
           rows={10}
         />
-        <p className="text-xs text-muted-foreground mt-2">
-          Supports Markdown formatting: **bold**, *italic*, [link](url), # headings, * lists
+        <p className='text-muted-foreground mt-2 text-xs'>
+          Supports Markdown formatting: **bold**, *italic*, [link](url), #
+          headings, * lists
         </p>
       </TabsContent>
 
-      <TabsContent value="preview" className="mt-0">
+      <TabsContent value='preview' className='mt-0'>
         <div
-          className="min-h-[200px] w-full p-4 rounded-md border bg-muted/50 overflow-auto"
+          className='bg-muted/50 min-h-[200px] w-full overflow-auto rounded-md border p-4'
           dangerouslySetInnerHTML={{
             __html: hasPreviewContent
               ? previewHtml

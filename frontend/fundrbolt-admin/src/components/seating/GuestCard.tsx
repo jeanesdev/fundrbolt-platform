@@ -3,11 +3,6 @@
  *
  * Draggable card displaying guest information for seating assignments.
  */
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import {
@@ -18,6 +13,11 @@ import {
   UserCheck,
   Users,
 } from 'lucide-react'
+import type { GuestSeatingInfo } from '@/lib/api/admin-seating'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 
 interface GuestCardProps {
   guest: GuestSeatingInfo
@@ -144,10 +144,10 @@ export function GuestCard({
                     style={
                       label.color
                         ? {
-                          backgroundColor: `${label.color}20`,
-                          color: label.color,
-                          borderColor: `${label.color}40`,
-                        }
+                            backgroundColor: `${label.color}20`,
+                            color: label.color,
+                            borderColor: `${label.color}40`,
+                          }
                         : undefined
                     }
                   >

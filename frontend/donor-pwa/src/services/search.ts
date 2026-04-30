@@ -4,7 +4,6 @@
  *
  * T071: API call logic for search
  */
-
 import apiClient from '@/lib/axios'
 
 // Search request

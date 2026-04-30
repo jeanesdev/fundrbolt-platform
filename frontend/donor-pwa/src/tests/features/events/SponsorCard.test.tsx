@@ -2,11 +2,10 @@
  * Tests for SponsorCard component
  * Focus: Logo size CSS classes and sponsor_level badge display (T057)
  */
-
-import { SponsorCard } from '@/features/events/components/SponsorCard'
 import { LogoSize, type Sponsor } from '@/types/sponsor'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import { SponsorCard } from '@/features/events/components/SponsorCard'
 
 const mockSponsor: Sponsor = {
   id: '123e4567-e89b-12d3-a456-426614174000',
@@ -38,7 +37,13 @@ const mockSponsor: Sponsor = {
 
 describe('SponsorCard - Logo Size Display (T057)', () => {
   it('renders all logos with fixed w-24 h-24 CSS class (96px) regardless of logo_size', () => {
-    const sizes = [LogoSize.XSMALL, LogoSize.SMALL, LogoSize.MEDIUM, LogoSize.LARGE, LogoSize.XLARGE]
+    const sizes = [
+      LogoSize.XSMALL,
+      LogoSize.SMALL,
+      LogoSize.MEDIUM,
+      LogoSize.LARGE,
+      LogoSize.XLARGE,
+    ]
 
     sizes.forEach((size) => {
       const sponsor = { ...mockSponsor, logo_size: size }
@@ -203,11 +208,16 @@ describe('SponsorCard - Website URL Links (Phase 8 - User Story 5)', () => {
     const { container } = render(<SponsorCard sponsor={sponsor} />)
 
     // Logo should be wrapped in an anchor tag
-    const logoLink = container.querySelector('a[href="https://acme.example.com"]')
+    const logoLink = container.querySelector(
+      'a[href="https://acme.example.com"]'
+    )
     expect(logoLink).toBeInTheDocument()
     expect(logoLink).toHaveAttribute('target', '_blank')
     expect(logoLink).toHaveAttribute('rel', 'noopener noreferrer')
-    expect(logoLink).toHaveAttribute('aria-label', 'Visit Acme Corporation website')
+    expect(logoLink).toHaveAttribute(
+      'aria-label',
+      'Visit Acme Corporation website'
+    )
   })
 
   it('renders clickable sponsor name when website_url is present', () => {
@@ -219,7 +229,10 @@ describe('SponsorCard - Website URL Links (Phase 8 - User Story 5)', () => {
 
     // Its parent should be an anchor tag
     expect(heading.parentElement?.tagName).toBe('A')
-    expect(heading.parentElement).toHaveAttribute('href', 'https://acme.example.com')
+    expect(heading.parentElement).toHaveAttribute(
+      'href',
+      'https://acme.example.com'
+    )
     expect(heading.parentElement).toHaveAttribute('target', '_blank')
     expect(heading.parentElement).toHaveAttribute('rel', 'noopener noreferrer')
   })

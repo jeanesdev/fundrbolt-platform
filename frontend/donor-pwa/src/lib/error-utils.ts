@@ -39,7 +39,10 @@ interface ApiErrorResponse {
  * }
  * ```
  */
-export function getErrorMessage(error: unknown, defaultMessage = 'An error occurred'): string {
+export function getErrorMessage(
+  error: unknown,
+  defaultMessage = 'An error occurred'
+): string {
   if (!error) {
     return defaultMessage
   }
@@ -109,7 +112,8 @@ export function isConsentError(error: unknown): boolean {
     isErrorStatus(error, 409) &&
     typeof data?.detail === 'object' &&
     data.detail !== null &&
-    (data.detail.code === 'CONSENT_REQUIRED' || data.detail.code === 'CONSENT_OUTDATED')
+    (data.detail.code === 'CONSENT_REQUIRED' ||
+      data.detail.code === 'CONSENT_OUTDATED')
   )
 }
 

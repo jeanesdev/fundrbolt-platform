@@ -1,5 +1,5 @@
-import { EventHomePage } from '@/features/events/EventHomePage'
 import { createFileRoute } from '@tanstack/react-router'
+import { EventHomePage } from '@/features/events/EventHomePage'
 
 type EventHomeSearch = {
   item?: string

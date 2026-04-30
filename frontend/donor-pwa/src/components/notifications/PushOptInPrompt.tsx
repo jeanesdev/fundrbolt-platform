@@ -4,9 +4,9 @@
  * Shows an inline banner (not a modal) that can be dismissed.
  * Dismissal is persisted in localStorage.
  */
-import { usePushNotifications } from '@/hooks/use-push-notifications'
-import { Bell, X } from 'lucide-react'
 import { useCallback, useState } from 'react'
+import { Bell, X } from 'lucide-react'
+import { usePushNotifications } from '@/hooks/use-push-notifications'
 
 const DISMISS_KEY = 'push-notification-prompt-dismissed'
 

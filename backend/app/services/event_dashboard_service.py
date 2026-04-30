@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.auction_bid import AuctionBid, BidStatus, PaddleRaiseContribution
 from app.models.event import Event
 from app.models.event_registration import EventRegistration
+from app.models.npo_donation import NpoDonation, NpoDonationStatus
 from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
 from app.models.quick_entry_buy_now_bid import QuickEntryBuyNowBid
 from app.models.quick_entry_donation import QuickEntryDonation
@@ -124,6 +125,14 @@ class EventDashboardService:
         )
         buy_now_total = Decimal((await self.db.execute(buy_now_stmt)).scalar_one() or 0)
 
+        # Donate-Now page donations linked to this event (amount stored in cents → convert)
+        npo_donation_stmt = select(func.coalesce(func.sum(NpoDonation.amount_cents), 0)).where(
+            NpoDonation.event_id == event_id,
+            NpoDonation.status == NpoDonationStatus.CAPTURED,
+        )
+        npo_donation_cents = Decimal((await self.db.execute(npo_donation_stmt)).scalar_one() or 0)
+        npo_donation_total = npo_donation_cents / Decimal("100")
+
         return {
             "tickets": tickets_total,
             "sponsorships": sponsorship_total,
@@ -131,7 +140,7 @@ class EventDashboardService:
             "live_auction": qe_live_auction_total,
             "buy_it_now": buy_now_total,
             "paddle_raise": paddle_total + qe_paddle_total,
-            "donations": Decimal("0"),
+            "donations": npo_donation_total,
             "fees_other": Decimal("0"),
         }
 

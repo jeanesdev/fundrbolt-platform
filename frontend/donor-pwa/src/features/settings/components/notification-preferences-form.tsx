@@ -5,11 +5,11 @@
  * Loads preferences from GET /api/v1/notifications/preferences
  * Saves on each toggle change with PUT /api/v1/notifications/preferences
  */
-import { Switch } from '@/components/ui/switch'
-import apiClient from '@/lib/axios'
-import { AlertTriangle } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
+import apiClient from '@/lib/axios'
+import { Switch } from '@/components/ui/switch'
 
 interface Preference {
   notification_type: string

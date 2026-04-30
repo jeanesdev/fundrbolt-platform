@@ -6,14 +6,7 @@
  * - Fallback dropdown with: Facebook, X/Twitter, LinkedIn, Email, SMS, Copy Link
  * - Includes event hashtag in social share text when available
  */
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { useCallback, useState } from 'react'
 import {
   Check,
   Copy,
@@ -24,8 +17,15 @@ import {
   Share2,
   Twitter,
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 export interface ShareEventButtonProps {
   eventName: string
@@ -121,8 +121,8 @@ export function ShareEventButton({
   if (typeof navigator !== 'undefined' && 'share' in navigator) {
     return (
       <Button
-        variant="outline"
-        size="sm"
+        variant='outline'
+        size='sm'
         onClick={handleNativeShare}
         className={className}
         style={{
@@ -130,7 +130,7 @@ export function ShareEventButton({
           color: 'rgb(var(--event-primary, 59, 130, 246))',
         }}
       >
-        <Share2 className="mr-2 h-4 w-4" />
+        <Share2 className='mr-2 h-4 w-4' />
         Share Event
       </Button>
     )
@@ -141,46 +141,45 @@ export function ShareEventButton({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="outline"
-          size="sm"
+          variant='outline'
+          size='sm'
           className={className}
           style={{
             borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.3)',
             color: 'rgb(var(--event-primary, 59, 130, 246))',
           }}
         >
-          <Share2 className="mr-2 h-4 w-4" />
+          <Share2 className='mr-2 h-4 w-4' />
           Share Event
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align='end' className='w-48'>
         <DropdownMenuItem onClick={handleShareFacebook}>
-          <Facebook className="mr-2 h-4 w-4" />
+          <Facebook className='mr-2 h-4 w-4' />
           Facebook
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleShareTwitter}>
-          <Twitter className="mr-2 h-4 w-4" />
-          X / Twitter
+          <Twitter className='mr-2 h-4 w-4' />X / Twitter
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleShareLinkedIn}>
-          <Link2 className="mr-2 h-4 w-4" />
+          <Link2 className='mr-2 h-4 w-4' />
           LinkedIn
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleShareEmail}>
-          <Mail className="mr-2 h-4 w-4" />
+          <Mail className='mr-2 h-4 w-4' />
           Email
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleShareSMS}>
-          <MessageCircle className="mr-2 h-4 w-4" />
+          <MessageCircle className='mr-2 h-4 w-4' />
           Text Message
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleCopyLink}>
           {copied ? (
-            <Check className="mr-2 h-4 w-4" />
+            <Check className='mr-2 h-4 w-4' />
           ) : (
-            <Copy className="mr-2 h-4 w-4" />
+            <Copy className='mr-2 h-4 w-4' />
           )}
           {copied ? 'Copied!' : 'Copy Link'}
         </DropdownMenuItem>

@@ -16,6 +16,7 @@ import { persist } from 'zustand/middleware'
 export interface NPOContextOption {
   id: string | null // null represents "FundrBolt Platform" for SuperAdmin
   name: string
+  slug?: string | null
   logo_url?: string | null
 }
 

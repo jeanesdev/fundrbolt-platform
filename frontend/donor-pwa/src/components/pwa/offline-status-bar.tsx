@@ -13,11 +13,11 @@ export function OfflineStatusBar({ isOnline }: OfflineStatusBarProps) {
 
   return (
     <div
-      className="animate-in slide-in-from-top sticky top-0 z-50 flex items-center justify-center gap-2 bg-amber-500 px-4 py-1.5 text-xs font-medium text-white duration-200"
-      role="status"
-      aria-live="polite"
+      className='animate-in slide-in-from-top sticky top-0 z-50 flex items-center justify-center gap-2 bg-amber-500 px-4 py-1.5 text-xs font-medium text-white duration-200'
+      role='status'
+      aria-live='polite'
     >
-      <WifiOff className="h-3.5 w-3.5" aria-hidden="true" />
+      <WifiOff className='h-3.5 w-3.5' aria-hidden='true' />
       You're offline — some features may be unavailable
     </div>
   )

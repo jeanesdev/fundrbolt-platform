@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { CommissionListItem } from '@/services/auctioneerService'
-import { DollarSign, Percent, Save, Trash2 } from 'lucide-react'
+import { Gavel, Percent, Save, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import {
   useDeleteCommission,
   useUpsertCommission,
@@ -21,12 +21,14 @@ interface ItemCommissionFormProps {
   eventId: string
   auctionItemId: string
   existing?: CommissionListItem | null
+  consignmentCost?: number | null
 }
 
 export function ItemCommissionForm({
   eventId,
   auctionItemId,
   existing,
+  consignmentCost,
 }: ItemCommissionFormProps) {
   // Derive a stable key so React remounts the form when existing data changes
   const formKey = useMemo(
@@ -40,6 +42,7 @@ export function ItemCommissionForm({
       eventId={eventId}
       auctionItemId={auctionItemId}
       existing={existing}
+      consignmentCost={consignmentCost}
     />
   )
 }
@@ -48,11 +51,11 @@ function ItemCommissionFormInner({
   eventId,
   auctionItemId,
   existing,
+  consignmentCost,
 }: ItemCommissionFormProps) {
   const [commissionPercent, setCommissionPercent] = useState(
     existing?.commission_percent?.toString() ?? ''
   )
-  const [flatFee, setFlatFee] = useState(existing?.flat_fee?.toString() ?? '0')
   const [notes, setNotes] = useState(existing?.notes ?? '')
 
   const upsertMutation = useUpsertCommission(eventId)
@@ -60,20 +63,22 @@ function ItemCommissionFormInner({
 
   const handleSave = () => {
     const percent = parseFloat(commissionPercent)
-    const fee = parseFloat(flatFee)
-
     if (isNaN(percent) || percent < 0 || percent > 100) return
-    if (isNaN(fee) || fee < 0) return
 
     upsertMutation.mutate({
       auctionItemId,
       data: {
         commission_percent: percent,
-        flat_fee: fee,
+        flat_fee: 0,
         notes: notes || undefined,
       },
     })
   }
+
+  const commissionAmount =
+    consignmentCost != null && commissionPercent !== ''
+      ? (consignmentCost * parseFloat(commissionPercent)) / 100
+      : null
 
   const handleDelete = () => {
     deleteMutation.mutate(auctionItemId)
@@ -86,8 +91,8 @@ function ItemCommissionFormInner({
     <Card>
       <CardHeader className='pb-3'>
         <CardTitle className='flex items-center gap-2 text-base'>
-          <Percent className='h-4 w-4' />
-          Commission & Fee
+          <Gavel className='h-4 w-4' />
+          Auctioneer Setup
         </CardTitle>
         <CardDescription>
           Track your commission for this auction item
@@ -112,32 +117,25 @@ function ItemCommissionFormInner({
               <Percent className='text-muted-foreground absolute top-3 right-2 h-3 w-3' />
             </div>
           </div>
-          <div className='space-y-2'>
-            <Label htmlFor='flat-fee'>Flat Fee</Label>
-            <div className='relative'>
-              <DollarSign className='text-muted-foreground absolute top-3 left-2 h-3 w-3' />
-              <Input
-                id='flat-fee'
-                type='number'
-                min='0'
-                step='0.01'
-                placeholder='0.00'
-                value={flatFee}
-                onChange={(e) => setFlatFee(e.target.value)}
-                className='pl-7'
-              />
+          {commissionAmount != null && (
+            <div className='space-y-2'>
+              <Label>Est. Commission</Label>
+              <p className='flex h-10 items-center font-semibold text-green-600 dark:text-green-400'>
+                {new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: 'USD',
+                }).format(commissionAmount)}
+              </p>
             </div>
-          </div>
+          )}
         </div>
         <div className='space-y-2'>
-          <Label htmlFor='notes'>Notes</Label>
-          <Textarea
-            id='notes'
-            placeholder='Optional notes...'
+          <Label>Notes</Label>
+          <RichTextEditor
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            maxLength={2000}
-            rows={2}
+            onChange={setNotes}
+            placeholder='Optional notes...'
+            disabled={isSaving}
           />
         </div>
         <div className='flex gap-2'>

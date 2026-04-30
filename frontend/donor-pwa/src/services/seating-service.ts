@@ -3,42 +3,41 @@
  *
  * API service for donor seating information.
  */
-
-import apiClient from '@/lib/axios';
+import apiClient from '@/lib/axios'
 
 export interface MySeatingInfo {
-  guestId: string;
-  fullName: string | null;
-  bidderNumber: number | null;
-  tableNumber: number | null;
-  checkedIn: boolean;
+  guestId: string
+  fullName: string | null
+  bidderNumber: number | null
+  tableNumber: number | null
+  checkedIn: boolean
 }
 
 export interface TablemateInfo {
-  guestId: string;
-  name: string | null;
-  bidderNumber: number | null;
-  company?: string | null;
-  profileImageUrl?: string | null;
+  guestId: string
+  name: string | null
+  bidderNumber: number | null
+  company?: string | null
+  profileImageUrl?: string | null
 }
 
 export interface TableAssignment {
-  tableNumber: number;
-  tableName: string | null;
-  captainFullName: string | null;
-  youAreCaptain: boolean;
+  tableNumber: number
+  tableName: string | null
+  captainFullName: string | null
+  youAreCaptain: boolean
 }
 
 export interface SeatingInfoResponse {
-  myInfo: MySeatingInfo;
-  tablemates: TablemateInfo[];
+  myInfo: MySeatingInfo
+  tablemates: TablemateInfo[]
   tableCapacity: {
-    current: number;
-    max: number;
-  };
-  hasTableAssignment: boolean;
-  message?: string | null;
-  tableAssignment?: TableAssignment | null;
+    current: number
+    max: number
+  }
+  hasTableAssignment: boolean
+  message?: string | null
+  tableAssignment?: TableAssignment | null
 }
 
 /**
@@ -53,6 +52,6 @@ export const getMySeatingInfo = async (
 ): Promise<SeatingInfoResponse> => {
   const response = await apiClient.get<SeatingInfoResponse>(
     `/donor/events/${eventId}/my-seating`
-  );
-  return response.data;
-};
+  )
+  return response.data
+}

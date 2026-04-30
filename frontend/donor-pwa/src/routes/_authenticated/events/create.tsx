@@ -5,5 +5,5 @@ import { createFileRoute, Navigate } from '@tanstack/react-router'
  * Redirects to home - donors cannot create events
  */
 export const Route = createFileRoute('/_authenticated/events/create')({
-  component: () => <Navigate to="/home" />,
+  component: () => <Navigate to='/home' />,
 })

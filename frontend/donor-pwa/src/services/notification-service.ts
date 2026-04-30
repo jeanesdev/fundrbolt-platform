@@ -2,9 +2,8 @@
  * Notification API service
  * Handles all notification-related API calls
  */
-
-import apiClient from '@/lib/axios'
 import { AxiosError } from 'axios'
+import apiClient from '@/lib/axios'
 
 export interface NotificationData {
   id: string
@@ -43,7 +42,7 @@ export interface ListNotificationsOptions {
 class NotificationService {
   async listNotifications(
     eventId: string,
-    options?: ListNotificationsOptions,
+    options?: ListNotificationsOptions
   ): Promise<NotificationListResponse> {
     try {
       const response = await apiClient.get<NotificationListResponse>(
@@ -55,7 +54,7 @@ class NotificationService {
             cursor: options?.cursor ?? undefined,
             unread_only: options?.unread_only ?? false,
           },
-        },
+        }
       )
       return response.data
     } catch (error) {
@@ -78,7 +77,7 @@ class NotificationService {
     try {
       const response = await apiClient.get<UnreadCountResponse>(
         '/notifications/unread-count',
-        { params: { event_id: eventId } },
+        { params: { event_id: eventId } }
       )
       return response.data
     } catch (error) {
@@ -95,7 +94,7 @@ class NotificationService {
 
   async markRead(notificationId: string): Promise<{ success: boolean }> {
     const response = await apiClient.post<{ success: boolean }>(
-      `/notifications/${notificationId}/read`,
+      `/notifications/${notificationId}/read`
     )
     return response.data
   }
@@ -103,18 +102,18 @@ class NotificationService {
   async markAllRead(eventId: string): Promise<MarkAllReadResponse> {
     const response = await apiClient.post<MarkAllReadResponse>(
       '/notifications/read-all',
-      { event_id: eventId },
+      { event_id: eventId }
     )
     return response.data
   }
 
   async deleteNotification(
     notificationId: string,
-    eventId?: string,
+    eventId?: string
   ): Promise<{ success: boolean }> {
     const response = await apiClient.delete<{ success: boolean }>(
       `/notifications/${notificationId}`,
-      { params: eventId ? { event_id: eventId } : undefined },
+      { params: eventId ? { event_id: eventId } : undefined }
     )
     return response.data
   }

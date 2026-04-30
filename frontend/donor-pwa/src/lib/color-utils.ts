@@ -7,7 +7,9 @@
 /**
  * Parse a hex color string to RGB values
  */
-export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+export function hexToRgb(
+  hex: string
+): { r: number; g: number; b: number } | null {
   // Remove # if present
   const cleanHex = hex.replace(/^#/, '')
 

@@ -6,7 +6,11 @@
  * T075: TanStack Query hook with min 2 character validation
  * T081: Loading spinner
  */
-
+import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { searchService } from '@/services/search'
+import { Loader2, SearchIcon } from 'lucide-react'
+import { useNpoContext } from '@/hooks/use-npo-context'
 import {
   Dialog,
   DialogContent,
@@ -15,11 +19,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { useNpoContext } from '@/hooks/use-npo-context'
-import { searchService } from '@/services/search'
-import { useQuery } from '@tanstack/react-query'
-import { Loader2, SearchIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { SearchResults } from './SearchResults'
 
 interface SearchBarProps {
@@ -78,28 +77,34 @@ export function SearchBar({ open, onOpenChange }: SearchBarProps) {
         </DialogDescription>
 
         <div className='relative'>
-          <SearchIcon className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+          <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
           {/* T081: Loading spinner */}
           {isLoading && (
-            <Loader2 className='absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground' />
+            <Loader2 className='text-muted-foreground absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin' />
           )}
           <Input
             type='text'
             placeholder='Search users, organizations, events, auction items...'
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className='pl-10 pr-10'
+            className='pr-10 pl-10'
             autoFocus
           />
         </div>
 
         {query.length > 0 && query.length < 2 && (
-          <p className='text-muted-foreground text-sm px-2'>
+          <p className='text-muted-foreground px-2 text-sm'>
             Type at least 2 characters to search
           </p>
         )}
 
-        {shouldSearch && <SearchResults results={results || null} isLoading={isLoading} onClose={() => handleOpenChange(false)} />}
+        {shouldSearch && (
+          <SearchResults
+            results={results || null}
+            isLoading={isLoading}
+            onClose={() => handleOpenChange(false)}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )

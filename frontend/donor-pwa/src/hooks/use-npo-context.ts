@@ -9,10 +9,12 @@
  * - Staff: Auto-select their assigned NPO, disable selector
  * - Changes to NPO selection invalidate TanStack Query cache
  */
-
-import { useNPOContextStore, type NPOContextOption } from '@/stores/npo-context-store'
-import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import {
+  useNPOContextStore,
+  type NPOContextOption,
+} from '@/stores/npo-context-store'
 import { useAuth } from './use-auth'
 
 export interface UseNpoContextReturn {
@@ -60,7 +62,8 @@ export function useNpoContext(): UseNpoContextReturn {
   useEffect(() => {
     if (isSingleNpoUser && userNpoId && selectedNpoId !== userNpoId) {
       // Find NPO name from available NPOs or use placeholder
-      const npoName = availableNpos.find(npo => npo.id === userNpoId)?.name || 'My NPO'
+      const npoName =
+        availableNpos.find((npo) => npo.id === userNpoId)?.name || 'My NPO'
       setSelectedNpo(userNpoId, npoName)
     }
   }, [isSingleNpoUser, userNpoId, selectedNpoId, availableNpos, setSelectedNpo])
@@ -75,14 +78,17 @@ export function useNpoContext(): UseNpoContextReturn {
     queryClient.invalidateQueries()
   }
 
-  const setAvailableNpos = useCallback((npos: NPOContextOption[]) => {
-    storeSetAvailableNpos(npos)
+  const setAvailableNpos = useCallback(
+    (npos: NPOContextOption[]) => {
+      storeSetAvailableNpos(npos)
 
-    // For single-NPO users, auto-select their NPO
-    if (isSingleNpoUser && npos.length === 1 && npos[0].id) {
-      setSelectedNpo(npos[0].id, npos[0].name)
-    }
-  }, [isSingleNpoUser, setSelectedNpo, storeSetAvailableNpos])
+      // For single-NPO users, auto-select their NPO
+      if (isSingleNpoUser && npos.length === 1 && npos[0].id) {
+        setSelectedNpo(npos[0].id, npos[0].name)
+      }
+    },
+    [isSingleNpoUser, setSelectedNpo, storeSetAvailableNpos]
+  )
 
   return {
     selectedNpoId,

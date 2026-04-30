@@ -1,5 +1,11 @@
-import { ConsentHistory } from '@/components/legal/consent-history'
-import { DataRightsForm } from '@/components/legal/data-rights-form'
+import { useState } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { createFileRoute } from '@tanstack/react-router'
+import { ChevronDown, LifeBuoy, Mail, Send, Shield } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -30,15 +36,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { ConsentHistory } from '@/components/legal/consent-history'
+import { DataRightsForm } from '@/components/legal/data-rights-form'
 import { ContentSection } from '@/features/settings/components/content-section'
-import { useAuthStore } from '@/stores/auth-store'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { createFileRoute } from '@tanstack/react-router'
-import { ChevronDown, LifeBuoy, Mail, Send, Shield } from 'lucide-react'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
 
 const SUPPORT_EMAIL = 'support@fundrbolt.com'
 

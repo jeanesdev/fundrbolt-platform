@@ -1,3 +1,6 @@
+import { LogoWhiteGold } from '@fundrbolt/shared/assets'
+import { Settings, User } from 'lucide-react'
+import { useLayout } from '@/context/layout-provider'
 import {
   Sidebar,
   SidebarContent,
@@ -5,11 +8,8 @@ import {
   SidebarHeader,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { useLayout } from '@/context/layout-provider'
-import { LogoWhiteGold } from '@fundrbolt/shared/assets'
-import { Settings, User } from 'lucide-react'
-import { sidebarData } from './data/sidebar-data'
 import { EventSelector } from './EventSelector'
+import { sidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
 import type { NavGroup as NavGroupType } from './types'
@@ -47,11 +47,7 @@ export function AppSidebar() {
       <SidebarHeader>
         {/* FundrBolt Logo */}
         <div className='flex items-center justify-center px-4 py-2'>
-          <img
-            src={LogoWhiteGold}
-            alt='FundrBolt'
-            className='h-8 w-auto'
-          />
+          <img src={LogoWhiteGold} alt='FundrBolt' className='h-8 w-auto' />
         </div>
 
         <EventSelector />

@@ -6,8 +6,20 @@
  * Radix Dialog drawer.  The newly-saved profile is automatically selected
  * after the HPF completes.
  */
-
-import { HpfIframe } from '@/components/payments/HpfIframe'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import type {
+  HpfCompletePayload,
+  LineItem,
+  PaymentProfile,
+} from '@/types/payment'
+import { CreditCard, Loader2, PlusCircle, Star } from 'lucide-react'
+import { toast } from 'sonner'
+import {
+  createPaymentProfile,
+  createPaymentSession,
+  listPaymentProfiles,
+} from '@/lib/api/payments'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,12 +32,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Separator } from '@/components/ui/separator'
-import { createPaymentProfile, createPaymentSession, listPaymentProfiles } from '@/lib/api/payments'
-import type { HpfCompletePayload, LineItem, PaymentProfile } from '@/types/payment'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { CreditCard, Loader2, PlusCircle, Star } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
+import { HpfIframe } from '@/components/payments/HpfIframe'
 
 export interface PaymentMethodSelectorProps {
   /** NPO whose vault is queried */
@@ -94,7 +101,9 @@ export function PaymentMethodSelector({
   // Called when HPF iframe fires postMessage (approved or declined)
   async function handleHpfComplete(payload: HpfCompletePayload) {
     if (payload.status !== 'approved') {
-      toast.error('Card declined: ' + (payload.declineReason ?? 'Unknown reason'))
+      toast.error(
+        'Card declined: ' + (payload.declineReason ?? 'Unknown reason')
+      )
       setAddCardOpen(false)
       return
     }
@@ -112,7 +121,9 @@ export function PaymentMethodSelector({
       })
 
       // Refresh profiles list
-      await queryClient.invalidateQueries({ queryKey: ['payment-profiles', npoId] })
+      await queryClient.invalidateQueries({
+        queryKey: ['payment-profiles', npoId],
+      })
       toast.success('Card saved successfully.')
       onSelect(newProfile.id)
       setAddCardOpen(false)
@@ -132,19 +143,19 @@ export function PaymentMethodSelector({
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 text-muted-foreground py-4">
-        <Loader2 className="w-4 h-4 animate-spin" />
-        <span className="text-sm">Loading saved cards…</span>
+      <div className='text-muted-foreground flex items-center gap-2 py-4'>
+        <Loader2 className='h-4 w-4 animate-spin' />
+        <span className='text-sm'>Loading saved cards…</span>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       <RadioGroup
         value={selectedProfileId ?? ''}
         onValueChange={handleRadioChange}
-        className="space-y-2"
+        className='space-y-2'
       >
         {profiles.map((profile: PaymentProfile) => (
           <ProfileRadioItem
@@ -159,23 +170,23 @@ export function PaymentMethodSelector({
 
       {/* Add new card button — shown as a pseudo-radio option */}
       <Button
-        type="button"
-        variant="outline"
-        className="w-full justify-start gap-2"
+        type='button'
+        variant='outline'
+        className='w-full justify-start gap-2'
         onClick={() => void handleAddCard()}
         disabled={isCreatingSession}
       >
         {isCreatingSession ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <Loader2 className='h-4 w-4 animate-spin' />
         ) : (
-          <PlusCircle className="w-4 h-4" />
+          <PlusCircle className='h-4 w-4' />
         )}
         Add a new card
       </Button>
 
       {/* HPF Drawer */}
       <Dialog open={addCardOpen} onOpenChange={setAddCardOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className='sm:max-w-lg'>
           <DialogHeader>
             <DialogTitle>Add a payment method</DialogTitle>
             <DialogDescription>
@@ -190,7 +201,7 @@ export function PaymentMethodSelector({
                 toast.error(msg)
                 setAddCardOpen(false)
               }}
-              className="min-h-[320px]"
+              className='min-h-[320px]'
             />
           )}
         </DialogContent>
@@ -216,30 +227,36 @@ function ProfileRadioItem({
 
   return (
     <div
-      className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${selected ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40'
-        } ${isExpired ? 'opacity-50' : ''}`}
+      className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+        selected
+          ? 'border-primary bg-primary/5'
+          : 'border-border hover:bg-muted/40'
+      } ${isExpired ? 'opacity-50' : ''}`}
     >
       <RadioGroupItem value={profile.id} id={`profile-${profile.id}`} />
       <Label
         htmlFor={`profile-${profile.id}`}
-        className="flex flex-1 items-center gap-2 cursor-pointer"
+        className='flex flex-1 cursor-pointer items-center gap-2'
       >
-        <CreditCard className="w-4 h-4 text-muted-foreground shrink-0" />
-        <span className="flex-1">
-          <span className="font-medium">{profile.card_brand}</span>{' '}
-          <span className="text-muted-foreground">ending {profile.card_last4}</span>
+        <CreditCard className='text-muted-foreground h-4 w-4 shrink-0' />
+        <span className='flex-1'>
+          <span className='font-medium'>{profile.card_brand}</span>{' '}
+          <span className='text-muted-foreground'>
+            ending {profile.card_last4}
+          </span>
         </span>
-        <span className="text-xs text-muted-foreground">
-          {String(profile.card_expiry_month).padStart(2, '0')}/{profile.card_expiry_year}
+        <span className='text-muted-foreground text-xs'>
+          {String(profile.card_expiry_month).padStart(2, '0')}/
+          {profile.card_expiry_year}
         </span>
         {profile.is_default && (
-          <Badge variant="secondary" className="gap-1 text-xs">
-            <Star className="w-3 h-3" />
+          <Badge variant='secondary' className='gap-1 text-xs'>
+            <Star className='h-3 w-3' />
             Default
           </Badge>
         )}
         {isExpired && (
-          <Badge variant="destructive" className="text-xs">
+          <Badge variant='destructive' className='text-xs'>
             Expired
           </Badge>
         )}

@@ -2,10 +2,10 @@
  * Purchase History Route — /_authenticated/tickets.history
  * Route: /tickets/history
  */
-import { Button } from '@/components/ui/button'
-import { PurchaseHistory } from '@/features/tickets/PurchaseHistory'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowLeft, History } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { PurchaseHistory } from '@/features/tickets/PurchaseHistory'
 
 export const Route = createFileRoute('/_authenticated/tickets/history')({
   component: PurchaseHistoryPage,

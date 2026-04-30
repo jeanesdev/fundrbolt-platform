@@ -1,5 +1,5 @@
-import apiClient from '@/lib/axios'
 import type { AxiosResponse } from 'axios'
+import apiClient from '@/lib/axios'
 
 export interface PublicNPOResponse {
   id: string

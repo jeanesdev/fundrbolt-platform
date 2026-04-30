@@ -1,5 +1,5 @@
-import { removeCookie, setCookie } from '@/lib/cookies'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { removeCookie, setCookie } from '@/lib/cookies'
 
 type Theme = 'dark' | 'light' | 'system'
 type ResolvedTheme = Exclude<Theme, 'system'>

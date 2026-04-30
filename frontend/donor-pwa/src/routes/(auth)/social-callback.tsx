@@ -1,6 +1,6 @@
-import { SocialCallback } from '@/features/auth/social-callback'
-import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
+import { createFileRoute } from '@tanstack/react-router'
+import { SocialCallback } from '@/features/auth/social-callback'
 
 const searchSchema = z
   .object({

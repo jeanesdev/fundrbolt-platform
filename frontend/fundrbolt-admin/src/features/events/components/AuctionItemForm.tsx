@@ -449,7 +449,7 @@ export function AuctionItemForm({
           </div>
 
           <div className='space-y-2'>
-            <Label htmlFor='donor_value'>Donor Value ($)</Label>
+            <Label htmlFor='donor_value'>Fair Market Value ($)</Label>
             <Input
               id='donor_value'
               type='number'
@@ -474,7 +474,7 @@ export function AuctionItemForm({
           </div>
 
           <div className='space-y-2'>
-            <Label htmlFor='cost'>Cost to NPO ($)</Label>
+            <Label htmlFor='cost'>Consignment Cost ($)</Label>
             <Input
               id='cost'
               type='number'
@@ -497,7 +497,29 @@ export function AuctionItemForm({
           </div>
 
           <div className='space-y-2'>
-            <Label htmlFor='buy_now_price'>Buy Now Price ($)</Label>
+            <div className='flex items-center justify-between gap-2'>
+              <Label htmlFor='buy_now_price'>Buy Now Price ($)</Label>
+              {formData.donor_value && parseFloat(formData.donor_value) > 0 && (
+                <button
+                  type='button'
+                  className='text-primary text-xs underline-offset-2 hover:underline'
+                  onClick={() => {
+                    const multiplierPct = parseFloat(
+                      import.meta.env.VITE_BUY_NOW_PRICE_MULTIPLIER ?? '250'
+                    )
+                    const fmv = parseFloat(formData.donor_value)
+                    const suggested = ((fmv * multiplierPct) / 100).toFixed(2)
+                    setFormData({ ...formData, buy_now_price: suggested })
+                  }}
+                >
+                  Suggest (
+                  {parseFloat(
+                    import.meta.env.VITE_BUY_NOW_PRICE_MULTIPLIER ?? '250'
+                  )}
+                  % of FMV)
+                </button>
+              )}
+            </div>
             <Input
               id='buy_now_price'
               type='number'

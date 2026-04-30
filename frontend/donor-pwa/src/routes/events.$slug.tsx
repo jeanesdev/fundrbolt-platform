@@ -3,13 +3,12 @@
  * Displays event information with branding (Phase 4)
  * Parent route for /events/$slug/register
  */
-
+import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { EventBrandingProvider } from '@/contexts/EventBrandingContext'
-import { useNotificationSocket } from '@/hooks/use-notification-socket'
-import { usePushNotifications } from '@/hooks/use-push-notifications'
 import { useAuthStore } from '@/stores/auth-store'
 import { useEventContextStore } from '@/stores/event-context-store'
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { useNotificationSocket } from '@/hooks/use-notification-socket'
+import { usePushNotifications } from '@/hooks/use-push-notifications'
 
 export const Route = createFileRoute('/events/$slug')({
   component: EventLayout,
@@ -31,8 +30,10 @@ function EventLayout() {
   return (
     <EventBrandingProvider>
       <div
-        className="min-h-screen"
-        style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}
+        className='min-h-screen'
+        style={{
+          backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+        }}
       >
         <Outlet />
       </div>

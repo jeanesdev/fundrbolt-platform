@@ -3,7 +3,10 @@
  * Reusable component for selecting an NPO from a list
  * Fetches NPOs and displays them in a searchable select dropdown
  */
-
+import { useEffect, useState } from 'react'
+import npoService from '@/services/npo-service'
+import type { NPO } from '@/types/npo'
+import { Loader2 } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -12,10 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import npoService from '@/services/npo-service'
-import type { NPO } from '@/types/npo'
-import { Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
 
 interface NPOSelectProps {
   value?: string
@@ -63,20 +62,29 @@ export function NPOSelect({
   }, [])
 
   return (
-    <div className="space-y-2">
+    <div className='space-y-2'>
       {label && (
-        <Label htmlFor="npo-select">
+        <Label htmlFor='npo-select'>
           {label}
-          {required && <span className="text-destructive ml-1">*</span>}
+          {required && <span className='text-destructive ml-1'>*</span>}
         </Label>
       )}
 
-      <Select value={value} onValueChange={onValueChange} disabled={disabled || isLoading}>
-        <SelectTrigger id="npo-select" className={error ? 'border-destructive' : ''}>
+      <Select
+        value={value}
+        onValueChange={onValueChange}
+        disabled={disabled || isLoading}
+      >
+        <SelectTrigger
+          id='npo-select'
+          className={error ? 'border-destructive' : ''}
+        >
           {isLoading ? (
-            <div className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-muted-foreground">Loading organizations...</span>
+            <div className='flex items-center gap-2'>
+              <Loader2 className='h-4 w-4 animate-spin' />
+              <span className='text-muted-foreground'>
+                Loading organizations...
+              </span>
             </div>
           ) : (
             <SelectValue placeholder={placeholder} />
@@ -84,16 +92,18 @@ export function NPOSelect({
         </SelectTrigger>
         <SelectContent>
           {npos.length === 0 && !isLoading && (
-            <div className="py-6 text-center text-sm text-muted-foreground">
+            <div className='text-muted-foreground py-6 text-center text-sm'>
               No organizations found
             </div>
           )}
           {npos.map((npo) => (
             <SelectItem key={npo.id} value={npo.id}>
-              <div className="flex flex-col">
-                <span className="font-medium">{npo.name}</span>
+              <div className='flex flex-col'>
+                <span className='font-medium'>{npo.name}</span>
                 {npo.tagline && (
-                  <span className="text-xs text-muted-foreground">{npo.tagline}</span>
+                  <span className='text-muted-foreground text-xs'>
+                    {npo.tagline}
+                  </span>
                 )}
               </div>
             </SelectItem>
@@ -101,12 +111,8 @@ export function NPOSelect({
         </SelectContent>
       </Select>
 
-      {loadError && (
-        <p className="text-sm text-destructive">{loadError}</p>
-      )}
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
+      {loadError && <p className='text-destructive text-sm'>{loadError}</p>}
+      {error && <p className='text-destructive text-sm'>{error}</p>}
     </div>
   )
 }

@@ -6,9 +6,9 @@
  * Includes slide-in entrance, icon bounce, accent glow, and auto-dismiss timer bar.
  * T064: Supports animation_type in data payload (confetti, flash, pulse).
  */
+import { useEffect, useState } from 'react'
 import type { NotificationData } from '@/services/notification-service'
 import { Bell, Gavel, Trophy, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { ConfettiAnimation } from './ConfettiAnimation'
 
 const TOAST_DURATION = 5000
@@ -160,7 +160,7 @@ export function NotificationToast({
 
           {/* Content */}
           <div className='min-w-0 flex-1'>
-            <p className='text-foreground text-sm font-semibold leading-tight'>
+            <p className='text-foreground text-sm leading-tight font-semibold'>
               {notification.title}
             </p>
             <p className='text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed'>

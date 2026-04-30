@@ -7,27 +7,26 @@
  * - Visual feedback for slide progress
  * - Event branding support
  */
-
+import { useEffect, useState } from 'react'
+import { ArrowRight, Check, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import {
   AlertDialog,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { cn } from '@/lib/utils';
-import { ArrowRight, Check, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import { Slider } from '@/components/ui/slider'
 
 export interface BidConfirmSlideProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  bidAmount: number;
-  isMaxBid?: boolean;
-  itemTitle: string;
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+  bidAmount: number
+  isMaxBid?: boolean
+  itemTitle: string
 }
 
 /**
@@ -39,7 +38,7 @@ function formatCurrency(amount: number): string {
     currency: 'USD',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(amount)
 }
 
 /**
@@ -53,51 +52,53 @@ export function BidConfirmSlide({
   isMaxBid = false,
   itemTitle,
 }: BidConfirmSlideProps) {
-  const [sliderValue, setSliderValue] = useState<number[]>([0]);
-  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [sliderValue, setSliderValue] = useState<number[]>([0])
+  const [isConfirmed, setIsConfirmed] = useState(false)
 
-  const slidePercent = sliderValue[0] ?? 0;
-  const isComplete = slidePercent >= 95; // 95% threshold for confirmation
+  const slidePercent = sliderValue[0] ?? 0
+  const isComplete = slidePercent >= 95 // 95% threshold for confirmation
 
   // Reset slider when modal opens
   useEffect(() => {
     if (isOpen) {
-      setSliderValue([0]);
-      setIsConfirmed(false);
+      setSliderValue([0])
+      setIsConfirmed(false)
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   // Auto-confirm when slider reaches end
   useEffect(() => {
     if (isComplete && !isConfirmed) {
-      setIsConfirmed(true);
+      setIsConfirmed(true)
       // Short delay for visual feedback before confirming
       setTimeout(() => {
-        onConfirm();
-      }, 300);
+        onConfirm()
+      }, 300)
     }
-  }, [isComplete, isConfirmed, onConfirm]);
+  }, [isComplete, isConfirmed, onConfirm])
 
   const handleSliderChange = (value: number[]) => {
     // Prevent sliding back once complete
     if (!isConfirmed) {
-      setSliderValue(value);
+      setSliderValue(value)
     }
-  };
+  }
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent
-        className="max-w-md"
-        style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}
+        className='max-w-md'
+        style={{
+          backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+        }}
       >
         <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="absolute top-3 right-3"
+          type='button'
+          variant='outline'
+          size='icon'
+          className='absolute top-3 right-3'
           onClick={onClose}
-          aria-label="Close confirm bid"
+          aria-label='Close confirm bid'
           disabled={isConfirmed}
           style={{
             color: 'var(--event-text-on-background, #000000)',
@@ -105,45 +106,47 @@ export function BidConfirmSlide({
             backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
           }}
         >
-          <X className="h-4 w-4" />
+          <X className='h-4 w-4' />
         </Button>
 
         <AlertDialogHeader>
           <AlertDialogTitle
-            className="text-xl font-bold text-center"
+            className='text-center text-xl font-bold'
             style={{ color: 'var(--event-text-on-background, #000000)' }}
           >
             Confirm Your Bid
           </AlertDialogTitle>
           <AlertDialogDescription
-            className="text-center line-clamp-2"
+            className='line-clamp-2 text-center'
             style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
           >
             {itemTitle}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className='space-y-6 py-4'>
           {/* Bid summary */}
           <div
-            className="rounded-lg p-6 text-center"
-            style={{ backgroundColor: 'rgb(var(--event-card-bg, 147, 51, 234))' }}
+            className='rounded-lg p-6 text-center'
+            style={{
+              backgroundColor: 'rgb(var(--event-card-bg, 147, 51, 234))',
+            }}
           >
             <div
-              className="text-sm font-medium mb-2"
+              className='mb-2 text-sm font-medium'
               style={{ color: 'var(--event-card-text-muted, #6B7280)' }}
             >
               {isMaxBid ? 'Maximum Bid Amount' : 'Bid Amount'}
             </div>
             <div
-              className="text-4xl font-bold mb-2"
+              className='mb-2 text-4xl font-bold'
               style={{ color: 'var(--event-card-text, #000000)' }}
             >
               {formatCurrency(bidAmount)}
             </div>
             {isMaxBid && (
               <div
-                className="text-xs"
+                className='text-xs'
                 style={{ color: 'var(--event-card-text-muted, #6B7280)' }}
               >
                 Auto-bid up to this amount
@@ -152,15 +155,15 @@ export function BidConfirmSlide({
           </div>
 
           {/* Swipe-to-confirm slider */}
-          <div className="space-y-2">
+          <div className='space-y-2'>
             <div
-              className="text-sm font-semibold text-center"
+              className='text-center text-sm font-semibold'
               style={{ color: 'var(--event-text-on-background, #000000)' }}
             >
               Slide to Confirm
             </div>
 
-            <div className="relative">
+            <div className='relative'>
               {/* Slider track background with gradient */}
               <div
                 className={cn(
@@ -177,7 +180,7 @@ export function BidConfirmSlide({
                         rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
                 }}
               >
-                <div className="flex items-center justify-between px-4 py-3">
+                <div className='flex items-center justify-between px-4 py-3'>
                   {/* Left icon */}
                   <div
                     className={cn(
@@ -186,14 +189,16 @@ export function BidConfirmSlide({
                     )}
                   >
                     <ArrowRight
-                      className="h-5 w-5"
-                      style={{ color: 'var(--event-text-on-secondary, #FFFFFF)' }}
+                      className='h-5 w-5'
+                      style={{
+                        color: 'var(--event-text-on-secondary, #FFFFFF)',
+                      }}
                     />
                   </div>
 
                   {/* Center text */}
                   <div
-                    className="text-sm font-semibold"
+                    className='text-sm font-semibold'
                     style={{
                       color: isComplete
                         ? 'var(--event-text-on-primary, #FFFFFF)'
@@ -213,7 +218,7 @@ export function BidConfirmSlide({
                     )}
                   >
                     <Check
-                      className="h-5 w-5"
+                      className='h-5 w-5'
                       style={{ color: 'var(--event-text-on-primary, #FFFFFF)' }}
                     />
                   </div>
@@ -221,22 +226,22 @@ export function BidConfirmSlide({
               </div>
 
               {/* Invisible slider overlay */}
-              <div className="absolute inset-0 flex items-center">
+              <div className='absolute inset-0 flex items-center'>
                 <Slider
                   value={sliderValue}
                   onValueChange={handleSliderChange}
                   min={0}
                   max={100}
                   step={1}
-                  className="w-full opacity-0 cursor-grab active:cursor-grabbing"
-                  aria-label="Slide to confirm bid"
+                  className='w-full cursor-grab opacity-0 active:cursor-grabbing'
+                  aria-label='Slide to confirm bid'
                   disabled={isConfirmed}
                 />
               </div>
             </div>
 
             <div
-              className="text-xs text-center font-medium"
+              className='text-center text-xs font-medium'
               style={{ color: 'var(--event-text-on-background, #000000)' }}
             >
               {isMaxBid
@@ -246,9 +251,9 @@ export function BidConfirmSlide({
           </div>
 
           <Button
-            type="button"
-            variant="outline"
-            className="w-full font-semibold"
+            type='button'
+            variant='outline'
+            className='w-full font-semibold'
             onClick={onClose}
             disabled={isConfirmed}
             style={{
@@ -262,7 +267,7 @@ export function BidConfirmSlide({
         </div>
       </AlertDialogContent>
     </AlertDialog>
-  );
+  )
 }
 
-export default BidConfirmSlide;
+export default BidConfirmSlide

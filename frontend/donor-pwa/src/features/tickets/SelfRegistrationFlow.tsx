@@ -2,6 +2,17 @@
  * SelfRegistrationFlow component — assigns a ticket to self and registers
  * the current user as an attendee. Multi-step inline flow.
  */
+import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Loader2, UserCheck } from 'lucide-react'
+import { toast } from 'sonner'
+import {
+  getEventBySlug,
+  getEventCustomOptions,
+  getTicketPackages,
+  type PublicTicketCustomOption,
+} from '@/lib/api/events'
+import { assignTicket, selfRegister } from '@/lib/api/ticket-assignments'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -23,22 +34,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  getEventBySlug,
-  getEventCustomOptions,
-  getTicketPackages,
-  type PublicTicketCustomOption,
-} from '@/lib/api/events'
-import { assignTicket, selfRegister } from '@/lib/api/ticket-assignments'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Loader2, UserCheck } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { toast } from 'sonner'
 
 type CustomResponseValue = string | string[] | boolean
 
 function normalizeOptionText(value: string): string {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ')
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
 }
 
 function isDuplicateMealQuestion(
@@ -159,7 +162,8 @@ export function SelfRegistrationFlow({
 
   const foodOptions = eventDetail?.food_options ?? []
   const foodOptionNames = useMemo(
-    () => new Set(foodOptions.map((option) => normalizeOptionText(option.name))),
+    () =>
+      new Set(foodOptions.map((option) => normalizeOptionText(option.name))),
     [foodOptions]
   )
   const requiresMealSelection = foodOptions.length > 0
@@ -354,7 +358,9 @@ export function SelfRegistrationFlow({
                         {foodOptions.map((option) => (
                           <SelectItem key={option.id} value={option.id}>
                             {option.name}
-                            {option.description ? ` - ${option.description}` : ''}
+                            {option.description
+                              ? ` - ${option.description}`
+                              : ''}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -488,7 +494,9 @@ export function SelfRegistrationFlow({
                                   placeholder='Enter your response'
                                 />
                                 {error && (
-                                  <p className='text-sm text-red-600'>{error}</p>
+                                  <p className='text-sm text-red-600'>
+                                    {error}
+                                  </p>
                                 )}
                               </>
                             )

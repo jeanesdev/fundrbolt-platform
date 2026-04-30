@@ -88,6 +88,7 @@ export function useEventContext(): UseEventContextReturn {
         slug: event.slug,
         status: event.status,
         event_datetime: event.event_datetime,
+        npo_id: event.npo_id,
       }))
 
       setAvailableEvents(eventOptions)

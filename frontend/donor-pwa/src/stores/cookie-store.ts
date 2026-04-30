@@ -2,9 +2,12 @@
  * Cookie Consent Store
  * Zustand store for managing cookie consent state
  */
-
 import { cookieService } from '@/services/cookie-service'
-import type { CookieConsentPreferences, CookieConsentStatusResponse } from '@/types/cookie'
+import type {
+  CookieConsentPreferences,
+  CookieConsentStatusResponse,
+} from '@/types/cookie'
+import { create } from 'zustand'
 import {
   clearSessionId,
   getCookiePreferences,
@@ -12,7 +15,6 @@ import {
   hasSetCookiePreferences,
   saveCookiePreferences,
 } from '@/utils/cookie-manager'
-import { create } from 'zustand'
 
 interface CookieConsentState {
   preferences: CookieConsentPreferences
@@ -23,8 +25,12 @@ interface CookieConsentState {
 
   // Actions
   fetchConsent: () => Promise<void>
-  setConsent: (preferences: Omit<CookieConsentPreferences, 'essential'>) => Promise<void>
-  updateConsent: (preferences: Omit<CookieConsentPreferences, 'essential'>) => Promise<void>
+  setConsent: (
+    preferences: Omit<CookieConsentPreferences, 'essential'>
+  ) => Promise<void>
+  updateConsent: (
+    preferences: Omit<CookieConsentPreferences, 'essential'>
+  ) => Promise<void>
   revokeConsent: () => Promise<void>
   acceptAll: () => Promise<void>
   rejectAll: () => Promise<void>
@@ -59,7 +65,8 @@ export const useCookieStore = create<CookieConsentState>((set, get) => ({
       const sessionId = getSessionId()
       set({ sessionId })
 
-      const response: CookieConsentStatusResponse = await cookieService.getConsent(sessionId)
+      const response: CookieConsentStatusResponse =
+        await cookieService.getConsent(sessionId)
 
       const preferences: CookieConsentPreferences = {
         essential: response.essential,

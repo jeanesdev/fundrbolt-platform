@@ -1,5 +1,5 @@
-import { LegalFooter } from '@/components/legal/legal-footer'
 import LogoWhiteGold from '@fundrbolt/shared/assets/logos/fundrbolt-logo-white-gold.svg'
+import { LegalFooter } from '@/components/legal/legal-footer'
 
 type AuthLayoutProps = {
   children: React.ReactNode

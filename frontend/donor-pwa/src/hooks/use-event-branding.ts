@@ -42,13 +42,12 @@
  * }
  * ```
  */
-
+import { useEffect } from 'react'
 import {
   getContrastingTextColor,
   getContrastingTextColors,
   hexToRgbTuple,
 } from '@/lib/color-utils'
-import { useEffect } from 'react'
 
 /**
  * Update the theme-color meta tag so iOS Safari chrome matches the page background.
@@ -87,7 +86,8 @@ const DEFAULT_BRANDING = {
   textOnPrimary: getContrastingTextColor(DEFAULT_COLORS.primary),
   textOnSecondary: getContrastingTextColor(DEFAULT_COLORS.secondary),
   textOnBackground: getContrastingTextColor(DEFAULT_COLORS.background),
-  textMutedOnBackground: getContrastingTextColors(DEFAULT_COLORS.background).muted,
+  textMutedOnBackground: getContrastingTextColors(DEFAULT_COLORS.background)
+    .muted,
 }
 
 export function useEventBranding() {
@@ -106,7 +106,8 @@ export function useEventBranding() {
     // Get actual colors with fallbacks
     const primaryColor = branding.primary_color || DEFAULT_COLORS.primary
     const secondaryColor = branding.secondary_color || DEFAULT_COLORS.secondary
-    const backgroundColor = branding.background_color || DEFAULT_COLORS.background
+    const backgroundColor =
+      branding.background_color || DEFAULT_COLORS.background
     const accentColor = branding.accent_color || DEFAULT_COLORS.accent
 
     // Apply color RGB tuples
@@ -116,17 +117,35 @@ export function useEventBranding() {
     root.style.setProperty('--event-accent', hexToRgbTuple(accentColor))
 
     // Apply contrasting text colors
-    root.style.setProperty('--event-text-on-primary', getContrastingTextColor(primaryColor))
-    root.style.setProperty('--event-text-on-secondary', getContrastingTextColor(secondaryColor))
-    root.style.setProperty('--event-text-on-background', getContrastingTextColor(backgroundColor))
+    root.style.setProperty(
+      '--event-text-on-primary',
+      getContrastingTextColor(primaryColor)
+    )
+    root.style.setProperty(
+      '--event-text-on-secondary',
+      getContrastingTextColor(secondaryColor)
+    )
+    root.style.setProperty(
+      '--event-text-on-background',
+      getContrastingTextColor(backgroundColor)
+    )
 
     const bgTextColors = getContrastingTextColors(backgroundColor)
-    root.style.setProperty('--event-text-muted-on-background', bgTextColors.muted)
+    root.style.setProperty(
+      '--event-text-muted-on-background',
+      bgTextColors.muted
+    )
 
     // Card colors - use secondary as card background with proper text contrast
     root.style.setProperty('--event-card-bg', hexToRgbTuple(secondaryColor))
-    root.style.setProperty('--event-card-text', getContrastingTextColor(secondaryColor))
-    root.style.setProperty('--event-card-text-muted', getContrastingTextColors(secondaryColor).muted)
+    root.style.setProperty(
+      '--event-card-text',
+      getContrastingTextColor(secondaryColor)
+    )
+    root.style.setProperty(
+      '--event-card-text-muted',
+      getContrastingTextColors(secondaryColor).muted
+    )
 
     // Update theme-color meta tag and body to match event background
     // This prevents the iOS Safari chrome (top/bottom bars) from being a different color
@@ -142,10 +161,22 @@ export function useEventBranding() {
     root.style.setProperty('--event-secondary', DEFAULT_BRANDING.secondary)
     root.style.setProperty('--event-background', DEFAULT_BRANDING.background)
     root.style.setProperty('--event-accent', DEFAULT_BRANDING.accent)
-    root.style.setProperty('--event-text-on-primary', DEFAULT_BRANDING.textOnPrimary)
-    root.style.setProperty('--event-text-on-secondary', DEFAULT_BRANDING.textOnSecondary)
-    root.style.setProperty('--event-text-on-background', DEFAULT_BRANDING.textOnBackground)
-    root.style.setProperty('--event-text-muted-on-background', DEFAULT_BRANDING.textMutedOnBackground)
+    root.style.setProperty(
+      '--event-text-on-primary',
+      DEFAULT_BRANDING.textOnPrimary
+    )
+    root.style.setProperty(
+      '--event-text-on-secondary',
+      DEFAULT_BRANDING.textOnSecondary
+    )
+    root.style.setProperty(
+      '--event-text-on-background',
+      DEFAULT_BRANDING.textOnBackground
+    )
+    root.style.setProperty(
+      '--event-text-muted-on-background',
+      DEFAULT_BRANDING.textMutedOnBackground
+    )
 
     // Reset theme-color to dark default and clear inline body background
     updateThemeColorMeta(DEFAULT_COLORS.background)

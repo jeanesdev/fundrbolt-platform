@@ -1,8 +1,8 @@
-import path from 'path'
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
+import react from '@vitejs/plugin-react-swc'
+import path from 'path'
+import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
@@ -17,7 +17,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       devOptions: {
         enabled: true,
         type: 'module',

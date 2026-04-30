@@ -4,13 +4,14 @@ import uuid
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, Numeric, String, Text
+from sqlalchemy import VARCHAR, Boolean, ForeignKey, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
+    from app.models.donate_now_media import DonateNowMedia
     from app.models.donation_tier import DonationTier
     from app.models.npo import NPO
     from app.models.npo_donation import NpoDonation
@@ -42,9 +43,18 @@ class DonateNowPageConfig(Base, UUIDMixin, TimestampMixin):
         default=Decimal("0.0290"),
     )
     npo_info_text: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    page_logo_url: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    brand_color_primary: Mapped[str | None] = mapped_column(VARCHAR(7), nullable=True)
+    brand_color_secondary: Mapped[str | None] = mapped_column(VARCHAR(7), nullable=True)
 
     # Relationships
     npo: Mapped["NPO"] = relationship("NPO", back_populates="donate_now_config")
+    media_items: Mapped[list["DonateNowMedia"]] = relationship(
+        "DonateNowMedia",
+        back_populates="config",
+        cascade="all, delete-orphan",
+        order_by="DonateNowMedia.display_order",
+    )
     tiers: Mapped[list["DonationTier"]] = relationship(
         "DonationTier",
         back_populates="config",

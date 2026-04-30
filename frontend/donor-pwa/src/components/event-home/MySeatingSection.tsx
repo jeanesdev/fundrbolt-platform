@@ -6,13 +6,13 @@
  * - Table name / number with captain badge
  * - Compact tablemates grid
  */
-import type { GuestProfileData } from '@/components/event-home/GuestProfileModal'
-import { Button } from '@/components/ui/button'
-import { Dialog } from '@/components/ui/dialog'
-import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { Crown, Hash, Loader2, Map, MapPin, Users, X } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
+import { Button } from '@/components/ui/button'
+import { Dialog } from '@/components/ui/dialog'
+import type { GuestProfileData } from '@/components/event-home/GuestProfileModal'
 
 interface MySeatingInfo {
   guestId: string
@@ -96,10 +96,16 @@ function normalizeName(value: string | null | undefined): string {
 }
 
 function normalizeNameForMatch(value: string | null | undefined): string {
-  return normalizeName(value).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()
+  return normalizeName(value)
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
-function namesLikelyMatch(left: string | null | undefined, right: string | null | undefined): boolean {
+function namesLikelyMatch(
+  left: string | null | undefined,
+  right: string | null | undefined
+): boolean {
   const leftNormalized = normalizeNameForMatch(left)
   const rightNormalized = normalizeNameForMatch(right)
 
@@ -121,7 +127,8 @@ function namesLikelyMatch(left: string | null | undefined, right: string | null 
 
   if (
     leftFirst === rightFirst &&
-    (leftNormalized.includes(rightNormalized) || rightNormalized.includes(leftNormalized))
+    (leftNormalized.includes(rightNormalized) ||
+      rightNormalized.includes(leftNormalized))
   ) {
     return true
   }
@@ -150,14 +157,21 @@ function getEmbedMapUrl(url: string): string {
   }
 }
 
-export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: MySeatingProps) {
+export function MySeatingSection({
+  seatingInfo,
+  venueMapLink,
+  onGuestClick,
+}: MySeatingProps) {
   const [isMapFullscreenOpen, setIsMapFullscreenOpen] = useState(false)
   const [mapImageFailed, setMapImageFailed] = useState(false)
   const [mapImageLoaded, setMapImageLoaded] = useState(false)
   const mapWarmCache = useMemo(() => getMapImageWarmCache(), [])
 
   // Double-tap to close fullscreen map
-  const closeFullscreenMap = useCallback(() => setIsMapFullscreenOpen(false), [])
+  const closeFullscreenMap = useCallback(
+    () => setIsMapFullscreenOpen(false),
+    []
+  )
   const lastMapTapRef = useRef(0)
   const handleMapDoubleTap = useCallback(() => {
     const now = Date.now()
@@ -168,10 +182,8 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
   }, [closeFullscreenMap])
 
   // Swipe-down to close fullscreen map
-  const {
-    onTouchStart: mapSwipeTouchStart,
-    onTouchEnd: mapSwipeTouchEnd,
-  } = useSwipeDownToClose(closeFullscreenMap)
+  const { onTouchStart: mapSwipeTouchStart, onTouchEnd: mapSwipeTouchEnd } =
+    useSwipeDownToClose(closeFullscreenMap)
 
   const isPreloadedMapImage = useMemo(() => {
     if (!venueMapLink || isGoogleMapsUrl(venueMapLink)) {
@@ -255,7 +267,8 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const myInfoSource: any = seatingInfo.myInfo ?? seatingInfoRecord.my_info ?? seatingInfoRecord
+  const myInfoSource: any =
+    seatingInfo.myInfo ?? seatingInfoRecord.my_info ?? seatingInfoRecord
   const myInfo: MySeatingInfo = {
     guestId: myInfoSource?.guestId ?? myInfoSource?.guest_id ?? '',
     fullName:
@@ -264,13 +277,17 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
       myInfoSource?.guest_name ??
       myInfoSource?.name ??
       null,
-    bidderNumber: parseBidderNumber(myInfoSource?.bidderNumber ?? myInfoSource?.bidder_number),
-    tableNumber: myInfoSource?.tableNumber ?? myInfoSource?.table_number ?? null,
+    bidderNumber: parseBidderNumber(
+      myInfoSource?.bidderNumber ?? myInfoSource?.bidder_number
+    ),
+    tableNumber:
+      myInfoSource?.tableNumber ?? myInfoSource?.table_number ?? null,
     checkedIn: myInfoSource?.checkedIn ?? myInfoSource?.checked_in ?? false,
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tablematesSource: any[] = seatingInfo.tablemates ?? seatingInfoRecord.tablemates ?? []
+  const tablematesSource: any[] =
+    seatingInfo.tablemates ?? seatingInfoRecord.tablemates ?? []
   const tablemates: TablemateInfo[] = tablematesSource.map((t) => ({
     guestId: t.guestId ?? t.guest_id ?? '',
     name: t.name ?? null,
@@ -280,25 +297,42 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
     profileImageUrl: t.profileImageUrl ?? t.profile_image_url ?? null,
   }))
 
-  const tableCapacitySource = seatingInfo.tableCapacity ?? seatingInfoRecord.table_capacity
+  const tableCapacitySource =
+    seatingInfo.tableCapacity ?? seatingInfoRecord.table_capacity
   const tableCapacity = {
-    current: tableCapacitySource?.current ?? seatingInfoRecord.table_assignment?.current_occupancy ?? 0,
-    max: tableCapacitySource?.max ?? seatingInfoRecord.table_assignment?.effective_capacity ?? 0,
+    current:
+      tableCapacitySource?.current ??
+      seatingInfoRecord.table_assignment?.current_occupancy ??
+      0,
+    max:
+      tableCapacitySource?.max ??
+      seatingInfoRecord.table_assignment?.effective_capacity ??
+      0,
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tableAssignmentSource: any = seatingInfo.tableAssignment ?? seatingInfoRecord.table_assignment
+  const tableAssignmentSource: any =
+    seatingInfo.tableAssignment ?? seatingInfoRecord.table_assignment
   const tableAssignment: TableAssignment | null = tableAssignmentSource
     ? {
-      tableNumber: tableAssignmentSource.tableNumber ?? tableAssignmentSource.table_number ?? 0,
-      tableName: tableAssignmentSource.tableName ?? tableAssignmentSource.table_name ?? null,
-      captainFullName:
-        tableAssignmentSource.captainFullName ??
-        tableAssignmentSource.table_captain_name ??
-        tableAssignmentSource.captain_full_name ??
-        null,
-      youAreCaptain: tableAssignmentSource.youAreCaptain ?? tableAssignmentSource.you_are_captain ?? false,
-    }
+        tableNumber:
+          tableAssignmentSource.tableNumber ??
+          tableAssignmentSource.table_number ??
+          0,
+        tableName:
+          tableAssignmentSource.tableName ??
+          tableAssignmentSource.table_name ??
+          null,
+        captainFullName:
+          tableAssignmentSource.captainFullName ??
+          tableAssignmentSource.table_captain_name ??
+          tableAssignmentSource.captain_full_name ??
+          null,
+        youAreCaptain:
+          tableAssignmentSource.youAreCaptain ??
+          tableAssignmentSource.you_are_captain ??
+          false,
+      }
     : null
 
   const isCurrentUserCaptain = Boolean(tableAssignment?.youAreCaptain)
@@ -306,35 +340,45 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
   const hasCurrentUserInTablemates = tablemates.some(
     (mate) =>
       (mate.guestId && myInfo.guestId && mate.guestId === myInfo.guestId) ||
-      (normalizeName(mate.name) && normalizeName(mate.name) === normalizeName(myInfo.fullName))
+      (normalizeName(mate.name) &&
+        normalizeName(mate.name) === normalizeName(myInfo.fullName))
   )
 
   const displayTablemates: TablemateInfo[] = hasCurrentUserInTablemates
     ? tablemates
     : [
-      {
-        guestId: myInfo.guestId || '__current-user__',
-        name: myInfo.fullName ?? 'Guest',
-        bidderNumber: myInfo.bidderNumber,
-        isTableCaptain: isCurrentUserCaptain,
-        company: null,
-        profileImageUrl: null,
-        isCurrentUser: true,
-      },
-      ...tablemates,
-    ]
+        {
+          guestId: myInfo.guestId || '__current-user__',
+          name: myInfo.fullName ?? 'Guest',
+          bidderNumber: myInfo.bidderNumber,
+          isTableCaptain: isCurrentUserCaptain,
+          company: null,
+          profileImageUrl: null,
+          isCurrentUser: true,
+        },
+        ...tablemates,
+      ]
 
-  const detectedCaptainFromTablemates = displayTablemates.find((mate) => mate.isTableCaptain)
-  const captainDisplayName = tableAssignment?.captainFullName ?? detectedCaptainFromTablemates?.name ?? null
+  const detectedCaptainFromTablemates = displayTablemates.find(
+    (mate) => mate.isTableCaptain
+  )
+  const captainDisplayName =
+    tableAssignment?.captainFullName ??
+    detectedCaptainFromTablemates?.name ??
+    null
   const matchedCurrentUserMate = displayTablemates.find(
     (mate) =>
       (mate.guestId && myInfo.guestId && mate.guestId === myInfo.guestId) ||
       namesLikelyMatch(mate.name, myInfo.fullName)
   )
-  const captainByNameMatch = displayTablemates.find((mate) => namesLikelyMatch(mate.name, captainDisplayName))
+  const captainByNameMatch = displayTablemates.find((mate) =>
+    namesLikelyMatch(mate.name, captainDisplayName)
+  )
   const captainGuestId =
     detectedCaptainFromTablemates?.guestId ||
-    (isCurrentUserCaptain ? (matchedCurrentUserMate?.guestId || myInfo.guestId || '__current-user__') : null) ||
+    (isCurrentUserCaptain
+      ? matchedCurrentUserMate?.guestId || myInfo.guestId || '__current-user__'
+      : null) ||
     captainByNameMatch?.guestId ||
     null
 
@@ -351,7 +395,10 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
     if (!venueMapLink) {
       return (
         <div className='flex h-full w-full items-center justify-center'>
-          <p className='text-sm' style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}>
+          <p
+            className='text-sm'
+            style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+          >
             Event map is not available for this event yet.
           </p>
         </div>
@@ -386,7 +433,7 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
           <img
             src={mapUrl}
             alt='Event Map'
-            className='h-auto w-auto max-h-full max-w-full object-contain'
+            className='h-auto max-h-full w-auto max-w-full object-contain'
             loading='eager'
             fetchPriority='high'
             decoding='async'
@@ -437,13 +484,15 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
         <div className='pointer-events-none absolute -top-6 -right-6 h-24 w-24 rounded-full bg-white/15 blur-xl' />
         <div className='relative z-10 flex items-center justify-between'>
           <div>
-            <p className='mb-1 text-xs font-semibold uppercase tracking-widest text-white/70'>
+            <p className='mb-1 text-xs font-semibold tracking-widest text-white/70 uppercase'>
               Your Bidder Number
             </p>
             {myInfo.bidderNumber ? (
               <div className='flex items-center gap-2'>
                 <Hash className='h-5 w-5 text-white/70' />
-                <span className='text-4xl font-black tabular-nums text-white'>{myInfo.bidderNumber}</span>
+                <span className='text-4xl font-black text-white tabular-nums'>
+                  {myInfo.bidderNumber}
+                </span>
               </div>
             ) : (
               <p className='text-sm text-white/60 italic'>
@@ -453,16 +502,20 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
           </div>
           {hasTable && (
             <div className='text-right'>
-              <p className='mb-1 text-xs font-semibold uppercase tracking-widest text-white/70'>
+              <p className='mb-1 text-xs font-semibold tracking-widest text-white/70 uppercase'>
                 Table
               </p>
-              <div className='flex items-center gap-1.5 justify-end'>
+              <div className='flex items-center justify-end gap-1.5'>
                 <MapPin className='h-4 w-4 text-white/70' />
                 <span className='text-2xl font-black text-white'>
                   {tableAssignment?.tableName ?? resolvedTableNumber}
                 </span>
               </div>
-              {tableAssignment?.tableName && <p className='text-xs text-white/60'>Table {tableAssignment?.tableNumber}</p>}
+              {tableAssignment?.tableName && (
+                <p className='text-xs text-white/60'>
+                  Table {tableAssignment?.tableNumber}
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -476,7 +529,10 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
             borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.25)',
           }}
         >
-          <p className='text-sm' style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}>
+          <p
+            className='text-sm'
+            style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+          >
             {message}
           </p>
         </div>
@@ -488,16 +544,28 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
           style={{
             backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
             borderColor: 'rgb(var(--event-primary, 59, 130, 246))',
-            boxShadow: '0 14px 36px rgb(var(--event-primary, 59, 130, 246) / 0.18)',
+            boxShadow:
+              '0 14px 36px rgb(var(--event-primary, 59, 130, 246) / 0.18)',
           }}
         >
           <div className='relative mb-3 flex items-center justify-between'>
             <div className='flex items-center gap-2'>
-              <Users className='h-4 w-4' style={{ color: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.85)' }} />
-              <h3 className='text-sm font-semibold' style={{ color: 'var(--event-text-on-primary, #FFFFFF)' }}>
+              <Users
+                className='h-4 w-4'
+                style={{
+                  color:
+                    'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.85)',
+                }}
+              />
+              <h3
+                className='text-sm font-semibold'
+                style={{ color: 'var(--event-text-on-primary, #FFFFFF)' }}
+              >
                 Tablemates
               </h3>
-              {(isCurrentUserCaptain || captainDisplayName || detectedCaptainFromTablemates) && (
+              {(isCurrentUserCaptain ||
+                captainDisplayName ||
+                detectedCaptainFromTablemates) && (
                 <span
                   className='inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold'
                   style={{
@@ -513,7 +581,8 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
             <span
               className='rounded-full px-2 py-0.5 text-xs font-medium'
               style={{
-                backgroundColor: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.2)',
+                backgroundColor:
+                  'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.2)',
                 color: 'var(--event-text-on-primary, #FFFFFF)',
               }}
             >
@@ -531,9 +600,11 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
               }}
               className='inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm transition-opacity hover:opacity-95'
               style={{
-                borderColor: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.85)',
+                borderColor:
+                  'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.85)',
                 color: 'rgb(var(--event-primary, 59, 130, 246))',
-                backgroundColor: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.96)',
+                backgroundColor:
+                  'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.96)',
               }}
             >
               <Map className='h-3.5 w-3.5' />
@@ -547,26 +618,39 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
                 <div
                   key={mate.guestId}
                   className={`flex flex-col items-center gap-1.5 ${onGuestClick && !mate.isCurrentUser ? 'cursor-pointer active:opacity-70' : ''}`}
-                  role={onGuestClick && !mate.isCurrentUser ? 'button' : undefined}
+                  role={
+                    onGuestClick && !mate.isCurrentUser ? 'button' : undefined
+                  }
                   tabIndex={onGuestClick && !mate.isCurrentUser ? 0 : undefined}
-                  aria-label={onGuestClick && !mate.isCurrentUser ? `View ${mate.name ?? 'guest'}'s profile` : undefined}
-                  onClick={onGuestClick && !mate.isCurrentUser ? () => onGuestClick({
-                    guestId: mate.guestId,
-                    name: mate.name,
-                    bidderNumber: mate.bidderNumber,
-                    tableNumber: resolvedTableNumber,
-                    tableName: tableAssignment?.tableName ?? null,
-                    company: mate.company,
-                    profileImageUrl: mate.profileImageUrl,
-                    isTableCaptain: mate.isTableCaptain,
-                  }) : undefined}
+                  aria-label={
+                    onGuestClick && !mate.isCurrentUser
+                      ? `View ${mate.name ?? 'guest'}'s profile`
+                      : undefined
+                  }
+                  onClick={
+                    onGuestClick && !mate.isCurrentUser
+                      ? () =>
+                          onGuestClick({
+                            guestId: mate.guestId,
+                            name: mate.name,
+                            bidderNumber: mate.bidderNumber,
+                            tableNumber: resolvedTableNumber,
+                            tableName: tableAssignment?.tableName ?? null,
+                            company: mate.company,
+                            profileImageUrl: mate.profileImageUrl,
+                            isTableCaptain: mate.isTableCaptain,
+                          })
+                      : undefined
+                  }
                 >
                   <div className='relative'>
                     <div
                       className='flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 text-xs font-bold'
                       style={{
-                        borderColor: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.85)',
-                        backgroundColor: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.92)',
+                        borderColor:
+                          'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.85)',
+                        backgroundColor:
+                          'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.92)',
                         color: 'rgb(var(--event-primary, 59, 130, 246))',
                       }}
                       aria-label={mate.name ?? 'Guest'}
@@ -585,23 +669,26 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
                     </div>
                     {(mate.isTableCaptain ||
                       (captainGuestId && mate.guestId === captainGuestId) ||
-                      (captainDisplayName && namesLikelyMatch(mate.name, captainDisplayName))) && (
-                        <span
-                          className='absolute -right-1.5 -top-1.5 z-20 inline-flex h-5 w-5 items-center justify-center rounded-full border shadow-sm'
-                          style={{
-                            backgroundColor: 'rgb(var(--event-text-on-primary-rgb, 255 255 255))',
-                            borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.45)',
-                            color: 'rgb(var(--event-primary, 59, 130, 246))',
-                          }}
-                          title='Table Captain'
-                          aria-label='Table Captain'
-                        >
-                          <Crown className='h-3 w-3' />
-                        </span>
-                      )}
+                      (captainDisplayName &&
+                        namesLikelyMatch(mate.name, captainDisplayName))) && (
+                      <span
+                        className='absolute -top-1.5 -right-1.5 z-20 inline-flex h-5 w-5 items-center justify-center rounded-full border shadow-sm'
+                        style={{
+                          backgroundColor:
+                            'rgb(var(--event-text-on-primary-rgb, 255 255 255))',
+                          borderColor:
+                            'rgb(var(--event-primary, 59, 130, 246) / 0.45)',
+                          color: 'rgb(var(--event-primary, 59, 130, 246))',
+                        }}
+                        title='Table Captain'
+                        aria-label='Table Captain'
+                      >
+                        <Crown className='h-3 w-3' />
+                      </span>
+                    )}
                   </div>
                   <p
-                    className='text-center text-[10px] font-medium leading-tight line-clamp-2'
+                    className='line-clamp-2 text-center text-[10px] leading-tight font-medium'
                     style={{ color: 'var(--event-text-on-primary, #FFFFFF)' }}
                   >
                     {mate.name ?? 'Guest'}
@@ -609,7 +696,10 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
                   {mate.bidderNumber !== null && (
                     <p
                       className='text-[10px] font-medium'
-                      style={{ color: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.82)' }}
+                      style={{
+                        color:
+                          'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.82)',
+                      }}
                     >
                       #{mate.bidderNumber}
                     </p>
@@ -618,7 +708,13 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
               ))}
             </div>
           ) : (
-            <p className='text-center text-sm italic' style={{ color: 'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.82)' }}>
+            <p
+              className='text-center text-sm italic'
+              style={{
+                color:
+                  'rgb(var(--event-text-on-primary-rgb, 255 255 255) / 0.82)',
+              }}
+            >
               You're the first at your table.
             </p>
           )}
@@ -626,7 +722,10 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
       )}
 
       {isMapFullscreenOpen && (
-        <Dialog open={isMapFullscreenOpen} onOpenChange={setIsMapFullscreenOpen}>
+        <Dialog
+          open={isMapFullscreenOpen}
+          onOpenChange={setIsMapFullscreenOpen}
+        >
           <DialogPrimitive.Portal>
             <DialogPrimitive.Overlay className='fixed inset-0 z-[10000] bg-black/95' />
             <DialogPrimitive.Content
@@ -638,7 +737,7 @@ export function MySeatingSection({ seatingInfo, venueMapLink, onGuestClick }: My
                 type='button'
                 variant='ghost'
                 size='icon'
-                className='absolute right-2 top-[max(env(safe-area-inset-top),0.5rem)] z-30 text-white hover:bg-white/15 hover:text-white sm:right-3 sm:top-[max(env(safe-area-inset-top),0.75rem)]'
+                className='absolute top-[max(env(safe-area-inset-top),0.5rem)] right-2 z-30 text-white hover:bg-white/15 hover:text-white sm:top-[max(env(safe-area-inset-top),0.75rem)] sm:right-3'
                 onClick={() => setIsMapFullscreenOpen(false)}
                 aria-label='Close map'
               >

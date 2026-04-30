@@ -1,6 +1,6 @@
-import { DonorDashboardPage } from '@/features/donor-dashboard/DonorDashboardPage'
-import { useAuthStore } from '@/stores/auth-store'
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import { useAuthStore } from '@/stores/auth-store'
+import { DonorDashboardPage } from '@/features/donor-dashboard/DonorDashboardPage'
 
 const ALLOWED_ROLES = [
   'super_admin',

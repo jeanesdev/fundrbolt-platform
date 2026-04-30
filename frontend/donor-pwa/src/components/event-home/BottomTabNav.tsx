@@ -5,9 +5,8 @@
  * Active tab uses the event primary brand colour.
  * Supports a badge count on any tab.
  */
-
-import { cn } from '@/lib/utils'
 import { Heart, PartyPopper, Ticket } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export type DonorTab = 'home' | 'auction' | 'seat'
 
@@ -39,22 +38,24 @@ export function BottomTabNav({
 }: BottomTabNavProps) {
   return (
     <nav
-      className='fixed bottom-0 left-0 right-0 z-50 border-t'
+      className='fixed right-0 bottom-0 left-0 z-50 border-t'
       style={{
         backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
         borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
-        boxShadow: '0 -14px 30px rgb(0 0 0 / 0.26), 0 -3px 10px rgb(0 0 0 / 0.18)',
+        boxShadow:
+          '0 -14px 30px rgb(0 0 0 / 0.26), 0 -3px 10px rgb(0 0 0 / 0.18)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
       <div
         aria-hidden='true'
-        className='pointer-events-none absolute -top-6 left-0 right-0 h-6'
+        className='pointer-events-none absolute -top-6 right-0 left-0 h-6'
         style={{
-          background: 'linear-gradient(to top, rgb(0 0 0 / 0.16), rgb(0 0 0 / 0))',
+          background:
+            'linear-gradient(to top, rgb(0 0 0 / 0.16), rgb(0 0 0 / 0))',
         }}
       />
-      <div className='flex items-stretch h-20'>
+      <div className='flex h-20 items-stretch'>
         {TABS.map((tab) => {
           const isActive = tab.id === activeTab
           const badgeCount = badges[tab.id] ?? 0
@@ -79,7 +80,7 @@ export function BottomTabNav({
               {/* Active indicator bar */}
               {isActive && (
                 <span
-                  className='absolute top-0 left-1/4 right-1/4 h-0.5 rounded-full'
+                  className='absolute top-0 right-1/4 left-1/4 h-0.5 rounded-full'
                   style={{
                     backgroundColor: `rgb(var(--event-primary, 59, 130, 246))`,
                   }}
@@ -101,7 +102,7 @@ export function BottomTabNav({
                 />
                 {badgeCount > 0 && (
                   <span
-                    className='absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[10px] font-bold leading-none text-white'
+                    className='absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[10px] leading-none font-bold text-white'
                     style={{
                       backgroundColor: 'rgb(239, 68, 68)',
                     }}

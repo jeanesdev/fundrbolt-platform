@@ -2,18 +2,17 @@
  * React Query hooks for notifications
  * Provides cached data fetching, polling, and mutations
  */
-
-import {
-  notificationService,
-  type ListNotificationsOptions,
-} from '@/services/notification-service'
-import { useNotificationStore } from '@/stores/notification-store'
 import {
   useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
+import {
+  notificationService,
+  type ListNotificationsOptions,
+} from '@/services/notification-service'
+import { useNotificationStore } from '@/stores/notification-store'
 
 const NOTIFICATION_KEYS = {
   all: ['notifications'] as const,
@@ -27,7 +26,7 @@ const NOTIFICATION_KEYS = {
  */
 export function useNotifications(
   eventId: string,
-  options?: Omit<ListNotificationsOptions, 'cursor'>,
+  options?: Omit<ListNotificationsOptions, 'cursor'>
 ) {
   return useInfiniteQuery({
     queryKey: [...NOTIFICATION_KEYS.list(eventId), options] as const,
@@ -95,8 +94,7 @@ export function useMarkAllRead() {
   const markAllAsRead = useNotificationStore((state) => state.markAllAsRead)
 
   return useMutation({
-    mutationFn: (eventId: string) =>
-      notificationService.markAllRead(eventId),
+    mutationFn: (eventId: string) => notificationService.markAllRead(eventId),
     onSuccess: () => {
       markAllAsRead()
       queryClient.invalidateQueries({ queryKey: NOTIFICATION_KEYS.all })
@@ -111,14 +109,21 @@ export function useDeleteNotification() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ notificationId, eventId }: { notificationId: string; eventId?: string }) =>
-      notificationService.deleteNotification(notificationId, eventId),
+    mutationFn: ({
+      notificationId,
+      eventId,
+    }: {
+      notificationId: string
+      eventId?: string
+    }) => notificationService.deleteNotification(notificationId, eventId),
     onMutate: async ({ notificationId }) => {
       // Cancel in-flight fetches so they don't overwrite optimistic update
       await queryClient.cancelQueries({ queryKey: NOTIFICATION_KEYS.all })
 
       // Snapshot previous cache for rollback
-      const previousData = queryClient.getQueriesData({ queryKey: NOTIFICATION_KEYS.all })
+      const previousData = queryClient.getQueriesData({
+        queryKey: NOTIFICATION_KEYS.all,
+      })
 
       // Optimistically remove from all notification query caches
       queryClient.setQueriesData(
@@ -128,14 +133,16 @@ export function useDeleteNotification() {
           if (!old?.pages) return old
           return {
             ...old,
-            pages: old.pages.map((page: { notifications: Array<{ id: string }> }) => ({
-              ...page,
-              notifications: page.notifications.filter(
-                (n: { id: string }) => n.id !== notificationId,
-              ),
-            })),
+            pages: old.pages.map(
+              (page: { notifications: Array<{ id: string }> }) => ({
+                ...page,
+                notifications: page.notifications.filter(
+                  (n: { id: string }) => n.id !== notificationId
+                ),
+              })
+            ),
           }
-        },
+        }
       )
 
       return { previousData }

@@ -1,4 +1,21 @@
-import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
+import { useEffect } from 'react'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { profileUpdateSchema } from '@/schemas/profile'
+import {
+  Facebook,
+  Globe,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Youtube,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import apiClient from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -11,24 +28,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
-import apiClient from '@/lib/axios'
-import { profileUpdateSchema } from '@/schemas/profile'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  Facebook,
-  Globe,
-  Instagram,
-  Linkedin,
-  Twitter,
-  Youtube,
-} from 'lucide-react'
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
+import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
 import { ContentSection } from '../components/content-section'
 
 // Social media platform config: prefix shown in UI, URL builder, and username extractor
@@ -223,9 +223,8 @@ export function SettingsProfile() {
       const socialMediaLinks: Record<string, string> = {}
       for (const [platform, username] of Object.entries(usernameFields)) {
         if (username && username !== '') {
-          socialMediaLinks[platform] = socialPlatforms[
-            platform as SocialPlatform
-          ].toUrl(username)
+          socialMediaLinks[platform] =
+            socialPlatforms[platform as SocialPlatform].toUrl(username)
         }
       }
       if (website && website !== '') socialMediaLinks.website = website
@@ -275,11 +274,11 @@ export function SettingsProfile() {
   // Derive initials: prefer spoofed user label, fall back to auth user
   const userInitials = spoofedUser
     ? spoofedUser.label
-      .split(' ')
-      .map((n) => n[0] ?? '')
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
+        .split(' ')
+        .map((n) => n[0] ?? '')
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
     : user
       ? `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase()
       : 'U'
@@ -504,14 +503,26 @@ export function SettingsProfile() {
 
             {(
               [
-                { name: 'facebook' as const, icon: Facebook, label: 'Facebook' },
-                { name: 'twitter' as const, icon: Twitter, label: 'Twitter / X' },
+                {
+                  name: 'facebook' as const,
+                  icon: Facebook,
+                  label: 'Facebook',
+                },
+                {
+                  name: 'twitter' as const,
+                  icon: Twitter,
+                  label: 'Twitter / X',
+                },
                 {
                   name: 'instagram' as const,
                   icon: Instagram,
                   label: 'Instagram',
                 },
-                { name: 'linkedin' as const, icon: Linkedin, label: 'LinkedIn' },
+                {
+                  name: 'linkedin' as const,
+                  icon: Linkedin,
+                  label: 'LinkedIn',
+                },
                 { name: 'youtube' as const, icon: Youtube, label: 'YouTube' },
               ] as const
             ).map(({ name, icon: Icon, label }) => (
@@ -526,8 +537,8 @@ export function SettingsProfile() {
                       {label}
                     </FormLabel>
                     <FormControl>
-                      <div className='flex overflow-hidden rounded-md border focus-within:ring-1 focus-within:ring-ring'>
-                        <span className='flex items-center border-r bg-muted px-3 text-sm text-muted-foreground'>
+                      <div className='focus-within:ring-ring flex overflow-hidden rounded-md border focus-within:ring-1'>
+                        <span className='bg-muted text-muted-foreground flex items-center border-r px-3 text-sm'>
                           {socialPlatforms[name].prefix}
                         </span>
                         <Input

@@ -4,7 +4,15 @@
  * Auto-playing carousel that displays event sponsors.
  * Automatically transitions through sponsors in a loop.
  */
-
+import { useRef } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import Autoplay from 'embla-carousel-autoplay'
+import { AlertCircle, Loader2 } from 'lucide-react'
+import {
+  getEventSponsors,
+  getPublicEventSponsors,
+  type Sponsor,
+} from '@/lib/api/sponsors'
 import {
   Carousel,
   CarouselContent,
@@ -12,11 +20,6 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel'
-import { getEventSponsors, getPublicEventSponsors, type Sponsor } from '@/lib/api/sponsors'
-import { useQuery } from '@tanstack/react-query'
-import Autoplay from 'embla-carousel-autoplay'
-import { AlertCircle, Loader2 } from 'lucide-react'
-import { useRef } from 'react'
 
 interface SponsorsCarouselProps {
   eventId?: string
@@ -25,10 +28,16 @@ interface SponsorsCarouselProps {
   className?: string
 }
 
-export function SponsorsCarousel({ eventId, publicSlug, className }: SponsorsCarouselProps) {
+export function SponsorsCarousel({
+  eventId,
+  publicSlug,
+  className,
+}: SponsorsCarouselProps) {
   const plugin = useRef(Autoplay({ delay: 3000, stopOnInteraction: true }))
 
-  const queryKey = publicSlug ? ['sponsors', 'public', publicSlug] : ['sponsors', eventId]
+  const queryKey = publicSlug
+    ? ['sponsors', 'public', publicSlug]
+    : ['sponsors', eventId]
   const queryFn = publicSlug
     ? () => getPublicEventSponsors(publicSlug)
     : () => getEventSponsors(eventId!)
@@ -48,8 +57,10 @@ export function SponsorsCarousel({ eventId, publicSlug, className }: SponsorsCar
   // Loading state
   if (isLoading) {
     return (
-      <div className={`flex items-center justify-center py-8 ${className || ''}`}>
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div
+        className={`flex items-center justify-center py-8 ${className || ''}`}
+      >
+        <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
       </div>
     )
   }
@@ -57,8 +68,10 @@ export function SponsorsCarousel({ eventId, publicSlug, className }: SponsorsCar
   // Error state
   if (error) {
     return (
-      <div className={`flex items-center justify-center gap-2 py-8 text-muted-foreground ${className || ''}`}>
-        <AlertCircle className="h-5 w-5" />
+      <div
+        className={`text-muted-foreground flex items-center justify-center gap-2 py-8 ${className || ''}`}
+      >
+        <AlertCircle className='h-5 w-5' />
         <span>Unable to load sponsors</span>
       </div>
     )
@@ -91,7 +104,7 @@ export function SponsorsCarousel({ eventId, publicSlug, className }: SponsorsCar
     <div className={className}>
       <Carousel
         plugins={[plugin.current]}
-        className="w-full max-w-5xl mx-auto"
+        className='mx-auto w-full max-w-5xl'
         onMouseEnter={plugin.current.stop}
         onMouseLeave={plugin.current.reset}
         opts={{
@@ -99,25 +112,25 @@ export function SponsorsCarousel({ eventId, publicSlug, className }: SponsorsCar
           loop: true,
         }}
       >
-        <CarouselContent className="-ml-2 md:-ml-4">
+        <CarouselContent className='-ml-2 md:-ml-4'>
           {sponsors.map((sponsor) => (
             <CarouselItem
               key={sponsor.id}
-              className="pl-2 md:pl-4 basis-full md:basis-1/3 lg:basis-1/4"
+              className='basis-full pl-2 md:basis-1/3 md:pl-4 lg:basis-1/4'
             >
-              <div className="p-6 h-48 flex items-center justify-center bg-transparent">
+              <div className='flex h-48 items-center justify-center bg-transparent p-6'>
                 {sponsor.website_url ? (
                   <a
                     href={sponsor.website_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full h-full flex items-center justify-center"
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='flex h-full w-full items-center justify-center'
                   >
                     <img
                       src={sponsor.logo_url}
                       alt={sponsor.name}
                       className={`object-contain ${getLogoSizeClass(sponsor.logo_size)} max-w-full`}
-                      loading="lazy"
+                      loading='lazy'
                     />
                   </a>
                 ) : (
@@ -125,7 +138,7 @@ export function SponsorsCarousel({ eventId, publicSlug, className }: SponsorsCar
                     src={sponsor.logo_url}
                     alt={sponsor.name}
                     className={`object-contain ${getLogoSizeClass(sponsor.logo_size)} max-w-full`}
-                    loading="lazy"
+                    loading='lazy'
                   />
                 )}
               </div>

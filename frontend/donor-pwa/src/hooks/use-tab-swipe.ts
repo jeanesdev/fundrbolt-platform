@@ -91,7 +91,7 @@ export function useTabSwipe({
         onSwipeRight?.()
       }
     },
-    [onSwipeLeft, onSwipeRight, minDistance, maxDuration],
+    [onSwipeLeft, onSwipeRight, minDistance, maxDuration]
   )
 
   return { onTouchStart, onTouchMove, onTouchEnd }

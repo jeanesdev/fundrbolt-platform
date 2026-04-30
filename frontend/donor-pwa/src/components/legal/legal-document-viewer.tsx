@@ -2,6 +2,8 @@
  * LegalDocumentViewer component
  * Displays legal document content with version and publication date
  */
+import type { LegalDocumentPublic } from '@/types/legal'
+import ReactMarkdown from 'react-markdown'
 import {
   Card,
   CardContent,
@@ -9,8 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import type { LegalDocumentPublic } from '@/types/legal'
-import ReactMarkdown from 'react-markdown'
 
 interface LegalDocumentViewerProps {
   document: LegalDocumentPublic

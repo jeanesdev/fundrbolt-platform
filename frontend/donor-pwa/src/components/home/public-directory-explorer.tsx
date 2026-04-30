@@ -1,3 +1,12 @@
+import { useDeferredValue, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
+import { eventApi } from '@/services/event-service'
+import { npoApi } from '@/services/npo-service'
+import { Building2, Calendar, ExternalLink, MapPin, Search } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { listPublicEvents, type EventResponse } from '@/lib/api/events'
+import { listPublicNPOs, type PublicNPOResponse } from '@/lib/api/npos'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,15 +26,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { listPublicEvents, type EventResponse } from '@/lib/api/events'
-import { listPublicNPOs, type PublicNPOResponse } from '@/lib/api/npos'
-import { eventApi } from '@/services/event-service'
-import { npoApi } from '@/services/npo-service'
-import { useAuthStore } from '@/stores/auth-store'
-import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import { Building2, Calendar, ExternalLink, MapPin, Search } from 'lucide-react'
-import { useDeferredValue, useState } from 'react'
 
 type DirectoryOrganization = PublicNPOResponse
 type DirectoryEvent = EventResponse
@@ -112,11 +112,7 @@ function OrganizationCards({ items }: { items: DirectoryOrganization[] }) {
   )
 }
 
-function EventCards({
-  items,
-}: {
-  items: DirectoryEvent[]
-}) {
+function EventCards({ items }: { items: DirectoryEvent[] }) {
   return (
     <div className='grid gap-4 lg:hidden'>
       {items.map((event) => (
@@ -238,11 +234,7 @@ function OrganizationTable({ items }: { items: DirectoryOrganization[] }) {
   )
 }
 
-function EventTable({
-  items,
-}: {
-  items: DirectoryEvent[]
-}) {
+function EventTable({ items }: { items: DirectoryEvent[] }) {
   return (
     <div className='hidden overflow-hidden rounded-xl border lg:block'>
       <Table>

@@ -58,6 +58,7 @@ async def create_event(
         event_with_npo, from_attributes=True
     ).model_dump()
     response_dict["npo_name"] = event_with_npo.npo.name if event_with_npo.npo else None
+    response_dict["npo_slug"] = event_with_npo.npo.slug if event_with_npo.npo else None
     add_sas_urls_to_event_media(response_dict, list(event_with_npo.media or []))
     return EventDetailResponse(**response_dict)
 
@@ -79,6 +80,7 @@ async def get_event(
     # Convert to dict using Pydantic, then add npo_name and SAS URLs for media
     response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
     response_dict["npo_name"] = event.npo.name if event.npo else None
+    response_dict["npo_slug"] = event.npo.slug if event.npo else None
 
     add_sas_urls_to_event_media(response_dict, list(event.media or []))
 
@@ -111,6 +113,7 @@ async def update_event(
 
     response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
     response_dict["npo_name"] = event.npo.name if event.npo else None
+    response_dict["npo_slug"] = event.npo.slug if event.npo else None
     add_sas_urls_to_event_media(response_dict, list(event.media or []))
     return EventDetailResponse(**response_dict)
 
@@ -135,6 +138,7 @@ async def publish_event(
 
     response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
     response_dict["npo_name"] = event.npo.name if event.npo else None
+    response_dict["npo_slug"] = event.npo.slug if event.npo else None
     add_sas_urls_to_event_media(response_dict, list(event.media or []))
     return EventDetailResponse(**response_dict)
 
@@ -159,6 +163,7 @@ async def close_event(
 
     response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
     response_dict["npo_name"] = event.npo.name if event.npo else None
+    response_dict["npo_slug"] = event.npo.slug if event.npo else None
     add_sas_urls_to_event_media(response_dict)
     return EventDetailResponse(**response_dict)
 
@@ -214,6 +219,7 @@ async def duplicate_event(
 
     response_dict = EventDetailResponse.model_validate(reloaded, from_attributes=True).model_dump()
     response_dict["npo_name"] = reloaded.npo.name if reloaded.npo else None
+    response_dict["npo_slug"] = reloaded.npo.slug if reloaded.npo else None
     add_sas_urls_to_event_media(response_dict, list(reloaded.media or []))
     return EventDetailResponse(**response_dict)
 
@@ -379,6 +385,7 @@ async def get_public_event(
             detail=f"Event with slug '{slug}' not found or not active",
         )
     response_dict = EventDetailResponse.model_validate(event, from_attributes=True).model_dump()
+    response_dict["npo_slug"] = event.npo.slug if event.npo else None
     add_sas_urls_to_event_media(response_dict, list(event.media or []))
     return EventDetailResponse(**response_dict)
 

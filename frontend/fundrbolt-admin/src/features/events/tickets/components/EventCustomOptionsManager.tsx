@@ -247,6 +247,7 @@ export function EventCustomOptionsManager({
         </div>
         <div className='flex items-center gap-2'>
           <Button
+            type='button'
             variant='ghost'
             size='sm'
             onClick={() => setEditingOption(option)}
@@ -254,6 +255,7 @@ export function EventCustomOptionsManager({
             <Pencil className='h-4 w-4' />
           </Button>
           <Button
+            type='button'
             variant='ghost'
             size='sm'
             onClick={() => handleDelete(option)}
@@ -277,6 +279,7 @@ export function EventCustomOptionsManager({
             </CardDescription>
           </div>
           <Button
+            type='button'
             onClick={() => setIsCreateOpen(true)}
             disabled={!canAddMore}
             size='sm'

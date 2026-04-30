@@ -2,7 +2,10 @@
  * DataRightsForm Component
  * GDPR data rights: export data, delete account, withdraw consent
  */
-
+import { useState } from 'react'
+import { consentService } from '@/services/consent-service'
+import { Download, Loader2, Shield, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,11 +18,13 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { consentService } from '@/services/consent-service'
-import { Download, Loader2, Shield, Trash2 } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 
 export function DataRightsForm() {
   const [isExporting, setIsExporting] = useState(false)
@@ -30,7 +35,9 @@ export function DataRightsForm() {
     setIsExporting(true)
     try {
       const response = await consentService.requestDataExport()
-      toast.success(response.message || 'Data export request submitted successfully')
+      toast.success(
+        response.message || 'Data export request submitted successfully'
+      )
     } catch (_error) {
       toast.error('Failed to request data export')
     } finally {
@@ -41,7 +48,9 @@ export function DataRightsForm() {
   const handleDeleteAccount = async () => {
     setIsDeleting(true)
     try {
-      const response = await consentService.requestDataDeletion({ confirmation: true })
+      const response = await consentService.requestDataDeletion({
+        confirmation: true,
+      })
       toast.success(response.message || 'Account deletion scheduled')
     } catch (_error) {
       toast.error('Failed to request account deletion')
@@ -68,19 +77,20 @@ export function DataRightsForm() {
       <Card>
         <CardHeader>
           <div className='flex items-center gap-2'>
-            <Download className='h-5 w-5 text-muted-foreground' />
+            <Download className='text-muted-foreground h-5 w-5' />
             <CardTitle>Export Your Data</CardTitle>
           </div>
           <CardDescription>
-            Download a copy of all your personal data stored in our system (GDPR Article 20)
+            Download a copy of all your personal data stored in our system (GDPR
+            Article 20)
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className='space-y-4'>
-            <p className='text-sm text-muted-foreground'>
-              We'll prepare a ZIP file containing all your personal information, consent records,
-              and activity history. You'll receive an email with a download link when it's ready
-              (usually within 24 hours).
+            <p className='text-muted-foreground text-sm'>
+              We'll prepare a ZIP file containing all your personal information,
+              consent records, and activity history. You'll receive an email
+              with a download link when it's ready (usually within 24 hours).
             </p>
             <Button onClick={handleExportData} disabled={isExporting}>
               {isExporting && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
@@ -94,7 +104,7 @@ export function DataRightsForm() {
       <Card>
         <CardHeader>
           <div className='flex items-center gap-2'>
-            <Shield className='h-5 w-5 text-muted-foreground' />
+            <Shield className='text-muted-foreground h-5 w-5' />
             <CardTitle>Withdraw Consent</CardTitle>
           </div>
           <CardDescription>
@@ -103,14 +113,16 @@ export function DataRightsForm() {
         </CardHeader>
         <CardContent>
           <div className='space-y-4'>
-            <p className='text-sm text-muted-foreground'>
-              Withdrawing consent will deactivate your account. You'll need to accept our terms
-              again to continue using the platform.
+            <p className='text-muted-foreground text-sm'>
+              Withdrawing consent will deactivate your account. You'll need to
+              accept our terms again to continue using the platform.
             </p>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant='outline' disabled={isWithdrawing}>
-                  {isWithdrawing && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+                  {isWithdrawing && (
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  )}
                   {isWithdrawing ? 'Processing...' : 'Withdraw Consent'}
                 </Button>
               </AlertDialogTrigger>
@@ -118,8 +130,8 @@ export function DataRightsForm() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Withdraw Consent?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will deactivate your account immediately. You can reactivate by signing
-                    in again and accepting our terms.
+                    This will deactivate your account immediately. You can
+                    reactivate by signing in again and accepting our terms.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -138,27 +150,33 @@ export function DataRightsForm() {
       <Card className='border-destructive'>
         <CardHeader>
           <div className='flex items-center gap-2'>
-            <Trash2 className='h-5 w-5 text-destructive' />
+            <Trash2 className='text-destructive h-5 w-5' />
             <CardTitle className='text-destructive'>Delete Account</CardTitle>
           </div>
           <CardDescription>
-            Permanently delete your account and all associated data (GDPR Article 17)
+            Permanently delete your account and all associated data (GDPR
+            Article 17)
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className='space-y-4'>
-            <div className='rounded-lg border border-destructive bg-destructive/10 p-4'>
-              <p className='text-sm font-semibold text-destructive'>Warning: This is permanent</p>
-              <p className='mt-2 text-sm text-destructive/90'>
-                Your account will be scheduled for deletion in 30 days. During this grace period,
-                you can contact support to cancel the request. After 30 days, all your data will
-                be permanently deleted and cannot be recovered.
+            <div className='border-destructive bg-destructive/10 rounded-lg border p-4'>
+              <p className='text-destructive text-sm font-semibold'>
+                Warning: This is permanent
+              </p>
+              <p className='text-destructive/90 mt-2 text-sm'>
+                Your account will be scheduled for deletion in 30 days. During
+                this grace period, you can contact support to cancel the
+                request. After 30 days, all your data will be permanently
+                deleted and cannot be recovered.
               </p>
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant='destructive' disabled={isDeleting}>
-                  {isDeleting && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+                  {isDeleting && (
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  )}
                   {isDeleting ? 'Processing...' : 'Delete My Account'}
                 </Button>
               </AlertDialogTrigger>
@@ -167,11 +185,13 @@ export function DataRightsForm() {
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription className='space-y-2'>
                     <p>
-                      This action cannot be undone after 30 days. This will permanently delete
-                      your account and remove all your data from our servers.
+                      This action cannot be undone after 30 days. This will
+                      permanently delete your account and remove all your data
+                      from our servers.
                     </p>
                     <p className='font-semibold'>
-                      You have 30 days to contact support if you change your mind.
+                      You have 30 days to contact support if you change your
+                      mind.
                     </p>
                   </AlertDialogDescription>
                 </AlertDialogHeader>

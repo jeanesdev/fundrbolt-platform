@@ -2,8 +2,6 @@
  * NPO (Non-Profit Organization) API service
  * Handles all NPO-related API calls including NPO CRUD, applications, members, and branding
  */
-
-import apiClient from '@/lib/axios'
 import type {
   BrandingCreateRequest,
   BrandingUpdateRequest,
@@ -23,8 +21,9 @@ import type {
   NPOListResponse,
   NPOMember,
   NPOUpdateRequest,
-  PendingInvitation
+  PendingInvitation,
 } from '@/types/npo'
+import apiClient from '@/lib/axios'
 
 // ============================================
 // NPO Management
@@ -80,9 +79,7 @@ export const applicationApi = {
    * Submit NPO application for approval
    */
   async submitApplication(npoId: string): Promise<NPO> {
-    const response = await apiClient.post<NPO>(
-      `/npos/${npoId}/submit`
-    )
+    const response = await apiClient.post<NPO>(`/npos/${npoId}/submit`)
     return response.data
   },
 }
@@ -196,7 +193,11 @@ export const memberApi = {
   /**
    * Remove member from NPO
    */
-  async removeMember(npoId: string, memberId: string, reason?: string): Promise<void> {
+  async removeMember(
+    npoId: string,
+    memberId: string,
+    reason?: string
+  ): Promise<void> {
     await apiClient.delete(`/npos/${npoId}/members/${memberId}`, {
       data: { reason },
     })
@@ -271,19 +272,21 @@ export const brandingApi = {
   /**
    * Upload logo file directly to local storage (development mode)
    */
-  async uploadLogoLocal(npoId: string, file: File): Promise<{ logo_url: string }> {
+  async uploadLogoLocal(
+    npoId: string,
+    file: File
+  ): Promise<{ logo_url: string }> {
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await apiClient.post<{ message: string; branding: { logo_url: string } }>(
-      `/npos/${npoId}/branding/logo-upload-local`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    )
+    const response = await apiClient.post<{
+      message: string
+      branding: { logo_url: string }
+    }>(`/npos/${npoId}/branding/logo-upload-local`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
     return { logo_url: response.data.branding.logo_url }
   },
 

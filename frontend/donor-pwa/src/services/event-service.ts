@@ -2,8 +2,6 @@
  * Event API service
  * Handles all event-related API calls including CRUD, media, links, and food options
  */
-
-import apiClient from '@/lib/axios'
 import type {
   Event,
   EventCreateRequest,
@@ -22,6 +20,7 @@ import type {
   MediaUploadRequest,
   MediaUploadResponse,
 } from '@/types/event'
+import apiClient from '@/lib/axios'
 
 // ============================================
 // Event Management
@@ -32,7 +31,9 @@ export const eventApi = {
    * Fetch list of events with optional filters
    */
   async listEvents(params?: EventListParams): Promise<EventListResponse> {
-    const response = await apiClient.get<EventListResponse>('/events', { params })
+    const response = await apiClient.get<EventListResponse>('/events', {
+      params,
+    })
     return response.data
   },
 
@@ -114,7 +115,10 @@ export const mediaApi = {
   /**
    * Confirm media upload completion
    */
-  async confirmUpload(eventId: string, data: MediaConfirmRequest): Promise<EventMedia> {
+  async confirmUpload(
+    eventId: string,
+    data: MediaConfirmRequest
+  ): Promise<EventMedia> {
     const response = await apiClient.post<EventMedia>(
       `/events/${eventId}/media/${data.media_id}/confirm`,
       data
@@ -140,7 +144,10 @@ export const mediaApi = {
     formData.append('media_type', mediaType)
     formData.append('usage_tag', usageTag)
 
-    const response = await apiClient.post<EventMedia>(`/events/${eventId}/media/upload`, formData)
+    const response = await apiClient.post<EventMedia>(
+      `/events/${eventId}/media/upload`,
+      formData
+    )
     return response.data
   },
 

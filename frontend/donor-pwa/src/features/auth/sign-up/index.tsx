@@ -1,3 +1,9 @@
+import { Link, useSearch } from '@tanstack/react-router'
+import { Building2, HandCoins, Users } from 'lucide-react'
+import {
+  buildAdminPortalNpoOnboardingUrl,
+  buildAdminPortalSignUpUrl,
+} from '@/lib/admin-portal'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -7,12 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  buildAdminPortalNpoOnboardingUrl,
-  buildAdminPortalSignUpUrl,
-} from '@/lib/admin-portal'
-import { Link, useSearch } from '@tanstack/react-router'
-import { Building2, HandCoins, Users } from 'lucide-react'
 import { AuthLayout } from '../auth-layout'
 import { DonorSignUpWizard } from './components/DonorSignUpWizard'
 

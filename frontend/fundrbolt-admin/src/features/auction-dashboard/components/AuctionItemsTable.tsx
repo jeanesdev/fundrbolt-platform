@@ -1,4 +1,8 @@
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useState } from 'react'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import { ChevronRight, Download, RefreshCw, Search } from 'lucide-react'
+import apiClient from '@/lib/axios'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,11 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import apiClient from '@/lib/axios'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { ChevronRight, Download, RefreshCw, Search } from 'lucide-react'
-import { useState } from 'react'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useAuctionItems } from '../hooks/useAuctionDashboard'
 
 const fmt = (n: number) =>
@@ -93,10 +93,10 @@ export function AuctionItemsTable({
             search: debouncedSearch || undefined,
           },
           responseType: 'blob',
-        },
+        }
       )
       const url = window.URL.createObjectURL(
-        new Blob([response.data as BlobPart]),
+        new Blob([response.data as BlobPart])
       )
       const link = document.createElement('a')
       link.href = url
@@ -171,7 +171,11 @@ export function AuctionItemsTable({
             >
               <RefreshCw className='h-4 w-4' />
             </Button>
-            <Button variant='outline' size='sm' onClick={() => void handleExport()}>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => void handleExport()}
+            >
               <Download className='mr-1 h-4 w-4' />
               CSV
             </Button>
@@ -292,7 +296,7 @@ export function AuctionItemsTable({
               >
                 <CardHeader className='pb-2'>
                   <div className='flex items-start justify-between gap-2'>
-                    <CardTitle className='text-sm font-medium leading-tight'>
+                    <CardTitle className='text-sm leading-tight font-medium'>
                       {item.title}
                     </CardTitle>
                     <StatusBadge status={item.status} />
@@ -368,13 +372,7 @@ export function AuctionItemsTable({
   )
 }
 
-function TypeBadge({
-  type,
-  buyNow,
-}: {
-  type: string
-  buyNow: boolean
-}) {
+function TypeBadge({ type, buyNow }: { type: string; buyNow: boolean }) {
   const label = buyNow ? 'Buy Now' : type === 'live' ? 'Live' : 'Silent'
   const variant = buyNow
     ? 'default'

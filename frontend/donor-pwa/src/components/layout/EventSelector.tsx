@@ -8,7 +8,8 @@
  * - Selecting an event navigates to that event's page
  * - Shows event name, date, and NPO name
  */
-
+import { Calendar, ChevronsUpDown, Shield } from 'lucide-react'
+import { useEventContext } from '@/hooks/use-event-context'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,8 +24,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { useEventContext } from '@/hooks/use-event-context'
-import { Calendar, ChevronsUpDown, Shield } from 'lucide-react'
 
 export function EventSelector() {
   const { isMobile } = useSidebar()
@@ -56,13 +55,13 @@ export function EventSelector() {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton size="lg" className="cursor-default" disabled>
-            <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-              <Calendar className="size-4" />
+          <SidebarMenuButton size='lg' className='cursor-default' disabled>
+            <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg'>
+              <Calendar className='size-4' />
             </div>
-            <div className="grid flex-1 text-start text-sm leading-tight">
-              <span className="truncate font-semibold">No Events</span>
-              <span className="text-muted-foreground truncate text-xs">
+            <div className='grid flex-1 text-start text-sm leading-tight'>
+              <span className='truncate font-semibold'>No Events</span>
+              <span className='text-muted-foreground truncate text-xs'>
                 Register for an event
               </span>
             </div>
@@ -78,26 +77,26 @@ export function EventSelector() {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton size="lg" className="cursor-default" disabled>
-            <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg">
+          <SidebarMenuButton size='lg' className='cursor-default' disabled>
+            <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg'>
               {selectedEventLogo ? (
                 <img
                   src={selectedEventLogo}
                   alt={selectedEventName}
-                  className="size-full object-cover"
+                  className='size-full object-cover'
                 />
               ) : (
-                <Calendar className="size-4" />
+                <Calendar className='size-4' />
               )}
             </div>
-            <div className="grid flex-1 text-start text-sm leading-tight">
-              <span className="truncate font-semibold">{event.name}</span>
-              <span className="text-muted-foreground truncate text-xs">
+            <div className='grid flex-1 text-start text-sm leading-tight'>
+              <span className='truncate font-semibold'>{event.name}</span>
+              <span className='text-muted-foreground truncate text-xs'>
                 {event.npo_name || formatEventDate(event.event_date) || 'Event'}
               </span>
             </div>
             {event.has_admin_access && (
-              <Shield className="text-primary size-4" />
+              <Shield className='text-primary size-4' />
             )}
           </SidebarMenuButton>
         </SidebarMenuItem>
@@ -112,41 +111,43 @@ export function EventSelector() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              size='lg'
+              className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
             >
-              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg">
+              <div className='bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg'>
                 {selectedEventLogo ? (
                   <img
                     src={selectedEventLogo}
                     alt={selectedEventName}
-                    className="size-full object-cover"
+                    className='size-full object-cover'
                   />
                 ) : (
-                  <Calendar className="size-4" />
+                  <Calendar className='size-4' />
                 )}
               </div>
-              <div className="grid flex-1 text-start text-sm leading-tight">
-                <span className="truncate font-semibold">{selectedEventName}</span>
-                <span className="text-muted-foreground truncate text-xs">
+              <div className='grid flex-1 text-start text-sm leading-tight'>
+                <span className='truncate font-semibold'>
+                  {selectedEventName}
+                </span>
+                <span className='text-muted-foreground truncate text-xs'>
                   {selectedEvent?.npo_name ||
                     formatEventDate(selectedEvent?.event_date) ||
                     'Select event'}
                 </span>
               </div>
               {selectedEvent?.has_admin_access && (
-                <Shield className="text-primary size-4" />
+                <Shield className='text-primary size-4' />
               )}
-              <ChevronsUpDown className="ms-auto" />
+              <ChevronsUpDown className='ms-auto' />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            align="start"
+            className='w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg'
+            align='start'
             side={isMobile ? 'bottom' : 'right'}
             sideOffset={4}
           >
-            <DropdownMenuLabel className="text-muted-foreground text-xs">
+            <DropdownMenuLabel className='text-muted-foreground text-xs'>
               My Events
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -154,34 +155,36 @@ export function EventSelector() {
               <DropdownMenuItem
                 key={event.id}
                 onClick={() => selectEvent(event)}
-                className="gap-2 p-2"
+                className='gap-2 p-2'
               >
-                <div className="flex size-6 items-center justify-center overflow-hidden rounded-sm border">
+                <div className='flex size-6 items-center justify-center overflow-hidden rounded-sm border'>
                   {event.logo_url ? (
                     <img
                       src={event.logo_url}
                       alt={event.name}
-                      className="size-full object-cover"
+                      className='size-full object-cover'
                     />
                   ) : (
-                    <Calendar className="size-4 shrink-0" />
+                    <Calendar className='size-4 shrink-0' />
                   )}
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 font-medium">
+                <div className='flex-1'>
+                  <div className='flex items-center gap-2 font-medium'>
                     {event.name}
                     {event.has_admin_access && (
-                      <Shield className="text-primary size-3" />
+                      <Shield className='text-primary size-3' />
                     )}
                   </div>
-                  <div className="text-muted-foreground text-xs">
+                  <div className='text-muted-foreground text-xs'>
                     {event.npo_name && <span>{event.npo_name}</span>}
                     {event.npo_name && event.event_date && <span> · </span>}
-                    {event.event_date && <span>{formatEventDate(event.event_date)}</span>}
+                    {event.event_date && (
+                      <span>{formatEventDate(event.event_date)}</span>
+                    )}
                   </div>
                 </div>
                 {selectedEventId === event.id && (
-                  <span className="text-primary text-xs">✓</span>
+                  <span className='text-primary text-xs'>✓</span>
                 )}
               </DropdownMenuItem>
             ))}

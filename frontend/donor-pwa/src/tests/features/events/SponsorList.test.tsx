@@ -2,12 +2,11 @@
  * SponsorList Component Tests
  * T050: Frontend component test for SponsorList
  */
-
-import { SponsorList } from '@/features/events/components/SponsorList'
 import { LogoSize, type Sponsor } from '@/types/sponsor'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
+import { SponsorList } from '@/features/events/components/SponsorList'
 
 // Mock sponsor data
 const mockSponsors: Sponsor[] = [
@@ -67,7 +66,9 @@ describe('SponsorList', () => {
 
       expect(screen.getByText('No sponsors yet')).toBeInTheDocument()
       expect(
-        screen.getByText('Add sponsors to showcase their support for your event')
+        screen.getByText(
+          'Add sponsors to showcase their support for your event'
+        )
       ).toBeInTheDocument()
     })
 
@@ -127,10 +128,7 @@ describe('SponsorList', () => {
 
     it('should not show sponsors when error exists', () => {
       render(
-        <SponsorList
-          sponsors={mockSponsors}
-          error="Something went wrong"
-        />
+        <SponsorList sponsors={mockSponsors} error='Something went wrong' />
       )
 
       expect(screen.queryByText('Tech Corp')).not.toBeInTheDocument()
@@ -221,7 +219,11 @@ describe('SponsorList', () => {
     })
 
     it('should handle all sponsors of same size', () => {
-      const sameSize = mockSponsors.map((s) => ({ ...s, logo_size: LogoSize.LARGE, sponsor_level: 'Platinum' }))
+      const sameSize = mockSponsors.map((s) => ({
+        ...s,
+        logo_size: LogoSize.LARGE,
+        sponsor_level: 'Platinum',
+      }))
       render(<SponsorList sponsors={sameSize} />)
 
       expect(screen.getByText('Platinum Sponsors')).toBeInTheDocument()
@@ -358,7 +360,7 @@ describe('SponsorList - Drag and Drop Reordering (Phase 9)', () => {
   })
 
   it('should handle reorder errors gracefully', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => { })
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
     const onReorder = vi.fn().mockRejectedValue(new Error('Reorder failed'))
 
     render(<SponsorList sponsors={reorderableSponsors} onReorder={onReorder} />)
@@ -372,9 +374,21 @@ describe('SponsorList - Drag and Drop Reordering (Phase 9)', () => {
 
   it('should only allow reordering within same logo size group', () => {
     const mixedSizes: Sponsor[] = [
-      { ...reorderableSponsors[0], logo_size: LogoSize.LARGE, sponsor_level: 'Platinum' },
-      { ...reorderableSponsors[1], logo_size: LogoSize.LARGE, sponsor_level: 'Platinum' },
-      { ...reorderableSponsors[2], logo_size: LogoSize.MEDIUM, sponsor_level: 'Gold' },
+      {
+        ...reorderableSponsors[0],
+        logo_size: LogoSize.LARGE,
+        sponsor_level: 'Platinum',
+      },
+      {
+        ...reorderableSponsors[1],
+        logo_size: LogoSize.LARGE,
+        sponsor_level: 'Platinum',
+      },
+      {
+        ...reorderableSponsors[2],
+        logo_size: LogoSize.MEDIUM,
+        sponsor_level: 'Gold',
+      },
     ]
     const onReorder = vi.fn()
     render(<SponsorList sponsors={mixedSizes} onReorder={onReorder} />)

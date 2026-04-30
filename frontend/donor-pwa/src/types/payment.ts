@@ -6,7 +6,13 @@
 // ── Line Items ────────────────────────────────────────────────────────────────
 
 export interface LineItem {
-  type: 'ticket' | 'auction_win' | 'donation' | 'extra_tip' | 'fee_coverage' | string
+  type:
+    | 'ticket'
+    | 'auction_win'
+    | 'donation'
+    | 'extra_tip'
+    | 'fee_coverage'
+    | string
   label: string
   amount: number
 }

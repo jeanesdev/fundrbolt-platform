@@ -6,16 +6,15 @@
  * - Custom table name (if set by admin)
  * - Table occupancy
  */
-
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { MapPin, Users } from 'lucide-react';
+import { MapPin, Users } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
 
 interface TableAssignmentCardProps {
-  tableNumber: number;
-  tableName: string | null;
-  currentOccupancy: number;
-  maxCapacity: number;
+  tableNumber: number
+  tableName: string | null
+  currentOccupancy: number
+  maxCapacity: number
 }
 
 export function TableAssignmentCard({
@@ -26,24 +25,24 @@ export function TableAssignmentCard({
 }: TableAssignmentCardProps) {
   return (
     <Card
-      className="p-4 border"
+      className='border p-4'
       style={{
         backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
         borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.25)',
       }}
     >
-      <div className="space-y-3">
+      <div className='space-y-3'>
         {/* Table Number and Name */}
-        <div className="flex items-start gap-3">
+        <div className='flex items-start gap-3'>
           <MapPin
-            className="h-5 w-5 mt-0.5"
+            className='mt-0.5 h-5 w-5'
             style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
           />
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
+          <div className='flex-1'>
+            <div className='flex items-center gap-2'>
               <Badge
-                variant="default"
-                className="text-lg font-semibold px-4 py-1"
+                variant='default'
+                className='px-4 py-1 text-lg font-semibold'
                 style={{
                   backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
                   color: 'var(--event-text-on-primary, #FFFFFF)',
@@ -53,8 +52,10 @@ export function TableAssignmentCard({
               </Badge>
               {tableName && (
                 <span
-                  className="text-base font-medium"
-                  style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+                  className='text-base font-medium'
+                  style={{
+                    color: 'var(--event-text-muted-on-background, #6B7280)',
+                  }}
                 >
                   "{tableName}"
                 </span>
@@ -65,15 +66,15 @@ export function TableAssignmentCard({
 
         {/* Occupancy */}
         <div
-          className="flex items-center gap-2 text-sm"
+          className='flex items-center gap-2 text-sm'
           style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
         >
-          <Users className="h-4 w-4" />
+          <Users className='h-4 w-4' />
           <span>
             {currentOccupancy} of {maxCapacity} seats filled
           </span>
         </div>
       </div>
     </Card>
-  );
+  )
 }

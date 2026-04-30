@@ -9,13 +9,17 @@
  *   - Delete a card
  *   - Set a card as default
  */
-
-import { createFileRoute } from '@tanstack/react-router'
-import { CreditCard, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-
-import { HpfIframe } from '@/components/payments/HpfIframe'
-import { SavedCardList } from '@/components/payments/SavedCardList'
+import { createFileRoute } from '@tanstack/react-router'
+import type { HpfCompletePayload, PaymentProfile } from '@/types/payment'
+import { CreditCard, Loader2 } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { useEventStore } from '@/stores/event-store'
+import {
+  createPaymentProfile,
+  createPaymentSession,
+  listPaymentProfiles,
+} from '@/lib/api/payments'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -32,14 +36,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  createPaymentProfile,
-  createPaymentSession,
-  listPaymentProfiles,
-} from '@/lib/api/payments'
-import { useAuthStore } from '@/stores/auth-store'
-import { useEventStore } from '@/stores/event-store'
-import type { HpfCompletePayload, PaymentProfile } from '@/types/payment'
+import { HpfIframe } from '@/components/payments/HpfIframe'
+import { SavedCardList } from '@/components/payments/SavedCardList'
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -82,7 +80,9 @@ function SettingsPayment() {
       const session = await createPaymentSession({
         event_id: null,
         npo_id: npoId,
-        line_items: [{ type: 'card_setup', label: 'Save card on file', amount: 0 }],
+        line_items: [
+          { type: 'card_setup', label: 'Save card on file', amount: 0 },
+        ],
         save_profile: true,
         return_url: window.location.href,
         idempotency_key: crypto.randomUUID(),
@@ -90,7 +90,9 @@ function SettingsPayment() {
       setHpfUrl(session.hpf_url)
     } catch (err: unknown) {
       const msg =
-        err instanceof Error ? err.message : 'Failed to open payment form. Please try again.'
+        err instanceof Error
+          ? err.message
+          : 'Failed to open payment form. Please try again.'
       setHpfError(msg)
     } finally {
       setHpfLoading(false)
@@ -101,7 +103,8 @@ function SettingsPayment() {
   async function handleHpfComplete(payload: HpfCompletePayload) {
     if (payload.status !== 'approved' || !payload.gatewayProfileId || !npoId) {
       setHpfError(
-        payload.declineReason ?? 'Payment was declined. Please try a different card.',
+        payload.declineReason ??
+          'Payment was declined. Please try a different card.'
       )
       return
     }
@@ -135,8 +138,8 @@ function SettingsPayment() {
         <Alert>
           <CreditCard className='h-4 w-4' />
           <AlertDescription>
-            Payment methods are linked to your organisation. Please contact support if you
-            believe this is an error.
+            Payment methods are linked to your organisation. Please contact
+            support if you believe this is an error.
           </AlertDescription>
         </Alert>
       </div>
@@ -147,7 +150,7 @@ function SettingsPayment() {
     <div className='w-full max-w-2xl space-y-6'>
       <div>
         <h3 className='text-lg font-medium'>Payment Methods</h3>
-        <p className='text-sm text-muted-foreground'>
+        <p className='text-muted-foreground text-sm'>
           Manage your saved cards for faster checkout at events.
         </p>
       </div>
@@ -159,13 +162,13 @@ function SettingsPayment() {
             Saved Cards
           </CardTitle>
           <CardDescription>
-            Cards are securely stored by our payment partner. We never see your full card
-            number.
+            Cards are securely stored by our payment partner. We never see your
+            full card number.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className='flex items-center gap-2 py-8 text-sm text-muted-foreground'>
+            <div className='text-muted-foreground flex items-center gap-2 py-8 text-sm'>
               <Loader2 className='h-4 w-4 animate-spin' />
               Loading saved cards…
             </div>
@@ -185,18 +188,23 @@ function SettingsPayment() {
       </Card>
 
       {/* Add Card Dialog */}
-      <Dialog open={addOpen} onOpenChange={(v) => { if (!savingCard) setAddOpen(v) }}>
+      <Dialog
+        open={addOpen}
+        onOpenChange={(v) => {
+          if (!savingCard) setAddOpen(v)
+        }}
+      >
         <DialogContent className='max-w-lg'>
           <DialogHeader>
             <DialogTitle>Add a Card</DialogTitle>
             <DialogDescription>
-              Enter your card details in the secure form below. Your card information is
-              handled directly by our payment partner.
+              Enter your card details in the secure form below. Your card
+              information is handled directly by our payment partner.
             </DialogDescription>
           </DialogHeader>
 
           {hpfLoading && (
-            <div className='flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground'>
+            <div className='text-muted-foreground flex items-center justify-center gap-2 py-8 text-sm'>
               <Loader2 className='h-4 w-4 animate-spin' />
               Preparing secure form…
             </div>
@@ -209,7 +217,7 @@ function SettingsPayment() {
           )}
 
           {savingCard && (
-            <div className='flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground'>
+            <div className='text-muted-foreground flex items-center justify-center gap-2 py-4 text-sm'>
               <Loader2 className='h-4 w-4 animate-spin' />
               Saving card…
             </div>

@@ -2,9 +2,21 @@
  * NPO Creation Form Component
  * Multi-section form for creating a new NPO with validation
  */
-
+import { useEffect, useRef, useState } from 'react'
+import * as z from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import type { NPOCreateRequest } from '@/types/npo'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
+import { AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   Form,
   FormControl,
@@ -23,13 +35,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import type { NPOCreateRequest } from '@/types/npo'
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { AlertCircle } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import * as z from 'zod'
 
 // US States for dropdown
 const US_STATES = [
@@ -161,7 +166,10 @@ const npoFormSchema = z.object({
     .string()
     .min(2, 'Name must be at least 2 characters')
     .max(255, 'Name must not exceed 255 characters')
-    .refine((val) => val.trim().length > 0, 'Name cannot be empty or whitespace'),
+    .refine(
+      (val) => val.trim().length > 0,
+      'Name cannot be empty or whitespace'
+    ),
   email: z.string().email('Invalid email address'),
 
   // Optional basic info
@@ -274,7 +282,8 @@ export function NPOCreationForm({
   useEffect(() => {
     const initAutocomplete = async () => {
       // Check if feature is enabled
-      const isEnabled = import.meta.env.VITE_ENABLE_ADDRESS_AUTOCOMPLETE === 'true'
+      const isEnabled =
+        import.meta.env.VITE_ENABLE_ADDRESS_AUTOCOMPLETE === 'true'
       if (!isEnabled) {
         return
       }
@@ -300,7 +309,12 @@ export function NPOCreationForm({
         const autocomplete = new Autocomplete(addressInputRef.current, {
           types: ['address'],
           componentRestrictions: { country: 'us' },
-          fields: ['address_components', 'formatted_address', 'geometry', 'name'],
+          fields: [
+            'address_components',
+            'formatted_address',
+            'geometry',
+            'name',
+          ],
         })
 
         autocomplete.addListener('place_changed', () => {
@@ -336,11 +350,26 @@ export function NPOCreationForm({
           }
 
           // Update form values
-          form.setValue('address.street', street.trim(), { shouldValidate: true, shouldDirty: true })
-          form.setValue('address.city', city, { shouldValidate: true, shouldDirty: true })
-          form.setValue('address.state', state, { shouldValidate: true, shouldDirty: true })
-          form.setValue('address.postal_code', postalCode, { shouldValidate: true, shouldDirty: true })
-          form.setValue('address.country', country, { shouldValidate: true, shouldDirty: true })
+          form.setValue('address.street', street.trim(), {
+            shouldValidate: true,
+            shouldDirty: true,
+          })
+          form.setValue('address.city', city, {
+            shouldValidate: true,
+            shouldDirty: true,
+          })
+          form.setValue('address.state', state, {
+            shouldValidate: true,
+            shouldDirty: true,
+          })
+          form.setValue('address.postal_code', postalCode, {
+            shouldValidate: true,
+            shouldDirty: true,
+          })
+          form.setValue('address.country', country, {
+            shouldValidate: true,
+            shouldDirty: true,
+          })
         })
 
         autocompleteRef.current = autocomplete
@@ -384,7 +413,9 @@ export function NPOCreationForm({
 
     // Add address only if any field has a value
     if (values.address) {
-      const hasAddressData = Object.values(values.address).some((val) => val?.trim())
+      const hasAddressData = Object.values(values.address).some((val) =>
+        val?.trim()
+      )
       if (hasAddressData) {
         cleanData.address = {
           street: values.address.street?.trim(),
@@ -402,25 +433,31 @@ export function NPOCreationForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
+      <form
+        onSubmit={form.handleSubmit(handleSubmit)}
+        className='space-y-4 sm:space-y-6'
+      >
         {/* Basic Information Section */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">Basic Information</CardTitle>
-            <CardDescription className="text-sm">
-              Essential details about your organization. Fields marked with * are required.
+            <CardTitle className='text-lg sm:text-xl'>
+              Basic Information
+            </CardTitle>
+            <CardDescription className='text-sm'>
+              Essential details about your organization. Fields marked with *
+              are required.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className='space-y-4'>
             <FormField
               control={form.control}
-              name="name"
+              name='name'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Organization Name *</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., Community Food Bank"
+                      placeholder='e.g., Community Food Bank'
                       {...field}
                       disabled={isLoading}
                     />
@@ -435,14 +472,14 @@ export function NPOCreationForm({
 
             <FormField
               control={form.control}
-              name="email"
+              name='email'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email Address *</FormLabel>
                   <FormControl>
                     <Input
-                      type="email"
-                      placeholder="contact@yourorg.org"
+                      type='email'
+                      placeholder='contact@yourorg.org'
                       {...field}
                       onBlur={(e) => {
                         field.onBlur()
@@ -461,8 +498,8 @@ export function NPOCreationForm({
                     Primary contact email for your organization
                   </FormDescription>
                   {emailError && (
-                    <p className="flex items-center gap-1 text-xs text-red-500">
-                      <AlertCircle className="h-3 w-3" />
+                    <p className='flex items-center gap-1 text-xs text-red-500'>
+                      <AlertCircle className='h-3 w-3' />
                       {emailError}
                     </p>
                   )}
@@ -473,19 +510,20 @@ export function NPOCreationForm({
 
             <FormField
               control={form.control}
-              name="tagline"
+              name='tagline'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tagline</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., Fighting hunger in our community"
+                      placeholder='e.g., Fighting hunger in our community'
                       {...field}
                       disabled={isLoading}
                     />
                   </FormControl>
                   <FormDescription>
-                    A short, memorable phrase that describes your mission (optional)
+                    A short, memorable phrase that describes your mission
+                    (optional)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -494,14 +532,14 @@ export function NPOCreationForm({
 
             <FormField
               control={form.control}
-              name="phone"
+              name='phone'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Phone Number</FormLabel>
                   <FormControl>
                     <Input
-                      type="tel"
-                      placeholder="(555)123-4567"
+                      type='tel'
+                      placeholder='(555)123-4567'
                       value={field.value ? formatPhoneNumber(field.value) : ''}
                       onChange={(e) => {
                         const rawDigits = e.target.value.replace(/\D/g, '')
@@ -510,7 +548,9 @@ export function NPOCreationForm({
                       disabled={isLoading}
                     />
                   </FormControl>
-                  <FormDescription>Contact phone number (optional)</FormDescription>
+                  <FormDescription>
+                    Contact phone number (optional)
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -518,20 +558,22 @@ export function NPOCreationForm({
 
             <FormField
               control={form.control}
-              name="website_url"
+              name='website_url'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Website</FormLabel>
                   <FormControl>
                     <Input
-                      type="url"
-                      placeholder="https://yourorg.org"
+                      type='url'
+                      placeholder='https://yourorg.org'
                       {...field}
                       onBlur={(e) => {
                         field.onBlur()
                         const value = e.target.value
                         if (value && !isValidUrl(value)) {
-                          setWebsiteError('Please enter a valid URL (must start with http:// or https://)')
+                          setWebsiteError(
+                            'Please enter a valid URL (must start with http:// or https://)'
+                          )
                         } else {
                           setWebsiteError(null)
                         }
@@ -540,10 +582,12 @@ export function NPOCreationForm({
                       disabled={isLoading}
                     />
                   </FormControl>
-                  <FormDescription>Your organization's website (optional)</FormDescription>
+                  <FormDescription>
+                    Your organization's website (optional)
+                  </FormDescription>
                   {websiteError && (
-                    <p className="flex items-center gap-1 text-xs text-red-500">
-                      <AlertCircle className="h-3 w-3" />
+                    <p className='flex items-center gap-1 text-xs text-red-500'>
+                      <AlertCircle className='h-3 w-3' />
                       {websiteError}
                     </p>
                   )}
@@ -554,14 +598,14 @@ export function NPOCreationForm({
 
             <FormField
               control={form.control}
-              name="description"
+              name='description'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Briefly describe your organization's activities and purpose..."
-                      className="min-h-[100px]"
+                      className='min-h-[100px]'
                       {...field}
                       disabled={isLoading}
                     />
@@ -576,14 +620,14 @@ export function NPOCreationForm({
 
             <FormField
               control={form.control}
-              name="mission_statement"
+              name='mission_statement'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Mission Statement</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Our mission is to..."
-                      className="min-h-[100px]"
+                      placeholder='Our mission is to...'
+                      className='min-h-[100px]'
                       {...field}
                       disabled={isLoading}
                     />
@@ -601,21 +645,23 @@ export function NPOCreationForm({
         {/* Legal Information Section */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">Legal Information</CardTitle>
-            <CardDescription className="text-sm">
+            <CardTitle className='text-lg sm:text-xl'>
+              Legal Information
+            </CardTitle>
+            <CardDescription className='text-sm'>
               Registration and tax information for your organization (optional)
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className='space-y-4'>
             <FormField
               control={form.control}
-              name="tax_id"
+              name='tax_id'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tax ID / EIN</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="XX-XXXXXXX"
+                      placeholder='XX-XXXXXXX'
                       {...field}
                       disabled={isLoading}
                     />
@@ -630,13 +676,13 @@ export function NPOCreationForm({
 
             <FormField
               control={form.control}
-              name="registration_number"
+              name='registration_number'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Registration Number</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="REG-12345"
+                      placeholder='REG-12345'
                       {...field}
                       disabled={isLoading}
                     />
@@ -654,21 +700,21 @@ export function NPOCreationForm({
         {/* Address Section */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">Address</CardTitle>
-            <CardDescription className="text-sm">
+            <CardTitle className='text-lg sm:text-xl'>Address</CardTitle>
+            <CardDescription className='text-sm'>
               Physical address of your organization (optional)
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className='space-y-4'>
             <FormField
               control={form.control}
-              name="address.street"
+              name='address.street'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Street Address</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="123 Main St"
+                      placeholder='123 Main St'
                       {...field}
                       ref={(e) => {
                         field.ref(e)
@@ -684,13 +730,13 @@ export function NPOCreationForm({
 
             <FormField
               control={form.control}
-              name="address.street2"
+              name='address.street2'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Street Address Line 2</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Apartment, suite, unit, building, floor, etc."
+                      placeholder='Apartment, suite, unit, building, floor, etc.'
                       {...field}
                       disabled={isLoading}
                     />
@@ -700,16 +746,16 @@ export function NPOCreationForm({
               )}
             />
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
               <FormField
                 control={form.control}
-                name="address.city"
+                name='address.city'
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>City</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="San Francisco"
+                        placeholder='San Francisco'
                         {...field}
                         disabled={isLoading}
                       />
@@ -721,7 +767,7 @@ export function NPOCreationForm({
 
               <FormField
                 control={form.control}
-                name="address.state"
+                name='address.state'
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>State / Province</FormLabel>
@@ -732,7 +778,7 @@ export function NPOCreationForm({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a state" />
+                          <SelectValue placeholder='Select a state' />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -749,16 +795,16 @@ export function NPOCreationForm({
               />
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
               <FormField
                 control={form.control}
-                name="address.postal_code"
+                name='address.postal_code'
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Postal Code</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="12345 or 12345-6789"
+                        placeholder='12345 or 12345-6789'
                         {...field}
                         disabled={isLoading}
                         onBlur={() => {
@@ -779,7 +825,7 @@ export function NPOCreationForm({
 
               <FormField
                 control={form.control}
-                name="address.country"
+                name='address.country'
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Country</FormLabel>
@@ -790,7 +836,7 @@ export function NPOCreationForm({
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a country" />
+                          <SelectValue placeholder='Select a country' />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -810,17 +856,21 @@ export function NPOCreationForm({
         </Card>
 
         {/* Form Actions */}
-        <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row sm:gap-4">
+        <div className='flex flex-col-reverse justify-end gap-3 sm:flex-row sm:gap-4'>
           <Button
-            type="button"
-            variant="outline"
+            type='button'
+            variant='outline'
             onClick={() => form.reset()}
             disabled={isLoading}
-            className="w-full sm:w-auto"
+            className='w-full sm:w-auto'
           >
             Reset
           </Button>
-          <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
+          <Button
+            type='submit'
+            disabled={isLoading}
+            className='w-full sm:w-auto'
+          >
             {isLoading ? 'Saving...' : submitButtonText}
           </Button>
         </div>
