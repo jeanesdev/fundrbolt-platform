@@ -49,6 +49,11 @@ class EventCreateRequest(BaseModel):
         ge=0,
         description="Optional fundraising goal for this event",
     )
+    last_year_total: float | None = Field(
+        default=None,
+        ge=0,
+        description="Optional total raised by this event last year",
+    )
     primary_contact_name: str | None = Field(default=None, max_length=255)
     primary_contact_email: str | None = Field(default=None, max_length=255)
     primary_contact_phone: str | None = Field(default=None, max_length=20)
@@ -135,6 +140,7 @@ class EventUpdateRequest(BaseModel):
         description="Social media hashtag (e.g., '#GalaForGood2026')",
     )
     fundraising_goal: float | None = Field(default=None, ge=0)
+    last_year_total: float | None = Field(default=None, ge=0)
     primary_contact_name: str | None = Field(default=None, max_length=255)
     primary_contact_email: str | None = Field(default=None, max_length=255)
     primary_contact_phone: str | None = Field(default=None, max_length=20)
@@ -408,6 +414,7 @@ class EventSummaryResponse(BaseModel):
     venue_state: str | None
     venue_zip: str | None
     logo_url: str | None
+    last_year_total: float | None = None
     hero_transition_style: HeroTransitionStyle
     created_at: datetime
     updated_at: datetime
@@ -437,6 +444,7 @@ class EventDetailResponse(BaseModel):
     attire: str | None
     hashtag: str | None = None
     fundraising_goal: float | None
+    last_year_total: float | None
     primary_contact_name: str | None
     primary_contact_email: str | None
     primary_contact_phone: str | None
@@ -513,6 +521,7 @@ class EventPublicResponse(BaseModel):
     attire: str | None
     hashtag: str | None = None
     fundraising_goal: float | None
+    last_year_total: float | None
     primary_contact_name: str | None
     primary_contact_email: str | None
     primary_contact_phone: str | None

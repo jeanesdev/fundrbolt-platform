@@ -14,6 +14,13 @@ export enum ItemStatus {
   WITHDRAWN = 'withdrawn',
 }
 
+export enum SlidePresentationLayout {
+  ON_IMAGE = 'on_image',
+  LEFT_OF_IMAGE = 'left_of_image',
+  RIGHT_OF_IMAGE = 'right_of_image',
+  BELOW_IMAGE = 'below_image',
+}
+
 export interface AuctionItemBase {
   title: string
   description: string
@@ -29,6 +36,8 @@ export interface AuctionItemBase {
   sponsor_id?: string | null
   item_webpage?: string | null
   display_priority?: number | null
+  slide_presentation_html?: string | null
+  slide_presentation_layout: SlidePresentationLayout
 }
 
 export interface AuctionItem extends AuctionItemBase {
@@ -67,6 +76,8 @@ export interface AuctionItemUpdate {
   sponsor_id?: string | null
   item_webpage?: string | null
   display_priority?: number | null
+  slide_presentation_html?: string | null
+  slide_presentation_layout?: SlidePresentationLayout
 }
 
 export interface PaginationInfo {

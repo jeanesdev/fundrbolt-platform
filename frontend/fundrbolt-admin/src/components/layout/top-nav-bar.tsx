@@ -21,8 +21,10 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSearch } from '@/context/search-provider'
+import { useEventContext } from '@/hooks/use-event-context'
 import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
 import { Button } from '@/components/ui/button'
+import { InitialAvatar } from '@/components/ui/initial-avatar'
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -38,6 +40,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { CommandMenu } from '@/components/command-menu'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { iconMap } from './icon-map'
@@ -292,6 +300,74 @@ function SearchButton() {
   )
 }
 
+/* ─── Event Chip ─── */
+function EventChip() {
+  const href = useLocation({ select: (l) => l.href })
+  const { availableEvents, selectedEventId } = useEventContext()
+  const selectedEvent = availableEvents.find((e) => e.id === selectedEventId)
+
+  // Only show when inside an event route
+  if (!href.includes('/events/') || !selectedEvent) return null
+
+  const logoUrl = selectedEvent.logo_url ?? null
+  const tooltipText = [
+    selectedEvent.name,
+    selectedEvent.npo_name,
+    selectedEvent.status
+      ? selectedEvent.status.charAt(0).toUpperCase() +
+        selectedEvent.status.slice(1)
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+  const lastYearTotal = selectedEvent.last_year_total ?? null
+
+  return (
+    <div className='flex items-center gap-2'>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className='flex h-7 w-7 shrink-0 cursor-default items-center justify-center overflow-hidden rounded-md border border-white/20'>
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={selectedEvent.name}
+                  className='h-full w-full object-cover'
+                />
+              ) : (
+                <InitialAvatar
+                  name={selectedEvent.name}
+                  brandingPrimaryColor={
+                    (selectedEvent as { primary_color?: string | null })
+                      .primary_color ?? undefined
+                  }
+                  size='sm'
+                  className='h-full w-full rounded-md'
+                />
+              )}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side='bottom'>
+            <p>{tooltipText}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      {lastYearTotal !== null ? (
+        <div className='hidden min-w-[7.5rem] rounded-md border px-2 py-1 text-xs leading-tight md:block'>
+          <div className='text-muted-foreground'>Last Years Total</div>
+          <div className='font-semibold'>
+            {new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              maximumFractionDigits: 0,
+            }).format(lastYearTotal)}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 /* ─── Main TopNavBar ─── */
 export function TopNavBar() {
   return (
@@ -311,6 +387,9 @@ export function TopNavBar() {
 
         {/* Separator */}
         <div className='bg-border mx-1 hidden h-6 w-px md:block' />
+
+        {/* Event context chip */}
+        <EventChip />
 
         {/* Desktop nav dropdowns */}
         <div className='hidden md:flex'>

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/)
@@ -11,12 +11,14 @@ function getInitials(name: string): string {
 
 interface BidderAvatarProps {
   name: string
+  imageUrl?: string | null
   className?: string
 }
 
-export function BidderAvatar({ name, className }: BidderAvatarProps) {
+export function BidderAvatar({ name, imageUrl, className }: BidderAvatarProps) {
   return (
     <Avatar className={cn('size-7', className)}>
+      {imageUrl ? <AvatarImage src={imageUrl} alt={name} /> : null}
       <AvatarFallback className='text-xs'>{getInitials(name)}</AvatarFallback>
     </Avatar>
   )

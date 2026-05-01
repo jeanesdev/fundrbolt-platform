@@ -35,8 +35,13 @@ export function CommissionGallery({ commissions }: CommissionGalleryProps) {
   return (
     <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
       {commissions.map((item) => {
+        const fairMarketValue =
+          item.donor_value == null ? null : Number(item.donor_value)
+        const commissionPercent = Number(item.commission_percent)
         const earning =
-          item.cost != null ? (item.cost * item.commission_percent) / 100 : null
+          fairMarketValue != null
+            ? (fairMarketValue * commissionPercent) / 100
+            : null
 
         return (
           <Card
@@ -87,7 +92,7 @@ export function CommissionGallery({ commissions }: CommissionGalleryProps) {
             </CardHeader>
             <CardContent className='space-y-1 text-sm'>
               <div className='flex items-center gap-1'>
-                <span>Commission: {item.commission_percent}%</span>
+                <span>Commission: {commissionPercent}%</span>
               </div>
               {item.quantity_available != null && (
                 <div className='text-muted-foreground'>
@@ -103,9 +108,9 @@ export function CommissionGallery({ commissions }: CommissionGalleryProps) {
                   Current bid: {formatCurrency(item.current_bid_amount)}
                 </div>
               )}
-              {item.cost != null && (
+              {fairMarketValue != null && (
                 <div className='text-muted-foreground'>
-                  Starting price: {formatCurrency(item.cost)}
+                  Fair market value: {formatCurrency(fairMarketValue)}
                 </div>
               )}
               {earning != null && (

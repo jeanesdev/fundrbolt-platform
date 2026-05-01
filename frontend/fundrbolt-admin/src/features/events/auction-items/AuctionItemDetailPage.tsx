@@ -7,6 +7,7 @@ import { ExternalLink } from 'lucide-react'
 import { useAuctionItemStore } from '@/stores/auctionItemStore'
 import { useAuth } from '@/hooks/use-auth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AuctioneerDetailPanel } from '@/features/auctioneer/components/AuctioneerDetailPanel'
 import { ItemCommissionForm } from '@/features/auctioneer/components/ItemCommissionForm'
 import { useAuctioneerCommissions } from '@/features/auctioneer/hooks/useAuctioneerData'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
@@ -169,12 +170,15 @@ export function AuctionItemDetailPage() {
 
           {/* Auctioneer Commission - visible to auctioneer and super_admin only */}
           {showCommission && (
-            <ItemCommissionForm
-              eventId={currentEvent.id}
-              auctionItemId={selectedItem.id}
-              existing={existingCommission ?? null}
-              consignmentCost={selectedItem.cost ?? null}
-            />
+            <>
+              <AuctioneerDetailPanel item={selectedItem} />
+              <ItemCommissionForm
+                eventId={currentEvent.id}
+                auctionItemId={selectedItem.id}
+                existing={existingCommission ?? null}
+                fairMarketValue={selectedItem.donor_value ?? null}
+              />
+            </>
           )}
         </div>
       )}

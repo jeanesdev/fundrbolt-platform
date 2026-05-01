@@ -323,6 +323,9 @@ async def list_events(
                 venue_state=event.venue_state,
                 venue_zip=event.venue_zip,
                 logo_url=event.logo_url,
+                last_year_total=(
+                    float(event.last_year_total) if event.last_year_total is not None else None
+                ),
                 hero_transition_style=event.hero_transition_style,
                 created_at=event.created_at,
                 updated_at=event.updated_at,

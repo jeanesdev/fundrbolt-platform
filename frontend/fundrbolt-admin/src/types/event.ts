@@ -19,7 +19,9 @@ export type EventMediaUsageTag =
   | 'main_event_page_hero'
   | 'event_layout_map'
   | 'npo_logo'
+  | 'npo_logo_icon'
   | 'event_logo'
+  | 'event_logo_icon'
 
 export type EventLinkType = 'video' | 'website' | 'social_media'
 
@@ -44,6 +46,7 @@ export interface Event {
   attire: string | null
   hashtag: string | null
   fundraising_goal: number | null
+  last_year_total: number | null
   primary_contact_name: string | null
   primary_contact_email: string | null
   primary_contact_phone: string | null
@@ -64,6 +67,7 @@ export interface Event {
   created_at: string
   updated_at: string
   npo_name?: string
+  logo_url?: string | null
 }
 
 export interface EventDetail extends Event {
@@ -93,6 +97,7 @@ export interface EventCreateRequest {
   attire?: string
   hashtag?: string
   fundraising_goal?: number | null
+  last_year_total?: number | null
   primary_contact_name?: string
   primary_contact_email?: string
   primary_contact_phone?: string
@@ -120,6 +125,7 @@ export interface EventUpdateRequest {
   attire?: string
   hashtag?: string
   fundraising_goal?: number | null
+  last_year_total?: number | null
   primary_contact_name?: string
   primary_contact_email?: string
   primary_contact_phone?: string

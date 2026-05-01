@@ -9,6 +9,7 @@ import {
   useNavigate,
   useParams,
   useRouterState,
+  useSearch,
 } from '@tanstack/react-router'
 import { AuctionType, ItemStatus } from '@/types/auction-item'
 import {
@@ -70,6 +71,15 @@ export function AuctionItemDetailLayout({
   const pathname = useRouterState({
     select: (s) => s.location.pathname,
   })
+  const search = useSearch({ strict: false }) as {
+    source?: 'auctioneer'
+  }
+  const isFromAuctioneer = search.source === 'auctioneer'
+  const itemDetailSearch = isFromAuctioneer
+    ? ({
+        source: 'auctioneer',
+      } as const)
+    : undefined
 
   const { selectedItem, isLoading, getAuctionItem, clearSelectedItem } =
     useAuctionItemStore()
@@ -105,10 +115,19 @@ export function AuctionItemDetailLayout({
     navigate({
       to: '/events/$eventId/auction-items/$itemId/edit',
       params: { eventId: routeEventId, itemId },
+      search: itemDetailSearch,
     })
   }
 
   const handleBack = () => {
+    if (isFromAuctioneer) {
+      navigate({
+        to: '/events/$eventId/auctioneer',
+        params: { eventId: routeEventId },
+      })
+      return
+    }
+
     navigate({
       to: '/events/$eventId',
       params: { eventId: routeEventId },
@@ -146,7 +165,7 @@ export function AuctionItemDetailLayout({
           className='px-0 hover:bg-transparent'
         >
           <ArrowLeft className='mr-2 h-4 w-4' />
-          Back to Auction Items
+          {isFromAuctioneer ? 'Back to Auctioneer' : 'Back to Auction Items'}
         </Button>
 
         <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
@@ -219,6 +238,7 @@ export function AuctionItemDetailLayout({
               key={tab.to}
               to={tab.to}
               params={{ eventId: routeEventId, itemId }}
+              search={itemDetailSearch}
               className={cn(
                 'flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
                 isActive

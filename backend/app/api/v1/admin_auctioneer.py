@@ -5,6 +5,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,8 +13,12 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.middleware.auth import get_current_active_user, require_role
 from app.models.auction_item import AuctionItem
+from app.models.event import Event
 from app.models.user import User
 from app.schemas.auctioneer import (
+    AuctioneerItemDetailResponse,
+    AuctioneerItemGalleryResponse,
+    AuctioneerPaddleRaiseResponse,
     CommissionListResponse,
     CommissionResponse,
     CommissionUpsertRequest,
@@ -50,6 +55,22 @@ def _resolve_auctioneer_id(current_user: User, auctioneer_user_id: UUID | None) 
     if auctioneer_user_id and role == "super_admin":
         return auctioneer_user_id
     return current_user.id
+
+
+def _sign_blob_url(url: str | None, media_service: AuctionItemMediaService) -> str | None:
+    if not url or not url.startswith("https://"):
+        return url
+
+    settings = get_settings()
+    container_path = f"{settings.azure_storage_container_name}/"
+    if container_path not in url:
+        return url
+
+    try:
+        blob_path = url.split(container_path, 1)[1].split("?", 1)[0]
+        return media_service._generate_blob_sas_url(blob_path, expiry_hours=24)
+    except (IndexError, ValueError):
+        return url
 
 
 # ── Commission endpoints ─────────────────────────────────────
@@ -192,6 +213,9 @@ async def upsert_event_settings(
         live_auction_percent=body.live_auction_percent,
         paddle_raise_percent=body.paddle_raise_percent,
         silent_auction_percent=body.silent_auction_percent,
+        paddle_raise_levels=body.paddle_raise_levels,
+        paddle_raise_total_goal=body.paddle_raise_total_goal,
+        paddle_raise_level_goals=body.paddle_raise_level_goals,
     )
     await db.commit()
     return result
@@ -235,3 +259,132 @@ async def get_live_auction(
     await _verify_event_access(event_id, current_user, db)
     service = AuctioneerService(db)
     return await service.get_live_auction(event_id)
+
+
+@router.get(
+    "/{event_id}/auctioneer/live-auction/gallery",
+    response_model=AuctioneerItemGalleryResponse,
+    summary="List live auction items with auctioneer metrics",
+)
+@require_role("super_admin", "auctioneer")
+async def get_live_auction_gallery(
+    event_id: UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+    auctioneer_user_id: UUID | None = Query(default=None),
+) -> AuctioneerItemGalleryResponse:
+    await _verify_event_access(event_id, current_user, db)
+    target_id = _resolve_auctioneer_id(current_user, auctioneer_user_id)
+    service = AuctioneerService(db)
+    result = await service.get_live_auction_gallery(event_id, target_id)
+
+    media_service = AuctionItemMediaService(get_settings(), db)
+    for item in result.items:
+        item.primary_image_url = _sign_blob_url(item.primary_image_url, media_service)
+
+    return result
+
+
+@router.get(
+    "/{event_id}/auctioneer/silent-auction/gallery",
+    response_model=AuctioneerItemGalleryResponse,
+    summary="List silent auction items with auctioneer metrics",
+)
+@require_role("super_admin", "auctioneer")
+async def get_silent_auction_gallery(
+    event_id: UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+    auctioneer_user_id: UUID | None = Query(default=None),
+) -> AuctioneerItemGalleryResponse:
+    await _verify_event_access(event_id, current_user, db)
+    target_id = _resolve_auctioneer_id(current_user, auctioneer_user_id)
+    service = AuctioneerService(db)
+    result = await service.get_silent_auction_gallery(event_id, target_id)
+
+    media_service = AuctionItemMediaService(get_settings(), db)
+    for item in result.items:
+        item.primary_image_url = _sign_blob_url(item.primary_image_url, media_service)
+
+    return result
+
+
+@router.get(
+    "/{event_id}/auctioneer/items/{item_id}",
+    response_model=AuctioneerItemDetailResponse,
+    summary="Get auctioneer detail for a live or silent auction item",
+)
+@require_role("super_admin", "auctioneer")
+async def get_auctioneer_item_detail(
+    event_id: UUID,
+    item_id: UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+    auctioneer_user_id: UUID | None = Query(default=None),
+) -> AuctioneerItemDetailResponse:
+    await _verify_event_access(event_id, current_user, db)
+    target_id = _resolve_auctioneer_id(current_user, auctioneer_user_id)
+    service = AuctioneerService(db)
+    try:
+        result = await service.get_item_detail(event_id, item_id, target_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+
+    media_service = AuctionItemMediaService(get_settings(), db)
+    result.item.primary_image_url = _sign_blob_url(result.item.primary_image_url, media_service)
+    return result
+
+
+@router.get(
+    "/{event_id}/auctioneer/paddle-raise",
+    response_model=AuctioneerPaddleRaiseResponse,
+    summary="Get paddle raise auctioneer dashboard data",
+)
+@require_role("super_admin", "auctioneer")
+async def get_paddle_raise_dashboard(
+    event_id: UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+    auctioneer_user_id: UUID | None = Query(default=None),
+) -> AuctioneerPaddleRaiseResponse:
+    await _verify_event_access(event_id, current_user, db)
+    target_id = _resolve_auctioneer_id(current_user, auctioneer_user_id)
+    service = AuctioneerService(db)
+    return await service.get_paddle_raise(event_id, target_id)
+
+
+@router.get(
+    "/{event_id}/auctioneer/silent-auction/slides/export",
+    summary="Export silent auction slide deck as PowerPoint",
+)
+@require_role("super_admin", "auctioneer")
+async def export_silent_auction_slides(
+    event_id: UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+    auctioneer_user_id: UUID | None = Query(default=None),
+) -> StreamingResponse:
+    await _verify_event_access(event_id, current_user, db)
+    target_id = _resolve_auctioneer_id(current_user, auctioneer_user_id)
+    service = AuctioneerService(db)
+    gallery = await service.get_silent_auction_gallery(event_id, target_id)
+
+    media_service = AuctionItemMediaService(get_settings(), db)
+    for item in gallery.items:
+        item.primary_image_url = _sign_blob_url(item.primary_image_url, media_service)
+
+    event = (await db.execute(select(Event).where(Event.id == event_id))).scalar_one_or_none()
+    if event is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    deck_bytes = await service.build_slide_deck(gallery.items, event.name, "Silent Auction")
+    safe_name = "".join(
+        char if char.isalnum() or char in "-_" else "-" for char in event.name
+    ).strip("-")
+    filename = f"{safe_name or 'event'}-silent-auction-slides.pptx"
+
+    return StreamingResponse(
+        iter([deck_bytes]),
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

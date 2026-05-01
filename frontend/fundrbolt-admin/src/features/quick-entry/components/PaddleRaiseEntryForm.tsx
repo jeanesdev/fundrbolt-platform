@@ -45,6 +45,18 @@ function parseToWholeDollar(value: string): string {
 
 type SortField = 'amount' | 'bidder' | 'donor' | 'labels' | 'time'
 
+const HIDDEN_LABELS = new Set(['head or tails', 'table raise'])
+
+function normalizeLabelName(labelName: string): string {
+  return labelName.trim().toLowerCase() === 'last leader'
+    ? 'Last Hero'
+    : labelName
+}
+
+function isVisibleLabel(labelName: string): boolean {
+  return !HIDDEN_LABELS.has(labelName.trim().toLowerCase())
+}
+
 export function PaddleRaiseEntryForm({
   amount,
   bidderNumber,
@@ -91,7 +103,10 @@ export function PaddleRaiseEntryForm({
   const filteredAndSortedDonations = useMemo(() => {
     const normalize = (v: string | null | undefined) => (v ?? '').toLowerCase()
     let rows = recentDonations.filter((d) => {
-      const labelText = d.labels.map((l) => l.label).join(', ')
+      const visibleNormalizedLabels = d.labels
+        .map((l) => normalizeLabelName(l.label))
+        .filter(isVisibleLabel)
+      const labelText = visibleNormalizedLabels.join(', ')
       const timeText = new Date(d.entered_at).toLocaleTimeString().toLowerCase()
       if (
         tableFilters.amount &&
@@ -142,6 +157,29 @@ export function PaddleRaiseEntryForm({
     return rows
   }, [recentDonations, tableFilters, tableSort])
 
+  const visibleLabels = useMemo(
+    () =>
+      labels
+        .map((label) => ({
+          ...label,
+          name: normalizeLabelName(label.name),
+        }))
+        .filter((label) => isVisibleLabel(label.name)),
+    [labels]
+  )
+
+  const lastHeroRaised = useMemo(
+    () =>
+      recentDonations.reduce((sum, donation) => {
+        const hasLastHero = donation.labels.some((label) => {
+          const normalizedName = normalizeLabelName(label.label)
+          return normalizedName.trim().toLowerCase() === 'last hero'
+        })
+        return hasLastHero ? sum + donation.amount : sum
+      }, 0),
+    [recentDonations]
+  )
+
   useEffect(() => {
     bidderRef.current?.focus()
     bidderRef.current?.select()
@@ -177,11 +215,17 @@ export function PaddleRaiseEntryForm({
 
   return (
     <section className='space-y-3' aria-live='polite'>
-      <div className='grid grid-cols-2 gap-3 sm:grid-cols-4'>
+      <div className='grid grid-cols-2 gap-3 sm:grid-cols-5'>
         <div className='rounded-md border p-3'>
           <p className='text-muted-foreground text-xs'>Total Pledged</p>
           <p className='text-xl font-semibold'>
             ${summary?.total_pledged.toLocaleString('en-US') ?? '0'}
+          </p>
+        </div>
+        <div className='rounded-md border p-3'>
+          <p className='text-muted-foreground text-xs'>Last Hero Raised</p>
+          <p className='text-xl font-semibold'>
+            ${lastHeroRaised.toLocaleString('en-US')}
           </p>
         </div>
         <div className='rounded-md border p-3'>
@@ -282,14 +326,14 @@ export function PaddleRaiseEntryForm({
               refresh.
             </p>
           ) : null}
-          {!isLoadingLabels && !labelsError && labels.length === 0 ? (
+          {!isLoadingLabels && !labelsError && visibleLabels.length === 0 ? (
             <p className='text-muted-foreground text-sm'>
               No donation labels found. Run latest backend migrations and
               refresh.
             </p>
           ) : null}
           <div className='grid grid-cols-2 gap-2'>
-            {labels.map((label) => (
+            {visibleLabels.map((label) => (
               <label
                 key={label.id}
                 className='inline-flex items-center gap-2 text-sm'
@@ -389,15 +433,20 @@ export function PaddleRaiseEntryForm({
                   {donation.donor_name ?? '—'}
                 </p>
                 <div className='flex flex-wrap gap-1'>
-                  {donation.labels.length ? (
-                    donation.labels.map((label, idx) => (
-                      <span
-                        key={idx}
-                        className='bg-muted rounded-full px-2 py-0.5 text-xs'
-                      >
-                        {label.label}
-                      </span>
-                    ))
+                  {donation.labels
+                    .map((label) => normalizeLabelName(label.label))
+                    .filter(isVisibleLabel).length ? (
+                    donation.labels
+                      .map((label) => normalizeLabelName(label.label))
+                      .filter(isVisibleLabel)
+                      .map((label, idx) => (
+                        <span
+                          key={idx}
+                          className='bg-muted rounded-full px-2 py-0.5 text-xs'
+                        >
+                          {label}
+                        </span>
+                      ))
                   ) : (
                     <span className='text-muted-foreground text-xs'>
                       No labels
@@ -500,7 +549,10 @@ export function PaddleRaiseEntryForm({
                   </td>
                   <td className='px-3 py-2'>
                     {donation.labels.length
-                      ? donation.labels.map((label) => label.label).join(', ')
+                      ? donation.labels
+                          .map((label) => normalizeLabelName(label.label))
+                          .filter(isVisibleLabel)
+                          .join(', ') || '—'
                       : '—'}
                   </td>
                   <td className='px-3 py-2'>

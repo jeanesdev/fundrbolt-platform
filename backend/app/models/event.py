@@ -67,7 +67,9 @@ class EventMediaUsageTag(str, enum.Enum):
     MAIN_EVENT_PAGE_HERO = "main_event_page_hero"
     EVENT_LAYOUT_MAP = "event_layout_map"
     NPO_LOGO = "npo_logo"
+    NPO_LOGO_ICON = "npo_logo_icon"
     EVENT_LOGO = "event_logo"
+    EVENT_LOGO_ICON = "event_logo_icon"
 
 
 class EventLinkType(str, enum.Enum):
@@ -174,6 +176,11 @@ class Event(Base, UUIDMixin, TimestampMixin):
         Numeric(12, 2),
         nullable=True,
         comment="Optional fundraising goal for event dashboard totals",
+    )
+    last_year_total: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 2),
+        nullable=True,
+        comment="Optional total raised by this event in the prior year",
     )
 
     # Primary Contact Information

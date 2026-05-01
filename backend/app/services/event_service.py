@@ -405,6 +405,7 @@ class EventService:
             venue_zip=source_event.venue_zip,
             attire=source_event.attire,
             fundraising_goal=source_event.fundraising_goal,
+            last_year_total=source_event.last_year_total,
             primary_contact_name=source_event.primary_contact_name,
             primary_contact_email=source_event.primary_contact_email,
             primary_contact_phone=source_event.primary_contact_phone,

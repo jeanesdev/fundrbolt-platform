@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import auctionItemMediaService from '@/services/auctionItemMediaService'
 import {
   AuctionType,
+  SlidePresentationLayout,
   type AuctionItem,
   type AuctionItemCreate,
   type AuctionItemMedia,
@@ -68,6 +69,8 @@ export function AuctionItemForm({
     sponsor_id: string
     item_webpage: string
     display_priority: string
+    slide_presentation_html: string
+    slide_presentation_layout: SlidePresentationLayout
   }
 
   const [formData, setFormData] = useState<FormData>({
@@ -87,6 +90,9 @@ export function AuctionItemForm({
     sponsor_id: item?.sponsor_id || '',
     item_webpage: item?.item_webpage || '',
     display_priority: item?.display_priority?.toString() || '',
+    slide_presentation_html: item?.slide_presentation_html || '',
+    slide_presentation_layout:
+      item?.slide_presentation_layout || SlidePresentationLayout.BELOW_IMAGE,
   })
 
   // Validation errors
@@ -280,6 +286,8 @@ export function AuctionItemForm({
           display_priority: formData.display_priority
             ? parseInt(formData.display_priority, 10)
             : null,
+          slide_presentation_html: formData.slide_presentation_html || null,
+          slide_presentation_layout: formData.slide_presentation_layout,
         } as AuctionItemUpdate)
       : ({
           title: formData.title,
@@ -302,6 +310,9 @@ export function AuctionItemForm({
           display_priority: formData.display_priority
             ? parseInt(formData.display_priority, 10)
             : undefined,
+          slide_presentation_html:
+            formData.slide_presentation_html || undefined,
+          slide_presentation_layout: formData.slide_presentation_layout,
         } as AuctionItemCreate)
 
     await onSubmit(data)

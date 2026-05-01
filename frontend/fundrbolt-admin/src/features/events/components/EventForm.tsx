@@ -123,6 +123,11 @@ const eventFormSchema = z.object({
     .min(0, 'Goal must be zero or greater')
     .nullable()
     .optional(),
+  last_year_total: z
+    .number()
+    .min(0, 'Last year total must be zero or greater')
+    .nullable()
+    .optional(),
   live_auction_start_datetime: z.string().optional(),
   auction_close_datetime: z.string().optional(),
   primary_contact_name: z.string().optional(),
@@ -169,6 +174,8 @@ export function EventForm({
   const [goalInputValue, setGoalInputValue] = useState<string>(
     formatGoalCurrency(event?.fundraising_goal ?? null)
   )
+  const [lastYearTotalInputValue, setLastYearTotalInputValue] =
+    useState<string>(formatGoalCurrency(event?.last_year_total ?? null))
 
   // Initialize form with existing event data or NPO branding defaults
   const form = useForm<EventFormValues>({
@@ -191,6 +198,7 @@ export function EventForm({
       venue_zip: event?.venue_zip || '',
       attire: event?.attire || '',
       fundraising_goal: event?.fundraising_goal ?? null,
+      last_year_total: event?.last_year_total ?? null,
       live_auction_start_datetime: event?.live_auction_start_datetime
         ? new Date(event.live_auction_start_datetime).toISOString().slice(0, 16)
         : '',
@@ -351,6 +359,9 @@ export function EventForm({
       if (name === 'fundraising_goal') {
         setGoalInputValue(formatGoalCurrency(values.fundraising_goal))
       }
+      if (name === 'last_year_total') {
+        setLastYearTotalInputValue(formatGoalCurrency(values.last_year_total))
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -365,6 +376,7 @@ export function EventForm({
       event_datetime: new Date(values.event_datetime).toISOString(),
       table_count: values.table_count,
       fundraising_goal: values.fundraising_goal ?? null,
+      last_year_total: values.last_year_total ?? null,
       live_auction_start_datetime: values.live_auction_start_datetime
         ? new Date(values.live_auction_start_datetime).toISOString()
         : null,
@@ -937,6 +949,56 @@ export function EventForm({
                 <FormDescription>
                   Set the dashboard fundraising goal used for progress and
                   pacing.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='last_year_total'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Last Years Total (USD)</FormLabel>
+                <FormControl>
+                  <Input
+                    type='text'
+                    inputMode='numeric'
+                    placeholder='$425,000'
+                    value={lastYearTotalInputValue}
+                    onFocus={(event) => {
+                      const currentValue = parseCurrencyInput(
+                        event.target.value
+                      )
+                      setLastYearTotalInputValue(
+                        currentValue !== null ? String(currentValue) : ''
+                      )
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault()
+                      }
+                    }}
+                    onChange={(event) => {
+                      const rawValue = event.target.value
+                      setLastYearTotalInputValue(rawValue)
+
+                      const parsedValue = parseCurrencyInput(rawValue)
+                      field.onChange(parsedValue)
+                    }}
+                    onBlur={(event) => {
+                      field.onBlur()
+                      const parsedValue = parseCurrencyInput(event.target.value)
+                      field.onChange(parsedValue)
+                      setLastYearTotalInputValue(
+                        formatGoalCurrency(parsedValue)
+                      )
+                    }}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Optional prior-year result shown in the sticky event header.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
