@@ -19,6 +19,9 @@ export interface EventContextOption {
   status: string
   event_datetime: string
   npo_id?: string
+  npo_name?: string | null
+  logo_url?: string | null
+  last_year_total?: number | null
 }
 
 interface EventContextState {

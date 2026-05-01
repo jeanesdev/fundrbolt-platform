@@ -1,6 +1,6 @@
+import { type SlidePresentationLayout } from '@/types/auction-item'
 import apiClient from '@/lib/axios'
 
-// Commission types
 export interface CommissionUpsertRequest {
   commission_percent: number
   flat_fee: number
@@ -30,6 +30,7 @@ export interface CommissionListItem {
   current_bid_amount: number | null
   quantity_available: number | null
   bid_count: number
+  donor_value: number | null
   cost: number | null
   primary_image_url: string | null
   created_at: string
@@ -41,11 +42,13 @@ export interface CommissionListResponse {
   total: number
 }
 
-// Event settings types
 export interface EventSettingsUpsertRequest {
   live_auction_percent: number
   paddle_raise_percent: number
   silent_auction_percent: number
+  paddle_raise_levels: number[]
+  paddle_raise_total_goal: number | null
+  paddle_raise_level_goals: Record<string, number>
 }
 
 export interface EventSettingsResponse {
@@ -54,11 +57,13 @@ export interface EventSettingsResponse {
   live_auction_percent: number
   paddle_raise_percent: number
   silent_auction_percent: number
+  paddle_raise_levels: number[]
+  paddle_raise_total_goal: number | null
+  paddle_raise_level_goals: Record<string, number>
   created_at: string
   updated_at: string
 }
 
-// Dashboard types
 export interface EarningsSummary {
   per_item_total: number
   per_item_count: number
@@ -89,7 +94,6 @@ export interface DashboardResponse {
   last_refreshed_at: string
 }
 
-// Live auction types
 export interface HighBidder {
   bidder_number: number | null
   first_name: string
@@ -125,8 +129,104 @@ export interface LiveAuctionResponse {
   auction_status: 'not_started' | 'in_progress' | 'ended' | 'not_scheduled'
 }
 
+export interface AuctioneerItemSummary {
+  id: string
+  bid_number: number | null
+  title: string
+  auction_type: string
+  status: string | null
+  description: string | null
+  current_bid_amount: number | null
+  bid_count: number
+  bidder_count: number
+  primary_image_url: string | null
+  donor_value: number | null
+  cost: number | null
+  commission_percent: number | null
+  flat_fee: number | null
+  has_commission: boolean
+  has_bounty: boolean
+  slide_presentation_html: string | null
+  slide_presentation_layout: SlidePresentationLayout
+}
+
+export interface AuctioneerItemGalleryResponse {
+  items: AuctioneerItemSummary[]
+  total_items: number
+  total_raised: number
+  total_bids: number
+}
+
+export interface AuctioneerBidderProfile {
+  bidder_number: number | null
+  bidder_name: string
+  table_number: number | null
+  profile_picture_url: string | null
+  user_id: string | null
+}
+
+export interface AuctioneerBidActivityEntry {
+  id: string
+  bid_amount: number
+  placed_at: string
+  bid_status: string
+  bid_source: 'live' | 'silent' | 'paddle_raise'
+  label_names: string[]
+  is_monthly: boolean
+  bidder: AuctioneerBidderProfile
+}
+
+export interface AuctioneerBidderSummary {
+  bidder: AuctioneerBidderProfile
+  total_bid_amount: number
+  highest_bid_amount: number
+  bid_count: number
+  latest_bid_at: string
+}
+
+export interface AuctioneerItemDetailResponse {
+  item: AuctioneerItemSummary
+  current_high_bid: number | null
+  high_bidder: AuctioneerBidderProfile | null
+  bids: AuctioneerBidActivityEntry[]
+  bidder_summaries: AuctioneerBidderSummary[]
+}
+
+export interface AuctioneerPaddleRaiseLevelSummary {
+  amount: number
+  bidder_count: number
+  total_amount: number
+  participation_percent: number
+  donations_count: number
+  goal_amount: number | null
+  goal_progress_percent: number | null
+  is_monthly: boolean
+}
+
+export interface AuctioneerPaddleRaiseBidderSummary {
+  bidder: AuctioneerBidderProfile
+  total_amount: number
+  donation_count: number
+  label_names: string[]
+  is_last_hero: boolean
+}
+
+export interface AuctioneerPaddleRaiseResponse {
+  configured_levels: number[]
+  total_pledged: number
+  total_goal: number | null
+  total_goal_progress_percent: number | null
+  donation_count: number
+  unique_donor_count: number
+  participation_percent: number
+  last_hero_total: number
+  level_summaries: AuctioneerPaddleRaiseLevelSummary[]
+  donations: AuctioneerBidActivityEntry[]
+  bidder_totals: AuctioneerPaddleRaiseBidderSummary[]
+  last_hero_bidder_totals: AuctioneerPaddleRaiseBidderSummary[]
+}
+
 class AuctioneerService {
-  // Commission CRUD
   async getCommissions(eventId: string): Promise<CommissionListResponse> {
     const response = await apiClient.get<CommissionListResponse>(
       `/admin/events/${eventId}/auctioneer/commissions`
@@ -155,7 +255,6 @@ class AuctioneerService {
     )
   }
 
-  // Event settings
   async getSettings(eventId: string): Promise<EventSettingsResponse | null> {
     try {
       const response = await apiClient.get<EventSettingsResponse>(
@@ -178,7 +277,6 @@ class AuctioneerService {
     return response.data
   }
 
-  // Dashboard
   async getDashboard(eventId: string): Promise<DashboardResponse> {
     const response = await apiClient.get<DashboardResponse>(
       `/admin/events/${eventId}/auctioneer/dashboard`
@@ -186,10 +284,56 @@ class AuctioneerService {
     return response.data
   }
 
-  // Live auction
   async getLiveAuction(eventId: string): Promise<LiveAuctionResponse> {
     const response = await apiClient.get<LiveAuctionResponse>(
       `/admin/events/${eventId}/auctioneer/live-auction`
+    )
+    return response.data
+  }
+
+  async getLiveAuctionGallery(
+    eventId: string
+  ): Promise<AuctioneerItemGalleryResponse> {
+    const response = await apiClient.get<AuctioneerItemGalleryResponse>(
+      `/admin/events/${eventId}/auctioneer/live-auction/gallery`
+    )
+    return response.data
+  }
+
+  async getSilentAuctionGallery(
+    eventId: string
+  ): Promise<AuctioneerItemGalleryResponse> {
+    const response = await apiClient.get<AuctioneerItemGalleryResponse>(
+      `/admin/events/${eventId}/auctioneer/silent-auction/gallery`
+    )
+    return response.data
+  }
+
+  async getAuctioneerItemDetail(
+    eventId: string,
+    itemId: string
+  ): Promise<AuctioneerItemDetailResponse> {
+    const response = await apiClient.get<AuctioneerItemDetailResponse>(
+      `/admin/events/${eventId}/auctioneer/items/${itemId}`
+    )
+    return response.data
+  }
+
+  async getPaddleRaise(
+    eventId: string
+  ): Promise<AuctioneerPaddleRaiseResponse> {
+    const response = await apiClient.get<AuctioneerPaddleRaiseResponse>(
+      `/admin/events/${eventId}/auctioneer/paddle-raise`
+    )
+    return response.data
+  }
+
+  async downloadSilentAuctionSlides(eventId: string): Promise<Blob> {
+    const response = await apiClient.get<Blob>(
+      `/admin/events/${eventId}/auctioneer/silent-auction/slides/export`,
+      {
+        responseType: 'blob',
+      }
     )
     return response.data
   }

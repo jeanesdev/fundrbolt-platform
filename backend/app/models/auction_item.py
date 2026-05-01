@@ -50,6 +50,15 @@ class MediaType(str, enum.Enum):
     VIDEO = "video"
 
 
+class SlidePresentationLayout(str, enum.Enum):
+    """Supported slide presentation text layouts."""
+
+    ON_IMAGE = "on_image"
+    LEFT_OF_IMAGE = "left_of_image"
+    RIGHT_OF_IMAGE = "right_of_image"
+    BELOW_IMAGE = "below_image"
+
+
 class AuctionItem(Base, UUIDMixin, TimestampMixin):
     """Auction item model."""
 
@@ -148,6 +157,13 @@ class AuctionItem(Base, UUIDMixin, TimestampMixin):
     promotion_badge: Mapped[str | None] = mapped_column(String(50), nullable=True)
     promotion_badge_color: Mapped[str | None] = mapped_column(String(20), nullable=True)
     promotion_notice: Mapped[str | None] = mapped_column(Text, nullable=True)
+    slide_presentation_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    slide_presentation_layout: Mapped[str] = mapped_column(
+        String(20),
+        default=SlidePresentationLayout.BELOW_IMAGE.value,
+        server_default=SlidePresentationLayout.BELOW_IMAGE.value,
+        nullable=False,
+    )
 
     # Soft delete
     deleted_at: Mapped[datetime | None] = mapped_column(
@@ -190,6 +206,10 @@ class AuctionItem(Base, UUIDMixin, TimestampMixin):
         CheckConstraint(
             "(buy_now_enabled = false) OR (buy_now_enabled = true AND buy_now_price IS NOT NULL)",
             name="ck_auction_items_buy_now_consistency",
+        ),
+        CheckConstraint(
+            "slide_presentation_layout IN ('on_image', 'left_of_image', 'right_of_image', 'below_image')",
+            name="ck_auction_items_slide_presentation_layout",
         ),
     )
 

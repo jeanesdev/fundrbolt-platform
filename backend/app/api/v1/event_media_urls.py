@@ -64,19 +64,12 @@ def get_signed_asset_url(file_url: str | None, blob_name: str | None = None) -> 
     return file_url
 
 
-def resolve_event_logo_url(event: Any) -> str | None:
-    """Resolve the preferred event logo URL using the same tag priority as the donor page."""
+def _resolve_logo_media_url(event: Any, usage_tags: tuple[str, ...]) -> str | None:
+    """Resolve a signed logo asset URL from prioritized event media usage tags."""
     media_items = list(getattr(event, "media", []) or [])
+    prioritized_tags = set(usage_tags)
 
-    prioritized_tags = {
-        EventMediaUsageTag.EVENT_LOGO.value,
-        EventMediaUsageTag.NPO_LOGO.value,
-    }
-
-    for usage_tag in (
-        EventMediaUsageTag.EVENT_LOGO.value,
-        EventMediaUsageTag.NPO_LOGO.value,
-    ):
+    for usage_tag in usage_tags:
         match = next(
             (item for item in media_items if getattr(item, "usage_tag", None) == usage_tag), None
         )
@@ -103,6 +96,19 @@ def resolve_event_logo_url(event: Any) -> str | None:
     return get_signed_asset_url(getattr(event, "logo_url", None))
 
 
+def resolve_event_logo_url(event: Any) -> str | None:
+    """Resolve the preferred event logo URL using the same tag priority as the donor page."""
+    return _resolve_logo_media_url(
+        event,
+        (
+            EventMediaUsageTag.EVENT_LOGO.value,
+            EventMediaUsageTag.EVENT_LOGO_ICON.value,
+            EventMediaUsageTag.NPO_LOGO.value,
+            EventMediaUsageTag.NPO_LOGO_ICON.value,
+        ),
+    )
+
+
 def resolve_event_card_thumbnail_url(event: Any) -> str | None:
     """Resolve the preferred donor home-page card thumbnail for an event.
 
@@ -115,7 +121,15 @@ def resolve_event_card_thumbnail_url(event: Any) -> str | None:
     Layout-map assets are intentionally excluded so seating maps never appear
     as the event card image.
     """
-    logo_url = resolve_event_logo_url(event)
+    logo_url = _resolve_logo_media_url(
+        event,
+        (
+            EventMediaUsageTag.EVENT_LOGO_ICON.value,
+            EventMediaUsageTag.NPO_LOGO_ICON.value,
+            EventMediaUsageTag.EVENT_LOGO.value,
+            EventMediaUsageTag.NPO_LOGO.value,
+        ),
+    )
     if logo_url:
         return logo_url
 

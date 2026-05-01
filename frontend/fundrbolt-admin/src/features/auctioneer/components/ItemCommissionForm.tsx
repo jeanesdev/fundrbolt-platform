@@ -21,14 +21,14 @@ interface ItemCommissionFormProps {
   eventId: string
   auctionItemId: string
   existing?: CommissionListItem | null
-  consignmentCost?: number | null
+  fairMarketValue?: number | null
 }
 
 export function ItemCommissionForm({
   eventId,
   auctionItemId,
   existing,
-  consignmentCost,
+  fairMarketValue,
 }: ItemCommissionFormProps) {
   // Derive a stable key so React remounts the form when existing data changes
   const formKey = useMemo(
@@ -42,7 +42,7 @@ export function ItemCommissionForm({
       eventId={eventId}
       auctionItemId={auctionItemId}
       existing={existing}
-      consignmentCost={consignmentCost}
+      fairMarketValue={fairMarketValue}
     />
   )
 }
@@ -51,7 +51,7 @@ function ItemCommissionFormInner({
   eventId,
   auctionItemId,
   existing,
-  consignmentCost,
+  fairMarketValue,
 }: ItemCommissionFormProps) {
   const [commissionPercent, setCommissionPercent] = useState(
     existing?.commission_percent?.toString() ?? ''
@@ -76,8 +76,8 @@ function ItemCommissionFormInner({
   }
 
   const commissionAmount =
-    consignmentCost != null && commissionPercent !== ''
-      ? (consignmentCost * parseFloat(commissionPercent)) / 100
+    fairMarketValue != null && commissionPercent !== ''
+      ? (fairMarketValue * parseFloat(commissionPercent)) / 100
       : null
 
   const handleDelete = () => {
@@ -95,7 +95,7 @@ function ItemCommissionFormInner({
           Auctioneer Setup
         </CardTitle>
         <CardDescription>
-          Track your commission for this auction item
+          Track your commission for this auction item using fair market value
         </CardDescription>
       </CardHeader>
       <CardContent className='space-y-4'>
@@ -119,7 +119,7 @@ function ItemCommissionFormInner({
           </div>
           {commissionAmount != null && (
             <div className='space-y-2'>
-              <Label>Est. Commission</Label>
+              <Label>Est. Commission from FMV</Label>
               <p className='flex h-10 items-center font-semibold text-green-600 dark:text-green-400'>
                 {new Intl.NumberFormat('en-US', {
                   style: 'currency',

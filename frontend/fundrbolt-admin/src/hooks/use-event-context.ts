@@ -89,6 +89,9 @@ export function useEventContext(): UseEventContextReturn {
         status: event.status,
         event_datetime: event.event_datetime,
         npo_id: event.npo_id,
+        npo_name: event.npo_name,
+        logo_url: event.logo_url,
+        last_year_total: event.last_year_total,
       }))
 
       setAvailableEvents(eventOptions)

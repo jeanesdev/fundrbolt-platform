@@ -65,6 +65,7 @@ async def _create_source_event(
         venue_zip="10001",
         attire="Black Tie",
         fundraising_goal=50000.0,
+        last_year_total=42500.0,
         primary_contact_name="John Doe",
         primary_contact_email="john@example.com",
         primary_contact_phone="+1-555-0100",
@@ -346,6 +347,7 @@ class TestDuplicateEventService:
         assert new_event.venue_zip == source.venue_zip
         assert new_event.attire == source.attire
         assert new_event.fundraising_goal == source.fundraising_goal
+        assert new_event.last_year_total == source.last_year_total
         assert new_event.description == source.description
         assert new_event.primary_color == source.primary_color
         assert new_event.secondary_color == source.secondary_color

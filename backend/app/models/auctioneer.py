@@ -5,8 +5,17 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Numeric, Text, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Numeric,
+    Text,
+    UniqueConstraint,
+    func,
+    text,
+)
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -125,6 +134,22 @@ class AuctioneerEventSettings(Base):
         nullable=False,
         default=Decimal("0"),
         server_default="0",
+    )
+    paddle_raise_levels: Mapped[list[int]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=lambda: [10000, 5000, 2500, 1000, 500, 250, 100],
+        server_default=text("'[10000, 5000, 2500, 1000, 500, 250, 100]'::jsonb"),
+    )
+    paddle_raise_total_goal: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 2),
+        nullable=True,
+    )
+    paddle_raise_level_goals: Mapped[dict[str, int]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'::jsonb"),
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

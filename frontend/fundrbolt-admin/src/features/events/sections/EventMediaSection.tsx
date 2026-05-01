@@ -320,7 +320,8 @@ export function EventMediaSection() {
         <CardHeader>
           <CardTitle>Other Event Media</CardTitle>
           <CardDescription>
-            Upload logos, layout maps, and other event media assets.
+            Upload full logos, icon logos, layout maps, and other event media
+            assets.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -333,7 +334,9 @@ export function EventMediaSection() {
             allowedUploadUsageTags={[
               'event_layout_map',
               'npo_logo',
+              'npo_logo_icon',
               'event_logo',
+              'event_logo_icon',
             ]}
             defaultUploadUsageTag='event_layout_map'
             uploadProgress={uploadProgress}

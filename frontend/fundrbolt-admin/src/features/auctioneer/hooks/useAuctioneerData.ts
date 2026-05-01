@@ -88,6 +88,9 @@ export function useUpsertSettings(eventId: string) {
       queryClient.invalidateQueries({
         queryKey: ['auctioneer-dashboard', eventId],
       })
+      queryClient.invalidateQueries({
+        queryKey: ['auctioneer-paddle-raise', eventId],
+      })
       toast.success('Settings saved')
     },
     onError: () => {
@@ -100,6 +103,42 @@ export function useLiveAuction(eventId: string) {
   return useQuery({
     queryKey: ['auctioneer-live-auction', eventId],
     queryFn: () => auctioneerService.getLiveAuction(eventId),
+    enabled: Boolean(eventId),
+    refetchInterval: 5_000,
+  })
+}
+
+export function useLiveAuctionGallery(eventId: string) {
+  return useQuery({
+    queryKey: ['auctioneer-live-gallery', eventId],
+    queryFn: () => auctioneerService.getLiveAuctionGallery(eventId),
+    enabled: Boolean(eventId),
+    refetchInterval: 5_000,
+  })
+}
+
+export function useSilentAuctionGallery(eventId: string) {
+  return useQuery({
+    queryKey: ['auctioneer-silent-gallery', eventId],
+    queryFn: () => auctioneerService.getSilentAuctionGallery(eventId),
+    enabled: Boolean(eventId),
+    refetchInterval: 10_000,
+  })
+}
+
+export function useAuctioneerItemDetail(eventId: string, itemId: string) {
+  return useQuery({
+    queryKey: ['auctioneer-item-detail', eventId, itemId],
+    queryFn: () => auctioneerService.getAuctioneerItemDetail(eventId, itemId),
+    enabled: Boolean(eventId) && Boolean(itemId),
+    refetchInterval: 5_000,
+  })
+}
+
+export function usePaddleRaiseDashboard(eventId: string) {
+  return useQuery({
+    queryKey: ['auctioneer-paddle-raise', eventId],
+    queryFn: () => auctioneerService.getPaddleRaise(eventId),
     enabled: Boolean(eventId),
     refetchInterval: 5_000,
   })

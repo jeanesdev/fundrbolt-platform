@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 # --- Commission schemas ---
 
@@ -43,6 +43,7 @@ class CommissionListItem(BaseModel):
     current_bid_amount: Decimal | None
     quantity_available: int | None
     bid_count: int
+    donor_value: Decimal | None
     cost: Decimal | None
     primary_image_url: str | None
     created_at: datetime
@@ -56,11 +57,37 @@ class CommissionListResponse(BaseModel):
 
 # --- Event settings schemas ---
 
+DEFAULT_PADDLE_RAISE_LEVELS = [10000, 5000, 2500, 1000, 500, 250, 100]
+
 
 class EventSettingsUpsertRequest(BaseModel):
     live_auction_percent: Decimal = Field(ge=0, le=100)
     paddle_raise_percent: Decimal = Field(ge=0, le=100)
     silent_auction_percent: Decimal = Field(ge=0, le=100)
+    paddle_raise_levels: list[int] = Field(
+        default_factory=lambda: DEFAULT_PADDLE_RAISE_LEVELS.copy()
+    )
+    paddle_raise_total_goal: int | None = Field(default=None, ge=1)
+    paddle_raise_level_goals: dict[str, int] = Field(default_factory=dict)
+
+    @field_validator("paddle_raise_levels")
+    @classmethod
+    def validate_paddle_raise_levels(cls, value: list[int]) -> list[int]:
+        normalized = sorted({level for level in value if level > 0}, reverse=True)
+        if not normalized:
+            raise ValueError("At least one positive paddle raise level is required")
+        return normalized
+
+    @field_validator("paddle_raise_level_goals")
+    @classmethod
+    def validate_paddle_raise_level_goals(cls, value: dict[str, int]) -> dict[str, int]:
+        normalized: dict[str, int] = {}
+        for key, goal in value.items():
+            amount = int(key)
+            if amount <= 0 or goal <= 0:
+                continue
+            normalized[str(amount)] = goal
+        return normalized
 
 
 class EventSettingsResponse(BaseModel):
@@ -69,6 +96,9 @@ class EventSettingsResponse(BaseModel):
     live_auction_percent: Decimal
     paddle_raise_percent: Decimal
     silent_auction_percent: Decimal
+    paddle_raise_levels: list[int]
+    paddle_raise_total_goal: Decimal | None = None
+    paddle_raise_level_goals: dict[str, int] = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime
 
@@ -148,3 +178,100 @@ class LiveAuctionResponse(BaseModel):
     high_bidder: HighBidder | None
     bid_history: list[BidHistoryEntry]
     auction_status: AuctionStatus
+
+
+class AuctioneerItemSummary(BaseModel):
+    id: UUID
+    bid_number: int | None
+    title: str
+    auction_type: str
+    status: str | None
+    description: str | None
+    current_bid_amount: Decimal | None
+    bid_count: int
+    bidder_count: int
+    primary_image_url: str | None
+    donor_value: Decimal | None
+    cost: Decimal | None
+    commission_percent: Decimal | None = None
+    flat_fee: Decimal | None = None
+    has_commission: bool = False
+    has_bounty: bool = False
+    slide_presentation_html: str | None = None
+    slide_presentation_layout: str
+
+
+class AuctioneerItemGalleryResponse(BaseModel):
+    items: list[AuctioneerItemSummary]
+    total_items: int
+    total_raised: Decimal
+    total_bids: int
+
+
+class AuctioneerBidderProfile(BaseModel):
+    bidder_number: int | None
+    bidder_name: str
+    table_number: int | None
+    profile_picture_url: str | None
+    user_id: UUID | None = None
+
+
+class AuctioneerBidActivityEntry(BaseModel):
+    id: UUID
+    bid_amount: Decimal
+    placed_at: datetime
+    bid_status: str
+    bid_source: Literal["live", "silent", "paddle_raise"]
+    label_names: list[str] = Field(default_factory=list)
+    is_monthly: bool = False
+    bidder: AuctioneerBidderProfile
+
+
+class AuctioneerBidderSummary(BaseModel):
+    bidder: AuctioneerBidderProfile
+    total_bid_amount: Decimal
+    highest_bid_amount: Decimal
+    bid_count: int
+    latest_bid_at: datetime
+
+
+class AuctioneerItemDetailResponse(BaseModel):
+    item: AuctioneerItemSummary
+    current_high_bid: Decimal | None
+    high_bidder: AuctioneerBidderProfile | None
+    bids: list[AuctioneerBidActivityEntry]
+    bidder_summaries: list[AuctioneerBidderSummary]
+
+
+class AuctioneerPaddleRaiseLevelSummary(BaseModel):
+    amount: int
+    bidder_count: int
+    total_amount: Decimal
+    participation_percent: float
+    donations_count: int
+    goal_amount: Decimal | None = None
+    goal_progress_percent: float | None = None
+    is_monthly: bool = False
+
+
+class AuctioneerPaddleRaiseBidderSummary(BaseModel):
+    bidder: AuctioneerBidderProfile
+    total_amount: Decimal
+    donation_count: int
+    label_names: list[str] = Field(default_factory=list)
+    is_last_hero: bool = False
+
+
+class AuctioneerPaddleRaiseResponse(BaseModel):
+    configured_levels: list[int]
+    total_pledged: Decimal
+    total_goal: Decimal | None = None
+    total_goal_progress_percent: float | None = None
+    donation_count: int
+    unique_donor_count: int
+    participation_percent: float
+    last_hero_total: Decimal
+    level_summaries: list[AuctioneerPaddleRaiseLevelSummary]
+    donations: list[AuctioneerBidActivityEntry]
+    bidder_totals: list[AuctioneerPaddleRaiseBidderSummary]
+    last_hero_bidder_totals: list[AuctioneerPaddleRaiseBidderSummary]

@@ -4,9 +4,30 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
+import bleach
+from bleach.css_sanitizer import CSSSanitizer
 from pydantic import BaseModel, Field, field_validator
 
-from app.models.auction_item import AuctionType, ItemStatus
+from app.models.auction_item import AuctionType, ItemStatus, SlidePresentationLayout
+
+_ALLOWED_SLIDE_TAGS = ["p", "br", "strong", "em", "u", "s", "ul", "ol", "li", "span"]
+_ALLOWED_SLIDE_ATTRS = {"p": ["style"], "span": ["style"]}
+_ALLOWED_SLIDE_CSS = ["color", "font-family", "text-align"]
+_SLIDE_CSS_SANITIZER = CSSSanitizer(allowed_css_properties=_ALLOWED_SLIDE_CSS)
+
+
+def _sanitize_slide_html(value: str | None) -> str | None:
+    if value is None:
+        return None
+
+    cleaned = bleach.clean(
+        value,
+        tags=_ALLOWED_SLIDE_TAGS,
+        attributes=_ALLOWED_SLIDE_ATTRS,
+        css_sanitizer=_SLIDE_CSS_SANITIZER,
+        strip=True,
+    ).strip()
+    return cleaned or None
 
 
 class AuctionItemBase(BaseModel):
@@ -26,6 +47,8 @@ class AuctionItemBase(BaseModel):
     sponsor_id: UUID | None = None
     item_webpage: str | None = Field(None, max_length=2048)
     display_priority: int | None = None
+    slide_presentation_html: str | None = Field(None, max_length=20000)
+    slide_presentation_layout: SlidePresentationLayout = SlidePresentationLayout.BELOW_IMAGE
 
     @field_validator("buy_now_price")
     @classmethod
@@ -34,6 +57,11 @@ class AuctionItemBase(BaseModel):
         # Note: Cross-field validation will be handled in service layer
         # to avoid pydantic v2 ValidationInfo complexity
         return v
+
+    @field_validator("slide_presentation_html")
+    @classmethod
+    def validate_slide_presentation_html(cls, value: str | None) -> str | None:
+        return _sanitize_slide_html(value)
 
 
 class AuctionItemCreate(AuctionItemBase):
@@ -59,6 +87,13 @@ class AuctionItemUpdate(BaseModel):
     sponsor_id: UUID | None = None
     item_webpage: str | None = Field(None, max_length=2048)
     display_priority: int | None = None
+    slide_presentation_html: str | None = Field(None, max_length=20000)
+    slide_presentation_layout: SlidePresentationLayout | None = None
+
+    @field_validator("slide_presentation_html")
+    @classmethod
+    def validate_slide_presentation_html(cls, value: str | None) -> str | None:
+        return _sanitize_slide_html(value)
 
 
 class AuctionItemResponse(AuctionItemBase):
@@ -87,6 +122,8 @@ class AuctionItemResponse(AuctionItemBase):
     watcher_count: int = 0
     promotion_badge: str | None = None
     promotion_notice: str | None = None
+    slide_presentation_html: str | None = None
+    slide_presentation_layout: SlidePresentationLayout = SlidePresentationLayout.BELOW_IMAGE
 
     model_config = {"from_attributes": True}
 

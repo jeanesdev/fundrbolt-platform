@@ -3,6 +3,7 @@
  * Page for editing an existing event with media, links, and food options
  */
 import { useCallback, useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Outlet,
   useLocation,
@@ -26,6 +27,7 @@ import { Button } from '@/components/ui/button'
 import { EventWorkspaceProvider } from './EventWorkspaceProvider'
 
 export function EventEditPage() {
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
   const location = useLocation()
   const params = useParams({ strict: false })
@@ -114,6 +116,7 @@ export function EventEditPage() {
     setIsSubmitting(true)
     try {
       await updateEvent(apiEventId, data)
+      await queryClient.invalidateQueries({ queryKey: ['events', 'list'] })
       toast.success('Event updated successfully!')
     } catch (err: unknown) {
       const error = err as { response?: { status: number } }
@@ -283,53 +286,7 @@ export function EventEditPage() {
   return (
     <EventWorkspaceProvider value={contextValue}>
       <div className='container mx-auto px-2 py-3 sm:px-6 sm:py-4 md:py-8'>
-        <div className='mb-4 md:mb-6'>
-          <div className='flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between'>
-            <div className='min-w-0 flex-1'>
-              <h1 className='truncate text-2xl font-bold md:text-3xl'>
-                {currentEvent.name}
-              </h1>
-              <div className='mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4'>
-                {currentEvent.npo_name && (
-                  <p className='text-muted-foreground text-sm'>
-                    <span className='font-medium'>Organization:</span>{' '}
-                    {currentEvent.npo_name}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className='flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4'>
-              <div className='flex items-center gap-2'>
-                <span className='text-muted-foreground text-sm'>Status:</span>
-                <span
-                  className={`rounded px-2 py-1 text-xs whitespace-nowrap ${
-                    currentEvent.status === 'draft'
-                      ? 'bg-gray-100 text-gray-800'
-                      : currentEvent.status === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                  }`}
-                >
-                  {currentEvent.status.charAt(0).toUpperCase() +
-                    currentEvent.status.slice(1)}
-                </span>
-              </div>
-              {(currentEvent.status === 'draft' ||
-                currentEvent.status === 'closed') && (
-                <Button
-                  variant='destructive'
-                  size='sm'
-                  onClick={handleDelete}
-                  className='w-full sm:w-auto'
-                >
-                  Delete Event
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className='mt-6 space-y-6'>
+        <div className='mt-2 space-y-6'>
           <Outlet />
         </div>
       </div>

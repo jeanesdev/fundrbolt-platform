@@ -201,6 +201,8 @@ class AuctionItemService:
             sponsor_id=item_data.sponsor_id,
             item_webpage=item_data.item_webpage,
             display_priority=item_data.display_priority,
+            slide_presentation_html=item_data.slide_presentation_html,
+            slide_presentation_layout=item_data.slide_presentation_layout,
             status=ItemStatus.DRAFT,  # New items start as draft
             created_by=created_by,
         )
