@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import enum
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
@@ -51,7 +51,7 @@ class RevenueGeneratorWinnerSelection(Base, UUIDMixin, TimestampMixin):
     selected_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=lambda: datetime.now(),
+        default=lambda: datetime.now(UTC),
     )
     selected_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),

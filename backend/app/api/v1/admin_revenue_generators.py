@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.middleware.auth import get_current_user
+from app.models.revenue_generator_item import RevenueGeneratorItem
 from app.models.user import User
 from app.schemas.revenue_generator import (
     ManualWinnerSelectRequest,
@@ -45,10 +46,10 @@ async def _require_event_access(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
 
-async def _get_item_or_404(db: AsyncSession, item_id: uuid.UUID, event_id: uuid.UUID) -> object:
+async def _get_item_or_404(
+    db: AsyncSession, item_id: uuid.UUID, event_id: uuid.UUID
+) -> RevenueGeneratorItem:
     from sqlalchemy import select
-
-    from app.models.revenue_generator_item import RevenueGeneratorItem
 
     result = await db.execute(
         select(RevenueGeneratorItem).where(
@@ -113,7 +114,7 @@ async def update_revenue_generator_item(
     """Update a revenue generator item."""
     await _require_event_access(db, current_user, event_id)
     item = await _get_item_or_404(db, item_id, event_id)
-    result = await RevenueGeneratorService.update_item(db, item, data)  # type: ignore[arg-type]
+    result = await RevenueGeneratorService.update_item(db, item, data)
     await db.commit()
     return result
 
@@ -131,7 +132,7 @@ async def delete_revenue_generator_item(
     """Delete a revenue generator item."""
     await _require_event_access(db, current_user, event_id)
     item = await _get_item_or_404(db, item_id, event_id)
-    await RevenueGeneratorService.delete_item(db, item)  # type: ignore[arg-type]
+    await RevenueGeneratorService.delete_item(db, item)
     await db.commit()
 
 
@@ -145,10 +146,10 @@ async def delete_revenue_generator_item(
 async def list_entries(
     event_id: uuid.UUID,
     item_id: uuid.UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
     page: Annotated[int, Query(ge=1)] = 1,
     per_page: Annotated[int, Query(ge=1, le=200)] = 50,
-    current_user: Annotated[User, Depends(get_current_user)] = None,  # type: ignore[assignment]
-    db: Annotated[AsyncSession, Depends(get_db)] = None,  # type: ignore[assignment]
 ) -> RevenueGeneratorEntryListResponse:
     """List all entries (grouped by bidder) for a revenue generator item."""
     await _require_event_access(db, current_user, event_id)

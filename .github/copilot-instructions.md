@@ -169,8 +169,8 @@ git commit -m "message"
 
 ## Recent Changes
 - 042-revenue-generators: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18/19, Vite, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (Frontend)
+- 042-revenue-generators: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18/19, Vite, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (Frontend)
 - 042-revenue-generators: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
-- 041-donate-now-page: Added Python 3.11+ (backend), TypeScript 5.x / React 19 (donor PWA frontend), TypeScript 5.x / React 19 (admin PWA frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (backend); React 19, Vite 7, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (donor PWA + admin PWA); Celery + Redis (recurring charge scheduling)
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields
   - ✅ Updated registration_guests with is_table_captain boolean field
   - ✅ US1 - Customize Table Capacity: Event coordinators can set custom capacity per table (1-20), system enforces limits

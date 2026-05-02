@@ -19,14 +19,14 @@ export interface RGItem {
 
 export interface RGItemCreate {
   name: string
-  description?: string
+  description?: string | null
   price_per_entry: number
   display_order?: number
 }
 
 export interface RGItemUpdate {
   name?: string
-  description?: string
+  description?: string | null
   price_per_entry?: number
   is_visible?: boolean
   is_open_for_entries?: boolean
@@ -62,8 +62,7 @@ export interface RGEntryListResponse {
   total_pages: number
 }
 
-const BASE = (eventId: string) =>
-  `/api/v1/admin/events/${eventId}/revenue-generators`
+const BASE = (eventId: string) => `/admin/events/${eventId}/revenue-generators`
 
 const revenueGeneratorService = {
   async listItems(eventId: string): Promise<RGItem[]> {

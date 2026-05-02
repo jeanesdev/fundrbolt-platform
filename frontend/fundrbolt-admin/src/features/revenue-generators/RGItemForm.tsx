@@ -47,7 +47,7 @@ export function RGItemForm({ eventId, item, open, onClose, onSaved }: Props) {
     try {
       const payload: RGItemCreate = {
         name: values.name.trim(),
-        description: values.description.trim() || undefined,
+        description: values.description.trim() || null,
         price_per_entry: parseFloat(values.price_per_entry),
         display_order: parseInt(values.display_order, 10),
       }

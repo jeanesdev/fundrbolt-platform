@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -51,7 +51,7 @@ class RevenueGeneratorEntry(Base, UUIDMixin, TimestampMixin):
     purchased_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=lambda: datetime.now(),
+        default=lambda: datetime.now(UTC),
     )
 
     # Relationships

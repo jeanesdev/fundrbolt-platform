@@ -643,6 +643,7 @@ class AuctioneerService:
             result = await RevenueGeneratorService.get_dashboard_summary(self.db, event_id)
             return result
         except Exception:
+            logger.exception("Failed to load revenue generator summary for event %s", event_id)
             return None
 
     # ── Live auction tab ─────────────────────────────────────────

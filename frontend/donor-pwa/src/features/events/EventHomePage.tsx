@@ -24,6 +24,7 @@ import {
   getEventGuests,
   getMyActivity,
 } from '@/services/donor-activity-service'
+import { getEventRevenueGenerators } from '@/services/revenueGeneratorService'
 import {
   getMySeatingInfo,
   type SeatingInfoResponse,
@@ -113,12 +114,6 @@ export function EventHomePage() {
   const prefetchedAuctionImagesRef = useRef<Set<string>>(new Set())
   const prefetchedVenueMapUrlsRef = useRef<Set<string>>(new Set())
   const queryClient = useQueryClient()
-  const tabOrder = useMemo<DonorTab[]>(
-    () => ['home', 'auction', 'play', 'seat'],
-    []
-  )
-  const isOnline = useOnlineStatus()
-  const prevOnlineRef = useRef(isOnline)
 
   // Registrations data — used as fallback to find the event ID when
   // availableEvents (Zustand store) hasn't been populated yet (e.g.
@@ -131,6 +126,23 @@ export function EventHomePage() {
     staleTime: 5 * 60 * 1000,
     enabled: !!eventSlug && !isPreviewMode,
   })
+
+  const { data: rgItems = [] } = useQuery({
+    queryKey: ['donor', 'revenue-generators', currentEvent?.id],
+    queryFn: () => getEventRevenueGenerators(currentEvent!.id),
+    enabled: !!currentEvent?.id && !isPreviewMode,
+    staleTime: 30_000,
+  })
+  const hasRgItems = rgItems.length > 0
+
+  const tabOrder = useMemo<DonorTab[]>(() => {
+    const base: DonorTab[] = ['home', 'auction']
+    if (hasRgItems) base.push('play')
+    base.push('seat')
+    return base
+  }, [hasRgItems])
+  const isOnline = useOnlineStatus()
+  const prevOnlineRef = useRef(isOnline)
 
   const npoSlugForDonateNow = useMemo(() => {
     const fromRecord = (
@@ -1665,7 +1677,11 @@ export function EventHomePage() {
       </main>
 
       {/* Fixed bottom navigation */}
-      <BottomTabNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomTabNav
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        visibleTabs={tabOrder}
+      />
 
       {/* Auction Item Detail Modal */}
       <AuctionItemDetailModal

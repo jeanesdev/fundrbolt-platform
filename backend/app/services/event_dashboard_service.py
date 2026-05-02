@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING, TypedDict
@@ -54,6 +55,8 @@ class SegmentRow(TypedDict):
 
 
 _PROJECTION_OVERRIDES: dict[tuple[str, ScenarioType], dict[str, Decimal]] = {}
+
+logger = logging.getLogger(__name__)
 
 
 class EventDashboardService:
@@ -378,6 +381,7 @@ class EventDashboardService:
             result = await RevenueGeneratorService.get_dashboard_summary(self.db, event_id)
             return result
         except Exception:
+            logger.exception("Failed to load revenue generator summary for event %s", event_id)
             return None
 
     async def _guest_rows(self, event_id: UUID) -> list[tuple[RegistrationGuest, UUID]]:

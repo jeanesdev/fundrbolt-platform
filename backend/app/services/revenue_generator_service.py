@@ -59,28 +59,29 @@ class RevenueGeneratorService:
         result = await db.execute(stmt)
         items = result.scalars().all()
 
-        response_items = []
-        for item in items:
-            entry_stats = await RevenueGeneratorService._get_entry_stats(db, item.id)
-            winner = await RevenueGeneratorService._get_current_winner(db, item.id)
-            response_items.append(
-                RevenueGeneratorItemAdminResponse(
-                    id=item.id,
-                    event_id=item.event_id,
-                    name=item.name,
-                    description=item.description,
-                    price_per_entry=item.price_per_entry,
-                    is_visible=item.is_visible,
-                    is_open_for_entries=item.is_open_for_entries,
-                    display_order=item.display_order,
-                    total_entries=entry_stats[0],
-                    total_revenue=entry_stats[1],
-                    current_winner_name=winner[0] if winner else None,
-                    current_winner_bidder_number=winner[1] if winner else None,
-                    created_at=item.created_at,
-                    updated_at=item.updated_at,
-                )
+        item_ids = [item.id for item in items]
+        entry_stats_bulk = await RevenueGeneratorService._get_entry_stats_bulk(db, item_ids)
+        winner_bulk = await RevenueGeneratorService._get_current_winner_bulk(db, item_ids)
+
+        response_items = [
+            RevenueGeneratorItemAdminResponse(
+                id=item.id,
+                event_id=item.event_id,
+                name=item.name,
+                description=item.description,
+                price_per_entry=item.price_per_entry,
+                is_visible=item.is_visible,
+                is_open_for_entries=item.is_open_for_entries,
+                display_order=item.display_order,
+                total_entries=entry_stats_bulk.get(item.id, (0, Decimal("0.00")))[0],
+                total_revenue=entry_stats_bulk.get(item.id, (0, Decimal("0.00")))[1],
+                current_winner_name=winner_bulk.get(item.id, (None, None))[0],
+                current_winner_bidder_number=winner_bulk.get(item.id, (None, None))[1],
+                created_at=item.created_at,
+                updated_at=item.updated_at,
             )
+            for item in items
+        ]
         return RevenueGeneratorAdminListResponse(items=response_items)
 
     @staticmethod
@@ -214,17 +215,21 @@ class RevenueGeneratorService:
             if e.purchased_at > grouped[k].last_purchased_at:
                 grouped[k].last_purchased_at = e.purchased_at
 
-        rows = [
-            EntryRow(
-                registration_guest_id=g.registration_guest_id,
-                bidder_number=g.bidder_number,
-                donor_name=g.donor_name,
-                entry_count=g.entry_count,
-                total_paid=g.total_paid,
-                last_purchased_at=g.last_purchased_at,
-            )
-            for g in grouped.values()
-        ]
+        rows = sorted(
+            [
+                EntryRow(
+                    registration_guest_id=g.registration_guest_id,
+                    bidder_number=g.bidder_number,
+                    donor_name=g.donor_name,
+                    entry_count=g.entry_count,
+                    total_paid=g.total_paid,
+                    last_purchased_at=g.last_purchased_at,
+                )
+                for g in grouped.values()
+            ],
+            key=lambda r: r.entry_count,
+            reverse=True,
+        )
         total = len(rows)
         start = (page - 1) * per_page
         rows_page = rows[start : start + per_page]
@@ -456,10 +461,13 @@ class RevenueGeneratorService:
         guest_result = await db.execute(guest_stmt)
         guest = guest_result.scalar_one_or_none()
 
+        if guest is None:
+            raise ValueError(f"Bidder #{bidder_number} is not assigned to a donor for this event")
+
         entry = RevenueGeneratorEntry(
             revenue_generator_item_id=item_id,
             event_id=event_id,
-            registration_guest_id=guest.id if guest else None,
+            registration_guest_id=guest.id,
             bidder_number=bidder_number,
             amount_paid=item.price_per_entry,
             recorded_by_user_id=recorded_by_user_id,
@@ -475,11 +483,9 @@ class RevenueGeneratorService:
         count_result = await db.execute(count_stmt)
         entry_count = count_result.scalar_one() or 0
 
-        donor_name: str | None = None
-        if guest:
-            first = getattr(guest, "first_name", None) or ""
-            last = getattr(guest, "last_name", None) or ""
-            donor_name = f"{first} {last}".strip() or None
+        first = getattr(guest, "first_name", None) or ""
+        last = getattr(guest, "last_name", None) or ""
+        donor_name: str | None = f"{first} {last}".strip() or None
 
         return QuickEntryRevenueGeneratorEntryResponse(
             entry_id=entry.id,
@@ -505,13 +511,17 @@ class RevenueGeneratorService:
         items_result = await db.execute(items_stmt)
         items = items_result.scalars().all()
 
+        item_ids = [item.id for item in items]
+        entry_stats_bulk = await RevenueGeneratorService._get_entry_stats_bulk(db, item_ids)
+        winner_bulk = await RevenueGeneratorService._get_current_winner_bulk(db, item_ids)
+
         item_summaries = []
         total_entries = 0
         total_revenue = Decimal("0.00")
 
         for item in items:
-            stats = await RevenueGeneratorService._get_entry_stats(db, item.id)
-            winner = await RevenueGeneratorService._get_current_winner(db, item.id)
+            stats = entry_stats_bulk.get(item.id, (0, Decimal("0.00")))
+            winner = winner_bulk.get(item.id)
             total_entries += stats[0]
             total_revenue += stats[1]
             item_summaries.append(
@@ -557,6 +567,60 @@ class RevenueGeneratorService:
         if not selection:
             return None
         return selection.winner_name, selection.bidder_number
+
+    @staticmethod
+    async def _get_entry_stats_bulk(
+        db: AsyncSession, item_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, tuple[int, Decimal]]:
+        """Bulk version of _get_entry_stats to avoid N+1 queries."""
+        if not item_ids:
+            return {}
+
+        stmt = (
+            select(
+                RevenueGeneratorEntry.revenue_generator_item_id,
+                func.count(RevenueGeneratorEntry.id).label("cnt"),
+                func.coalesce(func.sum(RevenueGeneratorEntry.amount_paid), Decimal("0.00")).label(
+                    "rev"
+                ),
+            )
+            .where(RevenueGeneratorEntry.revenue_generator_item_id.in_(item_ids))
+            .group_by(RevenueGeneratorEntry.revenue_generator_item_id)
+        )
+        result = await db.execute(stmt)
+        return {row.revenue_generator_item_id: (row.cnt, row.rev) for row in result}
+
+    @staticmethod
+    async def _get_current_winner_bulk(
+        db: AsyncSession, item_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, tuple[str, int]]:
+        """Bulk version of _get_current_winner to avoid N+1 queries."""
+        if not item_ids:
+            return {}
+        from sqlalchemy import and_
+
+        sub = (
+            select(
+                RevenueGeneratorWinnerSelection.revenue_generator_item_id,
+                func.max(RevenueGeneratorWinnerSelection.selected_at).label("max_at"),
+            )
+            .where(RevenueGeneratorWinnerSelection.revenue_generator_item_id.in_(item_ids))
+            .group_by(RevenueGeneratorWinnerSelection.revenue_generator_item_id)
+            .subquery()
+        )
+        stmt = select(RevenueGeneratorWinnerSelection).join(
+            sub,
+            and_(
+                RevenueGeneratorWinnerSelection.revenue_generator_item_id
+                == sub.c.revenue_generator_item_id,
+                RevenueGeneratorWinnerSelection.selected_at == sub.c.max_at,
+            ),
+        )
+        result = await db.execute(stmt)
+        return {
+            ws.revenue_generator_item_id: (ws.winner_name, ws.bidder_number)
+            for ws in result.scalars().all()
+        }
 
     @staticmethod
     async def _get_guest_name(db: AsyncSession, guest_id: uuid.UUID | None) -> str | None:

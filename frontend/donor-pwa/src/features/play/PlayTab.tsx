@@ -1,6 +1,11 @@
-import { useQuery } from '@tanstack/react-query'
-import { getEventRevenueGenerators } from '@/services/revenueGeneratorService'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  getEventRevenueGenerators,
+  purchaseEntry,
+} from '@/services/revenueGeneratorService'
 import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { RevenueGeneratorCard } from './RevenueGeneratorCard'
 
 interface Props {
@@ -10,6 +15,8 @@ interface Props {
 
 export function PlayTab({ eventId, brandPrimary }: Props) {
   const primary = brandPrimary ?? '59, 130, 246'
+  const queryClient = useQueryClient()
+  const [purchasingId, setPurchasingId] = useState<string | null>(null)
 
   const {
     data: items = [],
@@ -19,11 +26,27 @@ export function PlayTab({ eventId, brandPrimary }: Props) {
     queryKey: ['donor', 'revenue-generators', eventId],
     queryFn: () => getEventRevenueGenerators(eventId),
     enabled: !!eventId,
-    refetchInterval: 30_000,
+    refetchInterval: 5_000,
   })
 
-  const openItems = items.filter((i) => i.is_open)
-  const closedItems = items.filter((i) => !i.is_open)
+  const handlePurchase = async (itemId: string) => {
+    if (purchasingId) return
+    setPurchasingId(itemId)
+    try {
+      await purchaseEntry(eventId, itemId)
+      await queryClient.invalidateQueries({
+        queryKey: ['donor', 'revenue-generators', eventId],
+      })
+      toast.success('Entry purchased!')
+    } catch {
+      toast.error('Failed to purchase entry. Please try again.')
+    } finally {
+      setPurchasingId(null)
+    }
+  }
+
+  const openItems = items.filter((i) => i.is_open_for_entries)
+  const closedItems = items.filter((i) => !i.is_open_for_entries)
 
   return (
     <div className='space-y-4 px-4 py-4'>
@@ -40,8 +63,8 @@ export function PlayTab({ eventId, brandPrimary }: Props) {
         <div
           className='flex items-center gap-3 rounded-2xl border p-4'
           style={{
-            borderColor: `rgb(${primary} / 0.2)`,
-            backgroundColor: `rgb(${primary} / 0.06)`,
+            borderColor: `rgba(${primary}, 0.2)`,
+            backgroundColor: `rgba(${primary}, 0.06)`,
           }}
         >
           <p
@@ -83,6 +106,8 @@ export function PlayTab({ eventId, brandPrimary }: Props) {
               key={item.id}
               item={item}
               brandPrimary={primary}
+              onPurchase={handlePurchase}
+              isPurchasing={purchasingId === item.id}
             />
           ))}
         </div>
