@@ -32,6 +32,7 @@ import { BuyNowEntryForm } from './BuyNowEntryForm'
 import { LiveBidEntryForm } from './LiveBidEntryForm'
 import { LiveBidLogAndMetrics } from './LiveBidLogAndMetrics'
 import { PaddleRaiseEntryForm } from './PaddleRaiseEntryForm'
+import { RevenueGeneratorEntryForm } from './RevenueGeneratorEntryForm'
 import { SilentBidEntryForm } from './SilentBidEntryForm'
 
 export function QuickEntryPage() {
@@ -40,7 +41,11 @@ export function QuickEntryPage() {
   })
   const { selectedEventId, availableEvents } = useEventContext()
   const [mode, setMode] = useState<
-    'LIVE_AUCTION' | 'PADDLE_RAISE' | 'BUY_NOW' | 'SILENT_AUCTION'
+    | 'LIVE_AUCTION'
+    | 'PADDLE_RAISE'
+    | 'BUY_NOW'
+    | 'SILENT_AUCTION'
+    | 'REVENUE_GENERATORS'
   >('LIVE_AUCTION')
   const [itemMenuOpen, setItemMenuOpen] = useState(false)
   const [itemSearch, setItemSearch] = useState('')
@@ -209,6 +214,7 @@ export function QuickEntryPage() {
                 | 'PADDLE_RAISE'
                 | 'BUY_NOW'
                 | 'SILENT_AUCTION'
+                | 'REVENUE_GENERATORS'
             )
           }
         >
@@ -224,6 +230,9 @@ export function QuickEntryPage() {
             </TabsTrigger>
             <TabsTrigger value='SILENT_AUCTION' className='min-h-9 px-4'>
               Silent Auction
+            </TabsTrigger>
+            <TabsTrigger value='REVENUE_GENERATORS' className='min-h-9 px-4'>
+              Raffle
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -462,7 +471,7 @@ export function QuickEntryPage() {
           onDeleteBid={buyNow.deleteBid}
           summary={buyNow.summary}
         />
-      ) : (
+      ) : mode === 'SILENT_AUCTION' ? (
         <SilentBidEntryForm
           items={silent.items}
           isLoadingItems={silent.isLoadingItems}
@@ -480,6 +489,9 @@ export function QuickEntryPage() {
           onBidderKeyDown={silent.handleBidderKeyDown}
           onSubmit={silent.submitBid}
         />
+      ) : null}
+      {mode === 'REVENUE_GENERATORS' && (
+        <RevenueGeneratorEntryForm eventId={resolvedEventId} />
       )}
     </div>
   )

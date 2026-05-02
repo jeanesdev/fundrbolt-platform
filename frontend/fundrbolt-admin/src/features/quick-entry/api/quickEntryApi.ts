@@ -380,3 +380,41 @@ export async function getSilentAuctionBids(
   })
   return response.data.items
 }
+
+export interface QuickEntryRGItem {
+  id: string
+  name: string
+  price_per_entry: number
+}
+
+export interface QuickEntryRGEntryResponse {
+  entry_id: string
+  item_id: string
+  item_name: string
+  bidder_number: number
+  donor_name: string | null
+  entry_count_for_item: number
+  amount_paid: number
+}
+
+export async function getQuickEntryRGItems(
+  eventId: string
+): Promise<QuickEntryRGItem[]> {
+  const response = await apiClient.get<{ items: QuickEntryRGItem[] }>(
+    `/admin/events/${eventId}/quick-entry/revenue-generators`
+  )
+  return response.data.items
+}
+
+export async function createQuickEntryRGEntry(
+  eventId: string,
+  itemId: string,
+  bidderNumber: number
+): Promise<QuickEntryRGEntryResponse> {
+  const response = await apiClient.post<QuickEntryRGEntryResponse>(
+    `/admin/events/${eventId}/quick-entry/revenue-generators/entry`,
+    null,
+    { params: { item_id: itemId, bidder_number: bidderNumber } }
+  )
+  return response.data
+}

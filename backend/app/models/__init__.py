@@ -73,6 +73,12 @@ from app.models.registration_import import (
     RegistrationValidationIssue,
     ValidationSeverity,
 )
+from app.models.revenue_generator_entry import RevenueGeneratorEntry
+from app.models.revenue_generator_item import RevenueGeneratorItem
+from app.models.revenue_generator_winner_selection import (
+    RevenueGeneratorWinnerSelection,
+    WinnerSelectionMethod,
+)
 from app.models.role import Role
 from app.models.session import Session
 from app.models.social_auth_attempt import SocialAuthAttempt
@@ -177,6 +183,10 @@ __all__ = [
     "PromoCode",
     "PromoCodeApplication",
     "PushSubscription",
+    "RevenueGeneratorEntry",
+    "RevenueGeneratorItem",
+    "RevenueGeneratorWinnerSelection",
+    "WinnerSelectionMethod",
     "QuickEntryBid",
     "QuickEntryBuyNowBid",
     "QuickEntryBidStatus",

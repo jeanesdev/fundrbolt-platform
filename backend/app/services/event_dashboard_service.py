@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from app.schemas.revenue_generator import RevenueGeneratorDashboardSummary
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -363,7 +366,19 @@ class EventDashboardService:
             funnel=await self._funnel(event_id),
             alerts=alerts,
             last_refreshed_at=now,
+            revenue_generators=await self._revenue_generators_summary(event_id),
         )
+
+    async def _revenue_generators_summary(
+        self, event_id: UUID
+    ) -> RevenueGeneratorDashboardSummary | None:
+        try:
+            from app.services.revenue_generator_service import RevenueGeneratorService
+
+            result = await RevenueGeneratorService.get_dashboard_summary(self.db, event_id)
+            return result
+        except Exception:
+            return None
 
     async def _guest_rows(self, event_id: UUID) -> list[tuple[RegistrationGuest, UUID]]:
         stmt = (

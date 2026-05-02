@@ -75,6 +75,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 import { PushOptInPrompt } from '@/components/notifications/PushOptInPrompt'
 import { ProfileDropdown } from '@/components/profile-dropdown'
+import { PlayTab } from '@/features/play'
 
 export function EventHomePage() {
   const navigate = useNavigate()
@@ -112,7 +113,10 @@ export function EventHomePage() {
   const prefetchedAuctionImagesRef = useRef<Set<string>>(new Set())
   const prefetchedVenueMapUrlsRef = useRef<Set<string>>(new Set())
   const queryClient = useQueryClient()
-  const tabOrder = useMemo<DonorTab[]>(() => ['home', 'auction', 'seat'], [])
+  const tabOrder = useMemo<DonorTab[]>(
+    () => ['home', 'auction', 'play', 'seat'],
+    []
+  )
   const isOnline = useOnlineStatus()
   const prevOnlineRef = useRef(isOnline)
 
@@ -1451,6 +1455,33 @@ export function EventHomePage() {
     </>
   )
 
+  const playTabContent = (
+    <>
+      <div
+        className='sticky top-0 z-20 border-b px-4 pb-3 backdrop-blur-md'
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
+          backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.92)',
+          borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
+        }}
+      >
+        <div className='flex items-center justify-between'>
+          <h2
+            className='text-base font-bold'
+            style={{ color: 'var(--event-text-on-background, #111827)' }}
+          >
+            Raffle &amp; Prizes
+          </h2>
+          <div className='flex items-center gap-2'>
+            <NotificationBell variant='header' />
+            <ProfileDropdown />
+          </div>
+        </div>
+      </div>
+      <PlayTab eventId={currentEvent.id} />
+    </>
+  )
+
   const seatTabContent = (
     <>
       <div
@@ -1574,6 +1605,7 @@ export function EventHomePage() {
   const renderTabContent = (tab: DonorTab) => {
     if (tab === 'home') return homeTabContent
     if (tab === 'auction') return auctionTabContent
+    if (tab === 'play') return playTabContent
     return seatTabContent
   }
 

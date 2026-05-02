@@ -420,6 +420,11 @@ const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
     path: 'auctioneer',
     icon: 'Gavel',
   },
+  {
+    title: 'Revenue Generators',
+    path: 'revenue-generators',
+    icon: 'Gamepad2',
+  },
 ]
 
 /** Helper to look up a section by its path. Throws at startup if a path is missing. */
@@ -469,6 +474,7 @@ const EVENT_NAV_GROUPS: Array<{
       sectionByPath('auction-items'),
       sectionByPath('auction-bids'),
       sectionByPath('quick-entry'),
+      sectionByPath('revenue-generators'),
     ],
   },
   {

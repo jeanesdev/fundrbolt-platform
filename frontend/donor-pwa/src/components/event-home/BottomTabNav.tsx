@@ -5,10 +5,10 @@
  * Active tab uses the event primary brand colour.
  * Supports a badge count on any tab.
  */
-import { Heart, PartyPopper, Ticket } from 'lucide-react'
+import { Dices, Heart, PartyPopper, Ticket } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export type DonorTab = 'home' | 'auction' | 'seat'
+export type DonorTab = 'home' | 'auction' | 'seat' | 'play'
 
 interface TabConfig {
   id: DonorTab
@@ -19,6 +19,7 @@ interface TabConfig {
 const TABS: TabConfig[] = [
   { id: 'home', label: 'Our Cause', icon: Heart },
   { id: 'auction', label: 'Win it', icon: PartyPopper },
+  { id: 'play', label: 'Raffle', icon: Dices },
   { id: 'seat', label: 'My Event', icon: Ticket },
 ]
 

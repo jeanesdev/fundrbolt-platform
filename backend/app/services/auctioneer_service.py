@@ -9,7 +9,10 @@ from collections import defaultdict
 from datetime import UTC, datetime
 from decimal import Decimal
 from html import unescape
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from app.schemas.revenue_generator import RevenueGeneratorDashboardSummary
 from uuid import UUID
 
 import httpx
@@ -628,7 +631,19 @@ class AuctioneerService:
                 silent_auction_status=silent_status,
             ),
             last_refreshed_at=now,
+            revenue_generators=await self._revenue_generators_summary(event_id),
         )
+
+    async def _revenue_generators_summary(
+        self, event_id: UUID
+    ) -> RevenueGeneratorDashboardSummary | None:
+        try:
+            from app.services.revenue_generator_service import RevenueGeneratorService
+
+            result = await RevenueGeneratorService.get_dashboard_summary(self.db, event_id)
+            return result
+        except Exception:
+            return None
 
     # ── Live auction tab ─────────────────────────────────────────
 

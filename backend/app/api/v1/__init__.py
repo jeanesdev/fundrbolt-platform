@@ -20,6 +20,7 @@ from app.api.v1 import (
     admin_payments,
     admin_quick_entry,
     admin_registration_import,
+    admin_revenue_generators,
     admin_seating,
     admin_testimonials,
     admin_ticket_sales_import,
@@ -32,6 +33,7 @@ from app.api.v1 import (
     checkin,
     consent,
     cookies,
+    donor_revenue_generators,
     donor_seating,
     event_custom_options,
     event_preview,
@@ -138,5 +140,9 @@ api_router.include_router(ticket_invitations.router, tags=["ticket-invitations"]
 # Feature 041: Donate Now Page
 api_router.include_router(public_donate_now.router, tags=["Public Donate Now"])
 api_router.include_router(admin_donate_now.router, tags=["Admin Donate Now"])
+
+# Feature 042: Revenue Generators
+api_router.include_router(admin_revenue_generators.router, tags=["admin-revenue-generators"])
+api_router.include_router(donor_revenue_generators.router, tags=["donor-revenue-generators"])
 
 __all__ = ["api_router"]

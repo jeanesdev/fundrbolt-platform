@@ -8,6 +8,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.revenue_generator import RevenueGeneratorDashboardSummary
+
 ScenarioType = Literal["base", "optimistic", "conservative"]
 SegmentType = Literal["table", "guest", "registrant", "company"]
 SortType = Literal["total_amount", "contribution_share"]
@@ -88,6 +90,7 @@ class DashboardSummary(BaseModel):
     funnel: list[FunnelStage]
     alerts: list[AlertCard]
     last_refreshed_at: datetime
+    revenue_generators: RevenueGeneratorDashboardSummary | None = None
 
 
 class SegmentBreakdownItem(BaseModel):

@@ -780,3 +780,52 @@ async def _get_primary_image_url(
         except (ValueError, IndexError):
             return primary_media.file_path
     return primary_media.file_path
+
+
+# ── Revenue Generator Quick Entry Endpoints ────────────────────────────────────
+
+
+@router.get(
+    "/revenue-generators",
+    tags=["admin-quick-entry"],
+)
+async def qe_list_revenue_generator_items(
+    event_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> object:
+    """List revenue generator items open for entry (quick entry)."""
+    from app.services.revenue_generator_service import RevenueGeneratorService
+
+    event = await _get_event_or_404(db, event_id)
+    await _require_quick_entry_access(db, current_user, event)
+    return await RevenueGeneratorService.list_items_quick_entry(db, event_id)
+
+
+@router.post(
+    "/revenue-generators/entry",
+    status_code=status.HTTP_201_CREATED,
+    tags=["admin-quick-entry"],
+)
+async def qe_record_revenue_generator_entry(
+    event_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    item_id: UUID = Query(...),
+    bidder_number: int = Query(..., ge=100, le=999),
+) -> object:
+    """Record a revenue generator entry for a bidder (quick entry)."""
+    from app.services.revenue_generator_service import RevenueGeneratorService
+
+    event = await _get_event_or_404(db, event_id)
+    await _require_quick_entry_access(db, current_user, event)
+    try:
+        result = await RevenueGeneratorService.record_quick_entry(
+            db, event_id, item_id, bidder_number, current_user.id
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
+    await db.commit()
+    return result
