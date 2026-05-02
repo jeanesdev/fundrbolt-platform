@@ -1,12 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
 import {
   createQuickEntryRGEntry,
+  getQuickEntryRGAllEntries,
   getQuickEntryRGItems,
-  type QuickEntryRGEntryResponse,
+  type QuickEntryRGHistoryItem,
   type QuickEntryRGItem,
 } from '../api/quickEntryApi'
 
@@ -18,16 +21,45 @@ export function RevenueGeneratorEntryForm({ eventId }: Props) {
   const [selectedItemId, setSelectedItemId] = useState('')
   const [bidderNumber, setBidderNumber] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [recentEntries, setRecentEntries] = useState<
-    QuickEntryRGEntryResponse[]
-  >([])
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false)
   const bidderRef = useRef<HTMLInputElement>(null)
+  const queryClient = useQueryClient()
+  const [viewMode, setViewMode] = useViewPreference('rg-entries')
 
-  const { data: items = [], isLoading } = useQuery({
+  const {
+    data: items = [],
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['quick-entry', 'rg-items', eventId],
     queryFn: () => getQuickEntryRGItems(eventId),
     enabled: !!eventId,
+    retry: false,
   })
+
+  const { data: historyData } = useQuery({
+    queryKey: ['quick-entry', 'rg-entries', eventId],
+    queryFn: () => getQuickEntryRGAllEntries(eventId),
+    enabled: !!eventId,
+    refetchInterval: 10_000,
+  })
+
+  const allEntries: QuickEntryRGHistoryItem[] = historyData ?? []
+
+  useEffect(() => {
+    if (!isLoading) {
+      setLoadingTimedOut(false)
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setLoadingTimedOut(true)
+    }, 3000)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [isLoading])
 
   const selectedItem = items.find(
     (i: QuickEntryRGItem) => i.id === selectedItemId
@@ -44,12 +76,10 @@ export function RevenueGeneratorEntryForm({ eventId }: Props) {
     if (!selectedItemId || isNaN(bidder) || bidder < 100 || bidder > 999) return
     setSubmitting(true)
     try {
-      const result = await createQuickEntryRGEntry(
-        eventId,
-        selectedItemId,
-        bidder
-      )
-      setRecentEntries((prev) => [result, ...prev].slice(0, 20))
+      await createQuickEntryRGEntry(eventId, selectedItemId, bidder)
+      await queryClient.invalidateQueries({
+        queryKey: ['quick-entry', 'rg-entries', eventId],
+      })
       setBidderNumber('')
       bidderRef.current?.focus()
     } finally {
@@ -65,8 +95,12 @@ export function RevenueGeneratorEntryForm({ eventId }: Props) {
     <div className='space-y-4'>
       <div className='space-y-1'>
         <label className='text-sm font-medium'>Item</label>
-        {isLoading ? (
+        {isLoading && !loadingTimedOut ? (
           <p className='text-muted-foreground text-sm'>Loading items…</p>
+        ) : isError || loadingTimedOut ? (
+          <p className='text-destructive text-sm'>
+            Unable to load revenue generator items right now.
+          </p>
         ) : items.length === 0 ? (
           <p className='text-muted-foreground text-sm'>
             No open revenue generator items for this event.
@@ -123,32 +157,109 @@ export function RevenueGeneratorEntryForm({ eventId }: Props) {
         </div>
       )}
 
-      {recentEntries.length > 0 && (
-        <div className='space-y-1'>
-          <p className='text-muted-foreground text-xs font-medium tracking-wide uppercase'>
-            Recent Entries
-          </p>
-          <div className='space-y-1'>
-            {recentEntries.map((entry, idx) => (
-              <div
-                key={`${entry.entry_id}-${idx}`}
-                className='bg-muted/30 flex items-center justify-between rounded px-2 py-1 text-sm'
-              >
-                <span>
-                  <Badge variant='outline' className='mr-2'>
-                    #{entry.bidder_number}
-                  </Badge>
-                  {entry.donor_name ?? `Bidder #${entry.bidder_number}`}
-                </span>
-                <span className='text-muted-foreground'>
-                  {entry.item_name} · {entry.entry_count_for_item}x ·{' '}
-                  <span className='text-foreground font-medium'>
-                    ${Number(entry.amount_paid).toFixed(2)}
-                  </span>
-                </span>
-              </div>
-            ))}
+      {allEntries.length > 0 && (
+        <div className='space-y-2'>
+          <div className='flex items-center justify-between'>
+            <p className='text-muted-foreground text-xs font-medium tracking-wide uppercase'>
+              All Entries ({allEntries.length})
+            </p>
+            <DataTableViewToggle value={viewMode} onChange={setViewMode} />
           </div>
+
+          {viewMode === 'card' ? (
+            <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+              {allEntries.map((entry) => (
+                <div
+                  key={entry.entry_id}
+                  className='space-y-1 rounded-md border p-3'
+                >
+                  <div className='flex items-center justify-between'>
+                    <Badge variant='outline'>#{entry.bidder_number}</Badge>
+                    <span className='text-xs text-muted-foreground'>
+                      {new Date(entry.purchased_at).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                  <p className='text-sm font-medium'>
+                    {entry.donor_name ?? (
+                      <span className='text-muted-foreground'>Unknown donor</span>
+                    )}
+                  </p>
+                  <p className='truncate text-sm text-muted-foreground'>
+                    {entry.item_name}
+                  </p>
+                  <div className='flex items-center justify-between text-sm'>
+                    <span className='font-medium'>
+                      ${Number(entry.amount_paid).toFixed(2)}
+                    </span>
+                    <span className='text-muted-foreground'>
+                      {entry.entry_count_for_item}x
+                      {entry.table_number != null
+                        ? ` · T${entry.table_number}`
+                        : ''}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className='overflow-x-auto rounded-md border'>
+              <table className='w-full min-w-[540px] text-sm'>
+                <thead>
+                  <tr className='bg-muted/20 text-left'>
+                    <th className='px-3 py-2 font-medium'>Bidder</th>
+                    <th className='px-3 py-2 font-medium'>Name</th>
+                    <th className='px-3 py-2 font-medium'>Table</th>
+                    <th className='px-3 py-2 font-medium'>Item</th>
+                    <th className='px-3 py-2 font-medium'>Entries</th>
+                    <th className='px-3 py-2 font-medium'>Amount</th>
+                    <th className='px-3 py-2 font-medium'>Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allEntries.map((entry) => (
+                    <tr
+                      key={entry.entry_id}
+                      className='border-t transition-colors first:border-t-0 hover:bg-muted/10'
+                    >
+                      <td className='px-3 py-2'>
+                        <Badge variant='outline'>#{entry.bidder_number}</Badge>
+                      </td>
+                      <td className='px-3 py-2'>
+                        {entry.donor_name ?? (
+                          <span className='text-muted-foreground'>—</span>
+                        )}
+                      </td>
+                      <td className='px-3 py-2'>
+                        {entry.table_number != null ? (
+                          <span className='font-medium'>T{entry.table_number}</span>
+                        ) : (
+                          <span className='text-muted-foreground'>—</span>
+                        )}
+                      </td>
+                      <td className='px-3 py-2 max-w-[140px] truncate'>
+                        {entry.item_name}
+                      </td>
+                      <td className='px-3 py-2 text-center'>
+                        {entry.entry_count_for_item}x
+                      </td>
+                      <td className='px-3 py-2 font-medium'>
+                        ${Number(entry.amount_paid).toFixed(2)}
+                      </td>
+                      <td className='px-3 py-2 text-muted-foreground text-xs'>
+                        {new Date(entry.purchased_at).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -14,6 +14,11 @@ class RevenueGeneratorItemCreate(BaseModel):
     name: str = Field(max_length=255)
     description: str | None = None
     price_per_entry: Decimal = Field(gt=0, decimal_places=2)
+    max_entries: int | None = Field(
+        default=None,
+        gt=0,
+        description="Maximum number of entries/tickets available. NULL means unlimited.",
+    )
     display_order: int = Field(default=0, ge=0)
 
 
@@ -21,6 +26,11 @@ class RevenueGeneratorItemUpdate(BaseModel):
     name: str | None = Field(default=None, max_length=255)
     description: str | None = None
     price_per_entry: Decimal | None = Field(default=None, gt=0, decimal_places=2)
+    max_entries: int | None = Field(
+        default=None,
+        gt=0,
+        description="Maximum number of entries/tickets available. NULL means unlimited.",
+    )
     is_visible: bool | None = None
     is_open_for_entries: bool | None = None
     display_order: int | None = Field(default=None, ge=0)
@@ -32,6 +42,8 @@ class RevenueGeneratorItemAdminResponse(BaseModel):
     name: str
     description: str | None
     price_per_entry: Decimal
+    max_entries: int | None
+    image_url: str | None = None
     is_visible: bool
     is_open_for_entries: bool
     display_order: int
@@ -50,6 +62,8 @@ class RevenueGeneratorItemDonorResponse(BaseModel):
     name: str
     description: str | None
     price_per_entry: Decimal
+    max_entries: int | None
+    image_url: str | None = None
     is_open_for_entries: bool
     my_entry_count: int = 0
     current_winner_name: str | None = None
@@ -76,6 +90,8 @@ class EntryRow(BaseModel):
     registration_guest_id: UUID | None
     bidder_number: int
     donor_name: str
+    profile_picture_url: str | None = None
+    table_number: int | None = None
     entry_count: int
     total_paid: Decimal
     last_purchased_at: datetime
@@ -138,8 +154,25 @@ class QuickEntryRevenueGeneratorEntryResponse(BaseModel):
     item_name: str
     bidder_number: int
     donor_name: str | None
+    table_number: int | None = None
     entry_count_for_item: int
     amount_paid: Decimal
+
+
+class QuickEntryRGHistoryItem(BaseModel):
+    entry_id: UUID
+    item_id: UUID
+    item_name: str
+    bidder_number: int
+    donor_name: str | None
+    table_number: int | None = None
+    entry_count_for_item: int
+    amount_paid: Decimal
+    purchased_at: str
+
+
+class QuickEntryRGHistoryResponse(BaseModel):
+    entries: list[QuickEntryRGHistoryItem]
 
 
 # --- Dashboard summary schemas ---

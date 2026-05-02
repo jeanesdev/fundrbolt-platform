@@ -52,8 +52,10 @@ export function formatSourceLabel(source: string): string {
     silent_auction: 'Silent Auction',
     live_auction: 'Live Auction',
     buy_it_now: 'Buy It Now',
+    buy_now: 'Buy It Now',
     paddle_raise: 'Paddle Raise',
     fees_other: 'Fees & Other',
+    revenue_generators: 'Revenue Generators',
   }
 
   return aliases[source] ?? titleFromKey(source)

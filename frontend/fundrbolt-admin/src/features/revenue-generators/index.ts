@@ -1,4 +1,5 @@
 export { RevenueGeneratorsTab } from './RevenueGeneratorsTab'
-export { RGItemList } from './RGItemList'
-export { RGItemForm } from './RGItemForm'
+export { RGAuctioneerTab } from './RGAuctioneerTab'
 export { RGEntriesPanel } from './RGEntriesPanel'
+export { RGItemForm } from './RGItemForm'
+export { RGItemList } from './RGItemList'

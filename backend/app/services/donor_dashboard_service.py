@@ -22,6 +22,7 @@ from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
 from app.models.quick_entry_buy_now_bid import QuickEntryBuyNowBid
 from app.models.quick_entry_donation import QuickEntryDonation
 from app.models.registration_guest import RegistrationGuest
+from app.models.revenue_generator_entry import RevenueGeneratorEntry
 from app.models.ticket_management import PaymentStatus, TicketPackage, TicketPurchase
 from app.models.user import User
 from app.schemas.donor_dashboard import (
@@ -1426,6 +1427,24 @@ class DonorDashboardService:
         result.append(
             GivingTypeEntry(
                 category="buy_now", total_amount=float(row.total), donor_count=row.donors
+            )
+        )
+
+        # Revenue generators
+        r = await self.db.execute(
+            select(
+                func.coalesce(func.sum(RevenueGeneratorEntry.amount_paid), 0).label("total"),
+                func.count(distinct(RevenueGeneratorEntry.bidder_number)).label("donors"),
+            )
+            .join(Event, RevenueGeneratorEntry.event_id == Event.id)
+            .where(ef)
+        )
+        row = r.one()
+        result.append(
+            GivingTypeEntry(
+                category="revenue_generators",
+                total_amount=float(row.total),
+                donor_count=row.donors,
             )
         )
 

@@ -675,6 +675,7 @@ async def create_silent_auction_bid(
         item_id=bid.auction_item_id,
         bidder_number=bid.bidder_number,
         donor_name=bidder.donor_display_name,
+        table_number=str(bidder.table_number) if bidder.table_number is not None else None,
         amount=float(bid.bid_amount),
         bid_status=bid.bid_status,
         placed_at=bid.placed_at,
@@ -710,20 +711,21 @@ async def list_silent_auction_bids(
 
     response_items: list[QuickEntrySilentBidResponse] = []
     for bid in bids:
-        donor_name: str | None = None
-        if bid.user_id:
-            user_stmt = select(User).where(User.id == bid.user_id)
-            user_result = await db.execute(user_stmt)
-            user = user_result.scalar_one_or_none()
-            if user:
-                donor_name = f"{user.first_name} {user.last_name}".strip() or None
+        bidder_lookup = await QuickEntryServiceBase.lookup_bidder_optional(
+            db, event_id, bid.bidder_number
+        )
         response_items.append(
             QuickEntrySilentBidResponse(
                 id=bid.id,
                 event_id=bid.event_id,
                 item_id=bid.auction_item_id,
                 bidder_number=bid.bidder_number,
-                donor_name=donor_name,
+                donor_name=bidder_lookup.donor_display_name if bidder_lookup else None,
+                table_number=(
+                    str(bidder_lookup.table_number)
+                    if bidder_lookup and bidder_lookup.table_number is not None
+                    else None
+                ),
                 amount=float(bid.bid_amount),
                 bid_status=bid.bid_status,
                 placed_at=bid.placed_at,
@@ -829,3 +831,20 @@ async def qe_record_revenue_generator_entry(
         ) from exc
     await db.commit()
     return result
+
+
+@router.get(
+    "/revenue-generators/entries",
+    tags=["admin-quick-entry"],
+)
+async def qe_list_revenue_generator_entries(
+    event_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> object:
+    """Return all revenue generator entries for the event (quick entry history)."""
+    from app.services.revenue_generator_service import RevenueGeneratorService
+
+    event = await _get_event_or_404(db, event_id)
+    await _require_quick_entry_access(db, current_user, event)
+    return await RevenueGeneratorService.list_all_entries_quick_entry(db, event_id)

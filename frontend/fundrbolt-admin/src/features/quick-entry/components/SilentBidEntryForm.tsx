@@ -357,6 +357,9 @@ export function SilentBidEntryForm({
                     ) : null}
                     {bid.donor_name ?? '—'}
                   </p>
+                  <p className='text-muted-foreground text-xs'>
+                    {bid.table_number ? `Table ${bid.table_number}` : 'Table —'}
+                  </p>
                   <div className='flex items-center justify-between'>
                     <span className='text-muted-foreground text-xs'>
                       {new Date(bid.placed_at).toLocaleTimeString()}
@@ -382,6 +385,7 @@ export function SilentBidEntryForm({
                   <tr className='bg-muted/20 text-left'>
                     <th className='px-3 py-2'>Bidder</th>
                     <th className='px-3 py-2'>Donor</th>
+                    <th className='px-3 py-2'>Table</th>
                     <th className='px-3 py-2'>Amount</th>
                     <th className='px-3 py-2'>Status</th>
                     <th className='px-3 py-2'>Time</th>
@@ -398,6 +402,9 @@ export function SilentBidEntryForm({
                           ) : null}
                           {bid.donor_name ?? '—'}
                         </div>
+                      </td>
+                      <td className='px-3 py-2'>
+                        {bid.table_number ? `Table ${bid.table_number}` : '—'}
                       </td>
                       <td className='px-3 py-2'>
                         ${Math.round(bid.amount).toLocaleString('en-US')}

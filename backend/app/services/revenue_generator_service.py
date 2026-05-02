@@ -26,6 +26,8 @@ from app.schemas.revenue_generator import (
     QuickEntryRevenueGeneratorEntryResponse,
     QuickEntryRevenueGeneratorItem,
     QuickEntryRevenueGeneratorItemListResponse,
+    QuickEntryRGHistoryItem,
+    QuickEntryRGHistoryResponse,
     RevenueGeneratorAdminListResponse,
     RevenueGeneratorDashboardSummary,
     RevenueGeneratorDonorListResponse,
@@ -40,6 +42,22 @@ from app.schemas.revenue_generator import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_image_url(image_url: str | None, image_blob_name: str | None) -> str | None:
+    """Return a SAS-signed image URL if Azure is configured, else the raw URL."""
+    if not image_url:
+        return None
+    if not image_blob_name:
+        return image_url
+    try:
+        from app.core.config import get_settings
+        from app.services.sponsor_logo_service import SponsorLogoService
+
+        get_settings()  # ensure settings loaded
+        return SponsorLogoService.generate_blob_sas_url(image_blob_name, expiry_hours=24)
+    except Exception:
+        return image_url
 
 
 class RevenueGeneratorService:
@@ -70,6 +88,8 @@ class RevenueGeneratorService:
                 name=item.name,
                 description=item.description,
                 price_per_entry=item.price_per_entry,
+                max_entries=item.max_entries,
+                image_url=_resolve_image_url(item.image_url, item.image_blob_name),
                 is_visible=item.is_visible,
                 is_open_for_entries=item.is_open_for_entries,
                 display_order=item.display_order,
@@ -97,6 +117,7 @@ class RevenueGeneratorService:
             name=data.name,
             description=data.description,
             price_per_entry=data.price_per_entry,
+            max_entries=data.max_entries,
             display_order=data.display_order,
         )
         db.add(item)
@@ -108,6 +129,8 @@ class RevenueGeneratorService:
             name=item.name,
             description=item.description,
             price_per_entry=item.price_per_entry,
+            max_entries=item.max_entries,
+            image_url=None,
             is_visible=item.is_visible,
             is_open_for_entries=item.is_open_for_entries,
             display_order=item.display_order,
@@ -136,6 +159,8 @@ class RevenueGeneratorService:
             item.description = data.description
         if data.price_per_entry is not None:
             item.price_per_entry = data.price_per_entry
+        if data.max_entries is not None:
+            item.max_entries = data.max_entries
         if data.is_visible is not None:
             item.is_visible = data.is_visible
         if data.is_open_for_entries is not None:
@@ -151,6 +176,8 @@ class RevenueGeneratorService:
             name=item.name,
             description=item.description,
             price_per_entry=item.price_per_entry,
+            max_entries=item.max_entries,
+            image_url=_resolve_image_url(item.image_url, item.image_blob_name),
             is_visible=item.is_visible,
             is_open_for_entries=item.is_open_for_entries,
             display_order=item.display_order,
@@ -177,8 +204,15 @@ class RevenueGeneratorService:
         page: int = 1,
         per_page: int = 50,
     ) -> RevenueGeneratorEntryListResponse:
+        from sqlalchemy.orm import selectinload
+
         stmt = (
             select(RevenueGeneratorEntry)
+            .options(
+                selectinload(RevenueGeneratorEntry.registration_guest).selectinload(
+                    RegistrationGuest.user
+                )
+            )
             .where(RevenueGeneratorEntry.revenue_generator_item_id == item_id)
             .order_by(RevenueGeneratorEntry.purchased_at.desc())
         )
@@ -190,6 +224,8 @@ class RevenueGeneratorService:
             registration_guest_id: UUID | None
             bidder_number: int
             donor_name: str
+            profile_picture_url: str | None
+            table_number: int | None
             entry_count: int
             total_paid: Decimal
             last_purchased_at: datetime
@@ -199,13 +235,30 @@ class RevenueGeneratorService:
         for e in entries:
             k = e.bidder_number
             if k not in grouped:
-                guest_name = await RevenueGeneratorService._get_guest_name(
-                    db, e.registration_guest_id
-                )
+                guest = e.registration_guest
+                donor_name: str
+                profile_picture_url: str | None = None
+                table_number: int | None = None
+                if guest:
+                    # Prefer the guest's own name field; fall back to linked user full name
+                    if guest.name:
+                        donor_name = guest.name
+                    elif guest.user:
+                        first = getattr(guest.user, "first_name", "") or ""
+                        last = getattr(guest.user, "last_name", "") or ""
+                        donor_name = f"{first} {last}".strip() or f"Bidder #{k}"
+                    else:
+                        donor_name = f"Bidder #{k}"
+                    table_number = guest.table_number
+                    profile_picture_url = guest.user.profile_picture_url if guest.user else None
+                else:
+                    donor_name = f"Bidder #{k}"
                 grouped[k] = _BidderGroup(
                     registration_guest_id=e.registration_guest_id,
                     bidder_number=k,
-                    donor_name=guest_name or f"Bidder #{k}",
+                    donor_name=donor_name,
+                    profile_picture_url=profile_picture_url,
+                    table_number=table_number,
                     entry_count=0,
                     total_paid=Decimal("0.00"),
                     last_purchased_at=e.purchased_at,
@@ -221,6 +274,8 @@ class RevenueGeneratorService:
                     registration_guest_id=g.registration_guest_id,
                     bidder_number=g.bidder_number,
                     donor_name=g.donor_name,
+                    profile_picture_url=g.profile_picture_url,
+                    table_number=g.table_number,
                     entry_count=g.entry_count,
                     total_paid=g.total_paid,
                     last_purchased_at=g.last_purchased_at,
@@ -389,6 +444,8 @@ class RevenueGeneratorService:
                     name=item.name,
                     description=item.description,
                     price_per_entry=item.price_per_entry,
+                    max_entries=item.max_entries,
+                    image_url=_resolve_image_url(item.image_url, item.image_blob_name),
                     is_open_for_entries=item.is_open_for_entries,
                     my_entry_count=my_count,
                     current_winner_name=winner[0] if winner else None,
@@ -483,9 +540,7 @@ class RevenueGeneratorService:
         count_result = await db.execute(count_stmt)
         entry_count = count_result.scalar_one() or 0
 
-        first = getattr(guest, "first_name", None) or ""
-        last = getattr(guest, "last_name", None) or ""
-        donor_name: str | None = f"{first} {last}".strip() or None
+        donor_name: str | None = guest.name or None
 
         return QuickEntryRevenueGeneratorEntryResponse(
             entry_id=entry.id,
@@ -493,9 +548,77 @@ class RevenueGeneratorService:
             item_name=item.name,
             bidder_number=bidder_number,
             donor_name=donor_name,
+            table_number=guest.table_number,
             entry_count_for_item=entry_count,
             amount_paid=item.price_per_entry,
         )
+
+    @staticmethod
+    async def list_all_entries_quick_entry(
+        db: AsyncSession, event_id: uuid.UUID
+    ) -> QuickEntryRGHistoryResponse:
+        """Return all entries for this event's revenue generators, newest first."""
+        from app.models.revenue_generator_item import RevenueGeneratorItem as RGItem
+
+        stmt = (
+            select(
+                RevenueGeneratorEntry,
+                RGItem.name.label("item_name"),
+                RegistrationGuest.name.label("donor_name"),
+                RegistrationGuest.table_number.label("table_number"),
+            )
+            .join(RGItem, RevenueGeneratorEntry.revenue_generator_item_id == RGItem.id)
+            .outerjoin(
+                RegistrationGuest,
+                RevenueGeneratorEntry.registration_guest_id == RegistrationGuest.id,
+            )
+            .where(RevenueGeneratorEntry.event_id == event_id)
+            .order_by(RevenueGeneratorEntry.purchased_at.desc())
+        )
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        # Count entries per (bidder, item) for the entry_count_for_item field
+        from sqlalchemy import func as sa_func
+
+        count_stmt = (
+            select(
+                RevenueGeneratorEntry.bidder_number,
+                RevenueGeneratorEntry.revenue_generator_item_id,
+                sa_func.count().label("cnt"),
+            )
+            .where(RevenueGeneratorEntry.event_id == event_id)
+            .group_by(
+                RevenueGeneratorEntry.bidder_number,
+                RevenueGeneratorEntry.revenue_generator_item_id,
+            )
+        )
+        count_result = await db.execute(count_stmt)
+        counts: dict[tuple[int, uuid.UUID], int] = {
+            (r.bidder_number, r.revenue_generator_item_id): r.cnt for r in count_result.all()
+        }
+
+        entries = [
+            QuickEntryRGHistoryItem(
+                entry_id=row.RevenueGeneratorEntry.id,
+                item_id=row.RevenueGeneratorEntry.revenue_generator_item_id,
+                item_name=row.item_name,
+                bidder_number=row.RevenueGeneratorEntry.bidder_number,
+                donor_name=row.donor_name,
+                table_number=row.table_number,
+                entry_count_for_item=counts.get(
+                    (
+                        row.RevenueGeneratorEntry.bidder_number,
+                        row.RevenueGeneratorEntry.revenue_generator_item_id,
+                    ),
+                    1,
+                ),
+                amount_paid=row.RevenueGeneratorEntry.amount_paid,
+                purchased_at=row.RevenueGeneratorEntry.purchased_at.isoformat(),
+            )
+            for row in rows
+        ]
+        return QuickEntryRGHistoryResponse(entries=entries)
 
     # ── Dashboard ───────────────────────────────────────────────────────────
 
@@ -630,9 +753,9 @@ class RevenueGeneratorService:
         guest = result.scalar_one_or_none()
         if not guest:
             return None
-        first = getattr(guest, "first_name", None) or ""
-        last = getattr(guest, "last_name", None) or ""
-        return f"{first} {last}".strip() or None
+        if guest.name:
+            return guest.name
+        return None
 
     @staticmethod
     async def _get_my_entry_count(

@@ -1,5 +1,5 @@
-import type { AuctionItem } from '@/types/auction-item'
 import apiClient from '@/lib/axios'
+import type { AuctionItem } from '@/types/auction-item'
 
 export async function getQuickEntryStatus(
   eventId: string
@@ -338,6 +338,7 @@ export interface QuickEntrySilentBidResponse {
   item_id: string
   bidder_number: number
   donor_name: string | null
+  table_number: string | null
   amount: number
   bid_status: string
   placed_at: string
@@ -393,8 +394,21 @@ export interface QuickEntryRGEntryResponse {
   item_name: string
   bidder_number: number
   donor_name: string | null
+  table_number: number | null
   entry_count_for_item: number
   amount_paid: number
+}
+
+export interface QuickEntryRGHistoryItem {
+  entry_id: string
+  item_id: string
+  item_name: string
+  bidder_number: number
+  donor_name: string | null
+  table_number: number | null
+  entry_count_for_item: number
+  amount_paid: number
+  purchased_at: string
 }
 
 export async function getQuickEntryRGItems(
@@ -404,6 +418,15 @@ export async function getQuickEntryRGItems(
     `/admin/events/${eventId}/quick-entry/revenue-generators`
   )
   return response.data.items
+}
+
+export async function getQuickEntryRGAllEntries(
+  eventId: string
+): Promise<QuickEntryRGHistoryItem[]> {
+  const response = await apiClient.get<{ entries: QuickEntryRGHistoryItem[] }>(
+    `/admin/events/${eventId}/quick-entry/revenue-generators/entries`
+  )
+  return response.data.entries
 }
 
 export async function createQuickEntryRGEntry(

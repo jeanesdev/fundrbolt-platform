@@ -1,10 +1,3 @@
-import { type KeyboardEvent, useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { useParams } from '@tanstack/react-router'
-import { eventApi } from '@/services/event-service'
-import { Check, ChevronsUpDown, Gavel } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useEventContext } from '@/hooks/use-event-context'
 import {
   Command,
   CommandEmpty,
@@ -19,6 +12,13 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useEventContext } from '@/hooks/use-event-context'
+import { cn } from '@/lib/utils'
+import { eventApi } from '@/services/event-service'
+import { useQuery } from '@tanstack/react-query'
+import { useParams } from '@tanstack/react-router'
+import { Check, ChevronsUpDown, Gavel } from 'lucide-react'
+import { type KeyboardEvent, useEffect, useMemo, useState } from 'react'
 import {
   getLiveAuctionOverview,
   getQuickEntryLiveAuctionItems,
@@ -210,31 +210,33 @@ export function QuickEntryPage() {
           onValueChange={(value) =>
             setMode(
               value as
-                | 'LIVE_AUCTION'
-                | 'PADDLE_RAISE'
-                | 'BUY_NOW'
-                | 'SILENT_AUCTION'
-                | 'REVENUE_GENERATORS'
+              | 'LIVE_AUCTION'
+              | 'PADDLE_RAISE'
+              | 'BUY_NOW'
+              | 'SILENT_AUCTION'
+              | 'REVENUE_GENERATORS'
             )
           }
         >
-          <TabsList className='h-11'>
-            <TabsTrigger value='LIVE_AUCTION' className='min-h-9 px-4'>
-              Live Auction
-            </TabsTrigger>
-            <TabsTrigger value='PADDLE_RAISE' className='min-h-9 px-4'>
-              Paddle Raise
-            </TabsTrigger>
-            <TabsTrigger value='BUY_NOW' className='min-h-9 px-4'>
-              Buy It Now
-            </TabsTrigger>
-            <TabsTrigger value='SILENT_AUCTION' className='min-h-9 px-4'>
-              Silent Auction
-            </TabsTrigger>
-            <TabsTrigger value='REVENUE_GENERATORS' className='min-h-9 px-4'>
-              Raffle
-            </TabsTrigger>
-          </TabsList>
+          <div className='w-full overflow-x-auto'>
+            <TabsList className='h-11'>
+              <TabsTrigger value='LIVE_AUCTION' className='min-h-9 px-4'>
+                Live Auction
+              </TabsTrigger>
+              <TabsTrigger value='PADDLE_RAISE' className='min-h-9 px-4'>
+                Paddle Raise
+              </TabsTrigger>
+              <TabsTrigger value='BUY_NOW' className='min-h-9 px-4'>
+                Buy It Now
+              </TabsTrigger>
+              <TabsTrigger value='SILENT_AUCTION' className='min-h-9 px-4'>
+                Silent Auction
+              </TabsTrigger>
+              <TabsTrigger value='REVENUE_GENERATORS' className='min-h-9 px-4'>
+                Revenue Generators
+              </TabsTrigger>
+            </TabsList>
+          </div>
         </Tabs>
 
         {mode === 'LIVE_AUCTION' ? (

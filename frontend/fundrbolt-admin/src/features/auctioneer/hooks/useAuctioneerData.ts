@@ -4,6 +4,7 @@ import {
   type CommissionUpsertRequest,
   type EventSettingsUpsertRequest,
 } from '@/services/auctioneerService'
+import revenueGeneratorService from '@/services/revenueGeneratorService'
 import { toast } from 'sonner'
 
 export function useAuctioneerDashboard(eventId: string) {
@@ -141,5 +142,14 @@ export function usePaddleRaiseDashboard(eventId: string) {
     queryFn: () => auctioneerService.getPaddleRaise(eventId),
     enabled: Boolean(eventId),
     refetchInterval: 5_000,
+  })
+}
+
+export function useRevenueGeneratorItems(eventId: string) {
+  return useQuery({
+    queryKey: ['auctioneer-revenue-generators', eventId],
+    queryFn: () => revenueGeneratorService.listItems(eventId),
+    enabled: Boolean(eventId),
+    refetchInterval: 10_000,
   })
 }

@@ -38,12 +38,19 @@ class RevenueGeneratorItem(Base, UUIDMixin, TimestampMixin):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     price_per_entry: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    max_entries: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
+    image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    image_blob_name: Mapped[str | None] = mapped_column(String(512), nullable=True)
     is_visible: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_open_for_entries: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     __table_args__ = (
         CheckConstraint("price_per_entry > 0", name="ck_revenue_generator_items_price_positive"),
+        CheckConstraint(
+            "max_entries IS NULL OR max_entries > 0",
+            name="ck_revenue_generator_items_max_entries_positive",
+        ),
     )
 
     # Relationships

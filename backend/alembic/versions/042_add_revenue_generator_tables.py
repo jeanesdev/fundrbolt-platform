@@ -13,19 +13,20 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 revision: str = "042_rg_001"
-down_revision: str | Sequence[str] | None = "052_paddle_raise_goals"
+down_revision: str | Sequence[str] | None = "052_paddle_goals"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    winner_method_enum = postgresql.ENUM(
-        "random_draw",
-        "manual",
-        name="revenue_generator_winner_method",
-        create_type=True,
-    )
-    winner_method_enum.create(op.get_bind())
+    # Use DO block to create type only if it doesn't exist (handles partial migration re-runs)
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE revenue_generator_winner_method AS ENUM ('random_draw', 'manual');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+    """)
 
     op.create_table(
         "revenue_generator_items",
@@ -156,10 +157,11 @@ def upgrade() -> None:
         sa.Column("bidder_number", sa.Integer(), nullable=False),
         sa.Column(
             "selection_method",
-            sa.Enum(
+            postgresql.ENUM(
                 "random_draw",
                 "manual",
                 name="revenue_generator_winner_method",
+                create_type=False,
             ),
             nullable=False,
         ),

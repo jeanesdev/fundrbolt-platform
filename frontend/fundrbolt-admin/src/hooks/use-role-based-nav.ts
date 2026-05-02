@@ -474,7 +474,6 @@ const EVENT_NAV_GROUPS: Array<{
       sectionByPath('auction-items'),
       sectionByPath('auction-bids'),
       sectionByPath('quick-entry'),
-      sectionByPath('revenue-generators'),
     ],
   },
   {

@@ -23,6 +23,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Table,
   TableBody,
   TableCell,
@@ -41,10 +48,16 @@ interface AuctionBidsDashboardProps {
 }
 
 type SortDirection = 'asc' | 'desc'
-type HighestSortKey = 'itemNumber' | 'itemName' | 'bidderName' | 'amount'
+type HighestSortKey =
+  | 'itemNumber'
+  | 'itemName'
+  | 'auctionType'
+  | 'bidderName'
+  | 'amount'
 type RecentSortKey =
   | 'itemNumber'
   | 'itemName'
+  | 'auctionType'
   | 'bidderName'
   | 'amount'
   | 'time'
@@ -52,6 +65,7 @@ type RecentSortKey =
 type HighestFilters = {
   itemNumber: string
   itemName: string
+  auctionType: string
   bidderName: string
   amount: string
 }
@@ -59,10 +73,18 @@ type HighestFilters = {
 type RecentFilters = {
   itemNumber: string
   itemName: string
+  auctionType: string
   bidderName: string
   amount: string
   time: string
 }
+
+const AUCTION_TYPE_LABELS: Record<string, string> = {
+  silent: 'Silent',
+  live: 'Live',
+}
+
+const formatAuctionType = (type: string) => AUCTION_TYPE_LABELS[type] ?? type
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -153,6 +175,7 @@ export function AuctionBidsDashboard({
   const [highestFilters, setHighestFilters] = useState<HighestFilters>({
     itemNumber: '',
     itemName: '',
+    auctionType: '',
     bidderName: '',
     amount: '',
   })
@@ -162,6 +185,7 @@ export function AuctionBidsDashboard({
   const [recentFilters, setRecentFilters] = useState<RecentFilters>({
     itemNumber: '',
     itemName: '',
+    auctionType: '',
     bidderName: '',
     amount: '',
     time: '',
@@ -174,6 +198,7 @@ export function AuctionBidsDashboard({
     let count = 0
     if (highestFilters.itemNumber) count++
     if (highestFilters.itemName) count++
+    if (highestFilters.auctionType) count++
     if (highestFilters.bidderName) count++
     if (highestFilters.amount) count++
     return count
@@ -183,6 +208,7 @@ export function AuctionBidsDashboard({
     let count = 0
     if (recentFilters.itemNumber) count++
     if (recentFilters.itemName) count++
+    if (recentFilters.auctionType) count++
     if (recentFilters.bidderName) count++
     if (recentFilters.amount) count++
     if (recentFilters.time) count++
@@ -193,6 +219,7 @@ export function AuctionBidsDashboard({
     setHighestFilters({
       itemNumber: '',
       itemName: '',
+      auctionType: '',
       bidderName: '',
       amount: '',
     })
@@ -202,6 +229,7 @@ export function AuctionBidsDashboard({
     setRecentFilters({
       itemNumber: '',
       itemName: '',
+      auctionType: '',
       bidderName: '',
       amount: '',
       time: '',
@@ -317,6 +345,11 @@ export function AuctionBidsDashboard({
           return false
         }
       }
+      if (highestFilters.auctionType) {
+        if (bid.auction_type !== highestFilters.auctionType) {
+          return false
+        }
+      }
       if (highestFilters.bidderName) {
         if (
           !normalizeText(bidderName).includes(
@@ -352,6 +385,12 @@ export function AuctionBidsDashboard({
               }
             ) * direction
           )
+        case 'auctionType':
+          return (
+            a.auction_type.localeCompare(b.auction_type, undefined, {
+              sensitivity: 'base',
+            }) * direction
+          )
         case 'bidderName': {
           const bidderA = a.bidder_name || a.bidder_email
           const bidderB = b.bidder_name || b.bidder_email
@@ -367,6 +406,88 @@ export function AuctionBidsDashboard({
     })
     return bids
   }, [filteredHighestBids, highestSortDirection, highestSortKey])
+
+  const renderSelectHeader = (
+    label: string,
+    sortKey: string,
+    activeSortKey: string,
+    sortDirection: SortDirection,
+    onSortChange: (key: string) => void,
+    filterValue: string,
+    onFilterChange: (value: string) => void,
+    options: { value: string; label: string }[]
+  ) => (
+    <TableHead>
+      <div className='flex items-center gap-2'>
+        <button
+          className='flex items-center gap-2'
+          onClick={() => onSortChange(sortKey)}
+          type='button'
+        >
+          {label}
+          <ArrowUpDown className='text-muted-foreground h-3 w-3' />
+          {activeSortKey === sortKey && (
+            <span className='text-muted-foreground text-xs'>
+              {sortDirection === 'asc' ? '^' : 'v'}
+            </span>
+          )}
+        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className='text-muted-foreground hover:text-foreground rounded-sm p-1'
+              type='button'
+              aria-label={`Filter ${label}`}
+            >
+              <Filter
+                className={filterValue ? 'text-primary h-3 w-3' : 'h-3 w-3'}
+              />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='start' className='w-44'>
+            <DropdownMenuLabel>{label}</DropdownMenuLabel>
+            <DropdownMenuItem onSelect={() => onSortChange(sortKey)}>
+              Toggle sort
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Filter</DropdownMenuLabel>
+            <div
+              className='px-2 py-2'
+              onClick={(event) => event.stopPropagation()}
+            >
+              <Select
+                value={filterValue || '__all__'}
+                onValueChange={(v) => onFilterChange(v === '__all__' ? '' : v)}
+              >
+                <SelectTrigger className='h-8 text-xs'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='__all__'>All types</SelectItem>
+                  {options.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DropdownMenuItem
+              disabled={!filterValue}
+              onSelect={() => onFilterChange('')}
+            >
+              Clear filter
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </TableHead>
+  )
+
+  const auctionTypeOptions = [
+    { value: 'live', label: 'Live' },
+    { value: 'silent', label: 'Silent' },
+  ]
 
   const filteredRecentBids = useMemo(() => {
     return recentBids.filter((bid) => {
@@ -384,6 +505,11 @@ export function AuctionBidsDashboard({
             normalizeText(recentFilters.itemName)
           )
         ) {
+          return false
+        }
+      }
+      if (recentFilters.auctionType) {
+        if (bid.auction_type !== recentFilters.auctionType) {
           return false
         }
       }
@@ -426,6 +552,12 @@ export function AuctionBidsDashboard({
                 sensitivity: 'base',
               }
             ) * direction
+          )
+        case 'auctionType':
+          return (
+            a.auction_type.localeCompare(b.auction_type, undefined, {
+              sensitivity: 'base',
+            }) * direction
           )
         case 'bidderName': {
           const bidderA = a.bidder_name || a.bidder_email
@@ -555,6 +687,35 @@ export function AuctionBidsDashboard({
                     </div>
                     <div className='space-y-1'>
                       <Label
+                        htmlFor='highest-auction-type-filter'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Type
+                      </Label>
+                      <Select
+                        value={highestFilters.auctionType || '__all__'}
+                        onValueChange={(v) =>
+                          setHighestFilters((prev) => ({
+                            ...prev,
+                            auctionType: v === '__all__' ? '' : v,
+                          }))
+                        }
+                      >
+                        <SelectTrigger
+                          id='highest-auction-type-filter'
+                          className='h-9 text-sm'
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='__all__'>All types</SelectItem>
+                          <SelectItem value='live'>Live</SelectItem>
+                          <SelectItem value='silent'>Silent</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
                         htmlFor='highest-bidder-filter'
                         className='text-muted-foreground text-xs'
                       >
@@ -612,7 +773,12 @@ export function AuctionBidsDashboard({
                             {formatCurrency(bid.bid_amount)}
                           </span>
                         </div>
-                        <p className='text-sm'>{bid.auction_item_title}</p>
+                        <div className='flex items-center gap-2'>
+                          <p className='text-sm'>{bid.auction_item_title}</p>
+                          <Badge variant='outline' className='text-xs'>
+                            {formatAuctionType(bid.auction_type)}
+                          </Badge>
+                        </div>
                         <p className='text-muted-foreground flex items-center gap-2 text-sm'>
                           <BidderAvatar
                             name={bid.bidder_name || bid.bidder_email}
@@ -659,6 +825,20 @@ export function AuctionBidsDashboard({
                           itemName: value,
                         })),
                       'Search item name'
+                    )}
+                    {renderSelectHeader(
+                      'Type',
+                      'auctionType',
+                      highestSortKey,
+                      highestSortDirection,
+                      (key) => handleHighestSortChange(key as HighestSortKey),
+                      highestFilters.auctionType,
+                      (value) =>
+                        setHighestFilters((prev) => ({
+                          ...prev,
+                          auctionType: value,
+                        })),
+                      auctionTypeOptions
                     )}
                     {renderHeader(
                       'Bidder',
@@ -708,6 +888,11 @@ export function AuctionBidsDashboard({
                         </TableCell>
                         <TableCell>{bid.auction_item_title}</TableCell>
                         <TableCell>
+                          <Badge variant='outline' className='text-xs'>
+                            {formatAuctionType(bid.auction_type)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
                           <div className='flex items-center gap-2'>
                             <BidderAvatar
                               name={bid.bidder_name || bid.bidder_email}
@@ -723,7 +908,7 @@ export function AuctionBidsDashboard({
                   ) : (
                     <TableRow>
                       <TableCell
-                        colSpan={4}
+                        colSpan={5}
                         className='text-muted-foreground text-sm'
                       >
                         No bids match the current filters.
@@ -795,6 +980,35 @@ export function AuctionBidsDashboard({
                           }))
                         }
                       />
+                    </div>
+                    <div className='space-y-1'>
+                      <Label
+                        htmlFor='recent-auction-type-filter'
+                        className='text-muted-foreground text-xs'
+                      >
+                        Type
+                      </Label>
+                      <Select
+                        value={recentFilters.auctionType || '__all__'}
+                        onValueChange={(v) =>
+                          setRecentFilters((prev) => ({
+                            ...prev,
+                            auctionType: v === '__all__' ? '' : v,
+                          }))
+                        }
+                      >
+                        <SelectTrigger
+                          id='recent-auction-type-filter'
+                          className='h-9 text-sm'
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='__all__'>All types</SelectItem>
+                          <SelectItem value='live'>Live</SelectItem>
+                          <SelectItem value='silent'>Silent</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className='space-y-1'>
                       <Label
@@ -874,7 +1088,12 @@ export function AuctionBidsDashboard({
                             {formatCurrency(bid.bid_amount)}
                           </span>
                         </div>
-                        <p className='text-sm'>{bid.auction_item_title}</p>
+                        <div className='flex items-center gap-2'>
+                          <p className='text-sm'>{bid.auction_item_title}</p>
+                          <Badge variant='outline' className='text-xs'>
+                            {formatAuctionType(bid.auction_type)}
+                          </Badge>
+                        </div>
                         <p className='text-muted-foreground flex items-center gap-2 text-sm'>
                           <BidderAvatar
                             name={bid.bidder_name || bid.bidder_email}
@@ -924,6 +1143,20 @@ export function AuctionBidsDashboard({
                           itemName: value,
                         })),
                       'Search item name'
+                    )}
+                    {renderSelectHeader(
+                      'Type',
+                      'auctionType',
+                      recentSortKey,
+                      recentSortDirection,
+                      (key) => handleRecentSortChange(key as RecentSortKey),
+                      recentFilters.auctionType,
+                      (value) =>
+                        setRecentFilters((prev) => ({
+                          ...prev,
+                          auctionType: value,
+                        })),
+                      auctionTypeOptions
                     )}
                     {renderHeader(
                       'Bidder',
@@ -987,6 +1220,11 @@ export function AuctionBidsDashboard({
                         </TableCell>
                         <TableCell>{bid.auction_item_title}</TableCell>
                         <TableCell>
+                          <Badge variant='outline' className='text-xs'>
+                            {formatAuctionType(bid.auction_type)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
                           <div className='flex items-center gap-2'>
                             <BidderAvatar
                               name={bid.bidder_name || bid.bidder_email}
@@ -1003,7 +1241,7 @@ export function AuctionBidsDashboard({
                   ) : (
                     <TableRow>
                       <TableCell
-                        colSpan={5}
+                        colSpan={6}
                         className='text-muted-foreground text-sm'
                       >
                         No bids match the current filters.

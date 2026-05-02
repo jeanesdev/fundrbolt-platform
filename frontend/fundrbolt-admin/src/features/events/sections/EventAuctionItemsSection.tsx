@@ -25,6 +25,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AuctionItemImportReport } from '@/components/auction-items/AuctionItemImportReport'
+import { RevenueGeneratorsTab } from '@/features/revenue-generators'
 import { AuctionItemList } from '../components/AuctionItemList'
 import { useEventWorkspace } from '../useEventWorkspace'
 import { EventAuctionBidsSection } from './EventAuctionBidsSection'
@@ -151,8 +152,8 @@ export function EventAuctionItemsSection({
               <div>
                 <CardTitle>Auction Items</CardTitle>
                 <CardDescription>
-                  Manage live and silent auction items for your fundraising
-                  event
+                  Manage live, silent, and revenue generator items for your
+                  fundraising event
                 </CardDescription>
               </div>
               <Button variant='outline' onClick={() => setImportOpen(true)}>
@@ -202,6 +203,27 @@ export function EventAuctionItemsSection({
                 }
               }}
             />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className='flex flex-wrap items-center justify-between gap-4'>
+              <div>
+                <CardTitle className='flex items-center gap-2'>
+                  Revenue Generators
+                  <span className='bg-secondary text-secondary-foreground rounded-full px-2 py-0.5 text-xs font-normal'>
+                    raffle · game of chance
+                  </span>
+                </CardTitle>
+                <CardDescription>
+                  Manage raffle and game-of-chance items for this event
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <RevenueGeneratorsTab eventId={currentEvent.id} />
           </CardContent>
           <Dialog
             open={importOpen}
