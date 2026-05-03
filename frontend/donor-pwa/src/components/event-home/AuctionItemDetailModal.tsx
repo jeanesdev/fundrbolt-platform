@@ -11,29 +11,7 @@
  * - Donated by / item webpage
  * - View tracking
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { usePreviewMode } from '@/contexts/PreviewContext'
-import auctionItemService from '@/services/auctionItemService'
-import type { AuctionItemDetail } from '@/types/auction-item'
-import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
-import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
-import '@ncdai/react-wheel-picker/style.css'
-import {
-  ArrowRight,
-  ChevronLeft,
-  ChevronRight,
-  DollarSign,
-  ExternalLink,
-  Loader2,
-  TrendingUp,
-  Users,
-} from 'lucide-react'
-import { useAuthStore } from '@/stores/auth-store'
-import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { cn } from '@/lib/utils'
-import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
-import { useItemViewTracking } from '@/hooks/useItemViewTracking'
+import { WatchListButton } from '@/components/auction/WatchListButton'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -44,7 +22,29 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
-import { WatchListButton } from '@/components/auction/WatchListButton'
+import { usePreviewMode } from '@/contexts/PreviewContext'
+import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
+import { useItemViewTracking } from '@/hooks/useItemViewTracking'
+import { cn } from '@/lib/utils'
+import auctionItemService from '@/services/auctionItemService'
+import { useAuthStore } from '@/stores/auth-store'
+import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import type { AuctionItemDetail } from '@/types/auction-item'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
+import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
+import '@ncdai/react-wheel-picker/style.css'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  DollarSign,
+  ExternalLink,
+  Loader2,
+  TrendingUp,
+  Users,
+} from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 export interface AuctionItemDetailModalProps {
   eventId: string
@@ -835,9 +835,9 @@ export function AuctionItemDetailModal({
 
                   {/* Bidding Controls — only show when auction is open */}
                   {!isLiveAuctionItem &&
-                  isBiddingOpen &&
-                  eventStatus === 'active' &&
-                  !isEventInFuture ? (
+                    isBiddingOpen &&
+                    eventStatus === 'active' &&
+                    !isEventInFuture ? (
                     <div className='space-y-3'>
                       <div
                         className='relative h-[140px] overflow-hidden rounded-2xl border px-3 py-2'

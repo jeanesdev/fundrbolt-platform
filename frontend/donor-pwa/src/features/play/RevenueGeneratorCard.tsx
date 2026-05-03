@@ -2,6 +2,16 @@ import { useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { type RevenueGeneratorItemSummary } from '@/services/revenueGeneratorService'
 import { Slider } from '@/components/ui/slider'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 interface Props {
   item: RevenueGeneratorItemSummary
@@ -18,6 +28,7 @@ export function RevenueGeneratorCard({
 }: Props) {
   const primary = brandPrimary ?? '59, 130, 246'
   const [slideValue, setSlideValue] = useState<number[]>([0])
+  const [showConfirm, setShowConfirm] = useState(false)
   const slidePercent = slideValue[0] ?? 0
 
   const knobDiameterPx = 56
@@ -36,7 +47,7 @@ export function RevenueGeneratorCard({
   const handleSlideCommit = (value: number[]) => {
     const pct = value[0] ?? 0
     if (pct >= 95 && !isPurchasing && onPurchase) {
-      onPurchase(item.id)
+      setShowConfirm(true)
     }
     setSlideValue([0])
   }
@@ -179,6 +190,31 @@ export function RevenueGeneratorCard({
           </div>
         )}
       </div>
+
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm entry purchase</AlertDialogTitle>
+            <AlertDialogDescription>
+              Buy 1 entry for{' '}
+              <strong>{item.name}</strong> for{' '}
+              <strong>${Number(item.price_per_entry).toFixed(2)}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowConfirm(false)
+                onPurchase?.(item.id)
+              }}
+              style={{ backgroundColor: `rgb(${primary})` }}
+            >
+              Buy Entry
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
