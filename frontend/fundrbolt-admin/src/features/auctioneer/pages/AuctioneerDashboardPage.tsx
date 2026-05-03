@@ -1,5 +1,25 @@
-import { BidderAvatar } from '@/components/bidder-avatar'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { auctioneerService } from '@/services/auctioneerService'
+import {
+  ArrowUpDown,
+  CalendarClock,
+  CircleDollarSign,
+  Clock,
+  Coins,
+  Download,
+  Eye,
+  EyeOff,
+  Filter,
+  Gavel,
+  HandCoins,
+  Image as ImageIcon,
+  Pin,
+  PinOff,
+  Target,
+  Timer,
+} from 'lucide-react'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -31,30 +51,10 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { BidderAvatar } from '@/components/bidder-avatar'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { RGAuctioneerTab } from '@/features/revenue-generators'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { auctioneerService } from '@/services/auctioneerService'
-import { useNavigate } from '@tanstack/react-router'
-import {
-  ArrowUpDown,
-  CalendarClock,
-  CircleDollarSign,
-  Clock,
-  Coins,
-  Download,
-  Eye,
-  EyeOff,
-  Filter,
-  Gavel,
-  HandCoins,
-  Image as ImageIcon,
-  Pin,
-  PinOff,
-  Target,
-  Timer,
-} from 'lucide-react'
-import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import {
   useAuctioneerDashboard,
   useAuctioneerSettings,
@@ -346,11 +346,12 @@ export function AuctioneerDashboardPage({
       </div>
 
       <div
-        className={`bg-background/95 supports-[backdrop-filter]:bg-background/85 -mx-4 border-b px-4 py-2 backdrop-blur lg:-mx-6 lg:px-6 ${summaryPinned ? 'sticky top-14 z-20' : ''
-          }`}
+        className={`bg-background/95 supports-[backdrop-filter]:bg-background/85 -mx-4 border-b px-4 py-2 backdrop-blur lg:-mx-6 lg:px-6 ${
+          summaryPinned ? 'sticky top-14 z-20' : ''
+        }`}
       >
         <div className='relative'>
-          <div className='grid min-w-0 auto-cols-auto grid-flow-col grid-rows-2 gap-1.5 overflow-x-auto pb-0.5 pr-8'>
+          <div className='grid min-w-0 auto-cols-auto grid-flow-col grid-rows-2 gap-1.5 overflow-x-auto pr-8 pb-0.5'>
             <CompactStatusChip
               icon={<CircleDollarSign className='h-3.5 w-3.5' />}
               label='Event'
@@ -474,7 +475,7 @@ export function AuctioneerDashboardPage({
         className='space-y-4'
       >
         <div className='overflow-x-auto'>
-          <TabsList className='flex min-w-max w-full'>
+          <TabsList className='flex w-full min-w-max'>
             <TabsTrigger value='live' className='flex-1'>
               Live Auction
             </TabsTrigger>
@@ -540,10 +541,10 @@ export function AuctioneerDashboardPage({
                   value: fmtCurrency(paddleRaise.data?.total_pledged),
                   detail:
                     paddleRaise.data?.total_goal != null &&
-                      paddleRaise.data?.total_goal_progress_percent != null
+                    paddleRaise.data?.total_goal_progress_percent != null
                       ? `Goal ${fmtCurrency(
-                        paddleRaise.data.total_goal
-                      )} · ${paddleRaise.data.total_goal_progress_percent.toFixed(2)}% complete`
+                          paddleRaise.data.total_goal
+                        )} · ${paddleRaise.data.total_goal_progress_percent.toFixed(2)}% complete`
                       : undefined,
                 },
                 {
@@ -610,7 +611,7 @@ export function AuctioneerDashboardPage({
                           %
                         </p>
                         {level.goal_amount != null &&
-                          level.goal_progress_percent != null ? (
+                        level.goal_progress_percent != null ? (
                           <p className='text-muted-foreground text-xs'>
                             Goal {fmtCurrency(level.goal_amount)} ·{' '}
                             {level.goal_progress_percent.toFixed(2)}% complete
@@ -677,11 +678,11 @@ export function AuctioneerDashboardPage({
                         onValueChange={(value) =>
                           setPaddleDonationsSort(
                             value as
-                            | 'newest'
-                            | 'oldest'
-                            | 'amount_desc'
-                            | 'amount_asc'
-                            | 'bidder_asc'
+                              | 'newest'
+                              | 'oldest'
+                              | 'amount_desc'
+                              | 'amount_asc'
+                              | 'bidder_asc'
                           )
                         }
                       >
@@ -826,18 +827,19 @@ function CompactStatusChip({
 }) {
   return (
     <div
-      className={`bg-muted/70 flex min-h-9 items-center gap-2 rounded-md border px-2.5 py-1 text-xs${onClick
-          ? ' cursor-pointer transition-colors hover:bg-muted hover:border-foreground/20'
+      className={`bg-muted/70 flex min-h-9 items-center gap-2 rounded-md border px-2.5 py-1 text-xs${
+        onClick
+          ? 'hover:bg-muted hover:border-foreground/20 cursor-pointer transition-colors'
           : ''
-        }`}
+      }`}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={
         onClick
           ? (e) => {
-            if (e.key === 'Enter' || e.key === ' ') onClick()
-          }
+              if (e.key === 'Enter' || e.key === ' ') onClick()
+            }
           : undefined
       }
     >
@@ -872,23 +874,23 @@ function ItemGallerySection({
   title: string
   subtitle: string
   items:
-  | Array<{
-    id: string
-    bid_number: number | null
-    title: string
-    current_bid_amount: number | null
-    bid_count: number
-    bidder_count: number
-    primary_image_url: string | null
-    donor_value: number | null
-    auction_type: string
-    has_commission: boolean
-    has_bounty: boolean
-    commission_percent: number | null
-    flat_fee: number | null
-  }>
-  | null
-  | undefined
+    | Array<{
+        id: string
+        bid_number: number | null
+        title: string
+        current_bid_amount: number | null
+        bid_count: number
+        bidder_count: number
+        primary_image_url: string | null
+        donor_value: number | null
+        auction_type: string
+        has_commission: boolean
+        has_bounty: boolean
+        commission_percent: number | null
+        flat_fee: number | null
+      }>
+    | null
+    | undefined
   isLoading: boolean
   error: unknown
   totalItems: number
@@ -1442,11 +1444,11 @@ function BidderTotalsCard({
             onValueChange={(value) =>
               setSortValue(
                 value as
-                | 'amount_desc'
-                | 'amount_asc'
-                | 'count_desc'
-                | 'count_asc'
-                | 'bidder_asc'
+                  | 'amount_desc'
+                  | 'amount_asc'
+                  | 'count_desc'
+                  | 'count_asc'
+                  | 'bidder_asc'
               )
             }
           >

@@ -14,6 +14,7 @@ import {
   Trash2,
   Trophy,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -53,17 +54,25 @@ export function RevenueGeneratorItemCard({
   const [deleting, setDeleting] = useState(false)
 
   const handleToggleVisible = async () => {
-    await revenueGeneratorService.updateItem(eventId, item.id, {
-      is_visible: !item.is_visible,
-    })
-    onRefresh()
+    try {
+      await revenueGeneratorService.updateItem(eventId, item.id, {
+        is_visible: !item.is_visible,
+      })
+      onRefresh()
+    } catch {
+      toast.error('Failed to update visibility')
+    }
   }
 
   const handleToggleOpen = async () => {
-    await revenueGeneratorService.updateItem(eventId, item.id, {
-      is_open_for_entries: !item.is_open_for_entries,
-    })
-    onRefresh()
+    try {
+      await revenueGeneratorService.updateItem(eventId, item.id, {
+        is_open_for_entries: !item.is_open_for_entries,
+      })
+      onRefresh()
+    } catch {
+      toast.error('Failed to update open status')
+    }
   }
 
   const handleDelete = async () => {

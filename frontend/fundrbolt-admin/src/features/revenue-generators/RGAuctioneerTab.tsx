@@ -1,5 +1,11 @@
-import { BidderAvatar } from '@/components/bidder-avatar'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useEffect, useMemo, useState } from 'react'
+import revenueGeneratorService, {
+  type RGEntryRow,
+  type RGItem,
+  type RGWinnerSelection,
+} from '@/services/revenueGeneratorService'
+import { ArrowLeft, Shuffle, Ticket, Trophy, Users } from 'lucide-react'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,18 +24,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { BidderAvatar } from '@/components/bidder-avatar'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import {
   FilterableColumnHeader,
   type SortDir,
 } from '@/features/quick-entry/components/FilterableColumnHeader'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import revenueGeneratorService, {
-  type RGEntryRow,
-  type RGItem,
-  type RGWinnerSelection,
-} from '@/services/revenueGeneratorService'
-import { ArrowLeft, Shuffle, Ticket, Trophy, Users } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
 
 interface Props {
   eventId: string
@@ -86,9 +86,8 @@ function RGItemDetail({
   const [justDrawn, setJustDrawn] = useState<RGWinnerSelection | null>(null)
 
   // Entries table sort/filter/view
-  const [entriesViewMode, setEntriesViewMode] = useViewPreference(
-    'rg-entries-detail'
-  )
+  const [entriesViewMode, setEntriesViewMode] =
+    useViewPreference('rg-entries-detail')
   const [entriesFilters, setEntriesFilters] = useState({
     bidder: '',
     donor: '',
@@ -115,9 +114,8 @@ function RGItemDetail({
   }
 
   // Winner history table sort/filter/view
-  const [winnerViewMode, setWinnerViewMode] = useViewPreference(
-    'rg-winner-history'
-  )
+  const [winnerViewMode, setWinnerViewMode] =
+    useViewPreference('rg-winner-history')
   const [winnerFilters, setWinnerFilters] = useState({
     winner: '',
     bidder: '',
@@ -186,7 +184,11 @@ function RGItemDetail({
         return false
       if (entriesFilters.last_entry) {
         const timeText = new Date(row.last_purchased_at).toLocaleString()
-        if (!timeText.toLowerCase().includes(entriesFilters.last_entry.toLowerCase()))
+        if (
+          !timeText
+            .toLowerCase()
+            .includes(entriesFilters.last_entry.toLowerCase())
+        )
           return false
       }
       return true
@@ -238,9 +240,7 @@ function RGItemDetail({
       if (winnerFilters.drawn_at) {
         const timeText = new Date(row.selected_at).toLocaleString()
         if (
-          !timeText
-            .toLowerCase()
-            .includes(winnerFilters.drawn_at.toLowerCase())
+          !timeText.toLowerCase().includes(winnerFilters.drawn_at.toLowerCase())
         )
           return false
       }
@@ -342,12 +342,12 @@ function RGItemDetail({
                 {item.current_winner_name ?? justDrawn?.winner_name}
                 {(item.current_winner_bidder_number ??
                   justDrawn?.bidder_number) != null && (
-                    <Badge variant='outline' className='ml-2'>
-                      #
-                      {item.current_winner_bidder_number ??
-                        justDrawn?.bidder_number}
-                    </Badge>
-                  )}
+                  <Badge variant='outline' className='ml-2'>
+                    #
+                    {item.current_winner_bidder_number ??
+                      justDrawn?.bidder_number}
+                  </Badge>
+                )}
               </p>
               {justDrawn && (
                 <p className='text-muted-foreground text-xs'>
@@ -437,8 +437,8 @@ function RGItemDetail({
                       {(item.current_winner_bidder_number ===
                         row.bidder_number ||
                         justDrawn?.bidder_number === row.bidder_number) && (
-                          <Trophy className='h-3.5 w-3.5 text-yellow-500' />
-                        )}
+                        <Trophy className='h-3.5 w-3.5 text-yellow-500' />
+                      )}
                     </div>
                     <div className='flex items-center gap-2'>
                       <BidderAvatar
@@ -462,8 +462,7 @@ function RGItemDetail({
                       </span>
                     </div>
                     <p className='text-muted-foreground text-xs'>
-                      Last:{' '}
-                      {new Date(row.last_purchased_at).toLocaleString()}
+                      Last: {new Date(row.last_purchased_at).toLocaleString()}
                     </p>
                   </div>
                 ))
@@ -479,9 +478,7 @@ function RGItemDetail({
                         label='Bidder #'
                         sortField='bidder'
                         currentSort={entriesSort}
-                        onSort={(f) =>
-                          toggleEntriesSort(f as EntriesSortField)
-                        }
+                        onSort={(f) => toggleEntriesSort(f as EntriesSortField)}
                         filterValue={entriesFilters.bidder}
                         onFilterChange={(v) =>
                           setEntriesFilters((p) => ({ ...p, bidder: v }))
@@ -493,9 +490,7 @@ function RGItemDetail({
                         label='Donor'
                         sortField='donor'
                         currentSort={entriesSort}
-                        onSort={(f) =>
-                          toggleEntriesSort(f as EntriesSortField)
-                        }
+                        onSort={(f) => toggleEntriesSort(f as EntriesSortField)}
                         filterValue={entriesFilters.donor}
                         onFilterChange={(v) =>
                           setEntriesFilters((p) => ({ ...p, donor: v }))
@@ -507,9 +502,7 @@ function RGItemDetail({
                         label='Table'
                         sortField='table'
                         currentSort={entriesSort}
-                        onSort={(f) =>
-                          toggleEntriesSort(f as EntriesSortField)
-                        }
+                        onSort={(f) => toggleEntriesSort(f as EntriesSortField)}
                         filterValue={entriesFilters.table}
                         onFilterChange={(v) =>
                           setEntriesFilters((p) => ({ ...p, table: v }))
@@ -521,9 +514,7 @@ function RGItemDetail({
                         label='Entries'
                         sortField='entries'
                         currentSort={entriesSort}
-                        onSort={(f) =>
-                          toggleEntriesSort(f as EntriesSortField)
-                        }
+                        onSort={(f) => toggleEntriesSort(f as EntriesSortField)}
                         filterValue={entriesFilters.entries}
                         onFilterChange={(v) =>
                           setEntriesFilters((p) => ({ ...p, entries: v }))
@@ -535,9 +526,7 @@ function RGItemDetail({
                         label='Total Paid'
                         sortField='total_paid'
                         currentSort={entriesSort}
-                        onSort={(f) =>
-                          toggleEntriesSort(f as EntriesSortField)
-                        }
+                        onSort={(f) => toggleEntriesSort(f as EntriesSortField)}
                         filterValue={entriesFilters.total_paid}
                         onFilterChange={(v) =>
                           setEntriesFilters((p) => ({ ...p, total_paid: v }))
@@ -549,9 +538,7 @@ function RGItemDetail({
                         label='Last Entry'
                         sortField='last_entry'
                         currentSort={entriesSort}
-                        onSort={(f) =>
-                          toggleEntriesSort(f as EntriesSortField)
-                        }
+                        onSort={(f) => toggleEntriesSort(f as EntriesSortField)}
                         filterValue={entriesFilters.last_entry}
                         onFilterChange={(v) =>
                           setEntriesFilters((p) => ({ ...p, last_entry: v }))
@@ -587,9 +574,9 @@ function RGItemDetail({
                               {(item.current_winner_bidder_number ===
                                 row.bidder_number ||
                                 justDrawn?.bidder_number ===
-                                row.bidder_number) && (
-                                  <Trophy className='ml-1.5 inline h-3.5 w-3.5 text-yellow-500' />
-                                )}
+                                  row.bidder_number) && (
+                                <Trophy className='ml-1.5 inline h-3.5 w-3.5 text-yellow-500' />
+                              )}
                             </span>
                           </div>
                         </TableCell>
@@ -648,8 +635,12 @@ function RGItemDetail({
                       className='space-y-1.5 rounded-md border p-3'
                     >
                       <div className='flex items-center justify-between gap-2'>
-                        <span className='font-medium'>{selection.winner_name}</span>
-                        <Badge variant='outline'>#{selection.bidder_number}</Badge>
+                        <span className='font-medium'>
+                          {selection.winner_name}
+                        </span>
+                        <Badge variant='outline'>
+                          #{selection.bidder_number}
+                        </Badge>
                       </div>
                       <div className='flex items-center justify-between text-sm'>
                         <Badge
@@ -776,7 +767,6 @@ function RGItemDetail({
     </div>
   )
 }
-
 
 // ─── Gallery view ────────────────────────────────────────────────────────────
 

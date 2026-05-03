@@ -17,16 +17,16 @@ export async function getEventRevenueGenerators(
 ): Promise<RevenueGeneratorItemSummary[]> {
   const response = await apiClient.get<{
     items: RevenueGeneratorItemSummary[]
-  }>(`/events/${eventId}/revenue-generators`)
+  }>(`/donor/events/${eventId}/revenue-generators`)
   return response.data.items
 }
 
 export async function purchaseEntry(
   eventId: string,
   itemId: string
-): Promise<{ entry_count: number }> {
-  const response = await apiClient.post<{ entry_count: number }>(
-    `/events/${eventId}/revenue-generators/${itemId}/entries`
+): Promise<{ my_entry_count: number }> {
+  const response = await apiClient.post<{ my_entry_count: number }>(
+    `/donor/events/${eventId}/revenue-generators/${itemId}/entries`
   )
   return response.data
 }

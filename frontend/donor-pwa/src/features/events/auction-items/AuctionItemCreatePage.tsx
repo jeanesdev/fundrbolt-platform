@@ -103,7 +103,7 @@ export function AuctionItemCreatePage() {
         </CardHeader>
         <CardContent>
           <AuctionItemForm
-            eventId={eventId}
+            eventId={eventId ?? ''}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             isSubmitting={isSubmitting}

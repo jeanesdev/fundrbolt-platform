@@ -111,6 +111,9 @@ export function EventHomePage() {
   )
   const [maxBidItemMap, setMaxBidItemMap] = useState<Record<string, number>>({})
   const [displayedTab, setDisplayedTab] = useState<DonorTab>('home')
+  const [auctionSubTab, setAuctionSubTab] = useState<'bid' | 'play-along'>(
+    'bid'
+  )
   const prefetchedAuctionImagesRef = useRef<Set<string>>(new Set())
   const prefetchedVenueMapUrlsRef = useRef<Set<string>>(new Set())
   const queryClient = useQueryClient()
@@ -136,11 +139,9 @@ export function EventHomePage() {
   const hasRgItems = rgItems.length > 0
 
   const tabOrder = useMemo<DonorTab[]>(() => {
-    const base: DonorTab[] = ['home', 'auction']
-    if (hasRgItems) base.push('play')
-    base.push('seat')
+    const base: DonorTab[] = ['home', 'auction', 'seat']
     return base
-  }, [hasRgItems])
+  }, [])
   const isOnline = useOnlineStatus()
   const prevOnlineRef = useRef(isOnline)
 
@@ -1419,24 +1420,66 @@ export function EventHomePage() {
       >
         <div className='flex items-center justify-between'>
           <div className='flex items-center gap-3'>
-            <h2
-              className='text-base font-bold'
-              style={{ color: 'var(--event-text-on-background, #111827)' }}
-            >
-              Auction Items
-            </h2>
-            {!!(currentEvent as unknown as Record<string, unknown>)
-              .auction_close_datetime && (
-              <AuctionCountdownTimer
-                closeDateTime={
-                  (currentEvent as unknown as Record<string, unknown>)
-                    .auction_close_datetime as string
-                }
-              />
+            {hasRgItems ? (
+              <div
+                className='flex gap-1 rounded-lg p-0.5'
+                style={{
+                  backgroundColor:
+                    'rgb(var(--event-primary, 59, 130, 246) / 0.1)',
+                }}
+              >
+                <button
+                  onClick={() => setAuctionSubTab('bid')}
+                  className='rounded-md px-3 py-1 text-sm font-semibold transition-all'
+                  style={
+                    auctionSubTab === 'bid'
+                      ? {
+                          backgroundColor:
+                            'rgb(var(--event-primary, 59, 130, 246))',
+                          color: '#fff',
+                        }
+                      : { color: 'var(--event-text-on-background, #374151)' }
+                  }
+                >
+                  Bid
+                </button>
+                <button
+                  onClick={() => setAuctionSubTab('play-along')}
+                  className='rounded-md px-3 py-1 text-sm font-semibold transition-all'
+                  style={
+                    auctionSubTab === 'play-along'
+                      ? {
+                          backgroundColor:
+                            'rgb(var(--event-primary, 59, 130, 246))',
+                          color: '#fff',
+                        }
+                      : { color: 'var(--event-text-on-background, #374151)' }
+                  }
+                >
+                  Play Along
+                </button>
+              </div>
+            ) : (
+              <h2
+                className='text-base font-bold'
+                style={{ color: 'var(--event-text-on-background, #111827)' }}
+              >
+                Auction Items
+              </h2>
             )}
+            {auctionSubTab === 'bid' &&
+              !!(currentEvent as unknown as Record<string, unknown>)
+                .auction_close_datetime && (
+                <AuctionCountdownTimer
+                  closeDateTime={
+                    (currentEvent as unknown as Record<string, unknown>)
+                      .auction_close_datetime as string
+                  }
+                />
+              )}
           </div>
           <div className='flex items-center gap-2'>
-            {eventStatus === 'live' && (
+            {eventStatus === 'live' && auctionSubTab === 'bid' && (
               <span className='animate-live-glow flex items-center gap-1.5 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white'>
                 <span className='h-1.5 w-1.5 animate-pulse rounded-full bg-white' />
                 LIVE
@@ -1448,49 +1491,26 @@ export function EventHomePage() {
         </div>
       </div>
 
-      <div className='px-3 py-3'>
-        <AuctionGallery
-          eventId={currentEvent.id}
-          watchlistScope={watchlistScope}
-          disableWatchlist={isPreviewMode}
-          maxBidItemMap={maxBidItemMap}
-          winningItemMap={winningItemMap}
-          initialFilter='all'
-          initialSort='highest_bid'
-          eventStatus={currentEvent.status}
-          eventDateTime={resolveEventDateTime(currentEvent) ?? undefined}
-          onItemClick={(item, isWinning) =>
-            sharedAuctionProps.onItemClick(item, isWinning)
-          }
-        />
-      </div>
-    </>
-  )
-
-  const playTabContent = (
-    <>
-      <div
-        className='sticky top-0 z-20 border-b px-4 pb-3 backdrop-blur-md'
-        style={{
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
-          backgroundColor: 'rgb(var(--event-background, 255, 255, 255) / 0.92)',
-          borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
-        }}
-      >
-        <div className='flex items-center justify-between'>
-          <h2
-            className='text-base font-bold'
-            style={{ color: 'var(--event-text-on-background, #111827)' }}
-          >
-            Raffle &amp; Prizes
-          </h2>
-          <div className='flex items-center gap-2'>
-            <NotificationBell variant='header' />
-            <ProfileDropdown />
-          </div>
+      {auctionSubTab === 'bid' ? (
+        <div className='px-3 py-3'>
+          <AuctionGallery
+            eventId={currentEvent.id}
+            watchlistScope={watchlistScope}
+            disableWatchlist={isPreviewMode}
+            maxBidItemMap={maxBidItemMap}
+            winningItemMap={winningItemMap}
+            initialFilter='all'
+            initialSort='highest_bid'
+            eventStatus={currentEvent.status}
+            eventDateTime={resolveEventDateTime(currentEvent) ?? undefined}
+            onItemClick={(item, isWinning) =>
+              sharedAuctionProps.onItemClick(item, isWinning)
+            }
+          />
         </div>
-      </div>
-      <PlayTab eventId={currentEvent.id} />
+      ) : (
+        <PlayTab eventId={currentEvent.id} />
+      )}
     </>
   )
 
@@ -1617,7 +1637,6 @@ export function EventHomePage() {
   const renderTabContent = (tab: DonorTab) => {
     if (tab === 'home') return homeTabContent
     if (tab === 'auction') return auctionTabContent
-    if (tab === 'play') return playTabContent
     return seatTabContent
   }
 

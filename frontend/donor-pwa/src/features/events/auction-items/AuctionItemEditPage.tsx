@@ -157,7 +157,7 @@ export function AuctionItemEditPage() {
         <CardContent>
           <AuctionItemForm
             item={selectedItem}
-            eventId={eventId}
+            eventId={eventId ?? ''}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             isSubmitting={isSubmitting}

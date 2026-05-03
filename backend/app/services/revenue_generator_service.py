@@ -21,6 +21,7 @@ from app.models.revenue_generator_winner_selection import (
     WinnerSelectionMethod,
 )
 from app.schemas.revenue_generator import (
+    EntryPurchaseResponse,
     EntryRow,
     ManualWinnerSelectRequest,
     QuickEntryRevenueGeneratorEntryResponse,
@@ -168,6 +169,7 @@ class RevenueGeneratorService:
         if data.display_order is not None:
             item.display_order = data.display_order
         await db.flush()
+        await db.refresh(item)
         entry_stats = await RevenueGeneratorService._get_entry_stats(db, item.id)
         winner = await RevenueGeneratorService._get_current_winner(db, item.id)
         return RevenueGeneratorItemAdminResponse(
@@ -452,6 +454,79 @@ class RevenueGeneratorService:
                 )
             )
         return RevenueGeneratorDonorListResponse(items=response_items)
+
+    @staticmethod
+    async def create_donor_entry(
+        db: AsyncSession,
+        event_id: uuid.UUID,
+        item_id: uuid.UUID,
+        donor_user_id: uuid.UUID,
+    ) -> EntryPurchaseResponse:
+        """Purchase one entry for a donor (self-service via donor PWA)."""
+        from app.models.event_registration import EventRegistration
+
+        # Verify item exists and is open
+        item_result = await db.execute(
+            select(RevenueGeneratorItem).where(
+                RevenueGeneratorItem.id == item_id,
+                RevenueGeneratorItem.event_id == event_id,
+            )
+        )
+        item = item_result.scalar_one_or_none()
+        if not item:
+            raise ValueError("Revenue generator item not found")
+        if not item.is_visible:
+            raise ValueError("This item is not available")
+        if not item.is_open_for_entries:
+            raise ValueError("This item is not open for entries")
+
+        # Enforce max_entries limit if set
+        if item.max_entries is not None:
+            total_stmt = select(func.count()).where(
+                RevenueGeneratorEntry.revenue_generator_item_id == item_id,
+            )
+            total_result = await db.execute(total_stmt)
+            total = total_result.scalar_one() or 0
+            if total >= item.max_entries:
+                raise ValueError("This item has reached its maximum number of entries")
+
+        # Find donor's primary guest for this event
+        guest_stmt = (
+            select(RegistrationGuest)
+            .join(
+                EventRegistration,
+                RegistrationGuest.registration_id == EventRegistration.id,
+            )
+            .where(
+                EventRegistration.event_id == event_id,
+                EventRegistration.user_id == donor_user_id,
+                RegistrationGuest.is_primary.is_(True),
+            )
+            .limit(1)
+        )
+        guest_result = await db.execute(guest_stmt)
+        guest = guest_result.scalar_one_or_none()
+
+        entry = RevenueGeneratorEntry(
+            revenue_generator_item_id=item_id,
+            event_id=event_id,
+            registration_guest_id=guest.id if guest else None,
+            bidder_number=guest.bidder_number if (guest and guest.bidder_number) else 0,
+            amount_paid=item.price_per_entry,
+            recorded_by_user_id=donor_user_id,
+        )
+        db.add(entry)
+        await db.flush()
+
+        # Count total entries for this donor on this item
+        my_count = await RevenueGeneratorService._get_my_entry_count(db, item_id, donor_user_id)
+
+        return EntryPurchaseResponse(
+            entry_id=entry.id,
+            item_id=item_id,
+            my_entry_count=my_count,
+            amount_paid=item.price_per_entry,
+        )
 
     # ── Quick Entry ─────────────────────────────────────────────────────────
 

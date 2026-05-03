@@ -11,7 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.middleware.auth import get_current_active_user
 from app.models.user import User
-from app.schemas.revenue_generator import RevenueGeneratorDonorListResponse
+from app.schemas.revenue_generator import (
+    EntryPurchaseResponse,
+    RevenueGeneratorDonorListResponse,
+)
 from app.services.revenue_generator_service import RevenueGeneratorService
 
 router = APIRouter(prefix="/donor/events", tags=["donor-revenue-generators"])
@@ -29,3 +32,28 @@ async def list_revenue_generator_items_donor(
 ) -> RevenueGeneratorDonorListResponse:
     """Return all visible revenue generator items for the event with donor-specific data."""
     return await RevenueGeneratorService.list_items_donor(db, event_id, current_user.id)
+
+
+@router.post(
+    "/{event_id}/revenue-generators/{item_id}/entries",
+    response_model=EntryPurchaseResponse,
+    summary="Purchase a revenue generator entry",
+    status_code=201,
+)
+async def purchase_revenue_generator_entry(
+    event_id: uuid.UUID,
+    item_id: uuid.UUID,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> EntryPurchaseResponse:
+    """Record a revenue generator entry for the authenticated donor."""
+    from fastapi import HTTPException
+
+    try:
+        result = await RevenueGeneratorService.create_donor_entry(
+            db, event_id, item_id, current_user.id
+        )
+        await db.commit()
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc

@@ -1,10 +1,10 @@
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useEffect, useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef, useState } from 'react'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import {
   createQuickEntryRGEntry,
   getQuickEntryRGAllEntries,
@@ -175,7 +175,7 @@ export function RevenueGeneratorEntryForm({ eventId }: Props) {
                 >
                   <div className='flex items-center justify-between'>
                     <Badge variant='outline'>#{entry.bidder_number}</Badge>
-                    <span className='text-xs text-muted-foreground'>
+                    <span className='text-muted-foreground text-xs'>
                       {new Date(entry.purchased_at).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit',
@@ -184,10 +184,12 @@ export function RevenueGeneratorEntryForm({ eventId }: Props) {
                   </div>
                   <p className='text-sm font-medium'>
                     {entry.donor_name ?? (
-                      <span className='text-muted-foreground'>Unknown donor</span>
+                      <span className='text-muted-foreground'>
+                        Unknown donor
+                      </span>
                     )}
                   </p>
-                  <p className='truncate text-sm text-muted-foreground'>
+                  <p className='text-muted-foreground truncate text-sm'>
                     {entry.item_name}
                   </p>
                   <div className='flex items-center justify-between text-sm'>
@@ -222,7 +224,7 @@ export function RevenueGeneratorEntryForm({ eventId }: Props) {
                   {allEntries.map((entry) => (
                     <tr
                       key={entry.entry_id}
-                      className='border-t transition-colors first:border-t-0 hover:bg-muted/10'
+                      className='hover:bg-muted/10 border-t transition-colors first:border-t-0'
                     >
                       <td className='px-3 py-2'>
                         <Badge variant='outline'>#{entry.bidder_number}</Badge>
@@ -234,12 +236,14 @@ export function RevenueGeneratorEntryForm({ eventId }: Props) {
                       </td>
                       <td className='px-3 py-2'>
                         {entry.table_number != null ? (
-                          <span className='font-medium'>T{entry.table_number}</span>
+                          <span className='font-medium'>
+                            T{entry.table_number}
+                          </span>
                         ) : (
                           <span className='text-muted-foreground'>—</span>
                         )}
                       </td>
-                      <td className='px-3 py-2 max-w-[140px] truncate'>
+                      <td className='max-w-[140px] truncate px-3 py-2'>
                         {entry.item_name}
                       </td>
                       <td className='px-3 py-2 text-center'>
@@ -248,7 +252,7 @@ export function RevenueGeneratorEntryForm({ eventId }: Props) {
                       <td className='px-3 py-2 font-medium'>
                         ${Number(entry.amount_paid).toFixed(2)}
                       </td>
-                      <td className='px-3 py-2 text-muted-foreground text-xs'>
+                      <td className='text-muted-foreground px-3 py-2 text-xs'>
                         {new Date(entry.purchased_at).toLocaleTimeString([], {
                           hour: '2-digit',
                           minute: '2-digit',
