@@ -1,4 +1,7 @@
+import { useState } from 'react'
+import { ArrowRight } from 'lucide-react'
 import { type RevenueGeneratorItemSummary } from '@/services/revenueGeneratorService'
+import { Slider } from '@/components/ui/slider'
 
 interface Props {
   item: RevenueGeneratorItemSummary
@@ -14,15 +17,44 @@ export function RevenueGeneratorCard({
   isPurchasing,
 }: Props) {
   const primary = brandPrimary ?? '59, 130, 246'
+  const [slideValue, setSlideValue] = useState<number[]>([0])
+  const slidePercent = slideValue[0] ?? 0
+
+  const knobDiameterPx = 56
+  const knobRadiusPx = knobDiameterPx / 2
+  const getSliderCenterX = (pct: number) =>
+    `calc(${knobRadiusPx}px + (100% - ${knobDiameterPx}px) * ${pct / 100})`
+  const getKnobLeft = (pct: number) =>
+    `calc(${getSliderCenterX(pct)} - ${knobRadiusPx}px)`
+  const getFillWidth = (pct: number) => getSliderCenterX(pct)
+
+  const handleSlide = (value: number[]) => {
+    if (isPurchasing || !onPurchase) return
+    setSlideValue(value)
+  }
+
+  const handleSlideCommit = (value: number[]) => {
+    const pct = value[0] ?? 0
+    if (pct >= 95 && !isPurchasing && onPurchase) {
+      onPurchase(item.id)
+    }
+    setSlideValue([0])
+  }
 
   return (
     <div
-      className='animate-card-enter overflow-hidden rounded-2xl border'
+      className='animate-card-enter relative overflow-hidden rounded-2xl border'
       style={{
         borderColor: `rgba(${primary}, 0.2)`,
         backgroundColor: `rgba(${primary}, 0.04)`,
       }}
     >
+      <span
+        className='absolute right-0 top-0 rounded-bl-lg px-2 py-0.5 text-xs font-bold tracking-wide text-white'
+        style={{ backgroundColor: `rgb(${primary})` }}
+      >
+        PLAY
+      </span>
       <div className='p-4'>
         <div className='flex items-start justify-between gap-2'>
           <div className='flex-1 space-y-1'>
@@ -83,13 +115,13 @@ export function RevenueGeneratorCard({
               style={
                 item.is_open_for_entries
                   ? {
-                      backgroundColor: `rgba(${primary}, 0.15)`,
-                      color: `rgb(${primary})`,
-                    }
+                    backgroundColor: `rgba(${primary}, 0.15)`,
+                    color: `rgb(${primary})`,
+                  }
                   : {
-                      backgroundColor: 'rgba(107, 114, 128, 0.1)',
-                      color: 'rgb(107, 114, 128)',
-                    }
+                    backgroundColor: 'rgba(107, 114, 128, 0.1)',
+                    color: 'rgb(107, 114, 128)',
+                  }
               }
             >
               {item.is_open_for_entries ? 'Open' : 'Closed'}
@@ -98,16 +130,53 @@ export function RevenueGeneratorCard({
         </div>
 
         {item.is_open_for_entries && onPurchase && (
-          <button
-            className='mt-3 w-full rounded-xl py-2 text-sm font-semibold text-white disabled:opacity-50'
-            style={{ backgroundColor: `rgb(${primary})` }}
-            onClick={() => onPurchase(item.id)}
-            disabled={isPurchasing}
+          <div
+            className='relative mt-3 h-14 overflow-hidden rounded-[28px]'
+            style={{
+              backgroundColor: 'rgb(255, 255, 255)',
+              border: `1px solid rgba(${primary}, 0.35)`,
+              touchAction: 'none',
+            }}
+            onPointerLeave={() => setSlideValue([0])}
           >
-            {isPurchasing
-              ? 'Processing…'
-              : `Buy Entry — $${Number(item.price_per_entry).toFixed(2)}`}
-          </button>
+            <div className='pointer-events-none absolute inset-0 z-0 bg-white' />
+            <div
+              className='pointer-events-none absolute top-0 bottom-0 left-0 z-[1] rounded-l-[28px] bg-[rgb(34_197_94)]'
+              style={{ width: getFillWidth(slidePercent) }}
+            />
+            <div className='pointer-events-none absolute inset-y-0 right-14 left-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)]'>
+              {isPurchasing ? (
+                <span>Processing…</span>
+              ) : (
+                <>
+                  <span>Slide to Buy ·</span>
+                  <span className='ml-1'>
+                    ${Number(item.price_per_entry).toFixed(2)}
+                  </span>
+                </>
+              )}
+            </div>
+            <div
+              className='pointer-events-none absolute top-0 z-[3] flex h-14 w-14 items-center justify-center rounded-full text-white shadow-md'
+              style={{
+                left: getKnobLeft(slidePercent),
+                backgroundColor: `rgb(${primary})`,
+              }}
+            >
+              <ArrowRight className='h-6 w-6' />
+            </div>
+            <Slider
+              value={slideValue}
+              onValueChange={handleSlide}
+              onValueCommit={handleSlideCommit}
+              min={0}
+              max={100}
+              step={1}
+              className='absolute inset-0 z-20 w-full opacity-0'
+              aria-label='Slide to buy entry'
+              disabled={isPurchasing}
+            />
+          </div>
         )}
       </div>
     </div>
