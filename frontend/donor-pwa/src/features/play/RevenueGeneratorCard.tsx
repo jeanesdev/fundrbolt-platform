@@ -1,17 +1,7 @@
-import { useState } from 'react'
-import { ArrowRight } from 'lucide-react'
-import { type RevenueGeneratorItemSummary } from '@/services/revenueGeneratorService'
 import { Slider } from '@/components/ui/slider'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { type RevenueGeneratorItemSummary } from '@/services/revenueGeneratorService'
+import { ArrowRight } from 'lucide-react'
+import { useState } from 'react'
 
 interface Props {
   item: RevenueGeneratorItemSummary
@@ -29,7 +19,9 @@ export function RevenueGeneratorCard({
   const primary = brandPrimary ?? '59, 130, 246'
   const [slideValue, setSlideValue] = useState<number[]>([0])
   const [showConfirm, setShowConfirm] = useState(false)
+  const [confirmSlideValue, setConfirmSlideValue] = useState<number[]>([0])
   const slidePercent = slideValue[0] ?? 0
+  const confirmPercent = confirmSlideValue[0] ?? 0
 
   const knobDiameterPx = 56
   const knobRadiusPx = knobDiameterPx / 2
@@ -191,30 +183,76 @@ export function RevenueGeneratorCard({
         )}
       </div>
 
-      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm entry purchase</AlertDialogTitle>
-            <AlertDialogDescription>
-              Buy 1 entry for{' '}
-              <strong>{item.name}</strong> for{' '}
-              <strong>${Number(item.price_per_entry).toFixed(2)}</strong>?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setShowConfirm(false)
-                onPurchase?.(item.id)
+      {showConfirm && (
+        <div
+          className='absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 rounded-2xl p-4'
+          style={{ backgroundColor: `rgb(${primary})` }}
+        >
+          <div className='text-center'>
+            <p className='text-xs font-semibold uppercase tracking-wide text-white/70'>
+              Confirm Purchase
+            </p>
+            <p className='mt-1 text-sm font-bold text-white'>{item.name}</p>
+            <p className='text-xs text-white/80'>
+              ${Number(item.price_per_entry).toFixed(2)} · 1 entry
+            </p>
+          </div>
+          <div
+            className='relative h-14 w-full overflow-hidden rounded-[28px]'
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.4)',
+              touchAction: 'none',
+            }}
+            onPointerLeave={() => setConfirmSlideValue([0])}
+          >
+            <div className='pointer-events-none absolute inset-0 z-0' />
+            <div
+              className='pointer-events-none absolute top-0 bottom-0 left-0 z-[1] rounded-l-[28px]'
+              style={{
+                width: getFillWidth(confirmPercent),
+                backgroundColor: 'rgba(255,255,255,0.3)',
               }}
-              style={{ backgroundColor: `rgb(${primary})` }}
+            />
+            <div className='pointer-events-none absolute inset-y-0 right-14 left-14 z-[2] flex items-center justify-center text-xs font-semibold text-white'>
+              Swipe to Confirm
+            </div>
+            <div
+              className='pointer-events-none absolute top-0 z-[3] flex h-14 w-14 items-center justify-center rounded-full shadow-md'
+              style={{
+                left: getKnobLeft(confirmPercent),
+                backgroundColor: 'white',
+                color: `rgb(${primary})`,
+              }}
             >
-              Buy Entry
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              <ArrowRight className='h-6 w-6' />
+            </div>
+            <Slider
+              value={confirmSlideValue}
+              onValueChange={(v) => setConfirmSlideValue(v)}
+              onValueCommit={(v) => {
+                const pct = v[0] ?? 0
+                if (pct >= 95) {
+                  setShowConfirm(false)
+                  onPurchase?.(item.id)
+                }
+                setConfirmSlideValue([0])
+              }}
+              min={0}
+              max={100}
+              step={1}
+              className='absolute inset-0 z-20 w-full opacity-0'
+              aria-label='Swipe to confirm purchase'
+            />
+          </div>
+          <button
+            className='text-xs text-white/70 underline underline-offset-2'
+            onClick={() => setShowConfirm(false)}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   )
 }
