@@ -61,9 +61,18 @@ export interface DonorDonationItem {
   donated_at: string
 }
 
+export interface DonorRgEntryItem {
+  item_id: string
+  item_name: string
+  entry_count: number
+  total_paid: number
+  last_purchased_at: string
+}
+
 export interface DonorActivityResponse {
   bids: DonorBidItem[]
   donations: DonorDonationItem[]
+  rg_entries: DonorRgEntryItem[]
 }
 
 export async function getMyActivity(

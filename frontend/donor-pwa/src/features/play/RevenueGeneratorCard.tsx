@@ -1,7 +1,7 @@
-import { Slider } from '@/components/ui/slider'
+import { useState } from 'react'
 import { type RevenueGeneratorItemSummary } from '@/services/revenueGeneratorService'
 import { ArrowRight } from 'lucide-react'
-import { useState } from 'react'
+import { Slider } from '@/components/ui/slider'
 
 interface Props {
   item: RevenueGeneratorItemSummary
@@ -53,7 +53,7 @@ export function RevenueGeneratorCard({
       }}
     >
       <span
-        className='absolute right-0 top-0 rounded-bl-lg px-2 py-0.5 text-xs font-bold tracking-wide text-white'
+        className='absolute top-0 right-0 rounded-bl-lg px-2 py-0.5 text-xs font-bold tracking-wide text-white'
         style={{ backgroundColor: `rgb(${primary})` }}
       >
         PLAY
@@ -118,13 +118,13 @@ export function RevenueGeneratorCard({
               style={
                 item.is_open_for_entries
                   ? {
-                    backgroundColor: `rgba(${primary}, 0.15)`,
-                    color: `rgb(${primary})`,
-                  }
+                      backgroundColor: `rgba(${primary}, 0.15)`,
+                      color: `rgb(${primary})`,
+                    }
                   : {
-                    backgroundColor: 'rgba(107, 114, 128, 0.1)',
-                    color: 'rgb(107, 114, 128)',
-                  }
+                      backgroundColor: 'rgba(107, 114, 128, 0.1)',
+                      color: 'rgb(107, 114, 128)',
+                    }
               }
             >
               {item.is_open_for_entries ? 'Open' : 'Closed'}
@@ -189,7 +189,7 @@ export function RevenueGeneratorCard({
           style={{ backgroundColor: `rgb(${primary})` }}
         >
           <div className='text-center'>
-            <p className='text-xs font-semibold uppercase tracking-wide text-white/70'>
+            <p className='text-xs font-semibold tracking-wide text-white/70 uppercase'>
               Confirm Purchase
             </p>
             <p className='mt-1 text-sm font-bold text-white'>{item.name}</p>

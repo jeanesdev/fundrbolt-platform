@@ -7,10 +7,17 @@
  * - Searchable by item number or item description (bids)
  * - Tap/click a bid row to see full bid history for that item
  */
-import { useMemo, useState } from 'react'
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import type {
   DonorActivityResponse,
   DonorBidItem,
+  DonorRgEntryItem,
 } from '@/services/donor-activity-service'
 import {
   ChevronDown,
@@ -20,15 +27,10 @@ import {
   Gavel,
   Gift,
   Search,
+  Ticket,
   X,
 } from 'lucide-react'
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+import { useMemo, useState } from 'react'
 
 interface MyBidsDonationsSectionProps {
   activity: DonorActivityResponse
@@ -199,7 +201,7 @@ function BidHistorySheet({
                 if (
                   !existing ||
                   statusPriority(effectiveStatus) >
-                    statusPriority(existingStatus)
+                  statusPriority(existingStatus)
                 ) {
                   seen.set(key, entry)
                 }
@@ -295,6 +297,7 @@ export function MyBidsDonationsSection({
 
   const hasBids = activity.bids.length > 0
   const hasDonations = activity.donations.length > 0
+  const hasRgEntries = (activity.rg_entries ?? []).length > 0
 
   const filteredBids = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -306,7 +309,7 @@ export function MyBidsDonationsSection({
     )
   }, [activity.bids, search])
 
-  if (!hasBids && !hasDonations) return null
+  if (!hasBids && !hasDonations && !hasRgEntries) return null
 
   const totalBid = activity.bids
     .filter(
@@ -362,7 +365,9 @@ export function MyBidsDonationsSection({
                 color: 'rgb(var(--event-primary, 59, 130, 246))',
               }}
             >
-              {activity.bids.length + activity.donations.length}
+              {activity.bids.length +
+                activity.donations.length +
+                (activity.rg_entries ?? []).length}
             </span>
           </div>
           {expanded ? (
@@ -783,6 +788,100 @@ export function MyBidsDonationsSection({
                       </p>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Play Along Entries ──────────────────────────────────────────── */}
+            {hasRgEntries && (
+              <div>
+                {(hasBids || hasDonations) && (
+                  <div
+                    className='my-3 border-t'
+                    style={{
+                      borderColor:
+                        'rgb(var(--event-primary, 59, 130, 246) / 0.1)',
+                    }}
+                  />
+                )}
+                <div className='mb-2 flex items-center justify-between'>
+                  <div className='flex items-center gap-1.5'>
+                    <Ticket
+                      className='h-3.5 w-3.5'
+                      style={{
+                        color: 'rgb(var(--event-primary, 59, 130, 246))',
+                      }}
+                    />
+                    <span
+                      className='text-xs font-semibold tracking-wide uppercase'
+                      style={{
+                        color: 'rgb(var(--event-primary, 59, 130, 246))',
+                      }}
+                    >
+                      Play Along Entries
+                    </span>
+                  </div>
+                  <span
+                    className='text-xs font-semibold'
+                    style={{
+                      color: 'var(--event-text-muted-on-background, #6B7280)',
+                    }}
+                  >
+                    Total:{' '}
+                    {fmtCurrency(
+                      (activity.rg_entries ?? []).reduce(
+                        (s, e) => s + Number(e.total_paid),
+                        0
+                      )
+                    )}
+                  </span>
+                </div>
+
+                <div className='grid gap-2'>
+                  {(activity.rg_entries ?? []).map(
+                    (entry: DonorRgEntryItem) => (
+                      <div
+                        key={entry.item_id}
+                        className='flex items-center justify-between rounded-xl border px-3 py-2.5'
+                        style={{
+                          borderColor:
+                            'rgb(var(--event-primary, 59, 130, 246) / 0.12)',
+                          backgroundColor:
+                            'rgb(var(--event-primary, 59, 130, 246) / 0.03)',
+                        }}
+                      >
+                        <div className='min-w-0 flex-1'>
+                          <p
+                            className='truncate text-sm font-semibold'
+                            style={{
+                              color: 'var(--event-text-on-background, #111827)',
+                            }}
+                          >
+                            {entry.item_name}
+                          </p>
+                          <p
+                            className='mt-0.5 text-xs'
+                            style={{
+                              color:
+                                'var(--event-text-muted-on-background, #6B7280)',
+                            }}
+                          >
+                            {entry.entry_count}{' '}
+                            {entry.entry_count === 1 ? 'entry' : 'entries'}{' '}
+                            &middot; {fmtDate(entry.last_purchased_at)}
+                          </p>
+                        </div>
+                        <p
+                          className='ml-3 shrink-0 text-base font-black'
+                          style={{
+                            color: 'var(--event-text-on-background, #111827)',
+                          }}
+                        >
+                          {fmtCurrency(Number(entry.total_paid))}
+                        </p>
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
             )}
