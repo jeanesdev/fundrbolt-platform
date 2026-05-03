@@ -1,0 +1,152 @@
+openapi: 3.0.3
+info:
+  title: Revenue Generators — Donor API
+  version: 0.1.0
+  description: |
+    Donor-facing endpoints for browsing visible Revenue Generator items
+    and purchasing entries via the "Play" tab. Requires authenticated donor session.
+servers:
+  - url: /api/v1
+paths:
+
+  /events/{event_id}/revenue-generators:
+    get:
+      summary: List visible Revenue Generator items for a donor
+      description: |
+        Returns only items where is_visible=true. Each item includes the
+        authenticated donor's own entry count (not aggregate totals).
+        If a winner has been selected, the winner's name is included.
+        Returns an empty list when no visible items exist (Play tab should be hidden).
+      operationId: listDonorRevenueGenerators
+      tags: [DonorRevenueGenerators]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: List of visible Revenue Generator items with donor's own entry counts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RevenueGeneratorItemDonorResponse'
+        '401':
+          description: Not authenticated
+        '404':
+          description: Event not found
+
+  /events/{event_id}/revenue-generators/{item_id}/entries:
+    post:
+      summary: Purchase one entry for a Revenue Generator item
+      description: |
+        Records one entry for the authenticated donor. The donor must be registered
+        for the event (have a registration_guest record with a bidder number).
+        Entry purchase is rejected if the item is not open for entries (is_open_for_entries=false)
+        or not visible (is_visible=false).
+        Returns the updated donor entry count for this item.
+      operationId: purchaseDonorRevenueGeneratorEntry
+      tags: [DonorRevenueGenerators]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '201':
+          description: Entry purchased successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryPurchaseResponse'
+        '401':
+          description: Not authenticated
+        '403':
+          description: |
+            Donor not registered for event (no bidder number) or
+            insufficient permissions
+        '404':
+          description: Event or item not found
+        '409':
+          description: |
+            Item is not open for entries (is_open_for_entries=false) or
+            item is not visible (is_visible=false)
+
+components:
+  parameters:
+    EventId:
+      name: event_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID of the event
+
+    ItemId:
+      name: item_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID of the Revenue Generator item
+
+  schemas:
+    RevenueGeneratorItemDonorResponse:
+      type: object
+      description: |
+        A single visible Revenue Generator item as seen by a donor.
+        Does NOT include aggregate entry counts from other donors.
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "50/50 Raffle"
+        description:
+          type: string
+          nullable: true
+          example: "Half the pot goes to the winner!"
+        price_per_entry:
+          type: number
+          format: decimal
+          example: 10.00
+        is_open_for_entries:
+          type: boolean
+          description: False = entries closed; purchase action should be disabled
+        display_order:
+          type: integer
+        my_entry_count:
+          type: integer
+          description: Number of entries the authenticated donor has for this item
+          example: 3
+        current_winner_name:
+          type: string
+          nullable: true
+          description: |
+            Name of the selected winner, if one has been chosen.
+            Null if no winner has been selected yet.
+          example: "Jane Smith"
+
+    EntryPurchaseResponse:
+      type: object
+      description: Confirmation of successful entry purchase
+      properties:
+        entry_id:
+          type: string
+          format: uuid
+          description: UUID of the newly created entry record
+        item_id:
+          type: string
+          format: uuid
+        my_entry_count:
+          type: integer
+          description: Donor's updated total entry count for this item after the purchase
+          example: 4
+        amount_paid:
+          type: number
+          format: decimal
+          description: Amount charged for this entry
+          example: 10.00
+        purchased_at:
+          type: string
+          format: date-time

@@ -28,6 +28,8 @@ export interface BottomTabNavProps {
   onTabIntent?: (tab: DonorTab) => void
   /** Badge counts keyed by tab id */
   badges?: Partial<Record<DonorTab, number>>
+  /** Optional subset of tabs to display; defaults to all tabs */
+  visibleTabs?: DonorTab[]
 }
 
 export function BottomTabNav({
@@ -35,7 +37,11 @@ export function BottomTabNav({
   onTabChange,
   onTabIntent,
   badges = {},
+  visibleTabs,
 }: BottomTabNavProps) {
+  const tabs = visibleTabs
+    ? TABS.filter((t) => visibleTabs.includes(t.id))
+    : TABS
   return (
     <nav
       className='fixed right-0 bottom-0 left-0 z-50 border-t'
@@ -56,7 +62,7 @@ export function BottomTabNav({
         }}
       />
       <div className='flex h-20 items-stretch'>
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const isActive = tab.id === activeTab
           const badgeCount = badges[tab.id] ?? 0
           const Icon = tab.icon

@@ -3,9 +3,10 @@ import { useNavigate } from '@tanstack/react-router'
 import { auctioneerService } from '@/services/auctioneerService'
 import {
   ArrowUpDown,
+  CalendarClock,
   CircleDollarSign,
-  Coins,
   Clock,
+  Coins,
   Download,
   Eye,
   EyeOff,
@@ -53,11 +54,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BidderAvatar } from '@/components/bidder-avatar'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
+import { RGAuctioneerTab } from '@/features/revenue-generators'
 import {
   useAuctioneerDashboard,
   useAuctioneerSettings,
   useLiveAuctionGallery,
   usePaddleRaiseDashboard,
+  useRevenueGeneratorItems,
   useSilentAuctionGallery,
   useUpsertSettings,
 } from '../hooks/useAuctioneerData'
@@ -112,7 +115,7 @@ const matchesPaddleRaiseQuery = (
 }
 
 interface AuctioneerDashboardPageProps {
-  defaultTab?: 'live' | 'silent' | 'paddle'
+  defaultTab?: 'live' | 'silent' | 'paddle' | 'revenue'
 }
 
 export function AuctioneerDashboardPage({
@@ -128,6 +131,7 @@ export function AuctioneerDashboardPage({
   const liveGallery = useLiveAuctionGallery(currentEvent.id)
   const silentGallery = useSilentAuctionGallery(currentEvent.id)
   const paddleRaise = usePaddleRaiseDashboard(currentEvent.id)
+  const revenueGenerators = useRevenueGeneratorItems(currentEvent.id)
   const { data: settings } = useAuctioneerSettings(currentEvent.id)
   const upsertSettings = useUpsertSettings(currentEvent.id)
   const [silentViewMode, setSilentViewMode] = useViewPreference(
@@ -142,6 +146,9 @@ export function AuctioneerDashboardPage({
   const [paddleDonationsSort, setPaddleDonationsSort] = useState<
     'newest' | 'oldest' | 'amount_desc' | 'amount_asc' | 'bidder_asc'
   >('newest')
+  const [activeTab, setActiveTab] = useState<
+    'live' | 'silent' | 'paddle' | 'revenue'
+  >(defaultTab)
   const [showCommissionTotals, setShowCommissionTotals] = useState(true)
   const [summaryPinned, setSummaryPinned] = useState<boolean>(() => {
     try {
@@ -279,6 +286,21 @@ export function AuctioneerDashboardPage({
     return rows
   }, [paddleDonationsFilter, paddleDonationsSort, paddleRaise.data?.donations])
 
+  const revenueGeneratorHeaderCards = useMemo(() => {
+    const items = [...(revenueGenerators.data ?? [])].sort(
+      (left, right) => left.display_order - right.display_order
+    )
+    const totalRevenue = items.reduce(
+      (sum, item) => sum + Number(item.total_revenue ?? 0),
+      0
+    )
+
+    return {
+      totalRevenue,
+      items,
+    }
+  }, [revenueGenerators.data])
+
   if (isLoading) {
     return (
       <div className='space-y-4 px-2 py-4 sm:px-4'>
@@ -328,76 +350,106 @@ export function AuctioneerDashboardPage({
           summaryPinned ? 'sticky top-14 z-20' : ''
         }`}
       >
-        <div className='flex min-w-0 flex-wrap items-center gap-2'>
-          <CompactStatusChip
-            icon={<CircleDollarSign className='h-3.5 w-3.5' />}
-            label='Event'
-            value={fmtCurrency(dashboard.event_totals.event_total_raised)}
-          />
-          <CompactStatusChip
-            icon={<Coins className='h-3.5 w-3.5' />}
-            label='Commission'
-            value={
-              showCommissionTotals
-                ? fmtCurrency(dashboard.earnings.total_earnings)
-                : 'Hidden'
-            }
-            action={
-              <Button
-                type='button'
-                variant='ghost'
-                size='icon'
-                className='h-6 w-6'
-                onClick={() => setShowCommissionTotals((current) => !current)}
-                aria-label={
-                  showCommissionTotals
-                    ? 'Hide total commission'
-                    : 'Show total commission'
-                }
-                title={
-                  showCommissionTotals
-                    ? 'Hide total commission'
-                    : 'Show total commission'
-                }
-              >
-                {showCommissionTotals ? (
-                  <EyeOff className='h-3.5 w-3.5' />
-                ) : (
-                  <Eye className='h-3.5 w-3.5' />
-                )}
-              </Button>
-            }
-          />
-          <CompactStatusChip
-            icon={<Gavel className='h-3.5 w-3.5' />}
-            label='Live Raised'
-            value={fmtCurrency(dashboard.event_totals.live_auction_raised)}
-          />
-          <CompactStatusChip
-            icon={<Target className='h-3.5 w-3.5' />}
-            label='Silent Raised'
-            value={fmtCurrency(dashboard.event_totals.silent_auction_raised)}
-          />
-          <CompactStatusChip
-            icon={<HandCoins className='h-3.5 w-3.5' />}
-            label='Paddle Raised'
-            value={fmtCurrency(dashboard.event_totals.paddle_raise_raised)}
-          />
-          <CompactStatusChip
-            icon={<Timer className='h-3.5 w-3.5' />}
-            label='Live'
-            value={liveTimerValue}
-          />
-          <CompactStatusChip
-            icon={<Clock className='h-3.5 w-3.5' />}
-            label='Silent'
-            value={silentTimerValue}
-          />
+        <div className='relative'>
+          <div className='grid min-w-0 auto-cols-auto grid-flow-col grid-rows-2 gap-1.5 overflow-x-auto pr-8 pb-0.5'>
+            <CompactStatusChip
+              icon={<CircleDollarSign className='h-3.5 w-3.5' />}
+              label='Event'
+              value={fmtCurrency(dashboard.event_totals.event_total_raised)}
+            />
+            {currentEvent.last_year_total != null && (
+              <CompactStatusChip
+                icon={<CalendarClock className='h-3.5 w-3.5' />}
+                label='Last Year'
+                value={fmtCurrency(currentEvent.last_year_total)}
+              />
+            )}
+            <CompactStatusChip
+              icon={<Coins className='h-3.5 w-3.5' />}
+              label='Commission'
+              onClick={() => setActiveTab('live')}
+              value={
+                showCommissionTotals
+                  ? fmtCurrency(dashboard.earnings.total_earnings)
+                  : 'Hidden'
+              }
+              action={
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='icon'
+                  className='h-6 w-6'
+                  onClick={() => setShowCommissionTotals((current) => !current)}
+                  aria-label={
+                    showCommissionTotals
+                      ? 'Hide total commission'
+                      : 'Show total commission'
+                  }
+                  title={
+                    showCommissionTotals
+                      ? 'Hide total commission'
+                      : 'Show total commission'
+                  }
+                >
+                  {showCommissionTotals ? (
+                    <EyeOff className='h-3.5 w-3.5' />
+                  ) : (
+                    <Eye className='h-3.5 w-3.5' />
+                  )}
+                </Button>
+              }
+            />
+            <CompactStatusChip
+              icon={<Gavel className='h-3.5 w-3.5' />}
+              label='Live Raised'
+              value={fmtCurrency(dashboard.event_totals.live_auction_raised)}
+              onClick={() => setActiveTab('live')}
+            />
+            <CompactStatusChip
+              icon={<Target className='h-3.5 w-3.5' />}
+              label='Silent Raised'
+              value={fmtCurrency(dashboard.event_totals.silent_auction_raised)}
+              onClick={() => setActiveTab('silent')}
+            />
+            <CompactStatusChip
+              icon={<HandCoins className='h-3.5 w-3.5' />}
+              label='Paddle Raised'
+              value={fmtCurrency(dashboard.event_totals.paddle_raise_raised)}
+              onClick={() => setActiveTab('paddle')}
+            />
+            <CompactStatusChip
+              icon={<HandCoins className='h-3.5 w-3.5' />}
+              label='Revenue Generators'
+              value={fmtCurrency(revenueGeneratorHeaderCards.totalRevenue)}
+              onClick={() => setActiveTab('revenue')}
+            />
+            {revenueGeneratorHeaderCards.items.map((item) => (
+              <CompactStatusChip
+                key={item.id}
+                icon={<HandCoins className='h-3.5 w-3.5' />}
+                label={item.name}
+                value={fmtCurrency(item.total_revenue)}
+                onClick={() => setActiveTab('revenue')}
+              />
+            ))}
+            <CompactStatusChip
+              icon={<Timer className='h-3.5 w-3.5' />}
+              label='Live'
+              value={liveTimerValue}
+              onClick={() => setActiveTab('live')}
+            />
+            <CompactStatusChip
+              icon={<Clock className='h-3.5 w-3.5' />}
+              label='Silent'
+              value={silentTimerValue}
+              onClick={() => setActiveTab('silent')}
+            />
+          </div>
           <Button
             type='button'
             variant='ghost'
-            size='sm'
-            className='ml-auto h-8'
+            size='icon'
+            className='absolute top-0 right-0 h-7 w-7'
             onClick={() => setSummaryPinned((current) => !current)}
             aria-label={
               summaryPinned ? 'Unpin summary header' : 'Pin summary header'
@@ -407,21 +459,37 @@ export function AuctioneerDashboardPage({
             }
           >
             {summaryPinned ? (
-              <PinOff className='mr-1.5 h-4 w-4' />
+              <PinOff className='h-3.5 w-3.5' />
             ) : (
-              <Pin className='mr-1.5 h-4 w-4' />
+              <Pin className='h-3.5 w-3.5' />
             )}
-            {summaryPinned ? 'Unpin' : 'Pin'}
           </Button>
         </div>
       </div>
 
-      <Tabs defaultValue={defaultTab} className='space-y-4'>
-        <TabsList className='grid w-full grid-cols-3'>
-          <TabsTrigger value='live'>Live Auction</TabsTrigger>
-          <TabsTrigger value='silent'>Silent Auction</TabsTrigger>
-          <TabsTrigger value='paddle'>Paddle Raise</TabsTrigger>
-        </TabsList>
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) =>
+          setActiveTab(v as 'live' | 'silent' | 'paddle' | 'revenue')
+        }
+        className='space-y-4'
+      >
+        <div className='overflow-x-auto'>
+          <TabsList className='flex w-full min-w-max'>
+            <TabsTrigger value='live' className='flex-1'>
+              Live Auction
+            </TabsTrigger>
+            <TabsTrigger value='silent' className='flex-1'>
+              Silent Auction
+            </TabsTrigger>
+            <TabsTrigger value='paddle' className='flex-1'>
+              Paddle Raise
+            </TabsTrigger>
+            <TabsTrigger value='revenue' className='flex-1'>
+              Revenue Generators
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value='live'>
           <ItemGallerySection
@@ -699,6 +767,10 @@ export function AuctioneerDashboardPage({
             </Card>
           </div>
         </TabsContent>
+
+        <TabsContent value='revenue'>
+          <RGAuctioneerTab eventId={currentEvent.id} />
+        </TabsContent>
       </Tabs>
     </div>
   )
@@ -745,14 +817,32 @@ function CompactStatusChip({
   value,
   icon,
   action,
+  onClick,
 }: {
   label: string
   value: string
   icon?: ReactNode
   action?: ReactNode
+  onClick?: () => void
 }) {
   return (
-    <div className='bg-muted/70 flex min-h-9 items-center gap-2 rounded-md border px-2.5 py-1 text-xs'>
+    <div
+      className={`bg-muted/70 flex min-h-9 items-center gap-2 rounded-md border px-2.5 py-1 text-xs${
+        onClick
+          ? 'hover:bg-muted hover:border-foreground/20 cursor-pointer transition-colors'
+          : ''
+      }`}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') onClick()
+            }
+          : undefined
+      }
+    >
       {icon ? (
         <span className='text-muted-foreground shrink-0'>{icon}</span>
       ) : null}

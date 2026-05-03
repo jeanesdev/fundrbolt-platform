@@ -24,6 +24,7 @@ import {
   getEventGuests,
   getMyActivity,
 } from '@/services/donor-activity-service'
+import { getEventRevenueGenerators } from '@/services/revenueGeneratorService'
 import {
   getMySeatingInfo,
   type SeatingInfoResponse,
@@ -75,6 +76,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 import { PushOptInPrompt } from '@/components/notifications/PushOptInPrompt'
 import { ProfileDropdown } from '@/components/profile-dropdown'
+import { PlayTab } from '@/features/play'
 
 export function EventHomePage() {
   const navigate = useNavigate()
@@ -109,12 +111,12 @@ export function EventHomePage() {
   )
   const [maxBidItemMap, setMaxBidItemMap] = useState<Record<string, number>>({})
   const [displayedTab, setDisplayedTab] = useState<DonorTab>('home')
+  const [auctionSubTab, setAuctionSubTab] = useState<'bid' | 'play-along'>(
+    'bid'
+  )
   const prefetchedAuctionImagesRef = useRef<Set<string>>(new Set())
   const prefetchedVenueMapUrlsRef = useRef<Set<string>>(new Set())
   const queryClient = useQueryClient()
-  const tabOrder = useMemo<DonorTab[]>(() => ['home', 'auction', 'seat'], [])
-  const isOnline = useOnlineStatus()
-  const prevOnlineRef = useRef(isOnline)
 
   // Registrations data — used as fallback to find the event ID when
   // availableEvents (Zustand store) hasn't been populated yet (e.g.
@@ -127,6 +129,21 @@ export function EventHomePage() {
     staleTime: 5 * 60 * 1000,
     enabled: !!eventSlug && !isPreviewMode,
   })
+
+  const { data: rgItems = [] } = useQuery({
+    queryKey: ['donor', 'revenue-generators', currentEvent?.id],
+    queryFn: () => getEventRevenueGenerators(currentEvent!.id),
+    enabled: !!currentEvent?.id && !isPreviewMode,
+    staleTime: 30_000,
+  })
+  const hasRgItems = rgItems.length > 0
+
+  const tabOrder = useMemo<DonorTab[]>(() => {
+    const base: DonorTab[] = ['home', 'auction', 'seat']
+    return base
+  }, [])
+  const isOnline = useOnlineStatus()
+  const prevOnlineRef = useRef(isOnline)
 
   const npoSlugForDonateNow = useMemo(() => {
     const fromRecord = (
@@ -1403,24 +1420,66 @@ export function EventHomePage() {
       >
         <div className='flex items-center justify-between'>
           <div className='flex items-center gap-3'>
-            <h2
-              className='text-base font-bold'
-              style={{ color: 'var(--event-text-on-background, #111827)' }}
-            >
-              Auction Items
-            </h2>
-            {!!(currentEvent as unknown as Record<string, unknown>)
-              .auction_close_datetime && (
-              <AuctionCountdownTimer
-                closeDateTime={
-                  (currentEvent as unknown as Record<string, unknown>)
-                    .auction_close_datetime as string
-                }
-              />
+            {hasRgItems ? (
+              <div
+                className='flex gap-1 rounded-lg p-0.5'
+                style={{
+                  backgroundColor:
+                    'rgb(var(--event-primary, 59, 130, 246) / 0.1)',
+                }}
+              >
+                <button
+                  onClick={() => setAuctionSubTab('bid')}
+                  className='rounded-md px-3 py-1 text-sm font-semibold transition-all'
+                  style={
+                    auctionSubTab === 'bid'
+                      ? {
+                          backgroundColor:
+                            'rgb(var(--event-primary, 59, 130, 246))',
+                          color: '#fff',
+                        }
+                      : { color: 'var(--event-text-on-background, #374151)' }
+                  }
+                >
+                  Bid
+                </button>
+                <button
+                  onClick={() => setAuctionSubTab('play-along')}
+                  className='rounded-md px-3 py-1 text-sm font-semibold transition-all'
+                  style={
+                    auctionSubTab === 'play-along'
+                      ? {
+                          backgroundColor:
+                            'rgb(var(--event-primary, 59, 130, 246))',
+                          color: '#fff',
+                        }
+                      : { color: 'var(--event-text-on-background, #374151)' }
+                  }
+                >
+                  Play Along
+                </button>
+              </div>
+            ) : (
+              <h2
+                className='text-base font-bold'
+                style={{ color: 'var(--event-text-on-background, #111827)' }}
+              >
+                Auction Items
+              </h2>
             )}
+            {auctionSubTab === 'bid' &&
+              !!(currentEvent as unknown as Record<string, unknown>)
+                .auction_close_datetime && (
+                <AuctionCountdownTimer
+                  closeDateTime={
+                    (currentEvent as unknown as Record<string, unknown>)
+                      .auction_close_datetime as string
+                  }
+                />
+              )}
           </div>
           <div className='flex items-center gap-2'>
-            {eventStatus === 'live' && (
+            {eventStatus === 'live' && auctionSubTab === 'bid' && (
               <span className='animate-live-glow flex items-center gap-1.5 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white'>
                 <span className='h-1.5 w-1.5 animate-pulse rounded-full bg-white' />
                 LIVE
@@ -1432,22 +1491,26 @@ export function EventHomePage() {
         </div>
       </div>
 
-      <div className='px-3 py-3'>
-        <AuctionGallery
-          eventId={currentEvent.id}
-          watchlistScope={watchlistScope}
-          disableWatchlist={isPreviewMode}
-          maxBidItemMap={maxBidItemMap}
-          winningItemMap={winningItemMap}
-          initialFilter='all'
-          initialSort='highest_bid'
-          eventStatus={currentEvent.status}
-          eventDateTime={resolveEventDateTime(currentEvent) ?? undefined}
-          onItemClick={(item, isWinning) =>
-            sharedAuctionProps.onItemClick(item, isWinning)
-          }
-        />
-      </div>
+      {auctionSubTab === 'bid' ? (
+        <div className='px-3 py-3'>
+          <AuctionGallery
+            eventId={currentEvent.id}
+            watchlistScope={watchlistScope}
+            disableWatchlist={isPreviewMode}
+            maxBidItemMap={maxBidItemMap}
+            winningItemMap={winningItemMap}
+            initialFilter='all'
+            initialSort='highest_bid'
+            eventStatus={currentEvent.status}
+            eventDateTime={resolveEventDateTime(currentEvent) ?? undefined}
+            onItemClick={(item, isWinning) =>
+              sharedAuctionProps.onItemClick(item, isWinning)
+            }
+          />
+        </div>
+      ) : (
+        <PlayTab eventId={currentEvent.id} />
+      )}
     </>
   )
 
@@ -1633,7 +1696,11 @@ export function EventHomePage() {
       </main>
 
       {/* Fixed bottom navigation */}
-      <BottomTabNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomTabNav
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        visibleTabs={tabOrder}
+      />
 
       {/* Auction Item Detail Modal */}
       <AuctionItemDetailModal

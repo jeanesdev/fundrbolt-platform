@@ -905,7 +905,9 @@ export function AuctionItemDetailModal({
                               'rgb(var(--event-background, 255, 255, 255))',
                             border:
                               '1px solid rgb(var(--event-primary, 59, 130, 246) / 0.35)',
+                            touchAction: 'none',
                           }}
+                          onPointerLeave={() => setPlaceBidSlideValue([0])}
                         >
                           <div className='pointer-events-none absolute inset-0 z-0 bg-white' />
                           <div
@@ -951,7 +953,9 @@ export function AuctionItemDetailModal({
                               'rgb(var(--event-background, 255, 255, 255))',
                             border:
                               '1px solid rgb(var(--event-primary, 59, 130, 246) / 0.35)',
+                            touchAction: 'none',
                           }}
+                          onPointerLeave={() => setMaxBidSlideValue([0])}
                         >
                           <div className='pointer-events-none absolute inset-0 z-0 bg-white' />
                           <div
@@ -996,7 +1000,9 @@ export function AuctionItemDetailModal({
                                 'rgb(var(--event-background, 255, 255, 255))',
                               border:
                                 '1px solid rgb(var(--event-primary, 59, 130, 246) / 0.35)',
+                              touchAction: 'none',
                             }}
+                            onPointerLeave={() => setBuyNowSlideValue([0])}
                           >
                             <div className='pointer-events-none absolute inset-0 z-0 bg-white' />
                             <div

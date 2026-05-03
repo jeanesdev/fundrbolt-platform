@@ -39,6 +39,7 @@ export interface AuctionBidDashboardHighestBid {
   auction_item_id: string
   auction_item_number: number
   auction_item_title: string
+  auction_type: string
   bid_amount: number
   bidder_name: string
   bidder_email: string
@@ -48,6 +49,7 @@ export interface AuctionBidDashboardRecentBid {
   auction_item_id: string
   auction_item_number: number
   auction_item_title: string
+  auction_type: string
   bid_amount: number
   bidder_name: string
   bidder_email: string

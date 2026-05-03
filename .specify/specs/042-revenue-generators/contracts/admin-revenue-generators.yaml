@@ -1,0 +1,446 @@
+openapi: 3.0.3
+info:
+  title: Revenue Generators — Admin API
+  version: 0.1.0
+  description: |
+    Admin endpoints for managing Revenue Generator items, viewing entries,
+    and selecting winners. Requires admin or auctioneer role.
+servers:
+  - url: /api/v1
+paths:
+
+  /admin/events/{event_id}/revenue-generators:
+    get:
+      summary: List all Revenue Generator items for an event
+      description: Returns all items regardless of visibility state. Admins see everything; auctioneers see everything.
+      operationId: listAdminRevenueGenerators
+      tags: [RevenueGenerators]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: List of Revenue Generator items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RevenueGeneratorItemAdminResponse'
+        '401':
+          description: Not authenticated
+        '403':
+          description: Insufficient role (requires admin or auctioneer)
+        '404':
+          description: Event not found
+
+    post:
+      summary: Create a new Revenue Generator item
+      operationId: createRevenueGenerator
+      tags: [RevenueGenerators]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevenueGeneratorItemCreate'
+      responses:
+        '201':
+          description: Item created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevenueGeneratorItemAdminResponse'
+        '400':
+          description: Validation error (e.g., price_per_entry <= 0)
+        '401':
+          description: Not authenticated
+        '403':
+          description: Insufficient role (requires admin)
+        '404':
+          description: Event not found
+
+  /admin/events/{event_id}/revenue-generators/{item_id}:
+    patch:
+      summary: Update a Revenue Generator item
+      description: |
+        Partial update. Supports updating name, description, price_per_entry,
+        is_visible, is_open_for_entries, and display_order independently.
+        Use this endpoint to toggle visibility and entry status.
+      operationId: updateRevenueGenerator
+      tags: [RevenueGenerators]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevenueGeneratorItemUpdate'
+      responses:
+        '200':
+          description: Item updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevenueGeneratorItemAdminResponse'
+        '400':
+          description: Validation error
+        '401':
+          description: Not authenticated
+        '403':
+          description: Insufficient role (requires admin)
+        '404':
+          description: Event or item not found
+
+    delete:
+      summary: Delete a Revenue Generator item
+      description: Cascades to all entries and winner selections for this item.
+      operationId: deleteRevenueGenerator
+      tags: [RevenueGenerators]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '204':
+          description: Item deleted
+        '401':
+          description: Not authenticated
+        '403':
+          description: Insufficient role (requires admin)
+        '404':
+          description: Event or item not found
+
+  /admin/events/{event_id}/revenue-generators/{item_id}/entries:
+    get:
+      summary: List all entries for a Revenue Generator item
+      description: |
+        Returns all entries with donor name, bidder number, and purchase timestamp.
+        Groups by donor for display (each donor row shows their total entry count).
+        Results ordered by entry_count descending (highest-entry donors first).
+      operationId: listRevenueGeneratorEntries
+      tags: [RevenueGenerators]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number (default 1)
+        - name: per_page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 500
+          description: Results per page (default 100, max 500)
+      responses:
+        '200':
+          description: Entry list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevenueGeneratorEntryListResponse'
+        '401':
+          description: Not authenticated
+        '403':
+          description: Insufficient role (requires admin or auctioneer)
+        '404':
+          description: Event or item not found
+
+  /admin/events/{event_id}/revenue-generators/{item_id}/draw:
+    post:
+      summary: Perform a random weighted draw for a Revenue Generator item
+      description: |
+        Selects a winner by giving each individual entry an equal probability
+        of being chosen (donor with 5 entries has 5x probability of donor with 1 entry).
+        Records the selection in winner_selections with method=random_draw.
+        Returns 409 if no entries exist.
+      operationId: drawRevenueGeneratorWinner
+      tags: [RevenueGenerators]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Winner selected by random draw
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WinnerSelectionResponse'
+        '401':
+          description: Not authenticated
+        '403':
+          description: Insufficient role (requires admin or auctioneer)
+        '404':
+          description: Event or item not found
+        '409':
+          description: No entries exist for this item; draw not performed
+
+  /admin/events/{event_id}/revenue-generators/{item_id}/winner:
+    post:
+      summary: Manually select a winner for a Revenue Generator item
+      description: |
+        Explicitly selects a specific entry as the winner.
+        Records the selection in winner_selections with method=manual.
+        Previous winners are not deleted (full history preserved).
+      operationId: selectRevenueGeneratorWinner
+      tags: [RevenueGenerators]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManualWinnerSelectRequest'
+      responses:
+        '200':
+          description: Winner manually selected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WinnerSelectionResponse'
+        '400':
+          description: Validation error (entry_id missing or not for this item)
+        '401':
+          description: Not authenticated
+        '403':
+          description: Insufficient role (requires admin or auctioneer)
+        '404':
+          description: Event, item, or entry not found
+
+  /admin/events/{event_id}/revenue-generators/{item_id}/winner-history:
+    get:
+      summary: Get full winner selection history for a Revenue Generator item
+      description: |
+        Returns all winner selections in reverse chronological order (most recent first).
+        The first record is the current winner. Includes selection method and selecting admin.
+      operationId: getRevenueGeneratorWinnerHistory
+      tags: [RevenueGenerators]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Winner selection history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WinnerSelectionResponse'
+        '401':
+          description: Not authenticated
+        '403':
+          description: Insufficient role (requires admin or auctioneer)
+        '404':
+          description: Event or item not found
+
+components:
+  parameters:
+    EventId:
+      name: event_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID of the event
+
+    ItemId:
+      name: item_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID of the Revenue Generator item
+
+  schemas:
+    RevenueGeneratorItemCreate:
+      type: object
+      required: [name, price_per_entry]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          example: "50/50 Raffle"
+        description:
+          type: string
+          nullable: true
+          example: "Half the pot goes to the winner!"
+        price_per_entry:
+          type: number
+          format: decimal
+          exclusiveMinimum: 0
+          example: 10.00
+        is_visible:
+          type: boolean
+          default: false
+        is_open_for_entries:
+          type: boolean
+          default: true
+        display_order:
+          type: integer
+          default: 0
+
+    RevenueGeneratorItemUpdate:
+      type: object
+      description: All fields optional — only provided fields are updated
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        price_per_entry:
+          type: number
+          format: decimal
+          exclusiveMinimum: 0
+        is_visible:
+          type: boolean
+        is_open_for_entries:
+          type: boolean
+        display_order:
+          type: integer
+
+    RevenueGeneratorItemAdminResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        price_per_entry:
+          type: number
+          format: decimal
+        is_visible:
+          type: boolean
+        is_open_for_entries:
+          type: boolean
+        display_order:
+          type: integer
+        total_entries:
+          type: integer
+          description: Total entry count across all donors
+        total_revenue:
+          type: number
+          format: decimal
+          description: Sum of amount_paid across all entries
+        current_winner:
+          $ref: '#/components/schemas/WinnerSelectionResponse'
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    RevenueGeneratorEntryRow:
+      type: object
+      description: One donor's entries for the item (grouped summary)
+      properties:
+        registration_guest_id:
+          type: string
+          format: uuid
+          nullable: true
+        bidder_number:
+          type: integer
+        donor_name:
+          type: string
+        entry_count:
+          type: integer
+          description: Total number of entries for this donor on this item
+        total_paid:
+          type: number
+          format: decimal
+        last_purchased_at:
+          type: string
+          format: date-time
+
+    RevenueGeneratorEntryListResponse:
+      type: object
+      properties:
+        item_id:
+          type: string
+          format: uuid
+        total_entries:
+          type: integer
+        total_revenue:
+          type: number
+          format: decimal
+        total_donors:
+          type: integer
+          description: Count of unique donors with entries
+        page:
+          type: integer
+        per_page:
+          type: integer
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/RevenueGeneratorEntryRow'
+
+    ManualWinnerSelectRequest:
+      type: object
+      required: [registration_guest_id]
+      properties:
+        registration_guest_id:
+          type: string
+          format: uuid
+          description: |
+            UUID of the registration_guest to designate as winner. The admin selects
+            a donor (not an individual ticket) from the entry list. The service will
+            resolve the most recent entry for this guest to populate winning_entry_id.
+            Must be a guest who has at least one entry for this item (404 otherwise).
+
+    WinnerSelectionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        revenue_generator_item_id:
+          type: string
+          format: uuid
+        winning_entry_id:
+          type: string
+          format: uuid
+          nullable: true
+        winner_name:
+          type: string
+        bidder_number:
+          type: integer
+        selection_method:
+          type: string
+          enum: [random_draw, manual]
+        selected_at:
+          type: string
+          format: date-time
+        selected_by_user_id:
+          type: string
+          format: uuid
+          nullable: true
+        # FR-014: The frontend (WinnerSelectionModal) constructs the Notifications page
+        # shortcut URL from winner_name + bidder_number. The backend does not return
+        # a frontend URL — separation of concerns. Example frontend URL:
+        # /admin/events/{event_id}/notifications?prefill_bidder=42&prefill_name=Jane+Smith

@@ -320,8 +320,6 @@ function EventChip() {
   ]
     .filter(Boolean)
     .join(' · ')
-  const lastYearTotal = selectedEvent.last_year_total ?? null
-
   return (
     <div className='flex items-center gap-2'>
       <TooltipProvider>
@@ -352,18 +350,6 @@ function EventChip() {
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      {lastYearTotal !== null ? (
-        <div className='hidden min-w-[7.5rem] rounded-md border px-2 py-1 text-xs leading-tight md:block'>
-          <div className='text-muted-foreground'>Last Years Total</div>
-          <div className='font-semibold'>
-            {new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              maximumFractionDigits: 0,
-            }).format(lastYearTotal)}
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }

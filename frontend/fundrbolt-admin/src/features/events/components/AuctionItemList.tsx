@@ -91,16 +91,6 @@ export function AuctionItemList({
 
   return (
     <div className='space-y-8'>
-      {/* Add Button */}
-      {!readOnly && onAdd && (
-        <div className='flex justify-end'>
-          <Button onClick={onAdd}>
-            <Plus className='mr-2 h-4 w-4' />
-            Add Auction Item
-          </Button>
-        </div>
-      )}
-
       {/* Grouped Items */}
       {auctionTypes.map((type) => {
         const typeItems = groupedItems[type]

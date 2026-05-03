@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from app.schemas.revenue_generator import RevenueGeneratorDashboardSummary
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -18,6 +22,7 @@ from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
 from app.models.quick_entry_buy_now_bid import QuickEntryBuyNowBid
 from app.models.quick_entry_donation import QuickEntryDonation
 from app.models.registration_guest import RegistrationGuest
+from app.models.revenue_generator_entry import RevenueGeneratorEntry
 from app.models.sponsor import Sponsor
 from app.models.ticket_management import PaymentStatus, TicketPurchase
 from app.models.user import User
@@ -51,6 +56,8 @@ class SegmentRow(TypedDict):
 
 
 _PROJECTION_OVERRIDES: dict[tuple[str, ScenarioType], dict[str, Decimal]] = {}
+
+logger = logging.getLogger(__name__)
 
 
 class EventDashboardService:
@@ -114,6 +121,9 @@ class EventDashboardService:
         buy_now_stmt = select(func.coalesce(func.sum(QuickEntryBuyNowBid.amount), 0)).where(
             QuickEntryBuyNowBid.event_id == event_id
         )
+        revenue_generators_stmt = select(
+            func.coalesce(func.sum(RevenueGeneratorEntry.amount_paid), 0)
+        ).where(RevenueGeneratorEntry.event_id == event_id)
 
         tickets_total = Decimal((await self.db.execute(ticket_stmt)).scalar_one() or 0)
         sponsorship_total = Decimal((await self.db.execute(sponsor_stmt)).scalar_one() or 0)
@@ -124,6 +134,9 @@ class EventDashboardService:
             (await self.db.execute(qe_live_auction_stmt)).scalar_one() or 0
         )
         buy_now_total = Decimal((await self.db.execute(buy_now_stmt)).scalar_one() or 0)
+        revenue_generators_total = Decimal(
+            (await self.db.execute(revenue_generators_stmt)).scalar_one() or 0
+        )
 
         # Donate-Now page donations linked to this event (amount stored in cents → convert)
         npo_donation_stmt = select(func.coalesce(func.sum(NpoDonation.amount_cents), 0)).where(
@@ -141,6 +154,7 @@ class EventDashboardService:
             "buy_it_now": buy_now_total,
             "paddle_raise": paddle_total + qe_paddle_total,
             "donations": npo_donation_total,
+            "revenue_generators": revenue_generators_total,
             "fees_other": Decimal("0"),
         }
 
@@ -363,7 +377,20 @@ class EventDashboardService:
             funnel=await self._funnel(event_id),
             alerts=alerts,
             last_refreshed_at=now,
+            revenue_generators=await self._revenue_generators_summary(event_id),
         )
+
+    async def _revenue_generators_summary(
+        self, event_id: UUID
+    ) -> RevenueGeneratorDashboardSummary | None:
+        try:
+            from app.services.revenue_generator_service import RevenueGeneratorService
+
+            result = await RevenueGeneratorService.get_dashboard_summary(self.db, event_id)
+            return result
+        except Exception:
+            logger.exception("Failed to load revenue generator summary for event %s", event_id)
+            return None
 
     async def _guest_rows(self, event_id: UUID) -> list[tuple[RegistrationGuest, UUID]]:
         stmt = (

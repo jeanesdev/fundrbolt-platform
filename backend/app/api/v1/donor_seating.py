@@ -8,7 +8,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -20,6 +20,8 @@ from app.models.donation import Donation
 from app.models.event_registration import EventRegistration
 from app.models.event_table import EventTable
 from app.models.registration_guest import RegistrationGuest
+from app.models.revenue_generator_entry import RevenueGeneratorEntry
+from app.models.revenue_generator_item import RevenueGeneratorItem
 from app.models.user import User
 from app.schemas.seating import SeatingInfoResponse
 from app.services.seating_service import SeatingService
@@ -289,9 +291,18 @@ class DonorDonationItem(BaseModel):
     donated_at: datetime
 
 
+class DonorRgEntryItem(BaseModel):
+    item_id: str
+    item_name: str
+    entry_count: int
+    total_paid: Decimal
+    last_purchased_at: datetime
+
+
 class DonorActivityResponse(BaseModel):
     bids: list[DonorBidItem]
     donations: list[DonorDonationItem]
+    rg_entries: list[DonorRgEntryItem] = []
 
 
 # ---------------------------------------------------------------------------
@@ -486,4 +497,52 @@ async def get_my_activity(
         for d in donation_rows
     ]
 
-    return DonorActivityResponse(bids=bid_items, donations=donation_items)
+    # Revenue Generator entries — find the donor's guest IDs first
+    reg_result = await db.execute(
+        select(RegistrationGuest.id)
+        .join(EventRegistration, RegistrationGuest.registration_id == EventRegistration.id)
+        .where(
+            EventRegistration.event_id == event_id,
+            EventRegistration.user_id == current_user.id,
+        )
+    )
+    guest_ids = [r[0] for r in reg_result.all()]
+
+    rg_entry_items: list[DonorRgEntryItem] = []
+    if guest_ids:
+        rg_entries_result = await db.execute(
+            select(
+                RevenueGeneratorEntry.revenue_generator_item_id,
+                RevenueGeneratorItem.name,
+                func.count(RevenueGeneratorEntry.id).label("entry_count"),
+                func.sum(RevenueGeneratorEntry.amount_paid).label("total_paid"),
+                func.max(RevenueGeneratorEntry.purchased_at).label("last_purchased_at"),
+            )
+            .join(
+                RevenueGeneratorItem,
+                RevenueGeneratorEntry.revenue_generator_item_id == RevenueGeneratorItem.id,
+            )
+            .where(
+                RevenueGeneratorEntry.event_id == event_id,
+                RevenueGeneratorEntry.registration_guest_id.in_(guest_ids),
+            )
+            .group_by(
+                RevenueGeneratorEntry.revenue_generator_item_id,
+                RevenueGeneratorItem.name,
+            )
+            .order_by(func.max(RevenueGeneratorEntry.purchased_at).desc())
+        )
+        for row in rg_entries_result.all():
+            rg_entry_items.append(
+                DonorRgEntryItem(
+                    item_id=str(row.revenue_generator_item_id),
+                    item_name=row.name,
+                    entry_count=row.entry_count,
+                    total_paid=row.total_paid,
+                    last_purchased_at=row.last_purchased_at,
+                )
+            )
+
+    return DonorActivityResponse(
+        bids=bid_items, donations=donation_items, rg_entries=rg_entry_items
+    )

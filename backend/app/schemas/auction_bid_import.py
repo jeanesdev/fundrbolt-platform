@@ -57,6 +57,7 @@ class AuctionBidDashboardHighestBid(BaseModel):
     auction_item_id: UUID
     auction_item_number: int
     auction_item_title: str
+    auction_type: str
     bid_amount: Decimal
     bidder_name: str
     bidder_email: str
@@ -66,6 +67,7 @@ class AuctionBidDashboardRecentBid(BaseModel):
     auction_item_id: UUID
     auction_item_number: int
     auction_item_title: str
+    auction_type: str
     bid_amount: Decimal
     bidder_name: str
     bidder_email: str

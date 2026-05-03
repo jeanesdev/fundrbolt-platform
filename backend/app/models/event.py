@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from app.models.event_table import EventTable
     from app.models.npo import NPO
     from app.models.payment_transaction import PaymentTransaction
+    from app.models.revenue_generator_item import RevenueGeneratorItem
     from app.models.sponsor import Sponsor
     from app.models.ticket_management import CustomTicketOption as CustomTicketOption
     from app.models.ticket_management import PromoCode, TicketPurchase
@@ -382,6 +383,13 @@ class Event(Base, UUIDMixin, TimestampMixin):
     payment_transactions: Mapped[list["PaymentTransaction"]] = relationship(
         "PaymentTransaction",
         back_populates="event",
+    )
+    # Feature 042: Revenue Generators
+    revenue_generator_items: Mapped[list["RevenueGeneratorItem"]] = relationship(
+        "RevenueGeneratorItem",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        order_by="RevenueGeneratorItem.display_order",
     )
     # Universal custom options (event-level, not tied to a specific package)
     custom_options: Mapped[list["CustomTicketOption"]] = relationship(

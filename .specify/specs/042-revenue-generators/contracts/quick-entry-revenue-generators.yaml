@@ -1,0 +1,157 @@
+openapi: 3.0.3
+info:
+  title: Revenue Generators — Quick Entry API
+  version: 0.1.0
+  description: |
+    Quick Entry tab for recording Revenue Generator entry purchases on behalf of donors.
+    These endpoints extend the existing Quick Entry router at /api/v1/admin/events/{event_id}/quick-entry/.
+    Requires admin or staff role (consistent with other Quick Entry tabs).
+servers:
+  - url: /api/v1
+paths:
+
+  /admin/events/{event_id}/quick-entry/revenue-generators:
+    get:
+      summary: List Revenue Generator items open for Quick Entry
+      description: |
+        Returns Revenue Generator items that are open for entries (is_open_for_entries=true).
+        Both visible and hidden items are returned — staff can record entries regardless
+        of donor-facing visibility. Items closed for entries are excluded since there is
+        nothing to record.
+      operationId: listQuickEntryRevenueGenerators
+      tags: [QuickEntry]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: List of Revenue Generator items available for Quick Entry
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuickEntryRevenueGeneratorItem'
+        '401':
+          description: Not authenticated
+        '403':
+          description: Insufficient role (requires admin or staff)
+        '404':
+          description: Event not found
+
+  /admin/events/{event_id}/quick-entry/revenue-generators/entry:
+    post:
+      summary: Record one Revenue Generator entry for a donor
+      description: |
+        Records a single entry on behalf of a donor identified by bidder number.
+        The bidder number must match a registered guest for the event; an unrecognized
+        bidder number returns 409. Each submission records exactly one entry —
+        for multiple entries, submit this endpoint multiple times (form supports
+        rapid back-to-back submissions without navigating away per FR-010).
+        The form stays active after submission to support sequential entries.
+      operationId: createQuickEntryRevenueGeneratorEntry
+      tags: [QuickEntry]
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuickEntryRevenueGeneratorEntryCreate'
+      responses:
+        '201':
+          description: Entry recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuickEntryRevenueGeneratorEntryResponse'
+        '400':
+          description: Validation error (missing fields, invalid item_id)
+        '401':
+          description: Not authenticated
+        '403':
+          description: Insufficient role (requires admin or staff)
+        '404':
+          description: Event or Revenue Generator item not found
+        '409':
+          description: |
+            Bidder number not found for this event, or
+            item is not open for entries (is_open_for_entries=false)
+
+components:
+  parameters:
+    EventId:
+      name: event_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID of the event
+
+  schemas:
+    QuickEntryRevenueGeneratorItem:
+      type: object
+      description: Revenue Generator item summary for Quick Entry dropdown
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "50/50 Raffle"
+        price_per_entry:
+          type: number
+          format: decimal
+          example: 10.00
+        is_visible:
+          type: boolean
+          description: Whether donors can currently see this item (informational only for staff)
+        entry_count:
+          type: integer
+          description: Total entries recorded so far (for staff reference)
+
+    QuickEntryRevenueGeneratorEntryCreate:
+      type: object
+      required: [revenue_generator_item_id, bidder_number]
+      properties:
+        revenue_generator_item_id:
+          type: string
+          format: uuid
+          description: UUID of the Revenue Generator item to record the entry for
+        bidder_number:
+          type: integer
+          description: Bidder number of the donor purchasing the entry
+          example: 42
+
+    QuickEntryRevenueGeneratorEntryResponse:
+      type: object
+      description: Confirmation of successfully recorded entry
+      properties:
+        entry_id:
+          type: string
+          format: uuid
+          description: UUID of the created entry record
+        revenue_generator_item_id:
+          type: string
+          format: uuid
+        item_name:
+          type: string
+          example: "50/50 Raffle"
+        bidder_number:
+          type: integer
+          example: 42
+        donor_name:
+          type: string
+          example: "Jane Smith"
+        amount_paid:
+          type: number
+          format: decimal
+          example: 10.00
+        donor_total_entries:
+          type: integer
+          description: This donor's updated total entry count for this item after the submission
+          example: 3
+        purchased_at:
+          type: string
+          format: date-time

@@ -9,6 +9,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas.revenue_generator import RevenueGeneratorDashboardSummary
+
 # --- Commission schemas ---
 
 
@@ -140,6 +142,7 @@ class DashboardResponse(BaseModel):
     event_totals: EventTotals
     timers: TimerData
     last_refreshed_at: datetime
+    revenue_generators: RevenueGeneratorDashboardSummary | None = None
 
 
 # --- Live auction schemas ---

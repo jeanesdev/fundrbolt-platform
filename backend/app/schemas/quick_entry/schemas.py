@@ -223,6 +223,7 @@ class QuickEntrySilentBidResponse(BaseModel):
     item_id: UUID
     bidder_number: int
     donor_name: str | None = None
+    table_number: str | None = None
     amount: float
     bid_status: str
     placed_at: datetime
