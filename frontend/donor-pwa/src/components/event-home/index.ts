@@ -35,6 +35,9 @@ export type { ShareEventButtonProps } from './ShareEventButton'
 // Sponsors Carousel
 export { SponsorsCarousel } from './SponsorsCarousel'
 
+// Run-of-Show Timeline (Phase 9)
+export { RunOfShowTimelineCard } from './RunOfShowTimelineCard'
+
 // Bottom Tab Navigation (redesign)
 export { BottomTabNav } from './BottomTabNav'
 export type { BottomTabNavProps, DonorTab } from './BottomTabNav'

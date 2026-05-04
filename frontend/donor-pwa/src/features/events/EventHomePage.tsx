@@ -30,6 +30,7 @@ import {
   type SeatingInfoResponse,
 } from '@/services/seating-service'
 import watchListService from '@/services/watchlistService'
+import { getDonorRunOfShow } from '@/services/runOfShowService'
 import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
 import type { EventMediaUsageTag } from '@/types/event'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
@@ -72,6 +73,7 @@ import {
 import { MyBidsDonationsSection } from '@/components/event-home/MyBidsDonationsSection'
 import { OtherGuestsSection } from '@/components/event-home/OtherGuestsSection'
 import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
+import { RunOfShowTimelineCard } from '@/components/event-home/RunOfShowTimelineCard'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 import { PushOptInPrompt } from '@/components/notifications/PushOptInPrompt'
@@ -750,6 +752,15 @@ export function EventHomePage() {
     staleTime: 30000,
   })
 
+  // Run-of-show query (home tab — refreshes every 30 seconds)
+  const { data: runOfShowData } = useQuery({
+    queryKey: ['donor-ros', currentEvent?.id],
+    queryFn: () => getDonorRunOfShow(currentEvent!.id),
+    enabled: !!currentEvent?.id && !isPreviewMode,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  })
+
   // Place bid mutation
   const { mutate: mutatePlaceBid, isPending: isPlacingBid } = useMutation({
     mutationFn: ({ itemId, amount }: { itemId: string; amount: number }) =>
@@ -1403,6 +1414,9 @@ export function EventHomePage() {
         <div>
           <SponsorsCarousel eventId={currentEvent.id} />
         </div>
+
+        {/* Run-of-Show Program */}
+        <RunOfShowTimelineCard items={runOfShowData?.items ?? []} />
       </div>
     </>
   )
