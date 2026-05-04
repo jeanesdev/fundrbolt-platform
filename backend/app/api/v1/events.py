@@ -152,6 +152,13 @@ async def close_event(
     """Manually close an active event."""
     event = await EventService.close_event(db, event_id, current_user)
 
+    # Cancel any pending run-of-show notifications for this event
+    from app.services.run_of_show_notification_service import (
+        RunOfShowNotificationService,
+    )
+
+    await RunOfShowNotificationService.cancel_all_pending_for_event(db, event_id)
+
     # Reload event with NPO relationship
     reloaded_event = await EventService.get_event_by_id(db, event_id)
     if not reloaded_event:

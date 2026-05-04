@@ -124,12 +124,12 @@ In development, `celery_task_always_eager=True` (from `get_settings()`) runs tas
 
 ```sql
 -- Verify system default template was seeded
-SELECT id, name, is_system_default, npo_id FROM run_of_show_templates 
+SELECT id, name, is_system_default, npo_id FROM run_of_show_templates
 WHERE is_system_default = true;
 
 -- Verify 14 template items
-SELECT title, offset_minutes, donor_visible_default, auctioneer_visible_default 
-FROM run_of_show_template_items 
+SELECT title, offset_minutes, donor_visible_default, auctioneer_visible_default
+FROM run_of_show_template_items
 JOIN run_of_show_templates ON template_id = run_of_show_templates.id
 WHERE is_system_default = true
 ORDER BY display_order;

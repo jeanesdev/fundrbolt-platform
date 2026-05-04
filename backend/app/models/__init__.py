@@ -80,6 +80,14 @@ from app.models.revenue_generator_winner_selection import (
     WinnerSelectionMethod,
 )
 from app.models.role import Role
+from app.models.run_of_show import (
+    RosDeliveryStatusEnum,
+    RosRecipientTypeEnum,
+    RunOfShowItem,
+    RunOfShowTemplate,
+    RunOfShowTemplateItem,
+    ScheduledRunOfShowNotification,
+)
 from app.models.session import Session
 from app.models.social_auth_attempt import SocialAuthAttempt
 from app.models.social_auth_challenge import (
@@ -187,6 +195,12 @@ __all__ = [
     "RevenueGeneratorItem",
     "RevenueGeneratorWinnerSelection",
     "WinnerSelectionMethod",
+    "RosDeliveryStatusEnum",
+    "RosRecipientTypeEnum",
+    "RunOfShowItem",
+    "RunOfShowTemplate",
+    "RunOfShowTemplateItem",
+    "ScheduledRunOfShowNotification",
     "QuickEntryBid",
     "QuickEntryBuyNowBid",
     "QuickEntryBidStatus",

@@ -35,7 +35,7 @@ Revocation: `celery_app.control.revoke(task_id, terminate=False)`
 
 The `celery_app.py` has task routing: `"app.tasks.notification_tasks.*": {"queue": "notifications"}`. New RoS notification tasks should be added to the same queue.
 
-**Action**: 
+**Action**:
 - Create `backend/app/tasks/run_of_show_tasks.py` with `send_ros_notification_task`
 - Task receives `notification_id: str` (UUID string) — fetches message_body + recipients from DB at delivery time
 - Store `celery_task_id` returned from `apply_async` in `ScheduledRunOfShowNotification.celery_task_id`

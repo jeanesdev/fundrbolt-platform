@@ -25,6 +25,7 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,
     task_routes={
         "app.tasks.notification_tasks.*": {"queue": "notifications"},
+        "app.tasks.run_of_show_tasks.*": {"queue": "notifications"},
     },
     beat_schedule={
         "purge-expired-notifications": {
