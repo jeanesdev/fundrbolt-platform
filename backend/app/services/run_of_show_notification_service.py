@@ -84,6 +84,13 @@ class RunOfShowNotificationService:
             logger.exception(
                 f"Failed to schedule Celery task for RoS notification {notification.id}"
             )
+            notification.delivery_status = RosDeliveryStatusEnum.FAILED
+            notification.failure_reason = "Celery scheduling failed"
+            await db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to schedule notification — please try again.",
+            )
 
         await db.commit()
         await db.refresh(notification)
@@ -110,7 +117,7 @@ class RunOfShowNotificationService:
             try:
                 from app.celery_app import celery_app
 
-                celery_app.control.revoke(notification.celery_task_id, terminate=True)
+                celery_app.control.revoke(notification.celery_task_id, terminate=False)
             except Exception:
                 logger.warning(f"Failed to revoke Celery task {notification.celery_task_id}")
 

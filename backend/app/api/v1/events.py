@@ -244,6 +244,12 @@ async def delete_event(
     - Event must be in DRAFT or CLOSED status (cannot delete active events)
     - User must be NPO Admin/Event Coordinator for the NPO or Super Admin
     """
+    # Cancel any pending run-of-show notifications before deleting the event
+    from app.services.run_of_show_notification_service import (
+        RunOfShowNotificationService,
+    )
+
+    await RunOfShowNotificationService.cancel_all_pending_for_event(db, event_id)
     await EventService.delete_event(db, event_id, current_user)
 
 

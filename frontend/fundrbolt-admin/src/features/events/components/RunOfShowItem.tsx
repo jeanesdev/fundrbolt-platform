@@ -19,6 +19,7 @@ interface RunOfShowItemProps {
     itemId: string,
     updates: {
       title?: string
+      scheduled_time?: string
       donor_visible?: boolean
       auctioneer_visible?: boolean
     }
@@ -50,8 +51,10 @@ export function RunOfShowItemRow({
 }: RunOfShowItemProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [titleValue, setTitleValue] = useState(item.title)
+  const [isEditingTime, setIsEditingTime] = useState(false)
   const [showNotification, setShowNotification] = useState(false)
   const titleInputRef = useRef<HTMLInputElement>(null)
+  const timeInputRef = useRef<HTMLInputElement>(null)
 
   const handleTitleClick = () => {
     setIsEditingTitle(true)
@@ -75,6 +78,36 @@ export function RunOfShowItemRow({
     } else if (e.key === 'Escape') {
       setTitleValue(item.title)
       setIsEditingTitle(false)
+    }
+  }
+
+  // Format ISO datetime to local datetime-local input value (YYYY-MM-DDTHH:mm)
+  const toDateTimeLocalValue = (iso: string) => {
+    try {
+      const d = new Date(iso)
+      const pad = (n: number) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+    } catch {
+      return ''
+    }
+  }
+
+  const handleTimeBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    setIsEditingTime(false)
+    const val = e.target.value
+    if (val) {
+      const newIso = new Date(val).toISOString()
+      if (newIso !== item.scheduled_time) {
+        onUpdate(item.id, { scheduled_time: newIso })
+      }
+    }
+  }
+
+  const handleTimeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur()
+    } else if (e.key === 'Escape') {
+      setIsEditingTime(false)
     }
   }
 
@@ -117,10 +150,27 @@ export function RunOfShowItemRow({
           </Badge>
         </button>
 
-        {/* Time */}
-        <span className='text-muted-foreground shrink-0 text-xs tabular-nums'>
-          {formatScheduledTime(item.scheduled_time)}
-        </span>
+        {/* Time — click to edit */}
+        {isEditingTime ? (
+          <input
+            ref={timeInputRef}
+            type='datetime-local'
+            defaultValue={toDateTimeLocalValue(item.scheduled_time)}
+            onBlur={handleTimeBlur}
+            onKeyDown={handleTimeKeyDown}
+            autoFocus
+            className='text-muted-foreground h-6 shrink-0 rounded border bg-transparent px-1 text-xs tabular-nums focus:ring-1 focus:ring-blue-500 focus:outline-none'
+          />
+        ) : (
+          <button
+            type='button'
+            onClick={() => setIsEditingTime(true)}
+            className='text-muted-foreground hover:text-foreground shrink-0 rounded px-1 text-xs tabular-nums hover:bg-gray-100 dark:hover:bg-gray-800'
+            title='Click to edit time'
+          >
+            {formatScheduledTime(item.scheduled_time)}
+          </button>
+        )}
 
         {/* Title */}
         <div className='min-w-0 flex-1'>

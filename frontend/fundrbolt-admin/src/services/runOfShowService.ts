@@ -55,7 +55,7 @@ export const reorderRosItems = async (
   eventId: string,
   payload: RunOfShowReorderRequest
 ): Promise<RunOfShowResponse> => {
-  const { data } = await apiClient.post<RunOfShowResponse>(
+  const { data } = await apiClient.patch<RunOfShowResponse>(
     `${BASE(eventId)}/reorder`,
     payload
   )
@@ -67,7 +67,7 @@ export const markRosItemComplete = async (
   itemId: string
 ): Promise<RunOfShowItem> => {
   const { data } = await apiClient.post<RunOfShowItem>(
-    `${BASE(eventId)}/complete/${itemId}`
+    `${BASE(eventId)}/${itemId}/complete`
   )
   return data
 }
@@ -77,16 +77,16 @@ export const markRosItemIncomplete = async (
   itemId: string
 ): Promise<RunOfShowItem> => {
   const { data } = await apiClient.post<RunOfShowItem>(
-    `${BASE(eventId)}/incomplete/${itemId}`
+    `${BASE(eventId)}/${itemId}/incomplete`
   )
   return data
 }
 
 export const listRosTemplates = async (
-  eventId: string
+  npoId: string
 ): Promise<RunOfShowTemplate[]> => {
   const { data } = await apiClient.get<RunOfShowTemplate[]>(
-    `${BASE(eventId)}/templates`
+    `/admin/npos/${npoId}/run-of-show-templates`
   )
   return data
 }

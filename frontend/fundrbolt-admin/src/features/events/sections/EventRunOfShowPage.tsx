@@ -73,9 +73,9 @@ export function EventRunOfShowPage() {
   })
 
   const { data: templates, isLoading: templatesLoading } = useQuery({
-    queryKey: ['ros-templates', eventId],
-    queryFn: () => listRosTemplates(eventId),
-    enabled: showApplyTemplateDialog,
+    queryKey: ['ros-templates', currentEvent.npo_id],
+    queryFn: () => listRosTemplates(currentEvent.npo_id!),
+    enabled: showApplyTemplateDialog && !!currentEvent.npo_id,
   })
 
   const sensors = useSensors(
@@ -142,6 +142,9 @@ export function EventRunOfShowPage() {
   const { mutate: reorderMutate } = useMutation({
     mutationFn: (itemIds: string[]) =>
       reorderRosItems(eventId, { item_ids: itemIds }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['ros', eventId] })
+    },
     onError: () => {
       toast.error('Failed to reorder items')
       void queryClient.invalidateQueries({ queryKey: ['ros', eventId] })
@@ -189,6 +192,7 @@ export function EventRunOfShowPage() {
       itemId: string,
       updates: {
         title?: string
+        scheduled_time?: string
         donor_visible?: boolean
         auctioneer_visible?: boolean
       }
@@ -455,7 +459,7 @@ export function EventRunOfShowPage() {
                   checked={confirmReplace}
                   onChange={(e) => setConfirmReplace(e.target.checked)}
                 />
-                Replace existing items (uncheck to append)
+                Replace existing items when applying template
               </label>
             )}
           </div>

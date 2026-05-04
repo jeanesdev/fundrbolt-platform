@@ -37,7 +37,14 @@ def send_ros_notification_task(self: Any, notification_id: str) -> None:
         "Running send_ros_notification_task",
         extra={"notification_id": notification_id},
     )
-    _run_async(_send_ros_notification_async(notification_id))
+    try:
+        _run_async(_send_ros_notification_async(notification_id))
+    except Exception as exc:
+        logger.exception(
+            f"send_ros_notification_task failed for {notification_id}, will retry",
+            extra={"notification_id": notification_id},
+        )
+        raise self.retry(exc=exc)
 
 
 async def _send_ros_notification_async(notification_id_str: str) -> None:
@@ -86,7 +93,8 @@ async def _send_ros_notification_async(notification_id_str: str) -> None:
                 await db.commit()
                 return
 
-            # Get all registered user IDs for this event
+            # Get all registered user IDs for this event (for donor/all_attendees)
+            from app.models.auctioneer import AuctioneerEventSettings
             from app.models.event_registration import EventRegistration
 
             reg_result = await db.execute(
@@ -98,26 +106,41 @@ async def _send_ros_notification_async(notification_id_str: str) -> None:
             user_ids = [row[0] for row in reg_result.all()]
 
             recipient_type = notification.recipient_type.value
+            target_user_ids: list[uuid.UUID] = []
+
             if recipient_type in ("donors", "all_attendees"):
-                for user_id in user_ids:
-                    try:
-                        await NotificationService.create_notification(
-                            db=db,
-                            event_id=ros_item.event_id,
-                            user_id=user_id,
-                            notification_type=NotificationTypeEnum.CUSTOM,
-                            title="Event Update",
-                            body=notification.message_body,
-                            priority=NotificationPriorityEnum.NORMAL,
-                            dispatch_tasks=True,
-                        )
-                    except Exception:
-                        logger.exception(f"Failed to send RoS notification to user {user_id}")
+                target_user_ids = user_ids
+            elif recipient_type == "auctioneer":
+                # Notify auctioneers registered for this event
+                auc_result = await db.execute(
+                    select(AuctioneerEventSettings.auctioneer_user_id).where(
+                        AuctioneerEventSettings.event_id == ros_item.event_id,
+                    )
+                )
+                target_user_ids = [row[0] for row in auc_result.all()]
+
+            for user_id in target_user_ids:
+                try:
+                    await NotificationService.create_notification(
+                        db=db,
+                        event_id=ros_item.event_id,
+                        user_id=user_id,
+                        notification_type=NotificationTypeEnum.CUSTOM,
+                        title="Event Update",
+                        body=notification.message_body,
+                        priority=NotificationPriorityEnum.NORMAL,
+                        dispatch_tasks=True,
+                    )
+                except Exception:
+                    logger.exception(f"Failed to send RoS notification to user {user_id}")
 
             notification.delivery_status = RosDeliveryStatusEnum.DELIVERED
             notification.delivered_at = datetime.now(UTC)
             await db.commit()
-            logger.info(f"Delivered RoS notification {notif_id} to {len(user_ids)} users")
+            logger.info(
+                f"Delivered RoS notification {notif_id} to {len(target_user_ids)} "
+                f"{recipient_type} users"
+            )
 
         except Exception as exc:
             await db.rollback()

@@ -5,7 +5,7 @@ export const getDonorRunOfShow = async (
   eventId: string
 ): Promise<DonorRunOfShowResponse> => {
   const { data } = await apiClient.get<DonorRunOfShowResponse>(
-    `/events/${eventId}/run-of-show`
+    `/donor/events/${eventId}/run-of-show`
   )
   return data
 }
