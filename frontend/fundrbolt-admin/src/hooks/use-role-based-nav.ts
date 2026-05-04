@@ -354,6 +354,7 @@ const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
   { title: 'Auction Dashboard', path: 'auction-dashboard', icon: 'Gavel' },
   { title: 'Details', path: 'details', icon: 'FileText' },
   { title: 'Planning Checklist', path: 'checklist', icon: 'ClipboardList' },
+  { title: 'Run of Show', path: 'run-of-show', icon: 'CalendarClock' },
   { title: 'Preview', path: 'preview', icon: 'Eye' },
   { title: 'Media', path: 'media', icon: 'Image', statKey: 'media_count' },
   { title: 'Links', path: 'links', icon: 'Link2', statKey: 'links_count' },
@@ -449,6 +450,7 @@ const EVENT_NAV_GROUPS: Array<{
     sections: [
       sectionByPath('details'),
       sectionByPath('checklist'),
+      sectionByPath('run-of-show'),
       sectionByPath('preview'),
       sectionByPath('media'),
       sectionByPath('links'),

@@ -1,6 +1,8 @@
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { auctioneerService } from '@/services/auctioneerService'
+import { getAuctioneerRunOfShow } from '@/services/runOfShowService'
 import {
   ArrowUpDown,
   CalendarClock,
@@ -55,6 +57,8 @@ import { BidderAvatar } from '@/components/bidder-avatar'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { RGAuctioneerTab } from '@/features/revenue-generators'
+import { RosCountdownBadge } from '../components/RosCountdownBadge'
+import { RunOfShowCard } from '../components/RunOfShowCard'
 import {
   useAuctioneerDashboard,
   useAuctioneerSettings,
@@ -134,6 +138,12 @@ export function AuctioneerDashboardPage({
   const revenueGenerators = useRevenueGeneratorItems(currentEvent.id)
   const { data: settings } = useAuctioneerSettings(currentEvent.id)
   const upsertSettings = useUpsertSettings(currentEvent.id)
+  const { data: rosData } = useQuery({
+    queryKey: ['auctioneer-ros', currentEvent.id],
+    queryFn: () => getAuctioneerRunOfShow(currentEvent.id),
+    refetchInterval: 30_000,
+  })
+  const rosNextItem = rosData?.next_item ?? null
   const [silentViewMode, setSilentViewMode] = useViewPreference(
     'auctioneer-silent-gallery'
   )
@@ -343,6 +353,11 @@ export function AuctioneerDashboardPage({
             results in real time.
           </p>
         </div>
+        {rosData && (
+          <div className='shrink-0'>
+            <RosCountdownBadge nextItem={rosNextItem} />
+          </div>
+        )}
       </div>
 
       <div
@@ -772,6 +787,8 @@ export function AuctioneerDashboardPage({
           <RGAuctioneerTab eventId={currentEvent.id} />
         </TabsContent>
       </Tabs>
+
+      <RunOfShowCard eventId={currentEvent.id} />
     </div>
   )
 }

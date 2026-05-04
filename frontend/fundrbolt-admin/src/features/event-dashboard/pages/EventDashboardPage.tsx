@@ -9,6 +9,8 @@ import { CashflowTimeline } from '../components/CashflowTimeline'
 import { LastRefreshed } from '../components/LastRefreshed'
 import { PacingChart } from '../components/PacingChart'
 import { ProjectionControls } from '../components/ProjectionControls'
+import { RosNextItemCountdownCard } from '../components/RosNextItemCountdownCard'
+import { RunOfShowSummaryCard } from '../components/RunOfShowSummaryCard'
 import { ScenarioToggle } from '../components/ScenarioToggle'
 import { SegmentDrilldown } from '../components/SegmentDrilldown'
 import { SourceBreakdownChart } from '../components/SourceBreakdownChart'
@@ -82,6 +84,11 @@ export function EventDashboardPage() {
       </div>
 
       <ChecklistSummaryCard eventId={currentEvent.id} />
+
+      <div className='grid gap-4 xl:grid-cols-2'>
+        <RunOfShowSummaryCard eventId={currentEvent.id} />
+        <RosNextItemCountdownCard eventId={currentEvent.id} />
+      </div>
 
       <SummaryCards summary={summary} />
 
