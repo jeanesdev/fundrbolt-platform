@@ -9,6 +9,46 @@
  * Branding CSS variables (injected by useEventBranding):
  *   --event-primary, --event-secondary, --event-background, --event-accent
  */
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { AxiosError } from 'axios'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
+import { usePreviewMode } from '@/contexts/PreviewContext'
+import auctionItemService from '@/services/auctionItemService'
+import {
+  getEventGuests,
+  getMyActivity,
+} from '@/services/donor-activity-service'
+import { getEventRevenueGenerators } from '@/services/revenueGeneratorService'
+import { getDonorRunOfShow } from '@/services/runOfShowService'
+import {
+  getMySeatingInfo,
+  type SeatingInfoResponse,
+} from '@/services/seating-service'
+import watchListService from '@/services/watchlistService'
+import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
+import type { EventMediaUsageTag } from '@/types/event'
+import type { RegisteredEventWithBranding } from '@/types/event-branding'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
+import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
+import { AlertCircle, Loader2, Ticket } from 'lucide-react'
+import { toast } from 'sonner'
+import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { useEventStore } from '@/stores/event-store'
+import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { getMyInventory } from '@/lib/api/ticket-purchases'
+import apiClient from '@/lib/axios'
+import { useEventBranding } from '@/hooks/use-event-branding'
+import { useEventContext } from '@/hooks/use-event-context'
+import { useUnreadCount } from '@/hooks/use-notifications'
+import { useTabSwipe } from '@/hooks/use-tab-swipe'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   AuctionGallery,
   EventDetails,
@@ -37,48 +77,9 @@ import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 import { PushOptInPrompt } from '@/components/notifications/PushOptInPrompt'
+import { CheckoutSummaryCard } from '@/components/payments/CheckoutSummaryCard'
 import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { usePreviewMode } from '@/contexts/PreviewContext'
 import { PlayTab } from '@/features/play'
-import { useEventBranding } from '@/hooks/use-event-branding'
-import { useEventContext } from '@/hooks/use-event-context'
-import { useUnreadCount } from '@/hooks/use-notifications'
-import { useTabSwipe } from '@/hooks/use-tab-swipe'
-import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
-import { getMyInventory } from '@/lib/api/ticket-purchases'
-import apiClient from '@/lib/axios'
-import auctionItemService from '@/services/auctionItemService'
-import {
-  getEventGuests,
-  getMyActivity,
-} from '@/services/donor-activity-service'
-import { getEventRevenueGenerators } from '@/services/revenueGeneratorService'
-import { getDonorRunOfShow } from '@/services/runOfShowService'
-import {
-  getMySeatingInfo,
-  type SeatingInfoResponse,
-} from '@/services/seating-service'
-import watchListService from '@/services/watchlistService'
-import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { useEventContextStore } from '@/stores/event-context-store'
-import { useEventStore } from '@/stores/event-store'
-import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
-import type { EventMediaUsageTag } from '@/types/event'
-import type { RegisteredEventWithBranding } from '@/types/event-branding'
-import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
-import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import type { AxiosError } from 'axios'
-import { AlertCircle, Loader2, Ticket } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { toast } from 'sonner'
 
 export function EventHomePage() {
   const navigate = useNavigate()
@@ -799,14 +800,14 @@ export function EventHomePage() {
           (
             previous:
               | {
-                watch_list?: Array<{
-                  id: string
-                  user_id: string
-                  auction_item_id: string
-                  added_at: string
-                }>
-                total?: number
-              }
+                  watch_list?: Array<{
+                    id: string
+                    user_id: string
+                    auction_item_id: string
+                    added_at: string
+                  }>
+                  total?: number
+                }
               | undefined
           ) => {
             const existing = previous?.watch_list ?? []
@@ -901,14 +902,14 @@ export function EventHomePage() {
             (
               previous:
                 | {
-                  watch_list?: Array<{
-                    id: string
-                    user_id: string
-                    auction_item_id: string
-                    added_at: string
-                  }>
-                  total?: number
-                }
+                    watch_list?: Array<{
+                      id: string
+                      user_id: string
+                      auction_item_id: string
+                      added_at: string
+                    }>
+                    total?: number
+                  }
                 | undefined
             ) => {
               const existing = previous?.watch_list ?? []
@@ -1410,6 +1411,12 @@ export function EventHomePage() {
           </div>
         )}
 
+        {/* Checkout summary card — shown when organizer opens checkout */}
+        <CheckoutSummaryCard
+          eventId={currentEvent.id}
+          eventSlug={currentEvent.slug}
+        />
+
         {/* Sponsors */}
         <div>
           <SponsorsCarousel eventId={currentEvent.id} />
@@ -1445,10 +1452,10 @@ export function EventHomePage() {
                   style={
                     auctionSubTab === 'bid'
                       ? {
-                        backgroundColor:
-                          'rgb(var(--event-primary, 59, 130, 246))',
-                        color: '#fff',
-                      }
+                          backgroundColor:
+                            'rgb(var(--event-primary, 59, 130, 246))',
+                          color: '#fff',
+                        }
                       : { color: 'var(--event-text-on-background, #374151)' }
                   }
                 >
@@ -1460,10 +1467,10 @@ export function EventHomePage() {
                   style={
                     auctionSubTab === 'play-along'
                       ? {
-                        backgroundColor:
-                          'rgb(var(--event-primary, 59, 130, 246))',
-                        color: '#fff',
-                      }
+                          backgroundColor:
+                            'rgb(var(--event-primary, 59, 130, 246))',
+                          color: '#fff',
+                        }
                       : { color: 'var(--event-text-on-background, #374151)' }
                   }
                 >
