@@ -1,0 +1,667 @@
+openapi: "3.1.0"
+info:
+  title: "Checkout — Admin Endpoints"
+  version: "1.0.0"
+  description: "Admin control, donor status dashboard, item management, and notifications"
+
+paths:
+  # ── Checkout Configuration Control ──────────────────────────────────────────
+
+  /api/v1/admin/events/{event_id}/checkout/configuration:
+    get:
+      operationId: adminGetCheckoutConfiguration
+      summary: Get checkout configuration for an event
+      tags: [Checkout - Admin Control]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Checkout configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutConfigurationResponse"
+
+    patch:
+      operationId: adminUpdateCheckoutConfiguration
+      summary: Update checkout configuration (cash instructions, visibility)
+      tags: [Checkout - Admin Control]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutConfigurationUpdateRequest"
+      responses:
+        "200":
+          description: Updated configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutConfigurationResponse"
+
+  /api/v1/admin/events/{event_id}/checkout/open:
+    post:
+      operationId: adminOpenCheckout
+      summary: Manually open checkout for an event (snapshots processing fee rate)
+      tags: [Checkout - Admin Control]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Checkout opened
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutConfigurationResponse"
+        "409":
+          description: Checkout already open
+
+  /api/v1/admin/events/{event_id}/checkout/close:
+    post:
+      operationId: adminCloseCheckout
+      summary: Close checkout for an event
+      tags: [Checkout - Admin Control]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Checkout closed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutConfigurationResponse"
+
+  /api/v1/admin/events/{event_id}/checkout/schedule:
+    post:
+      operationId: adminScheduleCheckoutOpen
+      summary: Schedule automatic checkout open at a future time
+      tags: [Checkout - Admin Control]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleCheckoutOpenRequest"
+      responses:
+        "200":
+          description: Checkout auto-open scheduled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutConfigurationResponse"
+        "400":
+          description: scheduled_open_at must be in the future
+        "409":
+          description: Checkout already open
+
+  /api/v1/admin/events/{event_id}/checkout/schedule:
+    delete:
+      operationId: adminCancelScheduledOpen
+      summary: Cancel a previously scheduled checkout open
+      tags: [Checkout - Admin Control]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Schedule cancelled
+        "404":
+          description: No scheduled open found
+
+  # ── Donor Status Dashboard ───────────────────────────────────────────────────
+
+  /api/v1/admin/events/{event_id}/checkout/donors:
+    get:
+      operationId: adminListDonorCheckoutStatus
+      summary: Per-donor checkout status dashboard (paginated)
+      tags: [Checkout - Admin Dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [not_started, in_progress, complete]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+      responses:
+        "200":
+          description: Paginated donor checkout status list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DonorCheckoutStatusListResponse"
+
+  /api/v1/admin/events/{event_id}/checkout/donors/{user_id}/session:
+    get:
+      operationId: adminGetDonorCheckoutSession
+      summary: Get a specific donor's checkout session and items
+      tags: [Checkout - Admin Dashboard]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Donor checkout session with items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCheckoutSessionResponse"
+        "404":
+          description: No session found for this donor
+
+  # ── Item Management ──────────────────────────────────────────────────────────
+
+  /api/v1/admin/events/{event_id}/checkout/donors/{user_id}/items:
+    post:
+      operationId: adminAddCheckoutItem
+      summary: Add a manual line item to a donor's checkout
+      tags: [Checkout - Admin Item Management]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAddCheckoutItemRequest"
+      responses:
+        "201":
+          description: Item added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutItemAdminResponse"
+        "409":
+          description: Donor checkout already complete
+
+  /api/v1/admin/events/{event_id}/checkout/donors/{user_id}/items/{item_id}:
+    patch:
+      operationId: adminRepriceCheckoutItem
+      summary: Adjust price of an existing checkout item
+      tags: [Checkout - Admin Item Management]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminRepriceItemRequest"
+      responses:
+        "200":
+          description: Item repriced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutItemAdminResponse"
+        "409":
+          description: Donor checkout already complete
+
+    delete:
+      operationId: adminRemoveCheckoutItem
+      summary: Soft-delete an item from a donor's checkout
+      tags: [Checkout - Admin Item Management]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Item removed
+        "409":
+          description: Donor checkout already complete
+
+  # ── Notifications ────────────────────────────────────────────────────────────
+
+  /api/v1/admin/events/{event_id}/checkout/notifications/send-link:
+    post:
+      operationId: adminSendCheckoutLink
+      summary: Send checkout link push notification to all or selected donors
+      tags: [Checkout - Admin Notifications]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendCheckoutNotificationRequest"
+      responses:
+        "202":
+          description: Notification dispatch accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationDispatchResponse"
+
+  /api/v1/admin/events/{event_id}/checkout/notifications/send-reminder:
+    post:
+      operationId: adminSendCheckoutReminder
+      summary: Send reminder push notification to donors who have not completed checkout
+      tags: [Checkout - Admin Notifications]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendCheckoutNotificationRequest"
+      responses:
+        "202":
+          description: Reminder dispatch accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationDispatchResponse"
+
+  # ── Receipt Management ───────────────────────────────────────────────────────
+
+  /api/v1/admin/events/{event_id}/checkout/donors/{user_id}/receipt:
+    get:
+      operationId: adminDownloadDonorReceipt
+      summary: Download PDF receipt for a completed donor checkout
+      tags: [Checkout - Admin Receipts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: PDF receipt
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: No completed checkout or receipt not generated
+
+  /api/v1/admin/events/{event_id}/checkout/donors/{user_id}/receipt/resend:
+    post:
+      operationId: adminResendDonorReceipt
+      summary: Re-send receipt email to a donor
+      tags: [Checkout - Admin Receipts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Receipt email queued for delivery
+        "404":
+          description: No completed checkout found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CheckoutConfigurationResponse:
+      type: object
+      required: [id, event_id, is_open, donor_visible, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        is_open:
+          type: boolean
+        donor_visible:
+          type: boolean
+        scheduled_open_at:
+          type: string
+          format: date-time
+          nullable: true
+        opened_at:
+          type: string
+          format: date-time
+          nullable: true
+        processing_fee_rate:
+          type: number
+          nullable: true
+        cash_instructions:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CheckoutConfigurationUpdateRequest:
+      type: object
+      properties:
+        cash_instructions:
+          type: string
+          nullable: true
+        donor_visible:
+          type: boolean
+
+    ScheduleCheckoutOpenRequest:
+      type: object
+      required: [scheduled_open_at]
+      properties:
+        scheduled_open_at:
+          type: string
+          format: date-time
+          description: Must be in the future
+
+    DonorCheckoutStatusEntry:
+      type: object
+      required: [user_id, display_name, email, status, total_cents, item_count]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum: [not_started, in_progress, complete]
+        total_cents:
+          type: integer
+        item_count:
+          type: integer
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        has_receipt:
+          type: boolean
+
+    DonorCheckoutStatusListResponse:
+      type: object
+      required: [items, total, page, per_page]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DonorCheckoutStatusEntry"
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+        not_started_count:
+          type: integer
+        in_progress_count:
+          type: integer
+        complete_count:
+          type: integer
+
+    CheckoutItemAdminResponse:
+      type: object
+      required: [id, name, original_amount_cents, effective_amount_cents, source_type, display_order]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        original_amount_cents:
+          type: integer
+        adjusted_amount_cents:
+          type: integer
+          nullable: true
+        effective_amount_cents:
+          type: integer
+        source_type:
+          type: string
+          enum: [auction_win, quick_entry_bid, quick_entry_donation, ticket, manual]
+
+    AdminCheckoutSessionResponse:
+      type: object
+      required: [id, user_id, status, payment_method, items, subtotal_cents, total_cents]
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        email:
+          type: string
+        status:
+          type: string
+          enum: [not_started, in_progress, complete]
+        payment_method:
+          type: string
+          enum: [card, cash, check, daf]
+        cover_processing_fee:
+          type: boolean
+        auctioneer_tip_cents:
+          type: integer
+        platform_tip_cents:
+          type: integer
+        subtotal_cents:
+          type: integer
+        processing_fee_cents:
+          type: integer
+        total_cents:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CheckoutItemAdminResponse"
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        receipt_url:
+          type: string
+          nullable: true
+
+    AdminAddCheckoutItemRequest:
+      type: object
+      required: [name, original_amount_cents]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        original_amount_cents:
+          type: integer
+          minimum: 0
+
+    AdminRepriceItemRequest:
+      type: object
+      required: [adjusted_amount_cents]
+      properties:
+        adjusted_amount_cents:
+          type: integer
+          minimum: 0
+
+    SendCheckoutNotificationRequest:
+      type: object
+      properties:
+        user_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: If empty or omitted, send to all eligible donors
+
+    NotificationDispatchResponse:
+      type: object
+      required: [queued_count]
+      properties:
+        queued_count:
+          type: integer

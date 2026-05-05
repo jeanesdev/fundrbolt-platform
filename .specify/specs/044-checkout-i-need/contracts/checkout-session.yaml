@@ -1,0 +1,161 @@
+openapi: "3.1.0"
+info:
+  title: "Checkout — Session Read/Write"
+  version: "1.0.0"
+  description: "Checkout session balance aggregation and status check (donor-facing)"
+
+paths:
+  /api/v1/events/{event_id}/checkout/balance:
+    get:
+      operationId: getCheckoutBalance
+      summary: Aggregate donor's outstanding balance from all source types
+      description: >
+        Returns itemised line items from: auction wins, quick-entry bids,
+        quick-entry donations, and unpaid tickets. Replaces the legacy
+        GET /payments/checkout/balance endpoint and adds checkout configuration
+        data (processing_fee_rate, cash_instructions).
+      tags: [Checkout - Session]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Checkout balance with configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutBalanceResponse"
+        "403":
+          description: Checkout not open
+
+  /api/v1/events/{event_id}/checkout/status:
+    get:
+      operationId: getCheckoutStatus
+      summary: Check whether checkout is open and donor's session status
+      tags: [Checkout - Session]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Checkout open/closed state and donor session status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutStatusResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LineItemResponse:
+      type: object
+      required: [id, name, amount_cents, source_type]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: checkout_items.id
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        amount_cents:
+          type: integer
+          minimum: 0
+          description: effective_amount_cents (adjusted if set)
+        original_amount_cents:
+          type: integer
+          minimum: 0
+        source_type:
+          type: string
+          enum: [auction_win, quick_entry_bid, quick_entry_donation, ticket, manual]
+
+    CheckoutBalanceResponse:
+      type: object
+      required: [line_items, subtotal_cents, processing_fee_rate, processing_fee_cents, auctioneer_tip_cents, platform_tip_cents, total_cents, payment_method, cover_processing_fee]
+      properties:
+        line_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/LineItemResponse"
+        subtotal_cents:
+          type: integer
+          minimum: 0
+        processing_fee_rate:
+          type: number
+          description: Snapshotted fee rate for this event
+          example: 0.029
+        processing_fee_cents:
+          type: integer
+          minimum: 0
+          description: Fee amount if cover_processing_fee is true
+        auctioneer_tip_cents:
+          type: integer
+          minimum: 0
+          default: 5000
+        platform_tip_cents:
+          type: integer
+          minimum: 0
+          default: 0
+        total_cents:
+          type: integer
+          minimum: 0
+          description: subtotal + active tips + (fee if cover_processing_fee)
+        payment_method:
+          type: string
+          enum: [card, cash, check, daf]
+          default: card
+        cover_processing_fee:
+          type: boolean
+          default: false
+        cash_instructions:
+          type: string
+          nullable: true
+          description: Booth instructions for Cash/Check/DAF
+        items_updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    CheckoutStatusResponse:
+      type: object
+      required: [checkout_open, donor_visible, session_status]
+      properties:
+        checkout_open:
+          type: boolean
+        donor_visible:
+          type: boolean
+        scheduled_open_at:
+          type: string
+          format: date-time
+          nullable: true
+        session_status:
+          type: string
+          enum: [not_started, in_progress, complete]
+          nullable: true
+          description: null if no session exists yet
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        receipt_url:
+          type: string
+          nullable: true
