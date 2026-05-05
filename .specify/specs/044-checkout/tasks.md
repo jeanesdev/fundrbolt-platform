@@ -1,6 +1,6 @@
-# Tasks: 044-checkout-i-need — Donor Event Checkout
+# Tasks: 044-checkout — Donor Event Checkout
 
-**Branch**: `044-checkout-i-need` | **Generated**: 2026-05-05
+**Branch**: `044-checkout` | **Generated**: 2026-05-05
 **Total tasks**: 69 | **Phases**: 8
 
 ---

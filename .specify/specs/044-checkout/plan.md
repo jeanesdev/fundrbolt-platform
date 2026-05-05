@@ -1,7 +1,7 @@
-# Implementation Plan: 044-checkout-i-need — Donor Event Checkout
+# Implementation Plan: 044-checkout — Donor Event Checkout
 
-**Branch**: `044-checkout-i-need` | **Date**: 2026-05-05 | **Spec**: `.specify/specs/044-checkout-i-need/spec.md`
-**Input**: Feature specification from `/specs/044-checkout-i-need/spec.md`
+**Branch**: `044-checkout` | **Date**: 2026-05-05 | **Spec**: `.specify/specs/044-checkout/spec.md`
+**Input**: Feature specification from `/specs/044-checkout/spec.md`
 
 ## Summary
 
@@ -43,7 +43,7 @@ End-of-night donor checkout page for the Donor PWA allowing donors to review com
 ### Documentation (this feature)
 
 ```
-.specify/specs/044-checkout-i-need/
+.specify/specs/044-checkout/
 ├── plan.md              # This file
 ├── research.md          # Phase 0 output
 ├── data-model.md        # Phase 1 output

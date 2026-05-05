@@ -1,6 +1,6 @@
-# Quickstart: 044-checkout-i-need — Donor Event Checkout
+# Quickstart: 044-checkout — Donor Event Checkout
 
-**Date**: 2026-05-05 | **Branch**: `044-checkout-i-need`
+**Date**: 2026-05-05 | **Branch**: `044-checkout`
 
 ---
 

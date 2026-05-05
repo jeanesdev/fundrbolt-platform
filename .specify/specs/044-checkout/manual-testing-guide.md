@@ -1,6 +1,6 @@
 # Manual Testing Guide: Donor Event Checkout (Feature 044)
 
-**Branch**: `044-checkout-i-need` | **PR**: #104
+**Branch**: `044-checkout` | **PR**: #104
 **Purpose**: Step-by-step instructions to verify this feature is production-ready before calling it complete.
 
 ---

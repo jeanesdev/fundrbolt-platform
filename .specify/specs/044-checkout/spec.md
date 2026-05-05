@@ -1,6 +1,6 @@
 # Feature Specification: Donor Event Checkout
 
-**Feature Branch**: `044-checkout-i-need`
+**Feature Branch**: `044-checkout`
 **Created**: 2026-05-05
 **Status**: Draft
 **Input**: User description: "checkout — end-of-night checkout page for donors to review committed charges, approve payment, tip, and receive a receipt; admin controls for opening checkout, managing items, and monitoring progress"
