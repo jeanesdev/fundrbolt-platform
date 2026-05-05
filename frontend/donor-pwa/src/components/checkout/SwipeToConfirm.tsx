@@ -30,6 +30,7 @@ export function SwipeToConfirm({
   // Reset when external completed prop changes
   useEffect(() => {
     if (!completed) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSliderValue([0])
       setIsConfirmed(false)
     }
@@ -38,6 +39,7 @@ export function SwipeToConfirm({
   // Auto-confirm when slider reaches end
   useEffect(() => {
     if (isComplete && !isConfirmed && !completed) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsConfirmed(true)
       setTimeout(() => {
         onComplete()

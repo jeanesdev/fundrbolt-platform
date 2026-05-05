@@ -206,13 +206,14 @@ function EventCheckoutPage() {
     checkoutStatus?.checkout_open ?? event?.checkout_open ?? false
 
   // T021 — compare items_updated_at with acknowledgedItemsUpdatedAt
+  const sessionItemsUpdatedAt = session?.items_updated_at
   const showUpdateBanner = useMemo(() => {
-    if (!session?.items_updated_at) return false
+    if (!sessionItemsUpdatedAt) return false
     if (!acknowledgedItemsUpdatedAt) return true
     return (
-      new Date(session.items_updated_at) > new Date(acknowledgedItemsUpdatedAt)
+      new Date(sessionItemsUpdatedAt) > new Date(acknowledgedItemsUpdatedAt)
     )
-  }, [session?.items_updated_at, acknowledgedItemsUpdatedAt])
+  }, [sessionItemsUpdatedAt, acknowledgedItemsUpdatedAt])
 
   const visibleItems = session?.items.filter((item) => !item.deleted_at) ?? []
   const subtotalCents = session?.subtotal_cents ?? 0
