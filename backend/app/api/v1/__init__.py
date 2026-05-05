@@ -132,6 +132,9 @@ api_router.include_router(event_preview.preview_router, tags=["event-preview"])
 # Feature 033: Payment processing
 api_router.include_router(payments.router, tags=["payments"])
 api_router.include_router(admin_payments.router, tags=["admin-payments"])
+# Feature 044: Admin event checkout + super-admin fee config
+api_router.include_router(admin_payments.router_checkout, tags=["admin-checkout"])
+api_router.include_router(admin_payments.router_fee_config, tags=["admin-fee-config"])
 api_router.include_router(admin_npo_credentials.router, tags=["admin-npo-credentials"])
 # Feature 036: Ticket purchasing
 api_router.include_router(public_tickets.router, tags=["ticket-purchasing"])

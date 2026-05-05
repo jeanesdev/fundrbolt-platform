@@ -1,4 +1,4 @@
-"""Donor payments router — Phase 4 + Phase 6 endpoints.
+"""Donor payments router — Phase 4, Phase 6, and Phase 8 endpoints.
 
 Endpoints:
   POST   /payments/session                        — create HPF session (US2)
@@ -12,13 +12,22 @@ Endpoints:
   GET    /payments/transactions/{id}              — get transaction details (US4 / T035)
   GET    /payments/transactions/{id}/receipt      — download PDF receipt (US4 / T035)
 
-  Future (Phase 8+):
   GET    /payments/checkout/balance               — outstanding balance
   POST   /payments/checkout                       — end-of-night self-checkout
+
+  Feature 044 — Donor Event Checkout:
+  GET    /payments/events/{event_id}/checkout/status         — checkout open/visible/schedule
+  GET    /payments/events/{event_id}/checkout/balance        — enhanced balance with fee rate
+  GET    /payments/events/{event_id}/checkout/session        — get or create session
+  PATCH  /payments/events/{event_id}/checkout/session        — update tips/payment method
+  POST   /payments/events/{event_id}/checkout/confirm        — confirm/complete checkout
+  GET    /payments/events/{event_id}/checkout/receipt        — redirect to PDF receipt
+  POST   /payments/events/{event_id}/checkout/contact-admin  — message NPO admin
 """
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from typing import Annotated, Any
 
@@ -31,9 +40,19 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.payment_deps import get_payment_gateway
 from app.middleware.auth import get_current_active_user
+from app.models.checkout_session import CheckoutSession
 from app.models.payment_receipt import PaymentReceipt
 from app.models.payment_transaction import PaymentTransaction
 from app.models.user import User
+from app.schemas.checkout import (
+    CheckoutBalanceV2Response,
+    CheckoutConfirmRequest,
+    CheckoutConfirmResponse,
+    CheckoutItemResponse,
+    CheckoutSessionResponse,
+    ContactAdminRequest,
+    UpdateCheckoutSessionRequest,
+)
 from app.schemas.payment import (
     CheckoutBalanceResponse,
     CheckoutRequest,
@@ -43,11 +62,15 @@ from app.schemas.payment import (
     PaymentSessionRequest,
     PaymentSessionResponse,
 )
+from app.services.checkout_configuration_service import CheckoutConfigurationService
+from app.services.checkout_receipt_service import CheckoutReceiptService
 from app.services.checkout_service import (
     CheckoutNotOpenError,
     CheckoutService,
+    ItemsChangedError,
     ZeroBalanceError,
 )
+from app.services.contact_admin_service import ContactAdminService
 from app.services.payment_gateway.port import PaymentGatewayPort
 from app.services.payment_profile_service import PaymentProfileService, profile_to_read
 from app.services.payment_transaction_service import PaymentTransactionService
@@ -530,3 +553,270 @@ async def post_checkout(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
         ) from exc
+
+
+# ── Feature 044: Event Checkout endpoints ─────────────────────────────────────
+
+
+@router.get(
+    "/events/{event_id}/checkout/status",
+    response_model=dict[str, Any],
+)
+async def get_event_checkout_status(
+    event_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+) -> dict[str, Any]:
+    """Return checkout status for a specific event.
+
+    Returns: checkout_open, donor_visible, session_status (if session exists),
+    and scheduled_open_at.
+    """
+    config_svc = CheckoutConfigurationService(db)
+    config = await config_svc.get_or_create(event_id)
+
+    session_result = await db.execute(
+        select(CheckoutSession).where(
+            CheckoutSession.event_id == event_id,
+            CheckoutSession.user_id == current_user.id,
+        )
+    )
+    session = session_result.scalar_one_or_none()
+    session_status = session.status.value if session is not None else None
+
+    return {
+        "event_id": str(event_id),
+        "checkout_open": config.is_open,
+        "donor_visible": config.donor_visible,
+        "session_status": session_status,
+        "scheduled_open_at": config.scheduled_open_at.isoformat()
+        if config.scheduled_open_at
+        else None,
+    }
+
+
+@router.get(
+    "/events/{event_id}/checkout/balance",
+    response_model=CheckoutBalanceV2Response,
+)
+async def get_event_checkout_balance(
+    event_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+) -> CheckoutBalanceV2Response:
+    """Return enhanced checkout balance for an event including fee rate and cash instructions."""
+    config_svc = CheckoutConfigurationService(db)
+    config = await config_svc.get_or_create(event_id)
+
+    checkout_svc = CheckoutService(db)
+    session = await checkout_svc.get_or_create_session(
+        user_id=current_user.id,
+        event_id=event_id,
+    )
+    await db.commit()
+    await db.refresh(session)
+
+    items = [
+        CheckoutItemResponse.model_validate(i)
+        for i in (session.items or [])
+        if i.deleted_at is None
+    ]
+
+    return CheckoutBalanceV2Response(
+        event_id=event_id,
+        user_id=current_user.id,
+        session_id=session.id,
+        status=session.status.value,
+        subtotal_cents=session.subtotal_cents,
+        processing_fee_rate=config.processing_fee_rate,
+        processing_fee_cents=session.processing_fee_cents,
+        total_cents=session.total_cents,
+        cover_processing_fee=session.cover_processing_fee,
+        auctioneer_tip_cents=session.auctioneer_tip_cents,
+        platform_tip_cents=session.platform_tip_cents,
+        cash_instructions=config.cash_instructions,
+        items_updated_at=session.items_updated_at,
+        items=items,
+    )
+
+
+@router.get(
+    "/events/{event_id}/checkout/session",
+    response_model=CheckoutSessionResponse,
+)
+async def get_checkout_session(
+    event_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+) -> CheckoutSessionResponse:
+    """Get or create the donor's checkout session for an event."""
+    svc = CheckoutService(db)
+    session = await svc.get_or_create_session(
+        user_id=current_user.id,
+        event_id=event_id,
+    )
+    await db.commit()
+    await db.refresh(session)
+    return CheckoutSessionResponse.model_validate(session)
+
+
+@router.patch(
+    "/events/{event_id}/checkout/session",
+    response_model=CheckoutSessionResponse,
+)
+async def update_checkout_session(
+    event_id: uuid.UUID,
+    body: UpdateCheckoutSessionRequest,
+    current_user: CurrentUser,
+    db: DB,
+) -> CheckoutSessionResponse:
+    """Update the donor's checkout session (tips, payment method, cover_fee)."""
+    result = await db.execute(
+        select(CheckoutSession).where(
+            CheckoutSession.event_id == event_id,
+            CheckoutSession.user_id == current_user.id,
+        )
+    )
+    session = result.scalar_one_or_none()
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Checkout session not found. Call GET first to create it.",
+        )
+
+    svc = CheckoutService(db)
+    updated = await svc.update_session(
+        session_id=session.id,
+        payment_method=body.payment_method,
+        cover_processing_fee=body.cover_processing_fee,
+        auctioneer_tip_cents=body.auctioneer_tip_cents,
+        platform_tip_cents=body.platform_tip_cents,
+    )
+    await db.commit()
+    await db.refresh(updated)
+    return CheckoutSessionResponse.model_validate(updated)
+
+
+@router.post(
+    "/events/{event_id}/checkout/confirm",
+    response_model=CheckoutConfirmResponse,
+)
+async def confirm_checkout(
+    event_id: uuid.UUID,
+    body: CheckoutConfirmRequest,
+    current_user: CurrentUser,
+    db: DB,
+) -> CheckoutConfirmResponse:
+    """Confirm and complete checkout for the current donor.
+
+    Validates item change acknowledgement if items were updated by an admin.
+    Stubs payment processing and marks session as complete.
+
+    Returns 409 if items have been updated and donor has not acknowledged.
+    """
+    result = await db.execute(
+        select(CheckoutSession).where(
+            CheckoutSession.event_id == event_id,
+            CheckoutSession.user_id == current_user.id,
+        )
+    )
+    session = result.scalar_one_or_none()
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Checkout session not found.",
+        )
+
+    svc = CheckoutService(db)
+    try:
+        completed = await svc.confirm_checkout(
+            session_id=session.id,
+            request=body,
+        )
+    except ItemsChangedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    await db.commit()
+    await db.refresh(completed)
+
+    # Fire-and-forget: generate receipt and send email
+    async def _generate() -> None:
+        try:
+            receipt_svc = CheckoutReceiptService(db)
+            await receipt_svc.generate_receipt(completed)
+            await receipt_svc.send_receipt_email(completed)
+            await db.commit()
+        except Exception:  # noqa: BLE001
+            pass
+
+    asyncio.create_task(_generate())
+
+    return CheckoutConfirmResponse(
+        session_id=completed.id,
+        status=completed.status.value,
+        receipt_url=completed.receipt_url,
+        total_cents=completed.total_cents,
+    )
+
+
+@router.get("/events/{event_id}/checkout/receipt")
+async def get_checkout_receipt(
+    event_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+) -> RedirectResponse:
+    """Redirect to the PDF receipt for the donor's checkout session.
+
+    Returns 404 if no session exists, 503 if receipt is not yet generated.
+    """
+    result = await db.execute(
+        select(CheckoutSession).where(
+            CheckoutSession.event_id == event_id,
+            CheckoutSession.user_id == current_user.id,
+        )
+    )
+    session = result.scalar_one_or_none()
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Checkout session not found.",
+        )
+
+    if session.receipt_url is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Receipt is not yet available. Please try again shortly.",
+        )
+
+    return RedirectResponse(url=session.receipt_url, status_code=302)
+
+
+@router.post(
+    "/events/{event_id}/checkout/contact-admin",
+    response_model=dict[str, str],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def contact_admin(
+    event_id: uuid.UUID,
+    body: ContactAdminRequest,
+    current_user: CurrentUser,
+    db: DB,
+) -> dict[str, str]:
+    """Send a message to the NPO admin for support during checkout.
+
+    Rate-limited to 3 messages per hour per user.
+    Dispatches email and push notification to the NPO admin (fire-and-forget).
+    """
+    asyncio.create_task(
+        ContactAdminService.send_message(
+            db=db,
+            event_id=event_id,
+            donor_user_id=current_user.id,
+            message=body.message,
+        )
+    )
+
+    return {"status": "Message sent to the event organizer."}
