@@ -6,11 +6,13 @@ Responsibilities
   quick-entry bids/donations, unpaid tickets).
 * Compute the payment-processing fee if the donor elects to cover it.
 * Drive a charge through PaymentTransactionService, returning a typed response.
+* Manage checkout sessions, items, and admin adjustments (feature 044).
 """
 
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -18,12 +20,25 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
+from app.core.logging import get_logger
 from app.models.auction_bid import AuctionBid
+from app.models.checkout_configuration import CheckoutConfiguration
+from app.models.checkout_session import (
+    CheckoutAuditActionEnum,
+    CheckoutAuditLog,
+    CheckoutItem,
+    CheckoutItemSourceTypeEnum,
+    CheckoutPaymentMethodEnum,
+    CheckoutSession,
+    CheckoutStatusEnum,
+)
 from app.models.event import Event
 from app.models.payment_transaction import PaymentTransaction, TransactionStatus
 from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
 from app.models.quick_entry_donation import QuickEntryDonation
+from app.models.revenue_generator_entry import RevenueGeneratorEntry
 from app.models.ticket_management import PaymentStatus, TicketPurchase
+from app.schemas.checkout import AdminAddCheckoutItemRequest, CheckoutConfirmRequest
 from app.schemas.payment import (
     CheckoutBalanceResponse,
     CheckoutResponse,
@@ -32,7 +47,13 @@ from app.schemas.payment import (
 from app.services.payment_gateway.port import PaymentGatewayPort
 from app.services.payment_transaction_service import PaymentTransactionService
 
+logger = get_logger(__name__)
+
 _settings = get_settings()
+
+
+class ItemsChangedError(Exception):
+    """Raised when donor has not acknowledged updated items at checkout confirm."""
 
 
 class CheckoutError(Exception):
@@ -312,3 +333,374 @@ class CheckoutService:
             reason=reason,
         )
         return self._txn_to_checkout_response(txn)
+
+    # ── Feature 044: Session-based checkout methods ───────────────────────────
+
+    async def get_or_create_session(
+        self, user_id: uuid.UUID, event_id: uuid.UUID
+    ) -> CheckoutSession:
+        """Get or create a checkout session for a donor at an event.
+
+        If a new session is created, populates it with outstanding balance items
+        and recalculates totals.
+        """
+        result = await self.db.execute(
+            select(CheckoutSession)
+            .where(
+                CheckoutSession.event_id == event_id,
+                CheckoutSession.user_id == user_id,
+            )
+            .options(selectinload(CheckoutSession.items))
+        )
+        session = result.scalar_one_or_none()
+
+        if session is None:
+            session = CheckoutSession(
+                event_id=event_id,
+                user_id=user_id,
+                status=CheckoutStatusEnum.NOT_STARTED,
+                cover_processing_fee=True,
+                auctioneer_tip_cents=5000,
+                platform_tip_cents=0,
+            )
+            self.db.add(session)
+            await self.db.flush()
+            await self.build_checkout_items_from_balance(session)
+            await self.recalculate_totals(session)
+
+        return session
+
+    async def update_session(
+        self,
+        session_id: uuid.UUID,
+        *,
+        payment_method: str | None = None,
+        cover_processing_fee: bool | None = None,
+        auctioneer_tip_cents: int | None = None,
+        platform_tip_cents: int | None = None,
+    ) -> CheckoutSession:
+        """Update session preferences and recalculate totals."""
+        result = await self.db.execute(
+            select(CheckoutSession)
+            .where(CheckoutSession.id == session_id)
+            .options(selectinload(CheckoutSession.items))
+        )
+        session = result.scalar_one()
+
+        if payment_method is not None:
+            session.payment_method = CheckoutPaymentMethodEnum(payment_method)
+        if cover_processing_fee is not None:
+            session.cover_processing_fee = cover_processing_fee
+        if auctioneer_tip_cents is not None:
+            session.auctioneer_tip_cents = auctioneer_tip_cents
+        if platform_tip_cents is not None:
+            session.platform_tip_cents = platform_tip_cents
+
+        if session.status == CheckoutStatusEnum.NOT_STARTED:
+            session.status = CheckoutStatusEnum.IN_PROGRESS
+
+        await self.recalculate_totals(session)
+        return session
+
+    async def build_checkout_items_from_balance(self, session: CheckoutSession) -> None:
+        """Populate a new checkout session with the donor's outstanding balance items."""
+        event_id = session.event_id
+        user_id = session.user_id
+        display_order = 0
+
+        # ── Winning auction bids ──────────────────────────────────────────────
+        bid_result = await self.db.execute(
+            select(AuctionBid)
+            .where(
+                AuctionBid.user_id == user_id,
+                AuctionBid.event_id == event_id,
+                AuctionBid.bid_status == "winning",
+                AuctionBid.transaction_status == "pending",
+            )
+            .options(selectinload(AuctionBid.auction_item))
+        )
+        for bid in bid_result.scalars().all():
+            label = (
+                bid.auction_item.title
+                if bid.auction_item
+                else f"Auction item #{bid.auction_item_id}"
+            )
+            amount_cents = int(bid.bid_amount * 100)
+            item = CheckoutItem(
+                session_id=session.id,
+                name=label,
+                original_amount_cents=amount_cents,
+                source_type=CheckoutItemSourceTypeEnum.AUCTION_WIN,
+                source_id=bid.id,
+                display_order=display_order,
+            )
+            self.db.add(item)
+            display_order += 1
+
+        # ── Quick-entry paddle-raise donations ────────────────────────────────
+        qe_donation_result = await self.db.execute(
+            select(QuickEntryDonation).where(
+                QuickEntryDonation.donor_user_id == user_id,
+                QuickEntryDonation.event_id == event_id,
+            )
+        )
+        for donation in qe_donation_result.scalars().all():
+            amount_cents = int(donation.amount * 100)
+            item = CheckoutItem(
+                session_id=session.id,
+                name="Paddle raise donation",
+                original_amount_cents=amount_cents,
+                source_type=CheckoutItemSourceTypeEnum.QUICK_ENTRY_DONATION,
+                source_id=donation.id,
+                display_order=display_order,
+            )
+            self.db.add(item)
+            display_order += 1
+
+        # ── Quick-entry live bids ─────────────────────────────────────────────
+        qe_bid_result = await self.db.execute(
+            select(QuickEntryBid).where(
+                QuickEntryBid.donor_user_id == user_id,
+                QuickEntryBid.event_id == event_id,
+                QuickEntryBid.status != QuickEntryBidStatus.DELETED,
+            )
+        )
+        for qe_bid in qe_bid_result.scalars().all():
+            amount_cents = int(qe_bid.amount * 100)
+            item = CheckoutItem(
+                session_id=session.id,
+                name="Live auction bid",
+                original_amount_cents=amount_cents,
+                source_type=CheckoutItemSourceTypeEnum.QUICK_ENTRY_BID,
+                source_id=qe_bid.id,
+                display_order=display_order,
+            )
+            self.db.add(item)
+            display_order += 1
+
+        # ── Unpaid ticket purchases ───────────────────────────────────────────
+        ticket_result = await self.db.execute(
+            select(TicketPurchase).where(
+                TicketPurchase.user_id == user_id,
+                TicketPurchase.event_id == event_id,
+                TicketPurchase.payment_status == PaymentStatus.PENDING,
+            )
+        )
+        for ticket in ticket_result.scalars().all():
+            amount_cents = int(ticket.total_price * 100)
+            item = CheckoutItem(
+                session_id=session.id,
+                name="Ticket purchase",
+                original_amount_cents=amount_cents,
+                source_type=CheckoutItemSourceTypeEnum.TICKET,
+                source_id=ticket.id,
+                display_order=display_order,
+            )
+            self.db.add(item)
+            display_order += 1
+
+        # ── Revenue generator entries ─────────────────────────────────────────
+        rg_result = await self.db.execute(
+            select(RevenueGeneratorEntry).where(
+                RevenueGeneratorEntry.event_id == event_id,
+            )
+        )
+        for rg_entry in rg_result.scalars().all():
+            amount_cents = int(rg_entry.amount_paid * 100)
+            item = CheckoutItem(
+                session_id=session.id,
+                name="Revenue generator entry",
+                original_amount_cents=amount_cents,
+                source_type=CheckoutItemSourceTypeEnum.REVENUE_GENERATOR,
+                source_id=rg_entry.id,
+                display_order=display_order,
+            )
+            self.db.add(item)
+            display_order += 1
+
+        await self.db.flush()
+
+    async def recalculate_totals(self, session: CheckoutSession) -> None:
+        """Recalculate subtotal, processing fee, and total for a session."""
+        # Reload items if needed
+        if not hasattr(session, "_sa_instance_state") or "items" not in dir(session):
+            result = await self.db.execute(
+                select(CheckoutItem).where(
+                    CheckoutItem.session_id == session.id,
+                    CheckoutItem.deleted_at.is_(None),
+                )
+            )
+            active_items = list(result.scalars().all())
+        else:
+            active_items = [i for i in session.items if i.deleted_at is None]
+
+        subtotal = sum(i.effective_amount_cents for i in active_items)
+        session.subtotal_cents = subtotal
+
+        # Compute processing fee from checkout configuration
+        fee_cents = 0
+        if session.cover_processing_fee and subtotal > 0:
+            config_result = await self.db.execute(
+                select(CheckoutConfiguration).where(
+                    CheckoutConfiguration.event_id == session.event_id
+                )
+            )
+            config = config_result.scalar_one_or_none()
+            if config and config.processing_fee_rate is not None:
+                fee = Decimal(subtotal) * config.processing_fee_rate
+                fee_cents = int(fee.to_integral_value())
+
+        session.processing_fee_cents = fee_cents
+        session.total_cents = (
+            subtotal + fee_cents + session.auctioneer_tip_cents + session.platform_tip_cents
+        )
+
+    async def confirm_checkout(
+        self,
+        session_id: uuid.UUID,
+        request: CheckoutConfirmRequest,
+    ) -> CheckoutSession:
+        """Confirm/complete checkout for a session.
+
+        Validates that the donor has acknowledged any item changes.
+        Stubs payment processing (marks as complete).
+        """
+        result = await self.db.execute(
+            select(CheckoutSession)
+            .where(CheckoutSession.id == session_id)
+            .options(selectinload(CheckoutSession.items))
+        )
+        session = result.scalar_one()
+
+        # Validate items_updated_at acknowledgement
+        if session.items_updated_at is not None:
+            if request.acknowledged_items_updated_at is None:
+                raise ItemsChangedError(
+                    "Items have been updated. Please acknowledge the changes before confirming."
+                )
+            if request.acknowledged_items_updated_at < session.items_updated_at:
+                raise ItemsChangedError(
+                    "Acknowledged timestamp is older than the latest items update."
+                )
+
+        if request.payment_method:
+            session.payment_method = CheckoutPaymentMethodEnum(request.payment_method)
+
+        # Stub payment processing — mark as complete
+        session.status = CheckoutStatusEnum.COMPLETE
+        session.completed_at = datetime.now(UTC)
+
+        return session
+
+    # ── Admin item management ─────────────────────────────────────────────────
+
+    async def admin_add_item(
+        self,
+        session_id: uuid.UUID,
+        admin_user_id: uuid.UUID,
+        data: AdminAddCheckoutItemRequest,
+    ) -> CheckoutItem:
+        """Add a line item to a checkout session (admin only)."""
+        # Get current max display_order
+        items_result = await self.db.execute(
+            select(CheckoutItem).where(
+                CheckoutItem.session_id == session_id,
+                CheckoutItem.deleted_at.is_(None),
+            )
+        )
+        existing = list(items_result.scalars().all())
+        next_order = max((i.display_order for i in existing), default=-1) + 1
+
+        item = CheckoutItem(
+            session_id=session_id,
+            name=data.name,
+            description=data.description,
+            original_amount_cents=data.original_amount_cents,
+            source_type=CheckoutItemSourceTypeEnum(data.source_type),
+            display_order=next_order,
+        )
+        self.db.add(item)
+        await self.db.flush()
+
+        # Write audit log
+        audit = CheckoutAuditLog(
+            session_id=session_id,
+            admin_user_id=admin_user_id,
+            action=CheckoutAuditActionEnum.ITEM_ADDED,
+            item_id=item.id,
+            after_value=str(data.original_amount_cents),
+        )
+        self.db.add(audit)
+
+        # Update session items_updated_at and recalculate
+        session = await self._load_session_with_items(session_id)
+        session.items_updated_at = datetime.now(UTC)
+        await self.recalculate_totals(session)
+
+        return item
+
+    async def admin_reprice_item(
+        self,
+        session_id: uuid.UUID,
+        item_id: uuid.UUID,
+        admin_user_id: uuid.UUID,
+        new_amount_cents: int,
+    ) -> CheckoutItem:
+        """Update the adjusted price of a checkout item (admin only)."""
+        result = await self.db.execute(select(CheckoutItem).where(CheckoutItem.id == item_id))
+        item = result.scalar_one()
+
+        old_value = str(item.adjusted_amount_cents)
+        item.adjusted_amount_cents = new_amount_cents
+
+        audit = CheckoutAuditLog(
+            session_id=session_id,
+            admin_user_id=admin_user_id,
+            action=CheckoutAuditActionEnum.ITEM_REPRICED,
+            item_id=item_id,
+            field_changed="adjusted_amount_cents",
+            before_value=old_value,
+            after_value=str(new_amount_cents),
+        )
+        self.db.add(audit)
+
+        session = await self._load_session_with_items(session_id)
+        session.items_updated_at = datetime.now(UTC)
+        await self.recalculate_totals(session)
+
+        return item
+
+    async def admin_remove_item(
+        self,
+        session_id: uuid.UUID,
+        item_id: uuid.UUID,
+        admin_user_id: uuid.UUID,
+    ) -> CheckoutItem:
+        """Soft-delete a checkout item (admin only)."""
+        result = await self.db.execute(select(CheckoutItem).where(CheckoutItem.id == item_id))
+        item = result.scalar_one()
+        item.deleted_at = datetime.now(UTC)
+
+        audit = CheckoutAuditLog(
+            session_id=session_id,
+            admin_user_id=admin_user_id,
+            action=CheckoutAuditActionEnum.ITEM_REMOVED,
+            item_id=item_id,
+            before_value=str(item.original_amount_cents),
+        )
+        self.db.add(audit)
+
+        session = await self._load_session_with_items(session_id)
+        session.items_updated_at = datetime.now(UTC)
+        await self.recalculate_totals(session)
+
+        return item
+
+    async def _load_session_with_items(self, session_id: uuid.UUID) -> CheckoutSession:
+        """Load a checkout session with its items eagerly."""
+        result = await self.db.execute(
+            select(CheckoutSession)
+            .where(CheckoutSession.id == session_id)
+            .options(selectinload(CheckoutSession.items))
+        )
+        return result.scalar_one()

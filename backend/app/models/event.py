@@ -24,6 +24,7 @@ from app.models.base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from app.models.auction_item import AuctionItem
+    from app.models.checkout_configuration import CheckoutConfiguration
     from app.models.donation import Donation
     from app.models.donation_label import DonationLabel
     from app.models.event_registration import EventRegistration
@@ -397,6 +398,14 @@ class Event(Base, UUIDMixin, TimestampMixin):
         back_populates="event",
         cascade="all, delete-orphan",
         order_by="CustomTicketOption.display_order",
+    )
+    # Feature 044: Checkout configuration
+    checkout_configuration: Mapped["CheckoutConfiguration | None"] = relationship(
+        "CheckoutConfiguration",
+        back_populates="event",
+        uselist=False,
+        cascade="all, delete-orphan",
+        lazy="select",
     )
 
     # Computed Properties (Feature 012)

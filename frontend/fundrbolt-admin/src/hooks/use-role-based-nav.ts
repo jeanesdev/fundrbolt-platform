@@ -417,6 +417,11 @@ const EVENT_SECTION_CONFIG: EventSectionConfig[] = [
     icon: 'CreditCard',
   },
   {
+    title: 'Checkout',
+    path: 'checkout',
+    icon: 'ShoppingCart',
+  },
+  {
     title: 'Auctioneer',
     path: 'auctioneer',
     icon: 'Gavel',
@@ -480,7 +485,7 @@ const EVENT_NAV_GROUPS: Array<{
   },
   {
     title: 'Finance',
-    sections: [sectionByPath('payments')],
+    sections: [sectionByPath('payments'), sectionByPath('checkout')],
   },
   {
     title: 'Data',
