@@ -448,10 +448,10 @@ const EVENT_NAV_GROUPS: Array<{
   {
     title: 'Event',
     sections: [
+      sectionByPath('preview'),
       sectionByPath('details'),
       sectionByPath('checklist'),
       sectionByPath('run-of-show'),
-      sectionByPath('preview'),
       sectionByPath('media'),
       sectionByPath('links'),
       sectionByPath('food'),

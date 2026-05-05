@@ -293,29 +293,41 @@ export default function NpoBrandingPage() {
   }, [npoId, currentNPO, loadNPOById])
 
   // Handle logo upload
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    if (acceptedFiles.length === 0) return
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      if (acceptedFiles.length === 0) return
 
-    const file = acceptedFiles[0]
+      const file = acceptedFiles[0]
 
-    // Validate file
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be less than 5MB')
-      return
-    }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB')
+        return
+      }
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('File must be an image')
-      return
-    }
+      if (!file.type.startsWith('image/')) {
+        toast.error('File must be an image')
+        return
+      }
 
-    // Create object URL for cropping
-    const imageUrl = URL.createObjectURL(file)
-    setImageToCrop(imageUrl)
-    setOriginalFileName(file.name)
-    setUploadType('logo')
-    setCropDialogOpen(true)
-  }, [])
+      // Upload directly without cropping
+      try {
+        const result = await brandingApi.uploadLogoLocal(npoId, file)
+        setLogoUrl(result.logo_url)
+        await queryClient.invalidateQueries({ queryKey: ['npos'] })
+        toast.success('Logo uploaded successfully')
+      } catch (error: unknown) {
+        const errorDetail = (
+          error as { response?: { data?: { detail?: unknown } } }
+        ).response?.data?.detail
+        const errorMsg =
+          typeof errorDetail === 'string'
+            ? errorDetail
+            : 'Failed to upload logo'
+        toast.error(errorMsg)
+      }
+    },
+    [npoId, queryClient]
+  )
 
   // Handle icon upload
   const onDropIcon = useCallback(async (acceptedFiles: File[]) => {
@@ -734,7 +746,7 @@ export default function NpoBrandingPage() {
                   <li>• File types: PNG, JPG, JPEG, GIF, WEBP</li>
                   <li>• Maximum file size: 5MB</li>
                   <li>• Dimensions: 100x100px to 4000x4000px</li>
-                  <li>• Recommended: Square format for best display</li>
+                  <li>• Any aspect ratio supported</li>
                 </ul>
               </div>
             </CardContent>
@@ -1103,8 +1115,9 @@ export default function NpoBrandingPage() {
               {uploadType === 'icon' ? 'Crop Icon' : 'Crop Logo'}
             </DialogTitle>
             <DialogDescription>
-              Adjust the crop area to create a square image. Use the slider to
-              zoom.
+              {uploadType === 'icon'
+                ? 'Adjust the crop area to create a square image. Use the slider to zoom.'
+                : 'Adjust the crop area for your logo. Use the slider to zoom.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -1114,7 +1127,7 @@ export default function NpoBrandingPage() {
                 image={imageToCrop}
                 crop={crop}
                 zoom={zoom}
-                aspect={1}
+                aspect={uploadType === 'icon' ? 1 : undefined}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
                 onCropComplete={onCropComplete}

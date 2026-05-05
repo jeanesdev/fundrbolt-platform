@@ -22,6 +22,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useSearch } from '@/context/search-provider'
 import { useEventContext } from '@/hooks/use-event-context'
+import { useNpoContext } from '@/hooks/use-npo-context'
 import { useRoleBasedNav } from '@/hooks/use-role-based-nav'
 import { Button } from '@/components/ui/button'
 import { InitialAvatar } from '@/components/ui/initial-avatar'
@@ -304,12 +305,17 @@ function SearchButton() {
 function EventChip() {
   const href = useLocation({ select: (l) => l.href })
   const { availableEvents, selectedEventId } = useEventContext()
+  const { availableNpos } = useNpoContext()
   const selectedEvent = availableEvents.find((e) => e.id === selectedEventId)
 
   // Only show when inside an event route
   if (!href.includes('/events/') || !selectedEvent) return null
 
   const logoUrl = selectedEvent.logo_url ?? null
+  const selectedNpo = availableNpos.find(
+    (npo) => npo.id === selectedEvent.npo_id
+  )
+  const npoIconUrl = selectedNpo?.icon_url ?? null
   const tooltipText = [
     selectedEvent.name,
     selectedEvent.npo_name,
@@ -330,6 +336,12 @@ function EventChip() {
                 <img
                   src={logoUrl}
                   alt={selectedEvent.name}
+                  className='h-full w-full object-cover'
+                />
+              ) : npoIconUrl ? (
+                <img
+                  src={npoIconUrl}
+                  alt={selectedNpo?.name ?? selectedEvent.name}
                   className='h-full w-full object-cover'
                 />
               ) : (

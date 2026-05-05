@@ -190,6 +190,7 @@ class NPOResponse(BaseModel):
 
     # Branding info (optional, for selectors/list views)
     logo_url: str | None = None
+    icon_url: str | None = None
 
     model_config = {"from_attributes": True}
 

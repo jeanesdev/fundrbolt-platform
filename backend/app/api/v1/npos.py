@@ -184,6 +184,8 @@ async def list_npos(
         # Add logo_url from branding relationship if available
         if npo.branding and npo.branding.logo_url:
             npo_dict["logo_url"] = npo.branding.logo_url
+        if npo.branding and npo.branding.icon_url:
+            npo_dict["icon_url"] = npo.branding.icon_url
         npo_responses.append(NPOResponse.model_validate(npo_dict))
 
     return NPOListResponse(
