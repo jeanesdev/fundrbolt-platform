@@ -1,0 +1,421 @@
+openapi: "3.1.0"
+info:
+  title: Admin Run-of-Show Templates API
+  version: "1.0.0"
+  description: Admin endpoints for managing NPO-level run-of-show templates.
+
+tags:
+  - name: admin-ros-templates
+    description: NPO-level run-of-show template management
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RunOfShowTemplateCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+
+    RunOfShowTemplateUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+
+    RunOfShowTemplateItemCreate:
+      type: object
+      required: [title, offset_minutes]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        offset_minutes:
+          type: integer
+          minimum: 0
+        donor_visible_default:
+          type: boolean
+          default: false
+        auctioneer_visible_default:
+          type: boolean
+          default: true
+
+    RunOfShowTemplateItemUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        offset_minutes:
+          type: integer
+          minimum: 0
+        donor_visible_default:
+          type: boolean
+        auctioneer_visible_default:
+          type: boolean
+
+    RunOfShowTemplateItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        template_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        offset_minutes:
+          type: integer
+        donor_visible_default:
+          type: boolean
+        auctioneer_visible_default:
+          type: boolean
+        display_order:
+          type: integer
+
+    RunOfShowTemplateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        npo_id:
+          type: string
+          format: uuid
+          nullable: true
+        name:
+          type: string
+        is_system_default:
+          type: boolean
+        item_count:
+          type: integer
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    RunOfShowTemplateDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/RunOfShowTemplateResponse"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/RunOfShowTemplateItemResponse"
+
+    RunOfShowTemplateReorderRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [id, display_order]
+            properties:
+              id:
+                type: string
+                format: uuid
+              display_order:
+                type: integer
+                minimum: 0
+
+security:
+  - BearerAuth: []
+
+paths:
+  /admin/npos/{npo_id}/run-of-show-templates:
+    get:
+      summary: List run-of-show templates for an NPO
+      description: Returns NPO-owned templates plus the system default.
+      tags: [admin-ros-templates]
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  templates:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RunOfShowTemplateResponse"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: NPO not found }
+
+    post:
+      summary: Create a new template for an NPO
+      tags: [admin-ros-templates]
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunOfShowTemplateCreate"
+      responses:
+        "201":
+          description: Template created (empty, no items yet)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunOfShowTemplateDetailResponse"
+        "409":
+          description: Template name already exists for this NPO
+
+  /admin/npos/{npo_id}/run-of-show-templates/{template_id}:
+    get:
+      summary: Get template details with items
+      tags: [admin-ros-templates]
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Template with items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunOfShowTemplateDetailResponse"
+        "404": { description: Template not found }
+
+    patch:
+      summary: Rename a template
+      tags: [admin-ros-templates]
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunOfShowTemplateUpdate"
+      responses:
+        "200":
+          description: Template updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunOfShowTemplateResponse"
+        "403":
+          description: Cannot modify system default template
+        "409":
+          description: Name conflict
+
+    delete:
+      summary: Delete an NPO template
+      tags: [admin-ros-templates]
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204": { description: Deleted }
+        "403":
+          description: Cannot delete system default template
+
+  /admin/npos/{npo_id}/run-of-show-templates/{template_id}/items:
+    post:
+      summary: Add an item to a template
+      tags: [admin-ros-templates]
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunOfShowTemplateItemCreate"
+      responses:
+        "201":
+          description: Item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunOfShowTemplateItemResponse"
+        "403":
+          description: Cannot modify system default template
+
+  /admin/npos/{npo_id}/run-of-show-templates/{template_id}/items/{item_id}:
+    patch:
+      summary: Update a template item
+      tags: [admin-ros-templates]
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunOfShowTemplateItemUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunOfShowTemplateItemResponse"
+        "403":
+          description: Cannot modify system default template
+
+    delete:
+      summary: Delete a template item
+      tags: [admin-ros-templates]
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204": { description: Deleted }
+        "403":
+          description: Cannot modify system default template
+
+  /admin/npos/{npo_id}/run-of-show-templates/{template_id}/reorder:
+    post:
+      summary: Reorder template items
+      tags: [admin-ros-templates]
+      parameters:
+        - name: npo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunOfShowTemplateReorderRequest"
+      responses:
+        "200":
+          description: Reordered template detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunOfShowTemplateDetailResponse"
+        "403":
+          description: Cannot modify system default template

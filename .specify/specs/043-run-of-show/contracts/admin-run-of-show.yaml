@@ -1,0 +1,631 @@
+openapi: "3.1.0"
+info:
+  title: Admin Run-of-Show API
+  version: "1.0.0"
+  description: >
+    Admin endpoints for managing run-of-show items for a specific event.
+    Prefix: /api/v1
+
+tags:
+  - name: admin-run-of-show
+    description: Admin event run-of-show management
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RunOfShowItemCreate:
+      type: object
+      required: [title, scheduled_time]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: "Live Auction Begins"
+        description:
+          type: string
+          nullable: true
+          example: "Auctioneer takes the stage"
+        scheduled_time:
+          type: string
+          format: date-time
+          description: "Absolute wall-clock time in UTC ISO 8601"
+          example: "2026-05-03T19:00:00Z"
+        donor_visible:
+          type: boolean
+          default: false
+        auctioneer_visible:
+          type: boolean
+          default: true
+
+    RunOfShowItemUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        scheduled_time:
+          type: string
+          format: date-time
+        donor_visible:
+          type: boolean
+        auctioneer_visible:
+          type: boolean
+
+    RunOfShowItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        scheduled_time:
+          type: string
+          format: date-time
+        donor_visible:
+          type: boolean
+        auctioneer_visible:
+          type: boolean
+        is_complete:
+          type: boolean
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        display_order:
+          type: integer
+        has_notification:
+          type: boolean
+          description: "True if a ScheduledRunOfShowNotification exists for this item"
+        notification_status:
+          type: string
+          enum: [pending, delivered, failed, cancelled]
+          nullable: true
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    RunOfShowResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RunOfShowItemResponse"
+        total_count:
+          type: integer
+        completed_count:
+          type: integer
+        next_item:
+          $ref: "#/components/schemas/RunOfShowItemResponse"
+          nullable: true
+          description: "Earliest uncompleted future item (by scheduled_time); null if none"
+
+    RunOfShowReorderRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [id, display_order]
+            properties:
+              id:
+                type: string
+                format: uuid
+              display_order:
+                type: integer
+                minimum: 0
+
+    SaveAsTemplateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: "Annual Spring Gala Template"
+
+    ApplyTemplateRequest:
+      type: object
+      required: [template_id]
+      properties:
+        template_id:
+          type: string
+          format: uuid
+        confirm_replace:
+          type: boolean
+          default: false
+          description: "Must be true if event already has RoS items (replaces all existing items)"
+
+    ApplyTemplateResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RunOfShowItemResponse"
+        replaced_count:
+          type: integer
+          description: "Number of existing items that were replaced (0 if event had no items)"
+
+    RosNotificationCreate:
+      type: object
+      required: [message_body, recipient_type]
+      properties:
+        message_body:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: "The live auction is now open!"
+        recipient_type:
+          type: string
+          enum: [checked_in_donors, auctioneer, all_checked_in]
+
+    RosNotificationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ros_item_id:
+          type: string
+          format: uuid
+        message_body:
+          type: string
+        recipient_type:
+          type: string
+          enum: [checked_in_donors, auctioneer, all_checked_in]
+        scheduled_at:
+          type: string
+          format: date-time
+        delivery_status:
+          type: string
+          enum: [pending, delivered, failed, cancelled]
+        delivered_at:
+          type: string
+          format: date-time
+          nullable: true
+        failure_reason:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    RunOfShowTemplateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        npo_id:
+          type: string
+          format: uuid
+          nullable: true
+        name:
+          type: string
+        is_system_default:
+          type: boolean
+        item_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    RunOfShowTemplateDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/RunOfShowTemplateResponse"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/RunOfShowTemplateItemResponse"
+
+    RunOfShowTemplateItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        offset_minutes:
+          type: integer
+        donor_visible_default:
+          type: boolean
+        auctioneer_visible_default:
+          type: boolean
+        display_order:
+          type: integer
+
+security:
+  - BearerAuth: []
+
+paths:
+  /admin/events/{event_id}/run-of-show:
+    get:
+      summary: Get run-of-show for an event
+      tags: [admin-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Run-of-show items with summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunOfShowResponse"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Event not found }
+
+    post:
+      summary: Create a run-of-show item
+      tags: [admin-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunOfShowItemCreate"
+      responses:
+        "201":
+          description: Item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunOfShowItemResponse"
+        "401": { description: Unauthorized }
+        "403": { description: Forbidden }
+        "404": { description: Event not found }
+
+  /admin/events/{event_id}/run-of-show/{item_id}:
+    patch:
+      summary: Update a run-of-show item
+      tags: [admin-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunOfShowItemUpdate"
+      responses:
+        "200":
+          description: Item updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunOfShowItemResponse"
+        "404": { description: Item not found }
+
+    delete:
+      summary: Delete a run-of-show item
+      tags: [admin-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204": { description: Item deleted }
+        "404": { description: Item not found }
+
+  /admin/events/{event_id}/run-of-show/reorder:
+    post:
+      summary: Reorder run-of-show items
+      tags: [admin-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunOfShowReorderRequest"
+      responses:
+        "200":
+          description: Reordered item list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunOfShowResponse"
+
+  /admin/events/{event_id}/run-of-show/complete/{item_id}:
+    post:
+      summary: Mark item as complete
+      tags: [admin-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Updated item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunOfShowItemResponse"
+
+  /admin/events/{event_id}/run-of-show/incomplete/{item_id}:
+    post:
+      summary: Mark item as incomplete (undo complete)
+      tags: [admin-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Updated item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunOfShowItemResponse"
+
+  /admin/events/{event_id}/run-of-show/save-as-template:
+    post:
+      summary: Save current run-of-show as a named NPO template
+      tags: [admin-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveAsTemplateRequest"
+      responses:
+        "201":
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunOfShowTemplateDetailResponse"
+        "400":
+          description: No items to save / name conflict
+        "409":
+          description: Template name already exists for this NPO
+
+  /admin/events/{event_id}/run-of-show/apply-template:
+    post:
+      summary: Apply a template to the event run-of-show
+      description: >
+        Replaces all existing items with items generated from the template,
+        with times offset from event.start_time. Blocked if event has no start_time.
+        If event already has items, confirm_replace must be true.
+      tags: [admin-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplyTemplateRequest"
+      responses:
+        "200":
+          description: Template applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplyTemplateResponse"
+        "400":
+          description: Event has no start_time set
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Event start_time must be set before applying a template"
+        "409":
+          description: Event already has items and confirm_replace was not true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Event already has 5 run-of-show items. Set confirm_replace=true to replace them."
+                  existing_count:
+                    type: integer
+
+  /admin/events/{event_id}/run-of-show/notification/{item_id}:
+    get:
+      summary: Get notification for a run-of-show item
+      tags: [admin-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Notification details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosNotificationResponse"
+        "404": { description: No notification exists for this item }
+
+    post:
+      summary: Create/replace notification for a run-of-show item
+      tags: [admin-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RosNotificationCreate"
+      responses:
+        "201":
+          description: Notification scheduled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosNotificationResponse"
+        "400":
+          description: Item scheduled_time is in the past
+
+    delete:
+      summary: Cancel and remove notification for a run-of-show item
+      tags: [admin-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204": { description: Notification cancelled and deleted }
+        "404": { description: No notification exists }
+
+  /admin/events/{event_id}/run-of-show/templates:
+    get:
+      summary: List available templates for the event's NPO
+      description: "Returns NPO-owned templates + the system default. Used for Apply Template dropdown."
+      tags: [admin-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Available templates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  templates:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RunOfShowTemplateResponse"

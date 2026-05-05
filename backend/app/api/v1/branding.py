@@ -342,3 +342,82 @@ async def upload_logo_local(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"code": "logo_upload_failed", "message": str(e)},
         )
+
+
+@router.post(
+    "/{npo_id}/branding/icon-upload-local",
+    response_model=BrandingUpdateResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Upload icon (local storage)",
+    description="Upload square icon file directly to local storage (development mode).",
+)
+async def upload_icon_local(
+    npo_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    settings: Settings = Depends(get_settings),
+) -> BrandingUpdateResponse:
+    """Upload icon file directly to local storage."""
+    permission_service = NPOPermissionService()
+    can_manage = await permission_service.can_manage_npo(db, current_user, npo_id)
+
+    if not can_manage:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "insufficient_permissions",
+                "message": "Only NPO admins can upload icons",
+            },
+        )
+
+    try:
+        file_content = await file.read()
+        content_type = file.content_type or "application/octet-stream"
+        file_name = file.filename or "icon.png"
+
+        file_upload_service = FileUploadService(settings)
+
+        is_valid, error_msg = file_upload_service.validate_image_file(
+            file_content, content_type, file_name
+        )
+        if not is_valid:
+            raise ValueError(error_msg)
+
+        icon_url = file_upload_service.upload_file(
+            npo_id=npo_id,
+            file_name=file_name,
+            content_type=content_type,
+            file_content=file_content,
+        )
+
+        branding_service = BrandingService()
+        current_branding = await branding_service.get_branding(db, npo_id)
+        current_branding.icon_url = icon_url
+        await db.commit()
+        await db.refresh(current_branding)
+
+        branding_response = BrandingResponse.model_validate(current_branding)
+
+        return BrandingUpdateResponse(
+            message="Icon uploaded successfully",
+            branding=branding_response,
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "validation_error", "message": str(e)},
+        )
+
+    except NotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "npo_not_found", "message": "NPO not found"},
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "icon_upload_failed", "message": str(e)},
+        )

@@ -1,6 +1,8 @@
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { auctioneerService } from '@/services/auctioneerService'
+import { getAuctioneerRunOfShow } from '@/services/runOfShowService'
 import {
   ArrowUpDown,
   CalendarClock,
@@ -55,6 +57,9 @@ import { BidderAvatar } from '@/components/bidder-avatar'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { RGAuctioneerTab } from '@/features/revenue-generators'
+import { EventMapCard } from '../components/EventMapCard'
+import { RosCountdownBadge } from '../components/RosCountdownBadge'
+import { RunOfShowCard } from '../components/RunOfShowCard'
 import {
   useAuctioneerDashboard,
   useAuctioneerSettings,
@@ -134,6 +139,12 @@ export function AuctioneerDashboardPage({
   const revenueGenerators = useRevenueGeneratorItems(currentEvent.id)
   const { data: settings } = useAuctioneerSettings(currentEvent.id)
   const upsertSettings = useUpsertSettings(currentEvent.id)
+  const { data: rosData } = useQuery({
+    queryKey: ['auctioneer-ros', currentEvent.id],
+    queryFn: () => getAuctioneerRunOfShow(currentEvent.id),
+    refetchInterval: 30_000,
+  })
+  const rosNextItem = rosData?.next_item ?? null
   const [silentViewMode, setSilentViewMode] = useViewPreference(
     'auctioneer-silent-gallery'
   )
@@ -352,6 +363,7 @@ export function AuctioneerDashboardPage({
       >
         <div className='relative'>
           <div className='grid min-w-0 auto-cols-auto grid-flow-col grid-rows-2 gap-1.5 overflow-x-auto pr-8 pb-0.5'>
+            {rosData && <RosCountdownBadge nextItem={rosNextItem} />}
             <CompactStatusChip
               icon={<CircleDollarSign className='h-3.5 w-3.5' />}
               label='Event'
@@ -465,6 +477,11 @@ export function AuctioneerDashboardPage({
             )}
           </Button>
         </div>
+      </div>
+
+      <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+        <RunOfShowCard eventId={currentEvent.id} />
+        <EventMapCard layoutImageUrl={currentEvent.seating_layout_image_url} />
       </div>
 
       <Tabs

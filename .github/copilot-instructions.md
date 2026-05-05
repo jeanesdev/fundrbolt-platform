@@ -84,6 +84,7 @@ Auto-generated from all feature plans. Last updated: 2025-10-25
 - Azure Database for PostgreSQL (donations, support wall, config, NPO slug); Azure Blob Storage (hero media, reusing existing NPO branding blob container); Azure Cache for Redis (Celery broker for recurring payment tasks) (041-donate-now-page)
 - Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18/19, Vite, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (Frontend) (042-revenue-generators)
 - Azure Database for PostgreSQL — 3 new tables: `revenue_generator_items`, `revenue_generator_entries`, `revenue_generator_winner_selections` (042-revenue-generators)
+- Azure Database for PostgreSQL — 4 new tables: `run_of_show_items`, `run_of_show_templates`, `run_of_show_template_items`, `scheduled_run_of_show_notifications`; Azure Cache for Redis (Celery broker — already in use) (043-run-of-show)
 
 ## Project Structure
 ```
@@ -168,9 +169,9 @@ git commit -m "message"
 ```
 
 ## Recent Changes
+- 043-run-of-show: Added Python 3.11+ (backend), TypeScript 5.x (frontend)
 - 042-revenue-generators: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18/19, Vite, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (Frontend)
 - 042-revenue-generators: Added Python 3.11+ (Backend), TypeScript 5.x (Frontend) + FastAPI 0.120+, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic (Backend); React 18/19, Vite, TanStack Router, Zustand, Radix UI, Tailwind CSS 4 (Frontend)
-- 042-revenue-generators: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
   - ✅ Database migration: Added event_tables table with custom_capacity, table_name, table_captain_id fields
   - ✅ Updated registration_guests with is_table_captain boolean field
   - ✅ US1 - Customize Table Capacity: Event coordinators can set custom capacity per table (1-20), system enforces limits

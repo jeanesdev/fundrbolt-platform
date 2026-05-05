@@ -115,7 +115,13 @@ export function EventSelector() {
               className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
             >
               <div className='bg-sidebar-accent text-sidebar-accent-foreground flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg'>
-                {selectedEvent ? (
+                {selectedEvent?.logo_url ? (
+                  <img
+                    src={selectedEvent.logo_url}
+                    alt={selectedEventName || 'Event'}
+                    className='h-full w-full object-cover'
+                  />
+                ) : selectedEvent ? (
                   <InitialAvatar
                     name={selectedEventName || 'Event'}
                     brandingPrimaryColor={null}
@@ -164,12 +170,20 @@ export function EventSelector() {
                         className='gap-2 p-2'
                       >
                         <div className='flex size-6 items-center justify-center overflow-hidden rounded-sm border'>
-                          <InitialAvatar
-                            name={event.name}
-                            brandingPrimaryColor={null}
-                            size='sm'
-                            className='h-full w-full rounded-sm'
-                          />
+                          {event.logo_url ? (
+                            <img
+                              src={event.logo_url}
+                              alt={event.name}
+                              className='h-full w-full object-cover'
+                            />
+                          ) : (
+                            <InitialAvatar
+                              name={event.name}
+                              brandingPrimaryColor={null}
+                              size='sm'
+                              className='h-full w-full rounded-sm'
+                            />
+                          )}
                         </div>
                         <div className='min-w-0 flex-1'>
                           <div className='truncate font-medium'>
@@ -204,12 +218,20 @@ export function EventSelector() {
                     className='gap-2 p-2'
                   >
                     <div className='flex size-6 items-center justify-center overflow-hidden rounded-sm border'>
-                      <InitialAvatar
-                        name={event.name}
-                        brandingPrimaryColor={null}
-                        size='sm'
-                        className='h-full w-full rounded-sm'
-                      />
+                      {event.logo_url ? (
+                        <img
+                          src={event.logo_url}
+                          alt={event.name}
+                          className='h-full w-full object-cover'
+                        />
+                      ) : (
+                        <InitialAvatar
+                          name={event.name}
+                          brandingPrimaryColor={null}
+                          size='sm'
+                          className='h-full w-full rounded-sm'
+                        />
+                      )}
                     </div>
                     <div className='min-w-0 flex-1'>
                       <div className='truncate font-medium'>{event.name}</div>

@@ -71,6 +71,13 @@ class NPOBranding(Base, UUIDMixin, TimestampMixin):
         comment="Azure Blob Storage URL for NPO logo",
     )
 
+    # Icon URL (square image, Azure Blob Storage)
+    icon_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        comment="Azure Blob Storage URL for NPO square icon",
+    )
+
     # Social Media Links (JSON)
     # Schema: {facebook, twitter, instagram, linkedin, youtube, website, custom: [{name, url}]}
     social_media_links: Mapped[dict[str, Any] | None] = mapped_column(

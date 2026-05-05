@@ -175,6 +175,7 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
     useState<string>(DEFAULT_BACKGROUND)
   const [accentColor, setAccentColor] = useState<string>(DEFAULT_ACCENT)
   const [logoUrl, setLogoUrl] = useState<string | null | undefined>(null)
+  const [iconUrl, setIconUrl] = useState<string | null | undefined>(null)
   const [socialLinks, setSocialLinks] = useState({
     facebook: '',
     twitter: '',
@@ -184,6 +185,7 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
 
   // Image crop state
   const [cropDialogOpen, setCropDialogOpen] = useState(false)
+  const [uploadType, setUploadType] = useState<'logo' | 'icon'>('logo')
   const [imageToCrop, setImageToCrop] = useState<string | null>(null)
   const [originalFileName, setOriginalFileName] = useState<string>('')
   const [crop, setCrop] = useState({ x: 0, y: 0 })
@@ -219,6 +221,7 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
           setBackgroundColor(brandingData.background_color)
         if (brandingData.accent_color) setAccentColor(brandingData.accent_color)
         if (brandingData.logo_url) setLogoUrl(brandingData.logo_url)
+        if (brandingData.icon_url) setIconUrl(brandingData.icon_url)
         if (brandingData.social_media_links) {
           setSocialLinks({
             facebook: brandingData.social_media_links.facebook || '',
@@ -238,7 +241,44 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
   }, [npoId])
 
   // Handle logo upload
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      if (acceptedFiles.length === 0) return
+
+      const file = acceptedFiles[0]
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB')
+        return
+      }
+
+      if (!file.type.startsWith('image/')) {
+        toast.error('File must be an image')
+        return
+      }
+
+      // Upload directly without cropping
+      try {
+        const result = await brandingApi.uploadLogoLocal(npoId, file)
+        setLogoUrl(result.logo_url)
+        await queryClient.invalidateQueries({ queryKey: ['npos'] })
+        toast.success('Logo uploaded successfully')
+      } catch (error: unknown) {
+        const errorDetail = (
+          error as { response?: { data?: { detail?: unknown } } }
+        ).response?.data?.detail
+        const errorMsg =
+          typeof errorDetail === 'string'
+            ? errorDetail
+            : 'Failed to upload logo'
+        toast.error(errorMsg)
+      }
+    },
+    [npoId, queryClient]
+  )
+
+  // Handle icon upload
+  const onDropIcon = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return
 
     const file = acceptedFiles[0]
@@ -256,6 +296,7 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
     const imageUrl = URL.createObjectURL(file)
     setImageToCrop(imageUrl)
     setOriginalFileName(file.name)
+    setUploadType('icon')
     setCropDialogOpen(true)
   }, [])
 
@@ -286,17 +327,21 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
         return
       }
 
-      const result = await brandingApi.uploadLogoLocal(npoId, croppedFile)
-      setLogoUrl(result.logo_url)
-
-      // Invalidate NPO queries to refresh the logo in NpoSelector dropdown
-      await queryClient.invalidateQueries({ queryKey: ['npos'] })
+      if (uploadType === 'icon') {
+        const result = await brandingApi.uploadIconLocal(npoId, croppedFile)
+        setIconUrl(result.icon_url)
+        toast.success('Icon uploaded successfully')
+      } else {
+        const result = await brandingApi.uploadLogoLocal(npoId, croppedFile)
+        setLogoUrl(result.logo_url)
+        // Invalidate NPO queries to refresh the logo in NpoSelector dropdown
+        await queryClient.invalidateQueries({ queryKey: ['npos'] })
+        toast.success('Logo uploaded successfully')
+      }
 
       setCropDialogOpen(false)
       URL.revokeObjectURL(imageToCrop)
       setImageToCrop(null)
-
-      toast.success('Logo uploaded successfully')
     } catch (error: unknown) {
       const errorDetail = (
         error as { response?: { data?: { detail?: unknown } } }
@@ -317,10 +362,30 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
 
       toast.error(errorMsg, { duration: 5000 })
     }
-  }, [npoId, imageToCrop, croppedAreaPixels, originalFileName, queryClient])
+  }, [
+    npoId,
+    imageToCrop,
+    croppedAreaPixels,
+    originalFileName,
+    uploadType,
+    queryClient,
+  ])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
+    },
+    maxFiles: 1,
+    maxSize: 5 * 1024 * 1024,
+  })
+
+  const {
+    getRootProps: getIconRootProps,
+    getInputProps: getIconInputProps,
+    isDragActive: isIconDragActive,
+  } = useDropzone({
+    onDrop: onDropIcon,
     accept: {
       'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
     },
@@ -343,6 +408,7 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
         background_color: backgroundColor,
         accent_color: accentColor,
         logo_url: logoUrl || undefined,
+        icon_url: iconUrl || undefined,
         social_media_links: {
           facebook: socialLinks.facebook || undefined,
           twitter: socialLinks.twitter || undefined,
@@ -564,6 +630,63 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
         </CardContent>
       </Card>
 
+      {/* Icon Upload */}
+      <Card>
+        <CardHeader>
+          <CardTitle className='text-lg sm:text-xl'>Icon</CardTitle>
+          <CardDescription className='text-sm'>
+            Upload a square icon for your organization (used in app icons,
+            favicons, and small displays)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          <div
+            {...getIconRootProps()}
+            className={`cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors sm:p-8 ${
+              isIconDragActive
+                ? 'border-primary bg-primary/5'
+                : 'border-muted-foreground/25'
+            }`}
+          >
+            <input {...getIconInputProps()} />
+            {iconUrl ? (
+              <div className='space-y-2'>
+                <img
+                  src={getLogoUrl(iconUrl) || undefined}
+                  alt='Icon preview'
+                  className='mx-auto h-24 w-24 rounded-md object-contain'
+                />
+                <p className='text-muted-foreground text-sm'>
+                  Click or drag to replace icon
+                </p>
+              </div>
+            ) : (
+              <div className='space-y-2'>
+                <Building2 className='text-muted-foreground mx-auto h-12 w-12' />
+                <p className='text-sm font-medium'>
+                  {isIconDragActive
+                    ? 'Drop icon here'
+                    : 'Drag & drop icon, or click to select'}
+                </p>
+                <p className='text-muted-foreground text-xs'>
+                  PNG, JPG, GIF, WEBP up to 5MB — square image recommended
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className='bg-muted/50 text-muted-foreground rounded-lg p-3 text-xs'>
+            <p className='text-foreground mb-2 font-medium'>Requirements:</p>
+            <ul className='space-y-1 pl-4'>
+              <li>• File types: PNG, JPG, JPEG, GIF, WEBP</li>
+              <li>• Maximum file size: 5MB</li>
+              <li>• Recommended: Square format (1:1 aspect ratio)</li>
+              <li>• Ideal size: 512x512px or larger</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Social Media */}
       <Card>
         <CardHeader>
@@ -665,9 +788,13 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
       <Dialog open={cropDialogOpen} onOpenChange={setCropDialogOpen}>
         <DialogContent className='max-w-3xl'>
           <DialogHeader>
-            <DialogTitle>Crop Logo</DialogTitle>
+            <DialogTitle>
+              {uploadType === 'icon' ? 'Crop Icon' : 'Crop Logo'}
+            </DialogTitle>
             <DialogDescription>
-              Adjust the crop area to get a square logo
+              {uploadType === 'icon'
+                ? 'Adjust the crop area to create a square image. Use the slider to zoom.'
+                : 'Adjust the crop area for your logo. Use the slider to zoom.'}
             </DialogDescription>
           </DialogHeader>
           <div className='relative h-96 w-full'>
@@ -676,7 +803,7 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
                 image={imageToCrop}
                 crop={crop}
                 zoom={zoom}
-                aspect={1}
+                aspect={uploadType === 'icon' ? 1 : undefined}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
                 onCropComplete={onCropComplete}
@@ -709,7 +836,9 @@ export function NPOBrandingSection({ npoId, onSave }: NPOBrandingSectionProps) {
             </Button>
             <Button onClick={handleCropSave}>
               <Save className='mr-2 h-4 w-4' />
-              Save Cropped Logo
+              {uploadType === 'icon'
+                ? 'Save Cropped Icon'
+                : 'Save Cropped Logo'}
             </Button>
           </DialogFooter>
         </DialogContent>

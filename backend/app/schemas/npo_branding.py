@@ -28,6 +28,9 @@ class BrandingCreateRequest(BaseModel):
     logo_url: str | None = Field(
         None, max_length=500, description="Azure Blob Storage URL for logo"
     )
+    icon_url: str | None = Field(
+        None, max_length=500, description="Azure Blob Storage URL for square icon"
+    )
     social_media_links: dict[str, str] | None = Field(
         None,
         description="Social media links JSON: {facebook, twitter, instagram, linkedin}",
@@ -71,6 +74,9 @@ class BrandingUpdateRequest(BaseModel):
     )
     logo_url: str | None = Field(
         None, max_length=500, description="Azure Blob Storage URL for logo"
+    )
+    icon_url: str | None = Field(
+        None, max_length=500, description="Azure Blob Storage URL for square icon"
     )
     social_media_links: dict[str, str] | None = None
     custom_css_properties: dict[str, str] | None = None
@@ -127,6 +133,7 @@ class BrandingResponse(BaseModel):
     background_color: str | None
     accent_color: str | None
     logo_url: str | None
+    icon_url: str | None
     social_media_links: dict[str, str] | None
     custom_css_properties: dict[str, str] | None
     created_at: datetime

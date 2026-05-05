@@ -49,12 +49,14 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           name: string
           slug?: string
           logo_url?: string
+          icon_url?: string
         }) => {
           npoOptions.push({
             id: npo.id,
             name: npo.name,
             slug: npo.slug,
             logo_url: npo.logo_url,
+            icon_url: npo.icon_url,
           })
         }
       )

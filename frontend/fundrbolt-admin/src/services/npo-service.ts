@@ -349,6 +349,27 @@ export const brandingApi = {
   },
 
   /**
+   * Upload icon file directly to local storage (development mode)
+   */
+  async uploadIconLocal(
+    npoId: string,
+    file: File
+  ): Promise<{ icon_url: string }> {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await apiClient.post<{
+      message: string
+      branding: { icon_url: string }
+    }>(`/npos/${npoId}/branding/icon-upload-local`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return { icon_url: response.data.branding.icon_url }
+  },
+
+  /**
    * Upload logo file to Azure Blob Storage using SAS URL
    */
   async uploadLogoFile(uploadUrl: string, file: File): Promise<void> {

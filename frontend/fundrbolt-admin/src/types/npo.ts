@@ -249,6 +249,7 @@ export interface NPOBranding {
   background_color: string | null
   accent_color: string | null
   logo_url: string | null
+  icon_url: string | null
   social_media_links: {
     facebook?: string
     twitter?: string
@@ -267,6 +268,7 @@ export interface BrandingCreateRequest {
   background_color?: string
   accent_color?: string
   logo_url?: string
+  icon_url?: string
   social_media_links?: {
     facebook?: string
     twitter?: string
@@ -282,6 +284,7 @@ export interface BrandingUpdateRequest {
   background_color?: string
   accent_color?: string
   logo_url?: string
+  icon_url?: string
   social_media_links?: {
     facebook?: string
     twitter?: string

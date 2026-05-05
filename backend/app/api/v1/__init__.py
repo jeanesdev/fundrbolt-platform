@@ -21,6 +21,7 @@ from app.api.v1 import (
     admin_quick_entry,
     admin_registration_import,
     admin_revenue_generators,
+    admin_run_of_show,
     admin_seating,
     admin_testimonials,
     admin_ticket_sales_import,
@@ -28,12 +29,14 @@ from app.api.v1 import (
     auction_bids,
     auction_item_media,
     auction_items,
+    auctioneer_run_of_show,
     auth,
     branding,
     checkin,
     consent,
     cookies,
     donor_revenue_generators,
+    donor_run_of_show,
     donor_seating,
     event_custom_options,
     event_preview,
@@ -144,5 +147,10 @@ api_router.include_router(admin_donate_now.router, tags=["Admin Donate Now"])
 # Feature 042: Revenue Generators
 api_router.include_router(admin_revenue_generators.router, tags=["admin-revenue-generators"])
 api_router.include_router(donor_revenue_generators.router, tags=["donor-revenue-generators"])
+
+# Feature 043: Run-of-Show Management
+api_router.include_router(admin_run_of_show.router, tags=["admin-run-of-show"])
+api_router.include_router(donor_run_of_show.router, tags=["donor-run-of-show"])
+api_router.include_router(auctioneer_run_of_show.router, tags=["auctioneer-run-of-show"])
 
 __all__ = ["api_router"]

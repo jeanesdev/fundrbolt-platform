@@ -1,0 +1,148 @@
+openapi: "3.1.0"
+info:
+  title: Auctioneer Run-of-Show API
+  version: "1.0.0"
+  description: Auctioneer endpoints for viewing and completing run-of-show items.
+
+tags:
+  - name: auctioneer-run-of-show
+    description: Auctioneer run-of-show view and completion
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AuctioneerRunOfShowItem:
+      type: object
+      description: >
+        Run-of-show item as seen by the auctioneer. Auctioneer sees all items
+        where auctioneer_visible=true, plus completion status.
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        scheduled_time:
+          type: string
+          format: date-time
+        donor_visible:
+          type: boolean
+          description: "Whether donors also see this item"
+        is_complete:
+          type: boolean
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        display_order:
+          type: integer
+
+    AuctioneerRunOfShowResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          description: "All auctioneer-visible items, ordered by display_order"
+          items:
+            $ref: "#/components/schemas/AuctioneerRunOfShowItem"
+        next_item:
+          $ref: "#/components/schemas/AuctioneerRunOfShowItem"
+          nullable: true
+          description: "Next uncompleted item with scheduled_time > now(). Null = Program Complete"
+        completed_count:
+          type: integer
+        total_count:
+          type: integer
+
+security:
+  - BearerAuth: []
+
+paths:
+  /auctioneer/events/{event_id}/run-of-show:
+    get:
+      summary: Get auctioneer view of run-of-show
+      description: >
+        Returns all auctioneer_visible items for the event.
+        The next_item field identifies the countdown target.
+        Poll this endpoint every 30 seconds to detect state changes.
+      tags: [auctioneer-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Auctioneer run-of-show
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuctioneerRunOfShowResponse"
+        "401": { description: Unauthorized }
+        "403": { description: Not auctioneer for this event }
+        "404": { description: Event not found }
+
+  /auctioneer/events/{event_id}/run-of-show/complete/{item_id}:
+    post:
+      summary: Mark a run-of-show item as complete
+      description: Auctioneers can mark items complete during the live event.
+      tags: [auctioneer-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Updated item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuctioneerRunOfShowItem"
+        "403": { description: Not auctioneer for this event }
+        "404": { description: Item not found }
+
+  /auctioneer/events/{event_id}/run-of-show/incomplete/{item_id}:
+    post:
+      summary: Mark a run-of-show item as incomplete (undo complete)
+      tags: [auctioneer-run-of-show]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Updated item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuctioneerRunOfShowItem"
+        "403": { description: Not auctioneer for this event }
+        "404": { description: Item not found }

@@ -18,6 +18,7 @@ export interface NPOContextOption {
   name: string
   slug?: string | null
   logo_url?: string | null
+  icon_url?: string | null
 }
 
 interface NPOContextState {

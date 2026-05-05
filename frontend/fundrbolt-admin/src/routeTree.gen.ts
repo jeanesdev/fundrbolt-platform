@@ -60,6 +60,7 @@ import { Route as AuthenticatedNposNpoIdEditRouteImport } from './routes/_authen
 import { Route as AuthenticatedEventsEventIdTicketsRouteImport } from './routes/_authenticated/events/$eventId/tickets'
 import { Route as AuthenticatedEventsEventIdSponsorsRouteImport } from './routes/_authenticated/events/$eventId/sponsors'
 import { Route as AuthenticatedEventsEventIdSeatingRouteImport } from './routes/_authenticated/events/$eventId/seating'
+import { Route as AuthenticatedEventsEventIdRunOfShowRouteImport } from './routes/_authenticated/events/$eventId/run-of-show'
 import { Route as AuthenticatedEventsEventIdRevenueGeneratorsRouteImport } from './routes/_authenticated/events/$eventId/revenue-generators'
 import { Route as AuthenticatedEventsEventIdRegistrationsRouteImport } from './routes/_authenticated/events/$eventId/registrations'
 import { Route as AuthenticatedEventsEventIdQuickEntryRouteImport } from './routes/_authenticated/events/$eventId/quick-entry'
@@ -372,6 +373,12 @@ const AuthenticatedEventsEventIdSeatingRoute =
     path: '/seating',
     getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
+const AuthenticatedEventsEventIdRunOfShowRoute =
+  AuthenticatedEventsEventIdRunOfShowRouteImport.update({
+    id: '/run-of-show',
+    path: '/run-of-show',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdRevenueGeneratorsRoute =
   AuthenticatedEventsEventIdRevenueGeneratorsRouteImport.update({
     id: '/revenue-generators',
@@ -653,6 +660,7 @@ export interface FileRoutesByFullPath {
   '/events/$eventId/quick-entry': typeof AuthenticatedEventsEventIdQuickEntryRoute
   '/events/$eventId/registrations': typeof AuthenticatedEventsEventIdRegistrationsRoute
   '/events/$eventId/revenue-generators': typeof AuthenticatedEventsEventIdRevenueGeneratorsRoute
+  '/events/$eventId/run-of-show': typeof AuthenticatedEventsEventIdRunOfShowRoute
   '/events/$eventId/seating': typeof AuthenticatedEventsEventIdSeatingRoute
   '/events/$eventId/sponsors': typeof AuthenticatedEventsEventIdSponsorsRoute
   '/events/$eventId/tickets': typeof AuthenticatedEventsEventIdTicketsRouteWithChildren
@@ -736,6 +744,7 @@ export interface FileRoutesByTo {
   '/events/$eventId/quick-entry': typeof AuthenticatedEventsEventIdQuickEntryRoute
   '/events/$eventId/registrations': typeof AuthenticatedEventsEventIdRegistrationsRoute
   '/events/$eventId/revenue-generators': typeof AuthenticatedEventsEventIdRevenueGeneratorsRoute
+  '/events/$eventId/run-of-show': typeof AuthenticatedEventsEventIdRunOfShowRoute
   '/events/$eventId/seating': typeof AuthenticatedEventsEventIdSeatingRoute
   '/events/$eventId/sponsors': typeof AuthenticatedEventsEventIdSponsorsRoute
   '/npos/$npoId/edit': typeof AuthenticatedNposNpoIdEditRoute
@@ -826,6 +835,7 @@ export interface FileRoutesById {
   '/_authenticated/events/$eventId/quick-entry': typeof AuthenticatedEventsEventIdQuickEntryRoute
   '/_authenticated/events/$eventId/registrations': typeof AuthenticatedEventsEventIdRegistrationsRoute
   '/_authenticated/events/$eventId/revenue-generators': typeof AuthenticatedEventsEventIdRevenueGeneratorsRoute
+  '/_authenticated/events/$eventId/run-of-show': typeof AuthenticatedEventsEventIdRunOfShowRoute
   '/_authenticated/events/$eventId/seating': typeof AuthenticatedEventsEventIdSeatingRoute
   '/_authenticated/events/$eventId/sponsors': typeof AuthenticatedEventsEventIdSponsorsRoute
   '/_authenticated/events/$eventId/tickets': typeof AuthenticatedEventsEventIdTicketsRouteWithChildren
@@ -915,6 +925,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/quick-entry'
     | '/events/$eventId/registrations'
     | '/events/$eventId/revenue-generators'
+    | '/events/$eventId/run-of-show'
     | '/events/$eventId/seating'
     | '/events/$eventId/sponsors'
     | '/events/$eventId/tickets'
@@ -998,6 +1009,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/quick-entry'
     | '/events/$eventId/registrations'
     | '/events/$eventId/revenue-generators'
+    | '/events/$eventId/run-of-show'
     | '/events/$eventId/seating'
     | '/events/$eventId/sponsors'
     | '/npos/$npoId/edit'
@@ -1087,6 +1099,7 @@ export interface FileRouteTypes {
     | '/_authenticated/events/$eventId/quick-entry'
     | '/_authenticated/events/$eventId/registrations'
     | '/_authenticated/events/$eventId/revenue-generators'
+    | '/_authenticated/events/$eventId/run-of-show'
     | '/_authenticated/events/$eventId/seating'
     | '/_authenticated/events/$eventId/sponsors'
     | '/_authenticated/events/$eventId/tickets'
@@ -1501,6 +1514,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsEventIdSeatingRouteImport
       parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
+    '/_authenticated/events/$eventId/run-of-show': {
+      id: '/_authenticated/events/$eventId/run-of-show'
+      path: '/run-of-show'
+      fullPath: '/events/$eventId/run-of-show'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdRunOfShowRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
     '/_authenticated/events/$eventId/revenue-generators': {
       id: '/_authenticated/events/$eventId/revenue-generators'
       path: '/revenue-generators'
@@ -1835,6 +1855,7 @@ interface AuthenticatedEventsEventIdRouteRouteChildren {
   AuthenticatedEventsEventIdQuickEntryRoute: typeof AuthenticatedEventsEventIdQuickEntryRoute
   AuthenticatedEventsEventIdRegistrationsRoute: typeof AuthenticatedEventsEventIdRegistrationsRoute
   AuthenticatedEventsEventIdRevenueGeneratorsRoute: typeof AuthenticatedEventsEventIdRevenueGeneratorsRoute
+  AuthenticatedEventsEventIdRunOfShowRoute: typeof AuthenticatedEventsEventIdRunOfShowRoute
   AuthenticatedEventsEventIdSeatingRoute: typeof AuthenticatedEventsEventIdSeatingRoute
   AuthenticatedEventsEventIdSponsorsRoute: typeof AuthenticatedEventsEventIdSponsorsRoute
   AuthenticatedEventsEventIdTicketsRoute: typeof AuthenticatedEventsEventIdTicketsRouteWithChildren
@@ -1877,6 +1898,8 @@ const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRo
       AuthenticatedEventsEventIdRegistrationsRoute,
     AuthenticatedEventsEventIdRevenueGeneratorsRoute:
       AuthenticatedEventsEventIdRevenueGeneratorsRoute,
+    AuthenticatedEventsEventIdRunOfShowRoute:
+      AuthenticatedEventsEventIdRunOfShowRoute,
     AuthenticatedEventsEventIdSeatingRoute:
       AuthenticatedEventsEventIdSeatingRoute,
     AuthenticatedEventsEventIdSponsorsRoute:
