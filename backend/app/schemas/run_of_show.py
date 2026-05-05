@@ -25,6 +25,28 @@ class RunOfShowItemUpdate(BaseModel):
     display_order: int | None = None
 
 
+class RosNotificationCreate(BaseModel):
+    message_body: Annotated[str, Field(min_length=1)]
+    recipient_type: str  # "donors", "auctioneer", "all_attendees"
+    minutes_before: Annotated[int, Field(ge=0, le=1440)] = 0
+
+
+class RosNotificationResponse(BaseModel):
+    id: uuid.UUID
+    ros_item_id: uuid.UUID
+    message_body: str
+    recipient_type: str
+    minutes_before: int
+    scheduled_at: datetime
+    delivery_status: str
+    celery_task_id: str | None = None
+    delivered_at: datetime | None = None
+    failure_reason: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
 class RunOfShowItemResponse(BaseModel):
     id: uuid.UUID
     event_id: uuid.UUID
@@ -36,7 +58,7 @@ class RunOfShowItemResponse(BaseModel):
     is_complete: bool
     completed_at: datetime | None = None
     display_order: int
-    has_notification: bool = False
+    notifications: list[RosNotificationResponse] = []
     created_by: uuid.UUID
     created_at: datetime
     updated_at: datetime
@@ -120,23 +142,3 @@ class ApplyTemplateRequest(BaseModel):
 class ApplyTemplateResponse(BaseModel):
     replaced: bool
     items_created: int
-
-
-class RosNotificationCreate(BaseModel):
-    message_body: Annotated[str, Field(min_length=1)]
-    recipient_type: str  # "donors", "auctioneer", "all_attendees"
-
-
-class RosNotificationResponse(BaseModel):
-    id: uuid.UUID
-    ros_item_id: uuid.UUID
-    message_body: str
-    recipient_type: str
-    scheduled_at: datetime
-    delivery_status: str
-    celery_task_id: str | None = None
-    delivered_at: datetime | None = None
-    failure_reason: str | None = None
-    created_at: datetime
-    updated_at: datetime
-    model_config = ConfigDict(from_attributes=True)

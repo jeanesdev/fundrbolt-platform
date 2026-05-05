@@ -4,9 +4,9 @@
  * Collapsible timeline card for the Home tab showing the donor-visible
  * run-of-show items. Hidden entirely when there are no items.
  */
-import { useState } from 'react'
-import { ChevronDown, ChevronUp, Clock } from 'lucide-react'
 import type { DonorRunOfShowItem } from '@/types/run-of-show'
+import { ChevronDown, ChevronUp, Clock } from 'lucide-react'
+import { useState } from 'react'
 
 interface RunOfShowTimelineCardProps {
   items: DonorRunOfShowItem[]
@@ -53,14 +53,23 @@ export function RunOfShowTimelineCard({ items }: RunOfShowTimelineCardProps) {
           >
             Event Program
           </span>
-          <span className='text-muted-foreground text-xs'>
+          <span
+            className='text-xs'
+            style={{ color: 'var(--event-text-muted-on-background, #4B5563)' }}
+          >
             ({items.length} item{items.length === 1 ? '' : 's'})
           </span>
         </div>
         {expanded ? (
-          <ChevronUp className='text-muted-foreground h-4 w-4 shrink-0' />
+          <ChevronUp
+            className='h-4 w-4 shrink-0'
+            style={{ color: 'var(--event-text-muted-on-background, #4B5563)' }}
+          />
         ) : (
-          <ChevronDown className='text-muted-foreground h-4 w-4 shrink-0' />
+          <ChevronDown
+            className='h-4 w-4 shrink-0'
+            style={{ color: 'var(--event-text-muted-on-background, #4B5563)' }}
+          />
         )}
       </button>
 
@@ -95,14 +104,16 @@ export function RunOfShowTimelineCard({ items }: RunOfShowTimelineCardProps) {
                         className={[
                           'text-xs tabular-nums',
                           isComplete ? 'line-through opacity-50' : '',
-                          isNextUp ? 'font-bold' : 'text-muted-foreground',
+                          isNextUp ? 'font-bold' : '',
                         ]
                           .filter(Boolean)
                           .join(' ')}
                         style={
-                          isNextUp && !isComplete
-                            ? { color: 'rgb(var(--event-primary, 59, 130, 246))' }
-                            : undefined
+                          isComplete
+                            ? undefined
+                            : isNextUp
+                              ? { color: 'rgb(var(--event-primary, 59, 130, 246))' }
+                              : { color: 'var(--event-text-muted-on-background, #4B5563)' }
                         }
                       >
                         {formatTime(item.scheduled_time)}
@@ -119,12 +130,9 @@ export function RunOfShowTimelineCard({ items }: RunOfShowTimelineCardProps) {
                           .filter(Boolean)
                           .join(' ')}
                         style={
-                          isNextUp && !isComplete
-                            ? {
-                                color:
-                                  'var(--event-text-on-background, #374151)',
-                              }
-                            : undefined
+                          isComplete
+                            ? undefined
+                            : { color: 'var(--event-text-on-background, #374151)' }
                         }
                       >
                         {item.title}
@@ -141,6 +149,14 @@ export function RunOfShowTimelineCard({ items }: RunOfShowTimelineCardProps) {
                         </span>
                       )}
                     </div>
+                    {item.description && (
+                      <p
+                        className={['mt-0.5 text-xs', isComplete ? 'opacity-40' : ''].filter(Boolean).join(' ')}
+                        style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+                      >
+                        {item.description}
+                      </p>
+                    )}
                   </div>
                 </li>
               )

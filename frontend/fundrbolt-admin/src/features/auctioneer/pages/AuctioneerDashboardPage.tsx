@@ -57,6 +57,7 @@ import { BidderAvatar } from '@/components/bidder-avatar'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { RGAuctioneerTab } from '@/features/revenue-generators'
+import { EventMapCard } from '../components/EventMapCard'
 import { RosCountdownBadge } from '../components/RosCountdownBadge'
 import { RunOfShowCard } from '../components/RunOfShowCard'
 import {
@@ -353,11 +354,6 @@ export function AuctioneerDashboardPage({
             results in real time.
           </p>
         </div>
-        {rosData && (
-          <div className='shrink-0'>
-            <RosCountdownBadge nextItem={rosNextItem} />
-          </div>
-        )}
       </div>
 
       <div
@@ -367,6 +363,7 @@ export function AuctioneerDashboardPage({
       >
         <div className='relative'>
           <div className='grid min-w-0 auto-cols-auto grid-flow-col grid-rows-2 gap-1.5 overflow-x-auto pr-8 pb-0.5'>
+            {rosData && <RosCountdownBadge nextItem={rosNextItem} />}
             <CompactStatusChip
               icon={<CircleDollarSign className='h-3.5 w-3.5' />}
               label='Event'
@@ -480,6 +477,11 @@ export function AuctioneerDashboardPage({
             )}
           </Button>
         </div>
+      </div>
+
+      <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+        <RunOfShowCard eventId={currentEvent.id} />
+        <EventMapCard layoutImageUrl={currentEvent.seating_layout_image_url} />
       </div>
 
       <Tabs
@@ -787,8 +789,6 @@ export function AuctioneerDashboardPage({
           <RGAuctioneerTab eventId={currentEvent.id} />
         </TabsContent>
       </Tabs>
-
-      <RunOfShowCard eventId={currentEvent.id} />
     </div>
   )
 }

@@ -2,6 +2,7 @@
 
 import logging
 import uuid
+from datetime import timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -22,14 +23,27 @@ class RunOfShowNotificationService:
     """Service for managing scheduled RoS notifications."""
 
     @staticmethod
-    async def get_notification_for_item(
+    async def get_notifications_for_item(
         db: AsyncSession,
         item_id: uuid.UUID,
+    ) -> list[ScheduledRunOfShowNotification]:
+        """Get all notifications for a RoS item, ordered by minutes_before desc."""
+        result = await db.execute(
+            select(ScheduledRunOfShowNotification)
+            .where(ScheduledRunOfShowNotification.ros_item_id == item_id)
+            .order_by(ScheduledRunOfShowNotification.minutes_before.desc())
+        )
+        return list(result.scalars().all())
+
+    @staticmethod
+    async def get_notification_by_id(
+        db: AsyncSession,
+        notification_id: uuid.UUID,
     ) -> ScheduledRunOfShowNotification | None:
-        """Get the notification for a RoS item, or None if not set."""
+        """Get a notification by its ID."""
         result = await db.execute(
             select(ScheduledRunOfShowNotification).where(
-                ScheduledRunOfShowNotification.ros_item_id == item_id
+                ScheduledRunOfShowNotification.id == notification_id
             )
         )
         return result.scalar_one_or_none()
@@ -40,16 +54,9 @@ class RunOfShowNotificationService:
         ros_item_id: uuid.UUID,
         message_body: str,
         recipient_type: RosRecipientTypeEnum,
+        minutes_before: int = 0,
     ) -> ScheduledRunOfShowNotification:
         """Schedule a notification for a RoS item."""
-        # Check for existing notification
-        existing = await RunOfShowNotificationService.get_notification_for_item(db, ros_item_id)
-        if existing is not None:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="A notification already exists for this item. Delete it first.",
-            )
-
         # Get the RoS item for scheduled_time
         item_result = await db.execute(select(RunOfShowItem).where(RunOfShowItem.id == ros_item_id))
         item = item_result.scalar_one_or_none()
@@ -59,12 +66,21 @@ class RunOfShowNotificationService:
                 detail="Run-of-show item not found",
             )
 
+        if item.scheduled_time is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Run-of-show item has no scheduled time. Set a time before adding notifications.",
+            )
+
+        scheduled_at = item.scheduled_time - timedelta(minutes=minutes_before)
+
         notification = ScheduledRunOfShowNotification(
             id=uuid.uuid4(),
             ros_item_id=ros_item_id,
             message_body=message_body,
             recipient_type=recipient_type,
-            scheduled_at=item.scheduled_time,
+            minutes_before=minutes_before,
+            scheduled_at=scheduled_at,
             delivery_status=RosDeliveryStatusEnum.PENDING,
             celery_task_id=None,
         )
@@ -77,7 +93,7 @@ class RunOfShowNotificationService:
 
             task = send_ros_notification_task.apply_async(
                 args=[str(notification.id)],
-                eta=item.scheduled_time,
+                eta=scheduled_at,
             )
             notification.celery_task_id = task.id
         except Exception:
@@ -94,7 +110,10 @@ class RunOfShowNotificationService:
 
         await db.commit()
         await db.refresh(notification)
-        logger.info(f"Scheduled RoS notification {notification.id} for item {ros_item_id}")
+        logger.info(
+            f"Scheduled RoS notification {notification.id} for item {ros_item_id} "
+            f"({minutes_before} min before)"
+        )
         return notification
 
     @staticmethod
@@ -102,7 +121,7 @@ class RunOfShowNotificationService:
         db: AsyncSession,
         notification_id: uuid.UUID,
     ) -> None:
-        """Cancel a scheduled notification."""
+        """Cancel a scheduled notification by ID."""
         result = await db.execute(
             select(ScheduledRunOfShowNotification).where(
                 ScheduledRunOfShowNotification.id == notification_id
@@ -125,15 +144,14 @@ class RunOfShowNotificationService:
         await db.commit()
 
     @staticmethod
-    async def cancel_notification_for_item(
+    async def cancel_all_for_item(
         db: AsyncSession,
         item_id: uuid.UUID,
     ) -> None:
-        """Cancel the notification for a specific RoS item."""
-        notification = await RunOfShowNotificationService.get_notification_for_item(db, item_id)
-        if notification is None:
-            return
-        await RunOfShowNotificationService.cancel_notification(db, notification.id)
+        """Cancel all notifications for a specific RoS item."""
+        notifications = await RunOfShowNotificationService.get_notifications_for_item(db, item_id)
+        for notification in notifications:
+            await RunOfShowNotificationService.cancel_notification(db, notification.id)
 
     @staticmethod
     async def cancel_all_pending_for_event(
@@ -169,6 +187,7 @@ class RunOfShowNotificationService:
             ros_item_id=notification.ros_item_id,
             message_body=notification.message_body,
             recipient_type=notification.recipient_type.value,
+            minutes_before=notification.minutes_before,
             scheduled_at=notification.scheduled_at,
             delivery_status=notification.delivery_status.value,
             celery_task_id=notification.celery_task_id,

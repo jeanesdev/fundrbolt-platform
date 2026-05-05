@@ -9,10 +9,14 @@ import { RunOfShowItemRow } from './RunOfShowItem'
 interface SortableRunOfShowItemProps {
   eventId: string
   item: RunOfShowItem
+  /** ISO datetime of the event start — passed through for time-only editing */
+  eventDate?: string
   onUpdate: (
     itemId: string,
     updates: {
       title?: string
+      description?: string | null
+      scheduled_time?: string
       donor_visible?: boolean
       auctioneer_visible?: boolean
     }
@@ -24,6 +28,7 @@ interface SortableRunOfShowItemProps {
 export function SortableRunOfShowItem({
   eventId,
   item,
+  eventDate,
   onUpdate,
   onDelete,
   onToggleComplete,
@@ -48,6 +53,7 @@ export function SortableRunOfShowItem({
       <RunOfShowItemRow
         eventId={eventId}
         item={item}
+        eventDate={eventDate}
         onUpdate={onUpdate}
         onDelete={onDelete}
         onToggleComplete={onToggleComplete}

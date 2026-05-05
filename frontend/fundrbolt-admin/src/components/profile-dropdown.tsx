@@ -201,12 +201,20 @@ export function ProfileDropdown() {
                           className='gap-2 p-2'
                         >
                           <div className='flex size-6 items-center justify-center overflow-hidden rounded-sm border'>
-                            <InitialAvatar
-                              name={event.name}
-                              brandingPrimaryColor={null}
-                              size='sm'
-                              className='h-full w-full rounded-sm'
-                            />
+                            {event.logo_url ? (
+                              <img
+                                src={event.logo_url}
+                                alt={event.name}
+                                className='h-full w-full object-cover'
+                              />
+                            ) : (
+                              <InitialAvatar
+                                name={event.name}
+                                brandingPrimaryColor={null}
+                                size='sm'
+                                className='h-full w-full rounded-sm'
+                              />
+                            )}
                           </div>
                           <div className='min-w-0 flex-1'>
                             <div className='truncate font-medium'>
@@ -241,12 +249,20 @@ export function ProfileDropdown() {
                       className='gap-2 p-2'
                     >
                       <div className='flex size-6 items-center justify-center overflow-hidden rounded-sm border'>
-                        <InitialAvatar
-                          name={event.name}
-                          brandingPrimaryColor={null}
-                          size='sm'
-                          className='h-full w-full rounded-sm'
-                        />
+                        {event.logo_url ? (
+                          <img
+                            src={event.logo_url}
+                            alt={event.name}
+                            className='h-full w-full object-cover'
+                          />
+                        ) : (
+                          <InitialAvatar
+                            name={event.name}
+                            brandingPrimaryColor={null}
+                            size='sm'
+                            className='h-full w-full rounded-sm'
+                          />
+                        )}
                       </div>
                       <div className='min-w-0 flex-1'>
                         <div className='truncate font-medium'>{event.name}</div>

@@ -113,12 +113,12 @@ export const applyRosTemplate = async (
   return data
 }
 
-export const getRosNotification = async (
+export const listRosNotifications = async (
   eventId: string,
   itemId: string
-): Promise<RosNotification> => {
-  const { data } = await apiClient.get<RosNotification>(
-    `${BASE(eventId)}/${itemId}/notification`
+): Promise<RosNotification[]> => {
+  const { data } = await apiClient.get<RosNotification[]>(
+    `${BASE(eventId)}/${itemId}/notifications`
   )
   return data
 }
@@ -129,7 +129,7 @@ export const createRosNotification = async (
   payload: RosNotificationCreate
 ): Promise<RosNotification> => {
   const { data } = await apiClient.post<RosNotification>(
-    `${BASE(eventId)}/${itemId}/notification`,
+    `${BASE(eventId)}/${itemId}/notifications`,
     payload
   )
   return data
@@ -137,9 +137,12 @@ export const createRosNotification = async (
 
 export const deleteRosNotification = async (
   eventId: string,
-  itemId: string
+  itemId: string,
+  notificationId: string
 ): Promise<void> => {
-  await apiClient.delete(`${BASE(eventId)}/${itemId}/notification`)
+  await apiClient.delete(
+    `${BASE(eventId)}/${itemId}/notifications/${notificationId}`
+  )
 }
 
 // Auctioneer-facing endpoints

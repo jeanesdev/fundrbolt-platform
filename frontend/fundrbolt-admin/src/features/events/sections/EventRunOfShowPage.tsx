@@ -12,7 +12,6 @@ import {
   listRosTemplates,
   markRosItemComplete,
   markRosItemIncomplete,
-  reorderRosItems,
   saveAsRosTemplate,
   updateRosItem,
 } from '@/services/runOfShowService'
@@ -31,7 +30,6 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core'
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -83,7 +81,15 @@ export function EventRunOfShowPage() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
-  const items = useMemo(() => data?.items ?? [], [data?.items])
+  const items = useMemo(
+    () =>
+      [...(data?.items ?? [])].sort(
+        (a, b) =>
+          new Date(a.scheduled_time).getTime() -
+          new Date(b.scheduled_time).getTime()
+      ),
+    [data?.items]
+  )
   const itemIds = useMemo(() => items.map((i) => i.id), [items])
 
   // ── Mutations ──────────────────────────────────────────────────
@@ -139,18 +145,6 @@ export function EventRunOfShowPage() {
     onError: () => toast.error('Failed to update item status'),
   })
 
-  const { mutate: reorderMutate } = useMutation({
-    mutationFn: (itemIds: string[]) =>
-      reorderRosItems(eventId, { item_ids: itemIds }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['ros', eventId] })
-    },
-    onError: () => {
-      toast.error('Failed to reorder items')
-      void queryClient.invalidateQueries({ queryKey: ['ros', eventId] })
-    },
-  })
-
   const saveTemplateMutation = useMutation({
     mutationFn: (name: string) => saveAsRosTemplate(eventId, { name }),
     onSuccess: () => {
@@ -192,6 +186,7 @@ export function EventRunOfShowPage() {
       itemId: string,
       updates: {
         title?: string
+        description?: string | null
         scheduled_time?: string
         donor_visible?: boolean
         auctioneer_visible?: boolean
@@ -217,20 +212,10 @@ export function EventRunOfShowPage() {
     [completeMutate]
   )
 
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event
-      if (!over || active.id === over.id) return
-
-      const oldIndex = items.findIndex((i) => i.id === active.id)
-      const newIndex = items.findIndex((i) => i.id === over.id)
-      if (oldIndex === -1 || newIndex === -1) return
-
-      const reordered = arrayMove(items, oldIndex, newIndex)
-      reorderMutate(reordered.map((i) => i.id))
-    },
-    [items, reorderMutate]
-  )
+  const handleDragEnd = useCallback((_event: DragEndEvent) => {
+    // Items are always sorted by scheduled_time; drag-and-drop reordering
+    // is intentionally a no-op to preserve time-based ordering.
+  }, [])
 
   const handleApplyTemplate = () => {
     if (!selectedTemplateId) return
@@ -321,6 +306,9 @@ export function EventRunOfShowPage() {
         <RunOfShowItemForm
           onSubmit={(payload) => createMutation.mutate(payload)}
           onCancel={() => setShowAddForm(false)}
+          eventDate={
+            data?.event_start_time ? String(data.event_start_time) : undefined
+          }
         />
       )}
 
@@ -345,12 +333,17 @@ export function EventRunOfShowPage() {
             items={itemIds}
             strategy={verticalListSortingStrategy}
           >
-            <div className='space-y-1'>
+            <div className='grid gap-2'>
               {items.map((item) => (
                 <SortableRunOfShowItem
                   key={item.id}
                   eventId={eventId}
                   item={item}
+                  eventDate={
+                    data?.event_start_time
+                      ? String(data.event_start_time)
+                      : undefined
+                  }
                   onUpdate={handleUpdate}
                   onDelete={handleDelete}
                   onToggleComplete={handleToggleComplete}

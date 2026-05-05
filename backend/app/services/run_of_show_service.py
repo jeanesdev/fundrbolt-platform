@@ -14,10 +14,12 @@ from app.models.run_of_show import (
     RunOfShowItem,
     RunOfShowTemplate,
     RunOfShowTemplateItem,
+    ScheduledRunOfShowNotification,
 )
 from app.models.user import User
 from app.schemas.run_of_show import (
     ApplyTemplateResponse,
+    RosNotificationResponse,
     RunOfShowItemCreate,
     RunOfShowItemResponse,
     RunOfShowItemUpdate,
@@ -40,8 +42,26 @@ class RunOfShowService:
     @staticmethod
     def item_to_response(item: RunOfShowItem) -> RunOfShowItemResponse:
         """Convert ORM model to response schema."""
-        notification = item.__dict__.get("notification")
-        has_notification = notification is not None
+        raw_notifications: list[ScheduledRunOfShowNotification] = (
+            item.__dict__.get("notifications") or []
+        )
+        notification_responses = [
+            RosNotificationResponse(
+                id=n.id,
+                ros_item_id=n.ros_item_id,
+                message_body=n.message_body,
+                recipient_type=n.recipient_type.value,
+                minutes_before=n.minutes_before,
+                scheduled_at=n.scheduled_at,
+                delivery_status=n.delivery_status.value,
+                celery_task_id=n.celery_task_id,
+                delivered_at=n.delivered_at,
+                failure_reason=n.failure_reason,
+                created_at=n.created_at,
+                updated_at=n.updated_at,
+            )
+            for n in raw_notifications
+        ]
         return RunOfShowItemResponse(
             id=item.id,
             event_id=item.event_id,
@@ -53,7 +73,7 @@ class RunOfShowService:
             is_complete=item.is_complete,
             completed_at=item.completed_at,
             display_order=item.display_order,
-            has_notification=has_notification,
+            notifications=notification_responses,
             created_by=item.created_by,
             created_at=item.created_at,
             updated_at=item.updated_at,
@@ -109,7 +129,11 @@ class RunOfShowService:
         visibility_filter: str | None = None,
     ) -> RunOfShowResponse:
         """Get all run-of-show items for an event."""
-        query = select(RunOfShowItem).where(RunOfShowItem.event_id == event_id)
+        query = (
+            select(RunOfShowItem)
+            .where(RunOfShowItem.event_id == event_id)
+            .options(selectinload(RunOfShowItem.notifications))
+        )
 
         if visibility_filter == "donor":
             query = query.where(RunOfShowItem.donor_visible.is_(True))
@@ -224,7 +248,7 @@ class RunOfShowService:
         )
 
         item = await RunOfShowService._get_item(db, event_id, item_id)
-        await RunOfShowNotificationService.cancel_notification_for_item(db, item_id)
+        await RunOfShowNotificationService.cancel_all_for_item(db, item_id)
         await db.delete(item)
         await db.commit()
         logger.info(f"Deleted RoS item {item_id} from event {event_id}")

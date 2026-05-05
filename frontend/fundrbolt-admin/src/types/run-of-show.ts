@@ -9,7 +9,7 @@ export interface RunOfShowItem {
   is_complete: boolean
   completed_at: string | null
   display_order: number
-  has_notification: boolean
+  notifications: RosNotification[]
   created_by: string
   created_at: string
   updated_at: string
@@ -96,6 +96,7 @@ export interface RosNotification {
   ros_item_id: string
   message_body: string
   recipient_type: 'donors' | 'auctioneer' | 'all_attendees'
+  minutes_before: number
   scheduled_at: string
   delivery_status: 'pending' | 'delivered' | 'failed' | 'cancelled'
   celery_task_id: string | null
@@ -108,4 +109,5 @@ export interface RosNotification {
 export interface RosNotificationCreate {
   message_body: string
   recipient_type: 'donors' | 'auctioneer' | 'all_attendees'
+  minutes_before?: number
 }

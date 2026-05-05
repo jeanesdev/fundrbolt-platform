@@ -421,6 +421,10 @@ class BrandingService:
         if update_data.logo_url is not None:
             branding.logo_url = update_data.logo_url
 
+        # Update icon URL
+        if update_data.icon_url is not None:
+            branding.icon_url = update_data.icon_url
+
         # Validate and update social media links
         if update_data.social_media_links is not None:
             validation_result = self.validate_social_media_links(update_data.social_media_links)
@@ -502,6 +506,7 @@ class BrandingService:
             primary_color=primary_color,
             secondary_color=secondary_color,
             logo_url=branding_data.logo_url,
+            icon_url=branding_data.icon_url,
             social_media_links=branding_data.social_media_links,
             custom_css_properties=branding_data.custom_css_properties,
         )

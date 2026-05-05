@@ -9,7 +9,6 @@ import {
   type FieldValues,
 } from 'react-hook-form'
 import * as LabelPrimitive from '@radix-ui/react-label'
-import { Slot } from '@radix-ui/react-slot'
 import { cn } from '@/lib/utils'
 import { Label } from '@/components/ui/label'
 
@@ -101,22 +100,34 @@ function FormLabel({
   )
 }
 
-function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
+function FormControl({
+  children,
+  ...props
+}: { children?: React.ReactNode } & React.HTMLAttributes<HTMLElement>) {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
 
-  return (
-    <Slot
-      data-slot='form-control'
-      id={formItemId}
-      aria-describedby={
-        !error
-          ? `${formDescriptionId}`
-          : `${formDescriptionId} ${formMessageId}`
-      }
-      aria-invalid={!!error}
-      {...props}
-    />
-  )
+  const extraProps = {
+    'data-slot': 'form-control',
+    id: formItemId,
+    'aria-describedby': !error
+      ? `${formDescriptionId}`
+      : `${formDescriptionId} ${formMessageId}`,
+    'aria-invalid': !!error,
+    ...props,
+  }
+
+  // Use cloneElement instead of Slot to avoid React 19 + composeRefs infinite
+  // loop: Slot creates a new composeRefs callback every render, which React 19
+  // treats as a new ref and cleans up → re-sets → triggers more renders.
+  // cloneElement merges accessibility props without touching the child's ref.
+  if (React.isValidElement(children)) {
+    return React.cloneElement(
+      children as React.ReactElement<Record<string, unknown>>,
+      extraProps
+    )
+  }
+
+  return null
 }
 
 function FormDescription({ className, ...props }: React.ComponentProps<'p'>) {
@@ -153,12 +164,12 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
 }
 
 export {
-  useFormField,
   Form,
-  FormItem,
-  FormLabel,
   FormControl,
   FormDescription,
-  FormMessage,
   FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  useFormField,
 }

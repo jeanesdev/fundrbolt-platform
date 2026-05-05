@@ -12,16 +12,24 @@ interface RosCountdownBadgeProps {
 
 function computeCountdown(targetIso: string): string {
   const diff = new Date(targetIso).getTime() - Date.now()
-  if (diff <= 0) return '00:00:00'
-  const hours = Math.floor(diff / 3_600_000)
+  if (diff <= 0) return '0s'
+  const weeks = Math.floor(diff / 604_800_000)
+  const days = Math.floor((diff % 604_800_000) / 86_400_000)
+  const hours = Math.floor((diff % 86_400_000) / 3_600_000)
   const minutes = Math.floor((diff % 3_600_000) / 60_000)
   const seconds = Math.floor((diff % 60_000) / 1_000)
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  const parts: string[] = []
+  if (weeks > 0) parts.push(`${weeks}w`)
+  if (days > 0) parts.push(`${days}d`)
+  if (hours > 0) parts.push(`${hours}h`)
+  if (minutes > 0) parts.push(`${minutes}m`)
+  parts.push(`${seconds}s`)
+  return parts.join(' ')
 }
 
 export function RosCountdownBadge({ nextItem }: RosCountdownBadgeProps) {
   const [countdown, setCountdown] = useState<string>(() =>
-    nextItem ? computeCountdown(nextItem.scheduled_time) : '00:00:00'
+    nextItem ? computeCountdown(nextItem.scheduled_time) : '0s'
   )
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -29,7 +37,7 @@ export function RosCountdownBadge({ nextItem }: RosCountdownBadgeProps) {
     if (intervalRef.current) clearInterval(intervalRef.current)
 
     if (!nextItem) {
-      setCountdown('00:00:00')
+      setCountdown('0s')
       return
     }
 
@@ -45,9 +53,14 @@ export function RosCountdownBadge({ nextItem }: RosCountdownBadgeProps) {
 
   if (!nextItem) {
     return (
-      <div className='flex items-center gap-1.5 rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-200'>
-        <CalendarClock className='h-3.5 w-3.5' />
-        Program Complete
+      <div className='bg-muted/70 flex min-h-9 items-center gap-2 rounded-md border px-2.5 py-1 text-xs'>
+        <CalendarClock className='text-muted-foreground h-3.5 w-3.5 shrink-0' />
+        <div className='min-w-0'>
+          <div className='text-muted-foreground leading-none'>Next Up</div>
+          <div className='truncate pt-0.5 leading-none font-semibold'>
+            Complete
+          </div>
+        </div>
       </div>
     )
   }
@@ -63,13 +76,18 @@ export function RosCountdownBadge({ nextItem }: RosCountdownBadgeProps) {
     <button
       type='button'
       onClick={handleClick}
-      className='flex items-center gap-1.5 rounded-md bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:hover:bg-amber-800'
+      className='bg-muted/70 hover:bg-muted hover:border-foreground/20 flex min-h-9 cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1 text-xs transition-colors'
       title='Scroll to Run of Show'
     >
-      <CalendarClock className='h-3.5 w-3.5 shrink-0' />
-      <span className='hidden sm:inline'>Next:</span>{' '}
-      <span className='max-w-32 truncate'>{nextItem.title}</span>{' '}
-      <span className='tabular-nums'>{isPast ? 'now' : `in ${countdown}`}</span>
+      <CalendarClock className='text-muted-foreground h-3.5 w-3.5 shrink-0' />
+      <div className='min-w-0'>
+        <div className='text-muted-foreground max-w-32 truncate leading-none'>
+          {nextItem.title}
+        </div>
+        <div className='truncate pt-0.5 leading-none font-semibold tabular-nums'>
+          {isPast ? 'now' : countdown}
+        </div>
+      </div>
     </button>
   )
 }

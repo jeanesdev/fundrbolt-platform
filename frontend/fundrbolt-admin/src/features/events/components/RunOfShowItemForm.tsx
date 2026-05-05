@@ -1,5 +1,6 @@
 /**
  * RunOfShowItemForm — Inline form for adding a new run-of-show item.
+ * Time is entered as time-only; the date portion comes from the event date.
  */
 import { useState } from 'react'
 import type { RunOfShowItemCreate } from '@/types/run-of-show'
@@ -11,50 +12,53 @@ import { Label } from '@/components/ui/label'
 interface RunOfShowItemFormProps {
   onSubmit: (data: RunOfShowItemCreate) => void
   onCancel: () => void
+  /** ISO datetime of the event start — used as the date when saving */
+  eventDate?: string
 }
 
-/** Convert a local datetime-local input string to ISO 8601 */
-function localDatetimeToIso(value: string): string {
-  if (!value) return ''
-  // datetime-local value is like "2025-01-15T14:30"
-  return new Date(value).toISOString()
-}
-
-/** Convert an ISO datetime string to datetime-local input format "YYYY-MM-DDTHH:MM" */
-function isoToLocalDatetime(iso: string): string {
-  if (!iso) return ''
+/** Get a YYYY-MM-DD date string from an ISO datetime or fall back to today */
+function getDateStr(iso?: string): string {
+  const src = iso ?? new Date().toISOString()
   try {
-    const d = new Date(iso)
+    const d = new Date(src)
     const pad = (n: number) => String(n).padStart(2, '0')
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
   } catch {
-    return ''
+    return new Date().toISOString().slice(0, 10)
   }
 }
 
-/** Get a sensible default datetime (nearest future half-hour) */
-function getDefaultDatetime(): string {
+/** Get a sensible default time string (nearest future half-hour) as HH:mm */
+function getDefaultTime(): string {
   const now = new Date()
   now.setMinutes(Math.ceil(now.getMinutes() / 30) * 30, 0, 0)
-  return isoToLocalDatetime(now.toISOString())
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(now.getHours())}:${pad(now.getMinutes())}`
+}
+
+/** Combine YYYY-MM-DD + HH:mm → ISO UTC string */
+function combineDateTimeToIso(dateStr: string, timeStr: string): string {
+  return new Date(`${dateStr}T${timeStr}`).toISOString()
 }
 
 export function RunOfShowItemForm({
   onSubmit,
   onCancel,
+  eventDate,
 }: RunOfShowItemFormProps) {
   const [title, setTitle] = useState('')
-  const [scheduledTime, setScheduledTime] = useState(getDefaultDatetime())
+  const [timeValue, setTimeValue] = useState(getDefaultTime())
   const [donorVisible, setDonorVisible] = useState(false)
   const [auctioneerVisible, setAuctioneerVisible] = useState(true)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const trimmed = title.trim()
-    if (!trimmed || !scheduledTime) return
+    if (!trimmed || !timeValue) return
+    const dateStr = getDateStr(eventDate)
     onSubmit({
       title: trimmed,
-      scheduled_time: localDatetimeToIso(scheduledTime),
+      scheduled_time: combineDateTimeToIso(dateStr, timeValue),
       donor_visible: donorVisible,
       auctioneer_visible: auctioneerVisible,
     })
@@ -76,10 +80,10 @@ export function RunOfShowItemForm({
           required
         />
         <Input
-          type='datetime-local'
-          value={scheduledTime}
-          onChange={(e) => setScheduledTime(e.target.value)}
-          className='h-8 w-48 text-sm'
+          type='time'
+          value={timeValue}
+          onChange={(e) => setTimeValue(e.target.value)}
+          className='h-8 w-28 text-sm'
           required
         />
       </div>

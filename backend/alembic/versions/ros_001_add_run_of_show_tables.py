@@ -19,25 +19,25 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    # Create ENUMs
-    ros_notification_recipient_type_enum = postgresql.ENUM(
+    # Create ENUMs (using create_type=False + explicit create with checkfirst, like other migrations)
+    recipient_type_enum = postgresql.ENUM(
         "donors",
         "auctioneer",
         "all_attendees",
         name="ros_notification_recipient_type_enum",
-        create_type=True,
+        create_type=False,
     )
-    ros_notification_recipient_type_enum.create(op.get_bind(), checkfirst=True)
+    recipient_type_enum.create(op.get_bind(), checkfirst=True)
 
-    ros_notification_delivery_status_enum = postgresql.ENUM(
+    delivery_status_enum = postgresql.ENUM(
         "pending",
         "delivered",
         "failed",
         "cancelled",
         name="ros_notification_delivery_status_enum",
-        create_type=True,
+        create_type=False,
     )
-    ros_notification_delivery_status_enum.create(op.get_bind(), checkfirst=True)
+    delivery_status_enum.create(op.get_bind(), checkfirst=True)
 
     # Table 1: run_of_show_templates
     op.create_table(
@@ -225,26 +225,13 @@ def upgrade() -> None:
         sa.Column("message_body", sa.Text, nullable=False),
         sa.Column(
             "recipient_type",
-            sa.Enum(
-                "donors",
-                "auctioneer",
-                "all_attendees",
-                name="ros_notification_recipient_type_enum",
-                create_type=False,
-            ),
+            recipient_type_enum,
             nullable=False,
         ),
         sa.Column("scheduled_at", sa.TIMESTAMP(timezone=True), nullable=False),
         sa.Column(
             "delivery_status",
-            sa.Enum(
-                "pending",
-                "delivered",
-                "failed",
-                "cancelled",
-                name="ros_notification_delivery_status_enum",
-                create_type=False,
-            ),
+            delivery_status_enum,
             nullable=False,
             server_default=sa.text("'pending'"),
         ),

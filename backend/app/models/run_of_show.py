@@ -123,11 +123,11 @@ class RunOfShowItem(Base, UUIDMixin, TimestampMixin):
         nullable=False,
     )
 
-    notification: Mapped[ScheduledRunOfShowNotification | None] = relationship(
+    notifications: Mapped[list[ScheduledRunOfShowNotification]] = relationship(
         "ScheduledRunOfShowNotification",
         back_populates="ros_item",
         cascade="all, delete-orphan",
-        uselist=False,
+        uselist=True,
         lazy="select",
     )
 
@@ -144,7 +144,7 @@ class ScheduledRunOfShowNotification(Base, UUIDMixin, TimestampMixin):
         UUID(as_uuid=True),
         ForeignKey("run_of_show_items.id", ondelete="CASCADE"),
         nullable=False,
-        unique=True,
+        index=True,
     )
     message_body: Mapped[str] = mapped_column(Text, nullable=False)
     recipient_type: Mapped[RosRecipientTypeEnum] = mapped_column(
@@ -156,6 +156,7 @@ class ScheduledRunOfShowNotification(Base, UUIDMixin, TimestampMixin):
         ),
         nullable=False,
     )
+    minutes_before: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     delivery_status: Mapped[RosDeliveryStatusEnum] = mapped_column(
         Enum(
@@ -172,5 +173,5 @@ class ScheduledRunOfShowNotification(Base, UUIDMixin, TimestampMixin):
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     ros_item: Mapped[RunOfShowItem] = relationship(
-        "RunOfShowItem", back_populates="notification", lazy="select"
+        "RunOfShowItem", back_populates="notifications", lazy="select"
     )

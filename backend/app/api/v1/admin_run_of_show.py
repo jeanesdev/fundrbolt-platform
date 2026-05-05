@@ -249,8 +249,24 @@ async def incomplete_run_of_show_item(
 # ─── Notification Sub-Resource ────────────────────────────────────────────────
 
 
+@router.get(
+    "/admin/events/{event_id}/run-of-show/{item_id}/notifications",
+    response_model=list[RosNotificationResponse],
+)
+async def list_item_notifications(
+    event_id: uuid.UUID,
+    item_id: uuid.UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> list[RosNotificationResponse]:
+    """List all scheduled notifications for a run-of-show item."""
+    await _require_event_access(db, current_user, event_id)
+    notifications = await RunOfShowNotificationService.get_notifications_for_item(db, item_id)
+    return [RunOfShowNotificationService.notification_to_response(n) for n in notifications]
+
+
 @router.post(
-    "/admin/events/{event_id}/run-of-show/{item_id}/notification",
+    "/admin/events/{event_id}/run-of-show/{item_id}/notifications",
     response_model=RosNotificationResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -276,45 +292,31 @@ async def create_item_notification(
         )
 
     notification = await RunOfShowNotificationService.schedule_notification(
-        db, item_id, data.message_body, recipient_type
+        db, item_id, data.message_body, recipient_type, data.minutes_before
     )
     return RunOfShowNotificationService.notification_to_response(notification)
 
 
-@router.get(
-    "/admin/events/{event_id}/run-of-show/{item_id}/notification",
-    response_model=RosNotificationResponse,
-)
-async def get_item_notification(
-    event_id: uuid.UUID,
-    item_id: uuid.UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> RosNotificationResponse:
-    """Get the scheduled notification for a run-of-show item."""
-    await _require_event_access(db, current_user, event_id)
-    notification = await RunOfShowNotificationService.get_notification_for_item(db, item_id)
-    if notification is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No notification scheduled for this item",
-        )
-    return RunOfShowNotificationService.notification_to_response(notification)
-
-
 @router.delete(
-    "/admin/events/{event_id}/run-of-show/{item_id}/notification",
+    "/admin/events/{event_id}/run-of-show/{item_id}/notifications/{notification_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def cancel_item_notification(
     event_id: uuid.UUID,
     item_id: uuid.UUID,
+    notification_id: uuid.UUID,
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> None:
-    """Cancel the scheduled notification for a run-of-show item."""
+    """Cancel a scheduled notification for a run-of-show item."""
     await _require_event_access(db, current_user, event_id)
-    await RunOfShowNotificationService.cancel_notification_for_item(db, item_id)
+    notification = await RunOfShowNotificationService.get_notification_by_id(db, notification_id)
+    if notification is None or notification.ros_item_id != item_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Notification not found",
+        )
+    await RunOfShowNotificationService.cancel_notification(db, notification_id)
 
 
 # ─── NPO Template Endpoints ─────────────────────────────────────────────────
