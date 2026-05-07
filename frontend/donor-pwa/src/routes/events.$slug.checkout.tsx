@@ -190,8 +190,13 @@ function EventCheckoutPage() {
             : undefined,
         acknowledged_items_updated_at: acknowledgedItemsUpdatedAt ?? undefined,
       }),
-    onSuccess: (updated) => {
-      queryClient.setQueryData(['checkout-session', event?.id], updated)
+    onSuccess: () => {
+      // Invalidate so the next render re-fetches the complete session (now
+      // status="complete") from the server instead of storing the lightweight
+      // CheckoutConfirmResponse in the CheckoutSession query cache.
+      void queryClient.invalidateQueries({
+        queryKey: ['checkout-session', event?.id],
+      })
       setConfirmStage('submitted')
       setSubmitError(null)
     },
