@@ -1,0 +1,299 @@
+openapi: "3.1.0"
+info:
+  title: "Checkout — Donor Endpoints"
+  version: "1.0.0"
+  description: "All donor-facing checkout endpoints in the Donor PWA"
+
+paths:
+  /api/v1/events/{event_id}/checkout/session:
+    get:
+      operationId: getCheckoutSession
+      summary: Get donor's checkout session for an event
+      tags: [Checkout - Donor]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Checkout session (created lazily if not exists)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSessionResponse"
+        "403":
+          description: Checkout not open for this event
+        "404":
+          description: Event not found
+    patch:
+      operationId: updateCheckoutSession
+      summary: Update donor's checkout session (tips, payment method, fee election)
+      tags: [Checkout - Donor]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutSessionUpdateRequest"
+      responses:
+        "200":
+          description: Updated session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSessionResponse"
+        "400":
+          description: Validation error (e.g. negative tip)
+        "409":
+          description: Checkout already complete — cannot modify
+
+  /api/v1/events/{event_id}/checkout/confirm:
+    post:
+      operationId: confirmCheckout
+      summary: Confirm and submit checkout (simulated payment)
+      tags: [Checkout - Donor]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutConfirmRequest"
+      responses:
+        "200":
+          description: Checkout complete
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutConfirmResponse"
+        "409":
+          description: Already completed or items modified since last acknowledged
+
+  /api/v1/events/{event_id}/checkout/receipt:
+    get:
+      operationId: downloadCheckoutReceipt
+      summary: Download PDF receipt for completed checkout
+      tags: [Checkout - Donor]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: PDF receipt
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: No completed checkout or receipt not yet generated
+
+  /api/v1/events/{event_id}/checkout/contact-admin:
+    post:
+      operationId: contactAdminFromCheckout
+      summary: Send message to NPO Admin from Checkout page (email + push + SMS)
+      tags: [Checkout - Donor]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactAdminRequest"
+      responses:
+        "204":
+          description: Message dispatched (fire-and-forget)
+        "429":
+          description: Rate limited (max 3 messages per donor per hour)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CheckoutItemResponse:
+      type: object
+      required: [id, name, effective_amount_cents, original_amount_cents, source_type, display_order]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        original_amount_cents:
+          type: integer
+          minimum: 0
+        adjusted_amount_cents:
+          type: integer
+          nullable: true
+          minimum: 0
+        effective_amount_cents:
+          type: integer
+          minimum: 0
+          description: adjusted_amount_cents if set, else original_amount_cents
+        source_type:
+          type: string
+          enum: [auction_win, quick_entry_bid, quick_entry_donation, ticket, manual]
+        display_order:
+          type: integer
+
+    CheckoutSessionResponse:
+      type: object
+      required: [id, event_id, status, payment_method, items, subtotal_cents, processing_fee_cents, auctioneer_tip_cents, platform_tip_cents, total_cents, cover_processing_fee, items_updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [not_started, in_progress, complete]
+        payment_method:
+          type: string
+          enum: [card, cash, check, daf]
+        cover_processing_fee:
+          type: boolean
+        auctioneer_tip_cents:
+          type: integer
+          minimum: 0
+          default: 5000
+        platform_tip_cents:
+          type: integer
+          minimum: 0
+          default: 0
+        subtotal_cents:
+          type: integer
+          minimum: 0
+        processing_fee_cents:
+          type: integer
+          minimum: 0
+        total_cents:
+          type: integer
+          minimum: 0
+        processing_fee_rate:
+          type: number
+          description: Snapshotted fee rate for this event (e.g. 0.0290)
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CheckoutItemResponse"
+        items_updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        receipt_url:
+          type: string
+          nullable: true
+        cash_instructions:
+          type: string
+          nullable: true
+          description: Booth instructions for Cash/Check/DAF methods
+
+    CheckoutSessionUpdateRequest:
+      type: object
+      properties:
+        payment_method:
+          type: string
+          enum: [card, cash, check, daf]
+        cover_processing_fee:
+          type: boolean
+        auctioneer_tip_cents:
+          type: integer
+          minimum: 0
+        platform_tip_cents:
+          type: integer
+          minimum: 0
+
+    CheckoutConfirmRequest:
+      type: object
+      required: [idempotency_key, acknowledged_items_updated_at]
+      properties:
+        idempotency_key:
+          type: string
+          description: Client-generated UUID to prevent double-submission
+        payment_profile_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Required when payment_method = card
+        acknowledged_items_updated_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Client must echo back items_updated_at they last saw to prevent stale confirmation
+
+    CheckoutConfirmResponse:
+      type: object
+      required: [session_id, status, total_cents, completed_at]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [complete]
+        total_cents:
+          type: integer
+        completed_at:
+          type: string
+          format: date-time
+        receipt_url:
+          type: string
+          nullable: true
+
+    ContactAdminRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1000

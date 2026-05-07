@@ -7,13 +7,7 @@
  * - Searchable by item number or item description (bids)
  * - Tap/click a bid row to see full bid history for that item
  */
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+import { useMemo, useState } from 'react'
 import type {
   DonorActivityResponse,
   DonorBidItem,
@@ -30,7 +24,13 @@ import {
   Ticket,
   X,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 
 interface MyBidsDonationsSectionProps {
   activity: DonorActivityResponse
@@ -201,7 +201,7 @@ function BidHistorySheet({
                 if (
                   !existing ||
                   statusPriority(effectiveStatus) >
-                  statusPriority(existingStatus)
+                    statusPriority(existingStatus)
                 ) {
                   seen.set(key, entry)
                 }

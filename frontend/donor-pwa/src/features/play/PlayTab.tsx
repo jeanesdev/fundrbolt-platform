@@ -49,7 +49,7 @@ export function PlayTab({ eventId, brandPrimary }: Props) {
   const closedItems = items.filter((i) => !i.is_open_for_entries)
 
   return (
-    <div className='space-y-4 px-4 py-4'>
+    <div className='mx-auto w-full max-w-lg space-y-4 px-4 py-4 lg:max-w-xl'>
       {isLoading && (
         <div className='flex items-center justify-center py-16'>
           <Loader2

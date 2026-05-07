@@ -23,6 +23,7 @@ import {
   MessageSquare,
   Receipt,
   Settings,
+  ShoppingCart,
   Tag,
   Ticket,
   Users,
@@ -64,4 +65,5 @@ export const iconMap = {
   Zap,
   BarChart3,
   Bell,
+  ShoppingCart,
 }

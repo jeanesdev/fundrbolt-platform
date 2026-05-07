@@ -22,6 +22,22 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
+function buildReceiptFilename(
+  eventName: string | null | undefined,
+  dateStr: string | null | undefined
+): string {
+  const safe = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+  const event = safe(eventName ?? 'event').slice(0, 40)
+  const date = dateStr
+    ? dateStr.slice(0, 10)
+    : new Date().toISOString().slice(0, 10)
+  return `receipt-${event}-${date}.pdf`
+}
+
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
   completed: 'Paid',
   pending: 'Pending',
@@ -158,6 +174,10 @@ export function PurchaseHistory({ perPage = 20 }: PurchaseHistoryProps) {
                   <Button asChild variant='outline' size='sm'>
                     <a
                       href={item.receipt_url}
+                      download={buildReceiptFilename(
+                        item.event_name,
+                        item.purchased_at
+                      )}
                       target='_blank'
                       rel='noopener noreferrer'
                     >

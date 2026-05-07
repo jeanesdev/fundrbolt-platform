@@ -74,6 +74,7 @@ import { Route as AuthenticatedEventsEventIdEditRouteImport } from './routes/_au
 import { Route as AuthenticatedEventsEventIdDonorDashboardRouteImport } from './routes/_authenticated/events/$eventId/donor-dashboard'
 import { Route as AuthenticatedEventsEventIdDetailsRouteImport } from './routes/_authenticated/events/$eventId/details'
 import { Route as AuthenticatedEventsEventIdDashboardRouteImport } from './routes/_authenticated/events/$eventId/dashboard'
+import { Route as AuthenticatedEventsEventIdCheckoutRouteImport } from './routes/_authenticated/events/$eventId/checkout'
 import { Route as AuthenticatedEventsEventIdChecklistRouteImport } from './routes/_authenticated/events/$eventId/checklist'
 import { Route as AuthenticatedEventsEventIdCheckinRouteImport } from './routes/_authenticated/events/$eventId/checkin'
 import { Route as AuthenticatedEventsEventIdAuctionItemsRouteImport } from './routes/_authenticated/events/$eventId/auction-items'
@@ -457,6 +458,12 @@ const AuthenticatedEventsEventIdDashboardRoute =
     path: '/dashboard',
     getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
   } as any)
+const AuthenticatedEventsEventIdCheckoutRoute =
+  AuthenticatedEventsEventIdCheckoutRouteImport.update({
+    id: '/checkout',
+    path: '/checkout',
+    getParentRoute: () => AuthenticatedEventsEventIdRouteRoute,
+  } as any)
 const AuthenticatedEventsEventIdChecklistRoute =
   AuthenticatedEventsEventIdChecklistRouteImport.update({
     id: '/checklist',
@@ -647,6 +654,7 @@ export interface FileRoutesByFullPath {
   '/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsRouteWithChildren
   '/events/$eventId/checkin': typeof AuthenticatedEventsEventIdCheckinRoute
   '/events/$eventId/checklist': typeof AuthenticatedEventsEventIdChecklistRoute
+  '/events/$eventId/checkout': typeof AuthenticatedEventsEventIdCheckoutRoute
   '/events/$eventId/dashboard': typeof AuthenticatedEventsEventIdDashboardRoute
   '/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
   '/events/$eventId/donor-dashboard': typeof AuthenticatedEventsEventIdDonorDashboardRoute
@@ -731,6 +739,7 @@ export interface FileRoutesByTo {
   '/events/$eventId/auction-bids': typeof AuthenticatedEventsEventIdAuctionBidsRoute
   '/events/$eventId/checkin': typeof AuthenticatedEventsEventIdCheckinRoute
   '/events/$eventId/checklist': typeof AuthenticatedEventsEventIdChecklistRoute
+  '/events/$eventId/checkout': typeof AuthenticatedEventsEventIdCheckoutRoute
   '/events/$eventId/dashboard': typeof AuthenticatedEventsEventIdDashboardRoute
   '/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
   '/events/$eventId/donor-dashboard': typeof AuthenticatedEventsEventIdDonorDashboardRoute
@@ -822,6 +831,7 @@ export interface FileRoutesById {
   '/_authenticated/events/$eventId/auction-items': typeof AuthenticatedEventsEventIdAuctionItemsRouteWithChildren
   '/_authenticated/events/$eventId/checkin': typeof AuthenticatedEventsEventIdCheckinRoute
   '/_authenticated/events/$eventId/checklist': typeof AuthenticatedEventsEventIdChecklistRoute
+  '/_authenticated/events/$eventId/checkout': typeof AuthenticatedEventsEventIdCheckoutRoute
   '/_authenticated/events/$eventId/dashboard': typeof AuthenticatedEventsEventIdDashboardRoute
   '/_authenticated/events/$eventId/details': typeof AuthenticatedEventsEventIdDetailsRoute
   '/_authenticated/events/$eventId/donor-dashboard': typeof AuthenticatedEventsEventIdDonorDashboardRoute
@@ -912,6 +922,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/auction-items'
     | '/events/$eventId/checkin'
     | '/events/$eventId/checklist'
+    | '/events/$eventId/checkout'
     | '/events/$eventId/dashboard'
     | '/events/$eventId/details'
     | '/events/$eventId/donor-dashboard'
@@ -996,6 +1007,7 @@ export interface FileRouteTypes {
     | '/events/$eventId/auction-bids'
     | '/events/$eventId/checkin'
     | '/events/$eventId/checklist'
+    | '/events/$eventId/checkout'
     | '/events/$eventId/dashboard'
     | '/events/$eventId/details'
     | '/events/$eventId/donor-dashboard'
@@ -1086,6 +1098,7 @@ export interface FileRouteTypes {
     | '/_authenticated/events/$eventId/auction-items'
     | '/_authenticated/events/$eventId/checkin'
     | '/_authenticated/events/$eventId/checklist'
+    | '/_authenticated/events/$eventId/checkout'
     | '/_authenticated/events/$eventId/dashboard'
     | '/_authenticated/events/$eventId/details'
     | '/_authenticated/events/$eventId/donor-dashboard'
@@ -1612,6 +1625,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsEventIdDashboardRouteImport
       parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
     }
+    '/_authenticated/events/$eventId/checkout': {
+      id: '/_authenticated/events/$eventId/checkout'
+      path: '/checkout'
+      fullPath: '/events/$eventId/checkout'
+      preLoaderRoute: typeof AuthenticatedEventsEventIdCheckoutRouteImport
+      parentRoute: typeof AuthenticatedEventsEventIdRouteRoute
+    }
     '/_authenticated/events/$eventId/checklist': {
       id: '/_authenticated/events/$eventId/checklist'
       path: '/checklist'
@@ -1842,6 +1862,7 @@ interface AuthenticatedEventsEventIdRouteRouteChildren {
   AuthenticatedEventsEventIdAuctionItemsRoute: typeof AuthenticatedEventsEventIdAuctionItemsRouteWithChildren
   AuthenticatedEventsEventIdCheckinRoute: typeof AuthenticatedEventsEventIdCheckinRoute
   AuthenticatedEventsEventIdChecklistRoute: typeof AuthenticatedEventsEventIdChecklistRoute
+  AuthenticatedEventsEventIdCheckoutRoute: typeof AuthenticatedEventsEventIdCheckoutRoute
   AuthenticatedEventsEventIdDashboardRoute: typeof AuthenticatedEventsEventIdDashboardRoute
   AuthenticatedEventsEventIdDetailsRoute: typeof AuthenticatedEventsEventIdDetailsRoute
   AuthenticatedEventsEventIdDonorDashboardRoute: typeof AuthenticatedEventsEventIdDonorDashboardRoute
@@ -1876,6 +1897,8 @@ const AuthenticatedEventsEventIdRouteRouteChildren: AuthenticatedEventsEventIdRo
       AuthenticatedEventsEventIdCheckinRoute,
     AuthenticatedEventsEventIdChecklistRoute:
       AuthenticatedEventsEventIdChecklistRoute,
+    AuthenticatedEventsEventIdCheckoutRoute:
+      AuthenticatedEventsEventIdCheckoutRoute,
     AuthenticatedEventsEventIdDashboardRoute:
       AuthenticatedEventsEventIdDashboardRoute,
     AuthenticatedEventsEventIdDetailsRoute:

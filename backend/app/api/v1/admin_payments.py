@@ -8,25 +8,65 @@ Endpoints:
   GET    /admin/payments/transactions             — transaction list for event (T054)
   POST   /admin/payments/{transaction_id}/void    — void captured transaction (T053)
   POST   /admin/payments/{transaction_id}/refund  — partial or full refund (T053)
+
+  Feature 044 — Admin Event Checkout (router_checkout, prefix /admin/events):
+  POST   /admin/events/{event_id}/checkout/open                               — open checkout
+  POST   /admin/events/{event_id}/checkout/close                              — close checkout
+  POST   /admin/events/{event_id}/checkout/schedule                           — schedule auto-open
+  DELETE /admin/events/{event_id}/checkout/schedule                           — cancel schedule
+  GET    /admin/events/{event_id}/checkout/configuration                      — get config
+  PATCH  /admin/events/{event_id}/checkout/configuration                      — update config
+  GET    /admin/events/{event_id}/checkout/donors                             — list donor status
+  GET    /admin/events/{event_id}/checkout/donors/{user_id}/session           — donor session
+  POST   /admin/events/{event_id}/checkout/donors/{user_id}/items             — add item
+  PATCH  /admin/events/{event_id}/checkout/donors/{user_id}/items/{item_id}  — reprice item
+  DELETE /admin/events/{event_id}/checkout/donors/{user_id}/items/{item_id}  — remove item
+  POST   /admin/events/{event_id}/checkout/notifications/send-link            — send link
+  POST   /admin/events/{event_id}/checkout/notifications/send-reminder        — send reminder
+  GET    /admin/events/{event_id}/checkout/donors/{user_id}/receipt           — redirect to PDF
+  POST   /admin/events/{event_id}/checkout/donors/{user_id}/receipt/resend   — resend receipt
+
+  Feature 044 — Super-Admin Fee Config (router_fee_config, prefix /admin):
+  GET    /admin/processing-fee-config             — current rate
+  POST   /admin/processing-fee-config             — set new rate
+  GET    /admin/processing-fee-config/history     — paginated history
 """
 
 from __future__ import annotations
 
+import io
+import re
 import uuid
 from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.payment_deps import get_payment_gateway
 from app.middleware.auth import get_current_active_user, require_role
+from app.models.checkout_session import CheckoutSession
 from app.models.event import Event
 from app.models.payment_transaction import PaymentTransaction
 from app.models.user import User
+from app.schemas.checkout import (
+    AdminAddCheckoutItemRequest,
+    AdminCheckoutSessionResponse,
+    AdminRepriceItemRequest,
+    CheckoutConfigurationResponse,
+    DonorCheckoutCountsResponse,
+    DonorCheckoutStatusEntry,
+    DonorCheckoutStatusListResponse,
+    ProcessingFeeConfigResponse,
+    ScheduleCheckoutOpenRequest,
+    SendCheckoutNotificationRequest,
+    UpdateCheckoutConfigurationRequest,
+)
 from app.schemas.payment import (
     AdminChargeRequest,
     AdminChargeResponse,
@@ -38,12 +78,18 @@ from app.schemas.payment import (
     RefundResponse,
     VoidRequest,
 )
+from app.services.checkout_configuration_service import CheckoutConfigurationService
+from app.services.checkout_notification_service import CheckoutNotificationService
+from app.services.checkout_receipt_service import CheckoutReceiptService
 from app.services.checkout_service import CheckoutService
 from app.services.payment_gateway.port import PaymentGatewayPort
 from app.services.payment_profile_service import PaymentProfileService, profile_to_read
 from app.services.payment_transaction_service import PaymentTransactionService
+from app.services.processing_fee_config_service import ProcessingFeeConfigService
 
 router = APIRouter(prefix="/admin/payments", tags=["admin-payments"])
+router_checkout = APIRouter(prefix="/admin/events", tags=["admin-checkout"])
+router_fee_config = APIRouter(prefix="/admin", tags=["admin-fee-config"])
 
 # ── Typed dependency aliases ──────────────────────────────────────────────────
 
@@ -523,3 +569,582 @@ async def admin_create_payment_profile_for_user(
     await db.commit()
     await db.refresh(profile)
     return profile_to_read(profile)
+
+
+# ── Feature 044: Admin Event Checkout Control ─────────────────────────────────
+
+
+@router_checkout.post(
+    "/{event_id}/checkout/open",
+    response_model=CheckoutConfigurationResponse,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator")
+async def admin_open_checkout(
+    event_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+) -> CheckoutConfigurationResponse:
+    """Open checkout for an event. Snapshots the current processing fee rate if not yet set."""
+    svc = CheckoutConfigurationService(db)
+    config = await svc.open_checkout(event_id)
+    await db.commit()
+    await db.refresh(config)
+    return CheckoutConfigurationResponse.model_validate(config)
+
+
+@router_checkout.post(
+    "/{event_id}/checkout/close",
+    response_model=CheckoutConfigurationResponse,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator")
+async def admin_close_checkout(
+    event_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+) -> CheckoutConfigurationResponse:
+    """Close checkout for an event."""
+    svc = CheckoutConfigurationService(db)
+    config = await svc.close_checkout(event_id)
+    await db.commit()
+    await db.refresh(config)
+    return CheckoutConfigurationResponse.model_validate(config)
+
+
+@router_checkout.post(
+    "/{event_id}/checkout/schedule",
+    response_model=CheckoutConfigurationResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator")
+async def admin_schedule_checkout_open(
+    event_id: uuid.UUID,
+    body: ScheduleCheckoutOpenRequest,
+    current_user: CurrentUser,
+    db: DB,
+) -> CheckoutConfigurationResponse:
+    """Schedule checkout to auto-open at a specific UTC datetime."""
+    svc = CheckoutConfigurationService(db)
+    config = await svc.schedule_open(event_id, open_at=body.open_at)
+    await db.commit()
+    await db.refresh(config)
+    return CheckoutConfigurationResponse.model_validate(config)
+
+
+@router_checkout.delete(
+    "/{event_id}/checkout/schedule",
+    response_model=CheckoutConfigurationResponse,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator")
+async def admin_cancel_checkout_schedule(
+    event_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+) -> CheckoutConfigurationResponse:
+    """Cancel a pending scheduled auto-open."""
+    svc = CheckoutConfigurationService(db)
+    config = await svc.cancel_schedule(event_id)
+    await db.commit()
+    await db.refresh(config)
+    return CheckoutConfigurationResponse.model_validate(config)
+
+
+@router_checkout.get(
+    "/{event_id}/checkout/configuration",
+    response_model=CheckoutConfigurationResponse,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator", "npo_staff")
+async def admin_get_checkout_configuration(
+    event_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+) -> CheckoutConfigurationResponse:
+    """Get the checkout configuration for an event."""
+    svc = CheckoutConfigurationService(db)
+    config = await svc.get_or_create(event_id)
+    return CheckoutConfigurationResponse.model_validate(config)
+
+
+@router_checkout.patch(
+    "/{event_id}/checkout/configuration",
+    response_model=CheckoutConfigurationResponse,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator")
+async def admin_update_checkout_configuration(
+    event_id: uuid.UUID,
+    body: UpdateCheckoutConfigurationRequest,
+    current_user: CurrentUser,
+    db: DB,
+) -> CheckoutConfigurationResponse:
+    """Update editable checkout configuration fields (cash_instructions, donor_visible)."""
+    svc = CheckoutConfigurationService(db)
+    config = await svc.update_configuration(
+        event_id=event_id,
+        cash_instructions=body.cash_instructions,
+        donor_visible=body.donor_visible,
+    )
+    await db.commit()
+    await db.refresh(config)
+    return CheckoutConfigurationResponse.model_validate(config)
+
+
+@router_checkout.get(
+    "/{event_id}/checkout/donors",
+    response_model=DonorCheckoutStatusListResponse,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator", "npo_staff")
+async def admin_list_donor_checkout_status(
+    event_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+    page: int = 1,
+    per_page: int = 50,
+) -> DonorCheckoutStatusListResponse:
+    """List all donors and their checkout session status for an event."""
+    offset = (page - 1) * per_page
+
+    count_sql = text("SELECT COUNT(*) FROM checkout_sessions WHERE event_id = :eid")
+    total = (await db.execute(count_sql, {"eid": event_id})).scalar() or 0
+
+    counts_sql = text(
+        "SELECT status, COUNT(*) FROM checkout_sessions WHERE event_id = :eid GROUP BY status"
+    )
+    counts_rows = (await db.execute(counts_sql, {"eid": event_id})).all()
+    counts_map: dict[str, int] = {row[0]: row[1] for row in counts_rows}
+
+    result = await db.execute(
+        select(CheckoutSession)
+        .where(CheckoutSession.event_id == event_id)
+        .options(selectinload(CheckoutSession.items))
+        .order_by(CheckoutSession.created_at.asc())
+        .offset(offset)
+        .limit(per_page)
+    )
+    sessions = list(result.scalars().all())
+
+    entries: list[DonorCheckoutStatusEntry] = []
+    for sess in sessions:
+        user_result = await db.execute(select(User).where(User.id == sess.user_id))
+        user = user_result.scalar_one_or_none()
+        item_count = sum(1 for i in (sess.items or []) if i.deleted_at is None)
+        entries.append(
+            DonorCheckoutStatusEntry(
+                user_id=sess.user_id,
+                first_name=user.first_name if user else None,
+                last_name=user.last_name if user else None,
+                email=user.email if user else "",
+                status=sess.status.value,
+                total_cents=sess.total_cents,
+                item_count=item_count,
+                completed_at=sess.completed_at,
+            )
+        )
+
+    return DonorCheckoutStatusListResponse(
+        donors=entries,
+        total=int(total),
+        page=page,
+        per_page=per_page,
+        counts=DonorCheckoutCountsResponse(
+            not_started=counts_map.get("not_started", 0),
+            in_progress=counts_map.get("in_progress", 0),
+            complete=counts_map.get("complete", 0),
+        ),
+    )
+
+
+@router_checkout.get(
+    "/{event_id}/checkout/donors/{user_id}/session",
+    response_model=AdminCheckoutSessionResponse,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator", "npo_staff")
+async def admin_get_donor_session(
+    event_id: uuid.UUID,
+    user_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+) -> AdminCheckoutSessionResponse:
+    """Get a donor's checkout session, including admin audit logs."""
+    result = await db.execute(
+        select(CheckoutSession)
+        .where(
+            CheckoutSession.event_id == event_id,
+            CheckoutSession.user_id == user_id,
+        )
+        .options(
+            selectinload(CheckoutSession.items),
+            selectinload(CheckoutSession.audit_logs),
+        )
+    )
+    session = result.scalar_one_or_none()
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Checkout session not found for this donor.",
+        )
+    return AdminCheckoutSessionResponse.model_validate(session)
+
+
+@router_checkout.post(
+    "/{event_id}/checkout/donors/{user_id}/items",
+    response_model=AdminCheckoutSessionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator")
+async def admin_add_item_to_session(
+    event_id: uuid.UUID,
+    user_id: uuid.UUID,
+    body: AdminAddCheckoutItemRequest,
+    current_user: CurrentUser,
+    db: DB,
+) -> AdminCheckoutSessionResponse:
+    """Add a line item to a donor's checkout session."""
+    session = await _get_or_create_admin_session(db, event_id, user_id)
+    svc = CheckoutService(db)
+    await svc.admin_add_item(
+        session_id=session.id,
+        admin_user_id=current_user.id,
+        data=body,
+    )
+    await db.commit()
+    result = await db.execute(
+        select(CheckoutSession)
+        .where(CheckoutSession.id == session.id)
+        .options(
+            selectinload(CheckoutSession.items),
+            selectinload(CheckoutSession.audit_logs),
+        )
+    )
+    updated = result.scalar_one()
+    return AdminCheckoutSessionResponse.model_validate(updated)
+
+
+@router_checkout.patch(
+    "/{event_id}/checkout/donors/{user_id}/items/{item_id}",
+    response_model=AdminCheckoutSessionResponse,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator")
+async def admin_reprice_session_item(
+    event_id: uuid.UUID,
+    user_id: uuid.UUID,
+    item_id: uuid.UUID,
+    body: AdminRepriceItemRequest,
+    current_user: CurrentUser,
+    db: DB,
+) -> AdminCheckoutSessionResponse:
+    """Adjust the price of a checkout item for a donor."""
+    session = await _get_admin_session_or_404(db, event_id, user_id)
+    svc = CheckoutService(db)
+    await svc.admin_reprice_item(
+        session_id=session.id,
+        item_id=item_id,
+        admin_user_id=current_user.id,
+        new_amount_cents=body.adjusted_amount_cents,
+    )
+    await db.commit()
+    result = await db.execute(
+        select(CheckoutSession)
+        .where(CheckoutSession.id == session.id)
+        .options(
+            selectinload(CheckoutSession.items),
+            selectinload(CheckoutSession.audit_logs),
+        )
+    )
+    updated = result.scalar_one()
+    return AdminCheckoutSessionResponse.model_validate(updated)
+
+
+@router_checkout.delete(
+    "/{event_id}/checkout/donors/{user_id}/items/{item_id}",
+    response_model=AdminCheckoutSessionResponse,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator")
+async def admin_remove_session_item(
+    event_id: uuid.UUID,
+    user_id: uuid.UUID,
+    item_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+) -> AdminCheckoutSessionResponse:
+    """Soft-delete a checkout item from a donor's session."""
+    session = await _get_admin_session_or_404(db, event_id, user_id)
+    svc = CheckoutService(db)
+    await svc.admin_remove_item(
+        session_id=session.id,
+        item_id=item_id,
+        admin_user_id=current_user.id,
+    )
+    await db.commit()
+    result = await db.execute(
+        select(CheckoutSession)
+        .where(CheckoutSession.id == session.id)
+        .options(
+            selectinload(CheckoutSession.items),
+            selectinload(CheckoutSession.audit_logs),
+        )
+    )
+    updated = result.scalar_one()
+    return AdminCheckoutSessionResponse.model_validate(updated)
+
+
+@router_checkout.post(
+    "/{event_id}/checkout/notifications/send-link",
+    response_model=dict[str, int],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator")
+async def admin_send_checkout_link(
+    event_id: uuid.UUID,
+    body: SendCheckoutNotificationRequest,
+    current_user: CurrentUser,
+    db: DB,
+) -> dict[str, int]:
+    """Send checkout link notifications to all or selected donors."""
+    count = await CheckoutNotificationService.send_checkout_link(
+        db=db,
+        event_id=event_id,
+        user_ids=body.user_ids,
+    )
+    return {"dispatched": count}
+
+
+@router_checkout.post(
+    "/{event_id}/checkout/notifications/send-reminder",
+    response_model=dict[str, int],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator")
+async def admin_send_checkout_reminder(
+    event_id: uuid.UUID,
+    body: SendCheckoutNotificationRequest,
+    current_user: CurrentUser,
+    db: DB,
+) -> dict[str, int]:
+    """Send checkout reminder notifications to donors who have not yet completed checkout."""
+    count = await CheckoutNotificationService.send_checkout_reminder(
+        db=db,
+        event_id=event_id,
+        user_ids=body.user_ids,
+    )
+    return {"dispatched": count}
+
+
+@router_checkout.get(
+    "/{event_id}/checkout/donors/{user_id}/receipt",
+    response_class=StreamingResponse,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator", "npo_staff")
+async def admin_get_donor_receipt(
+    event_id: uuid.UUID,
+    user_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+) -> StreamingResponse:
+    """Generate and stream the PDF receipt for a donor's checkout session.
+
+    Always generates the PDF on demand so admins can download receipts
+    even when Azure Blob Storage is not configured.
+    """
+    result = await db.execute(
+        select(CheckoutSession)
+        .options(selectinload(CheckoutSession.items))
+        .where(
+            CheckoutSession.event_id == event_id,
+            CheckoutSession.user_id == user_id,
+        )
+    )
+    session = result.scalar_one_or_none()
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Checkout session not found for this donor.",
+        )
+
+    receipt_svc = CheckoutReceiptService(db)
+    ctx = await receipt_svc.build_context(session)
+    html = receipt_svc.render_html(ctx)
+    try:
+        pdf_bytes = await receipt_svc.generate_pdf(html)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate PDF receipt.",
+        ) from exc
+
+    def _slugify(s: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
+
+    event_slug = _slugify(str(ctx.get("event_name", "event")))[:40]
+    donor_slug = _slugify(str(ctx.get("donor_name", "donor")))[:30]
+    completed_at = session.completed_at
+    date_str = completed_at.strftime("%Y%m%d") if completed_at else "unknown"
+    filename = f"receipt-{event_slug}-{donor_slug}-{date_str}.pdf"
+
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Length": str(len(pdf_bytes)),
+        },
+    )
+
+
+@router_checkout.post(
+    "/{event_id}/checkout/donors/{user_id}/receipt/resend",
+    response_model=dict[str, str],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+@require_role("super_admin", "npo_admin", "event_coordinator")
+async def admin_resend_donor_receipt(
+    event_id: uuid.UUID,
+    user_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+) -> dict[str, str]:
+    """Resend the receipt email to a donor who has completed checkout."""
+    result = await db.execute(
+        select(CheckoutSession)
+        .options(selectinload(CheckoutSession.items))
+        .where(
+            CheckoutSession.event_id == event_id,
+            CheckoutSession.user_id == user_id,
+        )
+    )
+    session = result.scalar_one_or_none()
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Checkout session not found for this donor.",
+        )
+    receipt_svc = CheckoutReceiptService(db)
+    await receipt_svc.send_receipt_email(session)
+    return {"message": "Receipt email dispatched."}
+
+
+# ── Feature 044: Super-Admin Processing Fee Config ────────────────────────────
+
+
+class SetProcessingFeeRequest(BaseModel):
+    rate: Decimal = Field(..., gt=0, le=1, description="Rate as a decimal, e.g. 0.029 for 2.9%")
+
+
+class ProcessingFeeHistoryResponse(BaseModel):
+    items: list[ProcessingFeeConfigResponse]
+    total: int
+    page: int
+    per_page: int
+    pages: int
+
+
+@router_fee_config.get(
+    "/processing-fee-config",
+    response_model=ProcessingFeeConfigResponse,
+)
+@require_role("super_admin")
+async def get_processing_fee_config(
+    current_user: CurrentUser,
+    db: DB,
+) -> ProcessingFeeConfigResponse:
+    """Return the current processing fee rate (super admin only)."""
+    from app.models.processing_fee_config import ProcessingFeeConfig
+
+    result = await db.execute(
+        select(ProcessingFeeConfig).order_by(ProcessingFeeConfig.created_at.desc()).limit(1)
+    )
+    config = result.scalar_one_or_none()
+    if config is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No processing fee configuration found. Use POST to create one.",
+        )
+    return ProcessingFeeConfigResponse.model_validate(config)
+
+
+@router_fee_config.post(
+    "/processing-fee-config",
+    response_model=ProcessingFeeConfigResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+@require_role("super_admin")
+async def set_processing_fee_config(
+    body: SetProcessingFeeRequest,
+    current_user: CurrentUser,
+    db: DB,
+) -> ProcessingFeeConfigResponse:
+    """Set a new processing fee rate (super admin only). Creates an append-only history entry."""
+    svc = ProcessingFeeConfigService(db)
+    config = await svc.set_rate(rate=body.rate, admin_user_id=current_user.id)
+    await db.commit()
+    await db.refresh(config)
+    return ProcessingFeeConfigResponse.model_validate(config)
+
+
+@router_fee_config.get(
+    "/processing-fee-config/history",
+    response_model=ProcessingFeeHistoryResponse,
+)
+@require_role("super_admin")
+async def get_processing_fee_config_history(
+    current_user: CurrentUser,
+    db: DB,
+    page: int = 1,
+    per_page: int = 20,
+) -> ProcessingFeeHistoryResponse:
+    """Return paginated history of processing fee rate changes (super admin only)."""
+    svc = ProcessingFeeConfigService(db)
+    items, total = await svc.get_history(page=page, per_page=per_page)
+    pages = max(1, (total + per_page - 1) // per_page)
+    return ProcessingFeeHistoryResponse(
+        items=[ProcessingFeeConfigResponse.model_validate(i) for i in items],
+        total=total,
+        page=page,
+        per_page=per_page,
+        pages=pages,
+    )
+
+
+# ── Private helpers ───────────────────────────────────────────────────────────
+
+
+async def _get_admin_session_or_404(
+    db: AsyncSession,
+    event_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> CheckoutSession:
+    """Fetch a checkout session or raise 404."""
+    result = await db.execute(
+        select(CheckoutSession).where(
+            CheckoutSession.event_id == event_id,
+            CheckoutSession.user_id == user_id,
+        )
+    )
+    session = result.scalar_one_or_none()
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Checkout session not found for this donor.",
+        )
+    return session
+
+
+async def _get_or_create_admin_session(
+    db: AsyncSession,
+    event_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> CheckoutSession:
+    """Fetch or create a checkout session for a donor (admin-initiated)."""
+    result = await db.execute(
+        select(CheckoutSession).where(
+            CheckoutSession.event_id == event_id,
+            CheckoutSession.user_id == user_id,
+        )
+    )
+    session = result.scalar_one_or_none()
+    if session is None:
+        svc = CheckoutService(db)
+        session = await svc.get_or_create_session(
+            user_id=user_id,
+            event_id=event_id,
+        )
+        await db.flush()
+    return session

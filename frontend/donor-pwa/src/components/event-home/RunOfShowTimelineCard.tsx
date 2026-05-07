@@ -4,9 +4,9 @@
  * Collapsible timeline card for the Home tab showing the donor-visible
  * run-of-show items. Hidden entirely when there are no items.
  */
+import { useState } from 'react'
 import type { DonorRunOfShowItem } from '@/types/run-of-show'
 import { ChevronDown, ChevronUp, Clock } from 'lucide-react'
-import { useState } from 'react'
 
 interface RunOfShowTimelineCardProps {
   items: DonorRunOfShowItem[]
@@ -75,7 +75,12 @@ export function RunOfShowTimelineCard({ items }: RunOfShowTimelineCardProps) {
 
       {/* Expanded timeline */}
       {expanded && (
-        <div className='border-t px-4 pb-4 pt-2' style={{ borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.1)' }}>
+        <div
+          className='border-t px-4 pt-2 pb-4'
+          style={{
+            borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.1)',
+          }}
+        >
           <ol className='space-y-3'>
             {items.map((item, index) => {
               const isNextUp = index === nextItemIndex
@@ -112,8 +117,14 @@ export function RunOfShowTimelineCard({ items }: RunOfShowTimelineCardProps) {
                           isComplete
                             ? undefined
                             : isNextUp
-                              ? { color: 'rgb(var(--event-primary, 59, 130, 246))' }
-                              : { color: 'var(--event-text-muted-on-background, #4B5563)' }
+                              ? {
+                                  color:
+                                    'rgb(var(--event-primary, 59, 130, 246))',
+                                }
+                              : {
+                                  color:
+                                    'var(--event-text-muted-on-background, #4B5563)',
+                                }
                         }
                       >
                         {formatTime(item.scheduled_time)}
@@ -132,14 +143,17 @@ export function RunOfShowTimelineCard({ items }: RunOfShowTimelineCardProps) {
                         style={
                           isComplete
                             ? undefined
-                            : { color: 'var(--event-text-on-background, #374151)' }
+                            : {
+                                color:
+                                  'var(--event-text-on-background, #374151)',
+                              }
                         }
                       >
                         {item.title}
                       </span>
                       {isNextUp && !isComplete && (
                         <span
-                          className='rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white'
+                          className='rounded-full px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white uppercase'
                           style={{
                             backgroundColor:
                               'rgb(var(--event-primary, 59, 130, 246))',
@@ -151,8 +165,16 @@ export function RunOfShowTimelineCard({ items }: RunOfShowTimelineCardProps) {
                     </div>
                     {item.description && (
                       <p
-                        className={['mt-0.5 text-xs', isComplete ? 'opacity-40' : ''].filter(Boolean).join(' ')}
-                        style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+                        className={[
+                          'mt-0.5 text-xs',
+                          isComplete ? 'opacity-40' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        style={{
+                          color:
+                            'var(--event-text-muted-on-background, #6B7280)',
+                        }}
                       >
                         {item.description}
                       </p>

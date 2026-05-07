@@ -19,6 +19,16 @@ from app.models.checklist import (
     ChecklistTemplate,
     ChecklistTemplateItem,
 )
+from app.models.checkout_configuration import CheckoutConfiguration
+from app.models.checkout_session import (
+    CheckoutAuditActionEnum,
+    CheckoutAuditLog,
+    CheckoutItem,
+    CheckoutItemSourceTypeEnum,
+    CheckoutPaymentMethodEnum,
+    CheckoutSession,
+    CheckoutStatusEnum,
+)
 from app.models.consent import ConsentAuditLog, CookieConsent, UserConsent
 from app.models.donate_now_config import DonateNowPageConfig
 from app.models.donate_now_media import DonateNowMedia
@@ -61,6 +71,7 @@ from app.models.payment_transaction import (
     TransactionStatus,
     TransactionType,
 )
+from app.models.processing_fee_config import ProcessingFeeConfig
 from app.models.push_subscription import PushSubscription
 from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
 from app.models.quick_entry_buy_now_bid import QuickEntryBuyNowBid
@@ -146,6 +157,14 @@ __all__ = [
     "ChecklistItemStatus",
     "ChecklistTemplate",
     "ChecklistTemplateItem",
+    "CheckoutAuditActionEnum",
+    "CheckoutAuditLog",
+    "CheckoutConfiguration",
+    "CheckoutItem",
+    "CheckoutItemSourceTypeEnum",
+    "CheckoutPaymentMethodEnum",
+    "CheckoutSession",
+    "CheckoutStatusEnum",
     "ConsentAuditLog",
     "CookieConsent",
     "CustomTicketOption",
@@ -188,6 +207,7 @@ __all__ = [
     "OptionType",
     "PaddleRaiseContribution",
     "PaymentStatus",
+    "ProcessingFeeConfig",
     "PromoCode",
     "PromoCodeApplication",
     "PushSubscription",

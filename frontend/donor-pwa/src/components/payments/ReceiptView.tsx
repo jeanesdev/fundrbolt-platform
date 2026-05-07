@@ -15,7 +15,12 @@ import {
   Loader2,
   Receipt,
 } from 'lucide-react'
-import { getTransaction, type TransactionDetail } from '@/lib/api/payments'
+import {
+  downloadTransactionReceipt,
+  getTransaction,
+  openTransactionReceipt,
+  type TransactionDetail,
+} from '@/lib/api/payments'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -31,7 +36,21 @@ export interface ReceiptViewProps {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
+function buildReceiptFilename(
+  eventName: string | null | undefined,
+  dateStr: string | null | undefined
+): string {
+  const safe = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+  const event = safe(eventName ?? 'event').slice(0, 40)
+  const date = dateStr
+    ? dateStr.slice(0, 10)
+    : new Date().toISOString().slice(0, 10)
+  return `receipt-${event}-${date}.pdf`
+}
 const STATUS_LABELS: Record<
   string,
   {
@@ -150,20 +169,27 @@ export function ReceiptView({
       <div className='flex flex-wrap gap-2 pt-1'>
         {txn.receipt_url ? (
           <>
-            <Button size='sm' variant='outline' asChild>
-              <a
-                href={txn.receipt_url}
-                download={`receipt-${txn.id.slice(0, 8)}.pdf`}
-              >
-                <Download className='mr-1.5 h-4 w-4' />
-                Download Receipt
-              </a>
+            <Button
+              size='sm'
+              variant='outline'
+              onClick={() => {
+                const filename = buildReceiptFilename(
+                  txn.event_name,
+                  txn.created_at
+                )
+                void downloadTransactionReceipt(txn.id, filename)
+              }}
+            >
+              <Download className='mr-1.5 h-4 w-4' />
+              Download Receipt
             </Button>
-            <Button size='sm' variant='ghost' asChild>
-              <a href={txn.receipt_url} target='_blank' rel='noreferrer'>
-                <ExternalLink className='mr-1.5 h-4 w-4' />
-                Open PDF
-              </a>
+            <Button
+              size='sm'
+              variant='ghost'
+              onClick={() => void openTransactionReceipt(txn.id)}
+            >
+              <ExternalLink className='mr-1.5 h-4 w-4' />
+              Open PDF
             </Button>
           </>
         ) : (
