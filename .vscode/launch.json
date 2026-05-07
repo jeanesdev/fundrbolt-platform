@@ -21,6 +21,7 @@
       "python": "${command:python.interpreterPath}",
       "console": "integratedTerminal",
       "justMyCode": false,
+      "preLaunchTask": "kill-backend",
       "postDebugTask": "kill-backend"
     },
     {

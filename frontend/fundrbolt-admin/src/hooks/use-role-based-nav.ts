@@ -485,7 +485,7 @@ const EVENT_NAV_GROUPS: Array<{
   },
   {
     title: 'Finance',
-    sections: [sectionByPath('payments'), sectionByPath('checkout')],
+    sections: [sectionByPath('checkout')],
   },
   {
     title: 'Data',

@@ -29,10 +29,16 @@ import {
 } from '@/components/ui/sheet'
 import { Textarea } from '@/components/ui/textarea'
 import { CheckoutReceiptActions } from './CheckoutReceiptActions'
+import { CheckoutReceiptInlineView } from './CheckoutReceiptInlineView'
 
 interface DonorCheckoutItemEditorProps {
   eventId: string
   userId: string
+  donorInfo?: {
+    first_name?: string | null
+    last_name?: string | null
+    email?: string | null
+  }
   onClose: () => void
 }
 
@@ -327,6 +333,7 @@ function AddItemForm({
 export function DonorCheckoutItemEditor({
   eventId,
   userId,
+  donorInfo,
   onClose,
 }: DonorCheckoutItemEditorProps) {
   const queryClient = useQueryClient()
@@ -353,12 +360,12 @@ export function DonorCheckoutItemEditor({
       <SheetContent side='right' className='w-full overflow-y-auto sm:max-w-lg'>
         <SheetHeader>
           <SheetTitle>
-            {session
-              ? `${session.first_name} ${session.last_name}`
+            {donorInfo?.first_name || donorInfo?.last_name
+              ? `${donorInfo.first_name ?? ''} ${donorInfo.last_name ?? ''}`.trim()
               : 'Donor Checkout'}
           </SheetTitle>
           <SheetDescription>
-            {session?.email ?? 'Manage checkout items for this donor'}
+            {donorInfo?.email ?? 'Manage checkout items for this donor'}
           </SheetDescription>
         </SheetHeader>
 
@@ -393,8 +400,13 @@ export function DonorCheckoutItemEditor({
               <CheckoutReceiptActions
                 eventId={eventId}
                 userId={userId}
-                hasReceipt={!!session.receipt_url}
+                hasReceipt={true}
               />
+            )}
+
+            {/* Inline receipt — shown when checkout is complete */}
+            {session.status === 'complete' && (
+              <CheckoutReceiptInlineView session={session} />
             )}
 
             {/* Active items */}

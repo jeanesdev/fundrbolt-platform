@@ -25,7 +25,7 @@ const defaultState = {
   paymentMethod: 'card' as const,
   auctioneerTipCents: 5000,
   platformTipCents: 0,
-  coverProcessingFee: false,
+  coverProcessingFee: true,
   acknowledgedItemsUpdatedAt: null,
 }
 

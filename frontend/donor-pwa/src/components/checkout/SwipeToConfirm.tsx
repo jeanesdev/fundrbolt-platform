@@ -1,11 +1,11 @@
 /**
- * SwipeToConfirm — T016
+ * SwipeToConfirm — donate-page style swipe slider.
  *
- * Reusable swipe-to-confirm slider extracted from BidConfirmSlide pattern.
+ * White pill with a primary-colored circular knob and a green fill that grows
+ * from the left as the user drags. Matches the "Slide to Donate" aesthetic.
  */
 import { useEffect, useState } from 'react'
 import { ArrowRight, Check } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { Slider } from '@/components/ui/slider'
 
 export interface SwipeToConfirmProps {
@@ -15,107 +15,108 @@ export interface SwipeToConfirmProps {
   completed?: boolean
 }
 
+const KNOB_PX = 56
+const KNOB_RADIUS = KNOB_PX / 2
+
+function knobLeft(pct: number): string {
+  return `calc(${KNOB_RADIUS}px + (100% - ${KNOB_PX}px) * ${pct / 100} - ${KNOB_RADIUS}px)`
+}
+
+function fillWidth(pct: number): string {
+  return `calc(${KNOB_RADIUS}px + (100% - ${KNOB_PX}px) * ${pct / 100})`
+}
+
 export function SwipeToConfirm({
   label,
   onComplete,
   disabled = false,
   completed = false,
 }: SwipeToConfirmProps) {
-  const [sliderValue, setSliderValue] = useState<number[]>([0])
-  const [isConfirmed, setIsConfirmed] = useState(false)
+  const [value, setValue] = useState<number[]>([0])
+  const [locked, setLocked] = useState(false)
 
-  const slidePercent = sliderValue[0] ?? 0
-  const isComplete = completed || slidePercent >= 95
+  const pct = value[0] ?? 0
+  const showGreen = completed || locked
 
-  // Reset when external completed prop changes
+  // Reset when external completed resets
   useEffect(() => {
     if (!completed) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSliderValue([0])
-      setIsConfirmed(false)
+      setValue([0])
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLocked(false)
     }
   }, [completed])
 
-  // Auto-confirm when slider reaches end
+  // Trigger on reach
   useEffect(() => {
-    if (isComplete && !isConfirmed && !completed) {
+    if (pct >= 95 && !locked && !completed && !disabled) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsConfirmed(true)
-      setTimeout(() => {
-        onComplete()
-      }, 300)
+      setLocked(true)
+      setTimeout(onComplete, 300)
     }
-  }, [isComplete, isConfirmed, completed, onComplete])
+  }, [pct, locked, completed, disabled, onComplete])
 
-  const handleSliderChange = (value: number[]) => {
-    if (!isConfirmed && !disabled && !completed) {
-      setSliderValue(value)
-    }
-  }
-
-  const showGreen = isComplete || completed
+  const displayPct = showGreen ? 100 : pct
 
   return (
-    <div className='relative'>
-      {/* Track background */}
+    <div
+      className='relative h-14 overflow-hidden rounded-[28px]'
+      style={{ opacity: disabled ? 0.45 : 1 }}
+    >
+      {/* White base */}
+      <div className='pointer-events-none absolute inset-0 z-0 bg-white' />
+
+      {/* Green fill */}
       <div
-        className={cn(
-          'relative rounded-full p-1 transition-all duration-300',
-          disabled && 'opacity-40',
-          showGreen ? 'opacity-100' : 'opacity-90'
+        className='pointer-events-none absolute top-0 bottom-0 left-0 z-[1] rounded-l-[28px] bg-[rgb(34_197_94)] transition-[width] duration-150'
+        style={{ width: fillWidth(displayPct) }}
+      />
+
+      {/* Center label */}
+      <div className='pointer-events-none absolute inset-y-0 right-14 left-14 z-[2] flex items-center justify-center text-sm font-semibold text-gray-800'>
+        {showGreen ? (
+          <span className='flex items-center gap-1.5 text-white'>
+            <Check className='h-4 w-4' />
+            Confirmed!
+          </span>
+        ) : (
+          label
         )}
+      </div>
+
+      {/* Knob */}
+      <div
+        className='pointer-events-none absolute top-0 z-[3] flex h-14 w-14 items-center justify-center rounded-full shadow-md transition-[left] duration-150'
         style={{
-          background: showGreen
+          left: knobLeft(displayPct),
+          backgroundColor: showGreen
             ? 'rgb(34, 197, 94)'
-            : `linear-gradient(to right,
-                rgb(var(--event-primary, 59, 130, 246)) 0%,
-                rgb(var(--event-primary, 59, 130, 246)) ${slidePercent}%,
-                rgb(var(--event-secondary, 147, 51, 234)) ${slidePercent}%,
-                rgb(var(--event-secondary, 147, 51, 234)) 100%)`,
+            : 'rgb(var(--event-primary, 59, 130, 246))',
+          color: 'white',
         }}
       >
-        <div className='flex items-center justify-between px-4 py-3'>
-          {/* Left arrow */}
-          <div
-            className={cn(
-              'transition-opacity duration-300',
-              slidePercent > 30 ? 'opacity-0' : 'opacity-100'
-            )}
-          >
-            <ArrowRight className='h-5 w-5 text-white' />
-          </div>
-
-          {/* Center text */}
-          <div className='text-sm font-semibold text-white'>
-            {showGreen ? 'Confirmed!' : label}
-          </div>
-
-          {/* Right check */}
-          <div
-            className={cn(
-              'transition-opacity duration-300',
-              showGreen ? 'opacity-100' : 'opacity-0'
-            )}
-          >
-            <Check className='h-5 w-5 text-white' />
-          </div>
-        </div>
+        {showGreen ? (
+          <Check className='h-6 w-6' />
+        ) : (
+          <ArrowRight className='h-6 w-6' />
+        )}
       </div>
 
       {/* Invisible slider overlay */}
-      {!disabled && !completed && (
-        <div className='absolute inset-0 flex items-center'>
-          <Slider
-            value={sliderValue}
-            onValueChange={handleSliderChange}
-            min={0}
-            max={100}
-            step={1}
-            className='w-full cursor-grab opacity-0 active:cursor-grabbing'
-            aria-label={label}
-            disabled={isConfirmed}
-          />
-        </div>
+      {!disabled && !completed && !locked && (
+        <Slider
+          value={value}
+          onValueChange={(v) => setValue(v)}
+          onValueCommit={() => {
+            if (!locked) setValue([0])
+          }}
+          min={0}
+          max={100}
+          step={1}
+          className='absolute inset-0 z-20 w-full cursor-grab opacity-0 active:cursor-grabbing'
+          aria-label={label}
+        />
       )}
     </div>
   )

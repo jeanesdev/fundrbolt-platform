@@ -11,7 +11,14 @@
  */
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarClock, Loader2, Lock, LockOpen, X } from 'lucide-react'
+import {
+  CalendarClock,
+  Loader2,
+  Lock,
+  LockOpen,
+  UserCheck,
+  X,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import {
   type CheckoutConfiguration,
@@ -315,7 +322,10 @@ export function CheckoutControlPanel({ eventId }: CheckoutControlPanelProps) {
       {config?.status === 'open' && (
         <Card>
           <CardHeader>
-            <CardTitle>Donor Checkout Status</CardTitle>
+            <CardTitle className='flex items-center gap-2'>
+              <UserCheck className='h-5 w-5 shrink-0' />
+              Donor Checkout Status
+            </CardTitle>
             <CardDescription>
               Track and manage individual donor checkout sessions
             </CardDescription>

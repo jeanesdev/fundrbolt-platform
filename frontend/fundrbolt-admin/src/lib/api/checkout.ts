@@ -269,11 +269,24 @@ export async function sendCheckoutReminder(
 export async function downloadDonorReceipt(
   eventId: string,
   userId: string
-): Promise<string> {
-  const { data } = await apiClient.get<{ url: string }>(
-    `/admin/events/${eventId}/checkout/donors/${userId}/receipt`
+): Promise<void> {
+  const response = await apiClient.get(
+    `/admin/events/${eventId}/checkout/donors/${userId}/receipt`,
+    { responseType: 'blob' }
   )
-  return data.url
+  const disposition: string = response.headers['content-disposition'] ?? ''
+  const match =
+    disposition.match(/filename="([^"]+)"/) ??
+    disposition.match(/filename=([^;\s]+)/)
+  const filename = match ? match[1] : `receipt-${userId.slice(0, 8)}.pdf`
+  const url = URL.createObjectURL(response.data as Blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 export async function adminResendReceipt(

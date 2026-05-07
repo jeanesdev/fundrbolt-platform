@@ -7,6 +7,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { CheckCircle2, CreditCard, Download, ShoppingBag } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   downloadCheckoutReceipt,
   getCheckoutSession,
@@ -39,6 +40,7 @@ export function CheckoutSummaryCard({
   })
 
   const checkoutVisible = status?.donor_visible ?? false
+  const checkoutOpen = status?.checkout_open ?? false
   const sessionStatus = status?.session_status
 
   const { data: session } = useQuery({
@@ -48,7 +50,10 @@ export function CheckoutSummaryCard({
     refetchInterval: 10_000,
   })
 
+  // Hide entirely when checkout isn't enabled for donors, unless their session
+  // is already complete (so they can still see the receipt).
   if (!checkoutVisible) return null
+  if (!checkoutOpen && sessionStatus !== 'complete') return null
 
   // Completed state
   if (sessionStatus === 'complete' && session) {
@@ -71,7 +76,13 @@ export function CheckoutSummaryCard({
             variant='outline'
             size='sm'
             className='gap-2 border-green-300 text-green-800 hover:bg-green-100'
-            onClick={() => void downloadCheckoutReceipt(eventId)}
+            onClick={() =>
+              void downloadCheckoutReceipt(eventId).catch(() =>
+                toast.error(
+                  'Receipt not available yet. Please try again shortly.'
+                )
+              )
+            }
           >
             <Download className='h-3.5 w-3.5' />
             Download Receipt
@@ -100,18 +111,18 @@ export function CheckoutSummaryCard({
   const estimatedTotal = session?.total_cents ?? 0
 
   return (
-    <Card className='border-primary/20 bg-primary/5'>
+    <Card className='border-orange-300 bg-orange-50'>
       <CardHeader className='pb-2'>
-        <CardTitle className='flex items-center gap-2 text-base'>
-          <CreditCard className='text-primary h-5 w-5' />
+        <CardTitle className='flex items-center gap-2 text-base text-orange-900'>
+          <CreditCard className='h-5 w-5 text-orange-600' />
           Checkout Ready
         </CardTitle>
       </CardHeader>
       <CardContent className='space-y-3 pt-0'>
         {estimatedTotal > 0 && (
-          <p className='text-sm'>
+          <p className='text-sm font-medium text-orange-800'>
             Estimated total:{' '}
-            <span className='font-semibold'>{fmtCurrency(estimatedTotal)}</span>
+            <span className='font-bold'>{fmtCurrency(estimatedTotal)}</span>
           </p>
         )}
         <Link
@@ -119,7 +130,7 @@ export function CheckoutSummaryCard({
           params={{ slug: eventSlug }}
           className='block'
         >
-          <Button className='w-full gap-2'>
+          <Button className='w-full gap-2 bg-orange-600 text-white hover:bg-orange-700'>
             <CreditCard className='h-4 w-4' />
             Review &amp; Pay
           </Button>

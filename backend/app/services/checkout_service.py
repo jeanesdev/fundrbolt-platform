@@ -367,6 +367,11 @@ class CheckoutService:
             await self.db.flush()
             await self.build_checkout_items_from_balance(session)
             await self.recalculate_totals(session)
+        else:
+            # Refresh item names from source records so donors always see the
+            # current item name even if the session was created before names
+            # were populated (e.g. sessions created with generic fallbacks).
+            await self._refresh_item_names(session)
 
         return session
 
@@ -459,17 +464,20 @@ class CheckoutService:
 
         # ── Quick-entry live bids ─────────────────────────────────────────────
         qe_bid_result = await self.db.execute(
-            select(QuickEntryBid).where(
+            select(QuickEntryBid)
+            .where(
                 QuickEntryBid.donor_user_id == user_id,
                 QuickEntryBid.event_id == event_id,
                 QuickEntryBid.status != QuickEntryBidStatus.DELETED,
             )
+            .options(selectinload(QuickEntryBid.item))
         )
         for qe_bid in qe_bid_result.scalars().all():
             amount_cents = int(qe_bid.amount * 100)
+            name = qe_bid.item.title if qe_bid.item else "Live auction bid"
             item = CheckoutItem(
                 session_id=session.id,
-                name="Live auction bid",
+                name=name,
                 original_amount_cents=amount_cents,
                 source_type=CheckoutItemSourceTypeEnum.QUICK_ENTRY_BID,
                 source_id=qe_bid.id,
@@ -480,17 +488,20 @@ class CheckoutService:
 
         # ── Unpaid ticket purchases ───────────────────────────────────────────
         ticket_result = await self.db.execute(
-            select(TicketPurchase).where(
+            select(TicketPurchase)
+            .where(
                 TicketPurchase.user_id == user_id,
                 TicketPurchase.event_id == event_id,
                 TicketPurchase.payment_status == PaymentStatus.PENDING,
             )
+            .options(selectinload(TicketPurchase.ticket_package))
         )
         for ticket in ticket_result.scalars().all():
             amount_cents = int(ticket.total_price * 100)
+            name = ticket.ticket_package.name if ticket.ticket_package else "Ticket purchase"
             item = CheckoutItem(
                 session_id=session.id,
-                name="Ticket purchase",
+                name=name,
                 original_amount_cents=amount_cents,
                 source_type=CheckoutItemSourceTypeEnum.TICKET,
                 source_id=ticket.id,
@@ -501,15 +512,18 @@ class CheckoutService:
 
         # ── Revenue generator entries ─────────────────────────────────────────
         rg_result = await self.db.execute(
-            select(RevenueGeneratorEntry).where(
+            select(RevenueGeneratorEntry)
+            .where(
                 RevenueGeneratorEntry.event_id == event_id,
             )
+            .options(selectinload(RevenueGeneratorEntry.item))
         )
         for rg_entry in rg_result.scalars().all():
             amount_cents = int(rg_entry.amount_paid * 100)
+            name = rg_entry.item.name if rg_entry.item else "Revenue generator entry"
             item = CheckoutItem(
                 session_id=session.id,
-                name="Revenue generator entry",
+                name=name,
                 original_amount_cents=amount_cents,
                 source_type=CheckoutItemSourceTypeEnum.REVENUE_GENERATOR,
                 source_id=rg_entry.id,
@@ -520,19 +534,94 @@ class CheckoutService:
 
         await self.db.flush()
 
+    async def _refresh_item_names(self, session: CheckoutSession) -> None:
+        """Update item names from their source records.
+
+        Called for existing sessions so that names always reflect the current
+        source record (auction item title, ticket package name, etc.) rather
+        than a stale generic label stored when the session was first built.
+        Only non-MANUAL items are refreshed; admin-added items keep their names.
+        """
+        # Gather items by source type that can be looked up
+        items_by_source: dict[CheckoutItemSourceTypeEnum, list[CheckoutItem]] = {}
+        for item in session.items:
+            if item.source_id is None or item.source_type in (CheckoutItemSourceTypeEnum.MANUAL,):
+                continue
+            items_by_source.setdefault(item.source_type, []).append(item)
+
+        if not items_by_source:
+            return
+
+        # ── Auction wins ──────────────────────────────────────────────────────
+        if CheckoutItemSourceTypeEnum.AUCTION_WIN in items_by_source:
+            src_ids = [i.source_id for i in items_by_source[CheckoutItemSourceTypeEnum.AUCTION_WIN]]
+            bid_result = await self.db.execute(
+                select(AuctionBid)
+                .where(AuctionBid.id.in_(src_ids))
+                .options(selectinload(AuctionBid.auction_item))
+            )
+            bid_map = {b.id: b for b in bid_result.scalars().all()}
+            for ci in items_by_source[CheckoutItemSourceTypeEnum.AUCTION_WIN]:
+                bid = bid_map.get(ci.source_id) if ci.source_id is not None else None
+                if bid and bid.auction_item:
+                    ci.name = bid.auction_item.title
+
+        # ── Quick-entry bids ──────────────────────────────────────────────────
+        if CheckoutItemSourceTypeEnum.QUICK_ENTRY_BID in items_by_source:
+            src_ids = [
+                i.source_id for i in items_by_source[CheckoutItemSourceTypeEnum.QUICK_ENTRY_BID]
+            ]
+            qe_result = await self.db.execute(
+                select(QuickEntryBid)
+                .where(QuickEntryBid.id.in_(src_ids))
+                .options(selectinload(QuickEntryBid.item))
+            )
+            qe_map = {q.id: q for q in qe_result.scalars().all()}
+            for ci in items_by_source[CheckoutItemSourceTypeEnum.QUICK_ENTRY_BID]:
+                qe_bid = qe_map.get(ci.source_id) if ci.source_id is not None else None
+                if qe_bid and qe_bid.item:
+                    ci.name = qe_bid.item.title
+
+        # ── Ticket purchases ──────────────────────────────────────────────────
+        if CheckoutItemSourceTypeEnum.TICKET in items_by_source:
+            src_ids = [i.source_id for i in items_by_source[CheckoutItemSourceTypeEnum.TICKET]]
+            ticket_result = await self.db.execute(
+                select(TicketPurchase)
+                .where(TicketPurchase.id.in_(src_ids))
+                .options(selectinload(TicketPurchase.ticket_package))
+            )
+            ticket_map = {t.id: t for t in ticket_result.scalars().all()}
+            for ci in items_by_source[CheckoutItemSourceTypeEnum.TICKET]:
+                ticket = ticket_map.get(ci.source_id) if ci.source_id is not None else None
+                if ticket and ticket.ticket_package:
+                    ci.name = ticket.ticket_package.name
+
+        # ── Revenue generator entries ─────────────────────────────────────────
+        if CheckoutItemSourceTypeEnum.REVENUE_GENERATOR in items_by_source:
+            src_ids = [
+                i.source_id for i in items_by_source[CheckoutItemSourceTypeEnum.REVENUE_GENERATOR]
+            ]
+            rg_result = await self.db.execute(
+                select(RevenueGeneratorEntry)
+                .where(RevenueGeneratorEntry.id.in_(src_ids))
+                .options(selectinload(RevenueGeneratorEntry.item))
+            )
+            rg_map = {r.id: r for r in rg_result.scalars().all()}
+            for ci in items_by_source[CheckoutItemSourceTypeEnum.REVENUE_GENERATOR]:
+                rg_entry = rg_map.get(ci.source_id) if ci.source_id is not None else None
+                if rg_entry and rg_entry.item:
+                    ci.name = rg_entry.item.name
+
     async def recalculate_totals(self, session: CheckoutSession) -> None:
         """Recalculate subtotal, processing fee, and total for a session."""
-        # Reload items if needed
-        if not hasattr(session, "_sa_instance_state") or "items" not in dir(session):
-            result = await self.db.execute(
-                select(CheckoutItem).where(
-                    CheckoutItem.session_id == session.id,
-                    CheckoutItem.deleted_at.is_(None),
-                )
+        # Always reload items explicitly to avoid lazy-loading in async context
+        result = await self.db.execute(
+            select(CheckoutItem).where(
+                CheckoutItem.session_id == session.id,
+                CheckoutItem.deleted_at.is_(None),
             )
-            active_items = list(result.scalars().all())
-        else:
-            active_items = [i for i in session.items if i.deleted_at is None]
+        )
+        active_items = list(result.scalars().all())
 
         subtotal = sum(i.effective_amount_cents for i in active_items)
         session.subtotal_cents = subtotal

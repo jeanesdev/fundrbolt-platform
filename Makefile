@@ -1,4 +1,4 @@
-.PHONY: help install test lint format clean docker-up docker-down migrate dev-backend dev-frontend dev-fullstack validate-infra deploy-infra check-commits ngrok-start ngrok-stop ngrok-status ngrok-local smoke-donor-event-page test-checkin-e2e kill-debug
+.PHONY: help install test lint format clean docker-up docker-down migrate dev-backend dev-frontend dev-fullstack validate-infra deploy-infra check-commits ngrok-start ngrok-stop ngrok-status ngrok-local smoke-donor-event-page test-checkin-e2e kill-debug restart-debug
 
 # Default target
 help:
@@ -281,33 +281,41 @@ check-servers:
 
 kill-backend:
 	@echo "Stopping backend server..."
-	@pkill -f '[u]vicorn app.main:app' || echo "Backend not running"
+	@pkill -9 -f '[u]vicorn app.main:app' 2>/dev/null || true
+	@lsof -ti:8000 | xargs kill -9 2>/dev/null || true
+	@echo "Backend stopped"
 
 kill-frontend:
 	@echo "Stopping frontend server..."
 	@pids=$$(ps -eo pid=,ppid=,cmd= | awk -v self=$$$$ -v parent=$$PPID ' \
 		$$1 != self && $$1 != parent && $$2 != self && $$2 != parent && ($$0 ~ /frontend\/fundrbolt-admin/ || $$0 ~ /pnpm dev$$/ || ($$0 ~ /vite\/bin\/vite\.js/ && $$0 !~ /--port 5174/)) { print $$1 }' ); \
 	if [ -n "$$pids" ]; then \
-		kill $$pids 2>/dev/null || true; \
-	else \
-		echo "Frontend not running"; \
+		kill -9 $$pids 2>/dev/null || true; \
 	fi
+	@lsof -ti:5173 | xargs kill -9 2>/dev/null || true
+	@echo "Frontend stopped"
 
 kill-donor-pwa:
 	@echo "Stopping donor PWA server..."
 	@pids=$$(ps -eo pid=,ppid=,cmd= | awk -v self=$$$$ -v parent=$$PPID ' \
 		$$1 != self && $$1 != parent && $$2 != self && $$2 != parent && ($$0 ~ /frontend\/donor-pwa/ || $$0 ~ /pnpm dev --port 5174$$/ || ($$0 ~ /vite\/bin\/vite\.js/ && $$0 ~ /--port 5174/)) { print $$1 }' ); \
 	if [ -n "$$pids" ]; then \
-		kill $$pids 2>/dev/null || true; \
-	else \
-		echo "Donor PWA not running"; \
+		kill -9 $$pids 2>/dev/null || true; \
 	fi
+	@lsof -ti:5174 | xargs kill -9 2>/dev/null || true
+	@echo "Donor PWA stopped"
 
 kill-debug:
 	@echo "Stopping debug servers (frontend, donor PWA, backend)..."
 	@$(MAKE) kill-frontend
 	@$(MAKE) kill-donor-pwa
 	@$(MAKE) kill-backend
+	@sleep 1
+	@echo "All debug servers stopped. Ports 8000/5173/5174 are free."
+
+## Restart the full dev stack (kills everything, then starts backend + donor PWA)
+## Frontend admin (5173) runs in a separate terminal via: make f
+restart-debug: kill-debug dev-backend
 
 kill-all: kill-backend kill-frontend
 

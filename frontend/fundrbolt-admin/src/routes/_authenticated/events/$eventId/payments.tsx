@@ -1,12 +1,14 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { EventPaymentsSection } from '@/features/events/sections/EventPaymentsSection'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute(
   '/_authenticated/events/$eventId/payments'
 )({
-  component: RouteComponent,
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: '/events/$eventId/checkout',
+      params: { eventId: params.eventId },
+      replace: true,
+    })
+  },
+  component: () => null,
 })
-
-function RouteComponent() {
-  return <EventPaymentsSection />
-}

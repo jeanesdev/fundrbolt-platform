@@ -24,7 +24,7 @@ import type {
   AuctionSortType,
 } from '@/types/auction-gallery'
 import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
-import { Eye, Gavel, Loader2, RefreshCw } from 'lucide-react'
+import { Eye, Gavel, Loader2, RefreshCw, Sparkles } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import apiClient from '@/lib/axios'
@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { StaleDataIndicator } from '@/components/pwa/stale-data-indicator'
+import { PlayTab } from '@/features/play/PlayTab'
 import { AuctionItemCard } from './AuctionItemCard'
 
 function normalizeIdentifier(value: unknown): string | null {
@@ -183,6 +184,10 @@ export interface AuctionGalleryProps {
   className?: string
   /** When true, only shows items in the user's watchlist or that they've bid on */
   showOnlyMyItems?: boolean
+  /** When true, shows a "Play" tab for revenue generator items */
+  hasRgItems?: boolean
+  /** Brand primary color passed through to PlayTab */
+  brandPrimary?: string
 }
 
 const ITEMS_PER_PAGE = 12
@@ -209,7 +214,11 @@ function getAuctionImageWarmCache(): Set<string> {
   return globalWindow.__auctionImageWarmCache
 }
 
-const filterOptions: { value: AuctionFilterType; label: string }[] = [
+const baseFilterOptions: {
+  value: AuctionFilterType
+  label: string
+  icon?: React.ReactNode
+}[] = [
   { value: 'all', label: 'All' },
   { value: 'silent', label: 'Silent' },
   { value: 'live', label: 'Live' },
@@ -240,7 +249,21 @@ export function AuctionGallery({
   eventDateTime,
   className,
   showOnlyMyItems = false,
+  hasRgItems = false,
+  brandPrimary,
 }: AuctionGalleryProps) {
+  const filterOptions = hasRgItems
+    ? [
+        ...baseFilterOptions,
+        {
+          value: 'play' as AuctionFilterType,
+          label: 'Play',
+          icon: (
+            <Sparkles className='mr-1 inline-block h-3.5 w-3.5 align-[-0.1em]' />
+          ),
+        },
+      ]
+    : baseFilterOptions
   const authUserId = useAuthStore((state) => state.user?.id)
   const spoofedUserId = useDebugSpoofStore((state) => state.spoofedUser?.id)
   const effectiveUserId = normalizeIdentifier(spoofedUserId ?? authUserId)
@@ -805,6 +828,7 @@ export function AuctionGallery({
                       }
                 }
               >
+                {option.icon}
                 {option.label}
               </button>
             ))}
@@ -828,7 +852,12 @@ export function AuctionGallery({
           </button>
         </div>
 
-        <div className='grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end'>
+        <div
+          className={cn(
+            'grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end',
+            filter === 'play' && 'hidden'
+          )}
+        >
           <div className='space-y-1 text-left'>
             <p
               className='text-xs font-semibold tracking-wide uppercase'
@@ -954,170 +983,188 @@ export function AuctionGallery({
         </div>
       </div>
 
-      {/* Empty state */}
-      {items.length === 0 && !isMyItemsMode && (
-        <div className='flex flex-col items-center justify-center rounded-lg border border-dashed py-12'>
-          <Gavel
-            className='text-muted-foreground/40 h-12 w-12'
-            aria-hidden='true'
-          />
-          <h3
-            className='mt-4 text-lg font-medium'
-            style={{ color: 'var(--event-text-on-background, #000000)' }}
-          >
-            No auction items available yet
-          </h3>
-          <p
-            className='mt-1 text-sm'
-            style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
-          >
-            Check back soon for exciting items to bid on!
-          </p>
-        </div>
+      {/* Play Along tab — revenue generator items */}
+      {filter === 'play' && (
+        <PlayTab eventId={eventId} brandPrimary={brandPrimary} />
       )}
 
-      {/* My Items mode: show only items user has interacted with */}
-      {isMyItemsMode && (
+      {/* Everything below is hidden when Play tab is active */}
+      {filter !== 'play' && (
         <>
-          {myItems.length === 0 ? (
-            <div className='flex flex-col items-center justify-center py-20 text-center'>
-              <div
-                className='mb-4 flex h-20 w-20 items-center justify-center rounded-full'
-                style={{
-                  backgroundColor:
-                    'rgb(var(--event-primary, 59, 130, 246) / 0.1)',
-                }}
+          {/* Empty state */}
+          {items.length === 0 && !isMyItemsMode && (
+            <div className='flex flex-col items-center justify-center rounded-lg border border-dashed py-12'>
+              <Gavel
+                className='text-muted-foreground/40 h-12 w-12'
+                aria-hidden='true'
+              />
+              <h3
+                className='mt-4 text-lg font-medium'
+                style={{ color: 'var(--event-text-on-background, #000000)' }}
               >
-                <span className='text-4xl'>⭐</span>
-              </div>
+                No auction items available yet
+              </h3>
               <p
-                className='mb-1 text-base font-bold'
-                style={{ color: 'var(--event-text-on-background, #111827)' }}
-              >
-                No items yet
-              </p>
-              <p
-                className='text-sm'
+                className='mt-1 text-sm'
                 style={{
                   color: 'var(--event-text-muted-on-background, #6B7280)',
                 }}
               >
-                Watch or bid on items to see them here
+                Check back soon for exciting items to bid on!
               </p>
             </div>
-          ) : (
-            <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'>
-              {myItems.map((item) => (
-                <AuctionItemCard
-                  key={item.id}
-                  item={item}
-                  eagerLoadImage={true}
-                  isHotItem={hotItemIds.has(item.id)}
-                  isWatched={watchedItemIds.has(item.id)}
-                  currentUserMaxBid={maxBidItemMap[item.id] ?? null}
-                  isCurrentUserWinning={isItemCurrentlyWinning(item.id)}
-                  onToggleWatch={
-                    disableWatchlist ? undefined : handleToggleWatch
-                  }
-                  onClick={handleBidClick}
-                  onBidClick={handleBidClick}
-                  eventStatus={eventStatus}
-                  eventDateTime={eventDateTime}
+          )}
+
+          {/* My Items mode: show only items user has interacted with */}
+          {isMyItemsMode && (
+            <>
+              {myItems.length === 0 ? (
+                <div className='flex flex-col items-center justify-center py-20 text-center'>
+                  <div
+                    className='mb-4 flex h-20 w-20 items-center justify-center rounded-full'
+                    style={{
+                      backgroundColor:
+                        'rgb(var(--event-primary, 59, 130, 246) / 0.1)',
+                    }}
+                  >
+                    <span className='text-4xl'>⭐</span>
+                  </div>
+                  <p
+                    className='mb-1 text-base font-bold'
+                    style={{
+                      color: 'var(--event-text-on-background, #111827)',
+                    }}
+                  >
+                    No items yet
+                  </p>
+                  <p
+                    className='text-sm'
+                    style={{
+                      color: 'var(--event-text-muted-on-background, #6B7280)',
+                    }}
+                  >
+                    Watch or bid on items to see them here
+                  </p>
+                </div>
+              ) : (
+                <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'>
+                  {myItems.map((item) => (
+                    <AuctionItemCard
+                      key={item.id}
+                      item={item}
+                      eagerLoadImage={true}
+                      isHotItem={hotItemIds.has(item.id)}
+                      isWatched={watchedItemIds.has(item.id)}
+                      currentUserMaxBid={maxBidItemMap[item.id] ?? null}
+                      isCurrentUserWinning={isItemCurrentlyWinning(item.id)}
+                      onToggleWatch={
+                        disableWatchlist ? undefined : handleToggleWatch
+                      }
+                      onClick={handleBidClick}
+                      onBidClick={handleBidClick}
+                      eventStatus={eventStatus}
+                      eventDateTime={eventDateTime}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Watched Items Section (non-My-Items mode) */}
+          {!isMyItemsMode && watchedItems.length > 0 && (
+            <div>
+              <div className='mb-4 flex items-center gap-2'>
+                <Eye
+                  className='h-5 w-5'
+                  style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
                 />
-              ))}
+                <h3
+                  className='text-lg font-semibold'
+                  style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+                >
+                  Watched Items
+                </h3>
+                <span
+                  className='text-sm'
+                  style={{
+                    color: 'var(--event-text-muted-on-background, #6B7280)',
+                  }}
+                >
+                  ({watchedItems.length})
+                </span>
+              </div>
+              <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'>
+                {watchedItems.map((item) => (
+                  <AuctionItemCard
+                    key={item.id}
+                    item={item}
+                    eagerLoadImage={true}
+                    isHotItem={hotItemIds.has(item.id)}
+                    isWatched={watchedItemIds.has(item.id)}
+                    currentUserMaxBid={maxBidItemMap[item.id] ?? null}
+                    isCurrentUserWinning={isItemCurrentlyWinning(item.id)}
+                    onToggleWatch={
+                      disableWatchlist ? undefined : handleToggleWatch
+                    }
+                    onClick={handleBidClick}
+                    onBidClick={handleBidClick}
+                    eventStatus={eventStatus}
+                    eventDateTime={eventDateTime}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* All Items Section (non-My-Items mode) */}
+          {!isMyItemsMode && items.length > 0 && watchedItems.length > 0 && (
+            <h3
+              className='mt-8 text-lg font-semibold'
+              style={{ color: 'var(--event-text-on-background, #000000)' }}
+            >
+              All Items
+            </h3>
+          )}
+
+          {/* Items grid (non-My-Items mode) */}
+          {!isMyItemsMode && items.length > 0 && (
+            <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'>
+              {(watchedItems.length > 0 ? unwatchedItems : items).map(
+                (item, index) => (
+                  <AuctionItemCard
+                    key={item.id}
+                    item={item}
+                    eagerLoadImage={index < IMAGE_PRELOAD_COUNT}
+                    isHotItem={hotItemIds.has(item.id)}
+                    isWatched={watchedItemIds.has(item.id)}
+                    currentUserMaxBid={maxBidItemMap[item.id] ?? null}
+                    isCurrentUserWinning={isItemCurrentlyWinning(item.id)}
+                    onToggleWatch={
+                      disableWatchlist ? undefined : handleToggleWatch
+                    }
+                    onClick={handleBidClick}
+                    onBidClick={handleBidClick}
+                    eventStatus={eventStatus}
+                    eventDateTime={eventDateTime}
+                  />
+                )
+              )}
+            </div>
+          )}
+
+          {/* Infinite scroll trigger */}
+          {hasNextPage && (
+            <div
+              ref={loadMoreRef}
+              className='flex items-center justify-center py-4'
+            >
+              {isFetchingNextPage && (
+                <Loader2 className='text-muted-foreground h-6 w-6 animate-spin' />
+              )}
             </div>
           )}
         </>
-      )}
-
-      {/* Watched Items Section (non-My-Items mode) */}
-      {!isMyItemsMode && watchedItems.length > 0 && (
-        <div>
-          <div className='mb-4 flex items-center gap-2'>
-            <Eye
-              className='h-5 w-5'
-              style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
-            />
-            <h3
-              className='text-lg font-semibold'
-              style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
-            >
-              Watched Items
-            </h3>
-            <span
-              className='text-sm'
-              style={{
-                color: 'var(--event-text-muted-on-background, #6B7280)',
-              }}
-            >
-              ({watchedItems.length})
-            </span>
-          </div>
-          <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'>
-            {watchedItems.map((item) => (
-              <AuctionItemCard
-                key={item.id}
-                item={item}
-                eagerLoadImage={true}
-                isHotItem={hotItemIds.has(item.id)}
-                isWatched={watchedItemIds.has(item.id)}
-                currentUserMaxBid={maxBidItemMap[item.id] ?? null}
-                isCurrentUserWinning={isItemCurrentlyWinning(item.id)}
-                onToggleWatch={disableWatchlist ? undefined : handleToggleWatch}
-                onClick={handleBidClick}
-                onBidClick={handleBidClick}
-                eventStatus={eventStatus}
-                eventDateTime={eventDateTime}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* All Items Section (non-My-Items mode) */}
-      {!isMyItemsMode && items.length > 0 && watchedItems.length > 0 && (
-        <h3
-          className='mt-8 text-lg font-semibold'
-          style={{ color: 'var(--event-text-on-background, #000000)' }}
-        >
-          All Items
-        </h3>
-      )}
-
-      {/* Items grid (non-My-Items mode) */}
-      {!isMyItemsMode && items.length > 0 && (
-        <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'>
-          {(watchedItems.length > 0 ? unwatchedItems : items).map(
-            (item, index) => (
-              <AuctionItemCard
-                key={item.id}
-                item={item}
-                eagerLoadImage={index < IMAGE_PRELOAD_COUNT}
-                isHotItem={hotItemIds.has(item.id)}
-                isWatched={watchedItemIds.has(item.id)}
-                currentUserMaxBid={maxBidItemMap[item.id] ?? null}
-                isCurrentUserWinning={isItemCurrentlyWinning(item.id)}
-                onToggleWatch={disableWatchlist ? undefined : handleToggleWatch}
-                onClick={handleBidClick}
-                onBidClick={handleBidClick}
-                eventStatus={eventStatus}
-                eventDateTime={eventDateTime}
-              />
-            )
-          )}
-        </div>
-      )}
-
-      {/* Infinite scroll trigger */}
-      {hasNextPage && (
-        <div
-          ref={loadMoreRef}
-          className='flex items-center justify-center py-4'
-        >
-          {isFetchingNextPage && (
-            <Loader2 className='text-muted-foreground h-6 w-6 animate-spin' />
-          )}
-        </div>
       )}
     </div>
   )

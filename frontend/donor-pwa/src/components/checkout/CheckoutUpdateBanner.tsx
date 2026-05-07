@@ -2,9 +2,11 @@
  * CheckoutUpdateBanner — T020
  *
  * Sticky amber banner shown when the organizer has updated checkout items.
- * Auto-acknowledges when scrolled fully out of view.
+ * Dismissed explicitly by the user via the X button or the "Got it" button.
+ * (IntersectionObserver auto-dismiss is not used here because sticky elements
+ * never leave the viewport, so the observer would never fire.)
  */
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { X } from 'lucide-react'
 
 export interface CheckoutUpdateBannerProps {
@@ -15,25 +17,6 @@ export function CheckoutUpdateBanner({
   onAcknowledge,
 }: CheckoutUpdateBannerProps) {
   const [dismissed, setDismissed] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  // Auto-acknowledge when banner scrolls fully out of view
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry && entry.intersectionRatio === 0) {
-          onAcknowledge()
-        }
-      },
-      { threshold: 0 }
-    )
-
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [onAcknowledge])
 
   function handleDismiss() {
     setDismissed(true)
@@ -43,14 +26,19 @@ export function CheckoutUpdateBanner({
   if (dismissed) return null
 
   return (
-    <div
-      ref={ref}
-      className='sticky top-0 z-30 flex items-center gap-3 bg-amber-400 px-4 py-3 text-amber-950 shadow-sm'
-    >
+    <div className='sticky top-0 z-30 flex items-center gap-3 bg-amber-400 px-4 py-3 text-amber-950 shadow-sm'>
       <p className='flex-1 text-sm font-medium'>
-        Your items were updated by the organizer. Please review before
-        confirming.
+        Your items were updated by the organizer. Review below, then tap{' '}
+        <strong>Got it</strong> to continue.
       </p>
+      <button
+        type='button'
+        aria-label='Acknowledge item update'
+        onClick={handleDismiss}
+        className='shrink-0 rounded-md bg-amber-600 px-2 py-1 text-xs font-semibold text-white transition-colors hover:bg-amber-700'
+      >
+        Got it
+      </button>
       <button
         type='button'
         aria-label='Dismiss update notice'

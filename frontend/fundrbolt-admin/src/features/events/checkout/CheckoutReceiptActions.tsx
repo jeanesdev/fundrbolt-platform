@@ -5,6 +5,7 @@
  * PDF or re-send it via email.
  */
 import { useState } from 'react'
+import { isAxiosError } from 'axios'
 import { useMutation } from '@tanstack/react-query'
 import { Download, Mail } from 'lucide-react'
 import { toast } from 'sonner'
@@ -38,22 +39,33 @@ export function CheckoutReceiptActions({
     mutationFn: () => adminResendReceipt(eventId, userId),
     onSuccess: (result) => {
       toast.success(result.message || 'Receipt sent successfully')
+      setConfirmResendOpen(false)
     },
     onError: (err) => {
+      const detail = isAxiosError(err)
+        ? (err.response?.data?.detail ?? err.message)
+        : err instanceof Error
+          ? err.message
+          : 'Failed to resend receipt'
       toast.error(
-        err instanceof Error ? err.message : 'Failed to resend receipt'
+        typeof detail === 'string' ? detail : 'Failed to resend receipt'
       )
     },
   })
 
   const downloadMutation = useMutation({
     mutationFn: () => downloadDonorReceipt(eventId, userId),
-    onSuccess: (url) => {
-      window.open(url, '_blank', 'noopener,noreferrer')
+    onSuccess: () => {
+      // download triggered inside downloadDonorReceipt
     },
     onError: (err) => {
+      const detail = isAxiosError(err)
+        ? (err.response?.data?.detail ?? err.message)
+        : err instanceof Error
+          ? err.message
+          : 'Failed to get receipt URL'
       toast.error(
-        err instanceof Error ? err.message : 'Failed to get receipt URL'
+        typeof detail === 'string' ? detail : 'Failed to get receipt URL'
       )
     },
   })
@@ -94,7 +106,6 @@ export function CheckoutReceiptActions({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                setConfirmResendOpen(false)
                 resendMutation.mutate()
               }}
             >

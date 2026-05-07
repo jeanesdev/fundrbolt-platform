@@ -28,13 +28,15 @@ Endpoints:
 from __future__ import annotations
 
 import asyncio
+import re
 import uuid
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
 from app.core.database import get_db
@@ -762,15 +764,16 @@ async def confirm_checkout(
     )
 
 
-@router.get("/events/{event_id}/checkout/receipt")
+@router.get("/events/{event_id}/checkout/receipt", response_model=dict[str, str])
 async def get_checkout_receipt(
     event_id: uuid.UUID,
     current_user: CurrentUser,
     db: DB,
-) -> RedirectResponse:
-    """Redirect to the PDF receipt for the donor's checkout session.
+) -> dict[str, str]:
+    """Return the PDF receipt URL for the donor's checkout session.
 
     Returns 404 if no session exists, 503 if receipt is not yet generated.
+    The client should open the returned URL directly (it may be a blob storage URL).
     """
     result = await db.execute(
         select(CheckoutSession).where(
@@ -785,13 +788,74 @@ async def get_checkout_receipt(
             detail="Checkout session not found.",
         )
 
-    if session.receipt_url is None:
+    receipt_url = session.receipt_url
+    # If no URL stored (fire-and-forget task failed due to closed session, or
+    # Azure not configured), or it's the old self-referential fallback, redirect
+    # to the streaming endpoint which generates the PDF on demand.
+    old_self_ref = f"/api/v1/payments/events/{event_id}/checkout/receipt"
+    streaming_url = f"/api/v1/payments/events/{event_id}/checkout/receipt/pdf"
+    if receipt_url is None or receipt_url == old_self_ref:
+        receipt_url = streaming_url
+
+    return {"url": receipt_url}
+
+
+@router.get("/events/{event_id}/checkout/receipt/pdf")
+async def stream_checkout_receipt_pdf(
+    event_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: DB,
+) -> StreamingResponse:
+    """Generate and stream the PDF receipt for the donor's checkout session.
+
+    Used as the receipt download URL when Azure Blob Storage is not configured.
+    Always regenerates the PDF on demand.
+    """
+    result = await db.execute(
+        select(CheckoutSession)
+        .options(selectinload(CheckoutSession.items))
+        .where(
+            CheckoutSession.event_id == event_id,
+            CheckoutSession.user_id == current_user.id,
+        )
+    )
+    session = result.scalar_one_or_none()
+    if session is None:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Receipt is not yet available. Please try again shortly.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Checkout session not found.",
         )
 
-    return RedirectResponse(url=session.receipt_url, status_code=302)
+    receipt_svc = CheckoutReceiptService(db)
+    ctx = await receipt_svc.build_context(session)
+    html = receipt_svc.render_html(ctx)
+    try:
+        pdf_bytes = await receipt_svc.generate_pdf(html)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate PDF receipt.",
+        ) from exc
+
+    # Build a descriptive filename from context: event name, donor name, date
+
+    def _slugify(text: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+
+    event_slug = _slugify(str(ctx.get("event_name", "event")))[:40]
+    donor_slug = _slugify(str(ctx.get("donor_name", "donor")))[:30]
+    completed_at = session.completed_at
+    date_str = completed_at.strftime("%Y%m%d") if completed_at else "unknown"
+    filename = f"receipt-{event_slug}-{donor_slug}-{date_str}.pdf"
+
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Length": str(len(pdf_bytes)),
+        },
+    )
 
 
 @router.post(

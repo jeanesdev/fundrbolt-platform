@@ -98,18 +98,42 @@ export async function confirmCheckout(
 }
 
 /**
- * Download checkout receipt — returns the receipt URL from the response
- * or triggers a blob download if the server returns binary content.
+ * Download checkout receipt — fetches the PDF via the authenticated API client
+ * and triggers a browser download. Falls back to window.open for external URLs.
+ * Throws on network error or if the receipt is not yet available (503).
  */
 export async function downloadCheckoutReceipt(eventId: string): Promise<void> {
-  const response = await apiClient.get<{ url: string } | Blob>(
-    `/payments/events/${eventId}/checkout/receipt`,
-    { responseType: 'json' }
+  const { data } = await apiClient.get<{ url: string }>(
+    `/payments/events/${eventId}/checkout/receipt`
   )
-  const data = response.data as { url?: string } | null
-  if (data && typeof data === 'object' && 'url' in data && data.url) {
-    window.open(data.url, '_blank', 'noopener,noreferrer')
+  const url = data.url
+
+  // External blob storage URL — open directly
+  if (url.startsWith('http')) {
+    window.open(url, '_blank', 'noopener,noreferrer')
+    return
   }
+
+  // Relative API URL (e.g. /api/v1/payments/.../receipt/pdf) — fetch with auth
+  const response = await apiClient.get<Blob>(url.replace(/^\/api\/v1/, ''), {
+    responseType: 'blob',
+  })
+
+  // Extract filename from Content-Disposition header if present
+  const disposition = response.headers['content-disposition'] as
+    | string
+    | undefined
+  const match = disposition?.match(/filename="([^"]+)"/)
+  const filename = match?.[1] ?? 'receipt.pdf'
+
+  const blobUrl = URL.createObjectURL(response.data)
+  const anchor = document.createElement('a')
+  anchor.href = blobUrl
+  anchor.download = filename
+  document.body.appendChild(anchor)
+  anchor.click()
+  document.body.removeChild(anchor)
+  URL.revokeObjectURL(blobUrl)
 }
 
 export async function contactAdmin(

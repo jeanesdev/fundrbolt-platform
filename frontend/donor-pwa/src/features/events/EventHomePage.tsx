@@ -77,9 +77,9 @@ import { SponsorsCarousel } from '@/components/event-home/SponsorsCarousel'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 import { PushOptInPrompt } from '@/components/notifications/PushOptInPrompt'
+import { CheckoutCartIcon } from '@/components/payments/CheckoutCartIcon'
 import { CheckoutSummaryCard } from '@/components/payments/CheckoutSummaryCard'
 import { ProfileDropdown } from '@/components/profile-dropdown'
-import { PlayTab } from '@/features/play'
 
 export function EventHomePage() {
   const navigate = useNavigate()
@@ -114,9 +114,6 @@ export function EventHomePage() {
   )
   const [maxBidItemMap, setMaxBidItemMap] = useState<Record<string, number>>({})
   const [displayedTab, setDisplayedTab] = useState<DonorTab>('home')
-  const [auctionSubTab, setAuctionSubTab] = useState<'bid' | 'play-along'>(
-    'bid'
-  )
   const prefetchedAuctionImagesRef = useRef<Set<string>>(new Set())
   const prefetchedVenueMapUrlsRef = useRef<Set<string>>(new Set())
   const queryClient = useQueryClient()
@@ -1244,6 +1241,11 @@ export function EventHomePage() {
       venueMapLink={venueMapLink}
       profileSlot={
         <div className='flex items-center gap-1'>
+          <CheckoutCartIcon
+            eventId={currentEvent.id}
+            eventSlug={currentEvent.slug}
+            variant='hero'
+          />
           <NotificationBell />
           <ProfileDropdown />
         </div>
@@ -1411,12 +1413,6 @@ export function EventHomePage() {
           </div>
         )}
 
-        {/* Checkout summary card — shown when organizer opens checkout */}
-        <CheckoutSummaryCard
-          eventId={currentEvent.id}
-          eventSlug={currentEvent.slug}
-        />
-
         {/* Sponsors */}
         <div>
           <SponsorsCarousel eventId={currentEvent.id} />
@@ -1438,97 +1434,58 @@ export function EventHomePage() {
       >
         <div className='flex items-center justify-between'>
           <div className='flex items-center gap-3'>
-            {hasRgItems ? (
-              <div
-                className='flex gap-1 rounded-lg p-0.5'
-                style={{
-                  backgroundColor:
-                    'rgb(var(--event-primary, 59, 130, 246) / 0.1)',
-                }}
-              >
-                <button
-                  onClick={() => setAuctionSubTab('bid')}
-                  className='rounded-md px-3 py-1 text-sm font-semibold transition-all'
-                  style={
-                    auctionSubTab === 'bid'
-                      ? {
-                          backgroundColor:
-                            'rgb(var(--event-primary, 59, 130, 246))',
-                          color: '#fff',
-                        }
-                      : { color: 'var(--event-text-on-background, #374151)' }
-                  }
-                >
-                  Bid
-                </button>
-                <button
-                  onClick={() => setAuctionSubTab('play-along')}
-                  className='rounded-md px-3 py-1 text-sm font-semibold transition-all'
-                  style={
-                    auctionSubTab === 'play-along'
-                      ? {
-                          backgroundColor:
-                            'rgb(var(--event-primary, 59, 130, 246))',
-                          color: '#fff',
-                        }
-                      : { color: 'var(--event-text-on-background, #374151)' }
-                  }
-                >
-                  Play Along
-                </button>
-              </div>
-            ) : (
-              <h2
-                className='text-base font-bold'
-                style={{ color: 'var(--event-text-on-background, #111827)' }}
-              >
-                Auction Items
-              </h2>
+            <h2
+              className='text-base font-bold'
+              style={{ color: 'var(--event-text-on-background, #111827)' }}
+            >
+              Auction Items
+            </h2>
+            {!!(currentEvent as unknown as Record<string, unknown>)
+              .auction_close_datetime && (
+              <AuctionCountdownTimer
+                closeDateTime={
+                  (currentEvent as unknown as Record<string, unknown>)
+                    .auction_close_datetime as string
+                }
+              />
             )}
-            {auctionSubTab === 'bid' &&
-              !!(currentEvent as unknown as Record<string, unknown>)
-                .auction_close_datetime && (
-                <AuctionCountdownTimer
-                  closeDateTime={
-                    (currentEvent as unknown as Record<string, unknown>)
-                      .auction_close_datetime as string
-                  }
-                />
-              )}
           </div>
           <div className='flex items-center gap-2'>
-            {eventStatus === 'live' && auctionSubTab === 'bid' && (
+            {eventStatus === 'live' && (
               <span className='animate-live-glow flex items-center gap-1.5 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white'>
                 <span className='h-1.5 w-1.5 animate-pulse rounded-full bg-white' />
                 LIVE
               </span>
             )}
+            <CheckoutCartIcon
+              eventId={currentEvent.id}
+              eventSlug={currentEvent.slug}
+              variant='header'
+            />
             <NotificationBell variant='header' />
             <ProfileDropdown />
           </div>
         </div>
       </div>
 
-      {auctionSubTab === 'bid' ? (
-        <div className='px-3 py-3'>
-          <AuctionGallery
-            eventId={currentEvent.id}
-            watchlistScope={watchlistScope}
-            disableWatchlist={isPreviewMode}
-            maxBidItemMap={maxBidItemMap}
-            winningItemMap={winningItemMap}
-            initialFilter='all'
-            initialSort='highest_bid'
-            eventStatus={currentEvent.status}
-            eventDateTime={resolveEventDateTime(currentEvent) ?? undefined}
-            onItemClick={(item, isWinning) =>
-              sharedAuctionProps.onItemClick(item, isWinning)
-            }
-          />
-        </div>
-      ) : (
-        <PlayTab eventId={currentEvent.id} />
-      )}
+      <div className='px-3 py-3'>
+        <AuctionGallery
+          eventId={currentEvent.id}
+          watchlistScope={watchlistScope}
+          disableWatchlist={isPreviewMode}
+          maxBidItemMap={maxBidItemMap}
+          winningItemMap={winningItemMap}
+          initialFilter='all'
+          initialSort='highest_bid'
+          eventStatus={currentEvent.status}
+          eventDateTime={resolveEventDateTime(currentEvent) ?? undefined}
+          hasRgItems={hasRgItems}
+          brandPrimary={currentEvent.primary_color ?? undefined}
+          onItemClick={(item, isWinning) =>
+            sharedAuctionProps.onItemClick(item, isWinning)
+          }
+        />
+      </div>
     </>
   )
 
@@ -1550,6 +1507,11 @@ export function EventHomePage() {
             My Event
           </h2>
           <div className='flex items-center gap-2'>
+            <CheckoutCartIcon
+              eventId={currentEvent.id}
+              eventSlug={currentEvent.slug}
+              variant='header'
+            />
             <NotificationBell variant='header' />
             <ProfileDropdown />
           </div>
@@ -1557,6 +1519,11 @@ export function EventHomePage() {
       </div>
 
       <div className='space-y-4 px-4 py-4'>
+        {/* Checkout summary card — shown at the top when organizer opens checkout */}
+        <CheckoutSummaryCard
+          eventId={currentEvent.id}
+          eventSlug={currentEvent.slug}
+        />
         {seatingLoading && (
           <div className='flex items-center justify-center py-16'>
             <Loader2

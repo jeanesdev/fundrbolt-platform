@@ -1441,7 +1441,7 @@ If you have any questions about this decision, please contact us by replying to 
         greeting = f"Hi {donor_name},"
         amount_formatted = f"${amount_total:,.2f}"
 
-        body = (
+        plain_body = (
             f"{greeting}\n\n"
             f"Thank you! Your payment of {amount_formatted} for {event_name} "
             f"has been processed successfully.\n\n"
@@ -1450,6 +1450,21 @@ If you have any questions about this decision, please contact us by replying to 
             "You can also access your receipt any time from your account.\n\n"
             "Thank you for your support!\n\n"
             "— The FundrBolt Team"
+        )
+
+        html_body = _create_email_html_template(
+            heading="Your Receipt",
+            body_paragraphs=[
+                greeting,
+                f"Thank you! Your payment of <strong>{amount_formatted}</strong> "
+                f"for <strong>{event_name}</strong> has been processed successfully.",
+                f"Transaction ID: {transaction_id}",
+                "Please find your receipt attached to this email. "
+                "You can also access your receipt any time from your account.",
+                "Thank you for your support!",
+            ],
+            footer_text="You received this email because you completed checkout at a FundrBolt event.",
+            logo_url=self._get_logo_url("dark"),
         )
 
         if not self.enabled:
@@ -1479,7 +1494,11 @@ If you have any questions about this decision, please contact us by replying to 
                     settings.azure_communication_connection_string
                 )
 
-                content: dict[str, str] = {"subject": subject, "plainText": body}
+                content: dict[str, str] = {
+                    "subject": subject,
+                    "plainText": plain_body,
+                    "html": html_body,
+                }
 
                 message: dict[str, object] = {
                     "senderAddress": settings.email_from_address,

@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 # ── Processing Fee ────────────────────────────────────────────────────────────
 
@@ -156,6 +156,16 @@ class CheckoutConfigurationResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def status(self) -> str:
+        """Derived checkout status for frontend compatibility."""
+        if self.is_open:
+            return "open"
+        if self.scheduled_open_at is not None:
+            return "scheduled"
+        return "closed"
+
 
 class UpdateCheckoutConfigurationRequest(BaseModel):
     cash_instructions: str | None = None
@@ -174,7 +184,7 @@ class DonorCheckoutStatusEntry(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     email: str
-    session_status: str
+    status: str
     total_cents: int
     item_count: int
     completed_at: datetime | None = None
@@ -182,12 +192,18 @@ class DonorCheckoutStatusEntry(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class DonorCheckoutCountsResponse(BaseModel):
+    not_started: int
+    in_progress: int
+    complete: int
+
+
 class DonorCheckoutStatusListResponse(BaseModel):
-    items: list[DonorCheckoutStatusEntry]
+    donors: list[DonorCheckoutStatusEntry]
     total: int
     page: int
     per_page: int
-    pages: int
+    counts: DonorCheckoutCountsResponse
 
 
 # ── Admin Item Management ─────────────────────────────────────────────────────

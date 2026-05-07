@@ -157,6 +157,49 @@ export async function getTransaction(
   return response.data
 }
 
+/**
+ * Download a transaction receipt PDF via the authenticated API client.
+ * The backend redirects to an Azure Blob URL; axios follows the redirect.
+ */
+export async function downloadTransactionReceipt(
+  transactionId: string,
+  filename: string
+): Promise<void> {
+  const response = await apiClient.get<Blob>(
+    `/payments/transactions/${transactionId}/receipt`,
+    { responseType: 'blob' }
+  )
+  const blobUrl = URL.createObjectURL(response.data)
+  const anchor = document.createElement('a')
+  anchor.href = blobUrl
+  anchor.download = filename
+  document.body.appendChild(anchor)
+  anchor.click()
+  document.body.removeChild(anchor)
+  URL.revokeObjectURL(blobUrl)
+}
+
+/**
+ * Open a transaction receipt PDF in a new browser tab.
+ * Uses the authenticated API client so the JWT is included in the request.
+ */
+export async function openTransactionReceipt(
+  transactionId: string
+): Promise<void> {
+  const response = await apiClient.get<Blob>(
+    `/payments/transactions/${transactionId}/receipt`,
+    { responseType: 'blob' }
+  )
+  const blobUrl = URL.createObjectURL(response.data)
+  const win = window.open(blobUrl, '_blank', 'noopener,noreferrer')
+  // Revoke after a short delay to allow the new tab to load
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 30_000)
+  if (!win) {
+    // Pop-up blocked — fall back to same-tab navigation
+    window.location.href = blobUrl
+  }
+}
+
 // ── Checkout balance ──────────────────────────────────────────────────────────
 
 /**

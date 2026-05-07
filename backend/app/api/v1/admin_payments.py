@@ -34,12 +34,14 @@ Endpoints:
 
 from __future__ import annotations
 
+import io
+import re
 import uuid
 from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -57,6 +59,7 @@ from app.schemas.checkout import (
     AdminCheckoutSessionResponse,
     AdminRepriceItemRequest,
     CheckoutConfigurationResponse,
+    DonorCheckoutCountsResponse,
     DonorCheckoutStatusEntry,
     DonorCheckoutStatusListResponse,
     ProcessingFeeConfigResponse,
@@ -702,6 +705,12 @@ async def admin_list_donor_checkout_status(
     count_sql = text("SELECT COUNT(*) FROM checkout_sessions WHERE event_id = :eid")
     total = (await db.execute(count_sql, {"eid": event_id})).scalar() or 0
 
+    counts_sql = text(
+        "SELECT status, COUNT(*) FROM checkout_sessions WHERE event_id = :eid GROUP BY status"
+    )
+    counts_rows = (await db.execute(counts_sql, {"eid": event_id})).all()
+    counts_map: dict[str, int] = {row[0]: row[1] for row in counts_rows}
+
     result = await db.execute(
         select(CheckoutSession)
         .where(CheckoutSession.event_id == event_id)
@@ -723,20 +732,23 @@ async def admin_list_donor_checkout_status(
                 first_name=user.first_name if user else None,
                 last_name=user.last_name if user else None,
                 email=user.email if user else "",
-                session_status=sess.status.value,
+                status=sess.status.value,
                 total_cents=sess.total_cents,
                 item_count=item_count,
                 completed_at=sess.completed_at,
             )
         )
 
-    pages = max(1, (total + per_page - 1) // per_page)
     return DonorCheckoutStatusListResponse(
-        items=entries,
+        donors=entries,
         total=int(total),
         page=page,
         per_page=per_page,
-        pages=pages,
+        counts=DonorCheckoutCountsResponse(
+            not_started=counts_map.get("not_started", 0),
+            in_progress=counts_map.get("in_progress", 0),
+            complete=counts_map.get("complete", 0),
+        ),
     )
 
 
@@ -918,6 +930,7 @@ async def admin_send_checkout_reminder(
 
 @router_checkout.get(
     "/{event_id}/checkout/donors/{user_id}/receipt",
+    response_class=StreamingResponse,
 )
 @require_role("super_admin", "npo_admin", "event_coordinator", "npo_staff")
 async def admin_get_donor_receipt(
@@ -925,15 +938,55 @@ async def admin_get_donor_receipt(
     user_id: uuid.UUID,
     current_user: CurrentUser,
     db: DB,
-) -> RedirectResponse:
-    """Redirect to the PDF receipt for a donor's checkout session."""
-    session = await _get_admin_session_or_404(db, event_id, user_id)
-    if session.receipt_url is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Receipt is not yet available. Please try again shortly.",
+) -> StreamingResponse:
+    """Generate and stream the PDF receipt for a donor's checkout session.
+
+    Always generates the PDF on demand so admins can download receipts
+    even when Azure Blob Storage is not configured.
+    """
+    result = await db.execute(
+        select(CheckoutSession)
+        .options(selectinload(CheckoutSession.items))
+        .where(
+            CheckoutSession.event_id == event_id,
+            CheckoutSession.user_id == user_id,
         )
-    return RedirectResponse(url=session.receipt_url, status_code=302)
+    )
+    session = result.scalar_one_or_none()
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Checkout session not found for this donor.",
+        )
+
+    receipt_svc = CheckoutReceiptService(db)
+    ctx = await receipt_svc.build_context(session)
+    html = receipt_svc.render_html(ctx)
+    try:
+        pdf_bytes = await receipt_svc.generate_pdf(html)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate PDF receipt.",
+        ) from exc
+
+    def _slugify(s: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
+
+    event_slug = _slugify(str(ctx.get("event_name", "event")))[:40]
+    donor_slug = _slugify(str(ctx.get("donor_name", "donor")))[:30]
+    completed_at = session.completed_at
+    date_str = completed_at.strftime("%Y%m%d") if completed_at else "unknown"
+    filename = f"receipt-{event_slug}-{donor_slug}-{date_str}.pdf"
+
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Length": str(len(pdf_bytes)),
+        },
+    )
 
 
 @router_checkout.post(
@@ -949,10 +1002,23 @@ async def admin_resend_donor_receipt(
     db: DB,
 ) -> dict[str, str]:
     """Resend the receipt email to a donor who has completed checkout."""
-    session = await _get_admin_session_or_404(db, event_id, user_id)
+    result = await db.execute(
+        select(CheckoutSession)
+        .options(selectinload(CheckoutSession.items))
+        .where(
+            CheckoutSession.event_id == event_id,
+            CheckoutSession.user_id == user_id,
+        )
+    )
+    session = result.scalar_one_or_none()
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Checkout session not found for this donor.",
+        )
     receipt_svc = CheckoutReceiptService(db)
     await receipt_svc.send_receipt_email(session)
-    return {"status": "Receipt email dispatched."}
+    return {"message": "Receipt email dispatched."}
 
 
 # ── Feature 044: Super-Admin Processing Fee Config ────────────────────────────

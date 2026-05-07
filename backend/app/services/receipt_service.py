@@ -97,7 +97,7 @@ class ReceiptService:
         pdf_url: str | None = None
         if pdf_bytes:
             try:
-                pdf_url = await self._upload_to_blob(pdf_bytes, transaction.id)
+                pdf_url = await self._upload_to_blob(pdf_bytes, transaction.id, ctx)
             except Exception as exc:
                 logger.error(
                     "Blob upload failed for receipt",
@@ -207,7 +207,12 @@ class ReceiptService:
 
     # ── Blob storage ───────────────────────────────────────────────────────────
 
-    async def _upload_to_blob(self, pdf_bytes: bytes, transaction_id: uuid.UUID) -> str:
+    async def _upload_to_blob(
+        self,
+        pdf_bytes: bytes,
+        transaction_id: uuid.UUID,
+        ctx: dict[str, Any] | None = None,
+    ) -> str:
         """Upload PDF to Azure Blob Storage and return the public URL.
 
         Raises:
@@ -217,7 +222,16 @@ class ReceiptService:
         if not conn_str:
             raise ReceiptServiceError("Azure storage connection string not configured")
 
-        blob_name = f"receipts/{transaction_id}.pdf"
+        def _safe(s: str) -> str:
+            return "".join(c if c.isalnum() else "-" for c in s.lower()).strip("-")
+
+        if ctx:
+            event_slug = _safe(ctx.get("event_name") or "event")[:40]
+            donor_slug = _safe(ctx.get("donor_name") or "donor")[:30]
+            ts = (ctx.get("transaction_timestamp") or "").replace(" ", "-")[:10]
+            blob_name = f"receipts/{transaction_id}/{event_slug}_{donor_slug}_{ts}.pdf"
+        else:
+            blob_name = f"receipts/{transaction_id}.pdf"
 
         loop = asyncio.get_event_loop()
 

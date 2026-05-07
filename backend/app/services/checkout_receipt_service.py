@@ -74,31 +74,39 @@ class CheckoutReceiptService:
                 )
 
         if receipt_url is None:
-            receipt_url = f"/api/v1/payments/events/{session.event_id}/checkout/receipt"
+            receipt_url = f"/api/v1/payments/events/{session.event_id}/checkout/receipt/pdf"
 
         session.receipt_url = receipt_url
         return receipt_url
 
     async def send_receipt_email(self, session: CheckoutSession) -> None:
-        """Send receipt email to the donor after successful checkout."""
+        """Send receipt email with PDF attachment to the donor after successful checkout."""
         ctx = await self._build_context(session)
         donor_email = ctx.get("donor_email", "")
         if not donor_email:
             return
 
+        # Generate the PDF so we can attach it
+        pdf_bytes: bytes | None = None
+        try:
+            html = self._render_html(ctx)
+            pdf_bytes = await self._generate_pdf(html)
+        except Exception:
+            logger.warning(
+                "PDF generation failed for checkout receipt email; sending without attachment",
+                extra={"session_id": str(session.id)},
+                exc_info=True,
+            )
+
         email_svc = get_email_service()
         try:
-            await email_svc.send_notification_email(
+            await email_svc.send_receipt_email(
                 to_email=donor_email,
-                notification_type="custom",
-                title="Your checkout receipt",
-                body=(
-                    f"Thank you for completing checkout for {ctx.get('event_name', 'the event')}.\n\n"
-                    f"Total paid: ${ctx.get('total_dollars', '0.00')}\n"
-                    f"Receipt ID: {ctx.get('receipt_id', '')}"
-                ),
-                donor_name=ctx.get("donor_name"),
-                data={"event_id": str(session.event_id)},
+                donor_name=str(ctx.get("donor_name", "Donor")),
+                event_name=str(ctx.get("event_name", "the event")),
+                transaction_id=str(ctx.get("receipt_id", str(session.id)[:8])),
+                amount_total=float(ctx.get("total_dollars", 0)),
+                pdf_bytes=pdf_bytes,
             )
         except Exception:
             logger.warning(
@@ -106,6 +114,20 @@ class CheckoutReceiptService:
                 extra={"session_id": str(session.id)},
                 exc_info=True,
             )
+
+    # ── Public helpers (also used by streaming receipt endpoint) ─────────────
+
+    async def build_context(self, session: CheckoutSession) -> dict[str, Any]:
+        """Assemble template context from the checkout session and its items."""
+        return await self._build_context(session)
+
+    def render_html(self, ctx: dict[str, Any]) -> str:
+        """Render the checkout receipt Jinja2 template."""
+        return self._render_html(ctx)
+
+    async def generate_pdf(self, html: str) -> bytes:
+        """Render HTML to PDF via WeasyPrint."""
+        return await self._generate_pdf(html)
 
     # ── Private helpers ────────────────────────────────────────────────────────
 
