@@ -88,30 +88,27 @@ export interface AddCheckoutItemRequest {
 }
 
 export interface CheckoutNotificationResponse {
-  queued_count: number
-  message: string
+  dispatched: number
 }
 
 export interface ProcessingFeeConfig {
-  rate_bps: number
-  rate_pct: number
+  id: string
+  rate: number
   created_at: string
-  updated_at: string
-  updated_by: string | null
 }
 
 export interface ProcessingFeeHistoryEntry {
   id: string
-  rate_bps: number
-  rate_pct: number
-  set_by: string | null
+  rate: number
   created_at: string
 }
 
 export interface ProcessingFeeHistoryResponse {
-  history: ProcessingFeeHistoryEntry[]
+  items: ProcessingFeeHistoryEntry[]
   total: number
   page: number
+  per_page: number
+  pages: number
 }
 
 // ── Checkout Configuration ─────────────────────────────────────────────────────
@@ -164,7 +161,7 @@ export async function scheduleCheckoutOpen(
 ): Promise<CheckoutConfiguration> {
   const { data } = await apiClient.post<CheckoutConfiguration>(
     `/admin/events/${eventId}/checkout/schedule`,
-    { scheduled_open_at: scheduledOpenAt }
+    { open_at: scheduledOpenAt }
   )
   return data
 }
@@ -313,7 +310,7 @@ export async function setProcessingFeeRate(
 ): Promise<ProcessingFeeConfig> {
   const { data } = await apiClient.post<ProcessingFeeConfig>(
     '/admin/processing-fee-config',
-    { rate_pct: rate }
+    { rate }
   )
   return data
 }

@@ -86,11 +86,18 @@ export async function updateCheckoutSession(
   return response.data
 }
 
+export interface CheckoutConfirmResponse {
+  session_id: string
+  status: string
+  receipt_url?: string
+  total_cents: number
+}
+
 export async function confirmCheckout(
   eventId: string,
   data: CheckoutConfirmRequest
-): Promise<CheckoutSession> {
-  const response = await apiClient.post<CheckoutSession>(
+): Promise<CheckoutConfirmResponse> {
+  const response = await apiClient.post<CheckoutConfirmResponse>(
     `/payments/events/${eventId}/checkout/confirm`,
     data
   )

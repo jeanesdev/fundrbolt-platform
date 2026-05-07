@@ -36,6 +36,7 @@ from app.models.event import Event
 from app.models.payment_transaction import PaymentTransaction, TransactionStatus
 from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
 from app.models.quick_entry_donation import QuickEntryDonation
+from app.models.registration_guest import RegistrationGuest
 from app.models.revenue_generator_entry import RevenueGeneratorEntry
 from app.models.ticket_management import PaymentStatus, TicketPurchase
 from app.schemas.checkout import AdminAddCheckoutItemRequest, CheckoutConfirmRequest
@@ -513,8 +514,13 @@ class CheckoutService:
         # ── Revenue generator entries ─────────────────────────────────────────
         rg_result = await self.db.execute(
             select(RevenueGeneratorEntry)
+            .join(
+                RegistrationGuest,
+                RevenueGeneratorEntry.registration_guest_id == RegistrationGuest.id,
+            )
             .where(
                 RevenueGeneratorEntry.event_id == event_id,
+                RegistrationGuest.user_id == user_id,
             )
             .options(selectinload(RevenueGeneratorEntry.item))
         )

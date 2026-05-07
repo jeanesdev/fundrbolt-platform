@@ -58,7 +58,9 @@ export function ProcessingFeeConfig() {
       void queryClient.invalidateQueries({
         queryKey: ['processing-fee-history'],
       })
-      toast.success(`Processing fee rate set to ${updated.rate_pct}%`)
+      toast.success(
+        `Processing fee rate set to ${(Number(updated.rate) * 100).toFixed(2)}%`
+      )
       setNewRate('')
     },
     onError: (err) => {
@@ -86,7 +88,9 @@ export function ProcessingFeeConfig() {
             {configLoading ? (
               <Loader2 className='text-muted-foreground h-4 w-4 animate-spin' />
             ) : config ? (
-              <Badge className='text-sm'>{config.rate_pct}%</Badge>
+              <Badge className='text-sm'>
+                {(Number(config.rate) * 100).toFixed(2)}%
+              </Badge>
             ) : (
               <span className='text-muted-foreground text-sm'>Not set</span>
             )}
@@ -116,14 +120,15 @@ export function ProcessingFeeConfig() {
                 className='h-8 shrink-0'
                 disabled={!newRate || setRateMutation.isPending}
                 onClick={() => {
-                  const rate = parseFloat(newRate)
-                  if (isNaN(rate) || rate < 0 || rate > 100) {
+                  const pct = parseFloat(newRate)
+                  if (isNaN(pct) || pct < 0 || pct > 100) {
                     toast.error(
                       'Please enter a valid percentage between 0 and 100'
                     )
                     return
                   }
-                  setRateMutation.mutate(rate)
+                  // Backend expects decimal (0–1), e.g. 0.029 for 2.9%
+                  setRateMutation.mutate(pct / 100)
                 }}
               >
                 {setRateMutation.isPending ? (
@@ -150,7 +155,7 @@ export function ProcessingFeeConfig() {
             <div className='flex justify-center py-6'>
               <Loader2 className='text-muted-foreground h-5 w-5 animate-spin' />
             </div>
-          ) : !history || history.history.length === 0 ? (
+          ) : !history || history.items.length === 0 ? (
             <p className='text-muted-foreground py-4 text-center text-sm'>
               No rate history yet.
             </p>
@@ -164,13 +169,13 @@ export function ProcessingFeeConfig() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {history.history.map((entry) => (
+                {history.items.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className='font-medium'>
-                      {entry.rate_pct}%
+                      {(Number(entry.rate) * 100).toFixed(2)}%
                     </TableCell>
                     <TableCell className='text-muted-foreground text-sm'>
-                      {entry.set_by ?? '—'}
+                      —
                     </TableCell>
                     <TableCell className='text-muted-foreground text-sm'>
                       {new Date(entry.created_at).toLocaleString()}

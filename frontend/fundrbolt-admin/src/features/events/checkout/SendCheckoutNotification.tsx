@@ -34,10 +34,7 @@ export function SendCheckoutNotification({
   const sendLinkMutation = useMutation({
     mutationFn: () => sendCheckoutLink(eventId),
     onSuccess: (result) => {
-      toast.success(
-        result.message ||
-          `Checkout links queued for ${result.queued_count} donor(s)`
-      )
+      toast.success(`Checkout links sent to ${result.dispatched} donor(s)`)
     },
     onError: (err) => {
       toast.error(
@@ -49,9 +46,7 @@ export function SendCheckoutNotification({
   const sendReminderMutation = useMutation({
     mutationFn: () => sendCheckoutReminder(eventId),
     onSuccess: (result) => {
-      toast.success(
-        result.message || `Reminders queued for ${result.queued_count} donor(s)`
-      )
+      toast.success(`Reminders sent to ${result.dispatched} donor(s)`)
     },
     onError: (err) => {
       toast.error(

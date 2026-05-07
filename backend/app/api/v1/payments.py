@@ -39,9 +39,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
-from app.core.database import get_db
+from app.core.database import AsyncSessionLocal, get_db
 from app.core.payment_deps import get_payment_gateway
 from app.middleware.auth import get_current_active_user
+from app.middleware.rate_limit import rate_limit
 from app.models.checkout_session import CheckoutSession
 from app.models.payment_receipt import PaymentReceipt
 from app.models.payment_transaction import PaymentTransaction
@@ -744,13 +745,22 @@ async def confirm_checkout(
     await db.commit()
     await db.refresh(completed)
 
-    # Fire-and-forget: generate receipt and send email
+    # Fire-and-forget: generate receipt and send email.
+    # Uses a fresh session so the task is not affected by the request session
+    # being closed after the response is returned.
+    completed_id = completed.id
+
     async def _generate() -> None:
         try:
-            receipt_svc = CheckoutReceiptService(db)
-            await receipt_svc.generate_receipt(completed)
-            await receipt_svc.send_receipt_email(completed)
-            await db.commit()
+            async with AsyncSessionLocal() as bg_db:
+                result = await bg_db.execute(
+                    select(CheckoutSession).where(CheckoutSession.id == completed_id)
+                )
+                bg_session = result.scalar_one()
+                receipt_svc = CheckoutReceiptService(bg_db)
+                await receipt_svc.generate_receipt(bg_session)
+                await receipt_svc.send_receipt_email(bg_session)
+                await bg_db.commit()
         except Exception:  # noqa: BLE001
             pass
 
@@ -863,24 +873,35 @@ async def stream_checkout_receipt_pdf(
     response_model=dict[str, str],
     status_code=status.HTTP_202_ACCEPTED,
 )
+@rate_limit(max_requests=3, window_seconds=3600)  # 3 messages per hour per IP
 async def contact_admin(
     event_id: uuid.UUID,
     body: ContactAdminRequest,
+    request: Request,
     current_user: CurrentUser,
     db: DB,
 ) -> dict[str, str]:
     """Send a message to the NPO admin for support during checkout.
 
-    Rate-limited to 3 messages per hour per user.
+    Rate-limited to 3 messages per hour per IP.
     Dispatches email and push notification to the NPO admin (fire-and-forget).
     """
-    asyncio.create_task(
-        ContactAdminService.send_message(
-            db=db,
-            event_id=event_id,
-            donor_user_id=current_user.id,
-            message=body.message,
-        )
-    )
+    donor_user_id = current_user.id
+    message = body.message
+
+    async def _send() -> None:
+        try:
+            async with AsyncSessionLocal() as bg_db:
+                await ContactAdminService.send_message(
+                    db=bg_db,
+                    event_id=event_id,
+                    donor_user_id=donor_user_id,
+                    message=message,
+                )
+                await bg_db.commit()
+        except Exception:  # noqa: BLE001
+            pass
+
+    asyncio.create_task(_send())
 
     return {"status": "Message sent to the event organizer."}
