@@ -1,0 +1,170 @@
+openapi: "3.1.0"
+info:
+  title: "Printable Reports API Contracts"
+  version: "1.0.0"
+
+paths:
+  /api/v1/admin/events/{event_id}/reports/event-summary:
+    get:
+      summary: "Download NPO event summary report (PDF)"
+      description: "Generates and streams a full-color PDF report for the event, including all revenue metrics, charts, and segment leaderboards."
+      tags: ["admin-reports"]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "PDF binary stream"
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="event-2026-05-07-report.pdf"'
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: "Not authenticated"
+        "403":
+          description: "Insufficient role (requires npo_admin or super_admin)"
+        "404":
+          description: "Event not found"
+        "503":
+          description: "PDF generation failed"
+
+  /api/v1/admin/events/{event_id}/reports/bid-cards:
+    post:
+      summary: "Download bid cards PDF for auction items"
+      description: "Generates a multi-page PDF of bid cards formatted for Brady label printers. One card per page at the selected label dimensions."
+      tags: ["admin-reports"]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BidCardRequest"
+            examples:
+              specific_items:
+                summary: "Specific items, 3×5 label"
+                value:
+                  item_ids: ["<uuid1>", "<uuid2>"]
+                  label_size: "3x5"
+              all_items:
+                summary: "All published items, 2×4 label"
+                value:
+                  label_size: "2x4"
+      responses:
+        "200":
+          description: "PDF binary stream"
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="bid-cards-3x5.pdf"'
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: "Invalid request (unknown label_size, invalid item_ids)"
+        "401":
+          description: "Not authenticated"
+        "403":
+          description: "Insufficient role (requires npo_admin, npo_staff, or super_admin)"
+        "404":
+          description: "Event not found or specified item IDs not found in event"
+        "422":
+          description: "No published auction items found for selected IDs"
+        "503":
+          description: "PDF generation failed"
+
+  /api/v1/admin/events/{event_id}/auctioneer/report:
+    get:
+      summary: "Download auctioneer financial report (PDF)"
+      description: "Generates and streams a PDF auctioneer financial report showing event totals, per-item commissions, and category earnings."
+      tags: ["admin-reports", "admin-auctioneer"]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: auctioneer_user_id
+          in: query
+          required: false
+          description: "Super admin only: view report for a specific auctioneer"
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "PDF binary stream"
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: 'attachment; filename="auctioneer-report-2026-05-07.pdf"'
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: "Not authenticated"
+        "403":
+          description: "Insufficient role (requires auctioneer or super_admin)"
+        "404":
+          description: "Event not found"
+        "503":
+          description: "PDF generation failed"
+
+components:
+  schemas:
+    BidCardRequest:
+      type: object
+      required:
+        - label_size
+      properties:
+        item_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+          description: "List of auction item IDs to include. Omit or null for all published items."
+        label_size:
+          type: string
+          enum: ["2x3", "2x4", "3x3", "3x5"]
+          description: |
+            Brady-compatible label size:
+            - 2x3 = 50.8mm × 76.2mm
+            - 2x4 = 50.8mm × 101.6mm
+            - 3x3 = 76.2mm × 76.2mm
+            - 3x5 = 76.2mm × 127mm
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
