@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import io
 import ipaddress
 import logging
 import pathlib
@@ -14,6 +15,10 @@ logger = logging.getLogger(__name__)
 
 # Maximum image size accepted (5 MB) — prevents embedding huge files in PDFs
 _MAX_IMAGE_BYTES = 5 * 1024 * 1024
+# Maximum pixel dimension (width or height) for embedded report images.
+# Beyond this the extra detail is invisible in print; keeping it small
+# dramatically reduces the HTML payload WeasyPrint has to parse.
+_MAX_IMAGE_PX = 1000
 
 _ASSETS_DIR = pathlib.Path(__file__).parent.parent / "templates" / "assets"
 
@@ -84,6 +89,36 @@ def _is_safe_image_url(url: str) -> bool:
     return True
 
 
+def _compress_image_for_print(data: bytes, mime: str) -> tuple[bytes, str]:
+    """Resize and compress an image to a PDF-appropriate size.
+
+    Resizes so the longest edge is at most *_MAX_IMAGE_PX* pixels and
+    re-encodes as JPEG at quality 82.  Returns the (bytes, mime) tuple.
+    Originals that are already small are passed through unchanged.
+    Falls back to the original data on any Pillow error.
+    """
+    try:
+        from PIL import Image  # noqa: PLC0415
+
+        img: Image.Image = Image.open(io.BytesIO(data))
+        # Convert palette / transparency modes to RGB for JPEG encoding
+        if img.mode not in ("RGB", "L"):
+            img = img.convert("RGB")
+        w, h = img.size
+        if max(w, h) > _MAX_IMAGE_PX:
+            ratio = _MAX_IMAGE_PX / max(w, h)
+            img = img.resize(
+                (int(w * ratio), int(h * ratio)),
+                Image.Resampling.LANCZOS,
+            )
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=82, optimize=True)
+        return buf.getvalue(), "image/jpeg"
+    except Exception:
+        logger.debug("Image compression failed; using original", exc_info=True)
+        return data, mime
+
+
 async def fetch_image_as_base64(
     url: str,
     session: aiohttp.ClientSession,
@@ -114,8 +149,11 @@ async def fetch_image_as_base64(
             if not data or len(data) > _MAX_IMAGE_BYTES:
                 logger.debug("Image data empty or too large (%d bytes) for %s", len(data), url)
                 return None
-            b64 = base64.b64encode(data).decode("ascii")
             mime = content_type.split(";")[0].strip()
+            # Resize/compress to print-appropriate dimensions so WeasyPrint
+            # doesn't have to parse multi-megabyte base64 blobs per card.
+            data, mime = _compress_image_for_print(data, mime)
+            b64 = base64.b64encode(data).decode("ascii")
             return f"data:{mime};base64,{b64}"
     except Exception:
         logger.debug("Image fetch failed for %s", url, exc_info=True)
