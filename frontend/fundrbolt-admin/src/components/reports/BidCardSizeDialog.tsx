@@ -40,7 +40,7 @@ interface BidCardOptions {
 }
 
 const DEFAULT_OPTIONS: BidCardOptions = {
-  includeLive: true,
+  includeLive: false,
   showImage: true,
   showValue: true,
   showQr: true,

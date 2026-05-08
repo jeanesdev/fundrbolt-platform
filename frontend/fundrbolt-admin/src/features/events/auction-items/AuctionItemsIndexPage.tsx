@@ -150,7 +150,7 @@ export function AuctionItemsIndexPage() {
   return (
     <div className='space-y-4 md:space-y-6'>
       <div className='mb-4 space-y-4 md:mb-6'>
-        <div className='flex items-center justify-between'>
+        <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
           <div>
             <h1 className='text-2xl font-bold md:text-3xl'>Auction Items</h1>
             <p className='text-muted-foreground mt-1 text-sm md:mt-2 md:text-base'>
@@ -160,13 +160,15 @@ export function AuctionItemsIndexPage() {
           {typeFilter !== 'revenue_generators' ? (
             <div className='flex items-center gap-2'>
               <Button
+                size='sm'
                 variant='outline'
                 onClick={() => setShowBidCardDialog(true)}
               >
                 <Printer className='mr-2 h-4 w-4' />
-                Print Bid Cards
+                <span className='hidden sm:inline'>Print Bid Cards</span>
+                <span className='sm:hidden'>Bid Cards</span>
               </Button>
-              <Button onClick={handleAdd}>
+              <Button size='sm' onClick={handleAdd}>
                 <Plus className='mr-2 h-4 w-4' />
                 Add Item
               </Button>

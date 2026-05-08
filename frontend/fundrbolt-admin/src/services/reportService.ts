@@ -3,7 +3,7 @@
  */
 import apiClient from '@/lib/axios'
 
-export type LabelSize = '2x3' | '2x4' | '3x3' | '3x5'
+export type LabelSize = '2x3' | '2x4' | '3x3' | '3x5' | 'tent-8.5x11' | 'tent-8.5x11-2up'
 
 export interface BidCardRequest {
   item_ids?: string[] | null
@@ -32,6 +32,16 @@ const LABEL_SIZE_OPTIONS: {
       value: '3x5',
       label: '3" × 5"',
       description: 'Index card / large bid card (recommended)',
+    },
+    {
+      value: 'tent-8.5x11',
+      label: 'Tent 8.5" × 11"',
+      description: 'Full-page table tent card (1 per sheet)',
+    },
+    {
+      value: 'tent-8.5x11-2up',
+      label: 'Tent 8.5" × 11" (2-up)',
+      description: 'Two tent cards per sheet — cut along dashed line',
     },
   ]
 

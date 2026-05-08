@@ -141,7 +141,10 @@ class BidCardService:
 
         # 3. Build card data + QR codes (sync, placed in executor)
         page_size = request.label_size.css_dimensions
-        template = self._jinja.get_template("reports/bid_cards.html")
+        is_tent = request.label_size.is_tent
+        cards_per_page = request.label_size.cards_per_page
+        template_name = "reports/bid_cards_tent.html" if is_tent else "reports/bid_cards.html"
+        template = self._jinja.get_template(template_name)
 
         card_data = []
         for item, image_data in zip(items, item_images, strict=True):
@@ -185,6 +188,7 @@ class BidCardService:
                 event_logo=event_logo_data,
                 opts=opts,
                 fundrbolt_logo_b64=get_fundrbolt_logo_b64(),
+                cards_per_page=cards_per_page,
             )
             from weasyprint import HTML  # noqa: PLC0415
 

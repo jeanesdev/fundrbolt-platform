@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <style>
+        @page {
+            size: {{ page_size }};
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 11pt;
+            background: #fff;
+        }
+
+        /* ── 1-up: full page tent card ── */
+        .page-1up {
+            width: 100%;
+            height: 100%;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Back half (upside-down mirror of front) */
+        .tent-back {
+            flex: 1;
+            display: flex;
+            flex-direction: column-reverse;
+            transform: rotate(180deg);
+            padding: 10mm 12mm 8mm;
+            border-bottom: 2px dashed #94a3b8;
+            overflow: hidden;
+        }
+
+        /* Front half */
+        .tent-front {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 8mm 12mm 10mm;
+            overflow: hidden;
+        }
+
+        /* ── 2-up: two half-page cards per sheet ── */
+        .page-2up {
+            width: 100%;
+            height: 100%;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .half-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 8mm 12mm;
+            overflow: hidden;
+        }
+
+        .half-card:first-child {
+            border-bottom: 2px dashed #94a3b8;
+        }
+
+        /* ── Shared card inner content ── */
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 4mm;
+            margin-bottom: 3mm;
+        }
+
+        .card-header-left {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .lot-number {
+            font-size: 9pt;
+            color: #64748b;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1mm;
+        }
+
+        .type-badge {
+            display: inline-block;
+            font-size: 7.5pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 1.5px 5px;
+            border-radius: 3px;
+            background: #dbeafe;
+            color: #1e40af;
+            white-space: nowrap;
+        }
+
+        .type-badge.live {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .type-badge.paddle_raise {
+            background: #fce7f3;
+            color: #9d174d;
+        }
+
+        .item-title {
+            font-size: 18pt;
+            font-weight: 800;
+            color: #1a1a2e;
+            line-height: 1.15;
+            margin: 2mm 0 2mm;
+        }
+
+        .event-logo {
+            width: 16mm;
+            height: 16mm;
+            object-fit: contain;
+            flex-shrink: 0;
+            border-radius: 2px;
+        }
+
+        .item-image {
+            width: 100%;
+            max-height: 60mm;
+            object-fit: contain;
+            border-radius: 4px;
+            margin-bottom: 3mm;
+        }
+
+        .pricing {
+            display: flex;
+            gap: 8mm;
+            margin-bottom: 2mm;
+        }
+
+        .price-item {
+            min-width: 28mm;
+        }
+
+        .price-label {
+            font-size: 7pt;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .price-value {
+            font-size: 20pt;
+            font-weight: 800;
+            color: #2563eb;
+            line-height: 1.1;
+        }
+
+        .price-sub {
+            font-size: 8pt;
+            color: #475569;
+        }
+
+        .donated-by {
+            font-size: 8pt;
+            color: #64748b;
+            margin-bottom: 2mm;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: auto;
+            padding-top: 3mm;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .qr-code {
+            width: 28mm;
+            height: 28mm;
+            object-fit: contain;
+        }
+
+        .fundrbolt-logo {
+            height: 9pt;
+            width: auto;
+            opacity: 0.45;
+        }
+    </style>
+</head>
+
+<body>
+
+{% macro card_inner(card) %}
+    <div class="card-header">
+        <div class="card-header-left">
+            {% if card.bid_number %}<div class="lot-number">Lot #{{ card.bid_number }}</div>{% endif %}
+            <div class="item-title">{{ card.title }}</div>
+            <span class="type-badge {{ card.auction_type }}">{{ card.auction_type | replace('_', ' ') | title }}</span>
+        </div>
+        {% if event_logo %}
+        <img class="event-logo" src="{{ event_logo }}" alt="Event Logo" />
+        {% endif %}
+    </div>
+
+    {% if opts.show_image and card.image_data %}
+    <img class="item-image" src="{{ card.image_data }}" alt="{{ card.title }}" />
+    {% endif %}
+
+    {% if opts.show_starting_bid or opts.show_value %}
+    <div class="pricing">
+        {% if opts.show_starting_bid and card.starting_bid is not none %}
+        <div class="price-item">
+            <div class="price-label">Starting Bid</div>
+            <div class="price-value">${{ "{:,.0f}".format(card.starting_bid) }}</div>
+            {% if opts.show_min_bid_increment %}
+            <div class="price-sub">+${{ "{:,.0f}".format(card.bid_increment) }} min increment</div>
+            {% endif %}
+        </div>
+        {% elif opts.show_min_bid_increment %}
+        <div class="price-item">
+            <div class="price-label">Min Increment</div>
+            <div class="price-value">${{ "{:,.0f}".format(card.bid_increment) }}</div>
+        </div>
+        {% endif %}
+        {% if opts.show_value and card.donor_value is not none %}
+        <div class="price-item">
+            <div class="price-label">Value</div>
+            <div class="price-value">${{ "{:,.0f}".format(card.donor_value) }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% elif opts.show_min_bid_increment %}
+    <div class="pricing">
+        <div class="price-item">
+            <div class="price-label">Min Increment</div>
+            <div class="price-value">${{ "{:,.0f}".format(card.bid_increment) }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if card.donated_by %}
+    <div class="donated-by">Donated by {{ card.donated_by }}</div>
+    {% endif %}
+
+    <div class="card-footer">
+        {% if fundrbolt_logo_b64 %}
+        <img class="fundrbolt-logo" src="{{ fundrbolt_logo_b64 }}" alt="FundrBolt" />
+        {% else %}
+        <span></span>
+        {% endif %}
+        {% if opts.show_qr and card.qr_b64 %}
+        <img class="qr-code" src="{{ card.qr_b64 }}" alt="Bid QR Code" />
+        {% endif %}
+    </div>
+{% endmacro %}
+
+{% if cards_per_page == 1 %}
+    {# ── 1-up: full-page tent with front + mirrored back ── #}
+    {% for card in cards %}
+    <div class="page-1up">
+        <div class="tent-back">
+            {{ card_inner(card) }}
+        </div>
+        <div class="tent-front">
+            {{ card_inner(card) }}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    {# ── 2-up: two half-page cards per sheet (cut along dashed line) ── #}
+    {% for i in range(0, cards|length, 2) %}
+    <div class="page-2up">
+        <div class="half-card">
+            {{ card_inner(cards[i]) }}
+        </div>
+        {% if i + 1 < cards|length %}
+        <div class="half-card">
+            {{ card_inner(cards[i + 1]) }}
+        </div>
+        {% else %}
+        <div class="half-card"></div>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% endif %}
+
+</body>
+</html>

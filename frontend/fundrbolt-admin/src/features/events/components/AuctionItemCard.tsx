@@ -80,6 +80,7 @@ export function AuctionItemCard({
   readOnly = false,
 }: AuctionItemCardProps) {
   const [promotionDialogOpen, setPromotionDialogOpen] = useState(false)
+  const [imageError, setImageError] = useState(false)
 
   // Cast item to include promotion fields (they might not be in base type yet)
   const itemWithPromotion = item as AuctionItem & {
@@ -91,12 +92,13 @@ export function AuctionItemCard({
     <>
       <Card className='flex flex-col'>
         {/* Image Section */}
-        {item.primary_image_url && (
+        {item.primary_image_url && !imageError && (
           <div className='bg-muted relative aspect-video overflow-hidden'>
             <img
               src={item.primary_image_url}
               alt={item.title}
               className='h-full w-full object-cover'
+              onError={() => setImageError(true)}
             />
             {/* Promotion Badge Overlay */}
             {itemWithPromotion.promotion_badge && (
