@@ -16,10 +16,10 @@ import { AuctionItemList } from '@/features/events/components/AuctionItemList'
 import { RevenueGeneratorItemCard } from '@/features/events/components/RevenueGeneratorItemCard'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { RGItemForm } from '@/features/revenue-generators/RGItemForm'
+import { reportService, type BidCardRequest } from '@/services/reportService'
 import revenueGeneratorService, {
   type RGItem,
 } from '@/services/revenueGeneratorService'
-import { type BidCardRequest, reportService } from '@/services/reportService'
 import { useAuctionItemStore } from '@/stores/auctionItemStore'
 import { AuctionType, type AuctionItem } from '@/types/auction-item'
 import { useNavigate, useParams } from '@tanstack/react-router'
