@@ -1,6 +1,6 @@
 # Run-of-Show Management — Manual Testing Guide
 
-Feature: **043-run-of-show**  
+Feature: **043-run-of-show**
 Covers: US1 (Admin editor), US2 (NPO templates), US3 (Donor timeline), US4 (Auctioneer countdown), US5 (Event dashboard), US6 (Notifications)
 
 ---

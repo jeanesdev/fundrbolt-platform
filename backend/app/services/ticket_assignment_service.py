@@ -497,7 +497,9 @@ class TicketAssignmentService:
         revoked_guest_email = assignment.guest_email
         revoked_guest_name = assignment.guest_name
         registered_user_id = assignment.assignee_user_id
-        event_result = await db.execute(select(Event).where(Event.id == assignment.event_id))
+        event_result = await db.execute(
+            select(Event).options(selectinload(Event.media)).where(Event.id == assignment.event_id)
+        )
         event = event_result.scalar_one()
 
         # Soft-delete the RegistrationGuest (if linked)
@@ -567,10 +569,21 @@ class TicketAssignmentService:
                     event_datetime_text = f"{event_datetime_text} ({event.timezone})"
 
                 event_logo_url: str | None = None
-                if event.logo_url:
-                    from app.api.v1.event_media_urls import get_signed_asset_url
+                from app.api.v1.event_media_urls import resolve_event_logo_url as _resolve_logo
 
-                    event_logo_url = get_signed_asset_url(event.logo_url)
+                event_logo_url = _resolve_logo(event)
+
+                # Resolve the NPO slug and name for the branded sender / salutation
+                from sqlalchemy import select as _select
+
+                from app.models.npo import NPO
+
+                npo_slug_result = await db.execute(
+                    _select(NPO.slug, NPO.name).where(NPO.id == event.npo_id)
+                )
+                npo_row = npo_slug_result.one_or_none()
+                npo_slug: str | None = npo_row.slug if npo_row else None
+                npo_name: str | None = npo_row.name if npo_row else None
 
                 email_service = get_email_service()
                 try:
@@ -584,6 +597,9 @@ class TicketAssignmentService:
                         revoked_by_name=revoked_by_user.full_name,
                         revoked_by_email=revoked_by_email,
                         event_logo_url=event_logo_url,
+                        npo_slug=npo_slug,
+                        primary_color=event.primary_color,
+                        npo_name=npo_name,
                     )
                 except Exception:
                     logger.exception(

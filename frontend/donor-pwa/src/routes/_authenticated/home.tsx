@@ -1,7 +1,16 @@
-import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { PublicDirectoryExplorer } from '@/components/home/public-directory-explorer'
+import { LegalFooter } from '@/components/legal/legal-footer'
+import { ProfileDropdown } from '@/components/profile-dropdown'
+import { Button } from '@/components/ui/button'
+import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
+import { getMyInventory } from '@/lib/api/ticket-purchases'
+import { useAuthStore } from '@/stores/auth-store'
+import { getEffectiveNow } from '@/stores/debug-spoof-store'
+import { useEventContextStore } from '@/stores/event-context-store'
 import type { RegisteredEventWithBranding } from '@/types/event-branding'
 import { colors, LogoWhiteGold } from '@fundrbolt/shared/assets'
+import { useQuery } from '@tanstack/react-query'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   Calendar,
   ChevronRight,
@@ -10,15 +19,6 @@ import {
   TicketCheck,
   Users,
 } from 'lucide-react'
-import { useAuthStore } from '@/stores/auth-store'
-import { getEffectiveNow } from '@/stores/debug-spoof-store'
-import { useEventContextStore } from '@/stores/event-context-store'
-import { getRegisteredEventsWithBranding } from '@/lib/api/registrations'
-import { getMyInventory } from '@/lib/api/ticket-purchases'
-import { Button } from '@/components/ui/button'
-import { PublicDirectoryExplorer } from '@/components/home/public-directory-explorer'
-import { LegalFooter } from '@/components/legal/legal-footer'
-import { ProfileDropdown } from '@/components/profile-dropdown'
 
 // Unified display type — registered events plus admin-only events mapped to same shape
 type DisplayEvent = RegisteredEventWithBranding & { has_admin_access?: boolean }
@@ -50,13 +50,11 @@ function EventCard({ event }: { event: DisplayEvent }) {
   return (
     <Link to='/events/$slug' params={{ slug: event.slug }} className='block'>
       <div className='overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-transform active:scale-[0.98]'>
-        {/* Hero: thumbnail image or branding gradient */}
+        {/* Hero: logo on branded gradient background */}
         <div
           className='relative h-28'
           style={{
-            background: thumbnail
-              ? undefined
-              : `linear-gradient(135deg, ${event.primary_color} 0%, ${event.secondary_color} 100%)`,
+            background: `linear-gradient(135deg, ${event.primary_color} 0%, ${event.secondary_color} 100%)`,
           }}
         >
           {thumbnail && (
@@ -66,8 +64,6 @@ function EventCard({ event }: { event: DisplayEvent }) {
               className='h-full w-full object-cover'
             />
           )}
-          {/* Bottom-fade overlay so text above info row pops */}
-          <div className='absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent' />
           {/* Status badge */}
           <span
             className='absolute top-3 left-3 rounded-full px-2.5 py-1 text-xs font-semibold text-white'

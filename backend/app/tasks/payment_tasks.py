@@ -175,7 +175,7 @@ def retry_failed_receipts() -> None:
                 service = ReceiptService(db)
                 await service._send_email(  # noqa: SLF001
                     txn,
-                    service._build_template_context(txn),  # noqa: SLF001
+                    await service._build_template_context(txn),  # noqa: SLF001
                     None,  # PDF bytes not re-generated on retry
                     receipt,
                 )

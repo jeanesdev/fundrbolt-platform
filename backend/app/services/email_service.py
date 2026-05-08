@@ -31,6 +31,9 @@ def _create_email_html_template(
     footer_text: str | None = None,
     logo_url: str | None = None,
     otp_code: str | None = None,
+    logo_alt: str = "FundrBolt",
+    primary_color: str | None = None,
+    npo_name: str | None = None,
 ) -> str:
     """
     Create a professional HTML email template.
@@ -41,7 +44,10 @@ def _create_email_html_template(
         cta_text: Optional call-to-action button text
         cta_url: Optional call-to-action button URL
         footer_text: Optional footer text
-        logo_url: Optional CDN URL for FundrBolt logo
+        logo_url: Optional CDN URL for logo (defaults to FundrBolt logo)
+        logo_alt: Alt text for the logo image
+        primary_color: Optional hex color for header background and CTA button
+        npo_name: Optional NPO name for the salutation ("The {npo_name} Team")
 
     Returns:
         HTML email template string
@@ -49,6 +55,12 @@ def _create_email_html_template(
     resolved_logo_url = (
         logo_url or f"{settings.azure_cdn_logo_base_url}/fundrbolt-logo-white-gold.png"
     )
+    header_bg = primary_color or "#11294c"
+    button_bg = primary_color or "#2563eb"
+    salutation_name = f"The {npo_name} Team" if npo_name else "The FundrBolt Team"
+
+    # FundrBolt footer logo (publicly accessible, navy version for light backgrounds)
+    fundrbolt_footer_logo = f"{settings.azure_cdn_logo_base_url}/fundrbolt-logo-navy-gold.png"
 
     # Build body paragraphs
     paragraphs_html = "".join(
@@ -83,7 +95,7 @@ def _create_email_html_template(
           <tr>
             <td>
               <a href="{cta_url}"
-                 style="background-color: #2563eb;
+                 style="background-color: {button_bg};
                         color: #ffffff;
                         padding: 14px 32px;
                         text-decoration: none;
@@ -106,7 +118,7 @@ def _create_email_html_template(
                     border-top: 1px solid #e5e7eb;
                     color: #6b7280;
                     font-size: 14px;">
-          <p style="margin: 0;">{footer_text}</p>
+          <p style="margin: 0 0 24px 0;">{footer_text}</p>
         </div>
         """
 
@@ -133,13 +145,13 @@ def _create_email_html_template(
                           box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);">
               <tr>
                 <td style="padding: 0;">
-                  <!-- Header with Navy Background and Logo -->
-                  <div style="background-color: #11294c;
+                  <!-- Header with brand color background and logo -->
+                  <div style="background-color: {header_bg};
                               padding: 32px;
                               text-align: center;
                               border-top-left-radius: 8px;
                               border-top-right-radius: 8px;">
-                                        <img src="{resolved_logo_url}" alt="FundrBolt" style="height: 60px; width: auto; display: inline-block;" />
+                    <img src="{resolved_logo_url}" alt="{logo_alt}" style="height: 60px; width: auto; display: inline-block;" />
                   </div>
                 </td>
               </tr>
@@ -161,10 +173,19 @@ def _create_email_html_template(
 
                   <p style="margin: 32px 0 0 0; line-height: 1.6;">
                     Best regards,<br>
-                    <strong>The FundrBolt Team</strong>
+                    <strong>{salutation_name}</strong>
                   </p>
 
                   {footer_html}
+                </td>
+              </tr>
+              <!-- FundrBolt powered-by footer -->
+              <tr>
+                <td style="padding: 16px 40px 28px;
+                           text-align: center;
+                           border-top: 1px solid #e5e7eb;">
+                  <p style="margin: 0 0 8px 0; font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Powered by</p>
+                  <img src="{fundrbolt_footer_logo}" alt="FundrBolt" style="height: 24px; width: auto; display: inline-block; opacity: 0.7;" />
                 </td>
               </tr>
             </table>
@@ -227,6 +248,28 @@ class EmailService:
             else "fundrbolt-logo-white-gold.png"
         )
         return f"{settings.azure_cdn_logo_base_url}/{logo_filename}"
+
+    def _get_event_sender(self, npo_slug: str | None) -> tuple[str, str]:
+        """Return (sender_address, sender_display_name) for an event-scoped email.
+
+        If npo_slug is provided, the sender address will be {npo_slug}@{domain} so
+        recipients can identify which organisation is emailing them.  The display
+        name is set to the human-readable slug so it surfaces nicely in email clients.
+
+        Args:
+            npo_slug: NPO URL slug (e.g. "helping-hands").
+
+        Returns:
+            Tuple of (from_address, from_display_name).
+        """
+        if npo_slug:
+            domain = settings.email_from_address.split("@")[-1]
+            # Allow only safe characters in the local part of the email address
+            clean_slug = "".join(c for c in npo_slug.lower() if c.isalnum() or c == "-").strip("-")
+            if clean_slug:
+                display_name = npo_slug.replace("-", " ").title() + " via FundrBolt"
+                return f"{clean_slug}@{domain}", display_name
+        return settings.email_from_address, settings.email_from_name
 
     async def send_password_reset_email(
         self, to_email: str, reset_token: str, user_name: str | None = None
@@ -440,6 +483,9 @@ The FundrBolt Team
         inviter_name: str | None = None,
         inviter_email: str | None = None,
         event_logo_url: str | None = None,
+        npo_slug: str | None = None,
+        primary_color: str | None = None,
+        npo_name: str | None = None,
     ) -> bool:
         """Send a donor ticket-assignment invitation email."""
         inviter_display = inviter_name or "Someone"
@@ -497,21 +543,21 @@ The FundrBolt Team
             "Click the button below to claim your ticket and complete your registration."
         )
 
-        # Render the logo as an inline image so the template's paragraph wrapper stays valid.
-        event_logo_html = ""
-        if event_logo_url:
-            event_logo_html = (
-                f'<img src="{event_logo_url}" alt="{event_name}" '
-                f'style="display: block; max-height: 100px; max-width: 300px; width: auto; margin: 0 auto 24px;" />'
-            )
+        # Use the event logo in the email header; fall back to FundrBolt logo
+        header_logo_url = event_logo_url or self._get_logo_url("dark")
+        logo_alt = event_name if event_logo_url else "FundrBolt"
+        sender_address, sender_name = self._get_event_sender(npo_slug)
 
         html_body = _create_email_html_template(
             heading=f"You've been assigned a ticket to {event_name}!",
-            body_paragraphs=([event_logo_html] if event_logo_html else []) + body_paragraphs,
+            body_paragraphs=body_paragraphs,
             cta_text="Claim Your Ticket and Register",
             cta_url=invitation_url,
             footer_text="This invitation link will take you to the donor event experience to claim your ticket and finish registration.",
-            logo_url=self._get_logo_url("dark"),
+            logo_url=header_logo_url,
+            logo_alt=logo_alt,
+            primary_color=primary_color,
+            npo_name=npo_name,
         )
 
         return await self._send_email_with_retry(
@@ -520,6 +566,8 @@ The FundrBolt Team
             body,
             "ticket_assignment_invitation",
             html_body,
+            from_address=sender_address,
+            from_name=sender_name,
         )
 
     async def send_ticket_registration_cancelled_email(
@@ -533,6 +581,9 @@ The FundrBolt Team
         revoked_by_name: str,
         revoked_by_email: str,
         event_logo_url: str | None = None,
+        npo_slug: str | None = None,
+        primary_color: str | None = None,
+        npo_name: str | None = None,
     ) -> bool:
         """Notify a guest that their registration and ticket were revoked."""
         subject = f"Your registration for {event_name} has been cancelled"
@@ -574,18 +625,19 @@ The FundrBolt Team
             "If you believe this was done in error, please contact the person listed above."
         )
 
-        event_logo_html = ""
-        if event_logo_url:
-            event_logo_html = (
-                f'<img src="{event_logo_url}" alt="{event_name}" '
-                f'style="display: block; max-height: 100px; max-width: 300px; width: auto; margin: 0 auto 24px;" />'
-            )
+        # Use the event logo in the email header; fall back to FundrBolt logo
+        header_logo_url = event_logo_url or self._get_logo_url("dark")
+        logo_alt = event_name if event_logo_url else "FundrBolt"
+        sender_address, sender_name = self._get_event_sender(npo_slug)
 
         html_body = _create_email_html_template(
             heading=f"Your registration for {event_name} has been cancelled",
-            body_paragraphs=([event_logo_html] if event_logo_html else []) + body_paragraphs,
+            body_paragraphs=body_paragraphs,
             footer_text="This confirms that your ticket is no longer active for this event.",
-            logo_url=self._get_logo_url("dark"),
+            logo_url=header_logo_url,
+            logo_alt=logo_alt,
+            primary_color=primary_color,
+            npo_name=npo_name,
         )
 
         return await self._send_email_with_retry(
@@ -594,6 +646,8 @@ The FundrBolt Team
             body,
             "ticket_registration_cancelled",
             html_body,
+            from_address=sender_address,
+            from_name=sender_name,
         )
 
     async def send_npo_invitation_accepted_email(
@@ -781,6 +835,8 @@ The FundrBolt Team
         body: str,
         email_type: str,
         html_body: str | None = None,
+        from_address: str | None = None,
+        from_name: str | None = None,
     ) -> bool:
         """
         Send email with retry logic and error handling.
@@ -791,6 +847,8 @@ The FundrBolt Team
             body: Email body (plain text)
             email_type: Type of email (for logging)
             html_body: Optional HTML email body
+            from_address: Optional sender address override (defaults to settings.email_from_address)
+            from_name: Optional sender display name override (defaults to settings.email_from_name)
 
         Returns:
             True if email sent successfully
@@ -805,11 +863,15 @@ The FundrBolt Team
             try:
                 if self.enabled:
                     # Send via Azure Communication Services
-                    await self._send_via_azure(to_email, subject, body, html_body)
+                    await self._send_via_azure(
+                        to_email, subject, body, html_body, from_address, from_name
+                    )
                 else:
                     # Mock mode for development - just log
+                    sender_display = from_address or settings.email_from_address
                     logger.info(
                         f"[MOCK EMAIL] {email_type} email\n"
+                        f"From: {sender_display}\n"
                         f"To: {to_email}\n"
                         f"Subject: {subject}\n"
                         f"Body:\n{body}"
@@ -1321,7 +1383,13 @@ If you have any questions about this decision, please contact us by replying to 
         )
 
     async def _send_via_azure(
-        self, to_email: str, subject: str, body: str, html_body: str | None = None
+        self,
+        to_email: str,
+        subject: str,
+        body: str,
+        html_body: str | None = None,
+        from_address: str | None = None,
+        from_name: str | None = None,
     ) -> None:
         """
         Send email via Azure Communication Services.
@@ -1331,6 +1399,8 @@ If you have any questions about this decision, please contact us by replying to 
             subject: Email subject
             body: Email body (plain text)
             html_body: Optional HTML email body
+            from_address: Optional sender address override
+            from_name: Optional sender display name override
 
         Raises:
             EmailSendError: If sending fails
@@ -1374,8 +1444,8 @@ If you have any questions about this decision, please contact us by replying to 
 
                 # Prepare message
                 message = {
-                    "senderAddress": settings.email_from_address,
-                    "senderDisplayName": settings.email_from_name,
+                    "senderAddress": from_address or settings.email_from_address,
+                    "senderDisplayName": from_name or settings.email_from_name,
                     "recipients": {"to": [{"address": to_email}]},
                     "content": content,
                 }
@@ -1420,6 +1490,10 @@ If you have any questions about this decision, please contact us by replying to 
         transaction_id: str,
         amount_total: float,
         pdf_bytes: bytes | None = None,
+        event_logo_url: str | None = None,
+        npo_slug: str | None = None,
+        primary_color: str | None = None,
+        npo_name: str | None = None,
     ) -> bool:
         """Send a payment receipt email, optionally with PDF attachment.
 
@@ -1430,6 +1504,8 @@ If you have any questions about this decision, please contact us by replying to 
             transaction_id: Transaction UUID for reference
             amount_total: Total amount charged (USD)
             pdf_bytes: Optional PDF receipt bytes to attach
+            event_logo_url: Optional event logo URL (used in email header)
+            npo_slug: Optional NPO slug for branded sender address
 
         Returns:
             True if sent successfully, False on mock mode.
@@ -1452,6 +1528,8 @@ If you have any questions about this decision, please contact us by replying to 
             "— The FundrBolt Team"
         )
 
+        header_logo_url = event_logo_url or self._get_logo_url("dark")
+        logo_alt = event_name if event_logo_url else "FundrBolt"
         html_body = _create_email_html_template(
             heading="Your Receipt",
             body_paragraphs=[
@@ -1464,13 +1542,19 @@ If you have any questions about this decision, please contact us by replying to 
                 "Thank you for your support!",
             ],
             footer_text="You received this email because you completed checkout at a FundrBolt event.",
-            logo_url=self._get_logo_url("dark"),
+            logo_url=header_logo_url,
+            logo_alt=logo_alt,
+            primary_color=primary_color,
+            npo_name=npo_name,
         )
+
+        sender_address, sender_name = self._get_event_sender(npo_slug)
 
         if not self.enabled:
             logger.info(
                 "[MOCK EMAIL] receipt email",
                 extra={
+                    "from": sender_address,
                     "to": to_email,
                     "subject": subject,
                     "has_attachment": pdf_bytes is not None,
@@ -1501,8 +1585,8 @@ If you have any questions about this decision, please contact us by replying to 
                 }
 
                 message: dict[str, object] = {
-                    "senderAddress": settings.email_from_address,
-                    "senderDisplayName": settings.email_from_name,
+                    "senderAddress": sender_address,
+                    "senderDisplayName": sender_name,
                     "recipients": {"to": [{"address": to_email}]},
                     "content": content,
                 }
@@ -1645,6 +1729,10 @@ If you have any questions about this decision, please contact us by replying to 
         body: str,
         donor_name: str | None = None,
         data: dict[str, Any] | None = None,
+        event_logo_url: str | None = None,
+        npo_slug: str | None = None,
+        primary_color: str | None = None,
+        npo_name: str | None = None,
     ) -> bool:
         """Send a branded notification email.
 
@@ -1655,6 +1743,8 @@ If you have any questions about this decision, please contact us by replying to 
             body: Notification body text.
             donor_name: Donor's first name for personalisation.
             data: Optional notification JSONB data (item_name, bid_amount, deep_link, etc.).
+            event_logo_url: Optional event logo URL for the email header.
+            npo_slug: Optional NPO slug for branded sender address.
 
         Returns:
             True if sent successfully.
@@ -1669,6 +1759,12 @@ If you have any questions about this decision, please contact us by replying to 
             donor_url=donor_url,
         )
 
+        header_logo_url = event_logo_url or self._get_logo_url("dark")
+        logo_alt = (
+            npo_slug.replace("-", " ").title() if (event_logo_url and npo_slug) else "FundrBolt"
+        )
+        sender_address, sender_name = self._get_event_sender(npo_slug)
+
         html_body = _create_email_html_template(
             heading=heading,
             body_paragraphs=[p for p in plain_text.split("\n\n") if p.strip()],
@@ -1676,7 +1772,10 @@ If you have any questions about this decision, please contact us by replying to 
             cta_url=cta_url,
             footer_text="You received this because of your notification preferences. "
             "Update them any time from Settings in the FundrBolt app.",
-            logo_url=self._get_logo_url("dark"),
+            logo_url=header_logo_url,
+            logo_alt=logo_alt,
+            primary_color=primary_color,
+            npo_name=npo_name,
         )
 
         return await self._send_email_with_retry(
@@ -1685,6 +1784,8 @@ If you have any questions about this decision, please contact us by replying to 
             body=plain_text,
             email_type=f"notification_{notification_type}",
             html_body=html_body,
+            from_address=sender_address,
+            from_name=sender_name,
         )
 
 

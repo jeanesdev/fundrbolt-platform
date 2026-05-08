@@ -103,20 +103,32 @@ class EventDashboardService:
         qe_paddle_stmt = select(func.coalesce(func.sum(QuickEntryDonation.amount), 0)).where(
             QuickEntryDonation.event_id == event_id
         )
+        buy_now_min_sq = (
+            select(
+                QuickEntryBuyNowBid.item_id.label("item_id"),
+                func.min(QuickEntryBuyNowBid.amount).label("min_price"),
+            )
+            .where(QuickEntryBuyNowBid.event_id == event_id)
+            .group_by(QuickEntryBuyNowBid.item_id)
+            .subquery("bn_min_ev")
+        )
         qe_live_auction_high_bids = (
             select(
-                QuickEntryBid.item_id.label("item_id"),
-                func.max(QuickEntryBid.amount).label("max_bid"),
+                func.least(
+                    func.max(QuickEntryBid.amount),
+                    func.coalesce(buy_now_min_sq.c.min_price, func.max(QuickEntryBid.amount)),
+                ).label("effective_bid"),
             )
+            .outerjoin(buy_now_min_sq, QuickEntryBid.item_id == buy_now_min_sq.c.item_id)
             .where(
                 QuickEntryBid.event_id == event_id,
                 QuickEntryBid.status.in_([QuickEntryBidStatus.ACTIVE, QuickEntryBidStatus.WINNING]),
             )
-            .group_by(QuickEntryBid.item_id)
-            .subquery()
+            .group_by(QuickEntryBid.item_id, buy_now_min_sq.c.min_price)
+            .subquery("qe_live_high_ev")
         )
         qe_live_auction_stmt = select(
-            func.coalesce(func.sum(qe_live_auction_high_bids.c.max_bid), 0)
+            func.coalesce(func.sum(qe_live_auction_high_bids.c.effective_bid), 0)
         )
         buy_now_stmt = select(func.coalesce(func.sum(QuickEntryBuyNowBid.amount), 0)).where(
             QuickEntryBuyNowBid.event_id == event_id
