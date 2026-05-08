@@ -4,19 +4,19 @@
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import {
-    type LabelSize,
-    LABEL_SIZE_OPTIONS,
-    reportService,
+  type LabelSize,
+  LABEL_SIZE_OPTIONS,
+  reportService,
 } from '@/services/reportService'
 import { Loader2, Printer } from 'lucide-react'
 import { useState } from 'react'
@@ -213,4 +213,3 @@ function CheckboxRow({
     </div>
   )
 }
-

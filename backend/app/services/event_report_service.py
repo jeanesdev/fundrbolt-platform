@@ -23,9 +23,17 @@ from sqlalchemy.orm import selectinload
 
 from app.models.event import Event
 from app.models.npo import NPO
+from app.schemas.auction_dashboard import (
+    AuctionDashboardCharts,
+    AuctionDashboardSummary,
+    AuctionItemsListResponse,
+)
+from app.schemas.donor_dashboard import CategoryBreakdownResponse, DonorLeaderboardResponse
 from app.schemas.event_dashboard import DashboardSummary, SegmentBreakdownResponse
+from app.services.auction_dashboard_service import AuctionDashboardService
+from app.services.donor_dashboard_service import DonorDashboardService
 from app.services.event_dashboard_service import EventDashboardService
-from app.services.report_utils import fetch_image_as_base64
+from app.services.report_utils import fetch_image_as_base64, get_fundrbolt_logo_b64
 
 logger = logging.getLogger(__name__)
 
@@ -81,9 +89,33 @@ class EventReportService:
             event_date = event.event_datetime.strftime("%B %d, %Y")
         event_slug = event.slug or str(event_id)
 
+        # Donor dashboard data (scoped to this event)
+        npo_ids = [event.npo_id] if event.npo_id else []
+        donor_svc = DonorDashboardService(self._db)
+        donor_leaderboard: DonorLeaderboardResponse = await donor_svc.get_leaderboard(
+            npo_ids, event_id=event_id, per_page=25
+        )
+        category_breakdown: CategoryBreakdownResponse = await donor_svc.get_category_breakdown(
+            npo_ids, event_id=event_id
+        )
+
+        # Auction dashboard data (scoped to this event)
+        auction_svc = AuctionDashboardService(self._db)
+        auction_summary: AuctionDashboardSummary = await auction_svc.get_summary(
+            npo_ids, event_id=event_id
+        )
+        auction_items: AuctionItemsListResponse = await auction_svc.get_items(
+            npo_ids, event_id=event_id, per_page=50
+        )
+        auction_charts: AuctionDashboardCharts = await auction_svc.get_charts(
+            npo_ids, event_id=event_id
+        )
+
         # 2. Run all synchronous CPU-bound work (charts + WeasyPrint) in executor
         template = self._jinja.get_template("reports/event_report.html")
         generated_at = datetime.now(UTC).strftime("%B %d, %Y at %I:%M %p UTC")
+
+        fundrbolt_logo_b64 = get_fundrbolt_logo_b64()
 
         def _build_pdf() -> bytes:
             context = _build_context(
@@ -97,6 +129,12 @@ class EventReportService:
                 npo_name=npo_name,
                 npo_logo_data=npo_logo_data,
                 generated_at=generated_at,
+                fundrbolt_logo_b64=fundrbolt_logo_b64,
+                donor_leaderboard=donor_leaderboard,
+                category_breakdown=category_breakdown,
+                auction_summary=auction_summary,
+                auction_items=auction_items,
+                auction_charts=auction_charts,
             )
             html = template.render(**context)
             from weasyprint import HTML  # noqa: PLC0415
@@ -263,6 +301,94 @@ def _generate_segment_chart(items: list[dict[str, Any]], title: str) -> str:
     return _chart_to_base64(fig)
 
 
+def _generate_pie_chart(data: list[dict[str, Any]], title: str) -> str:
+    """Pie chart for category/type breakdowns."""
+    if not data:
+        return ""
+    filtered = [d for d in data if d["value"] > 0]
+    if not filtered:
+        return ""
+    labels = [d["label"].replace("_", " ").title() for d in filtered]
+    values = [d["value"] for d in filtered]
+
+    fig, ax = plt.subplots(figsize=(5, 3.5))
+    wedge_props: dict[str, Any] = {"linewidth": 0.5, "edgecolor": "white"}
+    colors = [
+        "#2563eb",
+        "#16a34a",
+        "#f59e0b",
+        "#dc2626",
+        "#7c3aed",
+        "#0891b2",
+        "#db2777",
+        "#65a30d",
+    ]
+    ax.pie(
+        values,
+        labels=labels,
+        autopct="%1.1f%%",
+        startangle=140,
+        colors=colors[: len(values)],
+        wedgeprops=wedge_props,
+        textprops={"fontsize": 7},
+    )
+    ax.set_title(title, fontsize=10, fontweight="bold")
+    fig.tight_layout()
+    return _chart_to_base64(fig)
+
+
+def _generate_hbar_chart(
+    data: list[dict[str, Any]], title: str, xlabel: str = "Amount (USD)"
+) -> str:
+    """Horizontal bar chart for labelled value data."""
+    if not data:
+        return ""
+    top = data[:10]
+    labels = [d["label"].replace("_", " ").title() for d in top]
+    values = [d["value"] for d in top]
+
+    fig, ax = plt.subplots(figsize=(6, max(2.5, len(labels) * 0.4)))
+    bars = ax.barh(labels[::-1], values[::-1], color="#2563eb")
+    max_val = max(values) if values else 1
+    for bar, val in zip(bars, values[::-1], strict=True):
+        ax.text(
+            val + max_val * 0.01,
+            bar.get_y() + bar.get_height() / 2,
+            f"${val:,.0f}",
+            va="center",
+            fontsize=7,
+        )
+    ax.set_xlabel(xlabel, fontsize=8)
+    ax.set_title(title, fontsize=10, fontweight="bold")
+    fig.tight_layout()
+    return _chart_to_base64(fig)
+
+
+def _generate_hbar_count_chart(data: list[dict[str, Any]], title: str) -> str:
+    """Horizontal bar chart where values are counts (not currency)."""
+    if not data:
+        return ""
+    top = data[:10]
+    labels = [d["label"].replace("_", " ").title() for d in top]
+    values = [d["value"] for d in top]
+
+    fig, ax = plt.subplots(figsize=(6, max(2.5, len(labels) * 0.4)))
+    bars = ax.barh(labels[::-1], values[::-1], color="#16a34a")
+    max_val = max(values) if values else 1
+    for bar, val in zip(bars, values[::-1], strict=True):
+        ax.text(
+            val + max_val * 0.01,
+            bar.get_y() + bar.get_height() / 2,
+            f"{int(val):,}",
+            va="center",
+            fontsize=7,
+        )
+    ax.set_xlabel("Bid Count", fontsize=8)
+    ax.set_title(title, fontsize=10, fontweight="bold")
+    fig.tight_layout()
+    return _chart_to_base64(fig)
+
+
 # ── Context builder (sync, called inside executor) ────────────────────────────
 
 
@@ -277,6 +403,12 @@ def _build_context(
     npo_name: str,
     npo_logo_data: str | None,
     generated_at: str,
+    fundrbolt_logo_b64: str | None = None,
+    donor_leaderboard: DonorLeaderboardResponse | None = None,
+    category_breakdown: CategoryBreakdownResponse | None = None,
+    auction_summary: AuctionDashboardSummary | None = None,
+    auction_items: AuctionItemsListResponse | None = None,
+    auction_charts: AuctionDashboardCharts | None = None,
 ) -> dict[str, Any]:
     """Build Jinja2 template context from service data."""
     sources_data = [
@@ -316,6 +448,97 @@ def _build_context(
     chart_company = _generate_segment_chart(_seg_items(seg_company), "Leaderboard by Company")
 
     funnel = [{"stage": f.stage, "count": f.count} for f in summary.funnel]
+
+    # ── Donor dashboard ─────────────────────────────────────────────────────
+    donor_leaders = []
+    if donor_leaderboard:
+        for e in donor_leaderboard.items:
+            donor_leaders.append(
+                {
+                    "name": f"{e.first_name} {e.last_name}".strip(),
+                    "total_given": e.total_given,
+                    "ticket_total": e.ticket_total,
+                    "donation_total": e.donation_total,
+                    "silent_auction_total": e.silent_auction_total,
+                    "live_auction_total": e.live_auction_total,
+                    "buy_now_total": e.buy_now_total,
+                }
+            )
+
+    giving_type_data: list[dict[str, Any]] = []
+    giving_type_chart = ""
+    auction_cat_data: list[dict[str, Any]] = []
+    auction_cat_chart = ""
+    if category_breakdown:
+        giving_type_data = [
+            {
+                "label": g.category,
+                "value": g.total_amount,
+                "donor_count": g.donor_count,
+            }
+            for g in category_breakdown.giving_type_breakdown
+            if g.total_amount > 0
+        ]
+        giving_type_chart = _generate_pie_chart(giving_type_data, "Revenue by Giving Type")
+
+        auction_cat_data = [
+            {
+                "label": a.category,
+                "value": a.total_revenue,
+                "bid_count": a.bid_count,
+                "item_count": a.item_count,
+            }
+            for a in category_breakdown.auction_category_breakdown
+            if a.total_revenue > 0
+        ]
+        auction_cat_chart = _generate_hbar_chart(auction_cat_data, "Auction Revenue by Category")
+
+    # ── Auction dashboard ────────────────────────────────────────────────────
+    auction_kpis: dict[str, Any] = {}
+    if auction_summary:
+        auction_kpis = {
+            "total_items": auction_summary.total_items,
+            "total_bids": auction_summary.total_bids,
+            "total_revenue": auction_summary.total_revenue,
+            "average_bid_amount": auction_summary.average_bid_amount,
+        }
+
+    auction_rows = []
+    if auction_items:
+        for item in auction_items.items:
+            auction_rows.append(
+                {
+                    "title": item.title,
+                    "auction_type": item.auction_type.replace("_", " ").title(),
+                    "category": item.category or "—",
+                    "current_bid": item.current_bid_amount,
+                    "bid_count": item.bid_count,
+                    "watcher_count": item.watcher_count,
+                    "status": item.status.replace("_", " ").title(),
+                    "donated_by": item.donated_by or "",
+                }
+            )
+
+    chart_auction_rev_type = ""
+    chart_auction_rev_cat = ""
+    chart_auction_top_rev = ""
+    chart_auction_top_bids = ""
+    if auction_charts:
+        rev_type = [{"label": p.label, "value": p.value} for p in auction_charts.revenue_by_type]
+        chart_auction_rev_type = _generate_pie_chart(rev_type, "Auction Revenue by Type")
+
+        rev_cat = [{"label": p.label, "value": p.value} for p in auction_charts.revenue_by_category]
+        chart_auction_rev_cat = _generate_hbar_chart(rev_cat, "Auction Revenue by Category")
+
+        top_rev = [
+            {"label": p.label, "value": p.value} for p in auction_charts.top_items_by_revenue
+        ]
+        chart_auction_top_rev = _generate_hbar_chart(top_rev, "Top Items by Revenue")
+
+        top_bids = [
+            {"label": p.label, "value": p.value} for p in auction_charts.top_items_by_bid_count
+        ]
+        chart_auction_top_bids = _generate_hbar_count_chart(top_bids, "Top Items by Bid Count")
 
     return {
         "event_name": event_name,
@@ -363,4 +586,18 @@ def _build_context(
             }
             for i in seg_company.items
         ],
+        "fundrbolt_logo_b64": fundrbolt_logo_b64,
+        # Donor dashboard
+        "donor_leaders": donor_leaders,
+        "giving_type_data": giving_type_data,
+        "giving_type_chart": giving_type_chart,
+        "auction_cat_data": auction_cat_data,
+        "auction_cat_chart": auction_cat_chart,
+        # Auction dashboard
+        "auction_kpis": auction_kpis,
+        "auction_rows": auction_rows,
+        "chart_auction_rev_type": chart_auction_rev_type,
+        "chart_auction_rev_cat": chart_auction_rev_cat,
+        "chart_auction_top_rev": chart_auction_top_rev,
+        "chart_auction_top_bids": chart_auction_top_bids,
     }

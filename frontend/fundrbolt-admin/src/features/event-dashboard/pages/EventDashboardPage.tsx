@@ -1,11 +1,11 @@
-import { useState } from 'react'
-import type { ScenarioType, SegmentType } from '@/services/event-dashboard'
-import { reportService } from '@/services/reportService'
+import { DownloadReportButton } from '@/components/reports/DownloadReportButton'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { DownloadReportButton } from '@/components/reports/DownloadReportButton'
 import { ChecklistSummaryCard } from '@/features/events/components/ChecklistSummaryCard'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
+import type { ScenarioType, SegmentType } from '@/services/event-dashboard'
+import { reportService } from '@/services/reportService'
+import { useState } from 'react'
 import { AlertCards } from '../components/AlertCards'
 import { CashflowTimeline } from '../components/CashflowTimeline'
 import { LastRefreshed } from '../components/LastRefreshed'
@@ -19,10 +19,10 @@ import { SourceBreakdownChart } from '../components/SourceBreakdownChart'
 import { SummaryCards } from '../components/SummaryCards'
 import { WaterfallChart } from '../components/WaterfallChart'
 import {
-  useEventDashboard,
-  useEventDashboardProjections,
-  useEventDashboardSegments,
-  useUpdateEventDashboardProjections,
+    useEventDashboard,
+    useEventDashboardProjections,
+    useEventDashboardSegments,
+    useUpdateEventDashboardProjections,
 } from '../hooks/useEventDashboard'
 
 export function EventDashboardPage() {

@@ -4,31 +4,31 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
@@ -40,23 +40,23 @@ import { getAuctioneerRunOfShow } from '@/services/runOfShowService'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import {
-    ArrowUpDown,
-    CalendarClock,
-    CircleDollarSign,
-    Clock,
-    Coins,
-    Download,
-    Eye,
-    EyeOff,
-    FileText,
-    Filter,
-    Gavel,
-    HandCoins,
-    Image as ImageIcon,
-    Pin,
-    PinOff,
-    Target,
-    Timer,
+  ArrowUpDown,
+  CalendarClock,
+  CircleDollarSign,
+  Clock,
+  Coins,
+  Download,
+  Eye,
+  EyeOff,
+  FileText,
+  Filter,
+  Gavel,
+  HandCoins,
+  Image as ImageIcon,
+  Pin,
+  PinOff,
+  Target,
+  Timer,
 } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -64,13 +64,13 @@ import { EventMapCard } from '../components/EventMapCard'
 import { RosCountdownBadge } from '../components/RosCountdownBadge'
 import { RunOfShowCard } from '../components/RunOfShowCard'
 import {
-    useAuctioneerDashboard,
-    useAuctioneerSettings,
-    useLiveAuctionGallery,
-    usePaddleRaiseDashboard,
-    useRevenueGeneratorItems,
-    useSilentAuctionGallery,
-    useUpsertSettings,
+  useAuctioneerDashboard,
+  useAuctioneerSettings,
+  useLiveAuctionGallery,
+  usePaddleRaiseDashboard,
+  useRevenueGeneratorItems,
+  useSilentAuctionGallery,
+  useUpsertSettings,
 } from '../hooks/useAuctioneerData'
 
 const fmtCurrency = (value: number | null | undefined) =>

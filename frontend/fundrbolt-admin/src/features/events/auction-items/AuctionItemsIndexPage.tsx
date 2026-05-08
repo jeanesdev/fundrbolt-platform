@@ -2,29 +2,29 @@
  * AuctionItemsIndexPage
  * Page for listing all auction items for an event
  */
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import revenueGeneratorService, {
-  type RGItem,
-} from '@/services/revenueGeneratorService'
-import { AuctionType, type AuctionItem } from '@/types/auction-item'
-import { Plus, Printer, Search, X } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import { BidCardSizeDialog } from '@/components/reports/BidCardSizeDialog'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { BidCardSizeDialog } from '@/components/reports/BidCardSizeDialog'
 import { AuctionItemList } from '@/features/events/components/AuctionItemList'
 import { RevenueGeneratorItemCard } from '@/features/events/components/RevenueGeneratorItemCard'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { RGItemForm } from '@/features/revenue-generators/RGItemForm'
+import revenueGeneratorService, {
+    type RGItem,
+} from '@/services/revenueGeneratorService'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import { AuctionType, type AuctionItem } from '@/types/auction-item'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import { Plus, Printer, Search, X } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 type TypeFilter = 'all' | 'live' | 'silent' | 'revenue_generators'
 

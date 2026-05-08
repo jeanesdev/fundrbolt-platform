@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import ipaddress
 import logging
+import pathlib
 import urllib.parse
 
 import aiohttp
@@ -13,6 +14,26 @@ logger = logging.getLogger(__name__)
 
 # Maximum image size accepted (5 MB) — prevents embedding huge files in PDFs
 _MAX_IMAGE_BYTES = 5 * 1024 * 1024
+
+_ASSETS_DIR = pathlib.Path(__file__).parent.parent / "templates" / "assets"
+
+
+def get_fundrbolt_logo_b64() -> str | None:
+    """Return the Fundrbolt logo as a base64-encoded PNG data URI.
+
+    Reads the bundled logo from the templates/assets directory so that PDF
+    generation works without any network access.  Returns None if the file
+    is missing (should never happen in a correctly packaged deployment).
+    """
+    logo_path = _ASSETS_DIR / "fundrbolt-logo-navy-gold.png"
+    try:
+        data = logo_path.read_bytes()
+        b64 = base64.b64encode(data).decode("ascii")
+        return f"data:image/png;base64,{b64}"
+    except OSError:
+        logger.warning("Fundrbolt logo not found at %s", logo_path)
+        return None
+
 
 # Private / special-purpose address ranges to block (SSRF protection)
 _BLOCKED_NETWORKS = [

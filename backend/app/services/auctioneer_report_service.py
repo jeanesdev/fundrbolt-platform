@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.event import Event
 from app.schemas.auctioneer import CommissionListResponse, DashboardResponse, EventSettingsResponse
 from app.services.auctioneer_service import AuctioneerService
+from app.services.report_utils import get_fundrbolt_logo_b64
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,7 @@ class AuctioneerReportService:
 
         generated_at = datetime.now(UTC).strftime("%B %d, %Y at %I:%M %p UTC")
         template = self._jinja.get_template("reports/auctioneer_report.html")
+        fundrbolt_logo_b64 = get_fundrbolt_logo_b64()
 
         def _build_pdf() -> bytes:
             context = _build_context(
@@ -72,6 +74,7 @@ class AuctioneerReportService:
                 event_date=event_date,
                 auctioneer_display_name=auctioneer_display_name,
                 generated_at=generated_at,
+                fundrbolt_logo_b64=fundrbolt_logo_b64,
             )
             html = template.render(**context)
             from weasyprint import HTML  # noqa: PLC0415
@@ -98,6 +101,7 @@ def _build_context(
     event_date: str,
     auctioneer_display_name: str,
     generated_at: str,
+    fundrbolt_logo_b64: str | None = None,
 ) -> dict[str, Any]:
     """Build Jinja2 template context for the auctioneer report."""
     totals = dashboard.event_totals
@@ -166,4 +170,5 @@ def _build_context(
         "per_item_total": per_item_total,
         "grand_total": grand_total,
         "no_commissions": no_commissions,
+        "fundrbolt_logo_b64": fundrbolt_logo_b64,
     }
