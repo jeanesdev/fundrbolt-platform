@@ -65,17 +65,31 @@ class ReportService {
     triggerDownload(response.data, `event-report-${eventId}.pdf`)
   }
 
-  async downloadBidCards(
+  async generateBidCardsBlob(
     eventId: string,
     request: BidCardRequest
-  ): Promise<void> {
+  ): Promise<{ blob: Blob; filename: string }> {
     const response = await apiClient.post<Blob>(
       `/admin/events/${eventId}/reports/bid-cards`,
       request,
       { responseType: 'blob' }
     )
     const sizeLabel = request.label_size.replace('x', '-by-')
-    triggerDownload(response.data, `bid-cards-${sizeLabel}-${eventId}.pdf`)
+    return {
+      blob: response.data,
+      filename: `bid-cards-${sizeLabel}-${eventId}.pdf`,
+    }
+  }
+
+  async downloadBidCards(
+    eventId: string,
+    request: BidCardRequest
+  ): Promise<void> {
+    const { blob, filename } = await this.generateBidCardsBlob(
+      eventId,
+      request
+    )
+    triggerDownload(blob, filename)
   }
 
   async downloadAuctioneerReport(eventId: string): Promise<void> {

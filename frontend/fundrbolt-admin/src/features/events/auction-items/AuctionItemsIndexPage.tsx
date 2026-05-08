@@ -19,11 +19,12 @@ import { RGItemForm } from '@/features/revenue-generators/RGItemForm'
 import revenueGeneratorService, {
   type RGItem,
 } from '@/services/revenueGeneratorService'
+import { type BidCardRequest, reportService } from '@/services/reportService'
 import { useAuctionItemStore } from '@/stores/auctionItemStore'
 import { AuctionType, type AuctionItem } from '@/types/auction-item'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import { Plus, Printer, Search, X } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Download, Loader2, Plus, Printer, Search, X } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 type TypeFilter = 'all' | 'live' | 'silent' | 'revenue_generators'
@@ -54,6 +55,55 @@ export function AuctionItemsIndexPage() {
   const [rgLoading, setRgLoading] = useState(false)
   const [showCreateRG, setShowCreateRG] = useState(false)
   const [showBidCardDialog, setShowBidCardDialog] = useState(false)
+
+  // Bid card background generation state
+  type BidCardGenState =
+    | 'idle'
+    | 'generating'
+    | { url: string; filename: string }
+  const [bidCardGenState, setBidCardGenState] =
+    useState<BidCardGenState>('idle')
+  const bidCardUrlRef = useRef<string | null>(null)
+
+  // Revoke object URL on unmount to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (bidCardUrlRef.current) URL.revokeObjectURL(bidCardUrlRef.current)
+    }
+  }, [])
+
+  const handleBidCardGenerate = useCallback(
+    (request: BidCardRequest) => {
+      setBidCardGenState('generating')
+      reportService
+        .generateBidCardsBlob(eventId, request)
+        .then(({ blob, filename }) => {
+          const url = URL.createObjectURL(blob)
+          bidCardUrlRef.current = url
+          setBidCardGenState({ url, filename })
+        })
+        .catch((err: unknown) => {
+          setBidCardGenState('idle')
+          toast.error(
+            err instanceof Error
+              ? err.message
+              : 'Failed to generate bid cards. Please try again.'
+          )
+        })
+    },
+    [eventId]
+  )
+
+  const handleBidCardDownload = () => {
+    if (typeof bidCardGenState !== 'object') return
+    const link = document.createElement('a')
+    link.href = bidCardGenState.url
+    link.download = bidCardGenState.filename
+    link.click()
+    URL.revokeObjectURL(bidCardGenState.url)
+    bidCardUrlRef.current = null
+    setBidCardGenState('idle')
+  }
 
   const loadRGItems = useCallback(() => {
     if (!eventId) return
@@ -159,14 +209,36 @@ export function AuctionItemsIndexPage() {
           </div>
           {typeFilter !== 'revenue_generators' ? (
             <div className='flex items-center gap-2'>
+              {typeof bidCardGenState === 'object' && (
+                <Button
+                  size='sm'
+                  className='bg-green-600 hover:bg-green-700 text-white'
+                  onClick={handleBidCardDownload}
+                >
+                  <Download className='mr-2 h-4 w-4' />
+                  <span className='hidden sm:inline'>Download Bid Cards</span>
+                  <span className='sm:hidden'>Download</span>
+                </Button>
+              )}
               <Button
                 size='sm'
                 variant='outline'
                 onClick={() => setShowBidCardDialog(true)}
+                disabled={bidCardGenState === 'generating'}
               >
-                <Printer className='mr-2 h-4 w-4' />
-                <span className='hidden sm:inline'>Print Bid Cards</span>
-                <span className='sm:hidden'>Bid Cards</span>
+                {bidCardGenState === 'generating' ? (
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                ) : (
+                  <Printer className='mr-2 h-4 w-4' />
+                )}
+                <span className='hidden sm:inline'>
+                  {bidCardGenState === 'generating'
+                    ? 'Generating…'
+                    : 'Print Bid Cards'}
+                </span>
+                <span className='sm:hidden'>
+                  {bidCardGenState === 'generating' ? 'Generating…' : 'Bid Cards'}
+                </span>
               </Button>
               <Button size='sm' onClick={handleAdd}>
                 <Plus className='mr-2 h-4 w-4' />
@@ -320,6 +392,7 @@ export function AuctionItemsIndexPage() {
           open={showBidCardDialog}
           onClose={() => setShowBidCardDialog(false)}
           eventId={eventId}
+          onStartGeneration={handleBidCardGenerate}
         />
       )}
     </div>

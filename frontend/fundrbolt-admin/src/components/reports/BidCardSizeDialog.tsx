@@ -14,18 +14,19 @@ import {
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import {
+  type BidCardRequest,
   type LabelSize,
   LABEL_SIZE_OPTIONS,
-  reportService,
 } from '@/services/reportService'
-import { Loader2, Printer } from 'lucide-react'
+import { Printer } from 'lucide-react'
 import { useState } from 'react'
-import { toast } from 'sonner'
 
 interface BidCardSizeDialogProps {
   open: boolean
   onClose: () => void
   eventId: string
+  /** Called when the user confirms generation — dialog closes immediately and parent runs generation in the background. */
+  onStartGeneration: (request: BidCardRequest) => void
   /** If provided, only generate cards for these item IDs. */
   selectedItemIds?: string[]
 }
@@ -51,12 +52,11 @@ const DEFAULT_OPTIONS: BidCardOptions = {
 export function BidCardSizeDialog({
   open,
   onClose,
-  eventId,
+  onStartGeneration,
   selectedItemIds,
 }: BidCardSizeDialogProps) {
   const [labelSize, setLabelSize] = useState<LabelSize>('3x5')
   const [options, setOptions] = useState<BidCardOptions>(DEFAULT_OPTIONS)
-  const [isGenerating, setIsGenerating] = useState(false)
 
   const toggle = (key: keyof BidCardOptions) =>
     setOptions((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -65,39 +65,26 @@ export function BidCardSizeDialog({
   const selectionLabel =
     count > 0 ? `${count} selected item${count !== 1 ? 's' : ''}` : 'all items'
 
-  const handleGenerate = async () => {
-    setIsGenerating(true)
-    try {
-      await reportService.downloadBidCards(eventId, {
-        label_size: labelSize,
-        item_ids:
-          selectedItemIds && selectedItemIds.length > 0
-            ? selectedItemIds
-            : null,
-        include_live: options.includeLive,
-        show_image: options.showImage,
-        show_value: options.showValue,
-        show_qr: options.showQr,
-        show_starting_bid: options.showStartingBid,
-        show_min_bid_increment: options.showMinBidIncrement,
-      })
-      onClose()
-    } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : 'Failed to generate bid cards. Please try again.'
-      )
-    } finally {
-      setIsGenerating(false)
-    }
+  const handleGenerate = () => {
+    onStartGeneration({
+      label_size: labelSize,
+      item_ids:
+        selectedItemIds && selectedItemIds.length > 0 ? selectedItemIds : null,
+      include_live: options.includeLive,
+      show_image: options.showImage,
+      show_value: options.showValue,
+      show_qr: options.showQr,
+      show_starting_bid: options.showStartingBid,
+      show_min_bid_increment: options.showMinBidIncrement,
+    })
+    onClose()
   }
 
   return (
     <Dialog
       open={open}
       onOpenChange={(o) => {
-        if (!o && !isGenerating) onClose()
+        if (!o) onClose()
       }}
     >
       <DialogContent className='sm:max-w-md'>
@@ -176,16 +163,12 @@ export function BidCardSizeDialog({
         </div>
 
         <DialogFooter>
-          <Button variant='ghost' onClick={onClose} disabled={isGenerating}>
+          <Button variant='ghost' onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={() => void handleGenerate()} disabled={isGenerating}>
-            {isGenerating ? (
-              <Loader2 className='mr-1.5 h-4 w-4 animate-spin' />
-            ) : (
-              <Printer className='mr-1.5 h-4 w-4' />
-            )}
-            {isGenerating ? 'Generating…' : 'Generate & Download'}
+          <Button onClick={handleGenerate}>
+            <Printer className='mr-1.5 h-4 w-4' />
+            Generate
           </Button>
         </DialogFooter>
       </DialogContent>
