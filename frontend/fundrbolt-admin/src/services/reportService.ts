@@ -84,6 +84,15 @@ class ReportService {
     )
     return response.data
   }
+
+  /** Fetches the event summary report and returns the raw Blob without triggering a download. */
+  async fetchEventReportBlob(eventId: string): Promise<Blob> {
+    const response = await apiClient.get<Blob>(
+      `/admin/events/${eventId}/reports/event-summary`,
+      { responseType: 'blob' }
+    )
+    return response.data
+  }
 }
 
 export const reportService = new ReportService()
