@@ -19,10 +19,10 @@ import { SourceBreakdownChart } from '../components/SourceBreakdownChart'
 import { SummaryCards } from '../components/SummaryCards'
 import { WaterfallChart } from '../components/WaterfallChart'
 import {
-    useEventDashboard,
-    useEventDashboardProjections,
-    useEventDashboardSegments,
-    useUpdateEventDashboardProjections,
+  useEventDashboard,
+  useEventDashboardProjections,
+  useEventDashboardSegments,
+  useUpdateEventDashboardProjections,
 } from '../hooks/useEventDashboard'
 
 export function EventDashboardPage() {
@@ -67,26 +67,28 @@ export function EventDashboardPage() {
 
   return (
     <div className='space-y-6'>
-      <div className='flex flex-wrap items-center justify-between gap-3'>
+      <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <ScenarioToggle value={scenario} onChange={setScenario} />
-        <div className='flex items-center gap-2'>
-          <DownloadReportButton
-            label='Download Report'
-            onDownload={() =>
-              reportService.downloadEventReport(currentEvent.id)
-            }
-          />
-          <Button
-            type='button'
-            variant='outline'
-            onClick={() => {
-              void summaryQuery.refetch()
-              void projectionsQuery.refetch()
-              void segmentsQuery.refetch()
-            }}
-          >
-            Refresh
-          </Button>
+        <div className='flex flex-wrap items-center justify-between gap-2 sm:justify-end'>
+          <div className='flex items-center gap-2'>
+            <DownloadReportButton
+              label='Download Report'
+              onDownload={() =>
+                reportService.downloadEventReport(currentEvent.id)
+              }
+            />
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => {
+                void summaryQuery.refetch()
+                void projectionsQuery.refetch()
+                void segmentsQuery.refetch()
+              }}
+            >
+              Refresh
+            </Button>
+          </div>
           <LastRefreshed timestamp={summary.last_refreshed_at} />
         </div>
       </div>
