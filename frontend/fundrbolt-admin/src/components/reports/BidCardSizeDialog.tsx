@@ -1,23 +1,26 @@
 /**
- * BidCardSizeDialog — select label size and trigger bid card PDF download.
+ * BidCardSizeDialog — select label size, configure options, and trigger bid card PDF download.
  */
-import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
-  type LabelSize,
-  LABEL_SIZE_OPTIONS,
-  reportService,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
+import {
+    type LabelSize,
+    LABEL_SIZE_OPTIONS,
+    reportService,
 } from '@/services/reportService'
 import { Loader2, Printer } from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 
 interface BidCardSizeDialogProps {
   open: boolean
@@ -27,6 +30,24 @@ interface BidCardSizeDialogProps {
   selectedItemIds?: string[]
 }
 
+interface BidCardOptions {
+  includeLive: boolean
+  showImage: boolean
+  showValue: boolean
+  showQr: boolean
+  showStartingBid: boolean
+  showMinBidIncrement: boolean
+}
+
+const DEFAULT_OPTIONS: BidCardOptions = {
+  includeLive: true,
+  showImage: true,
+  showValue: true,
+  showQr: true,
+  showStartingBid: true,
+  showMinBidIncrement: false,
+}
+
 export function BidCardSizeDialog({
   open,
   onClose,
@@ -34,7 +55,11 @@ export function BidCardSizeDialog({
   selectedItemIds,
 }: BidCardSizeDialogProps) {
   const [labelSize, setLabelSize] = useState<LabelSize>('3x5')
+  const [options, setOptions] = useState<BidCardOptions>(DEFAULT_OPTIONS)
   const [isGenerating, setIsGenerating] = useState(false)
+
+  const toggle = (key: keyof BidCardOptions) =>
+    setOptions((prev) => ({ ...prev, [key]: !prev[key] }))
 
   const count = selectedItemIds?.length ?? 0
   const selectionLabel =
@@ -49,6 +74,12 @@ export function BidCardSizeDialog({
           selectedItemIds && selectedItemIds.length > 0
             ? selectedItemIds
             : null,
+        include_live: options.includeLive,
+        show_image: options.showImage,
+        show_value: options.showValue,
+        show_qr: options.showQr,
+        show_starting_bid: options.showStartingBid,
+        show_min_bid_increment: options.showMinBidIncrement,
       })
       onClose()
     } catch (err) {
@@ -73,10 +104,11 @@ export function BidCardSizeDialog({
         <DialogHeader>
           <DialogTitle>Print Bid Cards</DialogTitle>
           <DialogDescription>
-            Select a label size to generate bid card PDFs for {selectionLabel}.
+            Select a label size and configure options for {selectionLabel}.
           </DialogDescription>
         </DialogHeader>
 
+        {/* Label size selector */}
         <div className='grid grid-cols-2 gap-3 py-2'>
           {LABEL_SIZE_OPTIONS.map((opt) => (
             <button
@@ -98,6 +130,51 @@ export function BidCardSizeDialog({
           ))}
         </div>
 
+        <Separator />
+
+        {/* Card content options */}
+        <div className='space-y-2.5'>
+          <p className='text-muted-foreground text-xs font-medium uppercase tracking-wide'>
+            Card Content
+          </p>
+          <CheckboxRow
+            id='opt-live'
+            label='Include Live Auction items'
+            checked={options.includeLive}
+            onToggle={() => toggle('includeLive')}
+          />
+          <CheckboxRow
+            id='opt-image'
+            label='Show item image'
+            checked={options.showImage}
+            onToggle={() => toggle('showImage')}
+          />
+          <CheckboxRow
+            id='opt-starting-bid'
+            label='Show Starting Bid'
+            checked={options.showStartingBid}
+            onToggle={() => toggle('showStartingBid')}
+          />
+          <CheckboxRow
+            id='opt-value'
+            label='Show Value (hidden if $0)'
+            checked={options.showValue}
+            onToggle={() => toggle('showValue')}
+          />
+          <CheckboxRow
+            id='opt-increment'
+            label='Show Min Bid Increment'
+            checked={options.showMinBidIncrement}
+            onToggle={() => toggle('showMinBidIncrement')}
+          />
+          <CheckboxRow
+            id='opt-qr'
+            label='Include QR code'
+            checked={options.showQr}
+            onToggle={() => toggle('showQr')}
+          />
+        </div>
+
         <DialogFooter>
           <Button variant='ghost' onClick={onClose} disabled={isGenerating}>
             Cancel
@@ -115,3 +192,25 @@ export function BidCardSizeDialog({
     </Dialog>
   )
 }
+
+function CheckboxRow({
+  id,
+  label,
+  checked,
+  onToggle,
+}: {
+  id: string
+  label: string
+  checked: boolean
+  onToggle: () => void
+}) {
+  return (
+    <div className='flex items-center gap-2'>
+      <Checkbox id={id} checked={checked} onCheckedChange={onToggle} />
+      <Label htmlFor={id} className='cursor-pointer text-sm font-normal'>
+        {label}
+      </Label>
+    </div>
+  )
+}
+

@@ -36,3 +36,27 @@ class BidCardRequest(BaseModel):
     label_size: LabelSize = Field(
         description="Brady-compatible label size for the printed cards.",
     )
+    include_live: bool = Field(
+        default=True,
+        description="Include live auction items (in addition to silent items).",
+    )
+    show_image: bool = Field(
+        default=True,
+        description="Embed item image on each card.",
+    )
+    show_value: bool = Field(
+        default=True,
+        description="Show donor value on each card (suppressed when value is 0).",
+    )
+    show_qr: bool = Field(
+        default=True,
+        description="Print QR code linking to the donor bidding page.",
+    )
+    show_starting_bid: bool = Field(
+        default=True,
+        description="Show the starting bid on each card.",
+    )
+    show_min_bid_increment: bool = Field(
+        default=False,
+        description="Show the minimum bid increment on each card.",
+    )

@@ -97,7 +97,7 @@ async def download_bid_cards(
 
     svc = BidCardService(db)
     try:
-        pdf_bytes = await svc.generate_pdf(event_id, item_uuids, request.label_size)
+        pdf_bytes = await svc.generate_pdf(event_id, request, item_uuids)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

@@ -29,6 +29,7 @@
     justify-content: space-between;
     gap: 2mm;
   }
+  .card-header-left { flex: 1; min-width: 0; }
   .lot-number {
     font-size: 7pt;
     color: #64748b;
@@ -54,7 +55,14 @@
     font-weight: 700;
     color: #1a1a2e;
     line-height: 1.2;
-    flex: 1;
+  }
+
+  .event-logo {
+    width: 12mm;
+    height: 12mm;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 2px;
   }
 
   .item-image {
@@ -71,56 +79,83 @@
   .price-item { flex: 1; }
   .price-label { font-size: 6pt; color: #64748b; text-transform: uppercase; }
   .price-value { font-size: 10pt; font-weight: 700; color: #2563eb; }
+  .price-sub { font-size: 7pt; color: #475569; }
 
   .donated-by { font-size: 7pt; color: #64748b; }
 
   .card-footer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
     margin-top: auto;
     padding-top: 2mm;
     border-top: 1px solid #e2e8f0;
   }
   .qr-code { width: 20mm; height: 20mm; object-fit: contain; }
+  .fundrbolt-logo { height: 8pt; width: auto; opacity: 0.45; }
 </style>
 </head>
 <body>
 {% for card in cards %}
 <div class="card">
   <div class="card-header">
-    <div>
+    <div class="card-header-left">
       {% if card.bid_number %}<div class="lot-number">Lot #{{ card.bid_number }}</div>{% endif %}
       <div class="item-title">{{ card.title }}</div>
+      <span class="type-badge {{ card.auction_type }}">{{ card.auction_type | replace('_', ' ') | title }}</span>
     </div>
-    <span class="type-badge {{ card.auction_type }}">{{ card.auction_type | replace('_', ' ') | title }}</span>
+    {% if event_logo %}
+    <img class="event-logo" src="{{ event_logo }}" alt="Event Logo"/>
+    {% endif %}
   </div>
 
-  {% if card.image_data %}
+  {% if opts.show_image and card.image_data %}
   <img class="item-image" src="{{ card.image_data }}" alt="{{ card.title }}"/>
   {% endif %}
 
+  {% if opts.show_starting_bid or opts.show_value %}
   <div class="pricing">
-    {% if card.starting_bid is not none %}
+    {% if opts.show_starting_bid and card.starting_bid is not none %}
     <div class="price-item">
       <div class="price-label">Starting Bid</div>
       <div class="price-value">${{ "{:,.0f}".format(card.starting_bid) }}</div>
+      {% if opts.show_min_bid_increment %}
+      <div class="price-sub">+${{ "{:,.0f}".format(card.bid_increment) }} min increment</div>
+      {% endif %}
+    </div>
+    {% elif opts.show_min_bid_increment %}
+    <div class="price-item">
+      <div class="price-label">Min Increment</div>
+      <div class="price-value">${{ "{:,.0f}".format(card.bid_increment) }}</div>
     </div>
     {% endif %}
-    {% if card.donor_value is not none %}
+    {% if opts.show_value and card.donor_value is not none %}
     <div class="price-item">
       <div class="price-label">Value</div>
       <div class="price-value">${{ "{:,.0f}".format(card.donor_value) }}</div>
     </div>
     {% endif %}
   </div>
+  {% elif opts.show_min_bid_increment %}
+  <div class="pricing">
+    <div class="price-item">
+      <div class="price-label">Min Increment</div>
+      <div class="price-value">${{ "{:,.0f}".format(card.bid_increment) }}</div>
+    </div>
+  </div>
+  {% endif %}
 
   {% if card.donated_by %}
   <div class="donated-by">Donated by {{ card.donated_by }}</div>
   {% endif %}
 
   <div class="card-footer">
-    {% if card.qr_b64 %}
+    {% if fundrbolt_logo_b64 %}
+    <img class="fundrbolt-logo" src="{{ fundrbolt_logo_b64 }}" alt="FundrBolt"/>
+    {% else %}
+    <span></span>
+    {% endif %}
+    {% if opts.show_qr and card.qr_b64 %}
     <img class="qr-code" src="{{ card.qr_b64 }}" alt="Bid QR Code"/>
     {% endif %}
   </div>

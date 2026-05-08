@@ -8,6 +8,12 @@ export type LabelSize = '2x3' | '2x4' | '3x3' | '3x5'
 export interface BidCardRequest {
   item_ids?: string[] | null
   label_size: LabelSize
+  include_live?: boolean
+  show_image?: boolean
+  show_value?: boolean
+  show_qr?: boolean
+  show_starting_bid?: boolean
+  show_min_bid_increment?: boolean
 }
 
 const LABEL_SIZE_OPTIONS: {
