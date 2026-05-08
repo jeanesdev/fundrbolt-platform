@@ -132,12 +132,23 @@
             border-radius: 2px;
         }
 
+        .image-zone {
+            flex: 1;
+            min-height: 30mm;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 3mm;
+        }
+
         .item-image {
             width: 100%;
-            max-height: 60mm;
+            height: 100%;
             object-fit: contain;
             border-radius: 4px;
-            margin-bottom: 3mm;
         }
 
         .pricing {
@@ -212,8 +223,12 @@
         {% endif %}
     </div>
 
-    {% if opts.show_image and card.image_data %}
-    <img class="item-image" src="{{ card.image_data }}" alt="{{ card.title }}" />
+    {% if opts.show_image %}
+    <div class="image-zone">
+        {% if card.image_data %}
+        <img class="item-image" src="{{ card.image_data }}" alt="{{ card.title }}" />
+        {% endif %}
+    </div>
     {% endif %}
 
     {% if opts.show_starting_bid or opts.show_value %}

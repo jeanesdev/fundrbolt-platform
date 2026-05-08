@@ -2,40 +2,40 @@
  * AuctionItemCard
  * Display card for a single auction item with actions
  */
-import { useState } from 'react'
-import { AuctionType, ItemStatus, type AuctionItem } from '@/types/auction-item'
-import {
-  DollarSign,
-  Eye,
-  MoreVertical,
-  Pencil,
-  Sparkles,
-  Trash2,
-} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { PromotionEditor } from '@/features/events/auction-items/components/PromotionEditor'
+import { AuctionType, ItemStatus, type AuctionItem } from '@/types/auction-item'
+import {
+    DollarSign,
+    Eye,
+    MoreVertical,
+    Pencil,
+    Sparkles,
+    Trash2,
+} from 'lucide-react'
+import { useState } from 'react'
 
 interface AuctionItemCardProps {
   item: AuctionItem

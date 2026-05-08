@@ -7,14 +7,17 @@ import base64
 import io
 import logging
 import pathlib
+from datetime import datetime, timedelta
 from uuid import UUID
 
 import aiohttp
+from azure.storage.blob import BlobSasPermissions, generate_blob_sas
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.config import Settings, get_settings
 from app.models.auction_item import AuctionItem, AuctionItemMedia
 from app.schemas.reports import BidCardRequest
 from app.services.report_utils import fetch_image_as_base64, get_fundrbolt_logo_b64
@@ -22,6 +25,56 @@ from app.services.report_utils import fetch_image_as_base64, get_fundrbolt_logo_
 logger = logging.getLogger(__name__)
 
 _TEMPLATES_DIR = pathlib.Path(__file__).parent.parent / "templates"
+
+
+def _ensure_sas_url(url: str | None, settings: Settings) -> str | None:
+    """Convert a raw Azure Blob Storage URL to a SAS-signed URL.
+
+    If the URL belongs to the configured storage account and has no SAS token,
+    a short-lived (1-hour) read SAS token is appended.  URLs for other hosts,
+    already-signed URLs, or non-HTTPS URLs are returned unchanged.
+    Returns None when *url* is None.
+    """
+    if not url:
+        return None
+    if (
+        not settings.azure_storage_connection_string
+        or not settings.azure_storage_account_name
+        or not settings.azure_storage_container_name
+    ):
+        return url
+
+    account_host = f"{settings.azure_storage_account_name}.blob.core.windows.net"
+    if account_host not in url:
+        return url  # Different storage account — leave unchanged
+
+    # Already has a SAS token
+    if "?" in url and "sig=" in url:
+        return url
+
+    container_prefix = f"{settings.azure_storage_container_name}/"
+    if container_prefix not in url:
+        return url
+
+    blob_name = url.split(container_prefix, 1)[1].split("?", 1)[0]
+    try:
+        conn_str = settings.azure_storage_connection_string
+        account_key = conn_str.split("AccountKey=")[1].split(";")[0]
+        sas_token = generate_blob_sas(
+            account_name=settings.azure_storage_account_name,
+            container_name=settings.azure_storage_container_name,
+            blob_name=blob_name,
+            account_key=account_key,
+            permission=BlobSasPermissions(read=True),
+            expiry=datetime.utcnow() + timedelta(hours=1),
+        )
+        return (
+            f"https://{account_host}/{settings.azure_storage_container_name}"
+            f"/{blob_name}?{sas_token}"
+        )
+    except Exception:
+        logger.debug("Failed to generate SAS URL for %s", url, exc_info=True)
+        return url
 
 
 def _generate_qr_base64(url: str) -> str:
@@ -89,7 +142,6 @@ class BidCardService:
             raise ValueError("no_items")
 
         # 2. Fetch images + event logo asynchronously before entering executor
-        from app.core.config import get_settings  # noqa: PLC0415
         from app.models.event import Event  # noqa: PLC0415
         from app.models.npo import NPO  # noqa: PLC0415
         from app.models.npo_branding import NPOBranding  # noqa: PLC0415
@@ -115,14 +167,20 @@ class BidCardService:
             )
             event_logo_url = npo_row.scalar_one_or_none()
 
-        # Collect image URLs first, then fetch them concurrently
+        # Collect image URLs first, then fetch them concurrently.
+        # Sign Azure Blob Storage URLs with a short-lived SAS token so that
+        # private (non-public) containers can be accessed.
         image_urls: list[str | None] = []
         for item in items:
             media_list: list[AuctionItemMedia] = sorted(
                 [m for m in (item.media or []) if m.media_type == "image"],
                 key=lambda m: m.display_order if m.display_order is not None else 999,
             )
-            image_urls.append(media_list[0].file_path if media_list else None)
+            raw_url = media_list[0].file_path if media_list else None
+            image_urls.append(_ensure_sas_url(raw_url, settings))
+
+        # Also sign the event logo URL so it can be fetched
+        event_logo_url = _ensure_sas_url(event_logo_url, settings)
 
         # Fetch all item images + event logo concurrently
         async with aiohttp.ClientSession() as http_session:

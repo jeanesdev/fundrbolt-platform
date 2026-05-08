@@ -5,11 +5,11 @@
 import { BidCardSizeDialog } from '@/components/reports/BidCardSizeDialog'
 import { Button } from '@/components/ui/button'
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { AuctionItemList } from '@/features/events/components/AuctionItemList'
@@ -17,7 +17,7 @@ import { RevenueGeneratorItemCard } from '@/features/events/components/RevenueGe
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { RGItemForm } from '@/features/revenue-generators/RGItemForm'
 import revenueGeneratorService, {
-    type RGItem,
+  type RGItem,
 } from '@/services/revenueGeneratorService'
 import { useAuctionItemStore } from '@/stores/auctionItemStore'
 import { AuctionType, type AuctionItem } from '@/types/auction-item'
