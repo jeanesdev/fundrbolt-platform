@@ -212,10 +212,25 @@ class TicketInvitationService:
 
         # Resolve the event logo URL for the email
         event_logo_url: str | None = None
-        if event.logo_url:
-            from app.api.v1.event_media_urls import get_signed_asset_url
+        from app.api.v1.event_media_urls import resolve_event_logo_url
+        from app.models.event import Event as _Event
 
-            event_logo_url = get_signed_asset_url(event.logo_url)
+        event_with_media_result = await db.execute(
+            select(_Event).options(selectinload(_Event.media)).where(_Event.id == event.id)
+        )
+        event_with_media = event_with_media_result.scalar_one_or_none()
+        if event_with_media:
+            event_logo_url = resolve_event_logo_url(event_with_media)
+
+        # Resolve the NPO slug and name for the branded sender address / salutation
+        npo_slug: str | None = None
+        npo_name: str | None = None
+        from app.models.npo import NPO
+
+        npo_result = await db.execute(select(NPO.slug, NPO.name).where(NPO.id == event.npo_id))
+        npo_row = npo_result.one_or_none()
+        if npo_row:
+            npo_slug, npo_name = npo_row.slug, npo_row.name
 
         # Fetch the purchaser's name and email for the invitation email
         purchaser_result = await db.execute(select(User).where(User.id == user_id))
@@ -238,6 +253,9 @@ class TicketInvitationService:
             inviter_name=inviter_name,
             inviter_email=inviter_email,
             event_logo_url=event_logo_url,
+            npo_slug=npo_slug,
+            primary_color=event.primary_color,
+            npo_name=npo_name,
         )
 
         logger.info(

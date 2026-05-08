@@ -26,6 +26,7 @@ from app.models.auctioneer import AuctioneerEventSettings, AuctioneerItemCommiss
 from app.models.event import Event
 from app.models.event_registration import EventRegistration
 from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
+from app.models.quick_entry_buy_now_bid import QuickEntryBuyNowBid
 from app.models.quick_entry_donation import QuickEntryDonation
 from app.models.quick_entry_donation_label import QuickEntryDonationLabelLink
 from app.models.registration_guest import RegistrationGuest
@@ -433,20 +434,32 @@ class AuctioneerService:
         silent_stmt = select(func.coalesce(func.sum(silent_high.c.max_bid), 0))
         silent_total = Decimal((await self.db.execute(silent_stmt)).scalar_one() or 0)
 
-        # Live auction - QuickEntryBid
+        # Live auction - QuickEntryBid (capped at buy-it-now price if sold via buy-now)
+        buy_now_min_sq = (
+            select(
+                QuickEntryBuyNowBid.item_id,
+                func.min(QuickEntryBuyNowBid.amount).label("min_price"),
+            )
+            .where(QuickEntryBuyNowBid.event_id == event_id)
+            .group_by(QuickEntryBuyNowBid.item_id)
+            .subquery("bn_min_ev")
+        )
         live_high = (
             select(
-                QuickEntryBid.item_id,
-                func.max(QuickEntryBid.amount).label("max_bid"),
+                func.least(
+                    func.max(QuickEntryBid.amount),
+                    func.coalesce(buy_now_min_sq.c.min_price, func.max(QuickEntryBid.amount)),
+                ).label("effective_bid"),
             )
+            .outerjoin(buy_now_min_sq, QuickEntryBid.item_id == buy_now_min_sq.c.item_id)
             .where(
                 QuickEntryBid.event_id == event_id,
                 QuickEntryBid.status.in_([QuickEntryBidStatus.ACTIVE, QuickEntryBidStatus.WINNING]),
             )
-            .group_by(QuickEntryBid.item_id)
-            .subquery()
+            .group_by(QuickEntryBid.item_id, buy_now_min_sq.c.min_price)
+            .subquery("qe_live_high_ev")
         )
-        live_stmt = select(func.coalesce(func.sum(live_high.c.max_bid), 0))
+        live_stmt = select(func.coalesce(func.sum(live_high.c.effective_bid), 0))
         live_total = Decimal((await self.db.execute(live_stmt)).scalar_one() or 0)
 
         # Paddle raise
@@ -497,8 +510,8 @@ class AuctioneerService:
         total = Decimal("0")
         count = 0
         for _item_id, pct, flat, donor_value in comm_rows:
-            fair_market_value = Decimal(donor_value or 0)
-            earning = fair_market_value * pct / Decimal("100") + Decimal(flat or 0)
+            sale_amount = Decimal(donor_value or 0)
+            earning = sale_amount * pct / Decimal("100") + Decimal(flat or 0)
             if earning > 0:
                 total += earning
                 count += 1
@@ -816,6 +829,19 @@ class AuctioneerService:
                 )
             ).all()
         }
+        buy_now_min_prices: dict[UUID, Decimal] = {
+            row.item_id: Decimal(row.min_price)
+            for row in (
+                await self.db.execute(
+                    select(
+                        QuickEntryBuyNowBid.item_id,
+                        func.min(QuickEntryBuyNowBid.amount).label("min_price"),
+                    )
+                    .where(QuickEntryBuyNowBid.event_id == event_id)
+                    .group_by(QuickEntryBuyNowBid.item_id)
+                )
+            ).all()
+        }
         commission_map = await self._get_commission_map(event_id, auctioneer_user_id)
         image_map = await self._get_primary_image_map(item_ids)
 
@@ -827,6 +853,8 @@ class AuctioneerService:
             current_bid_amount, bid_count, bidder_count = bid_stats.get(
                 item.id, (Decimal("0"), 0, 0)
             )
+            if item.id in buy_now_min_prices:
+                current_bid_amount = min(current_bid_amount, buy_now_min_prices[item.id])
             total_raised += current_bid_amount
             total_bids += bid_count
             commission_data = commission_map.get(item.id)

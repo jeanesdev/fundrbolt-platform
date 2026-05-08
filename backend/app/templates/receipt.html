@@ -23,8 +23,16 @@
       border-bottom: 2px solid #dddddd;
       padding-bottom: 16px;
       margin-bottom: 24px;
+      text-align: center;
     }
-    .receipt-header img { max-height: 64px; margin-bottom: 12px; display: block; }
+    .receipt-header .npo-logo-wrap {
+      margin-bottom: 14px;
+    }
+    .receipt-header .npo-logo-wrap img {
+      max-height: 72px;
+      max-width: 240px;
+      display: inline-block;
+    }
     .receipt-header h1 { font-size: 22px; margin: 0 0 2px; color: #111; }
     .receipt-header .event-name { font-size: 14px; color: #555; margin: 0; }
 
@@ -68,6 +76,18 @@
       color: #888;
       text-align: center;
     }
+    .powered-by {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid #eeeeee;
+    }
+    .powered-by img {
+      height: 18px;
+      width: auto;
+      display: inline-block;
+      vertical-align: middle;
+      opacity: 0.65;
+    }
   </style>
 </head>
 <body>
@@ -76,7 +96,9 @@
     <!-- Header -->
     <div class="receipt-header">
       {% if npo_logo_url %}
-      <img src="{{ npo_logo_url }}" alt="Event logo" />
+      <div class="npo-logo-wrap">
+        <img src="{{ npo_logo_url }}" alt="Event logo" />
+      </div>
       {% endif %}
       <h1>Checkout Receipt</h1>
       <p class="event-name">{{ event_name }}{% if event_date %} &mdash; {{ event_date }}{% endif %}</p>
@@ -160,8 +182,17 @@
 
     <!-- Footer -->
     <div class="receipt-footer">
-      <p>Thank you for your generosity. &mdash; Powered by FundrBolt</p>
+      <p>Thank you for your generosity.</p>
       <p>Receipt {{ receipt_id }} &bull; {{ receipt_date }}</p>
+      <div class="powered-by">
+        <p>Powered by
+          {% if fundrbolt_logo_url %}
+            <img src="{{ fundrbolt_logo_url }}" alt="FundrBolt" />
+          {% else %}
+            FundrBolt
+          {% endif %}
+        </p>
+      </div>
     </div>
 
   </div>

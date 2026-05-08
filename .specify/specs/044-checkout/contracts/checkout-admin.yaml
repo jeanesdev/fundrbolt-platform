@@ -133,8 +133,6 @@ paths:
           description: scheduled_open_at must be in the future
         "409":
           description: Checkout already open
-
-  /api/v1/admin/events/{event_id}/checkout/schedule:
     delete:
       operationId: adminCancelScheduledOpen
       summary: Cancel a previously scheduled checkout open

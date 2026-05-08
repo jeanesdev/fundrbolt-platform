@@ -107,6 +107,10 @@ class CheckoutReceiptService:
                 transaction_id=str(ctx.get("receipt_id", str(session.id)[:8])),
                 amount_total=float(ctx.get("total_dollars", 0)),
                 pdf_bytes=pdf_bytes,
+                event_logo_url=ctx.get("npo_logo_url"),
+                npo_slug=ctx.get("npo_slug"),
+                primary_color=ctx.get("primary_color"),
+                npo_name=ctx.get("npo_name"),
             )
         except Exception:
             logger.warning(
@@ -134,12 +138,17 @@ class CheckoutReceiptService:
     async def _build_context(self, session: CheckoutSession) -> dict[str, Any]:
         """Assemble template context from the checkout session and its items."""
         from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
 
+        from app.api.v1.event_media_urls import resolve_event_logo_url
         from app.models.event import Event
+        from app.models.npo import NPO
         from app.models.user import User
 
         event: Any = None
-        event_result = await self._db.execute(select(Event).where(Event.id == session.event_id))
+        event_result = await self._db.execute(
+            select(Event).options(selectinload(Event.media)).where(Event.id == session.event_id)
+        )
         event = event_result.scalar_one_or_none()
 
         user: Any = None
@@ -151,9 +160,17 @@ class CheckoutReceiptService:
         if event and hasattr(event, "event_datetime") and event.event_datetime:
             event_date = event.event_datetime.strftime("%B %d, %Y")
 
-        npo_logo_url: str | None = None
-        if event and hasattr(event, "logo_url"):
-            npo_logo_url = event.logo_url
+        # Load NPO for slug (needed for branded sender) and sign logo for email
+        npo_slug: str | None = None
+        npo_name: str | None = None
+        if event and event.npo_id:
+            npo_result = await self._db.execute(select(NPO).where(NPO.id == event.npo_id))
+            npo = npo_result.scalar_one_or_none()
+            if npo:
+                npo_slug = npo.slug
+                npo_name = npo.name
+
+        npo_logo_url: str | None = resolve_event_logo_url(event) if event else None
 
         donor_name = user.full_name if user else "Donor"
         donor_email = user.email if user else ""
@@ -177,10 +194,19 @@ class CheckoutReceiptService:
         receipt_id = str(session.id)[:8].upper()
         receipt_date = completed_ts.strftime("%B %d, %Y at %I:%M %p UTC")
 
+        from app.core.config import get_settings as _get_settings
+
+        _settings = _get_settings()
+        fundrbolt_logo_url = f"{_settings.azure_cdn_logo_base_url}/fundrbolt-logo-navy-gold.png"
+
         return {
             "event_name": event_name,
             "event_date": event_date,
             "npo_logo_url": npo_logo_url,
+            "npo_slug": npo_slug,
+            "npo_name": npo_name,
+            "primary_color": event.primary_color if event else None,
+            "fundrbolt_logo_url": fundrbolt_logo_url,
             "donor_name": donor_name,
             "donor_email": donor_email,
             "line_items": line_items,

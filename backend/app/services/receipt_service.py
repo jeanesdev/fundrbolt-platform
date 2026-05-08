@@ -25,6 +25,7 @@ from typing import Any
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
 from app.models.payment_receipt import PaymentReceipt
@@ -78,7 +79,7 @@ class ReceiptService:
         Returns:
             The upserted PaymentReceipt row (committed).
         """
-        ctx = self._build_template_context(transaction)
+        ctx = await self._build_template_context(transaction)
 
         # Step 1: Render HTML
         html = self._render_html(ctx)
@@ -118,7 +119,7 @@ class ReceiptService:
 
     # ── HTML rendering ─────────────────────────────────────────────────────────
 
-    def _build_template_context(self, txn: PaymentTransaction) -> dict[str, Any]:
+    async def _build_template_context(self, txn: PaymentTransaction) -> dict[str, Any]:
         """Assemble Jinja2 template variables from ORM relationships."""
         # Relationships might be lazily loaded — access them directly.
         user = txn.user
@@ -137,8 +138,18 @@ class ReceiptService:
         if event and hasattr(event, "event_datetime") and event.event_datetime:
             event_date = event.event_datetime.strftime("%B %d, %Y")
 
-        # NPO logo: use event-level logo_url if available
-        npo_logo_url = event.logo_url if event and event.logo_url else None
+        # NPO logo: resolve from event media items (event.logo_url is typically NULL)
+        npo_logo_url: str | None = None
+        if event:
+            from app.api.v1.event_media_urls import resolve_event_logo_url
+            from app.models.event import Event as _Event
+
+            event_with_media_result = await self._db.execute(
+                select(_Event).options(selectinload(_Event.media)).where(_Event.id == event.id)
+            )
+            event_with_media = event_with_media_result.scalar_one_or_none()
+            if event_with_media:
+                npo_logo_url = resolve_event_logo_url(event_with_media)
 
         # Card info
         card_last4: str | None = None
@@ -170,6 +181,7 @@ class ReceiptService:
             "npo_name": npo_name,
             "npo_email": npo_email,
             "npo_logo_url": npo_logo_url,
+            "fundrbolt_logo_url": f"{_settings.azure_cdn_logo_base_url}/fundrbolt-logo-navy-gold.png",
             "event_name": event_name,
             "event_date": event_date,
             "transaction_id": str(txn.id)[:8].upper(),
@@ -269,6 +281,17 @@ class ReceiptService:
         receipt: PaymentReceipt,
     ) -> None:
         """Send receipt email and update delivery tracking on the receipt row."""
+        # Sign the event logo URL so it is accessible in external email clients
+        from app.api.v1.event_media_urls import get_signed_asset_url
+
+        raw_logo_url: str | None = ctx.get("npo_logo_url")
+        event_logo_url: str | None = get_signed_asset_url(raw_logo_url) if raw_logo_url else None
+
+        # Get NPO slug for branded sender address
+        npo_slug: str | None = txn.npo.slug if txn.npo else None
+        npo_email_name: str | None = txn.npo.name if txn.npo else None
+        event_primary_color: str | None = txn.event.primary_color if txn.event else None
+
         email_svc = get_email_service()
         try:
             await email_svc.send_receipt_email(
@@ -278,6 +301,10 @@ class ReceiptService:
                 transaction_id=str(txn.id),
                 amount_total=ctx["total"],
                 pdf_bytes=pdf_bytes,
+                event_logo_url=event_logo_url,
+                npo_slug=npo_slug,
+                primary_color=event_primary_color,
+                npo_name=npo_email_name,
             )
             receipt.email_sent_at = datetime.now(tz=UTC)
             receipt.email_attempts = (receipt.email_attempts or 0) + 1

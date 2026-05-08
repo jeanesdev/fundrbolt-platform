@@ -15,7 +15,7 @@ import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -35,6 +35,7 @@ from app.models.checkout_session import (
 from app.models.event import Event
 from app.models.payment_transaction import PaymentTransaction, TransactionStatus
 from app.models.quick_entry_bid import QuickEntryBid, QuickEntryBidStatus
+from app.models.quick_entry_buy_now_bid import QuickEntryBuyNowBid
 from app.models.quick_entry_donation import QuickEntryDonation
 from app.models.registration_guest import RegistrationGuest
 from app.models.revenue_generator_entry import RevenueGeneratorEntry
@@ -138,12 +139,37 @@ class CheckoutService:
             QuickEntryBid.status != QuickEntryBidStatus.DELETED,
         )
         qe_bid_result = await self.db.execute(qe_bid_stmt)
-        for qe_bid in qe_bid_result.scalars().all():
+        qe_bids = list(qe_bid_result.scalars().all())
+
+        # Get minimum buy-it-now price per item to cap live bid amounts
+        qe_item_ids = {bid.item_id for bid in qe_bids}
+        buy_now_cap_by_item: dict[uuid.UUID, int] = {}
+        if qe_item_ids:
+            buy_now_min_rows = (
+                await self.db.execute(
+                    select(
+                        QuickEntryBuyNowBid.item_id,
+                        func.min(QuickEntryBuyNowBid.amount).label("min_amount"),
+                    )
+                    .where(
+                        QuickEntryBuyNowBid.event_id == event_id,
+                        QuickEntryBuyNowBid.item_id.in_(qe_item_ids),
+                    )
+                    .group_by(QuickEntryBuyNowBid.item_id)
+                )
+            ).all()
+            buy_now_cap_by_item = {row[0]: row[1] for row in buy_now_min_rows}
+
+        for qe_bid in qe_bids:
+            cap = buy_now_cap_by_item.get(qe_bid.item_id)
+            effective_amount = Decimal(
+                min(qe_bid.amount, cap) if cap is not None else qe_bid.amount
+            )
             line_items.append(
                 LineItemSchema(
                     type="donation",
                     label="Live auction bid",
-                    amount=Decimal(qe_bid.amount),
+                    amount=effective_amount,
                 )
             )
 

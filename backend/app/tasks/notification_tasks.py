@@ -754,6 +754,35 @@ async def _send_email_notification_async(notification_id: str) -> bool:
 
             email, first_name = user_row
 
+            # Resolve event logo and NPO slug for branded email
+            event_logo_url: str | None = None
+            npo_slug: str | None = None
+            npo_name: str | None = None
+            primary_color: str | None = None
+            if notification.event_id:
+                from sqlalchemy.orm import selectinload
+
+                from app.api.v1.event_media_urls import resolve_event_logo_url
+                from app.models.npo import NPO
+
+                event_with_media_result = await db.execute(
+                    select(Event)
+                    .options(selectinload(Event.media))
+                    .where(Event.id == notification.event_id)
+                )
+                event_row_full = event_with_media_result.scalar_one_or_none()
+                if event_row_full:
+                    event_logo_url = resolve_event_logo_url(event_row_full)
+                    primary_color = event_row_full.primary_color
+                if event_row_full and event_row_full.npo_id:
+                    npo_result = await db.execute(
+                        select(NPO.slug, NPO.name).where(NPO.id == event_row_full.npo_id)
+                    )
+                    npo_row = npo_result.one_or_none()
+                    if npo_row:
+                        npo_slug = npo_row.slug
+                        npo_name = npo_row.name
+
             # Send branded notification email via EmailService (T072)
             email_service = get_email_service()
             notification_data: dict[str, object] | None = (
@@ -766,6 +795,10 @@ async def _send_email_notification_async(notification_id: str) -> bool:
                 body=notification.body,
                 donor_name=first_name,
                 data=notification_data,
+                event_logo_url=event_logo_url,
+                npo_slug=npo_slug,
+                primary_color=primary_color,
+                npo_name=npo_name,
             )
 
             # Update delivery status

@@ -1,9 +1,9 @@
-import { useNavigate } from '@tanstack/react-router'
-import type { CommissionListItem } from '@/services/auctioneerService'
-import { Image } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
+import type { CommissionListItem } from '@/services/auctioneerService'
+import { useNavigate } from '@tanstack/react-router'
+import { Image } from 'lucide-react'
 
 interface CommissionGalleryProps {
   commissions: CommissionListItem[]
@@ -35,12 +35,12 @@ export function CommissionGallery({ commissions }: CommissionGalleryProps) {
   return (
     <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
       {commissions.map((item) => {
-        const fairMarketValue =
+        const saleAmount =
           item.donor_value == null ? null : Number(item.donor_value)
         const commissionPercent = Number(item.commission_percent)
         const earning =
-          fairMarketValue != null
-            ? (fairMarketValue * commissionPercent) / 100
+          saleAmount != null
+            ? (saleAmount * commissionPercent) / 100
             : null
 
         return (
@@ -108,9 +108,9 @@ export function CommissionGallery({ commissions }: CommissionGalleryProps) {
                   Current bid: {formatCurrency(item.current_bid_amount)}
                 </div>
               )}
-              {fairMarketValue != null && (
+              {saleAmount != null && (
                 <div className='text-muted-foreground'>
-                  Fair market value: {formatCurrency(fairMarketValue)}
+                  Sale amount: {formatCurrency(saleAmount)}
                 </div>
               )}
               {earning != null && (
