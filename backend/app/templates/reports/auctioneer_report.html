@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<style>
+  @page { size: letter; margin: 15mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 10pt; color: #1a1a2e; }
+
+  /* Header */
+  .header { border-bottom: 3px solid #7c3aed; padding-bottom: 8px; margin-bottom: 16px; }
+  .header-title { font-size: 20pt; font-weight: 700; color: #7c3aed; }
+  .header-subtitle { font-size: 9pt; color: #64748b; margin-top: 2px; }
+  .header-meta { font-size: 8pt; color: #64748b; margin-top: 4px; }
+
+  h2 { font-size: 12pt; font-weight: 700; color: #7c3aed; border-bottom: 1.5px solid #ede9fe; padding-bottom: 3px; margin-top: 18px; margin-bottom: 8px; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 12px; }
+  th { background: #ede9fe; color: #5b21b6; font-weight: 700; padding: 5px 7px; text-align: left; }
+  td { padding: 4px 7px; border-bottom: 1px solid #e2e8f0; }
+  tr:nth-child(even) td { background: #faf5ff; }
+  td.amount { text-align: right; font-family: "Courier New", monospace; }
+  th.amount { text-align: right; }
+  td.total-row { font-weight: 700; background: #ede9fe !important; }
+
+  /* Grand total box */
+  .grand-total-box {
+    border: 2px solid #7c3aed;
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #faf5ff;
+  }
+  .gt-label { font-size: 13pt; font-weight: 700; color: #5b21b6; }
+  .gt-value { font-size: 22pt; font-weight: 700; color: #7c3aed; }
+
+  .no-data { color: #94a3b8; font-style: italic; font-size: 9pt; margin-bottom: 12px; }
+
+  /* Footer */
+  .footer { font-size: 7.5pt; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 6px; margin-top: 18px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-title">Auctioneer Financial Report</div>
+  <div class="header-subtitle">{{ event_name }}{% if event_date %} · {{ event_date }}{% endif %}</div>
+  <div class="header-meta">Prepared for {{ auctioneer_display_name }} · Generated {{ generated_at }}</div>
+</div>
+
+<!-- Event Revenue Summary -->
+<h2>Event Revenue Summary</h2>
+<table>
+  <thead><tr><th>Category</th><th class="amount">Total Raised</th></tr></thead>
+  <tbody>
+    {% for row in event_totals %}
+    <tr>
+      <td {% if row.get('is_total') %}class="total-row"{% endif %}>{{ row.category }}</td>
+      <td class="amount {% if row.get('is_total') %}total-row{% endif %}">${{ "{:,.2f}".format(row.amount) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Category-Based Earnings -->
+<h2>Category-Based Earnings (Commission %)</h2>
+{% if no_commissions %}
+<p class="no-data">No category commissions configured for this event.</p>
+{% else %}
+<table>
+  <thead><tr><th>Category</th><th class="amount">Revenue Pool</th><th class="amount">Rate</th><th class="amount">Earned</th></tr></thead>
+  <tbody>
+    {% for row in category_earnings %}
+    <tr>
+      <td>{{ row.category }}</td>
+      <td class="amount">${{ "{:,.2f}".format(row.revenue) }}</td>
+      <td class="amount">{{ "{:.2f}".format(row.rate) }}%</td>
+      <td class="amount">${{ "{:,.2f}".format(row.earned) }}</td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td class="total-row" colspan="3">Category Earnings Subtotal</td>
+      <td class="amount total-row">${{ "{:,.2f}".format(category_total) }}</td>
+    </tr>
+  </tbody>
+</table>
+{% endif %}
+
+<!-- Per-Item Commissions -->
+<h2>Per-Item Commission Detail</h2>
+{% if commission_rows %}
+<table>
+  <thead>
+    <tr>
+      <th>Lot #</th>
+      <th>Item</th>
+      <th>Type</th>
+      <th class="amount">Sale Amount</th>
+      <th class="amount">Rate</th>
+      <th class="amount">Flat Fee</th>
+      <th class="amount">Earned</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in commission_rows %}
+    <tr>
+      <td>{{ row.bid_number or '—' }}</td>
+      <td>{{ row.title }}</td>
+      <td>{{ row.auction_type }}</td>
+      <td class="amount">${{ "{:,.2f}".format(row.sale_amount) }}</td>
+      <td class="amount">{{ "{:.2f}".format(row.commission_percent) }}%</td>
+      <td class="amount">${{ "{:,.2f}".format(row.flat_fee) }}</td>
+      <td class="amount">${{ "{:,.2f}".format(row.earned) }}</td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td class="total-row" colspan="6">Per-Item Subtotal</td>
+      <td class="amount total-row">${{ "{:,.2f}".format(per_item_total) }}</td>
+    </tr>
+  </tbody>
+</table>
+{% else %}
+<p class="no-data">No per-item commissions configured for this event.</p>
+{% endif %}
+
+<!-- Grand Total -->
+<div class="grand-total-box">
+  <div class="gt-label">Total Auctioneer Earnings</div>
+  <div class="gt-value">${{ "{:,.2f}".format(grand_total) }}</div>
+</div>
+
+<div class="footer">Generated by Fundrbolt · {{ generated_at }} · Confidential</div>
+</body>
+</html>

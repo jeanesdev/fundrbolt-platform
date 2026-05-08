@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import type { ScenarioType, SegmentType } from '@/services/event-dashboard'
+import { reportService } from '@/services/reportService'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { DownloadReportButton } from '@/components/reports/DownloadReportButton'
 import { ChecklistSummaryCard } from '@/features/events/components/ChecklistSummaryCard'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { AlertCards } from '../components/AlertCards'
@@ -68,6 +70,12 @@ export function EventDashboardPage() {
       <div className='flex flex-wrap items-center justify-between gap-3'>
         <ScenarioToggle value={scenario} onChange={setScenario} />
         <div className='flex items-center gap-2'>
+          <DownloadReportButton
+            label='Download Report'
+            onDownload={() =>
+              reportService.downloadEventReport(currentEvent.id)
+            }
+          />
           <Button
             type='button'
             variant='outline'

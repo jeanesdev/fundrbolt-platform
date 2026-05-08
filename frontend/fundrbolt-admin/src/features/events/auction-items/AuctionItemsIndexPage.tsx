@@ -8,7 +8,7 @@ import revenueGeneratorService, {
   type RGItem,
 } from '@/services/revenueGeneratorService'
 import { AuctionType, type AuctionItem } from '@/types/auction-item'
-import { Plus, Search, X } from 'lucide-react'
+import { Plus, Printer, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuctionItemStore } from '@/stores/auctionItemStore'
 import { Button } from '@/components/ui/button'
@@ -20,6 +20,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { BidCardSizeDialog } from '@/components/reports/BidCardSizeDialog'
 import { AuctionItemList } from '@/features/events/components/AuctionItemList'
 import { RevenueGeneratorItemCard } from '@/features/events/components/RevenueGeneratorItemCard'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
@@ -52,6 +53,7 @@ export function AuctionItemsIndexPage() {
   const [rgItems, setRgItems] = useState<RGItem[]>([])
   const [rgLoading, setRgLoading] = useState(false)
   const [showCreateRG, setShowCreateRG] = useState(false)
+  const [showBidCardDialog, setShowBidCardDialog] = useState(false)
 
   const loadRGItems = useCallback(() => {
     if (!eventId) return
@@ -156,10 +158,19 @@ export function AuctionItemsIndexPage() {
             </p>
           </div>
           {typeFilter !== 'revenue_generators' ? (
-            <Button onClick={handleAdd}>
-              <Plus className='mr-2 h-4 w-4' />
-              Add Item
-            </Button>
+            <div className='flex items-center gap-2'>
+              <Button
+                variant='outline'
+                onClick={() => setShowBidCardDialog(true)}
+              >
+                <Printer className='mr-2 h-4 w-4' />
+                Print Bid Cards
+              </Button>
+              <Button onClick={handleAdd}>
+                <Plus className='mr-2 h-4 w-4' />
+                Add Item
+              </Button>
+            </div>
           ) : (
             <Button onClick={() => setShowCreateRG(true)}>
               <Plus className='mr-2 h-4 w-4' />
@@ -301,6 +312,14 @@ export function AuctionItemsIndexPage() {
           loadRGItems()
         }}
       />
+
+      {eventId && (
+        <BidCardSizeDialog
+          open={showBidCardDialog}
+          onClose={() => setShowBidCardDialog(false)}
+          eventId={eventId}
+        />
+      )}
     </div>
   )
 }

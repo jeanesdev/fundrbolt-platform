@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<style>
+  @page { size: letter; margin: 15mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 10pt; color: #1a1a2e; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #2563eb; padding-bottom: 8px; margin-bottom: 16px; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-logo { max-height: 48px; max-width: 120px; object-fit: contain; }
+  .header-title { font-size: 18pt; font-weight: 700; color: #2563eb; }
+  .header-subtitle { font-size: 9pt; color: #64748b; }
+  .header-meta { text-align: right; font-size: 8pt; color: #64748b; }
+
+  /* KPI row */
+  .kpi-row { display: flex; gap: 8px; margin-bottom: 18px; }
+  .kpi-card { flex: 1; border: 1.5px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; background: #f8faff; }
+  .kpi-label { font-size: 7.5pt; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+  .kpi-value { font-size: 15pt; font-weight: 700; color: #2563eb; }
+  .kpi-sub { font-size: 7.5pt; color: #64748b; margin-top: 2px; }
+  .kpi-card.positive .kpi-value { color: #16a34a; }
+  .kpi-card.negative .kpi-value { color: #dc2626; }
+  .kpi-card.on_track { border-color: #16a34a; }
+  .kpi-card.off_track { border-color: #dc2626; }
+
+  /* Section headings */
+  h2 { font-size: 12pt; font-weight: 700; color: #2563eb; border-bottom: 1.5px solid #dbeafe; padding-bottom: 3px; margin-top: 18px; margin-bottom: 8px; }
+
+  /* Charts */
+  .chart-row { display: flex; gap: 12px; margin-bottom: 14px; }
+  .chart-half { flex: 1; }
+  .chart-full { margin-bottom: 14px; }
+  .chart-img { width: 100%; height: auto; max-height: 220px; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 12px; }
+  th { background: #dbeafe; color: #1e40af; font-weight: 700; padding: 5px 7px; text-align: left; }
+  td { padding: 4px 7px; border-bottom: 1px solid #e2e8f0; }
+  tr:nth-child(even) td { background: #f8faff; }
+  td.amount { text-align: right; }
+  th.amount { text-align: right; }
+
+  /* Funnel */
+  .funnel-row { display: flex; gap: 4px; margin-bottom: 14px; }
+  .funnel-stage { flex: 1; text-align: center; background: #dbeafe; border-radius: 4px; padding: 8px 4px; }
+  .funnel-stage .fs-label { font-size: 7pt; color: #64748b; text-transform: uppercase; }
+  .funnel-stage .fs-count { font-size: 16pt; font-weight: 700; color: #2563eb; }
+
+  /* Footer */
+  .footer { font-size: 7.5pt; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 6px; margin-top: 18px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    {% if npo_logo_data %}
+    <img class="header-logo" src="{{ npo_logo_data }}" alt="{{ npo_name }} logo"/>
+    {% endif %}
+    <div>
+      <div class="header-title">{{ event_name }}</div>
+      <div class="header-subtitle">{{ npo_name }}{% if event_date %} · {{ event_date }}{% endif %}</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    Event Summary Report<br/>
+    Generated {{ generated_at }}
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-row">
+  <div class="kpi-card">
+    <div class="kpi-label">Total Raised (Actual)</div>
+    <div class="kpi-value">${{ total_actual }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Projected Total</div>
+    <div class="kpi-value">${{ total_projected }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Goal</div>
+    <div class="kpi-value">${{ goal }}</div>
+  </div>
+  <div class="kpi-card {{ 'positive' if variance_amount[0] != '-' else 'negative' }}">
+    <div class="kpi-label">Variance vs Goal</div>
+    <div class="kpi-value">${{ variance_amount }}</div>
+    <div class="kpi-sub">{{ variance_percent }}%</div>
+  </div>
+  <div class="kpi-card {{ pacing_status }}">
+    <div class="kpi-label">Pacing</div>
+    <div class="kpi-value">{{ pacing_percent }}%</div>
+    <div class="kpi-sub">{{ pacing_status | replace('_', ' ') | title }}</div>
+  </div>
+</div>
+
+<!-- Funnel -->
+<h2>Donor Funnel</h2>
+<div class="funnel-row">
+  {% for stage in funnel %}
+  <div class="funnel-stage">
+    <div class="fs-label">{{ stage.stage | replace('_', ' ') | title }}</div>
+    <div class="fs-count">{{ stage.count }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Revenue by Source -->
+{% if chart_revenue %}
+<h2>Revenue by Source</h2>
+<div class="chart-full">
+  <img class="chart-img" src="{{ chart_revenue }}" alt="Revenue by Source"/>
+</div>
+{% endif %}
+
+<!-- Revenue Sources Table -->
+<table>
+  <thead><tr><th>Source</th><th class="amount">Actual</th><th class="amount">Projected</th><th class="amount">Variance</th><th class="amount">Var %</th></tr></thead>
+  <tbody>
+    {% for s in sources %}
+    <tr>
+      <td>{{ s.source | replace('_', ' ') | title }}</td>
+      <td class="amount">${{ "{:,.2f}".format(s.actual) }}</td>
+      <td class="amount">${{ "{:,.2f}".format(s.projected) }}</td>
+      <td class="amount">${{ "{:,.2f}".format(s.variance_amount) }}</td>
+      <td class="amount">{{ "{:.1f}".format(s.variance_percent) }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Waterfall + Cashflow -->
+<div class="chart-row">
+  {% if chart_waterfall %}
+  <div class="chart-half">
+    <h2>Revenue Waterfall</h2>
+    <img class="chart-img" src="{{ chart_waterfall }}" alt="Revenue Waterfall"/>
+  </div>
+  {% endif %}
+  {% if chart_cashflow %}
+  <div class="chart-half">
+    <h2>Cashflow Timeline</h2>
+    <img class="chart-img" src="{{ chart_cashflow }}" alt="Cashflow Timeline"/>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Segment Leaderboards -->
+{% if chart_table or seg_table %}
+<h2>Leaderboard by Table</h2>
+{% if chart_table %}<img class="chart-img" src="{{ chart_table }}" alt="Table Leaderboard"/>{% endif %}
+{% if seg_table %}
+<table>
+  <thead><tr><th>Table</th><th class="amount">Raised</th><th class="amount">Share</th></tr></thead>
+  <tbody>
+    {% for row in seg_table[:10] %}<tr><td>{{ row.label }}</td><td class="amount">${{ "{:,.2f}".format(row.amount) }}</td><td class="amount">{{ "{:.1f}".format(row.share * 100) }}%</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endif %}
+
+{% if chart_guest or seg_guest %}
+<h2>Leaderboard by Guest</h2>
+{% if chart_guest %}<img class="chart-img" src="{{ chart_guest }}" alt="Guest Leaderboard"/>{% endif %}
+{% if seg_guest %}
+<table>
+  <thead><tr><th>Guest</th><th class="amount">Raised</th><th class="amount">Share</th></tr></thead>
+  <tbody>
+    {% for row in seg_guest[:10] %}<tr><td>{{ row.label }}</td><td class="amount">${{ "{:,.2f}".format(row.amount) }}</td><td class="amount">{{ "{:.1f}".format(row.share * 100) }}%</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endif %}
+
+{% if chart_company or seg_company %}
+<h2>Leaderboard by Company</h2>
+{% if chart_company %}<img class="chart-img" src="{{ chart_company }}" alt="Company Leaderboard"/>{% endif %}
+{% if seg_company %}
+<table>
+  <thead><tr><th>Company</th><th class="amount">Raised</th><th class="amount">Share</th></tr></thead>
+  <tbody>
+    {% for row in seg_company[:10] %}<tr><td>{{ row.label }}</td><td class="amount">${{ "{:,.2f}".format(row.amount) }}</td><td class="amount">{{ "{:.1f}".format(row.share * 100) }}%</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endif %}
+
+<div class="footer">Generated by Fundrbolt · {{ generated_at }}</div>
+</body>
+</html>
