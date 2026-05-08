@@ -25,8 +25,8 @@ class LabelSize(str, Enum):
             LabelSize.TWO_BY_FOUR: "50.8mm 101.6mm",
             LabelSize.THREE_BY_THREE: "76.2mm 76.2mm",
             LabelSize.THREE_BY_FIVE: "76.2mm 127mm",
-            LabelSize.TENT_8_5X11: "8.5in 11in",
-            LabelSize.TENT_8_5X11_2UP: "8.5in 11in",
+            LabelSize.TENT_8_5X11: "11in 8.5in",
+            LabelSize.TENT_8_5X11_2UP: "11in 8.5in",
         }[self]
 
     @property
