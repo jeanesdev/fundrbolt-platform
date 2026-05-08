@@ -7,6 +7,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.admin_auctioneer import _resolve_auctioneer_id, _verify_event_access
@@ -140,10 +141,16 @@ async def download_auctioneer_report(
     await _verify_event_access(event_id, current_user, db)
 
     resolved_id = _resolve_auctioneer_id(current_user, auctioneer_user_id)
-    display_name = (
-        f"{getattr(current_user, 'first_name', '')} {getattr(current_user, 'last_name', '')}".strip()
-        or getattr(current_user, "email", "Auctioneer")
-    )
+
+    # When a super admin provides a specific auctioneer_user_id, resolve that
+    # user's name for the "Prepared for …" header rather than using the super
+    # admin's own name.
+    if auctioneer_user_id is not None and resolved_id != current_user.id:
+        result = await db.execute(select(User).where(User.id == resolved_id))
+        auctioneer_user = result.scalar_one_or_none()
+        display_name = auctioneer_user.full_name if auctioneer_user else str(resolved_id)
+    else:
+        display_name = current_user.full_name
 
     svc = AuctioneerReportService(db)
     try:

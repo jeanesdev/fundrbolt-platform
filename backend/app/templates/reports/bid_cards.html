@@ -101,13 +101,13 @@
   {% endif %}
 
   <div class="pricing">
-    {% if card.starting_bid %}
+    {% if card.starting_bid is not none %}
     <div class="price-item">
       <div class="price-label">Starting Bid</div>
       <div class="price-value">${{ "{:,.0f}".format(card.starting_bid) }}</div>
     </div>
     {% endif %}
-    {% if card.donor_value %}
+    {% if card.donor_value is not none %}
     <div class="price-item">
       <div class="price-label">Value</div>
       <div class="price-value">${{ "{:,.0f}".format(card.donor_value) }}</div>

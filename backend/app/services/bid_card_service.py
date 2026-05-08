@@ -97,21 +97,28 @@ class BidCardService:
         event_result = await self._db.execute(select(Event.slug).where(Event.id == event_id))
         event_slug = event_result.scalar_one_or_none() or str(event_id)
 
-        item_images: list[str | None] = []
+        # Collect image URLs first, then fetch them concurrently
+        image_urls: list[str | None] = []
+        for item in items:
+            media_list: list[AuctionItemMedia] = sorted(
+                [m for m in (item.media or []) if m.media_type == "image"],
+                key=lambda m: m.display_order if m.display_order is not None else 999,
+            )
+            image_urls.append(media_list[0].file_path if media_list else None)
+
+        # Fetch all item images concurrently (semaphore limits connection count)
         async with aiohttp.ClientSession() as http_session:
-            for item in items:
-                image_url: str | None = None
-                media_list: list[AuctionItemMedia] = sorted(
-                    [m for m in (item.media or []) if m.media_type == "image"],
-                    key=lambda m: m.display_order if m.display_order is not None else 999,
-                )
-                if media_list:
-                    image_url = media_list[0].file_path
-                if image_url:
-                    img_data = await fetch_image_as_base64(image_url, http_session)
-                    item_images.append(img_data)
-                else:
-                    item_images.append(None)
+            sem = asyncio.Semaphore(10)
+
+            async def _fetch(url: str | None) -> str | None:
+                if not url:
+                    return None
+                async with sem:
+                    return await fetch_image_as_base64(url, http_session)
+
+            item_images: list[str | None] = list(
+                await asyncio.gather(*[_fetch(u) for u in image_urls])
+            )
 
         # 3. Build card data + QR codes (sync, placed in executor)
         page_size = label_size.css_dimensions
@@ -119,14 +126,18 @@ class BidCardService:
 
         card_data = []
         for item, image_data in zip(items, item_images, strict=True):
-            qr_url = f"{donor_pwa_base}/events/{event_slug}/auction/{item.id}"
+            qr_url = f"{donor_pwa_base}/events/{event_slug}/auction-items/{item.id}"
             card_data.append(
                 {
                     "bid_number": item.bid_number,
                     "title": item.title or "",
                     "auction_type": item.auction_type or "silent",
-                    "starting_bid": float(item.starting_bid) if item.starting_bid else None,
-                    "donor_value": float(item.donor_value) if item.donor_value else None,
+                    "starting_bid": float(item.starting_bid)
+                    if item.starting_bid is not None
+                    else None,
+                    "donor_value": float(item.donor_value)
+                    if item.donor_value is not None
+                    else None,
                     "donated_by": getattr(item, "donated_by", None),
                     "image_data": image_data,
                     "qr_url": qr_url,
