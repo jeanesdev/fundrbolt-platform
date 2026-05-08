@@ -21,19 +21,19 @@ const LABEL_SIZE_OPTIONS: {
   label: string
   description: string
 }[] = [
-  { value: '2x3', label: '2" × 3"', description: 'Small badge / shelf label' },
-  {
-    value: '2x4',
-    label: '2" × 4"',
-    description: 'Standard address label (Brady 3456)',
-  },
-  { value: '3x3', label: '3" × 3"', description: 'Square label' },
-  {
-    value: '3x5',
-    label: '3" × 5"',
-    description: 'Index card / large bid card (recommended)',
-  },
-]
+    { value: '2x3', label: '2" × 3"', description: 'Small badge / shelf label' },
+    {
+      value: '2x4',
+      label: '2" × 4"',
+      description: 'Standard address label (Brady 3456)',
+    },
+    { value: '3x3', label: '3" × 3"', description: 'Square label' },
+    {
+      value: '3x5',
+      label: '3" × 5"',
+      description: 'Index card / large bid card (recommended)',
+    },
+  ]
 
 export { LABEL_SIZE_OPTIONS }
 
@@ -74,6 +74,15 @@ class ReportService {
       { responseType: 'blob' }
     )
     triggerDownload(response.data, `auctioneer-report-${eventId}.pdf`)
+  }
+
+  /** Fetches the auctioneer report and returns the raw Blob without triggering a download. */
+  async fetchAuctioneerReportBlob(eventId: string): Promise<Blob> {
+    const response = await apiClient.get<Blob>(
+      `/admin/events/${eventId}/auctioneer/report`,
+      { responseType: 'blob' }
+    )
+    return response.data
   }
 }
 

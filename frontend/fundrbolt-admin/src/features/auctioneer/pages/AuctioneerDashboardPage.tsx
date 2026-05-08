@@ -1,75 +1,76 @@
-import { type ReactNode, useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import { auctioneerService } from '@/services/auctioneerService'
-import { reportService } from '@/services/reportService'
-import { getAuctioneerRunOfShow } from '@/services/runOfShowService'
-import {
-  ArrowUpDown,
-  CalendarClock,
-  CircleDollarSign,
-  Clock,
-  Coins,
-  Download,
-  Eye,
-  EyeOff,
-  Filter,
-  Gavel,
-  HandCoins,
-  Image as ImageIcon,
-  Pin,
-  PinOff,
-  Target,
-  Timer,
-} from 'lucide-react'
-import { useViewPreference } from '@/hooks/use-view-preference'
+import { BidderAvatar } from '@/components/bidder-avatar'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { BidderAvatar } from '@/components/bidder-avatar'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
-import { DownloadReportButton } from '@/components/reports/DownloadReportButton'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { RGAuctioneerTab } from '@/features/revenue-generators'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import { auctioneerService } from '@/services/auctioneerService'
+import { reportService } from '@/services/reportService'
+import { getAuctioneerRunOfShow } from '@/services/runOfShowService'
+import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
+import {
+    ArrowUpDown,
+    CalendarClock,
+    CircleDollarSign,
+    Clock,
+    Coins,
+    Download,
+    Eye,
+    EyeOff,
+    FileText,
+    Filter,
+    Gavel,
+    HandCoins,
+    Image as ImageIcon,
+    Pin,
+    PinOff,
+    Target,
+    Timer,
+} from 'lucide-react'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { EventMapCard } from '../components/EventMapCard'
 import { RosCountdownBadge } from '../components/RosCountdownBadge'
 import { RunOfShowCard } from '../components/RunOfShowCard'
 import {
-  useAuctioneerDashboard,
-  useAuctioneerSettings,
-  useLiveAuctionGallery,
-  usePaddleRaiseDashboard,
-  useRevenueGeneratorItems,
-  useSilentAuctionGallery,
-  useUpsertSettings,
+    useAuctioneerDashboard,
+    useAuctioneerSettings,
+    useLiveAuctionGallery,
+    usePaddleRaiseDashboard,
+    useRevenueGeneratorItems,
+    useSilentAuctionGallery,
+    useUpsertSettings,
 } from '../hooks/useAuctioneerData'
 
 const fmtCurrency = (value: number | null | undefined) =>
@@ -250,6 +251,46 @@ export function AuctioneerDashboardPage({
     })
   }
 
+  const reportToastId = useRef<string | number>('auctioneer-financial-report')
+
+  const requestFinancialReport = () => {
+    toast.loading('Generating Financial Report…', {
+      id: reportToastId.current,
+      duration: Infinity,
+      description: 'This may take a moment.',
+    })
+
+    reportService
+      .fetchAuctioneerReportBlob(currentEvent.id)
+      .then((blob) => {
+        const blobUrl = URL.createObjectURL(blob)
+        const filename = `auctioneer-report-${currentEvent.slug || currentEvent.id}.pdf`
+
+        toast.success('Financial Report Ready', {
+          id: reportToastId.current,
+          duration: Infinity,
+          description: 'Your auctioneer financial report is ready.',
+          action: {
+            label: 'Download PDF',
+            onClick: () => {
+              const link = document.createElement('a')
+              link.href = blobUrl
+              link.download = filename
+              link.click()
+              URL.revokeObjectURL(blobUrl)
+            },
+          },
+        })
+      })
+      .catch((err: unknown) => {
+        toast.error('Report generation failed', {
+          id: reportToastId.current,
+          description:
+            err instanceof Error ? err.message : 'Please try again.',
+        })
+      })
+  }
+
   const exportSilentSlides = async () => {
     const blob = await auctioneerService.downloadSilentAuctionSlides(
       currentEvent.id
@@ -356,12 +397,15 @@ export function AuctioneerDashboardPage({
             results in real time.
           </p>
         </div>
-        <DownloadReportButton
-          label='Financial Report'
-          onDownload={() =>
-            reportService.downloadAuctioneerReport(currentEvent.id)
-          }
-        />
+        <Button
+          type='button'
+          variant='outline'
+          size='sm'
+          onClick={requestFinancialReport}
+        >
+          <FileText className='mr-1.5 h-4 w-4' />
+          Financial Report
+        </Button>
       </div>
 
       <div
