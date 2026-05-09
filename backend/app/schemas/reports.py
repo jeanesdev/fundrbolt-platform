@@ -15,6 +15,7 @@ class LabelSize(str, Enum):
     THREE_BY_THREE = "3x3"
     THREE_BY_FIVE = "3x5"
     TENT_8_5X11 = "tent-8.5x11"
+    TENT_8_5X11_LONG = "tent-8.5x11-long"
     TENT_8_5X11_2UP = "tent-8.5x11-2up"
 
     @property
@@ -25,14 +26,19 @@ class LabelSize(str, Enum):
             LabelSize.TWO_BY_FOUR: "50.8mm 101.6mm",
             LabelSize.THREE_BY_THREE: "76.2mm 76.2mm",
             LabelSize.THREE_BY_FIVE: "76.2mm 127mm",
-            LabelSize.TENT_8_5X11: "11in 8.5in",
+            LabelSize.TENT_8_5X11: "11in 8.5in",  # landscape — short-side fold
+            LabelSize.TENT_8_5X11_LONG: "8.5in 11in",  # portrait  — long-side fold
             LabelSize.TENT_8_5X11_2UP: "11in 8.5in",
         }[self]
 
     @property
     def is_tent(self) -> bool:
         """Return True if this is a tent-card format (uses tent template)."""
-        return self in (LabelSize.TENT_8_5X11, LabelSize.TENT_8_5X11_2UP)
+        return self in (
+            LabelSize.TENT_8_5X11,
+            LabelSize.TENT_8_5X11_LONG,
+            LabelSize.TENT_8_5X11_2UP,
+        )
 
     @property
     def cards_per_page(self) -> int:

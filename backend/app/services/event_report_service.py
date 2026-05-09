@@ -28,12 +28,16 @@ from app.schemas.auction_dashboard import (
     AuctionDashboardSummary,
     AuctionItemsListResponse,
 )
+from app.schemas.checklist import ChecklistResponse
 from app.schemas.donor_dashboard import CategoryBreakdownResponse, DonorLeaderboardResponse
 from app.schemas.event_dashboard import DashboardSummary, SegmentBreakdownResponse
+from app.schemas.run_of_show import RunOfShowResponse
 from app.services.auction_dashboard_service import AuctionDashboardService
+from app.services.checklist_service import ChecklistService
 from app.services.donor_dashboard_service import DonorDashboardService
 from app.services.event_dashboard_service import EventDashboardService
 from app.services.report_utils import fetch_image_as_base64, get_fundrbolt_logo_b64
+from app.services.run_of_show_service import RunOfShowService
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +66,7 @@ class EventReportService:
         seg_table = await dashboard_svc.get_segment_breakdown(event_id, "table", limit=10)
         seg_guest = await dashboard_svc.get_segment_breakdown(event_id, "guest", limit=10)
         seg_company = await dashboard_svc.get_segment_breakdown(event_id, "company", limit=10)
+        seg_registrant = await dashboard_svc.get_segment_breakdown(event_id, "registrant", limit=10)
 
         # Load event + NPO info
         event_result = await self._db.execute(
@@ -111,6 +116,12 @@ class EventReportService:
             npo_ids, event_id=event_id
         )
 
+        # Run of Show and Checklist
+        ros_data: RunOfShowResponse = await RunOfShowService.get_event_ros(self._db, event_id)
+        checklist_data: ChecklistResponse = await ChecklistService.get_event_checklist(
+            self._db, event_id
+        )
+
         # 2. Run all synchronous CPU-bound work (charts + WeasyPrint) in executor
         template = self._jinja.get_template("reports/event_report.html")
         generated_at = datetime.now(UTC).strftime("%B %d, %Y at %I:%M %p UTC")
@@ -123,6 +134,7 @@ class EventReportService:
                 seg_table=seg_table,
                 seg_guest=seg_guest,
                 seg_company=seg_company,
+                seg_registrant=seg_registrant,
                 event_name=event_name,
                 event_date=event_date,
                 event_slug=event_slug,
@@ -135,6 +147,8 @@ class EventReportService:
                 auction_summary=auction_summary,
                 auction_items=auction_items,
                 auction_charts=auction_charts,
+                ros_data=ros_data,
+                checklist_data=checklist_data,
             )
             html = template.render(**context)
             from weasyprint import HTML  # noqa: PLC0415
@@ -389,6 +403,31 @@ def _generate_hbar_count_chart(data: list[dict[str, Any]], title: str) -> str:
     return _chart_to_base64(fig)
 
 
+def _generate_pacing_chart(sources: list[dict[str, Any]]) -> str:
+    """Horizontal bar chart showing pacing % per revenue source."""
+    if not sources:
+        return ""
+    data = [s for s in sources if s.get("pacing_percent", 0) > 0]
+    if not data:
+        return ""
+    labels = [s["source"].replace("_", " ").title() for s in data]
+    values = [s["pacing_percent"] for s in data]
+    colors = ["#16a34a" if v >= 90 else "#f59e0b" if v >= 70 else "#dc2626" for v in values]
+
+    fig, ax = plt.subplots(figsize=(6, max(2.5, len(labels) * 0.45)))
+    ax.barh(labels[::-1], values[::-1], color=colors[::-1])
+    ax.axvline(x=100, color="#64748b", linewidth=1, linestyle="--", label="100% target")
+    max_val = max(max(values), 105)
+    ax.set_xlim(0, max_val)
+    for i, val in enumerate(values[::-1]):
+        ax.text(val + max_val * 0.01, i, f"{val:.0f}%", va="center", fontsize=7)
+    ax.set_xlabel("Pacing %", fontsize=8)
+    ax.set_title("Pacing by Revenue Source", fontsize=10, fontweight="bold")
+    ax.legend(fontsize=7)
+    fig.tight_layout()
+    return _chart_to_base64(fig)
+
+
 # ── Context builder (sync, called inside executor) ────────────────────────────
 
 
@@ -397,6 +436,7 @@ def _build_context(
     seg_table: SegmentBreakdownResponse,
     seg_guest: SegmentBreakdownResponse,
     seg_company: SegmentBreakdownResponse,
+    seg_registrant: SegmentBreakdownResponse,
     event_name: str,
     event_date: str,
     event_slug: str,
@@ -409,6 +449,8 @@ def _build_context(
     auction_summary: AuctionDashboardSummary | None = None,
     auction_items: AuctionItemsListResponse | None = None,
     auction_charts: AuctionDashboardCharts | None = None,
+    ros_data: RunOfShowResponse | None = None,
+    checklist_data: ChecklistResponse | None = None,
 ) -> dict[str, Any]:
     """Build Jinja2 template context from service data."""
     sources_data = [
@@ -418,6 +460,7 @@ def _build_context(
             "projected": float(s.projected.amount),
             "variance_amount": float(s.variance_amount.amount),
             "variance_percent": s.variance_percent,
+            "pacing_percent": s.pacing_percent,
         }
         for s in summary.sources
     ]
@@ -443,9 +486,13 @@ def _build_context(
     chart_revenue = _generate_revenue_chart(sources_data)
     chart_cashflow = _generate_cashflow_chart(cashflow_data)
     chart_waterfall = _generate_waterfall_chart(waterfall_data)
+    chart_pacing = _generate_pacing_chart(sources_data)
     chart_table = _generate_segment_chart(_seg_items(seg_table), "Leaderboard by Table")
     chart_guest = _generate_segment_chart(_seg_items(seg_guest), "Leaderboard by Guest")
     chart_company = _generate_segment_chart(_seg_items(seg_company), "Leaderboard by Company")
+    chart_registrant = _generate_segment_chart(
+        _seg_items(seg_registrant), "Leaderboard by Registrant"
+    )
 
     funnel = [{"stage": f.stage, "count": f.count} for f in summary.funnel]
 
@@ -559,9 +606,11 @@ def _build_context(
         "chart_revenue": chart_revenue,
         "chart_cashflow": chart_cashflow,
         "chart_waterfall": chart_waterfall,
+        "chart_pacing": chart_pacing,
         "chart_table": chart_table,
         "chart_guest": chart_guest,
         "chart_company": chart_company,
+        "chart_registrant": chart_registrant,
         "seg_table": [
             {
                 "label": i.segment_label,
@@ -586,6 +635,14 @@ def _build_context(
             }
             for i in seg_company.items
         ],
+        "seg_registrant": [
+            {
+                "label": i.segment_label,
+                "amount": float(i.total_amount.amount),
+                "share": i.contribution_share,
+            }
+            for i in seg_registrant.items
+        ],
         "fundrbolt_logo_b64": fundrbolt_logo_b64,
         # Donor dashboard
         "donor_leaders": donor_leaders,
@@ -600,4 +657,44 @@ def _build_context(
         "chart_auction_rev_cat": chart_auction_rev_cat,
         "chart_auction_top_rev": chart_auction_top_rev,
         "chart_auction_top_bids": chart_auction_top_bids,
+        # Alerts
+        "alerts": [
+            {
+                "source": a.source.replace("_", " ").title(),
+                "status": a.status,
+                "threshold_percent": a.threshold_percent,
+                "consecutive_refreshes": a.consecutive_refreshes,
+            }
+            for a in summary.alerts
+        ],
+        # Run of Show
+        "ros_items": [
+            {
+                "scheduled_time": item.scheduled_time.strftime("%H:%M") if item.scheduled_time else "—",
+                "title": item.title,
+                "description": item.description or "",
+                "is_complete": item.is_complete,
+                "display_order": item.display_order,
+            }
+            for item in (ros_data.items if ros_data else [])
+        ],
+        "ros_total": ros_data.total_count if ros_data else 0,
+        "ros_completed": ros_data.completed_count if ros_data else 0,
+        # Checklist
+        "checklist_items": [
+            {
+                "title": item.title,
+                "due_date": item.due_date.strftime("%b %d, %Y") if item.due_date else "—",
+                "status": item.status.replace("_", " ").title(),
+                "is_overdue": item.is_overdue,
+            }
+            for item in (checklist_data.items if checklist_data else [])
+        ],
+        "checklist_total": checklist_data.total_count if checklist_data else 0,
+        "checklist_completed": checklist_data.completed_count if checklist_data else 0,
+        "checklist_in_progress": checklist_data.in_progress_count if checklist_data else 0,
+        "checklist_overdue": checklist_data.overdue_count if checklist_data else 0,
+        "checklist_progress_pct": f"{checklist_data.progress_percentage:.0f}"
+        if checklist_data
+        else "0",
     }

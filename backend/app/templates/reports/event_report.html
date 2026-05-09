@@ -204,6 +204,83 @@
             color: #2563eb;
         }
 
+        /* Alerts */
+        .alert-grid {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .alert-card {
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 8pt;
+            border-left: 4px solid;
+            background: #fff;
+            min-width: 150px;
+            flex: 1;
+        }
+
+        .alert-card.on_track {
+            border-color: #16a34a;
+            background: #f0fdf4;
+        }
+
+        .alert-card.off_track {
+            border-color: #dc2626;
+            background: #fef2f2;
+        }
+
+        .alert-card.warning {
+            border-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        .alert-source {
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .alert-meta {
+            color: #64748b;
+            font-size: 7.5pt;
+        }
+
+        /* Progress bar */
+        .progress-bar-bg {
+            background: #e2e8f0;
+            border-radius: 4px;
+            height: 8px;
+            width: 100%;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .progress-fill-green { background: #16a34a; }
+        .progress-fill-yellow { background: #f59e0b; }
+        .progress-fill-red { background: #dc2626; }
+
+        /* Status badge */
+        .badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 7pt;
+            font-weight: 600;
+        }
+
+        .badge-green { background: #dcfce7; color: #16a34a; }
+        .badge-yellow { background: #fef9c3; color: #b45309; }
+        .badge-red { background: #fee2e2; color: #dc2626; }
+        .badge-gray { background: #f1f5f9; color: #64748b; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+
         /* Footer */
         .footer {
             font-size: 7.5pt;
@@ -314,6 +391,31 @@
         </tbody>
     </table>
 
+    <!-- Pacing Chart -->
+    {% if chart_pacing %}
+    <h2>Pacing by Revenue Source</h2>
+    <div class="chart-full">
+        <img class="chart-img" src="{{ chart_pacing }}" alt="Pacing by Source" />
+    </div>
+    {% endif %}
+
+    <!-- Alerts -->
+    {% if alerts %}
+    <h2>Revenue Alerts</h2>
+    <div class="alert-grid">
+        {% for a in alerts %}
+        <div class="alert-card {{ a.status }}">
+            <div class="alert-source">{{ a.source }}</div>
+            <div class="alert-meta">
+                Pacing: {{ "{:.0f}".format(a.threshold_percent) }}% threshold
+                · {{ a.consecutive_refreshes }} consecutive check{{ 's' if a.consecutive_refreshes != 1 else '' }}
+                · <strong>{{ a.status | replace('_', ' ') | title }}</strong>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <!-- Waterfall + Cashflow -->
     <div class="chart-row">
         {% if chart_waterfall %}
@@ -391,6 +493,29 @@
         </thead>
         <tbody>
             {% for row in seg_company[:10] %}<tr>
+                <td>{{ row.label }}</td>
+                <td class="amount">${{ "{:,.2f}".format(row.amount) }}</td>
+                <td class="amount">{{ "{:.1f}".format(row.share * 100) }}%</td>
+            </tr>{% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% endif %}
+
+    {% if chart_registrant or seg_registrant %}
+    <h2>Leaderboard by Registrant</h2>
+    {% if chart_registrant %}<img class="chart-img" src="{{ chart_registrant }}" alt="Registrant Leaderboard" />{% endif %}
+    {% if seg_registrant %}
+    <table>
+        <thead>
+            <tr>
+                <th>Registrant</th>
+                <th class="amount">Raised</th>
+                <th class="amount">Share</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in seg_registrant[:10] %}<tr>
                 <td>{{ row.label }}</td>
                 <td class="amount">${{ "{:,.2f}".format(row.amount) }}</td>
                 <td class="amount">{{ "{:.1f}".format(row.share * 100) }}%</td>
@@ -578,6 +703,105 @@
                 <td class="amount">{{ item.bid_count }}</td>
                 <td class="amount">{{ item.watcher_count }}</td>
                 <td>{{ item.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <!-- ── RUN OF SHOW ───────────────────────────────────────────────────── -->
+    {% if ros_items %}
+    <h2>Run of Show</h2>
+    <div class="kpi-row" style="margin-bottom:10px">
+        <div class="kpi-card">
+            <div class="kpi-label">Total Items</div>
+            <div class="kpi-value">{{ ros_total }}</div>
+        </div>
+        <div class="kpi-card positive">
+            <div class="kpi-label">Completed</div>
+            <div class="kpi-value">{{ ros_completed }}</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Remaining</div>
+            <div class="kpi-value">{{ ros_total - ros_completed }}</div>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Item</th>
+                <th>Notes</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in ros_items %}
+            <tr>
+                <td style="white-space:nowrap">{{ item.scheduled_time }}</td>
+                <td><strong>{{ item.title }}</strong></td>
+                <td style="font-size:7.5pt;color:#64748b">{{ item.description }}</td>
+                <td>
+                    {% if item.is_complete %}
+                    <span class="badge badge-green">Done</span>
+                    {% else %}
+                    <span class="badge badge-gray">Pending</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <!-- ── PLANNING CHECKLIST ────────────────────────────────────────────── -->
+    {% if checklist_items %}
+    <h2>Planning Checklist</h2>
+    <div class="kpi-row" style="margin-bottom:10px">
+        <div class="kpi-card">
+            <div class="kpi-label">Total</div>
+            <div class="kpi-value">{{ checklist_total }}</div>
+        </div>
+        <div class="kpi-card positive">
+            <div class="kpi-label">Completed</div>
+            <div class="kpi-value">{{ checklist_completed }}</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">In Progress</div>
+            <div class="kpi-value">{{ checklist_in_progress }}</div>
+        </div>
+        {% if checklist_overdue > 0 %}
+        <div class="kpi-card negative">
+            <div class="kpi-label">Overdue</div>
+            <div class="kpi-value">{{ checklist_overdue }}</div>
+        </div>
+        {% endif %}
+        <div class="kpi-card">
+            <div class="kpi-label">Progress</div>
+            <div class="kpi-value">{{ checklist_progress_pct }}%</div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill {% if checklist_progress_pct|int >= 80 %}progress-fill-green{% elif checklist_progress_pct|int >= 50 %}progress-fill-yellow{% else %}progress-fill-red{% endif %}" style="width:{{ checklist_progress_pct }}%"></div></div>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Task</th>
+                <th>Due</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in checklist_items %}
+            <tr{% if item.is_overdue %} style="background:#fff1f2"{% endif %}>
+                <td>{{ item.title }}{% if item.is_overdue %} <span class="badge badge-red">Overdue</span>{% endif %}</td>
+                <td style="white-space:nowrap">{{ item.due_date }}</td>
+                <td>
+                    {% if item.status == 'Completed' %}<span class="badge badge-green">{{ item.status }}</span>
+                    {% elif item.status == 'In Progress' %}<span class="badge badge-blue">{{ item.status }}</span>
+                    {% elif item.is_overdue %}<span class="badge badge-red">{{ item.status }}</span>
+                    {% else %}<span class="badge badge-gray">{{ item.status }}</span>
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>

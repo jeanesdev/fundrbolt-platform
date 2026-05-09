@@ -3,7 +3,14 @@
  */
 import apiClient from '@/lib/axios'
 
-export type LabelSize = '2x3' | '2x4' | '3x3' | '3x5' | 'tent-8.5x11' | 'tent-8.5x11-2up'
+export type LabelSize =
+  | '2x3'
+  | '2x4'
+  | '3x3'
+  | '3x5'
+  | 'tent-8.5x11'
+  | 'tent-8.5x11-long'
+  | 'tent-8.5x11-2up'
 
 export interface BidCardRequest {
   item_ids?: string[] | null
@@ -35,12 +42,17 @@ const LABEL_SIZE_OPTIONS: {
     },
     {
       value: 'tent-8.5x11',
-      label: 'Tent 8.5" × 11"',
-      description: 'Full-page table tent card (1 per sheet)',
+      label: 'Tent — short fold (landscape)',
+      description: 'Folds on the short side · 11"×4.25" faces (1 per sheet)',
+    },
+    {
+      value: 'tent-8.5x11-long',
+      label: 'Tent — long fold (portrait)',
+      description: 'Folds on the long side · 8.5"×5.5" faces (1 per sheet)',
     },
     {
       value: 'tent-8.5x11-2up',
-      label: 'Tent 8.5" × 11" (2-up)',
+      label: 'Tent 2-up (landscape)',
       description: 'Two tent cards per sheet — cut along dashed line',
     },
   ]
@@ -85,10 +97,7 @@ class ReportService {
     eventId: string,
     request: BidCardRequest
   ): Promise<void> {
-    const { blob, filename } = await this.generateBidCardsBlob(
-      eventId,
-      request
-    )
+    const { blob, filename } = await this.generateBidCardsBlob(eventId, request)
     triggerDownload(blob, filename)
   }
 
