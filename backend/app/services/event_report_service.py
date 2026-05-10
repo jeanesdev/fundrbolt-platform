@@ -670,7 +670,9 @@ def _build_context(
         # Run of Show
         "ros_items": [
             {
-                "scheduled_time": item.scheduled_time.strftime("%H:%M") if item.scheduled_time else "—",
+                "scheduled_time": item.scheduled_time.strftime("%H:%M")
+                if item.scheduled_time
+                else "—",
                 "title": item.title,
                 "description": item.description or "",
                 "is_complete": item.is_complete,
