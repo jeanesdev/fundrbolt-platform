@@ -21,9 +21,13 @@ CAE_NAME="${2:?'Usage: $0 <resource-group> <container-apps-env-name> <image>'}"
 IMAGE="${3:?'Usage: $0 <resource-group> <container-apps-env-name> <image>'}"
 
 JOB_NAME="fundrbolt-production-migration"
-KEY_VAULT_URI=$(az keyvault list \
+# Derive Key Vault name from resource group following the naming convention:
+# <appName>-<env>-rg  →  <appName>-<env>-kv
+KV_NAME="${RESOURCE_GROUP%-rg}-kv"
+KEY_VAULT_URI=$(az keyvault show \
   --resource-group "$RESOURCE_GROUP" \
-  --query '[0].properties.vaultUri' -o tsv)
+  --name "$KV_NAME" \
+  --query 'properties.vaultUri' -o tsv)
 
 echo "==> Running database migrations"
 echo "    Resource Group : $RESOURCE_GROUP"
@@ -31,38 +35,42 @@ echo "    Container Env  : $CAE_NAME"
 echo "    Image          : $IMAGE"
 echo "    Key Vault      : $KEY_VAULT_URI"
 
-# Create or update the migration job
+# Create or update the migration job.
 # Uses the same secrets configuration as the API container app.
-az containerapp job create \
-  --name "$JOB_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --environment "$CAE_NAME" \
-  --trigger-type Manual \
-  --replica-timeout 300 \
-  --replica-retry-limit 1 \
-  --replica-completion-count 1 \
-  --parallelism 1 \
-  --image "$IMAGE" \
-  --cpu 0.5 \
-  --memory 1Gi \
-  --command "alembic" \
-  --args "upgrade" "head" \
-  --mi-system-assigned \
-  --secrets \
-    "database-url=keyvaultref:${KEY_VAULT_URI}secrets/DATABASE-URL,identityref:system" \
-    "secret-key=keyvaultref:${KEY_VAULT_URI}secrets/SECRET-KEY,identityref:system" \
-  --env-vars \
-    "DATABASE_URL=secretref:database-url" \
-    "ENVIRONMENT=production" \
-    "LOG_LEVEL=INFO" \
-  2>/dev/null || {
-    # Job already exists; update the image
-    echo "==> Migration job already exists, updating image..."
-    az containerapp job update \
-      --name "$JOB_NAME" \
-      --resource-group "$RESOURCE_GROUP" \
-      --image "$IMAGE"
-  }
+if az containerapp job show \
+    --name "$JOB_NAME" \
+    --resource-group "$RESOURCE_GROUP" &>/dev/null; then
+  # Job already exists; update the image only
+  echo "==> Migration job already exists, updating image..."
+  az containerapp job update \
+    --name "$JOB_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --image "$IMAGE"
+else
+  echo "==> Creating migration job..."
+  az containerapp job create \
+    --name "$JOB_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --environment "$CAE_NAME" \
+    --trigger-type Manual \
+    --replica-timeout 300 \
+    --replica-retry-limit 1 \
+    --replica-completion-count 1 \
+    --parallelism 1 \
+    --image "$IMAGE" \
+    --cpu 0.5 \
+    --memory 1Gi \
+    --command "alembic" \
+    --args "upgrade" "head" \
+    --mi-system-assigned \
+    --secrets \
+      "database-url=keyvaultref:${KEY_VAULT_URI}secrets/DATABASE-URL,identityref:system" \
+      "secret-key=keyvaultref:${KEY_VAULT_URI}secrets/SECRET-KEY,identityref:system" \
+    --env-vars \
+      "DATABASE_URL=secretref:database-url" \
+      "ENVIRONMENT=production" \
+      "LOG_LEVEL=INFO"
+fi
 
 # Assign Key Vault Secrets User role to the migration job's managed identity
 MIGRATION_PRINCIPAL=$(az containerapp job show \
@@ -72,7 +80,7 @@ MIGRATION_PRINCIPAL=$(az containerapp job show \
 
 KV_ID=$(az keyvault show \
   --resource-group "$RESOURCE_GROUP" \
-  --name "$(az keyvault list --resource-group "$RESOURCE_GROUP" --query '[0].name' -o tsv)" \
+  --name "$KV_NAME" \
   --query 'id' -o tsv)
 
 az role assignment create \

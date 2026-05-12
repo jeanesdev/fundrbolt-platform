@@ -8,9 +8,6 @@ param envName string
 @description('Azure region')
 param location string = resourceGroup().location
 
-@description('Log Analytics workspace resource ID')
-param logAnalyticsWorkspaceId string
-
 @description('Log Analytics workspace client ID (customerId)')
 param logAnalyticsWorkspaceClientId string
 

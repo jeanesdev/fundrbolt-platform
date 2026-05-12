@@ -99,7 +99,7 @@ jobs:
           echo "ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
       - name: Run database migrations
-        if: ${{ !inputs.skip_migrations }}
+        if: ${{ github.event_name != 'workflow_dispatch' || !inputs.skip_migrations }}
         run: |
           chmod +x ./infrastructure/scripts/run-migrations-container-apps.sh
           ./infrastructure/scripts/run-migrations-container-apps.sh \

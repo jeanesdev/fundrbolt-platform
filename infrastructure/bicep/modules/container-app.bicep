@@ -51,7 +51,8 @@ param secretEnvVars array = []
 param tags object = {}
 
 // Build the secrets array (Key Vault references become Container App secrets)
-// Each item in secretEnvVars must have: { name, keyVaultUrl }
+// Each item in secretEnvVars must have: { name, keyVaultUrl, envName }
+// where: name = secret identifier in Container Apps, keyVaultUrl = KV secret URI, envName = env var name exposed to the container
 var secrets = [for secret in secretEnvVars: {
   name: secret.name
   keyVaultUrl: secret.keyVaultUrl

@@ -43,7 +43,7 @@ var appInsightsName = '${appName}-${env}-insights'
 var postgresServerName = '${appName}-${env}-postgres'
 var redisCacheName = '${appName}-${env}-redis'
 var keyVaultName = '${appName}-${env}-kv'
-var storageAccountName = replace('${appName}${env}storage', '-', '')
+var storageAccountName = take(replace('${appName}${env}storage', '-', ''), 24)
 var containerAppsEnvName = '${appName}-${env}-cae'
 var apiAppName = '${appName}-${env}-api'
 var workerAppName = '${appName}-${env}-worker'
@@ -154,7 +154,6 @@ module containerAppsEnv './modules/container-apps-env.bicep' = {
   params: {
     envName: containerAppsEnvName
     location: location
-    logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId
     logAnalyticsWorkspaceClientId: logAnalytics.outputs.workspaceCustomerId
     logAnalyticsWorkspaceKey: logAnalytics.outputs.workspaceSharedKey
     tags: tags
@@ -286,9 +285,15 @@ module beatApp './modules/container-app.bicep' = {
 }
 
 // ── Key Vault RBAC: grant all three container apps secret read access ───────
+// Reference the deployed Key Vault to scope role assignments to the resource (least-privilege).
+resource keyVaultResource 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
+  name: keyVaultName
+  scope: az.resourceGroup(resourceGroupName)
+}
+
 resource apiKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(keyVault.outputs.keyVaultId, apiApp.outputs.principalId, 'kv-secrets-user')
-  scope: az.resourceGroup(resourceGroupName)
+  scope: keyVaultResource
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
     principalId: apiApp.outputs.principalId
@@ -299,7 +304,7 @@ resource apiKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01
 
 resource workerKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(keyVault.outputs.keyVaultId, workerApp.outputs.principalId, 'kv-secrets-user')
-  scope: az.resourceGroup(resourceGroupName)
+  scope: keyVaultResource
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
     principalId: workerApp.outputs.principalId
@@ -310,7 +315,7 @@ resource workerKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04
 
 resource beatKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(keyVault.outputs.keyVaultId, beatApp.outputs.principalId, 'kv-secrets-user')
-  scope: az.resourceGroup(resourceGroupName)
+  scope: keyVaultResource
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
     principalId: beatApp.outputs.principalId
@@ -356,6 +361,7 @@ module landingStaticWebApp './modules/static-web-app.bicep' = {
     location: 'eastus2'
     environment: env
     skuOverride: 'Free'  // Budget-optimised: Free tier sufficient for beta
+    appLocation: '/frontend/landing-site'
     tags: tags
   }
   dependsOn: [resourceGroup]
