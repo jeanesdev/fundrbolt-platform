@@ -6,18 +6,56 @@ working end-to-end.
 
 ---
 
+## 🚀 Quick Start — Automated Setup Scripts
+
+A set of numbered scripts in `scripts/setup/` automate most of the steps in this guide.
+**Run these instead of following the manual steps**, unless you need to do a step individually.
+
+```bash
+# Run all steps interactively (pauses between each step):
+./scripts/setup/run-setup.sh
+
+# Resume from a specific step (e.g., if step 04 failed):
+./scripts/setup/run-setup.sh --start 04
+
+# Or run a single step directly:
+./scripts/setup/00-install-prerequisites.sh
+./scripts/setup/01-azure-login.sh
+./scripts/setup/02-register-providers.sh
+./scripts/setup/03-create-service-principal.sh
+./scripts/setup/04-deploy-infrastructure.sh    # ~15 min
+./scripts/setup/05-populate-keyvault.sh
+./scripts/setup/06-set-github-secrets.sh
+./scripts/setup/07-trigger-deployment.sh       # merges PR #108 → main
+./scripts/setup/08-run-migrations.sh
+```
+
+See [`scripts/setup/README.md`](../scripts/setup/README.md) for details on each script.
+
+> **State file**: The scripts save progress to `.azure-setup-state` (gitignored).
+> This file contains passwords — keep it secure and back it up.
+
+---
+
+## Manual Steps Reference
+
+The sections below document each step for reference, or for when you need to run
+a step manually (e.g., to troubleshoot or re-run a specific part).
+
+---
+
 ## Prerequisites
 
 Before you start, make sure you have the following installed and authenticated:
 
 ```bash
-# Azure CLI (v2.60+)
+# Azure CLI (v2.60+) — installed by 00-install-prerequisites.sh
 az --version
 
 # GitHub CLI
 gh --version
 
-# Log in to Azure
+# Log in to Azure — done by 01-azure-login.sh
 az login
 
 # Set your target subscription

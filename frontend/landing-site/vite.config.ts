@@ -1,8 +1,8 @@
 /// <reference types="vitest" />
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig } from 'vite';
-import { sentryVitePlugin } from '@sentry/vite-plugin';
 
 export default defineConfig({
   plugins: [
@@ -10,15 +10,15 @@ export default defineConfig({
     // Upload source maps to Sentry only when SENTRY_AUTH_TOKEN is set (i.e. in CI)
     ...(process.env.SENTRY_AUTH_TOKEN
       ? [
-          sentryVitePlugin({
-            org: process.env.SENTRY_ORG,
-            project: 'fundrbolt-landing',
-            authToken: process.env.SENTRY_AUTH_TOKEN,
-            sourcemaps: {
-              filesToDeleteAfterUpload: ['./dist/**/*.map'],
-            },
-          }),
-        ]
+        sentryVitePlugin({
+          org: process.env.SENTRY_ORG,
+          project: 'fundrbolt-landing',
+          authToken: process.env.SENTRY_AUTH_TOKEN,
+          sourcemaps: {
+            filesToDeleteAfterUpload: ['./dist/**/*.map'],
+          },
+        }),
+      ]
       : []),
   ],
   server: {

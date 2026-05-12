@@ -221,18 +221,21 @@ module apiApp './modules/container-app.bicep' = {
     location: location
     containerAppsEnvId: containerAppsEnv.outputs.envId
     image: backendImage
-    command: []  // Default CMD: uvicorn
+    command: [] // Default CMD: uvicorn
     minReplicas: 0
     maxReplicas: 3
     cpu: '0.5'
     memory: '1Gi'
     externalIngress: true
     targetPort: 8000
-    stickySessionsEnabled: true  // Required for Socket.IO
+    stickySessionsEnabled: true // Required for Socket.IO
     envVars: concat(commonEnvVars, [
       { name: 'FRONTEND_ADMIN_URL', value: 'https://app.${customDomain}' }
       { name: 'FRONTEND_DONOR_URL', value: 'https://give.${customDomain}' }
-      { name: 'CORS_ORIGINS', value: 'https://app.${customDomain},https://give.${customDomain},https://${customDomain},https://www.${customDomain}' }
+      {
+        name: 'CORS_ORIGINS'
+        value: 'https://app.${customDomain},https://give.${customDomain},https://${customDomain},https://www.${customDomain}'
+      }
     ])
     secretEnvVars: commonSecretEnvVars
     tags: tags
@@ -272,7 +275,7 @@ module beatApp './modules/container-app.bicep' = {
     containerAppsEnvId: containerAppsEnv.outputs.envId
     image: backendImage
     command: ['celery', '-A', 'app.celery_app', 'beat', '--loglevel=info']
-    minReplicas: 1  // FR-009: beat must always run exactly 1 instance
+    minReplicas: 1 // FR-009: beat must always run exactly 1 instance
     maxReplicas: 1
     cpu: '0.25'
     memory: '0.5Gi'
@@ -295,7 +298,10 @@ resource apiKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01
   name: guid(keyVault.outputs.keyVaultId, apiApp.outputs.principalId, 'kv-secrets-user')
   scope: keyVaultResource
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      '4633458b-17de-408a-b874-0445c86b69e6'
+    )
     principalId: apiApp.outputs.principalId
     principalType: 'ServicePrincipal'
   }
@@ -306,7 +312,10 @@ resource workerKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04
   name: guid(keyVault.outputs.keyVaultId, workerApp.outputs.principalId, 'kv-secrets-user')
   scope: keyVaultResource
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      '4633458b-17de-408a-b874-0445c86b69e6'
+    )
     principalId: workerApp.outputs.principalId
     principalType: 'ServicePrincipal'
   }
@@ -317,7 +326,10 @@ resource beatKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-0
   name: guid(keyVault.outputs.keyVaultId, beatApp.outputs.principalId, 'kv-secrets-user')
   scope: keyVaultResource
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      '4633458b-17de-408a-b874-0445c86b69e6'
+    )
     principalId: beatApp.outputs.principalId
     principalType: 'ServicePrincipal'
   }
@@ -332,7 +344,7 @@ module adminStaticWebApp './modules/static-web-app.bicep' = {
     staticWebAppName: adminWebAppName
     location: 'eastus2'
     environment: env
-    skuOverride: 'Free'  // Budget-optimised: Free tier sufficient for beta
+    skuOverride: 'Free' // Budget-optimised: Free tier sufficient for beta
     tags: tags
   }
   dependsOn: [resourceGroup]
@@ -346,7 +358,7 @@ module donorStaticWebApp './modules/donor-static-web-app.bicep' = {
     staticWebAppName: donorWebAppName
     location: 'eastus2'
     environment: env
-    skuOverride: 'Free'  // Budget-optimised: Free tier sufficient for beta
+    skuOverride: 'Free' // Budget-optimised: Free tier sufficient for beta
     tags: tags
   }
   dependsOn: [resourceGroup]
@@ -360,7 +372,7 @@ module landingStaticWebApp './modules/static-web-app.bicep' = {
     staticWebAppName: landingWebAppName
     location: 'eastus2'
     environment: env
-    skuOverride: 'Free'  // Budget-optimised: Free tier sufficient for beta
+    skuOverride: 'Free' // Budget-optimised: Free tier sufficient for beta
     appLocation: '/frontend/landing-site'
     tags: tags
   }

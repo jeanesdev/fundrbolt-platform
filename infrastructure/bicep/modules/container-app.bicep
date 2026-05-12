@@ -53,17 +53,21 @@ param tags object = {}
 // Build the secrets array (Key Vault references become Container App secrets)
 // Each item in secretEnvVars must have: { name, keyVaultUrl, envName }
 // where: name = secret identifier in Container Apps, keyVaultUrl = KV secret URI, envName = env var name exposed to the container
-var secrets = [for secret in secretEnvVars: {
-  name: secret.name
-  keyVaultUrl: secret.keyVaultUrl
-  identity: 'system'
-}]
+var secrets = [
+  for secret in secretEnvVars: {
+    name: secret.name
+    keyVaultUrl: secret.keyVaultUrl
+    identity: 'system'
+  }
+]
 
 // Map secret names to env var bindings
-var secretEnvBindings = [for secret in secretEnvVars: {
-  name: secret.envName
-  secretRef: secret.name
-}]
+var secretEnvBindings = [
+  for secret in secretEnvVars: {
+    name: secret.envName
+    secretRef: secret.name
+  }
+]
 
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: appName
@@ -77,16 +81,20 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
     configuration: {
       activeRevisionsMode: 'Single'
       secrets: secrets
-      ingress: externalIngress ? {
-        external: true
-        targetPort: targetPort
-        transport: 'http'
-        allowInsecure: false
-        stickySessions: stickySessionsEnabled ? {
-          affinity: 'sticky'
-        } : null
-        corsPolicy: null
-      } : null
+      ingress: externalIngress
+        ? {
+            external: true
+            targetPort: targetPort
+            transport: 'http'
+            allowInsecure: false
+            stickySessions: stickySessionsEnabled
+              ? {
+                  affinity: 'sticky'
+                }
+              : null
+            corsPolicy: null
+          }
+        : null
     }
     template: {
       containers: [
@@ -104,16 +112,18 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       scale: {
         minReplicas: minReplicas
         maxReplicas: maxReplicas
-        rules: externalIngress ? [
-          {
-            name: 'http-scaler'
-            http: {
-              metadata: {
-                concurrentRequests: '20'
+        rules: externalIngress
+          ? [
+              {
+                name: 'http-scaler'
+                http: {
+                  metadata: {
+                    concurrentRequests: '20'
+                  }
+                }
               }
-            }
-          }
-        ] : []
+            ]
+          : []
       }
     }
   }
