@@ -19,7 +19,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.config import Settings, get_settings
 from app.models.auction_item import AuctionItem, AuctionItemMedia
-from app.schemas.reports import BidCardRequest
+from app.schemas.reports import BidCardRequest, LabelSize
 from app.services.report_utils import fetch_image_as_base64, get_fundrbolt_logo_b64
 
 logger = logging.getLogger(__name__)
@@ -200,6 +200,7 @@ class BidCardService:
         # 3. Build card data + QR codes (sync, placed in executor)
         page_size = request.label_size.css_dimensions
         is_tent = request.label_size.is_tent
+        is_long_fold = request.label_size == LabelSize.TENT_8_5X11_LONG
         cards_per_page = request.label_size.cards_per_page
         template_name = "reports/bid_cards_tent.html" if is_tent else "reports/bid_cards.html"
         template = self._jinja.get_template(template_name)
@@ -231,6 +232,7 @@ class BidCardService:
             "show_qr": request.show_qr,
             "show_starting_bid": request.show_starting_bid,
             "show_min_bid_increment": request.show_min_bid_increment,
+            "show_event_logo": request.show_event_logo,
         }
 
         def _build_pdf() -> bytes:
@@ -240,13 +242,21 @@ class BidCardService:
                     card["qr_b64"] = _generate_qr_base64(str(card["qr_url"]))
                 else:
                     card["qr_b64"] = None
+            page_margin = (
+                "2mm"
+                if request.label_size in (LabelSize.TWO_BY_FOUR, LabelSize.TWO_BY_THREE)
+                else "3mm"
+            )
             html = template.render(
                 cards=card_data,
                 page_size=page_size,
+                page_margin=page_margin,
+                label_size=request.label_size.value,
                 event_logo=event_logo_data,
                 opts=opts,
                 fundrbolt_logo_b64=get_fundrbolt_logo_b64(),
                 cards_per_page=cards_per_page,
+                is_long_fold=is_long_fold,
             )
             from weasyprint import HTML  # noqa: PLC0415
 
@@ -256,7 +266,15 @@ class BidCardService:
 
         loop = asyncio.get_running_loop()
         try:
-            return await loop.run_in_executor(None, _build_pdf)
+            return await asyncio.wait_for(
+                loop.run_in_executor(None, _build_pdf),
+                timeout=120,  # 2-minute hard limit on WeasyPrint
+            )
+        except TimeoutError as exc:
+            logger.error("Bid card PDF generation timed out after 120s for event %s", event_id)
+            raise RuntimeError(
+                "PDF generation timed out — try fewer items or a smaller size"
+            ) from exc
         except Exception as exc:
             logger.error("Bid card PDF generation failed for event %s", event_id, exc_info=True)
             raise RuntimeError(f"PDF generation failed: {exc}") from exc

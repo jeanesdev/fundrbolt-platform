@@ -135,14 +135,14 @@ async def fetch_image_as_base64(
         logger.debug("Skipping unsafe/non-HTTPS image URL: %s", url)
         return None
     try:
-        async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
             if resp.status != 200:
-                logger.debug("Image fetch returned %d for %s", resp.status, url)
+                logger.info("Image fetch returned %d for %s", resp.status, url)
                 return None
             content_type = resp.headers.get("Content-Type", "")
             # Only embed actual image content to prevent non-image injection
             if not content_type.startswith("image/"):
-                logger.debug("Skipping non-image Content-Type %r for %s", content_type, url)
+                logger.info("Skipping non-image Content-Type %r for %s", content_type, url)
                 return None
             # Guard against oversized payloads
             data = await resp.read()

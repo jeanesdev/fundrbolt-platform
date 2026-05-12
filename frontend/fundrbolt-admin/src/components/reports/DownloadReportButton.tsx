@@ -1,10 +1,10 @@
 /**
  * DownloadReportButton — triggers a PDF report download with a loading overlay.
  */
-import { Button } from '@/components/ui/button'
-import { FileText, Loader2 } from 'lucide-react'
 import { useState } from 'react'
+import { FileText, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
 
 interface DownloadReportButtonProps {
   /** Called to fetch the PDF. Should trigger the download (or throw on error). */
@@ -13,12 +13,12 @@ interface DownloadReportButtonProps {
   label?: string
   /** Variant forwarded to Button */
   variant?:
-  | 'default'
-  | 'outline'
-  | 'ghost'
-  | 'secondary'
-  | 'destructive'
-  | 'link'
+    | 'default'
+    | 'outline'
+    | 'ghost'
+    | 'secondary'
+    | 'destructive'
+    | 'link'
   /** Size forwarded to Button */
   size?: 'default' | 'sm' | 'lg' | 'icon'
   className?: string

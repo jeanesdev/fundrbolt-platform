@@ -22,10 +22,10 @@ class LabelSize(str, Enum):
     def css_dimensions(self) -> str:
         """Return CSS page dimensions for this label size."""
         return {
-            LabelSize.TWO_BY_THREE: "50.8mm 76.2mm",
-            LabelSize.TWO_BY_FOUR: "50.8mm 101.6mm",
+            LabelSize.TWO_BY_THREE: "76.2mm 50.8mm",  # landscape
+            LabelSize.TWO_BY_FOUR: "101.6mm 50.8mm",  # landscape
             LabelSize.THREE_BY_THREE: "76.2mm 76.2mm",
-            LabelSize.THREE_BY_FIVE: "76.2mm 127mm",
+            LabelSize.THREE_BY_FIVE: "127mm 76.2mm",  # landscape
             LabelSize.TENT_8_5X11: "11in 8.5in",  # landscape — short-side fold
             LabelSize.TENT_8_5X11_LONG: "8.5in 11in",  # portrait  — long-side fold
             LabelSize.TENT_8_5X11_2UP: "11in 8.5in",
@@ -79,4 +79,8 @@ class BidCardRequest(BaseModel):
     show_min_bid_increment: bool = Field(
         default=False,
         description="Show the minimum bid increment on each card.",
+    )
+    show_event_logo: bool = Field(
+        default=False,
+        description="Show the event logo on each card (default on for tent sizes).",
     )

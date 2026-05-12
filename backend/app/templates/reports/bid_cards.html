@@ -4,11 +4,9 @@
 <head>
     <meta charset="UTF-8" />
     <style>
-        @page {
-            size: {{ page_size }};
-            margin: 3mm;
-        }
-
+        @page { size: {{ page_size }}; margin: {{ page_margin }}; }
+    </style>
+    <style>
         * {
             box-sizing: border-box;
             margin: 0;
@@ -93,19 +91,36 @@
             border-radius: 2px;
         }
 
-        .image-zone {
-            height: 20mm;
+        /* Image + QR side-by-side row */
+        .media-row {
             display: flex;
+            flex-direction: row;
             align-items: center;
             justify-content: center;
-            background: #f8fafc;
-            border-radius: 3px;
+            gap: 2mm;
             margin-bottom: 2mm;
         }
 
+        .media-image-wrap,
+        .media-qr-wrap {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .item-image {
-            max-height: 20mm;
             max-width: 100%;
+            max-height: 18mm;
+            width: auto;
+            height: auto;
+            display: block;
+        }
+
+        .qr-code {
+            max-width: 100%;
+            max-height: 18mm;
             width: auto;
             height: auto;
             display: block;
@@ -144,17 +159,11 @@
 
         .card-footer {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             margin-top: auto;
             padding-top: 2mm;
             border-top: 1px solid #e2e8f0;
-        }
-
-        .qr-code {
-            width: 20mm;
-            height: 20mm;
-            object-fit: contain;
         }
 
         .fundrbolt-logo {
@@ -163,6 +172,25 @@
             opacity: 0.45;
         }
     </style>
+    {% if label_size == '2x4' %}
+    <style>
+        .card { padding: 2mm; gap: 1mm; }
+        .media-row { margin-bottom: 1mm; }
+        .item-image, .qr-code { max-height: 12mm; }
+        .item-title { font-size: 9pt; }
+        .card-footer { padding-top: 1mm; }
+    </style>
+    {% endif %}
+    {% if label_size == '2x3' %}
+    <style>
+        .card { padding: 1.5mm; gap: 0.5mm; }
+        .media-row { margin-bottom: 0.5mm; }
+        .item-image, .qr-code { max-height: 10mm; }
+        .item-title { font-size: 8pt; }
+        .price-value { font-size: 8pt; }
+        .card-footer { padding-top: 0.5mm; }
+    </style>
+    {% endif %}
 </head>
 
 <body>
@@ -175,15 +203,22 @@
                 <span class="type-badge {{ card.auction_type }}">{{ card.auction_type | replace('_', ' ') | title
                     }}</span>
             </div>
-            {% if event_logo %}
+            {% if event_logo and opts.show_event_logo %}
             <img class="event-logo" src="{{ event_logo }}" alt="Event Logo" />
             {% endif %}
         </div>
 
-        {% if opts.show_image %}
-        <div class="image-zone">
-            {% if card.image_data %}
-            <img class="item-image" src="{{ card.image_data }}" alt="{{ card.title }}" />
+        {% if opts.show_image or (opts.show_qr and card.qr_b64) %}
+        <div class="media-row">
+            {% if opts.show_image and card.image_data %}
+            <div class="media-image-wrap">
+                <img class="item-image" src="{{ card.image_data }}" alt="{{ card.title }}" />
+            </div>
+            {% endif %}
+            {% if opts.show_qr and card.qr_b64 %}
+            <div class="media-qr-wrap">
+                <img class="qr-code" src="{{ card.qr_b64 }}" alt="Bid QR Code" />
+            </div>
             {% endif %}
         </div>
         {% endif %}
@@ -225,14 +260,6 @@
         {% endif %}
 
         <div class="card-footer">
-            {% if fundrbolt_logo_b64 %}
-            <img class="fundrbolt-logo" src="{{ fundrbolt_logo_b64 }}" alt="FundrBolt" />
-            {% else %}
-            <span></span>
-            {% endif %}
-            {% if opts.show_qr and card.qr_b64 %}
-            <img class="qr-code" src="{{ card.qr_b64 }}" alt="Bid QR Code" />
-            {% endif %}
         </div>
     </div>
     {% endfor %}

@@ -21,6 +21,7 @@ export interface BidCardRequest {
   show_qr?: boolean
   show_starting_bid?: boolean
   show_min_bid_increment?: boolean
+  show_event_logo?: boolean
 }
 
 const LABEL_SIZE_OPTIONS: {
@@ -84,7 +85,7 @@ class ReportService {
     const response = await apiClient.post<Blob>(
       `/admin/events/${eventId}/reports/bid-cards`,
       request,
-      { responseType: 'blob' }
+      { responseType: 'blob', timeout: 300_000 } // 5-minute timeout — image fetch + WeasyPrint
     )
     const sizeLabel = request.label_size.replace('x', '-by-')
     return {

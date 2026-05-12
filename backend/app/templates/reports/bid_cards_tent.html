@@ -4,11 +4,9 @@
 <head>
     <meta charset="UTF-8" />
     <style>
-        @page {
-            size: {{ page_size }};
-            margin: 0;
-        }
-
+        @page { size: {{ page_size }}; margin: 0; }
+    </style>
+    <style>
         * {
             box-sizing: border-box;
             margin: 0;
@@ -26,7 +24,7 @@
             background: #fff;
         }
 
-        /* ── 1-up: full page tent card ── */
+        /* ── 1-up: full-page tent card (short fold — horizontal crease) ── */
         .page-1up {
             width: 100%;
             height: 100%;
@@ -35,51 +33,147 @@
             flex-direction: column;
         }
 
-        /* Back half (upside-down mirror of front) */
-        .tent-back {
-            flex: 1;
-            display: flex;
-            flex-direction: column-reverse;
-            transform: rotate(180deg);
-            padding: 10mm 12mm 8mm;
-            border-bottom: 2px dashed #94a3b8;
-        }
-
-        /* Front half */
+        /*
+         * Each half is exactly 50% of the page.
+         * The dashed fold line lives on tent-back's border-bottom so it
+         * stays at the physical midpoint regardless of content transforms.
+         * Only .card-content inside tent-back is rotated so the back side
+         * mirrors correctly when the tent is folded and standing.
+         */
+        .tent-back,
         .tent-front {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 8mm 12mm 10mm;
-        }
-
-        /* ── 2-up: two half-page cards per sheet ── */
-        .page-2up {
-            width: 100%;
-            height: 100%;
-            page-break-after: always;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .half-card {
-            flex: 1;
+            flex: 1 1 0;
+            min-height: 0;
             display: flex;
             flex-direction: column;
             padding: 8mm 12mm;
         }
 
-        .half-card:first-child {
-            border-bottom: 2px dashed #94a3b8;
+        .tent-back {
+            border-bottom: 0.5px solid #cbd5e1;
         }
 
-        /* ── Shared card inner content ── */
+        .tent-back .card-content {
+            transform: rotate(180deg);
+        }
+
+        /* ── 1-up long fold: portrait page, fold along long (vertical) axis ── */
+        /*
+         * Portrait page (8.5"×11") folded along the long vertical centre line.
+         * Each panel is 4.25"×11" (portrait). Content is laid out in landscape
+         * (11"×4.25") and rotated to fill the panel — front face 90°CW, back
+         * face 90°CCW (mirrors front when the tent is folded and standing).
+         *
+         * Centering math: element 11in×4.25in in a 4.25in×11in container:
+         *   top  = (11 - 4.25) / 2 = 3.375in
+         *   left = (4.25 - 11) / 2 = -3.375in
+         */
+        .page-1up-long {
+            width: 100%;
+            height: 100%;
+            page-break-after: always;
+            display: flex;
+            flex-direction: row;
+        }
+
+        .tent-back-long,
+        .tent-front-long {
+            flex: 1 1 0;
+            min-width: 0;
+            position: relative;
+        }
+
+        .tent-back-long {
+            border-right: 0.5px solid #cbd5e1;
+        }
+
+        .tent-front-long .card-content {
+            position: absolute;
+            width: 11in;
+            height: 4.25in;
+            top: 3.375in;
+            left: -3.375in;
+            padding: 8mm 12mm;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            transform: rotate(-90deg);
+        }
+
+        .tent-back-long .card-content {
+            position: absolute;
+            width: 11in;
+            height: 4.25in;
+            top: 3.375in;
+            left: -3.375in;
+            padding: 8mm 12mm;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            transform: rotate(90deg);
+        }
+
+        /* ── 2-up: two tent cards side-by-side on a landscape page ── */
+        .page-2up {
+            width: 100%;
+            height: 100%;
+            page-break-after: always;
+            display: flex;
+            flex-direction: row;
+        }
+
+        /*
+         * Each column is exactly half the page width.
+         * The vertical center border separates the two items.
+         * Within each column, a horizontal fold line (col-back border-bottom)
+         * sits at the exact midpoint of the column height.
+         */
+        .tent-column {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tent-column:first-child {
+            border-right: 0.5px solid #cbd5e1;
+        }
+
+        .col-back,
+        .col-front {
+            flex: 1 1 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 8mm 10mm;
+        }
+
+        /* Dashed fold line at the vertical midpoint of each column */
+        .col-back {
+            border-bottom: 0.5px solid #cbd5e1;
+        }
+
+        /* Only the content is rotated — the border stays at the midpoint */
+        .col-back .card-content {
+            transform: rotate(180deg);
+        }
+
+        /* ── Card inner wrapper: fills half and stacks content ── */
+        .card-content {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Card header ── */
         .card-header {
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
             gap: 4mm;
-            margin-bottom: 3mm;
+            margin-bottom: 2mm;
+            flex-shrink: 0;
         }
 
         .card-header-left {
@@ -123,40 +217,45 @@
             font-weight: 800;
             color: #1a1a2e;
             line-height: 1.15;
-            margin: 2mm 0 2mm;
+            margin: 1mm 0;
         }
 
         .event-logo {
-            width: 16mm;
-            height: 16mm;
-            object-fit: contain;
+            max-width: 16mm;
+            max-height: 16mm;
+            width: auto;
+            height: auto;
             flex-shrink: 0;
             border-radius: 2px;
         }
 
+        /*
+         * Image zone grows to fill whatever vertical space remains after the
+         * fixed elements (header, pricing, footer). The image itself is
+         * capped at 65mm so it never overflows on a crowded card.
+         */
         .image-zone {
-            height: 45mm;
+            flex: 1;
+            min-height: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f8fafc;
-            border-radius: 4px;
             margin-bottom: 3mm;
         }
 
         .item-image {
-            max-height: 45mm;
             max-width: 100%;
+            max-height: 65mm;
             width: auto;
             height: auto;
             display: block;
-            margin: auto;
         }
 
         .pricing {
             display: flex;
             gap: 8mm;
             margin-bottom: 2mm;
+            flex-shrink: 0;
         }
 
         .price-item {
@@ -186,21 +285,21 @@
             font-size: 8pt;
             color: #64748b;
             margin-bottom: 2mm;
+            flex-shrink: 0;
         }
 
         .card-footer {
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            margin-top: auto;
             padding-top: 3mm;
             border-top: 1px solid #e2e8f0;
+            flex-shrink: 0;
         }
 
         .qr-code {
-            width: 28mm;
-            height: 28mm;
-            object-fit: contain;
+            width: 24mm;
+            height: 24mm;
         }
 
         .fundrbolt-logo {
@@ -213,76 +312,85 @@
 
 <body>
 
-{% macro card_inner(card) %}
-    <div class="card-header">
-        <div class="card-header-left">
-            {% if card.bid_number %}<div class="lot-number">Lot #{{ card.bid_number }}</div>{% endif %}
-            <div class="item-title">{{ card.title }}</div>
-            <span class="type-badge {{ card.auction_type }}">{{ card.auction_type | replace('_', ' ') | title }}</span>
+    {% macro card_inner(card) %}
+    <div class="card-content">
+        <div class="card-header">
+            <div class="card-header-left">
+                {% if card.bid_number %}<div class="lot-number">Lot #{{ card.bid_number }}</div>{% endif %}
+                <div class="item-title">{{ card.title }}</div>
+                <span class="type-badge {{ card.auction_type }}">{{ card.auction_type | replace('_', ' ') | title
+                    }}</span>
+            </div>
+            {% if event_logo and opts.show_event_logo %}
+            <img class="event-logo" src="{{ event_logo }}" alt="Event Logo" />
+            {% endif %}
         </div>
-        {% if event_logo %}
-        <img class="event-logo" src="{{ event_logo }}" alt="Event Logo" />
-        {% endif %}
-    </div>
 
-    {% if opts.show_image %}
-    <div class="image-zone">
-        {% if card.image_data %}
-        <img class="item-image" src="{{ card.image_data }}" alt="{{ card.title }}" />
+        {% if opts.show_image and card.image_data %}
+        <div class="image-zone">
+            <img class="item-image" src="{{ card.image_data }}" alt="{{ card.title }}" />
+        </div>
         {% endif %}
-    </div>
-    {% endif %}
 
-    {% if opts.show_starting_bid or opts.show_value %}
-    <div class="pricing">
-        {% if opts.show_starting_bid and card.starting_bid is not none %}
-        <div class="price-item">
-            <div class="price-label">Starting Bid</div>
-            <div class="price-value">${{ "{:,.0f}".format(card.starting_bid) }}</div>
-            {% if opts.show_min_bid_increment %}
-            <div class="price-sub">+${{ "{:,.0f}".format(card.bid_increment) }} min increment</div>
+        {% if opts.show_starting_bid or opts.show_value %}
+        <div class="pricing">
+            {% if opts.show_starting_bid and card.starting_bid is not none %}
+            <div class="price-item">
+                <div class="price-label">Starting Bid</div>
+                <div class="price-value">${{ "{:,.0f}".format(card.starting_bid) }}</div>
+                {% if opts.show_min_bid_increment %}
+                <div class="price-sub">+${{ "{:,.0f}".format(card.bid_increment) }} min increment</div>
+                {% endif %}
+            </div>
+            {% elif opts.show_min_bid_increment %}
+            <div class="price-item">
+                <div class="price-label">Min Increment</div>
+                <div class="price-value">${{ "{:,.0f}".format(card.bid_increment) }}</div>
+            </div>
+            {% endif %}
+            {% if opts.show_value and card.donor_value is not none %}
+            <div class="price-item">
+                <div class="price-label">Value</div>
+                <div class="price-value">${{ "{:,.0f}".format(card.donor_value) }}</div>
+            </div>
             {% endif %}
         </div>
         {% elif opts.show_min_bid_increment %}
-        <div class="price-item">
-            <div class="price-label">Min Increment</div>
-            <div class="price-value">${{ "{:,.0f}".format(card.bid_increment) }}</div>
+        <div class="pricing">
+            <div class="price-item">
+                <div class="price-label">Min Increment</div>
+                <div class="price-value">${{ "{:,.0f}".format(card.bid_increment) }}</div>
+            </div>
         </div>
         {% endif %}
-        {% if opts.show_value and card.donor_value is not none %}
-        <div class="price-item">
-            <div class="price-label">Value</div>
-            <div class="price-value">${{ "{:,.0f}".format(card.donor_value) }}</div>
-        </div>
+
+        {% if card.donated_by %}
+        <div class="donated-by">Donated by {{ card.donated_by }}</div>
         {% endif %}
-    </div>
-    {% elif opts.show_min_bid_increment %}
-    <div class="pricing">
-        <div class="price-item">
-            <div class="price-label">Min Increment</div>
-            <div class="price-value">${{ "{:,.0f}".format(card.bid_increment) }}</div>
+
+        <div class="card-footer">
+            {% if opts.show_qr and card.qr_b64 %}
+            <img class="qr-code" src="{{ card.qr_b64 }}" alt="Bid QR Code" />
+            {% endif %}
         </div>
     </div>
-    {% endif %}
+    {% endmacro %}
 
-    {% if card.donated_by %}
-    <div class="donated-by">Donated by {{ card.donated_by }}</div>
-    {% endif %}
-
-    <div class="card-footer">
-        {% if fundrbolt_logo_b64 %}
-        <img class="fundrbolt-logo" src="{{ fundrbolt_logo_b64 }}" alt="FundrBolt" />
-        {% else %}
-        <span></span>
-        {% endif %}
-        {% if opts.show_qr and card.qr_b64 %}
-        <img class="qr-code" src="{{ card.qr_b64 }}" alt="Bid QR Code" />
-        {% endif %}
+    {% if cards_per_page == 1 %}
+    {% if is_long_fold %}
+    {# ── 1-up long fold: portrait page, vertical crease, left=back (rotated) / right=front ── #}
+    {% for card in cards %}
+    <div class="page-1up-long">
+        <div class="tent-back-long">
+            {{ card_inner(card) }}
+        </div>
+        <div class="tent-front-long">
+            {{ card_inner(card) }}
+        </div>
     </div>
-{% endmacro %}
-
-{% if cards_per_page == 1 %}
-    {# ── 1-up: full-page tent with front + mirrored back ── #}
+    {% endfor %}
+    {% else %}
+    {# ── 1-up short fold: landscape page, horizontal crease, top=back (rotated) / bottom=front ── #}
     {% for card in cards %}
     <div class="page-1up">
         <div class="tent-back">
@@ -293,23 +401,28 @@
         </div>
     </div>
     {% endfor %}
-{% else %}
-    {# ── 2-up: two half-page cards per sheet (cut along dashed line) ── #}
+    {% endif %}
+    {% else %}
+    {# ── 2-up: two tent cards side-by-side on a landscape page ── #}
+    {# Vertical line separates items; each column has its own horizontal fold #}
     {% for i in range(0, cards|length, 2) %}
     <div class="page-2up">
-        <div class="half-card">
-            {{ card_inner(cards[i]) }}
+        <div class="tent-column">
+            <div class="col-back">{{ card_inner(cards[i]) }}</div>
+            <div class="col-front">{{ card_inner(cards[i]) }}</div>
         </div>
-        {% if i + 1 < cards|length %}
-        <div class="half-card">
-            {{ card_inner(cards[i + 1]) }}
-        </div>
+        <div class="tent-column">
+            {% if i + 1 < cards|length %} <div class="col-back">{{ card_inner(cards[i + 1]) }}</div>
+        <div class="col-front">{{ card_inner(cards[i + 1]) }}</div>
         {% else %}
-        <div class="half-card"></div>
+        <div class="col-back"></div>
+        <div class="col-front"></div>
         {% endif %}
     </div>
+    </div>
     {% endfor %}
-{% endif %}
+    {% endif %}
 
 </body>
+
 </html>

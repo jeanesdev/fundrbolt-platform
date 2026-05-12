@@ -38,7 +38,14 @@ interface BidCardOptions {
   showQr: boolean
   showStartingBid: boolean
   showMinBidIncrement: boolean
+  showEventLogo: boolean
 }
+
+const TENT_SIZES: LabelSize[] = [
+  'tent-8.5x11',
+  'tent-8.5x11-long',
+  'tent-8.5x11-2up',
+]
 
 const DEFAULT_OPTIONS: BidCardOptions = {
   includeLive: false,
@@ -47,6 +54,7 @@ const DEFAULT_OPTIONS: BidCardOptions = {
   showQr: true,
   showStartingBid: true,
   showMinBidIncrement: false,
+  showEventLogo: false,
 }
 
 export function BidCardSizeDialog({
@@ -60,6 +68,12 @@ export function BidCardSizeDialog({
 
   const toggle = (key: keyof BidCardOptions) =>
     setOptions((prev) => ({ ...prev, [key]: !prev[key] }))
+
+  const handleSizeChange = (size: LabelSize) => {
+    setLabelSize(size)
+    // Auto-set event logo default based on whether the new size is a tent
+    setOptions((prev) => ({ ...prev, showEventLogo: TENT_SIZES.includes(size) }))
+  }
 
   const count = selectedItemIds?.length ?? 0
   const selectionLabel =
@@ -76,6 +90,7 @@ export function BidCardSizeDialog({
       show_qr: options.showQr,
       show_starting_bid: options.showStartingBid,
       show_min_bid_increment: options.showMinBidIncrement,
+      show_event_logo: options.showEventLogo,
     })
     onClose()
   }
@@ -101,7 +116,7 @@ export function BidCardSizeDialog({
             <button
               key={opt.value}
               type='button'
-              onClick={() => setLabelSize(opt.value)}
+              onClick={() => handleSizeChange(opt.value)}
               className={[
                 'rounded-lg border-2 p-3 text-left transition-colors',
                 labelSize === opt.value
@@ -121,7 +136,7 @@ export function BidCardSizeDialog({
 
         {/* Card content options */}
         <div className='space-y-2.5'>
-          <p className='text-muted-foreground text-xs font-medium uppercase tracking-wide'>
+          <p className='text-muted-foreground text-xs font-medium tracking-wide uppercase'>
             Card Content
           </p>
           <CheckboxRow
@@ -159,6 +174,12 @@ export function BidCardSizeDialog({
             label='Include QR code'
             checked={options.showQr}
             onToggle={() => toggle('showQr')}
+          />
+          <CheckboxRow
+            id='opt-event-logo'
+            label='Show event logo'
+            checked={options.showEventLogo}
+            onToggle={() => toggle('showEventLogo')}
           />
         </div>
 

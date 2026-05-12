@@ -1,12 +1,12 @@
+import { useRef, useState } from 'react'
+import type { ScenarioType, SegmentType } from '@/services/event-dashboard'
+import { reportService } from '@/services/reportService'
+import { FileText } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ChecklistSummaryCard } from '@/features/events/components/ChecklistSummaryCard'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
-import type { ScenarioType, SegmentType } from '@/services/event-dashboard'
-import { reportService } from '@/services/reportService'
-import { FileText } from 'lucide-react'
-import { useRef, useState } from 'react'
-import { toast } from 'sonner'
 import { AlertCards } from '../components/AlertCards'
 import { CashflowTimeline } from '../components/CashflowTimeline'
 import { LastRefreshed } from '../components/LastRefreshed'
@@ -64,8 +64,7 @@ export function EventDashboardPage() {
       .catch((err: unknown) => {
         toast.error('Report generation failed', {
           id: reportToastId.current,
-          description:
-            err instanceof Error ? err.message : 'Please try again.',
+          description: err instanceof Error ? err.message : 'Please try again.',
         })
       })
   }

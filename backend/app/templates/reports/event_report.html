@@ -262,9 +262,17 @@
             border-radius: 4px;
         }
 
-        .progress-fill-green { background: #16a34a; }
-        .progress-fill-yellow { background: #f59e0b; }
-        .progress-fill-red { background: #dc2626; }
+        .progress-fill-green {
+            background: #16a34a;
+        }
+
+        .progress-fill-yellow {
+            background: #f59e0b;
+        }
+
+        .progress-fill-red {
+            background: #dc2626;
+        }
 
         /* Status badge */
         .badge {
@@ -275,11 +283,30 @@
             font-weight: 600;
         }
 
-        .badge-green { background: #dcfce7; color: #16a34a; }
-        .badge-yellow { background: #fef9c3; color: #b45309; }
-        .badge-red { background: #fee2e2; color: #dc2626; }
-        .badge-gray { background: #f1f5f9; color: #64748b; }
-        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-green {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .badge-yellow {
+            background: #fef9c3;
+            color: #b45309;
+        }
+
+        .badge-red {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .badge-gray {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .badge-blue {
+            background: #dbeafe;
+            color: #1e40af;
+        }
 
         /* Footer */
         .footer {
@@ -504,7 +531,8 @@
 
     {% if chart_registrant or seg_registrant %}
     <h2>Leaderboard by Registrant</h2>
-    {% if chart_registrant %}<img class="chart-img" src="{{ chart_registrant }}" alt="Registrant Leaderboard" />{% endif %}
+    {% if chart_registrant %}<img class="chart-img" src="{{ chart_registrant }}" alt="Registrant Leaderboard" />{% endif
+    %}
     {% if seg_registrant %}
     <table>
         <thead>
@@ -699,7 +727,8 @@
                 <td>{{ item.title }}</td>
                 <td>{{ item.auction_type }}</td>
                 <td>{{ item.category }}</td>
-                <td class="amount">{% if item.current_bid is not none %}${{ "{:,.2f}".format(item.current_bid) }}{% else %}—{% endif %}</td>
+                <td class="amount">{% if item.current_bid is not none %}${{ "{:,.2f}".format(item.current_bid) }}{% else
+                    %}—{% endif %}</td>
                 <td class="amount">{{ item.bid_count }}</td>
                 <td class="amount">{{ item.watcher_count }}</td>
                 <td>{{ item.status }}</td>
@@ -779,7 +808,10 @@
         <div class="kpi-card">
             <div class="kpi-label">Progress</div>
             <div class="kpi-value">{{ checklist_progress_pct }}%</div>
-            <div class="progress-bar-bg"><div class="progress-bar-fill {% if checklist_progress_pct|int >= 80 %}progress-fill-green{% elif checklist_progress_pct|int >= 50 %}progress-fill-yellow{% else %}progress-fill-red{% endif %}" style="width:{{ checklist_progress_pct }}%"></div></div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill {% if checklist_progress_pct|int >= 80 %}progress-fill-green{% elif checklist_progress_pct|int >= 50 %}progress-fill-yellow{% else %}progress-fill-red{% endif %}"
+                    style="width:{{ checklist_progress_pct }}%"></div>
+            </div>
         </div>
     </div>
     <table>
@@ -792,8 +824,9 @@
         </thead>
         <tbody>
             {% for item in checklist_items %}
-            <tr{% if item.is_overdue %} style="background:#fff1f2"{% endif %}>
-                <td>{{ item.title }}{% if item.is_overdue %} <span class="badge badge-red">Overdue</span>{% endif %}</td>
+            <tr{% if item.is_overdue %} style="background:#fff1f2" {% endif %}>
+                <td>{{ item.title }}{% if item.is_overdue %} <span class="badge badge-red">Overdue</span>{% endif %}
+                </td>
                 <td style="white-space:nowrap">{{ item.due_date }}</td>
                 <td>
                     {% if item.status == 'Completed' %}<span class="badge badge-green">{{ item.status }}</span>
@@ -802,8 +835,8 @@
                     {% else %}<span class="badge badge-gray">{{ item.status }}</span>
                     {% endif %}
                 </td>
-            </tr>
-            {% endfor %}
+                </tr>
+                {% endfor %}
         </tbody>
     </table>
     {% endif %}

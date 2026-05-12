@@ -1,5 +1,30 @@
-import { BidderAvatar } from '@/components/bidder-avatar'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
+import { auctioneerService } from '@/services/auctioneerService'
+import { reportService } from '@/services/reportService'
+import { getAuctioneerRunOfShow } from '@/services/runOfShowService'
+import {
+  ArrowUpDown,
+  CalendarClock,
+  CircleDollarSign,
+  Clock,
+  Coins,
+  Download,
+  Eye,
+  EyeOff,
+  FileText,
+  Filter,
+  Gavel,
+  HandCoins,
+  Image as ImageIcon,
+  Pin,
+  PinOff,
+  Target,
+  Timer,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -31,35 +56,10 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { BidderAvatar } from '@/components/bidder-avatar'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { RGAuctioneerTab } from '@/features/revenue-generators'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { auctioneerService } from '@/services/auctioneerService'
-import { reportService } from '@/services/reportService'
-import { getAuctioneerRunOfShow } from '@/services/runOfShowService'
-import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import {
-  ArrowUpDown,
-  CalendarClock,
-  CircleDollarSign,
-  Clock,
-  Coins,
-  Download,
-  Eye,
-  EyeOff,
-  FileText,
-  Filter,
-  Gavel,
-  HandCoins,
-  Image as ImageIcon,
-  Pin,
-  PinOff,
-  Target,
-  Timer,
-} from 'lucide-react'
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
-import { toast } from 'sonner'
 import { EventMapCard } from '../components/EventMapCard'
 import { RosCountdownBadge } from '../components/RosCountdownBadge'
 import { RunOfShowCard } from '../components/RunOfShowCard'
@@ -285,8 +285,7 @@ export function AuctioneerDashboardPage({
       .catch((err: unknown) => {
         toast.error('Report generation failed', {
           id: reportToastId.current,
-          description:
-            err instanceof Error ? err.message : 'Please try again.',
+          description: err instanceof Error ? err.message : 'Please try again.',
         })
       })
   }

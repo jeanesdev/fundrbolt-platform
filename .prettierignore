@@ -5,3 +5,5 @@ coverage/
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+# Jinja2 templates — Prettier mangles {{ }} expressions
+backend/app/templates/
