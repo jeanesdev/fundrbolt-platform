@@ -23,7 +23,7 @@ param repositoryUrl string = 'https://github.com/jeanesdev/fundrbolt-platform'
 @description('GitHub branch')
 param branch string = 'main'
 
-@description('SKU override. When empty, uses environment-based default (Standard for production, Free otherwise). Use \"Free\" for cost-constrained environments.')
+@description('SKU override. When empty, uses environment-based default (Standard for production, Free otherwise). Use Free for cost-constrained beta environments.')
 param skuOverride string = ''
 
 // SKU configuration based on environment (can be overridden)
