@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react'
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { AxiosError } from 'axios'
@@ -18,6 +19,17 @@ import { ThemeProvider } from './context/theme-provider'
 import { routeTree } from './routeTree.gen'
 // Styles
 import './styles/index.css'
+
+// Initialise Sentry error tracking (only when DSN is configured)
+if (import.meta.env.VITE_SENTRY_DSN) {
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN as string,
+    environment: (import.meta.env.VITE_ENVIRONMENT as string) ?? 'development',
+    integrations: [Sentry.browserTracingIntegration()],
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+  })
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {

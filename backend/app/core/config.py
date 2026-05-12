@@ -113,6 +113,10 @@ class Settings(BaseSettings):
     receipts_blob_container: str = "payment-receipts"
     stub_hpf_base_url: str = "http://localhost:8000"
 
+    # Error Tracking (Sentry)
+    sentry_dsn: str = ""
+    sentry_traces_sample_rate: float = 0.1
+
     def get_cors_origins_list(self) -> list[str]:
         """Parse CORS origins from comma-separated string."""
         parsed_origins = [
