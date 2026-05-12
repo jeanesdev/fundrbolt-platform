@@ -1,9 +1,9 @@
+import { useNavigate } from '@tanstack/react-router'
+import type { CommissionListItem } from '@/services/auctioneerService'
+import { Image } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
-import type { CommissionListItem } from '@/services/auctioneerService'
-import { useNavigate } from '@tanstack/react-router'
-import { Image } from 'lucide-react'
 
 interface CommissionGalleryProps {
   commissions: CommissionListItem[]
@@ -39,9 +39,7 @@ export function CommissionGallery({ commissions }: CommissionGalleryProps) {
           item.donor_value == null ? null : Number(item.donor_value)
         const commissionPercent = Number(item.commission_percent)
         const earning =
-          saleAmount != null
-            ? (saleAmount * commissionPercent) / 100
-            : null
+          saleAmount != null ? (saleAmount * commissionPercent) / 100 : null
 
         return (
           <Card

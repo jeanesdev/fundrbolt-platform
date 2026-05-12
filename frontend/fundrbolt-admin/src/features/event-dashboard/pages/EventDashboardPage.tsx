@@ -1,5 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { ScenarioType, SegmentType } from '@/services/event-dashboard'
+import { reportService } from '@/services/reportService'
+import { FileText } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ChecklistSummaryCard } from '@/features/events/components/ChecklistSummaryCard'
@@ -27,6 +30,44 @@ export function EventDashboardPage() {
   const { currentEvent } = useEventWorkspace()
   const [scenario, setScenario] = useState<ScenarioType>('base')
   const [segmentType, setSegmentType] = useState<SegmentType>('guest')
+  const reportToastId = useRef<string | number>('event-dashboard-report')
+
+  const requestReport = () => {
+    toast.loading('Generating Event Report…', {
+      id: reportToastId.current,
+      duration: Infinity,
+      description: 'This may take a moment.',
+    })
+
+    reportService
+      .fetchEventReportBlob(currentEvent.id)
+      .then((blob) => {
+        const blobUrl = URL.createObjectURL(blob)
+        const filename = `event-report-${currentEvent.slug || currentEvent.id}.pdf`
+
+        toast.success('Event Report Ready', {
+          id: reportToastId.current,
+          duration: Infinity,
+          description: 'Your event summary report is ready.',
+          action: {
+            label: 'Download PDF',
+            onClick: () => {
+              const link = document.createElement('a')
+              link.href = blobUrl
+              link.download = filename
+              link.click()
+              URL.revokeObjectURL(blobUrl)
+            },
+          },
+        })
+      })
+      .catch((err: unknown) => {
+        toast.error('Report generation failed', {
+          id: reportToastId.current,
+          description: err instanceof Error ? err.message : 'Please try again.',
+        })
+      })
+  }
 
   const summaryQuery = useEventDashboard(currentEvent.id, scenario)
   const projectionsQuery = useEventDashboardProjections(
@@ -65,20 +106,31 @@ export function EventDashboardPage() {
 
   return (
     <div className='space-y-6'>
-      <div className='flex flex-wrap items-center justify-between gap-3'>
+      <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <ScenarioToggle value={scenario} onChange={setScenario} />
-        <div className='flex items-center gap-2'>
-          <Button
-            type='button'
-            variant='outline'
-            onClick={() => {
-              void summaryQuery.refetch()
-              void projectionsQuery.refetch()
-              void segmentsQuery.refetch()
-            }}
-          >
-            Refresh
-          </Button>
+        <div className='flex flex-wrap items-center justify-between gap-2 sm:justify-end'>
+          <div className='flex items-center gap-2'>
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              onClick={requestReport}
+            >
+              <FileText className='mr-1.5 h-4 w-4' />
+              Download Report
+            </Button>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => {
+                void summaryQuery.refetch()
+                void projectionsQuery.refetch()
+                void segmentsQuery.refetch()
+              }}
+            >
+              Refresh
+            </Button>
+          </div>
           <LastRefreshed timestamp={summary.last_refreshed_at} />
         </div>
       </div>

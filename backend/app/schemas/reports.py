@@ -1,0 +1,86 @@
+"""Schemas for printable report generation."""
+
+from __future__ import annotations
+
+from enum import Enum
+
+from pydantic import BaseModel, Field
+
+
+class LabelSize(str, Enum):
+    """Brady label printer size options and tent card formats."""
+
+    TWO_BY_THREE = "2x3"
+    TWO_BY_FOUR = "2x4"
+    THREE_BY_THREE = "3x3"
+    THREE_BY_FIVE = "3x5"
+    TENT_8_5X11 = "tent-8.5x11"
+    TENT_8_5X11_LONG = "tent-8.5x11-long"
+    TENT_8_5X11_2UP = "tent-8.5x11-2up"
+
+    @property
+    def css_dimensions(self) -> str:
+        """Return CSS page dimensions for this label size."""
+        return {
+            LabelSize.TWO_BY_THREE: "76.2mm 50.8mm",  # landscape
+            LabelSize.TWO_BY_FOUR: "101.6mm 50.8mm",  # landscape
+            LabelSize.THREE_BY_THREE: "76.2mm 76.2mm",
+            LabelSize.THREE_BY_FIVE: "127mm 76.2mm",  # landscape
+            LabelSize.TENT_8_5X11: "11in 8.5in",  # landscape — short-side fold
+            LabelSize.TENT_8_5X11_LONG: "8.5in 11in",  # portrait  — long-side fold
+            LabelSize.TENT_8_5X11_2UP: "11in 8.5in",
+        }[self]
+
+    @property
+    def is_tent(self) -> bool:
+        """Return True if this is a tent-card format (uses tent template)."""
+        return self in (
+            LabelSize.TENT_8_5X11,
+            LabelSize.TENT_8_5X11_LONG,
+            LabelSize.TENT_8_5X11_2UP,
+        )
+
+    @property
+    def cards_per_page(self) -> int:
+        """Return number of items rendered per page."""
+        return 2 if self == LabelSize.TENT_8_5X11_2UP else 1
+
+
+class BidCardRequest(BaseModel):
+    """Request body for bid card PDF generation."""
+
+    item_ids: list[str] | None = Field(
+        default=None,
+        description="Auction item IDs to include. Omit or null for all published items.",
+    )
+    label_size: LabelSize = Field(
+        description="Brady-compatible label size for the printed cards.",
+    )
+    include_live: bool = Field(
+        default=True,
+        description="Include live auction items (in addition to silent items).",
+    )
+    show_image: bool = Field(
+        default=True,
+        description="Embed item image on each card.",
+    )
+    show_value: bool = Field(
+        default=True,
+        description="Show donor value on each card (suppressed when value is 0).",
+    )
+    show_qr: bool = Field(
+        default=True,
+        description="Print QR code linking to the donor bidding page.",
+    )
+    show_starting_bid: bool = Field(
+        default=True,
+        description="Show the starting bid on each card.",
+    )
+    show_min_bid_increment: bool = Field(
+        default=False,
+        description="Show the minimum bid increment on each card.",
+    )
+    show_event_logo: bool = Field(
+        default=False,
+        description="Show the event logo on each card (default on for tent sizes).",
+    )

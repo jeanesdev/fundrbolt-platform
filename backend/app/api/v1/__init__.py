@@ -20,6 +20,7 @@ from app.api.v1 import (
     admin_payments,
     admin_quick_entry,
     admin_registration_import,
+    admin_reports,
     admin_revenue_generators,
     admin_run_of_show,
     admin_seating,
@@ -155,5 +156,8 @@ api_router.include_router(donor_revenue_generators.router, tags=["donor-revenue-
 api_router.include_router(admin_run_of_show.router, tags=["admin-run-of-show"])
 api_router.include_router(donor_run_of_show.router, tags=["donor-run-of-show"])
 api_router.include_router(auctioneer_run_of_show.router, tags=["auctioneer-run-of-show"])
+
+# Feature 045: Printable Reports
+api_router.include_router(admin_reports.router)
 
 __all__ = ["api_router"]

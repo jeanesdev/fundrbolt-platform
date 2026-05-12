@@ -2,13 +2,14 @@
  * AuctionItemsIndexPage
  * Page for listing all auction items for an event
  */
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
+import { reportService, type BidCardRequest } from '@/services/reportService'
 import revenueGeneratorService, {
   type RGItem,
 } from '@/services/revenueGeneratorService'
 import { AuctionType, type AuctionItem } from '@/types/auction-item'
-import { Plus, Search, X } from 'lucide-react'
+import { Download, Loader2, Plus, Printer, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuctionItemStore } from '@/stores/auctionItemStore'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { BidCardSizeDialog } from '@/components/reports/BidCardSizeDialog'
 import { AuctionItemList } from '@/features/events/components/AuctionItemList'
 import { RevenueGeneratorItemCard } from '@/features/events/components/RevenueGeneratorItemCard'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
@@ -52,6 +54,56 @@ export function AuctionItemsIndexPage() {
   const [rgItems, setRgItems] = useState<RGItem[]>([])
   const [rgLoading, setRgLoading] = useState(false)
   const [showCreateRG, setShowCreateRG] = useState(false)
+  const [showBidCardDialog, setShowBidCardDialog] = useState(false)
+
+  // Bid card background generation state
+  type BidCardGenState =
+    | 'idle'
+    | 'generating'
+    | { url: string; filename: string }
+  const [bidCardGenState, setBidCardGenState] =
+    useState<BidCardGenState>('idle')
+  const bidCardUrlRef = useRef<string | null>(null)
+
+  // Revoke object URL on unmount to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (bidCardUrlRef.current) URL.revokeObjectURL(bidCardUrlRef.current)
+    }
+  }, [])
+
+  const handleBidCardGenerate = useCallback(
+    (request: BidCardRequest) => {
+      setBidCardGenState('generating')
+      reportService
+        .generateBidCardsBlob(eventId, request)
+        .then(({ blob, filename }) => {
+          const url = URL.createObjectURL(blob)
+          bidCardUrlRef.current = url
+          setBidCardGenState({ url, filename })
+        })
+        .catch((err: unknown) => {
+          setBidCardGenState('idle')
+          toast.error(
+            err instanceof Error
+              ? err.message
+              : 'Failed to generate bid cards. Please try again.'
+          )
+        })
+    },
+    [eventId]
+  )
+
+  const handleBidCardDownload = () => {
+    if (typeof bidCardGenState !== 'object') return
+    const link = document.createElement('a')
+    link.href = bidCardGenState.url
+    link.download = bidCardGenState.filename
+    link.click()
+    URL.revokeObjectURL(bidCardGenState.url)
+    bidCardUrlRef.current = null
+    setBidCardGenState('idle')
+  }
 
   const loadRGItems = useCallback(() => {
     if (!eventId) return
@@ -148,7 +200,7 @@ export function AuctionItemsIndexPage() {
   return (
     <div className='space-y-4 md:space-y-6'>
       <div className='mb-4 space-y-4 md:mb-6'>
-        <div className='flex items-center justify-between'>
+        <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
           <div>
             <h1 className='text-2xl font-bold md:text-3xl'>Auction Items</h1>
             <p className='text-muted-foreground mt-1 text-sm md:mt-2 md:text-base'>
@@ -156,10 +208,45 @@ export function AuctionItemsIndexPage() {
             </p>
           </div>
           {typeFilter !== 'revenue_generators' ? (
-            <Button onClick={handleAdd}>
-              <Plus className='mr-2 h-4 w-4' />
-              Add Item
-            </Button>
+            <div className='flex items-center gap-2'>
+              {typeof bidCardGenState === 'object' && (
+                <Button
+                  size='sm'
+                  className='bg-green-600 text-white hover:bg-green-700'
+                  onClick={handleBidCardDownload}
+                >
+                  <Download className='mr-2 h-4 w-4' />
+                  <span className='hidden sm:inline'>Download Bid Cards</span>
+                  <span className='sm:hidden'>Download</span>
+                </Button>
+              )}
+              <Button
+                size='sm'
+                variant='outline'
+                onClick={() => setShowBidCardDialog(true)}
+                disabled={bidCardGenState === 'generating'}
+              >
+                {bidCardGenState === 'generating' ? (
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                ) : (
+                  <Printer className='mr-2 h-4 w-4' />
+                )}
+                <span className='hidden sm:inline'>
+                  {bidCardGenState === 'generating'
+                    ? 'Generating…'
+                    : 'Print Bid Cards'}
+                </span>
+                <span className='sm:hidden'>
+                  {bidCardGenState === 'generating'
+                    ? 'Generating…'
+                    : 'Bid Cards'}
+                </span>
+              </Button>
+              <Button size='sm' onClick={handleAdd}>
+                <Plus className='mr-2 h-4 w-4' />
+                Add Item
+              </Button>
+            </div>
           ) : (
             <Button onClick={() => setShowCreateRG(true)}>
               <Plus className='mr-2 h-4 w-4' />
@@ -301,6 +388,15 @@ export function AuctionItemsIndexPage() {
           loadRGItems()
         }}
       />
+
+      {eventId && (
+        <BidCardSizeDialog
+          open={showBidCardDialog}
+          onClose={() => setShowBidCardDialog(false)}
+          eventId={eventId}
+          onStartGeneration={handleBidCardGenerate}
+        />
+      )}
     </div>
   )
 }

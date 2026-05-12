@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <style>
+        @page { size: {{ page_size }}; margin: {{ page_margin }}; }
+    </style>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 8pt;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 3mm;
+            display: flex;
+            flex-direction: column;
+            gap: 2mm;
+            page-break-after: always;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 2mm;
+        }
+
+        .card-header-left {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .lot-number {
+            font-size: 7pt;
+            color: #64748b;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .type-badge {
+            display: inline-block;
+            font-size: 6pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 1px 4px;
+            border-radius: 3px;
+            background: #dbeafe;
+            color: #1e40af;
+            white-space: nowrap;
+        }
+
+        .type-badge.live {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .type-badge.paddle_raise {
+            background: #fce7f3;
+            color: #9d174d;
+        }
+
+        .item-title {
+            font-size: 10pt;
+            font-weight: 700;
+            color: #1a1a2e;
+            line-height: 1.2;
+        }
+
+        .event-logo {
+            width: 12mm;
+            height: 12mm;
+            object-fit: contain;
+            flex-shrink: 0;
+            border-radius: 2px;
+        }
+
+        /* Image + QR side-by-side row */
+        .media-row {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 2mm;
+            margin-bottom: 2mm;
+        }
+
+        .media-image-wrap,
+        .media-qr-wrap {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-image {
+            max-width: 100%;
+            max-height: 18mm;
+            width: auto;
+            height: auto;
+            display: block;
+        }
+
+        .qr-code {
+            max-width: 100%;
+            max-height: 18mm;
+            width: auto;
+            height: auto;
+            display: block;
+        }
+
+        .pricing {
+            display: flex;
+            gap: 4mm;
+        }
+
+        .price-item {
+            flex: 1;
+        }
+
+        .price-label {
+            font-size: 6pt;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .price-value {
+            font-size: 10pt;
+            font-weight: 700;
+            color: #2563eb;
+        }
+
+        .price-sub {
+            font-size: 7pt;
+            color: #475569;
+        }
+
+        .donated-by {
+            font-size: 7pt;
+            color: #64748b;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: auto;
+            padding-top: 2mm;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .fundrbolt-logo {
+            height: 8pt;
+            width: auto;
+            opacity: 0.45;
+        }
+    </style>
+    {% if label_size == '2x4' %}
+    <style>
+        .card { padding: 2mm; gap: 1mm; }
+        .media-row { margin-bottom: 1mm; }
+        .item-image, .qr-code { max-height: 12mm; }
+        .item-title { font-size: 9pt; }
+        .card-footer { padding-top: 1mm; }
+    </style>
+    {% endif %}
+    {% if label_size == '2x3' %}
+    <style>
+        .card { padding: 1.5mm; gap: 0.5mm; }
+        .media-row { margin-bottom: 0.5mm; }
+        .item-image, .qr-code { max-height: 10mm; }
+        .item-title { font-size: 8pt; }
+        .price-value { font-size: 8pt; }
+        .card-footer { padding-top: 0.5mm; }
+    </style>
+    {% endif %}
+</head>
+
+<body>
+    {% for card in cards %}
+    <div class="card">
+        <div class="card-header">
+            <div class="card-header-left">
+                {% if card.bid_number %}<div class="lot-number">Lot #{{ card.bid_number }}</div>{% endif %}
+                <div class="item-title">{{ card.title }}</div>
+                <span class="type-badge {{ card.auction_type }}">{{ card.auction_type | replace('_', ' ') | title
+                    }}</span>
+            </div>
+            {% if event_logo and opts.show_event_logo %}
+            <img class="event-logo" src="{{ event_logo }}" alt="Event Logo" />
+            {% endif %}
+        </div>
+
+        {% if opts.show_image or (opts.show_qr and card.qr_b64) %}
+        <div class="media-row">
+            {% if opts.show_image and card.image_data %}
+            <div class="media-image-wrap">
+                <img class="item-image" src="{{ card.image_data }}" alt="{{ card.title }}" />
+            </div>
+            {% endif %}
+            {% if opts.show_qr and card.qr_b64 %}
+            <div class="media-qr-wrap">
+                <img class="qr-code" src="{{ card.qr_b64 }}" alt="Bid QR Code" />
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if opts.show_starting_bid or opts.show_value %}
+        <div class="pricing">
+            {% if opts.show_starting_bid and card.starting_bid is not none %}
+            <div class="price-item">
+                <div class="price-label">Starting Bid</div>
+                <div class="price-value">${{ "{:,.0f}".format(card.starting_bid) }}</div>
+                {% if opts.show_min_bid_increment %}
+                <div class="price-sub">+${{ "{:,.0f}".format(card.bid_increment) }} min increment</div>
+                {% endif %}
+            </div>
+            {% elif opts.show_min_bid_increment %}
+            <div class="price-item">
+                <div class="price-label">Min Increment</div>
+                <div class="price-value">${{ "{:,.0f}".format(card.bid_increment) }}</div>
+            </div>
+            {% endif %}
+            {% if opts.show_value and card.donor_value is not none %}
+            <div class="price-item">
+                <div class="price-label">Value</div>
+                <div class="price-value">${{ "{:,.0f}".format(card.donor_value) }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% elif opts.show_min_bid_increment %}
+        <div class="pricing">
+            <div class="price-item">
+                <div class="price-label">Min Increment</div>
+                <div class="price-value">${{ "{:,.0f}".format(card.bid_increment) }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if card.donated_by %}
+        <div class="donated-by">Donated by {{ card.donated_by }}</div>
+        {% endif %}
+
+        <div class="card-footer">
+        </div>
+    </div>
+    {% endfor %}
+</body>
+
+</html>
