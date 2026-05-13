@@ -48,7 +48,7 @@ echo "   Tenant:   $TENANT_ID"
 # ── Persist state ─────────────────────────────────────────────────────────
 cat > "$STATE_FILE" <<EOF
 SUBSCRIPTION_ID=$SUB_ID
-SUBSCRIPTION_NAME=$SUB_NAME
+SUBSCRIPTION_NAME="$SUB_NAME"
 TENANT_ID=$TENANT_ID
 EOF
 echo ""

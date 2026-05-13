@@ -288,52 +288,17 @@ module beatApp './modules/container-app.bicep' = {
 }
 
 // ── Key Vault RBAC: grant all three container apps secret read access ───────
-// Reference the deployed Key Vault to scope role assignments to the resource (least-privilege).
-resource keyVaultResource 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-  name: keyVaultName
+// Role assignments scoped to a resource must live in a resource-group-scope module.
+module kvRbac './modules/kv-rbac.bicep' = {
+  name: 'kvRbac'
   scope: az.resourceGroup(resourceGroupName)
-}
-
-resource apiKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.outputs.keyVaultId, apiApp.outputs.principalId, 'kv-secrets-user')
-  scope: keyVaultResource
-  properties: {
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      '4633458b-17de-408a-b874-0445c86b69e6'
-    )
-    principalId: apiApp.outputs.principalId
-    principalType: 'ServicePrincipal'
+  params: {
+    keyVaultName: keyVaultName
+    apiPrincipalId: apiApp.outputs.principalId
+    workerPrincipalId: workerApp.outputs.principalId
+    beatPrincipalId: beatApp.outputs.principalId
   }
-  dependsOn: [keyVault, apiApp]
-}
-
-resource workerKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.outputs.keyVaultId, workerApp.outputs.principalId, 'kv-secrets-user')
-  scope: keyVaultResource
-  properties: {
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      '4633458b-17de-408a-b874-0445c86b69e6'
-    )
-    principalId: workerApp.outputs.principalId
-    principalType: 'ServicePrincipal'
-  }
-  dependsOn: [keyVault, workerApp]
-}
-
-resource beatKvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.outputs.keyVaultId, beatApp.outputs.principalId, 'kv-secrets-user')
-  scope: keyVaultResource
-  properties: {
-    roleDefinitionId: subscriptionResourceId(
-      'Microsoft.Authorization/roleDefinitions',
-      '4633458b-17de-408a-b874-0445c86b69e6'
-    )
-    principalId: beatApp.outputs.principalId
-    principalType: 'ServicePrincipal'
-  }
-  dependsOn: [keyVault, beatApp]
+  dependsOn: [keyVault, apiApp, workerApp, beatApp]
 }
 
 // ── Static Web App: Admin PWA ──────────────────────────────────────────────
