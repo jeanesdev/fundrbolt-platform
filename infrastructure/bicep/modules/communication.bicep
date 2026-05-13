@@ -56,14 +56,9 @@ resource azureManagedDomain 'Microsoft.Communication/emailServices/domains@2023-
   }
 }
 
-// Link Email Service to Communication Service
-resource emailServiceLink 'Microsoft.Communication/communicationServices/domains@2023-04-01' = {
-  parent: communicationService
-  name: environment == 'production' ? emailDomain : 'AzureManagedDomain'
-  properties: {
-    domainResourceId: environment == 'production' ? emailDomainConfig.id : azureManagedDomain.id
-  }
-}
+// NOTE: Domain linking (Microsoft.Communication/communicationServices/domains) is not supported
+// via Bicep at this time. Link the email domain to the communication service manually via
+// Azure Portal: Communication Service → Domains → Link Domain.
 
 // Sender addresses configuration
 var senderAddresses = [
@@ -96,45 +91,9 @@ output emailServiceName string = emailService.name
 
 output emailDomainId string = environment == 'production' ? emailDomainConfig.id : azureManagedDomain.id
 output emailDomainName string = environment == 'production' ? emailDomain : azureManagedDomain.name
-output emailDomainStatus string = environment == 'production'
-  ? emailDomainConfig.properties.verificationStates.Domain.status
-  : 'Verified'
 
-// DNS records required for custom domain verification and authentication
-output dnsRecordsRequired object = environment == 'production'
-  ? {
-      verification: {
-        type: 'TXT'
-        name: '@'
-        value: emailDomainConfig.properties.verificationStates.Domain.verificationToken
-        ttl: 3600
-      }
-      spf: {
-        type: 'TXT'
-        name: '@'
-        value: 'v=spf1 include:spf.protection.outlook.com include:spf.azurecomm.net ~all'
-        ttl: 3600
-      }
-      dmarc: {
-        type: 'TXT'
-        name: '_dmarc'
-        value: 'v=DMARC1; p=quarantine; rua=mailto:dmarc@${emailDomain}; pct=100; fo=1'
-        ttl: 3600
-      }
-      dkim1: {
-        type: 'CNAME'
-        name: 'selector1-azurecomm-prod-net._domainkey'
-        value: emailDomainConfig.properties.verificationStates.DKIM.domainKey1
-        ttl: 3600
-      }
-      dkim2: {
-        type: 'CNAME'
-        name: 'selector2-azurecomm-prod-net._domainkey'
-        value: emailDomainConfig.properties.verificationStates.DKIM.domainKey2
-        ttl: 3600
-      }
-    }
-  : {}
+// NOTE: DNS TXT/CNAME verification records must be retrieved manually from the Azure Portal
+// after deployment: Email Services → Domains → (your domain) → MailFrom/DKIM tabs.
 
 output senderAddresses array = senderAddresses
 
