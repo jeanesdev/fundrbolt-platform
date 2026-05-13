@@ -46,8 +46,8 @@ logger = get_logger(__name__)
 # Get settings
 settings = get_settings()
 
-# Initialize Sentry error tracking (only when DSN is configured)
-if settings.sentry_dsn:
+# Initialize Sentry error tracking (only when a real DSN URL is configured)
+if settings.sentry_dsn and settings.sentry_dsn.startswith("https://"):
     sentry_sdk.init(
         dsn=settings.sentry_dsn,
         environment=settings.environment,
