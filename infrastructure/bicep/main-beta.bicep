@@ -12,7 +12,8 @@ param location string = 'eastus'
 param appName string = 'fundrbolt'
 
 @description('Docker image reference (full tag, e.g. ghcr.io/owner/fundrbolt-backend:sha)')
-param backendImage string = 'ghcr.io/jeanesdev/fundrbolt-backend:latest'
+// Use a public placeholder until the first real image is pushed via CI/CD
+param backendImage string = 'mcr.microsoft.com/k8se/quickstart:latest'
 
 @description('PostgreSQL administrator password')
 @secure()
