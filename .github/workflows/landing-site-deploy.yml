@@ -51,6 +51,11 @@ jobs:
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: fundrbolt-landing
 
+      - name: Clean up before deploy
+        run: |
+          rm -rf frontend/landing-site/node_modules
+          find frontend/landing-site/dist -name '*.map' -delete 2>/dev/null || true
+
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:

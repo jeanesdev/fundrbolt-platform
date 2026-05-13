@@ -130,6 +130,14 @@ setup_federated_credential \
   "fundrbolt-pull-requests" \
   "repo:${GH_REPO}:pull_request"
 
+setup_federated_credential \
+  "fundrbolt-dev-environment" \
+  "repo:${GH_REPO}:environment:dev"
+
+setup_federated_credential \
+  "fundrbolt-production-environment" \
+  "repo:${GH_REPO}:environment:production"
+
 # ── Save to state ─────────────────────────────────────────────────────────
 cat >> "$STATE_FILE" <<EOF
 AZURE_CLIENT_ID=$APP_ID
