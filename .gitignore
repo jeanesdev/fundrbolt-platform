@@ -61,3 +61,7 @@ node_modules/
 ignore/
 .playwright-mcp/
 dev-dist/
+
+# Azure setup state (contains passwords/secrets - never commit)
+.azure-setup-state
+.azure-deployment-output.json

@@ -1,4 +1,4 @@
-name: Deploy Donor PWA
+name: Deploy Landing Site
 
 on:
   workflow_dispatch:
@@ -6,9 +6,8 @@ on:
     branches:
       - main
     paths:
-      - 'frontend/donor-pwa/**'
-      - 'frontend/shared/**'
-      - '.github/workflows/donor-pwa-deploy.yml'
+      - 'frontend/landing-site/**'
+      - '.github/workflows/landing-site-deploy.yml'
 
 permissions:
   contents: read
@@ -21,7 +20,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
-      url: https://give.fundrbolt.com
+      url: https://fundrbolt.com
 
     steps:
       - name: Checkout code
@@ -38,34 +37,34 @@ jobs:
           version: 8
 
       - name: Install dependencies
-        working-directory: ./frontend/donor-pwa
+        working-directory: ./frontend/landing-site
         run: pnpm install --frozen-lockfile
 
       - name: Build application
-        working-directory: ./frontend/donor-pwa
+        working-directory: ./frontend/landing-site
         run: pnpm build
         env:
           VITE_API_URL: https://api.fundrbolt.com
           VITE_ENVIRONMENT: production
-          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN_DONOR }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN_LANDING }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: fundrbolt-donor
+          SENTRY_PROJECT: fundrbolt-landing
 
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_DONOR_PROD }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LANDING_PROD }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: 'upload'
-          app_location: '/frontend/donor-pwa'
+          app_location: '/frontend/landing-site'
           output_location: 'dist'
           skip_app_build: true
 
       - name: Verify production deployment
         run: |
           for i in $(seq 1 6); do
-            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://give.fundrbolt.com || echo "000")
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://fundrbolt.com || echo "000")
             echo "  Attempt $i/6: HTTP $HTTP_STATUS"
             if [[ "$HTTP_STATUS" == "200" ]]; then exit 0; fi
             sleep 15

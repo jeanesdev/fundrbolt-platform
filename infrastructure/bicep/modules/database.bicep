@@ -48,7 +48,7 @@ var skuConfigs = {
     storageSizeGB: 128
     backupRetentionDays: 30
     geoRedundantBackup: true
-    highAvailability: true
+    highAvailability: false  // ZoneRedundant HA not available on this subscription in eastus2
   }
 }
 

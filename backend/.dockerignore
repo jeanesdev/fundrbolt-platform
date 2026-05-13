@@ -1,0 +1,58 @@
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Poetry
+.poetry/
+
+# Test artefacts
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Type checker cache
+.mypy_cache/
+.ruff_cache/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Local dev config
+.env
+.env.*
+!.env.example
+
+# Alembic — keep migrations, exclude generated artefacts
+alembic/versions/__pycache__/
+
+# Seed and debug scripts (not needed at runtime)
+seed_*.py
+publish_*.py
+diagnose_*.py
+check_*.py
+test_*.py
+set_blob_*.py
+
+# Docs and CI artefacts
+*.md
+docs/
+scripts/
+
+# Static build artefacts
+static/
+
+# Misc
+*.log
+*.pid

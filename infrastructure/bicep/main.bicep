@@ -334,12 +334,6 @@ output communicationServiceName string = enableCustomDomain && customDomain != '
 output communicationServiceEndpoint string = enableCustomDomain && customDomain != ''
   ? communicationServices!.outputs.communicationServiceEndpoint
   : ''
-output emailDomainStatus string = enableCustomDomain && customDomain != ''
-  ? communicationServices!.outputs.emailDomainStatus
-  : ''
-output dnsRecordsRequired object = enableCustomDomain && customDomain != ''
-  ? communicationServices!.outputs.dnsRecordsRequired
-  : {}
 output emailConfigurationInstructions string = enableCustomDomain && customDomain != ''
   ? communicationServices!.outputs.configurationInstructions
   : 'Email services not configured'

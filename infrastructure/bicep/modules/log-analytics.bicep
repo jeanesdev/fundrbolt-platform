@@ -37,3 +37,6 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
 output workspaceId string = logAnalyticsWorkspace.id
 output workspaceName string = logAnalyticsWorkspace.name
 output workspaceCustomerId string = logAnalyticsWorkspace.properties.customerId
+@description('Primary shared key for Log Analytics — used by Container Apps environment')
+@secure()
+output workspaceSharedKey string = logAnalyticsWorkspace.listKeys().primarySharedKey
