@@ -6,7 +6,7 @@
 //     --parameters infrastructure/bicep/parameters/production-beta.bicepparam
 using '../main-beta.bicep'
 
-param location = 'eastus'
+param location = 'eastus2'
 
 param appName = 'fundrbolt'
 

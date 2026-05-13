@@ -55,7 +55,7 @@ echo ""
 
 az deployment sub create \
   --name "$DEPLOYMENT_NAME" \
-  --location eastus \
+  --location eastus2 \
   --template-file "$REPO_ROOT/infrastructure/bicep/main-beta.bicep" \
   --parameters "$REPO_ROOT/infrastructure/bicep/parameters/production-beta.bicepparam" \
   --parameters postgresAdminPassword="$POSTGRES_ADMIN_PASSWORD" \

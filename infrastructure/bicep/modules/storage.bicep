@@ -80,12 +80,14 @@ resource logsContainer 'Microsoft.Storage/storageAccounts/blobServices/container
   }
 }
 
-// Create blob container for branding assets (public access for logos in emails)
+// Create blob container for branding assets
+// NOTE: Public blob access is disabled at the account level (subscription policy).
+// Use SAS tokens or Managed Identity for serving email logos.
 resource brandingContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
   parent: blobServices
   name: 'branding'
   properties: {
-    publicAccess: 'Blob' // Allow anonymous read access to individual blobs (for email logos)
+    publicAccess: 'None'
   }
 }
 

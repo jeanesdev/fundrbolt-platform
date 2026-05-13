@@ -68,15 +68,8 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-// Configure daily cap (if specified)
-resource dailyCap 'Microsoft.Insights/components/pricingPlans@2017-10-01' = if (dailyCapGB > 0) {
-  parent: appInsights
-  name: 'current'
-  properties: {
-    cap: dailyCapGB
-    stopSendNotificationWhenHitCap: false
-  }
-}
+// NOTE: Daily cap for workspace-based App Insights is configured on the Log Analytics workspace,
+// not via the deprecated pricingPlans API (which only applies to Classic App Insights).
 
 // Action Group for alert notifications
 resource actionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = if (length(alertEmailAddresses) > 0) {
