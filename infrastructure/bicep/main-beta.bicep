@@ -93,12 +93,14 @@ module appInsights './modules/monitoring.bicep' = {
 }
 
 // ── PostgreSQL Flexible Server ─────────────────────────────────────────────
+// NOTE: eastus is restricted for PostgreSQL Flexible Server on this subscription.
+// Deploy to eastus2 while keeping all other resources in eastus.
 module postgres './modules/database.bicep' = {
   name: 'postgres'
   scope: az.resourceGroup(resourceGroupName)
   params: {
     postgresServerName: postgresServerName
-    location: location
+    location: 'eastus2'
     environment: env
     administratorPassword: postgresAdminPassword
     tags: tags
