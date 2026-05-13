@@ -12,7 +12,8 @@ param appName = 'fundrbolt'
 
 // Container image — updated automatically by backend-deploy.yml CI/CD workflow
 // Override at deploy time: --parameters backendImage='ghcr.io/jeanesdev/fundrbolt-backend:sha-abc123'
-param backendImage = 'ghcr.io/jeanesdev/fundrbolt-backend:latest'
+// Using placeholder for initial infrastructure setup; CI/CD will update this after first build
+param backendImage = 'mcr.microsoft.com/k8se/quickstart:latest'
 
 // Set via --parameters postgresAdminPassword='...' at deploy time
 // Never store passwords in this file
