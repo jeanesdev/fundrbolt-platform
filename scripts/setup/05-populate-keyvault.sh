@@ -100,26 +100,19 @@ kv_set "AZURE-STORAGE-CONNECTION-STRING" "$STORAGE_CONN"
 # ── AZURE-COMMUNICATION-CONNECTION-STRING ─────────────────────────────────
 ACS_NAME="fundrbolt-production-acs"
 echo "→  Fetching ACS connection string for $ACS_NAME..."
-ACS_CONN=$(az communication show \
+ACS_CONN=$(az communication list-key \
   --resource-group "$RESOURCE_GROUP" \
   --name "$ACS_NAME" \
-  --query dataLocation -o tsv 2>/dev/null || echo "")
-
-if [[ -z "$ACS_CONN" ]]; then
-  # ACS doesn't have a simple "show-connection-string" — fetch from list-keys
-  ACS_CONN=$(az communication list-key \
-    --resource-group "$RESOURCE_GROUP" \
-    --name "$ACS_NAME" \
-    --query primaryConnectionString -o tsv 2>/dev/null || echo "PLACEHOLDER_ACS_CONNECTION_STRING")
-fi
+  --query primaryConnectionString -o tsv 2>/dev/null || echo "PLACEHOLDER_ACS_CONNECTION_STRING")
 kv_set "AZURE-COMMUNICATION-CONNECTION-STRING" "$ACS_CONN"
 
 # ── SENTRY-DSN ────────────────────────────────────────────────────────────
-# Set to empty string for now; update after creating Sentry project
-SENTRY_DSN_VALUE="${SENTRY_DSN:-}"
+# Set to placeholder for now; update after creating Sentry project
+# Key Vault does not accept empty string values, so use "disabled" as placeholder
+SENTRY_DSN_VALUE="${SENTRY_DSN:-disabled}"
 kv_set "SENTRY-DSN" "$SENTRY_DSN_VALUE"
-if [[ -z "$SENTRY_DSN_VALUE" ]]; then
-  echo "   ℹ  SENTRY-DSN set to empty (Sentry disabled until you add a real DSN)"
+if [[ "$SENTRY_DSN_VALUE" == "disabled" ]]; then
+  echo "   ℹ  SENTRY-DSN set to 'disabled' placeholder (update after Sentry setup)"
 fi
 
 # ── SUPER-ADMIN-EMAIL / PASSWORD ──────────────────────────────────────────

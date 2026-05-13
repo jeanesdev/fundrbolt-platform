@@ -116,7 +116,7 @@ setup_federated_credential() {
         \"name\": \"$name\",
         \"issuer\": \"https://token.actions.githubusercontent.com\",
         \"subject\": \"$subject\",
-        \"audiences\": [\"api://AzureADTokenAudience\"]
+        \"audiences\": [\"api://AzureADTokenExchange\"]
       }"
     echo "✓  Created '$name'"
   fi
