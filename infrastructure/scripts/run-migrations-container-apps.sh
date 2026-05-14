@@ -37,45 +37,86 @@ echo "    Key Vault      : $KEY_VAULT_URI"
 
 # Create or update the migration job.
 # Uses the same secrets configuration as the API container app.
+SUBSCRIPTION=$(az account show --query id -o tsv)
+
 if az containerapp job show \
     --name "$JOB_NAME" \
     --resource-group "$RESOURCE_GROUP" &>/dev/null; then
-  # Delete and recreate so secrets + env vars are always fully applied.
-  # (az containerapp job update does not support --secrets)
-  echo "==> Deleting existing migration job to rebuild with updated configuration..."
-  az containerapp job delete \
-    --name "$JOB_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --yes
+  # Update the existing job via REST API (PATCH).
+  # Cannot use `az containerapp job delete` because the resource group has CanNotDelete locks.
+  # Cannot use `az containerapp job update --secrets` because it does not support --secrets.
+  # REST API PATCH is allowed under CanNotDelete locks (only DELETE is blocked).
+  echo "==> Updating existing migration job via REST API..."
+  PATCH_BODY=$(python3 -c "
+import json, sys
+body = {
+    'properties': {
+        'configuration': {
+            'secrets': [
+                {'name': 'database-url', 'keyVaultUrl': '${KEY_VAULT_URI}secrets/DATABASE-URL', 'identity': 'system'},
+                {'name': 'secret-key', 'keyVaultUrl': '${KEY_VAULT_URI}secrets/SECRET-KEY', 'identity': 'system'},
+                {'name': 'super-admin-password', 'keyVaultUrl': '${KEY_VAULT_URI}secrets/SUPER-ADMIN-PASSWORD', 'identity': 'system'}
+            ]
+        },
+        'template': {
+            'containers': [
+                {
+                    'name': 'migration',
+                    'image': '$IMAGE',
+                    'env': [
+                        {'name': 'DATABASE_URL', 'secretRef': 'database-url'},
+                        {'name': 'ENVIRONMENT', 'value': 'production'},
+                        {'name': 'LOG_LEVEL', 'value': 'INFO'},
+                        {'name': 'SUPER_ADMIN_EMAIL', 'value': 'admin@fundrbolt.com'},
+                        {'name': 'SUPER_ADMIN_PASSWORD', 'secretRef': 'super-admin-password'}
+                    ]
+                }
+            ]
+        }
+    }
+}
+print(json.dumps(body))
+")
+  echo "$PATCH_BODY" > /tmp/migration-patch.json
+  az rest --method patch \
+    --url "https://management.azure.com/subscriptions/${SUBSCRIPTION}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.App/jobs/${JOB_NAME}?api-version=2024-03-01" \
+    --body @/tmp/migration-patch.json
+  # Wait for provisioning to complete
+  for i in $(seq 1 12); do
+    STATE=$(az containerapp job show --name "$JOB_NAME" --resource-group "$RESOURCE_GROUP" --query 'properties.provisioningState' -o tsv 2>/dev/null || echo "Unknown")
+    echo "    Provisioning: $STATE (attempt $i/12)"
+    [ "$STATE" = "Succeeded" ] && break
+    sleep 5
+  done
+else
+  # Create new job from scratch
+  echo "==> Creating migration job..."
+  az containerapp job create \
+      --name "$JOB_NAME" \
+      --resource-group "$RESOURCE_GROUP" \
+      --environment "$CAE_NAME" \
+      --trigger-type Manual \
+      --replica-timeout 300 \
+      --replica-retry-limit 1 \
+      --replica-completion-count 1 \
+      --parallelism 1 \
+      --image "$IMAGE" \
+      --cpu 0.5 \
+      --memory 1Gi \
+      --command "alembic" \
+      --args "upgrade" "head" \
+      --mi-system-assigned \
+      --secrets \
+        "database-url=keyvaultref:${KEY_VAULT_URI}secrets/DATABASE-URL,identityref:system" \
+        "secret-key=keyvaultref:${KEY_VAULT_URI}secrets/SECRET-KEY,identityref:system" \
+        "super-admin-password=keyvaultref:${KEY_VAULT_URI}secrets/SUPER-ADMIN-PASSWORD,identityref:system" \
+      --env-vars \
+        "DATABASE_URL=secretref:database-url" \
+        "ENVIRONMENT=production" \
+        "LOG_LEVEL=INFO" \
+        "SUPER_ADMIN_EMAIL=admin@fundrbolt.com" \
+        "SUPER_ADMIN_PASSWORD=secretref:super-admin-password"
 fi
-
-# Always create (either fresh or after deletion above)
-echo "==> Creating migration job..."
-az containerapp job create \
-    --name "$JOB_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --environment "$CAE_NAME" \
-    --trigger-type Manual \
-    --replica-timeout 300 \
-    --replica-retry-limit 1 \
-    --replica-completion-count 1 \
-    --parallelism 1 \
-    --image "$IMAGE" \
-    --cpu 0.5 \
-    --memory 1Gi \
-    --command "alembic" \
-    --args "upgrade" "head" \
-    --mi-system-assigned \
-    --secrets \
-      "database-url=keyvaultref:${KEY_VAULT_URI}secrets/DATABASE-URL,identityref:system" \
-      "secret-key=keyvaultref:${KEY_VAULT_URI}secrets/SECRET-KEY,identityref:system" \
-      "super-admin-password=keyvaultref:${KEY_VAULT_URI}secrets/SUPER-ADMIN-PASSWORD,identityref:system" \
-    --env-vars \
-      "DATABASE_URL=secretref:database-url" \
-      "ENVIRONMENT=production" \
-      "LOG_LEVEL=INFO" \
-      "SUPER_ADMIN_EMAIL=admin@fundrbolt.com" \
-      "SUPER_ADMIN_PASSWORD=secretref:super-admin-password"
 
 # Assign Key Vault Secrets User role to the migration job's managed identity
 MIGRATION_PRINCIPAL=$(az containerapp job show \
