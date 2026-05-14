@@ -63,6 +63,8 @@ body = {
                 {
                     'name': 'migration',
                     'image': '$IMAGE',
+                    'command': ['alembic'],
+                    'args': ['upgrade', 'head'],
                     'env': [
                         {'name': 'DATABASE_URL', 'secretRef': 'database-url'},
                         {'name': 'ENVIRONMENT', 'value': 'production'},
