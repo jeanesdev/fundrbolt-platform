@@ -32,7 +32,11 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     """Upsert super admin user with correct credentials."""
-    from app.core.security import hash_password
+    import bcrypt
+
+    def hash_password(password: str) -> str:
+        password_bytes = password.encode("utf-8")[:72]
+        return bcrypt.hashpw(password_bytes, bcrypt.gensalt(rounds=12)).decode("utf-8")
 
     super_admin_email = os.getenv("SUPER_ADMIN_EMAIL", "admin@fundrbolt.com")
     super_admin_password = os.getenv("SUPER_ADMIN_PASSWORD", "")
