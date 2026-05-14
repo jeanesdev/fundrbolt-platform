@@ -40,12 +40,22 @@ echo "    Key Vault      : $KEY_VAULT_URI"
 if az containerapp job show \
     --name "$JOB_NAME" \
     --resource-group "$RESOURCE_GROUP" &>/dev/null; then
-  # Job already exists; update the image only
-  echo "==> Migration job already exists, updating image..."
+  # Job already exists; update the image, secrets, and env vars
+  echo "==> Migration job already exists, updating image and configuration..."
   az containerapp job update \
     --name "$JOB_NAME" \
     --resource-group "$RESOURCE_GROUP" \
-    --image "$IMAGE"
+    --image "$IMAGE" \
+    --secrets \
+      "database-url=keyvaultref:${KEY_VAULT_URI}secrets/DATABASE-URL,identityref:system" \
+      "secret-key=keyvaultref:${KEY_VAULT_URI}secrets/SECRET-KEY,identityref:system" \
+      "super-admin-password=keyvaultref:${KEY_VAULT_URI}secrets/SUPER-ADMIN-PASSWORD,identityref:system" \
+    --env-vars \
+      "DATABASE_URL=secretref:database-url" \
+      "ENVIRONMENT=production" \
+      "LOG_LEVEL=INFO" \
+      "SUPER_ADMIN_EMAIL=admin@fundrbolt.com" \
+      "SUPER_ADMIN_PASSWORD=secretref:super-admin-password"
 else
   echo "==> Creating migration job..."
   az containerapp job create \
@@ -66,10 +76,13 @@ else
     --secrets \
       "database-url=keyvaultref:${KEY_VAULT_URI}secrets/DATABASE-URL,identityref:system" \
       "secret-key=keyvaultref:${KEY_VAULT_URI}secrets/SECRET-KEY,identityref:system" \
+      "super-admin-password=keyvaultref:${KEY_VAULT_URI}secrets/SUPER-ADMIN-PASSWORD,identityref:system" \
     --env-vars \
       "DATABASE_URL=secretref:database-url" \
       "ENVIRONMENT=production" \
-      "LOG_LEVEL=INFO"
+      "LOG_LEVEL=INFO" \
+      "SUPER_ADMIN_EMAIL=admin@fundrbolt.com" \
+      "SUPER_ADMIN_PASSWORD=secretref:super-admin-password"
 fi
 
 # Assign Key Vault Secrets User role to the migration job's managed identity
