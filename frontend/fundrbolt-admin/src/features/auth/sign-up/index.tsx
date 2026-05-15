@@ -59,6 +59,24 @@ export function SignUp() {
           <div className='rounded-xl border p-5'>
             <div className='mb-4 flex items-start gap-3'>
               <div className='bg-primary/10 text-primary rounded-lg p-2'>
+                <HandCoins className='h-5 w-5' />
+              </div>
+              <div>
+                <h3 className='font-semibold'>Attendee</h3>
+                <p className='text-muted-foreground text-sm'>
+                  Go to the attendee portal for ticketing, bidding, and event
+                  flows.
+                </p>
+              </div>
+            </div>
+            <Button asChild className='w-full'>
+              <a href={buildDonorPortalSignUpUrl()}>Create attendee account</a>
+            </Button>
+          </div>
+
+          <div className='rounded-xl border p-5'>
+            <div className='mb-4 flex items-start gap-3'>
+              <div className='bg-primary/10 text-primary rounded-lg p-2'>
                 <Building2 className='h-5 w-5' />
               </div>
               <div>
@@ -70,7 +88,7 @@ export function SignUp() {
                 </p>
               </div>
             </div>
-            <Button asChild className='w-full'>
+            <Button asChild variant='outline' className='w-full'>
               <Link to='/register-npo'>
                 Continue as Organization Administrator
               </Link>
@@ -94,24 +112,6 @@ export function SignUp() {
               <Link to='/sign-up' search={{ intent: 'staff' }}>
                 Continue as Event Staff
               </Link>
-            </Button>
-          </div>
-
-          <div className='rounded-xl border p-5'>
-            <div className='mb-4 flex items-start gap-3'>
-              <div className='bg-primary/10 text-primary rounded-lg p-2'>
-                <HandCoins className='h-5 w-5' />
-              </div>
-              <div>
-                <h3 className='font-semibold'>Attendee</h3>
-                <p className='text-muted-foreground text-sm'>
-                  Go to the attendee portal for ticketing, bidding, and event
-                  flows.
-                </p>
-              </div>
-            </div>
-            <Button asChild variant='outline' className='w-full'>
-              <a href={buildDonorPortalSignUpUrl()}>Create attendee account</a>
             </Button>
           </div>
         </CardContent>
