@@ -354,6 +354,43 @@ async def get_paddle_raise_dashboard(
 
 
 @router.get(
+    "/{event_id}/auctioneer/live-auction/slides/export",
+    summary="Export live auction slide deck as PowerPoint",
+)
+@require_role("super_admin", "auctioneer")
+async def export_live_auction_slides(
+    event_id: UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+    auctioneer_user_id: UUID | None = Query(default=None),
+) -> StreamingResponse:
+    await _verify_event_access(event_id, current_user, db)
+    target_id = _resolve_auctioneer_id(current_user, auctioneer_user_id)
+    service = AuctioneerService(db)
+    gallery = await service.get_live_auction_gallery(event_id, target_id)
+
+    media_service = AuctionItemMediaService(get_settings(), db)
+    for item in gallery.items:
+        item.primary_image_url = _sign_blob_url(item.primary_image_url, media_service)
+
+    event = (await db.execute(select(Event).where(Event.id == event_id))).scalar_one_or_none()
+    if event is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    deck_bytes = await service.build_slide_deck(gallery.items, event.name, "Live Auction")
+    safe_name = "".join(
+        char if char.isalnum() or char in "-_" else "-" for char in event.name
+    ).strip("-")
+    filename = f"{safe_name or 'event'}-live-auction-slides.pptx"
+
+    return StreamingResponse(
+        iter([deck_bytes]),
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get(
     "/{event_id}/auctioneer/silent-auction/slides/export",
     summary="Export silent auction slide deck as PowerPoint",
 )
