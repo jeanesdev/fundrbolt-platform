@@ -38,7 +38,7 @@ class Settings(BaseSettings):
 
     # Azure Communication Services (Email) - Optional for local dev
     azure_communication_connection_string: str | None = None
-    email_from_address: EmailStr
+    email_from_address: EmailStr = "noreply@fundrbolt.com"
     email_from_name: str = "FundrBolt"
 
     # Azure Blob Storage (for NPO logo uploads) - Optional for local dev
@@ -68,9 +68,9 @@ class Settings(BaseSettings):
     social_auth_microsoft_client_id: str | None = None
     social_auth_microsoft_client_secret: str | None = None
 
-    # Super Admin Seed (for initial setup)
-    super_admin_email: EmailStr
-    super_admin_password: str
+    # Super Admin Seed (for initial setup — only used during DB migrations)
+    super_admin_email: EmailStr = "admin@fundrbolt.com"
+    super_admin_password: str = ""
     super_admin_first_name: str = "Super"
     super_admin_last_name: str = "Admin"
 

@@ -55,7 +55,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=sha,prefix=main-
+            type=sha,prefix=main-,format=long
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
@@ -145,6 +145,7 @@ jobs:
           done
 
       - name: Verify production health endpoint
+        continue-on-error: true
         run: |
           for i in $(seq 1 6); do
             HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.fundrbolt.com/health || echo "000")

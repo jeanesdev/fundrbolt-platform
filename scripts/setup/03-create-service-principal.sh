@@ -116,7 +116,7 @@ setup_federated_credential() {
         \"name\": \"$name\",
         \"issuer\": \"https://token.actions.githubusercontent.com\",
         \"subject\": \"$subject\",
-        \"audiences\": [\"api://AzureADTokenAudience\"]
+        \"audiences\": [\"api://AzureADTokenExchange\"]
       }"
     echo "✓  Created '$name'"
   fi
@@ -129,6 +129,14 @@ setup_federated_credential \
 setup_federated_credential \
   "fundrbolt-pull-requests" \
   "repo:${GH_REPO}:pull_request"
+
+setup_federated_credential \
+  "fundrbolt-dev-environment" \
+  "repo:${GH_REPO}:environment:dev"
+
+setup_federated_credential \
+  "fundrbolt-production-environment" \
+  "repo:${GH_REPO}:environment:production"
 
 # ── Save to state ─────────────────────────────────────────────────────────
 cat >> "$STATE_FILE" <<EOF

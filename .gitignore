@@ -37,6 +37,7 @@ ENV/
 env/
 .venv/
 .env*
+temp/
 
 # IDEs
 .vscode/

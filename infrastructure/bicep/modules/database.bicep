@@ -48,7 +48,7 @@ var skuConfigs = {
     storageSizeGB: 128
     backupRetentionDays: 30
     geoRedundantBackup: true
-    highAvailability: false  // ZoneRedundant HA not available on this subscription in eastus2
+    highAvailability: false // ZoneRedundant HA not available on this subscription in eastus2
   }
 }
 
@@ -73,11 +73,13 @@ resource postgresServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-12-01' =
       backupRetentionDays: config.backupRetentionDays
       geoRedundantBackup: config.geoRedundantBackup ? 'Enabled' : 'Disabled'
     }
-    highAvailability: config.highAvailability ? {
-      mode: 'ZoneRedundant'
-    } : {
-      mode: 'Disabled'
-    }
+    highAvailability: config.highAvailability
+      ? {
+          mode: 'ZoneRedundant'
+        }
+      : {
+          mode: 'Disabled'
+        }
   }
 }
 
