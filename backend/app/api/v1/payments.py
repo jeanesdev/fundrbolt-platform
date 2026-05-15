@@ -25,12 +25,10 @@ Endpoints:
   POST   /payments/events/{event_id}/checkout/contact-admin  — message NPO admin
 """
 
-from __future__ import annotations
-
 import asyncio
 import re
-import uuid
 from typing import Annotated, Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
@@ -244,7 +242,7 @@ async def stub_hpf_page(
 
 @router.get("/profiles", response_model=list[PaymentProfileRead])
 async def list_payment_profiles(
-    npo_id: uuid.UUID,
+    npo_id: UUID,
     current_user: CurrentUser,
     db: DB,
 ) -> list[PaymentProfileRead]:
@@ -282,8 +280,8 @@ async def create_payment_profile(
     status_code=status.HTTP_200_OK,
 )
 async def delete_payment_profile(
-    profile_id: uuid.UUID,
-    npo_id: uuid.UUID,
+    profile_id: UUID,
+    npo_id: UUID,
     current_user: CurrentUser,
     db: DB,
     gateway: Gateway,
@@ -311,8 +309,8 @@ async def delete_payment_profile(
     response_model=PaymentProfileRead,
 )
 async def set_default_payment_profile(
-    profile_id: uuid.UUID,
-    npo_id: uuid.UUID,
+    profile_id: UUID,
+    npo_id: UUID,
     current_user: CurrentUser,
     db: DB,
 ) -> PaymentProfileRead:
@@ -385,7 +383,7 @@ class TransactionReadResponse(PaymentSessionResponse):
 
 @router.get("/transactions/{transaction_id}", response_model=dict[str, Any])
 async def get_transaction(
-    transaction_id: uuid.UUID,
+    transaction_id: UUID,
     current_user: CurrentUser,
     db: DB,
 ) -> dict[str, Any]:
@@ -447,7 +445,7 @@ async def get_transaction(
 
 @router.get("/transactions/{transaction_id}/receipt")
 async def get_transaction_receipt(
-    transaction_id: uuid.UUID,
+    transaction_id: UUID,
     current_user: CurrentUser,
     db: DB,
 ) -> RedirectResponse:
@@ -505,7 +503,7 @@ async def get_transaction_receipt(
 
 @router.get("/checkout/balance", response_model=CheckoutBalanceResponse)
 async def get_checkout_balance(
-    event_id: uuid.UUID,
+    event_id: UUID,
     current_user: CurrentUser,
     db: DB,
 ) -> CheckoutBalanceResponse:
@@ -566,7 +564,7 @@ async def post_checkout(
     response_model=dict[str, Any],
 )
 async def get_event_checkout_status(
-    event_id: uuid.UUID,
+    event_id: UUID,
     current_user: CurrentUser,
     db: DB,
 ) -> dict[str, Any]:
@@ -603,7 +601,7 @@ async def get_event_checkout_status(
     response_model=CheckoutBalanceV2Response,
 )
 async def get_event_checkout_balance(
-    event_id: uuid.UUID,
+    event_id: UUID,
     current_user: CurrentUser,
     db: DB,
 ) -> CheckoutBalanceV2Response:
@@ -648,7 +646,7 @@ async def get_event_checkout_balance(
     response_model=CheckoutSessionResponse,
 )
 async def get_checkout_session(
-    event_id: uuid.UUID,
+    event_id: UUID,
     current_user: CurrentUser,
     db: DB,
 ) -> CheckoutSessionResponse:
@@ -668,7 +666,7 @@ async def get_checkout_session(
     response_model=CheckoutSessionResponse,
 )
 async def update_checkout_session(
-    event_id: uuid.UUID,
+    event_id: UUID,
     body: UpdateCheckoutSessionRequest,
     current_user: CurrentUser,
     db: DB,
@@ -705,7 +703,7 @@ async def update_checkout_session(
     response_model=CheckoutConfirmResponse,
 )
 async def confirm_checkout(
-    event_id: uuid.UUID,
+    event_id: UUID,
     body: CheckoutConfirmRequest,
     current_user: CurrentUser,
     db: DB,
@@ -776,7 +774,7 @@ async def confirm_checkout(
 
 @router.get("/events/{event_id}/checkout/receipt", response_model=dict[str, str])
 async def get_checkout_receipt(
-    event_id: uuid.UUID,
+    event_id: UUID,
     current_user: CurrentUser,
     db: DB,
 ) -> dict[str, str]:
@@ -812,7 +810,7 @@ async def get_checkout_receipt(
 
 @router.get("/events/{event_id}/checkout/receipt/pdf")
 async def stream_checkout_receipt_pdf(
-    event_id: uuid.UUID,
+    event_id: UUID,
     current_user: CurrentUser,
     db: DB,
 ) -> StreamingResponse:
@@ -875,7 +873,7 @@ async def stream_checkout_receipt_pdf(
 )
 @rate_limit(max_requests=3, window_seconds=3600)  # 3 messages per hour per IP
 async def contact_admin(
-    event_id: uuid.UUID,
+    event_id: UUID,
     body: ContactAdminRequest,
     request: Request,
     current_user: CurrentUser,
