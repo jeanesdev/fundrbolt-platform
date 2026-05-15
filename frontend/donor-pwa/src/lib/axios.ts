@@ -26,7 +26,7 @@ const resolveApiBaseUrl = () => {
     return '/api/v1'
   }
 
-  return configuredApiUrl || 'http://localhost:8000/api/v1'
+  return configuredApiUrl || 'https://api.fundrbolt.com/api/v1'
 }
 
 // Create axios instance with default config

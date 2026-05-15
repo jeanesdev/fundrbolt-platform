@@ -40,7 +40,7 @@ const resolveApiBaseUrl = (): string => {
     return '/api/v1'
   }
 
-  return 'http://localhost:8000/api/v1'
+  return 'https://api.fundrbolt.com/api/v1'
 }
 
 const apiBaseUrl = resolveApiBaseUrl()
