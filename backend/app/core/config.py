@@ -58,7 +58,9 @@ class Settings(BaseSettings):
     social_auth_enabled_providers: str = "apple,google,facebook,microsoft"
     social_auth_callback_base_url: str = "http://localhost:8000/api/v1"
     social_auth_apple_client_id: str | None = None
-    social_auth_apple_client_secret: str | None = None
+    social_auth_apple_client_secret: str | None = None  # PEM private key (.p8 contents)
+    social_auth_apple_team_id: str | None = None
+    social_auth_apple_key_id: str | None = None
     social_auth_google_client_id: str | None = None
     social_auth_google_client_secret: str | None = None
     social_auth_facebook_client_id: str | None = None

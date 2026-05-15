@@ -1,10 +1,10 @@
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  getEventRevenueGenerators,
-  purchaseEntry,
+    getEventRevenueGenerators,
+    purchaseEntry,
 } from '@/services/revenueGeneratorService'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { RevenueGeneratorCard } from './RevenueGeneratorCard'
 

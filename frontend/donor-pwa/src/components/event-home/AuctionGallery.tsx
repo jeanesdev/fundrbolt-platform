@@ -9,36 +9,36 @@
  * - Empty state with Gavel icon
  * - Loading spinner for scroll trigger
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
-import watchListService from '@/services/watchlistService'
-import type {
-  AuctionFilterType,
-  AuctionItemGalleryItem,
-  AuctionSortType,
-} from '@/types/auction-gallery'
-import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
-import { Eye, Gavel, Loader2, RefreshCw, Sparkles } from 'lucide-react'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import apiClient from '@/lib/axios'
-import { cn } from '@/lib/utils'
+import { StaleDataIndicator } from '@/components/pwa/stale-data-indicator'
 import { Input } from '@/components/ui/input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select'
-import { StaleDataIndicator } from '@/components/pwa/stale-data-indicator'
 import { PlayTab } from '@/features/play/PlayTab'
+import apiClient from '@/lib/axios'
+import { cn } from '@/lib/utils'
+import watchListService from '@/services/watchlistService'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import type {
+    AuctionFilterType,
+    AuctionItemGalleryItem,
+    AuctionSortType,
+} from '@/types/auction-gallery'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
+import {
+    useInfiniteQuery,
+    useMutation,
+    useQueries,
+    useQuery,
+    useQueryClient,
+} from '@tanstack/react-query'
+import { Eye, Gavel, Loader2, RefreshCw, Sparkles } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AuctionItemCard } from './AuctionItemCard'
 
 function normalizeIdentifier(value: unknown): string | null {
@@ -800,7 +800,7 @@ export function AuctionGallery({
         lastFetchedAt={dataUpdatedAt ? new Date(dataUpdatedAt) : null}
       />
       {/* Filter controls */}
-      <div className='space-y-3'>
+      <div className='space-y-2'>
         <div className='flex items-center justify-between'>
           <div
             className='bg-muted/30 inline-flex rounded-lg border p-1'
@@ -834,13 +834,6 @@ export function AuctionGallery({
             ))}
           </div>
 
-          <span
-            className='text-sm'
-            style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
-          >
-            {displayedCount} item{displayedCount !== 1 ? 's' : ''}
-          </span>
-
           <button
             type='button'
             onClick={() => void refetch()}
@@ -851,6 +844,13 @@ export function AuctionGallery({
             <RefreshCw className='h-4 w-4' />
           </button>
         </div>
+
+        <span
+          className='block text-sm'
+          style={{ color: 'var(--event-text-muted-on-background, #6B7280)' }}
+        >
+          {displayedCount} item{displayedCount !== 1 ? 's' : ''}
+        </span>
 
         <div
           className={cn(

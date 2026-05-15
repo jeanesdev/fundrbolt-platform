@@ -1,17 +1,17 @@
+import { handleServerError } from '@/lib/handle-server-error'
+import { useAuthStore } from '@/stores/auth-store'
+import { useGlobalInputSanitizer } from '@fundrbolt/shared/hooks'
 import * as Sentry from '@sentry/react'
-import { StrictMode, useEffect } from 'react'
-import ReactDOM from 'react-dom/client'
-import { AxiosError } from 'axios'
 import {
   QueryCache,
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
-import { useGlobalInputSanitizer } from '@fundrbolt/shared/hooks'
+import { AxiosError } from 'axios'
+import { StrictMode, useEffect } from 'react'
+import ReactDOM from 'react-dom/client'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { handleServerError } from '@/lib/handle-server-error'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
@@ -28,6 +28,18 @@ if (import.meta.env.VITE_SENTRY_DSN) {
     integrations: [Sentry.browserTracingIntegration()],
     tracesSampleRate: 0.1,
     sendDefaultPii: false,
+  })
+}
+
+// When the service worker activates a new version it broadcasts SW_UPDATED.
+// Reload the page so the new HTML shell (with updated asset hashes) is
+// served instead of the stale one — prevents MIME-type errors caused by
+// old content-hash URLs that no longer exist on the server.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data?.type === 'SW_UPDATED') {
+      window.location.reload()
+    }
   })
 }
 

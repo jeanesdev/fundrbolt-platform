@@ -15,6 +15,7 @@ from app.core.security import hash_password
 from app.models.npo_member import MemberRole, MemberStatus, NPOMember
 from app.models.user import User
 from app.schemas.users import (
+    NPOMembershipInfo,
     UserCreateRequest,
     UserListResponse,
     UserPublicWithRole,
@@ -175,29 +176,30 @@ class UserService:
 
                 if npo_name:
                     npo_memberships.append(
-                        {
-                            "npo_id": member.npo_id,
-                            "npo_name": npo_name,
-                            "role": member.role.value,
-                            "status": member.status.value,
-                        }
+                        NPOMembershipInfo(
+                            npo_id=member.npo_id,
+                            npo_name=npo_name,
+                            role=member.role.value,
+                            status=member.status.value,
+                        )
                     )
 
-            user_dict = {
-                "id": user.id,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "phone": user.phone,
-                "role": role_name,
-                "npo_memberships": npo_memberships,
-                "email_verified": user.email_verified,
-                "is_active": user.is_active,
-                "last_login_at": user.last_login_at,
-                "created_at": user.created_at,
-                "updated_at": user.updated_at,
-            }
-            user_list.append(UserPublicWithRole(**user_dict))
+            user_list.append(
+                UserPublicWithRole(
+                    id=user.id,
+                    email=user.email,
+                    first_name=user.first_name,
+                    last_name=user.last_name,
+                    phone=user.phone,
+                    role=role_name,
+                    npo_memberships=npo_memberships,
+                    email_verified=user.email_verified,
+                    is_active=user.is_active,
+                    last_login_at=user.last_login_at,
+                    created_at=user.created_at,
+                    updated_at=user.updated_at,
+                )
+            )
 
         # Calculate total pages, handling case where total is None
         total_pages = ceil(total / per_page) if (total is not None and total > 0) else 1

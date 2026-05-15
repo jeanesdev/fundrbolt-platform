@@ -14,8 +14,26 @@ declare const self: ServiceWorkerGlobalScope
 
 // Claim clients immediately on activation so push subscriptions
 // are associated with the active SW that will receive push events.
+// Also reload all open clients so they get the new HTML/assets instead
+// of being left with stale references from the previous SW's cached shell.
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(
+    (async () => {
+      await self.clients.claim()
+      // Tell every open tab to reload so they pick up the new app shell.
+      // Without this, a page loaded under the old SW keeps its old asset
+      // hashes — when those old files are gone from the server the new SW
+      // returns the SPA-fallback HTML, causing MIME-type errors ("Expected
+      // JS but got text/html") and leaving the app completely unstyled.
+      const clients = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      })
+      for (const client of clients) {
+        client.postMessage({ type: 'SW_UPDATED' })
+      }
+    })()
+  )
 })
 
 // Handle SKIP_WAITING from the main thread (VitePWA update prompt).
@@ -100,13 +118,17 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
 // ──────────────────────────────────────────────────────────────
 
 async function setupWorkboxCaching() {
-  const { precacheAndRoute } = await import('workbox-precaching')
+  const { precacheAndRoute, cleanupOutdatedCaches } = await import('workbox-precaching')
   const { registerRoute } = await import('workbox-routing')
   const { CacheFirst, NetworkFirst, StaleWhileRevalidate } =
     await import('workbox-strategies')
   const { ExpirationPlugin } = await import('workbox-expiration')
 
-  // Precache static assets injected by vite-plugin-pwa
+  // Precache static assets injected by vite-plugin-pwa.
+  // cleanupOutdatedCaches() removes stale precache entries from previous
+  // builds so old content-hashed filenames don't linger and cause MIME
+  // errors when the server no longer serves them.
+  cleanupOutdatedCaches()
   precacheAndRoute(self.__WB_MANIFEST)
 
   // Images: CacheFirst (30 days)
