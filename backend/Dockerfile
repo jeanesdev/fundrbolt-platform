@@ -2,7 +2,7 @@
 # ============================================================
 # Stage 1: builder — install Python dependencies via Poetry
 # ============================================================
-FROM python:3.12-slim AS builder
+FROM python:3.12-slim-bookworm AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -45,7 +45,7 @@ RUN poetry install --only main
 # ============================================================
 # Stage 2: runtime — lean production image
 # ============================================================
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim-bookworm AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
