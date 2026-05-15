@@ -43,8 +43,7 @@ def upgrade() -> None:
 
     if not super_admin_password:
         print(
-            "WARNING: SUPER_ADMIN_PASSWORD not set in environment. "
-            "Skipping admin credential fix."
+            "WARNING: SUPER_ADMIN_PASSWORD not set in environment. Skipping admin credential fix."
         )
         return
 
