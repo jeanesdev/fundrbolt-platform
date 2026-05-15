@@ -45,7 +45,7 @@ jobs:
         working-directory: ./frontend/fundrbolt-admin
         run: pnpm build
         env:
-          VITE_API_URL: https://api.fundrbolt.com
+          VITE_API_URL: https://api.fundrbolt.com/api/v1
           VITE_ENVIRONMENT: production
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN_ADMIN }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
