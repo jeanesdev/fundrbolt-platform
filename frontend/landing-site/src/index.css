@@ -12,14 +12,21 @@
     /* Colors */
     --color-primary: #2563eb;
     --color-primary-hover: #1d4ed8;
+    --color-primary-light: rgba(37, 99, 235, 0.15);
+    --color-primary-dark: #1e40af;
     --color-secondary: #64748b;
     --color-success: #10b981;
     --color-error: #ef4444;
-    --color-text: #1e293b;
-    --color-text-light: #64748b;
-    --color-bg: #ffffff;
-    --color-bg-alt: #f8fafc;
-    --color-border: #e2e8f0;
+    --color-text: #f1f5f9;
+    --color-text-light: #94a3b8;
+    --color-text-dark: #f1f5f9;
+    --color-text-muted: #94a3b8;
+    --color-white: #ffffff;
+    --color-bg: #11294c;
+    --color-bg-alt: #0d2140;
+    --color-bg-light: #0d2140;
+    --color-card: #162f57;
+    --color-border: rgba(255, 255, 255, 0.12);
 
     /* Spacing */
     --spacing-xs: 0.25rem;

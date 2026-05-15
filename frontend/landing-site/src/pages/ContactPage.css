@@ -2,7 +2,7 @@
 
 /* Hero Section */
 .contact-hero {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    background: linear-gradient(135deg, #0a1d36 0%, #162f57 100%);
     color: var(--color-white);
     padding: 4rem 0 3rem;
     text-align: center;
@@ -91,7 +91,7 @@
 /* Resources Section */
 .contact-resources {
     padding: 4rem 0;
-    background: var(--color-white);
+    background: var(--color-bg-alt);
     text-align: center;
 }
 
