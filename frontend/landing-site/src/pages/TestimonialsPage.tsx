@@ -4,7 +4,6 @@
 
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link } from 'react-router-dom';
 import { TestimonialCard } from '../components/testimonials/TestimonialCard';
 import { type Testimonial, testimonialApi } from '../services/api';
 import './TestimonialsPage.css';
@@ -16,7 +15,6 @@ const ITEMS_PER_PAGE = 10;
 export const TestimonialsPage = () => {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('');
 
@@ -24,7 +22,6 @@ export const TestimonialsPage = () => {
     const fetchTestimonials = async () => {
       try {
         setLoading(true);
-        setError(null);
 
         const params = {
           limit: ITEMS_PER_PAGE,
@@ -35,7 +32,7 @@ export const TestimonialsPage = () => {
         const data = await testimonialApi.list(params);
         setTestimonials(data);
       } catch (err) {
-        setError('Failed to load testimonials. Please try again later.');
+        // Silently treat errors as empty — no error message shown to visitors
         // eslint-disable-next-line no-console
         console.error('Error fetching testimonials:', err);
       } finally {
@@ -92,7 +89,8 @@ export const TestimonialsPage = () => {
         </div>
       </section>
 
-      {/* Filter Section */}
+      {/* Filter Section — hidden when there are no testimonials at all */}
+      {(!loading && (testimonials.length > 0 || roleFilter !== '')) && (
       <section className="testimonials-filters">
         <div className="container">
           <div className="filter-buttons" role="group" aria-label="Filter testimonials by role">
@@ -127,29 +125,19 @@ export const TestimonialsPage = () => {
           </div>
         </div>
       </section>
+      )}
 
-      {/* Testimonials Grid */}
+      {/* Testimonials Grid — hidden when there are no testimonials at all */}
+      {(!loading && (testimonials.length > 0 || roleFilter !== '')) && (
       <section className="testimonials-grid-section">
         <div className="container">
-          {loading && (
-            <div className="loading-state" aria-live="polite">
-              <p>Loading testimonials...</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="error-state" role="alert" aria-live="assertive">
-              <p>{error}</p>
-            </div>
-          )}
-
-          {!loading && !error && testimonials.length === 0 && (
+          {testimonials.length === 0 && (
             <div className="empty-state">
-              <p>No testimonials found for this filter.</p>
+              <p>No stories found for this filter.</p>
             </div>
           )}
 
-          {!loading && !error && testimonials.length > 0 && (
+          {!loading && testimonials.length > 0 && (
             <div className="testimonials-grid">
               {testimonials.map((testimonial) => (
                 <TestimonialCard
@@ -166,7 +154,6 @@ export const TestimonialsPage = () => {
 
           {/* Pagination - only show if there's more than one page */}
           {!loading &&
-            !error &&
             testimonials.length > 0 &&
             (currentPage > 1 || testimonials.length === ITEMS_PER_PAGE) && (
               <div className="pagination" role="navigation" aria-label="Pagination">
@@ -193,6 +180,7 @@ export const TestimonialsPage = () => {
             )}
         </div>
       </section>
+      )}
 
       {/* CTA Section */}
       <section className="testimonials-cta">
@@ -203,12 +191,12 @@ export const TestimonialsPage = () => {
             raise more funds and create unforgettable experiences.
           </p>
           <div className="cta-buttons">
-            <Link to="/register/npo" className="btn btn-primary">
+            <a href="https://admin.fundrbolt.com/register-npo" className="btn btn-primary">
               Register Your NPO
-            </Link>
-            <Link to="/register/donor" className="btn btn-secondary">
+            </a>
+            <a href="https://app.fundrbolt.com/sign-up" className="btn btn-secondary">
               Register as Donor
-            </Link>
+            </a>
           </div>
         </div>
       </section>
