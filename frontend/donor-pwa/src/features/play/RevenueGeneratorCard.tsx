@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { Slider } from '@/components/ui/slider'
 import { type RevenueGeneratorItemSummary } from '@/services/revenueGeneratorService'
 import { ArrowRight } from 'lucide-react'
-import { Slider } from '@/components/ui/slider'
+import { useState } from 'react'
 
 interface Props {
   item: RevenueGeneratorItemSummary
@@ -12,14 +12,14 @@ interface Props {
 
 export function RevenueGeneratorCard({
   item,
-  brandPrimary,
   onPurchase,
   isPurchasing,
 }: Props) {
-  const primary = brandPrimary ?? '59, 130, 246'
   const [slideValue, setSlideValue] = useState<number[]>([0])
   const [showConfirm, setShowConfirm] = useState(false)
   const [confirmSlideValue, setConfirmSlideValue] = useState<number[]>([0])
+  const [isDragging, setIsDragging] = useState(false)
+  const [isConfirmDragging, setIsConfirmDragging] = useState(false)
   const slidePercent = slideValue[0] ?? 0
   const confirmPercent = confirmSlideValue[0] ?? 0
 
@@ -37,6 +37,7 @@ export function RevenueGeneratorCard({
   }
 
   const handleSlideCommit = (value: number[]) => {
+    setIsDragging(false)
     const pct = value[0] ?? 0
     if (pct >= 95 && !isPurchasing && onPurchase) {
       setShowConfirm(true)
@@ -48,13 +49,13 @@ export function RevenueGeneratorCard({
     <div
       className='animate-card-enter relative overflow-hidden rounded-2xl border'
       style={{
-        borderColor: `rgba(${primary}, 0.2)`,
-        backgroundColor: `rgba(${primary}, 0.04)`,
+        borderColor: 'rgba(var(--event-primary, 59, 130, 246), 0.2)',
+        backgroundColor: 'rgba(var(--event-primary, 59, 130, 246), 0.04)',
       }}
     >
       <span
         className='absolute top-0 right-0 rounded-bl-lg px-2 py-0.5 text-xs font-bold tracking-wide text-white'
-        style={{ backgroundColor: `rgb(${primary})` }}
+        style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))' }}
       >
         PLAY
       </span>
@@ -79,7 +80,7 @@ export function RevenueGeneratorCard({
           <div className='shrink-0 text-right'>
             <span
               className='text-lg font-bold'
-              style={{ color: `rgb(${primary})` }}
+              style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
             >
               ${Number(item.price_per_entry).toFixed(2)}
             </span>
@@ -118,8 +119,8 @@ export function RevenueGeneratorCard({
               style={
                 item.is_open_for_entries
                   ? {
-                      backgroundColor: `rgba(${primary}, 0.15)`,
-                      color: `rgb(${primary})`,
+                      backgroundColor: 'rgba(var(--event-primary, 59, 130, 246), 0.15)',
+                      color: 'rgb(var(--event-primary, 59, 130, 246))',
                     }
                   : {
                       backgroundColor: 'rgba(107, 114, 128, 0.1)',
@@ -137,15 +138,18 @@ export function RevenueGeneratorCard({
             className='relative mt-3 h-14 overflow-hidden rounded-[28px]'
             style={{
               backgroundColor: 'rgb(255, 255, 255)',
-              border: `1px solid rgba(${primary}, 0.35)`,
+              border: '1px solid rgba(var(--event-primary, 59, 130, 246), 0.35)',
               touchAction: 'none',
             }}
-            onPointerLeave={() => setSlideValue([0])}
+            onPointerDown={() => setIsDragging(true)}
+            onPointerLeave={() => {
+              if (!isDragging) setSlideValue([0])
+            }}
           >
             <div className='pointer-events-none absolute inset-0 z-0 bg-white' />
             <div
-              className='pointer-events-none absolute top-0 bottom-0 left-0 z-[1] rounded-l-[28px] bg-[rgb(34_197_94)]'
-              style={{ width: getFillWidth(slidePercent) }}
+              className='pointer-events-none absolute top-0 bottom-0 left-0 z-[1] rounded-l-[28px]'
+              style={{ width: getFillWidth(slidePercent), backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))' }}
             />
             <div className='pointer-events-none absolute inset-y-0 right-14 left-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)]'>
               {isPurchasing ? (
@@ -163,7 +167,7 @@ export function RevenueGeneratorCard({
               className='pointer-events-none absolute top-0 z-[3] flex h-14 w-14 items-center justify-center rounded-full text-white shadow-md'
               style={{
                 left: getKnobLeft(slidePercent),
-                backgroundColor: `rgb(${primary})`,
+                backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
               }}
             >
               <ArrowRight className='h-6 w-6' />
@@ -186,7 +190,7 @@ export function RevenueGeneratorCard({
       {showConfirm && (
         <div
           className='absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 rounded-2xl p-4'
-          style={{ backgroundColor: `rgb(${primary})` }}
+          style={{ backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))' }}
         >
           <div className='text-center'>
             <p className='text-xs font-semibold tracking-wide text-white/70 uppercase'>
@@ -204,7 +208,10 @@ export function RevenueGeneratorCard({
               border: '1px solid rgba(255,255,255,0.4)',
               touchAction: 'none',
             }}
-            onPointerLeave={() => setConfirmSlideValue([0])}
+            onPointerDown={() => setIsConfirmDragging(true)}
+            onPointerLeave={() => {
+              if (!isConfirmDragging) setConfirmSlideValue([0])
+            }}
           >
             <div className='pointer-events-none absolute inset-0 z-0' />
             <div
@@ -222,7 +229,7 @@ export function RevenueGeneratorCard({
               style={{
                 left: getKnobLeft(confirmPercent),
                 backgroundColor: 'white',
-                color: `rgb(${primary})`,
+                color: 'rgb(var(--event-primary, 59, 130, 246))',
               }}
             >
               <ArrowRight className='h-6 w-6' />
@@ -231,6 +238,7 @@ export function RevenueGeneratorCard({
               value={confirmSlideValue}
               onValueChange={(v) => setConfirmSlideValue(v)}
               onValueCommit={(v) => {
+                setIsConfirmDragging(false)
                 const pct = v[0] ?? 0
                 if (pct >= 95) {
                   setShowConfirm(false)

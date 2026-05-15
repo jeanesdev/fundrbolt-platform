@@ -54,7 +54,7 @@ export function PlayTab({ eventId, brandPrimary }: Props) {
         <div className='flex items-center justify-center py-16'>
           <Loader2
             className='h-8 w-8 animate-spin'
-            style={{ color: `rgb(${primary})` }}
+            style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
           />
         </div>
       )}
@@ -63,8 +63,8 @@ export function PlayTab({ eventId, brandPrimary }: Props) {
         <div
           className='flex items-center gap-3 rounded-2xl border p-4'
           style={{
-            borderColor: `rgba(${primary}, 0.2)`,
-            backgroundColor: `rgba(${primary}, 0.06)`,
+            borderColor: 'rgba(var(--event-primary, 59, 130, 246), 0.2)',
+            backgroundColor: 'rgba(var(--event-primary, 59, 130, 246), 0.06)',
           }}
         >
           <p
