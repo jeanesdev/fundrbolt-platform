@@ -56,13 +56,13 @@ export const Navigation = () => {
             <Link to="/contact" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>
               Contact
             </Link>
-            <Link
-              to="/login"
+            <a
+              href="https://app.fundrbolt.com/sign-in"
               className="nav-link nav-link-login"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Login
-            </Link>
+            </a>
           </div>
         </div>
       </div>

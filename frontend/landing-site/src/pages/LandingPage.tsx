@@ -36,12 +36,12 @@ export const LandingPage = () => {
               Mobile bidding, real-time updates, and easy setup get your next event running in days, not weeks.
             </p>
             <div className="hero-cta">
-              <Link to="/register/donor" className="btn btn-primary btn-large">
+              <a href="https://app.fundrbolt.com/sign-up" className="btn btn-primary btn-large">
                 Register as Donor
-              </Link>
-              <Link to="/register/npo" className="btn btn-secondary btn-large">
+              </a>
+              <a href="https://admin.fundrbolt.com/register-npo" className="btn btn-secondary btn-large">
                 Register Your NPO
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -121,9 +121,9 @@ export const LandingPage = () => {
               <p className="user-type-description">
                 Participate in auctions and support causes you care about. Easy mobile bidding from anywhere.
               </p>
-              <Link to="/register/donor" className="btn btn-primary">
+              <a href="https://app.fundrbolt.com/sign-up" className="btn btn-primary">
                 Register as Donor
-              </Link>
+              </a>
             </div>
 
             <div className="user-type-card">
@@ -131,9 +131,9 @@ export const LandingPage = () => {
               <p className="user-type-description">
                 Professional tools for managing live and silent auctions. Real-time controls at your fingertips.
               </p>
-              <Link to="/register/auctioneer" className="btn btn-primary">
+              <a href="https://admin.fundrbolt.com/sign-up" className="btn btn-primary">
                 Register as Auctioneer
-              </Link>
+              </a>
             </div>
 
             <div className="user-type-card user-type-featured">
@@ -142,17 +142,17 @@ export const LandingPage = () => {
               <p className="user-type-description">
                 Launch your fundraising event in days. Everything you need to maximize revenue and donor engagement.
               </p>
-              <Link to="/register/npo" className="btn btn-primary">
+              <a href="https://admin.fundrbolt.com/register-npo" className="btn btn-primary">
                 Register Your NPO
-              </Link>
+              </a>
             </div>
           </div>
 
           <div className="existing-user">
             <p>Already have an account?</p>
-            <Link to="/login" className="btn btn-secondary">
+            <a href="https://app.fundrbolt.com/sign-in" className="btn btn-secondary">
               Login
-            </Link>
+            </a>
           </div>
         </div>
       </section>
