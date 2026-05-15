@@ -67,8 +67,8 @@
     font-size: 1rem;
     line-height: 1.5;
     color: var(--color-text);
-    background: var(--color-white);
-    border: 2px solid var(--color-border);
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     transition: all 0.2s ease;
     font-family: inherit;
@@ -76,12 +76,16 @@
 
 .form-input:focus {
     outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    border-color: var(--color-brand-gold);
+    box-shadow: 0 0 0 3px rgba(255, 194, 14, 0.2);
+}
+
+.form-input::placeholder {
+    color: rgba(255, 255, 255, 0.35);
 }
 
 .form-input.error {
-    border-color: #dc2626;
+    border-color: #f87171;
 }
 
 .form-input.error:focus {
@@ -89,9 +93,9 @@
 }
 
 .form-input:disabled {
-    background: var(--color-bg-light);
+    background: rgba(255, 255, 255, 0.03);
     cursor: not-allowed;
-    opacity: 0.6;
+    opacity: 0.5;
 }
 
 .form-textarea {
