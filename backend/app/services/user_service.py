@@ -153,7 +153,7 @@ class UserService:
             roles_table = Base.metadata.tables["roles"]
             role_stmt = select(roles_table.c.name).where(roles_table.c.id == user.role_id)
             role_result = await db.execute(role_stmt)
-            role_name = role_result.scalar_one()
+            role_name = role_result.scalar_one_or_none() or "unknown"
 
             # Fetch NPO memberships
             npo_memberships = []
