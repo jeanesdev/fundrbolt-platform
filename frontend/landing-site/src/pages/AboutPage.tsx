@@ -42,7 +42,7 @@ export const AboutPage = () => {
             We're committed to removing the barriers that prevent nonprofits from
             reaching their full fundraising potential. By combining cutting-edge
             technology with deep understanding of nonprofit needs, we're transforming
-            how charitable organizations connect with donors and achieve their goals.
+            how charitable organizations connect with attendees and achieve their goals.
           </p>
         </div>
       </section>
@@ -56,7 +56,7 @@ export const AboutPage = () => {
               <div className="feature-icon">📱</div>
               <h3>Mobile Bidding</h3>
               <p>
-                Donors can bid from anywhere using their smartphones. No apps to download,
+                Attendees can bid from anywhere using their smartphones. No apps to download,
                 no complicated setup - just simple, intuitive mobile bidding that works
                 on any device.
               </p>
@@ -66,7 +66,7 @@ export const AboutPage = () => {
               <div className="feature-icon">⚡</div>
               <h3>Real-Time Updates</h3>
               <p>
-                See bids as they happen with live updates. Donors get instant notifications
+                See bids as they happen with live updates. Attendees get instant notifications
                 when they're outbid, creating excitement and encouraging engagement
                 throughout your event.
               </p>
@@ -97,7 +97,7 @@ export const AboutPage = () => {
               <h3>Powerful Analytics</h3>
               <p>
                 Track your auction performance in real-time with comprehensive analytics.
-                Understand donor behavior, identify top items, and make data-driven
+                Understand attendee behavior, identify top items, and make data-driven
                 decisions for future events.
               </p>
             </div>
@@ -106,7 +106,7 @@ export const AboutPage = () => {
               <div className="feature-icon">🔒</div>
               <h3>Secure & Reliable</h3>
               <p>
-                Built with enterprise-grade security. Your donor data is protected with
+                Built with enterprise-grade security. Your attendee data is protected with
                 encryption, secure payment processing, and compliance with all major
                 data protection regulations.
               </p>
@@ -121,7 +121,7 @@ export const AboutPage = () => {
           <h2>Built for Everyone</h2>
           <div className="benefits-grid">
             <div className="benefit-card">
-              <h3>For Donors</h3>
+              <h3>For Attendees</h3>
               <ul>
                 <li>Bid from anywhere on your phone</li>
                 <li>Receive instant outbid notifications</li>
@@ -147,7 +147,7 @@ export const AboutPage = () => {
               <ul>
                 <li>No upfront costs - only pay when you succeed</li>
                 <li>Quick setup with minimal training</li>
-                <li>Branded auction experience for your donors</li>
+                <li>Branded auction experience for your attendees</li>
                 <li>Comprehensive reporting and analytics</li>
                 <li>Dedicated support from setup to settlement</li>
               </ul>
@@ -169,7 +169,7 @@ export const AboutPage = () => {
               Register Your NPO
             </a>
             <a href="/register/donor" className="btn btn-secondary">
-              Register as Donor
+              Register as Attendee
             </a>
           </div>
         </div>

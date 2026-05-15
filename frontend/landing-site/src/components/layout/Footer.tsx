@@ -34,7 +34,7 @@ export const Footer = () => {
           <div className="footer-section">
             <h4 className="footer-heading">Get Started</h4>
             <nav className="footer-links" aria-label="Get started links">
-              <Link to="/register/donor" className="footer-link">Register as Donor</Link>
+              <Link to="/register/donor" className="footer-link">Register as Attendee</Link>
               <Link to="/register/auctioneer" className="footer-link">Register as Auctioneer</Link>
               <Link to="/register/npo" className="footer-link">Register Your NPO</Link>
               <Link to="/login" className="footer-link">Login</Link>

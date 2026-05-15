@@ -37,7 +37,7 @@ export const LandingPage = () => {
             </p>
             <div className="hero-cta">
               <a href="https://app.fundrbolt.com/sign-up" className="btn btn-primary btn-large">
-                Register as Donor
+                Register as Attendee
               </a>
               <a href="https://admin.fundrbolt.com/register-npo" className="btn btn-secondary btn-large">
                 Register Your NPO
@@ -60,7 +60,7 @@ export const LandingPage = () => {
               <div className="feature-icon">📱</div>
               <h3 className="feature-title">Mobile Bidding</h3>
               <p className="feature-description">
-                Silent auction bidding with push notifications from any device. Donors can track auctions throughout the event, increasing engagement and bids.
+                Silent auction bidding with push notifications from any device. Attendees can track auctions throughout the event, increasing engagement and bids.
               </p>
             </div>
 
@@ -68,7 +68,7 @@ export const LandingPage = () => {
               <div className="feature-icon">⚡</div>
               <h3 className="feature-title">Real-Time Updates</h3>
               <p className="feature-description">
-                Instant leaderboards and bid notifications keep the excitement high and donors engaged throughout your event.
+                Instant leaderboards and bid notifications keep the excitement high and attendees engaged throughout your event.
               </p>
             </div>
 
@@ -117,12 +117,12 @@ export const LandingPage = () => {
 
           <div className="user-type-grid">
             <div className="user-type-card">
-              <h3 className="user-type-title">For Donors</h3>
+              <h3 className="user-type-title">For Attendees</h3>
               <p className="user-type-description">
                 Participate in auctions and support causes you care about. Easy mobile bidding from anywhere.
               </p>
               <a href="https://app.fundrbolt.com/sign-up" className="btn btn-primary">
-                Register as Donor
+                Register as Attendee
               </a>
             </div>
 
@@ -140,7 +140,7 @@ export const LandingPage = () => {
               <div className="featured-badge">Popular</div>
               <h3 className="user-type-title">For Nonprofits</h3>
               <p className="user-type-description">
-                Launch your fundraising event in days. Everything you need to maximize revenue and donor engagement.
+                Launch your fundraising event in days. Everything you need to maximize revenue and attendee engagement.
               </p>
               <a href="https://admin.fundrbolt.com/register-npo" className="btn btn-primary">
                 Register Your NPO
