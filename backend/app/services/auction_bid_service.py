@@ -22,7 +22,7 @@ from app.models.auction_bid import (
     PaddleRaiseContribution,
     TransactionStatus,
 )
-from app.models.auction_item import AuctionItem, AuctionType
+from app.models.auction_item import AuctionItem, AuctionItemMedia, AuctionType
 from app.models.event import Event
 from app.models.event_registration import EventRegistration
 from app.models.notification import NotificationPriorityEnum, NotificationTypeEnum
@@ -257,6 +257,40 @@ class AuctionBidService:
         amount_str = f"${new_bid_amount:,.2f}" if new_bid_amount else "a higher amount"
         old_amount_str = f"${previous_bid.bid_amount:,.2f}"
 
+        # Fetch primary image for thumbnail
+        media_result = await self.db.execute(
+            select(AuctionItemMedia.file_path)
+            .where(
+                AuctionItemMedia.auction_item_id == item.id,
+                AuctionItemMedia.media_type == "image",
+            )
+            .order_by(AuctionItemMedia.display_order)
+            .limit(1)
+        )
+        image_url: str | None = None
+        raw_image_url = media_result.scalar_one_or_none()
+        if raw_image_url:
+            if raw_image_url.startswith("https://"):
+                try:
+                    from app.core.config import get_settings
+                    from app.services.auction_item_media_service import (
+                        AuctionItemMediaService,
+                    )
+
+                    _settings = get_settings()
+                    _media_svc = AuctionItemMediaService(_settings, self.db)
+                    container_path = f"{_settings.azure_storage_container_name}/"
+                    if container_path in raw_image_url:
+                        blob_path = raw_image_url.split(container_path, 1)[1]
+                        blob_path = blob_path.split("?", 1)[0]
+                        image_url = _media_svc._generate_blob_sas_url(blob_path, expiry_hours=24)
+                    else:
+                        image_url = raw_image_url
+                except Exception:
+                    image_url = raw_image_url
+            else:
+                image_url = raw_image_url
+
         async with self.db.begin_nested():
             await NotificationService.create_notification(
                 db=self.db,
@@ -271,9 +305,11 @@ class AuctionBidService:
                 ),
                 data={
                     "item_id": str(item.id),
+                    "item_title": item.title,
                     "deep_link": f"/events/{event_slug}?item={item.id}",
                     "animation_type": "flash",
                     "bid_amount": str(new_bid_amount) if new_bid_amount else None,
+                    **({"image_url": image_url} if image_url else {}),
                 },
                 sio=sio,
             )

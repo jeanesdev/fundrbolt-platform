@@ -61,7 +61,7 @@ export function BottomTabNav({
             'linear-gradient(to top, rgb(0 0 0 / 0.16), rgb(0 0 0 / 0))',
         }}
       />
-      <div className='flex h-14 items-stretch'>
+      <div className='flex h-12 items-stretch'>
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab
           const badgeCount = badges[tab.id] ?? 0

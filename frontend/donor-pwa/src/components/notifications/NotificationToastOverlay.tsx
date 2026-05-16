@@ -7,8 +7,8 @@
  * for dynamically-created elements outside of the React tree, so we use
  * inline styles + the keyframe animations defined in the global stylesheet).
  */
-import { useEffect } from 'react'
 import type { NotificationData } from '@/services/notification-service'
+import { useEffect } from 'react'
 
 const TOAST_DURATION = 5000
 const MAX_VISIBLE = 3
@@ -67,7 +67,7 @@ function ensureContainer() {
     containerEl = document.createElement('div')
     containerEl.id = 'notification-toast-overlay'
     containerEl.style.cssText =
-      'position:fixed;top:0;left:0;right:0;z-index:9999;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 16px 0;'
+      'position:fixed;top:0;left:0;right:0;z-index:9999;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:calc(env(safe-area-inset-top, 0px) + 12px);padding-left:16px;padding-right:16px;padding-bottom:0;'
     document.body.appendChild(containerEl)
   }
 }
