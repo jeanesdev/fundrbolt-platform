@@ -38,16 +38,6 @@ export function InstallPromptBanner({
     return () => clearTimeout(showTimer)
   }, [canShow, showDelay])
 
-  // Auto-dismiss after 5 seconds of being visible
-  useEffect(() => {
-    if (!visible) return
-
-    const autoDismissTimer = setTimeout(() => {
-      setVisible(false)
-    }, 5000)
-
-    return () => clearTimeout(autoDismissTimer)
-  }, [visible])
 
   if (!visible || !canShow) return null
 
