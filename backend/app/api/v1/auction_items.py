@@ -265,22 +265,24 @@ async def list_auction_items(
         primary_media = media_result.scalar_one_or_none()
 
         if primary_media and primary_media.file_path:
-            # Generate SAS URL for full-resolution image (not thumbnail)
-            if primary_media.file_path.startswith("https://"):
+            # Prefer thumbnail (small, 200x200) for card list view performance;
+            # fall back to full-resolution image if no thumbnail exists (e.g. imported items).
+            image_blob_url = primary_media.thumbnail_path or primary_media.file_path
+            if image_blob_url.startswith("https://"):
                 try:
                     container_path = f"{settings.azure_storage_container_name}/"
-                    if container_path in primary_media.file_path:
-                        blob_path = primary_media.file_path.split(container_path, 1)[1]
+                    if container_path in image_blob_url:
+                        blob_path = image_blob_url.split(container_path, 1)[1]
                         blob_path = blob_path.split("?", 1)[0]
                         item_dict["primary_image_url"] = media_service._generate_blob_sas_url(
                             blob_path, expiry_hours=24
                         )
                     else:
-                        item_dict["primary_image_url"] = primary_media.file_path
+                        item_dict["primary_image_url"] = image_blob_url
                 except (ValueError, IndexError):
-                    item_dict["primary_image_url"] = primary_media.file_path
+                    item_dict["primary_image_url"] = image_blob_url
             else:
-                item_dict["primary_image_url"] = primary_media.file_path
+                item_dict["primary_image_url"] = image_blob_url
         else:
             item_dict["primary_image_url"] = None
 

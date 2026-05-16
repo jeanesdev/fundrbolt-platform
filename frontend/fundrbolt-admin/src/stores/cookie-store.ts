@@ -7,7 +7,6 @@ import type {
   CookieConsentPreferences,
   CookieConsentStatusResponse,
 } from '@/types/cookie'
-import { create } from 'zustand'
 import {
   clearSessionId,
   getCookiePreferences,
@@ -15,6 +14,7 @@ import {
   hasSetCookiePreferences,
   saveCookiePreferences,
 } from '@/utils/cookie-manager'
+import { create } from 'zustand'
 
 interface CookieConsentState {
   preferences: CookieConsentPreferences
@@ -95,6 +95,16 @@ export const useCookieStore = create<CookieConsentState>((set, get) => ({
   setConsent: async (prefs: Omit<CookieConsentPreferences, 'essential'>) => {
     set({ isLoading: true, error: null })
 
+    const preferences: CookieConsentPreferences = {
+      essential: true,
+      ...prefs,
+    }
+
+    // Persist locally first so the banner doesn't reappear even if the
+    // backend call fails (e.g. network error, unauthenticated session).
+    saveCookiePreferences(preferences)
+    set({ preferences, hasConsent: true })
+
     try {
       const sessionId = get().sessionId || getSessionId()
       set({ sessionId })
@@ -104,29 +114,24 @@ export const useCookieStore = create<CookieConsentState>((set, get) => ({
         sessionId
       )
 
-      const preferences: CookieConsentPreferences = {
-        essential: true,
-        ...prefs,
-      }
-
-      set({
-        preferences,
-        hasConsent: true,
-        isLoading: false,
-      })
-
-      // Save to localStorage
-      saveCookiePreferences(preferences)
+      set({ isLoading: false })
     } catch (_error) {
-      set({
-        error: 'Failed to set cookie consent',
-        isLoading: false,
-      })
+      // Backend sync failed but local preference is already saved.
+      set({ isLoading: false })
     }
   },
 
   updateConsent: async (prefs: Omit<CookieConsentPreferences, 'essential'>) => {
     set({ isLoading: true, error: null })
+
+    const preferences: CookieConsentPreferences = {
+      essential: true,
+      ...prefs,
+    }
+
+    // Persist locally first.
+    saveCookiePreferences(preferences)
+    set({ preferences, hasConsent: true })
 
     try {
       const sessionId = get().sessionId || getSessionId()
@@ -136,24 +141,9 @@ export const useCookieStore = create<CookieConsentState>((set, get) => ({
         sessionId
       )
 
-      const preferences: CookieConsentPreferences = {
-        essential: true,
-        ...prefs,
-      }
-
-      set({
-        preferences,
-        hasConsent: true,
-        isLoading: false,
-      })
-
-      // Save to localStorage
-      saveCookiePreferences(preferences)
+      set({ isLoading: false })
     } catch (_error) {
-      set({
-        error: 'Failed to update cookie consent',
-        isLoading: false,
-      })
+      set({ isLoading: false })
     }
   },
 

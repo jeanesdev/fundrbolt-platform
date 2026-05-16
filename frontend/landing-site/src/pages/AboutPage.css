@@ -2,7 +2,7 @@
 
 /* Hero Section */
 .about-hero {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a1d36 0%, #162f57 100%);
     color: white;
     padding: 4rem 0 3rem;
     text-align: center;
@@ -47,7 +47,7 @@
 /* Features Section */
 .features-section {
     padding: 3rem 0;
-    background-color: white;
+    background-color: var(--color-bg);
 }
 
 .features-section h2 {
@@ -97,7 +97,7 @@
 /* Benefits Section */
 .benefits-section {
     padding: 3rem 0;
-    background: linear-gradient(to bottom, white 0%, var(--color-bg-alt) 100%);
+    background-color: var(--color-bg-alt);
 }
 
 .benefits-section h2 {
@@ -114,16 +114,16 @@
 }
 
 .benefit-card {
-    background: white;
+    background: var(--color-card);
     padding: 2rem;
     border-radius: var(--radius-lg);
-    border: 2px solid var(--color-border);
+    border: 1px solid var(--color-border);
     transition: all 0.3s ease;
 }
 
 .benefit-card.featured {
     border-color: var(--color-primary);
-    background: linear-gradient(to bottom, white 0%, #f0f7ff 100%);
+    background: linear-gradient(to bottom, var(--color-card) 0%, rgba(37, 99, 235, 0.12) 100%);
 }
 
 .benefit-card:hover {
@@ -162,7 +162,7 @@
 /* CTA Section */
 .cta-section {
     padding: 4rem 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a1d36 0%, #162f57 100%);
     color: white;
     text-align: center;
 }

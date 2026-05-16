@@ -14,8 +14,47 @@ declare const self: ServiceWorkerGlobalScope
 
 // Claim clients immediately on activation so push subscriptions
 // are associated with the active SW that will receive push events.
+// Also reload all open clients so they get the new HTML/assets instead
+// of being left with stale references from the previous SW's cached shell.
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(
+    (async () => {
+      await self.clients.claim()
+
+      // Get all open windows before we wipe old cache entries.
+      const openClients = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      })
+
+      // Clean up stale precache entries from previous builds now that
+      // we have a reference to every open client.  We do this BEFORE
+      // reloading so the next load always comes from the fresh cache.
+      const { cleanupOutdatedCaches } = await import('workbox-precaching')
+      cleanupOutdatedCaches()
+
+      // Reload every open tab so it picks up the new HTML shell (and
+      // therefore the new content-hashed CSS/JS filenames).
+      //
+      // Prefer client.navigate() because it works even when the page's
+      // JS has not yet set up a message listener — which is the race
+      // condition that causes the "no CSS on homescreen PWA" bug on iOS:
+      // the SW activates before the page bundle finishes loading, the
+      // postMessage is never heard, and the page keeps serving stale
+      // asset hashes that cleanupOutdatedCaches() already removed.
+      for (const client of openClients) {
+        const windowClient = client as WindowClient
+        try {
+          await windowClient.navigate(windowClient.url)
+        } catch {
+          // navigate() can fail if the client is not focused (e.g. a
+          // background tab on some browsers).  Fall back to postMessage
+          // so the page can reload itself via the SW_UPDATED handler.
+          client.postMessage({ type: 'SW_UPDATED' })
+        }
+      }
+    })()
+  )
 })
 
 // Handle SKIP_WAITING from the main thread (VitePWA update prompt).
@@ -106,7 +145,10 @@ async function setupWorkboxCaching() {
     await import('workbox-strategies')
   const { ExpirationPlugin } = await import('workbox-expiration')
 
-  // Precache static assets injected by vite-plugin-pwa
+  // Precache static assets injected by vite-plugin-pwa.
+  // Note: cleanupOutdatedCaches() is called in the activate event handler
+  // (after clients.claim()) so that stale entries are only removed once
+  // every open tab has already been told to reload with the new shell.
   precacheAndRoute(self.__WB_MANIFEST)
 
   // Images: CacheFirst (30 days)

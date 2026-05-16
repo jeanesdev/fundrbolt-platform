@@ -46,18 +46,21 @@ logger = get_logger(__name__)
 # Get settings
 settings = get_settings()
 
-# Initialize Sentry error tracking (only when a real DSN URL is configured)
+# Initialize Sentry error tracking (only when a valid DSN is configured)
 if settings.sentry_dsn and settings.sentry_dsn.startswith("https://"):
-    sentry_sdk.init(
-        dsn=settings.sentry_dsn,
-        environment=settings.environment,
-        integrations=[
-            StarletteIntegration(transaction_style="endpoint"),
-            FastApiIntegration(transaction_style="endpoint"),
-        ],
-        traces_sample_rate=settings.sentry_traces_sample_rate,
-        send_default_pii=False,
-    )
+    try:
+        sentry_sdk.init(
+            dsn=settings.sentry_dsn,
+            environment=settings.environment,
+            integrations=[
+                StarletteIntegration(transaction_style="endpoint"),
+                FastApiIntegration(transaction_style="endpoint"),
+            ],
+            traces_sample_rate=settings.sentry_traces_sample_rate,
+            send_default_pii=False,
+        )
+    except Exception as _sentry_err:
+        logger.warning("Failed to initialize Sentry: %s", _sentry_err)
 
 
 @asynccontextmanager

@@ -365,6 +365,10 @@ class AuctionItemImportService:
         image_filenames: list[str],
         image_files: dict[str, bytes],
     ) -> None:
+        from app.services.auction_item_media_service import AuctionItemMediaService
+
+        media_service = AuctionItemMediaService(self.settings, self.db)
+
         display_order = 0
         for image_filename in image_filenames:
             if image_filename not in image_files:
@@ -374,6 +378,17 @@ class AuctionItemImportService:
             mime_type = magic.from_buffer(image_bytes, mime=True)
             file_path = self._store_image(item.id, image_filename, image_bytes, mime_type)
 
+            # Generate small thumbnail for card/list view performance.
+            # Non-fatal: if thumbnail generation fails, fall back to full-resolution image.
+            thumbnail_path: str | None = None
+            if mime_type.startswith("image/") and media_service.blob_service_client:
+                blob_name = f"auction-items/{item.id}/{image_filename}"
+                try:
+                    thumbnails = await media_service._generate_thumbnails(image_bytes, blob_name)
+                    thumbnail_path = thumbnails.get("small")
+                except Exception:
+                    pass
+
             media = AuctionItemMedia(
                 auction_item_id=item.id,
                 media_type=MediaType.IMAGE.value,
@@ -382,6 +397,7 @@ class AuctionItemImportService:
                 file_size=len(image_bytes),
                 mime_type=mime_type,
                 display_order=display_order,
+                thumbnail_path=thumbnail_path,
             )
             self.db.add(media)
             display_order += 1

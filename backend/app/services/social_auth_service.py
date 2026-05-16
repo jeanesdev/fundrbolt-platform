@@ -87,6 +87,13 @@ class SocialAuthService:
         settings = get_settings()
         client_id = getattr(settings, f"social_auth_{provider}_client_id", None)
         client_secret = getattr(settings, f"social_auth_{provider}_client_secret", None)
+        if provider == "apple":
+            return bool(
+                client_id
+                and client_secret
+                and settings.social_auth_apple_team_id
+                and settings.social_auth_apple_key_id
+            )
         return bool(client_id and client_secret)
 
     @classmethod
@@ -756,14 +763,50 @@ class SocialAuthService:
 
         import urllib.parse
 
-        params = {
+        params: dict[str, str] = {
             "client_id": client_id or "",
             "redirect_uri": redirect_uri,
             "state": state,
             "response_type": "code",
             "scope": SocialAuthService._get_scopes(provider),
         }
+        # Apple requires response_mode=query to deliver the code via GET redirect
+        # so the existing frontend /social-callback route can handle it.
+        if provider == ProviderKey.APPLE:
+            params["response_mode"] = "query"
         return f"{auth_base}?{urllib.parse.urlencode(params)}"
+
+    @staticmethod
+    def _generate_apple_client_secret() -> str:
+        """Generate a short-lived ES256 JWT client secret for Apple Sign In.
+
+        Apple requires a signed JWT instead of a static client secret.
+        See https://developer.apple.com/documentation/sign_in_with_apple/generate_and_validate_tokens
+        """
+        import jwt  # PyJWT
+
+        settings = get_settings()
+        private_key_pem = settings.social_auth_apple_client_secret or ""
+        team_id = settings.social_auth_apple_team_id or ""
+        key_id = settings.social_auth_apple_key_id or ""
+        client_id = settings.social_auth_apple_client_id or ""
+
+        now = datetime.now(UTC)
+        payload = {
+            "iss": team_id,
+            "iat": int(now.timestamp()),
+            "exp": int((now + timedelta(minutes=5)).timestamp()),
+            "aud": "https://appleid.apple.com",
+            "sub": client_id,
+        }
+        return str(
+            jwt.encode(
+                payload,
+                private_key_pem,
+                algorithm="ES256",
+                headers={"kid": key_id},
+            )
+        )
 
     @staticmethod
     def _simulate_provider_claims(provider: ProviderKey, code: str) -> dict[str, Any]:
@@ -785,8 +828,10 @@ class SocialAuthService:
         """Return OAuth2 scopes per provider (minimal for data minimization)."""
         scopes = {
             ProviderKey.GOOGLE: "openid email profile",
-            ProviderKey.APPLE: "email name",
-            ProviderKey.FACEBOOK: "email public_profile",
+            # Apple: only request email; name is only delivered via form_post
+            # and we use response_mode=query for compatibility with the SPA callback.
+            ProviderKey.APPLE: "email",
+            ProviderKey.FACEBOOK: "email,public_profile",
             ProviderKey.MICROSOFT: "openid email profile",
         }
         return scopes.get(provider, "openid email")
@@ -807,13 +852,14 @@ class SocialAuthService:
         client_id = getattr(settings, f"social_auth_{provider.value}_client_id", "")
         client_secret = getattr(settings, f"social_auth_{provider.value}_client_secret", "")
 
-        token_urls = {
+        # --- Google / Microsoft: standard OIDC code exchange ---
+        oidc_token_urls = {
             ProviderKey.GOOGLE: "https://oauth2.googleapis.com/token",
             ProviderKey.MICROSOFT: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
         }
-        token_url = token_urls.get(provider)
+        oidc_token_url = oidc_token_urls.get(provider)
 
-        if token_url and client_id and client_secret:
+        if oidc_token_url and client_id and client_secret:
             payload = {
                 "code": code,
                 "client_id": client_id,
@@ -822,10 +868,7 @@ class SocialAuthService:
                 "grant_type": "authorization_code",
             }
             async with httpx.AsyncClient(timeout=10.0) as http:
-                resp = await http.post(
-                    token_url,
-                    data=payload,
-                )
+                resp = await http.post(oidc_token_url, data=payload)
                 if resp.status_code != 200:
                     logger.error(
                         "Provider token exchange failed",
@@ -840,8 +883,8 @@ class SocialAuthService:
                     )
                 token_data = resp.json()
 
-            # Decode claims from the ID token (JWT payload, no verify needed —
-            # we obtained the token directly from the provider's token endpoint)
+            # Decode claims from the ID token (JWT payload — no signature verification
+            # needed since we obtained it directly from the provider's token endpoint)
             id_token = token_data.get("id_token", "")
             parts = id_token.split(".")
             if len(parts) == 3:
@@ -849,9 +892,95 @@ class SocialAuthService:
                 claims: dict[str, Any] = json.loads(base64.urlsafe_b64decode(padded))
                 return {k: v for k, v in claims.items() if k in ALLOWED_PROVIDER_CLAIMS}
 
-        # Fallback for providers not yet implemented (Apple, Facebook)
+        # --- Apple: code exchange with JWT client secret ---
+        if provider == ProviderKey.APPLE and client_id and client_secret:
+            settings = get_settings()
+            if settings.social_auth_apple_team_id and settings.social_auth_apple_key_id:
+                apple_jwt_secret = SocialAuthService._generate_apple_client_secret()
+                apple_payload = {
+                    "code": code,
+                    "client_id": client_id,
+                    "client_secret": apple_jwt_secret,
+                    "redirect_uri": redirect_uri,
+                    "grant_type": "authorization_code",
+                }
+                async with httpx.AsyncClient(timeout=10.0) as http:
+                    apple_resp = await http.post(
+                        "https://appleid.apple.com/auth/token",
+                        data=apple_payload,
+                    )
+                    if apple_resp.status_code != 200:
+                        logger.error(
+                            "Apple token exchange failed",
+                            extra={
+                                "status": apple_resp.status_code,
+                                "body": apple_resp.text[:200],
+                            },
+                        )
+                        raise ValueError(f"Apple token exchange failed: {apple_resp.status_code}")
+                    apple_token_data = apple_resp.json()
+
+                apple_id_token = apple_token_data.get("id_token", "")
+                apple_parts = apple_id_token.split(".")
+                if len(apple_parts) == 3:
+                    apple_padded = apple_parts[1] + "=" * (-len(apple_parts[1]) % 4)
+                    apple_claims: dict[str, Any] = json.loads(
+                        base64.urlsafe_b64decode(apple_padded)
+                    )
+                    return {k: v for k, v in apple_claims.items() if k in ALLOWED_PROVIDER_CLAIMS}
+
+        # --- Facebook: exchange code for access token, then fetch user info ---
+        if provider == ProviderKey.FACEBOOK and client_id and client_secret:
+            async with httpx.AsyncClient(timeout=10.0) as http:
+                fb_token_resp = await http.get(
+                    "https://graph.facebook.com/v18.0/oauth/access_token",
+                    params={
+                        "client_id": client_id,
+                        "client_secret": client_secret,
+                        "redirect_uri": redirect_uri,
+                        "code": code,
+                    },
+                )
+                if fb_token_resp.status_code != 200:
+                    logger.error(
+                        "Facebook token exchange failed",
+                        extra={
+                            "status": fb_token_resp.status_code,
+                            "body": fb_token_resp.text[:200],
+                        },
+                    )
+                    raise ValueError(f"Facebook token exchange failed: {fb_token_resp.status_code}")
+                fb_access_token = fb_token_resp.json().get("access_token", "")
+
+                fb_user_resp = await http.get(
+                    "https://graph.facebook.com/me",
+                    params={
+                        "fields": "id,email,name",
+                        "access_token": fb_access_token,
+                    },
+                )
+                if fb_user_resp.status_code != 200:
+                    logger.error(
+                        "Facebook user info fetch failed",
+                        extra={
+                            "status": fb_user_resp.status_code,
+                            "body": fb_user_resp.text[:200],
+                        },
+                    )
+                    raise ValueError("Failed to fetch user info from Facebook")
+                fb_user = fb_user_resp.json()
+
+            return {
+                "sub": fb_user.get("id", ""),
+                "email": fb_user.get("email", ""),
+                # Facebook only provides verified emails; treat as verified
+                "email_verified": True,
+                "name": fb_user.get("name", ""),
+            }
+
+        # Fallback — should only be reached if credentials are missing
         logger.warning(
-            "Using simulated claims — provider token exchange not implemented",
+            "Using simulated claims — provider credentials not configured",
             extra={"provider": provider.value},
         )
         return {

@@ -1,5 +1,5 @@
-import { type SlidePresentationLayout } from '@/types/auction-item'
 import apiClient from '@/lib/axios'
+import { type SlidePresentationLayout } from '@/types/auction-item'
 
 export interface CommissionUpsertRequest {
   commission_percent: number
@@ -324,6 +324,16 @@ class AuctioneerService {
   ): Promise<AuctioneerPaddleRaiseResponse> {
     const response = await apiClient.get<AuctioneerPaddleRaiseResponse>(
       `/admin/events/${eventId}/auctioneer/paddle-raise`
+    )
+    return response.data
+  }
+
+  async downloadLiveAuctionSlides(eventId: string): Promise<Blob> {
+    const response = await apiClient.get<Blob>(
+      `/admin/events/${eventId}/auctioneer/live-auction/slides/export`,
+      {
+        responseType: 'blob',
+      }
     )
     return response.data
   }

@@ -1,16 +1,16 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
-import type {
-  SocialAuthCallbackRequest,
-  SocialAuthCallbackResponse,
-  SocialAuthProvider,
-  SocialAuthProvidersResponse,
-  SocialAuthStartRequest,
-  SocialAuthStartResponse,
-} from '@fundrbolt/shared/types'
-import { sanitizeRequestPayload } from '@fundrbolt/shared/utils'
+import { isRetryableError, retryWithBackoff } from '@/lib/retry'
 import { useAuthStore } from '@/stores/auth-store'
 import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { isRetryableError, retryWithBackoff } from '@/lib/retry'
+import type {
+    SocialAuthCallbackRequest,
+    SocialAuthCallbackResponse,
+    SocialAuthProvider,
+    SocialAuthProvidersResponse,
+    SocialAuthStartRequest,
+    SocialAuthStartResponse,
+} from '@fundrbolt/shared/types'
+import { sanitizeRequestPayload } from '@fundrbolt/shared/utils'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 // Global flag to track if consent modal is already shown
 let consentModalShown = false

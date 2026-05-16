@@ -41,7 +41,7 @@ export const ContactPage = () => {
             <div className="contact-info">
               <h2>Contact Information</h2>
               <p>
-                Whether you're a nonprofit looking to modernize your fundraising, a donor with
+                Whether you're a nonprofit looking to modernize your fundraising, an attendee with
                 questions, or an auctioneer interested in our platform, we'd love to hear from you.
               </p>
 

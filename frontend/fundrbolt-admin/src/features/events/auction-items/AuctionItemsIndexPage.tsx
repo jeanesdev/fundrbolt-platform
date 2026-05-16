@@ -2,30 +2,31 @@
  * AuctionItemsIndexPage
  * Page for listing all auction items for an event
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import { reportService, type BidCardRequest } from '@/services/reportService'
-import revenueGeneratorService, {
-  type RGItem,
-} from '@/services/revenueGeneratorService'
-import { AuctionType, type AuctionItem } from '@/types/auction-item'
-import { Download, Loader2, Plus, Printer, Search, X } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import { BidCardSizeDialog } from '@/components/reports/BidCardSizeDialog'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { BidCardSizeDialog } from '@/components/reports/BidCardSizeDialog'
 import { AuctionItemList } from '@/features/events/components/AuctionItemList'
 import { RevenueGeneratorItemCard } from '@/features/events/components/RevenueGeneratorItemCard'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { RGItemForm } from '@/features/revenue-generators/RGItemForm'
+import auctioneerService from '@/services/auctioneerService'
+import { reportService, type BidCardRequest } from '@/services/reportService'
+import revenueGeneratorService, {
+    type RGItem,
+} from '@/services/revenueGeneratorService'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import { AuctionType, type AuctionItem } from '@/types/auction-item'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import { Download, Loader2, Plus, Printer, Search, X } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 type TypeFilter = 'all' | 'live' | 'silent' | 'revenue_generators'
 
@@ -178,6 +179,34 @@ export function AuctionItemsIndexPage() {
     })
   }
 
+  const exportLiveSlides = async () => {
+    try {
+      const blob = await auctioneerService.downloadLiveAuctionSlides(eventId)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${currentEvent.slug || 'event'}-live-auction-slides.pptx`
+      link.click()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to export PowerPoint')
+    }
+  }
+
+  const exportSilentSlides = async () => {
+    try {
+      const blob = await auctioneerService.downloadSilentAuctionSlides(eventId)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${currentEvent.slug || 'event'}-silent-auction-slides.pptx`
+      link.click()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to export PowerPoint')
+    }
+  }
+
   const handleDelete = async (item: AuctionItem) => {
     if (
       !window.confirm(
@@ -242,6 +271,28 @@ export function AuctionItemsIndexPage() {
                     : 'Bid Cards'}
                 </span>
               </Button>
+              {(typeFilter === 'all' || typeFilter === 'live') && (
+                <Button
+                  size='sm'
+                  variant='outline'
+                  onClick={() => void exportLiveSlides()}
+                >
+                  <Download className='mr-2 h-4 w-4' />
+                  <span className='hidden sm:inline'>Live PPT</span>
+                  <span className='sm:hidden'>Live PPT</span>
+                </Button>
+              )}
+              {(typeFilter === 'all' || typeFilter === 'silent') && (
+                <Button
+                  size='sm'
+                  variant='outline'
+                  onClick={() => void exportSilentSlides()}
+                >
+                  <Download className='mr-2 h-4 w-4' />
+                  <span className='hidden sm:inline'>Silent PPT</span>
+                  <span className='sm:hidden'>Silent PPT</span>
+                </Button>
+              )}
               <Button size='sm' onClick={handleAdd}>
                 <Plus className='mr-2 h-4 w-4' />
                 Add Item

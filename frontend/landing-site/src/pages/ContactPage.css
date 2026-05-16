@@ -2,7 +2,7 @@
 
 /* Hero Section */
 .contact-hero {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    background: linear-gradient(135deg, #0a1d36 0%, #162f57 100%);
     color: var(--color-white);
     padding: 4rem 0 3rem;
     text-align: center;
@@ -82,16 +82,17 @@
 
 /* Contact Form Container */
 .contact-form-container {
-    background: var(--color-white);
+    background: var(--color-card);
     padding: 2.5rem;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
 }
 
 /* Resources Section */
 .contact-resources {
     padding: 4rem 0;
-    background: var(--color-white);
+    background: var(--color-bg-alt);
     text-align: center;
 }
 
@@ -109,8 +110,8 @@
 
 .resource-card {
     padding: 2rem;
-    background: var(--color-bg-light);
-    border-radius: 12px;
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 

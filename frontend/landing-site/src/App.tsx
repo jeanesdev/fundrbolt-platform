@@ -12,6 +12,7 @@ const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ defaul
 const AboutPage = lazy(() => import('./pages/AboutPage').then(m => ({ default: m.AboutPage })));
 const TestimonialsPage = lazy(() => import('./pages/TestimonialsPage').then(m => ({ default: m.TestimonialsPage })));
 const ContactPage = lazy(() => import('./pages/ContactPage').then(m => ({ default: m.ContactPage })));
+const UnderConstructionPage = lazy(() => import('./pages/UnderConstructionPage').then(m => ({ default: m.UnderConstructionPage })));
 
 function App() {
   return (
@@ -28,7 +29,7 @@ function App() {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/testimonials" element={<TestimonialsPage />} />
               <Route path="/contact" element={<ContactPage />} />
-              {/* Additional routes will be added in future phases */}
+              <Route path="*" element={<UnderConstructionPage />} />
             </Route>
           </Routes>
         </Suspense>

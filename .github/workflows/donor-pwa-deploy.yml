@@ -21,7 +21,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
-      url: https://give.fundrbolt.com
+      url: https://app.fundrbolt.com
 
     steps:
       - name: Checkout code
@@ -71,7 +71,7 @@ jobs:
         continue-on-error: true
         run: |
           for i in $(seq 1 6); do
-            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://give.fundrbolt.com || echo "000")
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://app.fundrbolt.com || echo "000")
             echo "  Attempt $i/6: HTTP $HTTP_STATUS"
             if [[ "$HTTP_STATUS" == "200" ]]; then exit 0; fi
             sleep 15

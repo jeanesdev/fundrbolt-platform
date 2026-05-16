@@ -5,8 +5,8 @@
  * Active tab uses the event primary brand colour.
  * Supports a badge count on any tab.
  */
-import { Heart, PartyPopper, Ticket } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Heart, PartyPopper, Ticket } from 'lucide-react'
 
 export type DonorTab = 'home' | 'auction' | 'seat'
 
@@ -50,7 +50,7 @@ export function BottomTabNav({
         borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
         boxShadow:
           '0 -14px 30px rgb(0 0 0 / 0.26), 0 -3px 10px rgb(0 0 0 / 0.18)',
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        paddingBottom: 'var(--bottom-safe-area, 0px)',
       }}
     >
       <div
@@ -61,7 +61,7 @@ export function BottomTabNav({
             'linear-gradient(to top, rgb(0 0 0 / 0.16), rgb(0 0 0 / 0))',
         }}
       />
-      <div className='flex h-20 items-stretch'>
+      <div className='flex h-14 items-stretch'>
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab
           const badgeCount = badges[tab.id] ?? 0

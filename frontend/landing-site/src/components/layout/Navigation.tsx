@@ -2,7 +2,7 @@
  * Navigation component with mobile-first responsive design.
  */
 
-import { LogoNavyGold } from '@fundrbolt/shared/assets';
+import { LogoWhiteGold } from '@fundrbolt/shared/assets';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Navigation.css';
@@ -21,7 +21,7 @@ export const Navigation = () => {
           {/* Logo */}
           <Link to="/" className="nav-logo" aria-label="FundrBolt Home">
             <img
-              src={LogoNavyGold}
+              src={LogoWhiteGold}
               alt="FundrBolt"
               className="logo-image"
               style={{ height: '32px', width: 'auto' }}
@@ -56,13 +56,13 @@ export const Navigation = () => {
             <Link to="/contact" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>
               Contact
             </Link>
-            <Link
-              to="/login"
+            <a
+              href="https://app.fundrbolt.com/sign-in"
               className="nav-link nav-link-login"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Login
-            </Link>
+            </a>
           </div>
         </div>
       </div>

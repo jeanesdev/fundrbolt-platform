@@ -2,18 +2,18 @@
  * Axios HTTP client for donor PWA API requests.
  * Handles authentication tokens and token refresh automatically.
  */
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
-import type {
-  SocialAuthCallbackRequest,
-  SocialAuthCallbackResponse,
-  SocialAuthProvider,
-  SocialAuthProvidersResponse,
-  SocialAuthStartRequest,
-  SocialAuthStartResponse,
-} from '@fundrbolt/shared/types'
-import { sanitizeRequestPayload } from '@fundrbolt/shared/utils'
 import { useAuthStore } from '@/stores/auth-store'
 import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import type {
+    SocialAuthCallbackRequest,
+    SocialAuthCallbackResponse,
+    SocialAuthProvider,
+    SocialAuthProvidersResponse,
+    SocialAuthStartRequest,
+    SocialAuthStartResponse,
+} from '@fundrbolt/shared/types'
+import { sanitizeRequestPayload } from '@fundrbolt/shared/utils'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 const resolveApiBaseUrl = () => {
   const configuredApiUrl = import.meta.env.VITE_API_URL
