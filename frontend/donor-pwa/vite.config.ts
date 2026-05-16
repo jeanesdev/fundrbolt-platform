@@ -1,10 +1,10 @@
-import path from 'path'
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
+import react from '@vitejs/plugin-react-swc'
+import path from 'path'
+import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
-import { sentryVitePlugin } from '@sentry/vite-plugin'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -68,15 +68,15 @@ export default defineConfig({
     // Upload source maps to Sentry only when SENTRY_AUTH_TOKEN is set (i.e. in CI)
     ...(process.env.SENTRY_AUTH_TOKEN
       ? [
-          sentryVitePlugin({
-            org: process.env.SENTRY_ORG,
-            project: 'fundrbolt-donor',
-            authToken: process.env.SENTRY_AUTH_TOKEN,
-            sourcemaps: {
-              filesToDeleteAfterUpload: ['./dist/**/*.map'],
-            },
-          }),
-        ]
+        sentryVitePlugin({
+          org: process.env.SENTRY_ORG,
+          project: 'fundrbolt-donor',
+          authToken: process.env.SENTRY_AUTH_TOKEN,
+          sourcemaps: {
+            filesToDeleteAfterUpload: ['./dist/**/*.map'],
+          },
+        }),
+      ]
       : []),
   ],
   resolve: {
