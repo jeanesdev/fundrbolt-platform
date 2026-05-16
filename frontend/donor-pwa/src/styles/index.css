@@ -71,15 +71,9 @@
   padding-top: env(safe-area-inset-top, 0px);
 }
 
-/* Bottom safe area: present in browser (gesture bar), absent in installed PWA */
+/* Bottom safe area: used in both browser and installed PWA (home indicator on iPhone) */
 :root {
   --bottom-safe-area: env(safe-area-inset-bottom, 0px);
-}
-
-@media (display-mode: standalone) {
-  :root {
-    --bottom-safe-area: 0px;
-  }
 }
 
 @utility no-scrollbar {

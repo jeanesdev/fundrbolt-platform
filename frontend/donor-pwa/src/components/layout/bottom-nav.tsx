@@ -52,7 +52,7 @@ export function BottomNav() {
           paddingBottom: 'var(--bottom-safe-area, 0px)',
         }}
       >
-        <div className='flex h-14 items-stretch'>
+        <div className='flex h-12 items-stretch'>
           <NavTab
             to='/settings'
             icon={UserCog}

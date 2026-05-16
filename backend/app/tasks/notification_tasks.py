@@ -159,6 +159,20 @@ async def _send_auction_closed_async(event_id: str) -> int:
             for bid in winning_bids:
                 winner_user_ids.add(bid.user_id)
                 try:
+                    # Fetch primary image for thumbnail
+                    from app.models.auction_item import AuctionItemMedia
+
+                    media_result = await db.execute(
+                        select(AuctionItemMedia.file_path)
+                        .where(
+                            AuctionItemMedia.auction_item_id == bid.auction_item_id,
+                            AuctionItemMedia.media_type == "image",
+                        )
+                        .order_by(AuctionItemMedia.display_order)
+                        .limit(1)
+                    )
+                    item_image_url = media_result.scalar_one_or_none()
+
                     notification = await NotificationService.create_notification(
                         db=db,
                         event_id=event_uuid,
@@ -175,6 +189,7 @@ async def _send_auction_closed_async(event_id: str) -> int:
                             "deep_link": f"/events/{event_slug}?item={bid.auction_item_id}",
                             "animation_type": "confetti",
                             "bid_amount": str(bid.bid_amount),
+                            **({"image_url": item_image_url} if item_image_url else {}),
                         },
                         sio=sio,
                         dispatch_tasks=False,

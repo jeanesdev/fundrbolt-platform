@@ -22,7 +22,7 @@ from app.models.auction_bid import (
     PaddleRaiseContribution,
     TransactionStatus,
 )
-from app.models.auction_item import AuctionItem, AuctionType
+from app.models.auction_item import AuctionItem, AuctionItemMedia, AuctionType
 from app.models.event import Event
 from app.models.event_registration import EventRegistration
 from app.models.notification import NotificationPriorityEnum, NotificationTypeEnum
@@ -257,6 +257,18 @@ class AuctionBidService:
         amount_str = f"${new_bid_amount:,.2f}" if new_bid_amount else "a higher amount"
         old_amount_str = f"${previous_bid.bid_amount:,.2f}"
 
+        # Fetch primary image for thumbnail
+        media_result = await self.db.execute(
+            select(AuctionItemMedia.file_path)
+            .where(
+                AuctionItemMedia.auction_item_id == item.id,
+                AuctionItemMedia.media_type == "image",
+            )
+            .order_by(AuctionItemMedia.display_order)
+            .limit(1)
+        )
+        image_url = media_result.scalar_one_or_none()
+
         async with self.db.begin_nested():
             await NotificationService.create_notification(
                 db=self.db,
@@ -271,9 +283,11 @@ class AuctionBidService:
                 ),
                 data={
                     "item_id": str(item.id),
+                    "item_title": item.title,
                     "deep_link": f"/events/{event_slug}?item={item.id}",
                     "animation_type": "flash",
                     "bid_amount": str(new_bid_amount) if new_bid_amount else None,
+                    **({"image_url": image_url} if image_url else {}),
                 },
                 sio=sio,
             )
