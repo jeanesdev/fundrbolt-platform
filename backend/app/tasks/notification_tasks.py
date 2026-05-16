@@ -171,7 +171,31 @@ async def _send_auction_closed_async(event_id: str) -> int:
                         .order_by(AuctionItemMedia.display_order)
                         .limit(1)
                     )
-                    item_image_url = media_result.scalar_one_or_none()
+                    item_image_url: str | None = None
+                    raw_image_url = media_result.scalar_one_or_none()
+                    if raw_image_url:
+                        if raw_image_url.startswith("https://"):
+                            try:
+                                from app.core.config import get_settings
+                                from app.services.auction_item_media_service import (
+                                    AuctionItemMediaService,
+                                )
+
+                                _settings = get_settings()
+                                _media_svc = AuctionItemMediaService(_settings, db)
+                                container_path = f"{_settings.azure_storage_container_name}/"
+                                if container_path in raw_image_url:
+                                    blob_path = raw_image_url.split(container_path, 1)[1]
+                                    blob_path = blob_path.split("?", 1)[0]
+                                    item_image_url = _media_svc._generate_blob_sas_url(
+                                        blob_path, expiry_hours=24
+                                    )
+                                else:
+                                    item_image_url = raw_image_url
+                            except Exception:
+                                item_image_url = raw_image_url
+                        else:
+                            item_image_url = raw_image_url
 
                     notification = await NotificationService.create_notification(
                         db=db,
