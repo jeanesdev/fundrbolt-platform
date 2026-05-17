@@ -75,7 +75,7 @@ export function Settings() {
 
       {/* Swipeable content area */}
       <main
-        className='flex-1 overflow-y-auto px-4 py-4 pb-14'
+        className='flex-1 overflow-y-auto px-4 py-4 pb-bottom-nav'
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
