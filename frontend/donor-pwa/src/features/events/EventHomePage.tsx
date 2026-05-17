@@ -10,25 +10,25 @@
  *   --event-primary, --event-secondary, --event-background, --event-accent
  */
 import {
-    AuctionGallery,
-    EventDetails,
-    MySeatingSection,
-    ShareEventButton,
+  AuctionGallery,
+  EventDetails,
+  MySeatingSection,
+  ShareEventButton,
 } from '@/components/event-home'
 import { AuctionCountdownTimer } from '@/components/event-home/AuctionCountdownTimer'
 import { AuctionItemDetailModal } from '@/components/event-home/AuctionItemDetailModal'
 import {
-    BottomTabNav,
-    type DonorTab,
+  BottomTabNav,
+  type DonorTab,
 } from '@/components/event-home/BottomTabNav'
 import { CountdownTimer } from '@/components/event-home/CountdownTimer'
 import {
-    EventHeroSection,
-    type EventStatus,
+  EventHeroSection,
+  type EventStatus,
 } from '@/components/event-home/EventHeroSection'
 import {
-    GuestProfileModal,
-    type GuestProfileData,
+  GuestProfileModal,
+  type GuestProfileData,
 } from '@/components/event-home/GuestProfileModal'
 import { MyBidsDonationsSection } from '@/components/event-home/MyBidsDonationsSection'
 import { OtherGuestsSection } from '@/components/event-home/OtherGuestsSection'
@@ -51,14 +51,14 @@ import { getMyInventory } from '@/lib/api/ticket-purchases'
 import apiClient from '@/lib/axios'
 import auctionItemService from '@/services/auctionItemService'
 import {
-    getEventGuests,
-    getMyActivity,
+  getEventGuests,
+  getMyActivity,
 } from '@/services/donor-activity-service'
 import { getEventRevenueGenerators } from '@/services/revenueGeneratorService'
 import { getDonorRunOfShow } from '@/services/runOfShowService'
 import {
-    getMySeatingInfo,
-    type SeatingInfoResponse,
+  getMySeatingInfo,
+  type SeatingInfoResponse,
 } from '@/services/seating-service'
 import watchListService from '@/services/watchlistService'
 import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
@@ -70,10 +70,10 @@ import type { RegisteredEventWithBranding } from '@/types/event-branding'
 import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
 import { renderMarkdownToSafeHtml } from '@fundrbolt/shared/utils'
 import {
-    keepPreviousData,
-    useMutation,
-    useQuery,
-    useQueryClient,
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
 } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import type { AxiosError } from 'axios'
@@ -797,14 +797,14 @@ export function EventHomePage() {
           (
             previous:
               | {
-                  watch_list?: Array<{
-                    id: string
-                    user_id: string
-                    auction_item_id: string
-                    added_at: string
-                  }>
-                  total?: number
-                }
+                watch_list?: Array<{
+                  id: string
+                  user_id: string
+                  auction_item_id: string
+                  added_at: string
+                }>
+                total?: number
+              }
               | undefined
           ) => {
             const existing = previous?.watch_list ?? []
@@ -899,14 +899,14 @@ export function EventHomePage() {
             (
               previous:
                 | {
-                    watch_list?: Array<{
-                      id: string
-                      user_id: string
-                      auction_item_id: string
-                      added_at: string
-                    }>
-                    total?: number
-                  }
+                  watch_list?: Array<{
+                    id: string
+                    user_id: string
+                    auction_item_id: string
+                    added_at: string
+                  }>
+                  total?: number
+                }
                 | undefined
             ) => {
               const existing = previous?.watch_list ?? []
@@ -1442,13 +1442,13 @@ export function EventHomePage() {
             </h2>
             {!!(currentEvent as unknown as Record<string, unknown>)
               .auction_close_datetime && (
-              <AuctionCountdownTimer
-                closeDateTime={
-                  (currentEvent as unknown as Record<string, unknown>)
-                    .auction_close_datetime as string
-                }
-              />
-            )}
+                <AuctionCountdownTimer
+                  closeDateTime={
+                    (currentEvent as unknown as Record<string, unknown>)
+                      .auction_close_datetime as string
+                  }
+                />
+              )}
           </div>
           <div className='flex items-center gap-2'>
             {eventStatus === 'live' && (
