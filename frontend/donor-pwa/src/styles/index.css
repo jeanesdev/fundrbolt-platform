@@ -76,6 +76,11 @@
   --bottom-safe-area: env(safe-area-inset-bottom, 0px);
 }
 
+/* Bottom padding that clears the fixed bottom nav (h-12 = 3rem) plus iOS home indicator */
+@utility pb-bottom-nav {
+  padding-bottom: calc(3rem + var(--bottom-safe-area, 0px));
+}
+
 @utility no-scrollbar {
 
   /* Hide scrollbar for Chrome, Safari and Opera */

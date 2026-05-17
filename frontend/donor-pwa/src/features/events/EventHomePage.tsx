@@ -1631,7 +1631,7 @@ export function EventHomePage() {
   const renderTabPage = (tab: DonorTab) => {
     return (
       <div
-        className='min-h-full pb-14'
+        className='min-h-full pb-bottom-nav'
         style={{
           backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
         }}
