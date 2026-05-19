@@ -12,8 +12,6 @@ never restored. This migration adds them back.
 
 from collections.abc import Sequence
 
-import sqlalchemy as sa
-
 from alembic import op
 
 # revision identifiers, used by Alembic.
@@ -25,44 +23,31 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     """Re-add user address and organization fields that were dropped."""
-    # Add organization_name (was dropped by 5c1511bffa16)
-    op.add_column(
-        "users",
-        sa.Column("organization_name", sa.String(255), nullable=True),
+    # Use IF NOT EXISTS so this is idempotent in case the columns already exist
+    # (e.g. if migration 5c1511bffa16 did not actually drop them in a given environment)
+    op.execute(
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS organization_name VARCHAR(255)"
     )
-    # Add structured address fields (were dropped by 5c1511bffa16)
-    op.add_column(
-        "users",
-        sa.Column("address_line1", sa.String(255), nullable=True),
+    op.execute(
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS address_line1 VARCHAR(255)"
     )
-    op.add_column(
-        "users",
-        sa.Column("address_line2", sa.String(255), nullable=True),
+    op.execute(
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS address_line2 VARCHAR(255)"
     )
-    op.add_column(
-        "users",
-        sa.Column("city", sa.String(100), nullable=True),
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(100)")
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS state VARCHAR(100)")
+    op.execute(
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS postal_code VARCHAR(20)"
     )
-    op.add_column(
-        "users",
-        sa.Column("state", sa.String(100), nullable=True),
-    )
-    op.add_column(
-        "users",
-        sa.Column("postal_code", sa.String(20), nullable=True),
-    )
-    op.add_column(
-        "users",
-        sa.Column("country", sa.String(100), nullable=True),
-    )
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(100)")
 
 
 def downgrade() -> None:
     """Remove the restored columns."""
-    op.drop_column("users", "country")
-    op.drop_column("users", "postal_code")
-    op.drop_column("users", "state")
-    op.drop_column("users", "city")
-    op.drop_column("users", "address_line2")
-    op.drop_column("users", "address_line1")
-    op.drop_column("users", "organization_name")
+    op.execute("ALTER TABLE users DROP COLUMN IF EXISTS country")
+    op.execute("ALTER TABLE users DROP COLUMN IF EXISTS postal_code")
+    op.execute("ALTER TABLE users DROP COLUMN IF EXISTS state")
+    op.execute("ALTER TABLE users DROP COLUMN IF EXISTS city")
+    op.execute("ALTER TABLE users DROP COLUMN IF EXISTS address_line2")
+    op.execute("ALTER TABLE users DROP COLUMN IF EXISTS address_line1")
+    op.execute("ALTER TABLE users DROP COLUMN IF EXISTS organization_name")
