@@ -8,7 +8,7 @@ export function LegalFooter() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className='bg-background border-t'>
+    <footer className='bg-background pb-safe-bottom border-t'>
       <div className='container mx-auto flex flex-col items-center justify-between gap-4 px-4 py-6 md:flex-row md:py-4'>
         {/* Copyright */}
         <p className='text-muted-foreground text-sm'>
