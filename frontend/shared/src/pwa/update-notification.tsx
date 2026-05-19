@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 export interface UpdateNotificationProps {
   /** Whether a new version is waiting to be activated */
   needRefresh: boolean;
@@ -16,7 +18,41 @@ export function UpdateNotification({
   onRefresh,
   onDismiss,
 }: UpdateNotificationProps) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   if (!needRefresh) return null;
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+
+    // Tell the waiting SW to skip waiting so it becomes active.
+    // We do this directly rather than relying solely on onRefresh()
+    // because vite-plugin-pwa's updateServiceWorker() silently does
+    // nothing if registration.waiting is null at call time (a known
+    // race condition on iOS Safari / standalone mode).
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg?.waiting) {
+        reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      }
+    } catch {
+      // serviceWorker API unavailable — fall through to reload
+    }
+
+    // Also call the hook's update function (for the controllerchange path)
+    try {
+      await onRefresh();
+    } catch {
+      // ignore
+    }
+
+    // Hard reload after 300ms — enough for skipWaiting to execute.
+    // This is the guaranteed path: we don't wait for controllerchange
+    // (which can be unreliable on iOS standalone) to trigger reload.
+    setTimeout(() => {
+      window.location.reload();
+    }, 300);
+  };
 
   return (
     <div
@@ -27,14 +63,15 @@ export function UpdateNotification({
       <div className="px-4 py-3">
         <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
           <p className="text-sm font-medium text-blue-800">
-            A new version is available.
+            {isRefreshing ? "Updating…" : "A new version is available."}
           </p>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => void onRefresh()}
-              className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-blue-700"
+              onClick={() => void handleRefresh()}
+              disabled={isRefreshing}
+              className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
             >
-              Refresh to update
+              {isRefreshing ? "Updating…" : "Refresh to update"}
             </button>
             <button
               onClick={onDismiss}
