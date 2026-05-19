@@ -95,14 +95,27 @@ self.addEventListener('push', (event: PushEvent) => {
   }
 
   event.waitUntil(
-    self.registration
-      .showNotification(title, options)
-      // eslint-disable-next-line no-console
-      .then(() => console.log('[SW] showNotification resolved'))
-      .catch((err: unknown) =>
-        // eslint-disable-next-line no-console
-        console.error('[SW] showNotification failed:', err)
-      )
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clients) => {
+        // If the app is open and visible in the foreground, skip the native
+        // notification — the in-app Socket.IO toast handles it instead.
+        const isAppVisible = clients.some(
+          (client) => (client as WindowClient).visibilityState === 'visible',
+        )
+        if (isAppVisible) {
+          return
+        }
+
+        return self.registration
+          .showNotification(title, options)
+          // eslint-disable-next-line no-console
+          .then(() => console.log('[SW] showNotification resolved'))
+          .catch((err: unknown) =>
+            // eslint-disable-next-line no-console
+            console.error('[SW] showNotification failed:', err),
+          )
+      }),
   )
 })
 
