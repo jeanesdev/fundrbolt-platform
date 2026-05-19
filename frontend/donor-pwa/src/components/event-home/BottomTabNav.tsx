@@ -48,19 +48,10 @@ export function BottomTabNav({
       style={{
         backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
         borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
-        boxShadow:
-          '0 -14px 30px rgb(0 0 0 / 0.26), 0 -3px 10px rgb(0 0 0 / 0.18)',
+        boxShadow: '0 -1px 4px rgb(0 0 0 / 0.08)',
         paddingBottom: 'var(--bottom-safe-area, 0px)',
       }}
     >
-      <div
-        aria-hidden='true'
-        className='pointer-events-none absolute -top-6 right-0 left-0 h-6'
-        style={{
-          background:
-            'linear-gradient(to top, rgb(0 0 0 / 0.16), rgb(0 0 0 / 0))',
-        }}
-      />
       <div className='flex h-12 items-stretch'>
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab
