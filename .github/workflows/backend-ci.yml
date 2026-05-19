@@ -177,5 +177,5 @@ jobs:
       - name: Check for security vulnerabilities
         run: |
           poetry export -f requirements.txt --output requirements.txt --without-hashes
-          pip install safety
+          pip install 'safety>=2,<3'
           safety check --file requirements.txt --short-report
