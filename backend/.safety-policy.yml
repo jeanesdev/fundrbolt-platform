@@ -1,0 +1,5 @@
+version: "2.0"
+security:
+  ignore-cvss-severity-below: 0
+  ignore-cvss-unknown-severity: false
+  packages: []
