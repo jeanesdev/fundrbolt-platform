@@ -19,6 +19,9 @@
     position: fixed;
     width: 100%;
     height: 100%;
+    /* Ensure the html element background matches the app theme so the home
+       indicator area on iOS never shows through as a "dead" dark strip */
+    background-color: var(--background);
   }
 
   body {

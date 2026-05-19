@@ -1,10 +1,10 @@
 export interface UpdateNotificationProps {
   /** Whether a new version is waiting to be activated */
-  needRefresh: boolean
+  needRefresh: boolean;
   /** Called when the user taps "Refresh" to activate the new version */
-  onRefresh: () => Promise<void>
+  onRefresh: () => Promise<void>;
   /** Called when the user dismisses the notification */
-  onDismiss: () => void
+  onDismiss: () => void;
 }
 
 /**
@@ -16,14 +16,15 @@ export function UpdateNotification({
   onRefresh,
   onDismiss,
 }: UpdateNotificationProps) {
-  if (!needRefresh) return null
+  if (!needRefresh) return null;
 
   return (
     <div
-      className="fixed inset-x-0 top-0 z-50 animate-in slide-in-from-top duration-300"
+      className="fixed inset-x-0 top-0 z-50 animate-in slide-in-from-top border-b border-blue-200 bg-blue-50 duration-300"
+      style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       role="alert"
     >
-      <div className="border-b border-blue-200 bg-blue-50 px-4 py-3">
+      <div className="px-4 py-3">
         <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
           <p className="text-sm font-medium text-blue-800">
             A new version is available.
@@ -58,5 +59,5 @@ export function UpdateNotification({
         </div>
       </div>
     </div>
-  )
+  );
 }
