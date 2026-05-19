@@ -8,7 +8,7 @@ type AuthLayoutProps = {
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (
     <div className='pt-safe-top flex min-h-svh flex-col'>
-      <div className='container grid flex-1 items-center justify-center'>
+      <div className='container flex flex-1 items-center justify-center'>
         <div className='mx-auto flex w-full flex-col justify-center space-y-2 py-8 sm:w-[480px] sm:p-8'>
           <div className='mb-4 flex items-center justify-center'>
             <img src={LogoWhiteGold} alt='FundrBolt' className='h-12' />
