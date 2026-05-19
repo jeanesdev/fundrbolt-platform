@@ -20,8 +20,8 @@ export function UpdateNotification({
 
   return (
     <div
-      className="fixed inset-x-0 top-0 z-50 animate-in slide-in-from-top border-b border-blue-200 bg-blue-50 duration-300"
-      style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      className="fixed inset-x-0 z-50 animate-in slide-in-from-top border-b border-blue-200 bg-blue-50 duration-300"
+      style={{ top: "env(safe-area-inset-top, 0px)" }}
       role="alert"
     >
       <div className="px-4 py-3">
