@@ -1656,7 +1656,7 @@ export function EventHomePage() {
   return (
     <div
       className='flex h-svh flex-col overflow-hidden'
-      style={{ backgroundColor: 'rgb(var(--event-background, 255, 255, 255))' }}
+      style={{ backgroundColor: 'var(--background)' }}
     >
       {/* Tab content — scrollable, key triggers re-animation on tab switch */}
       <main

@@ -5,12 +5,27 @@ import react from '@vitejs/plugin-react-swc'
 import path from 'path'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'child_process'
 import { version } from './package.json'
+
+// Auto-generate version: major.minor from package.json, patch from git commit count
+// This increments automatically on every build without manual package.json edits.
+function buildVersion() {
+  try {
+    const commitCount = execSync('git rev-list HEAD --count', { encoding: 'utf8' }).trim()
+    const [major, minor] = version.split('.')
+    return `${major}.${minor}.${commitCount}`
+  } catch {
+    return version
+  }
+}
+
+const appVersion = buildVersion()
 
 // https://vite.dev/config/
 export default defineConfig({
   define: {
-    __APP_VERSION__: JSON.stringify(version),
+    __APP_VERSION__: JSON.stringify(appVersion),
   },
   plugins: [
     tanstackRouter({

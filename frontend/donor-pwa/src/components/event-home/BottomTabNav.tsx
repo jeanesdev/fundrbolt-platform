@@ -46,7 +46,7 @@ export function BottomTabNav({
     <nav
       className='fixed right-0 bottom-0 left-0 z-50 border-t'
       style={{
-        backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+        backgroundColor: 'var(--background)',
         borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
         boxShadow: '0 -1px 4px rgb(0 0 0 / 0.08)',
         paddingBottom: 'var(--bottom-safe-area, 0px)',
