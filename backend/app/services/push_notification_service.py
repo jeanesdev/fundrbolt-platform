@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.models.event import Event
 from app.models.notification import DeliveryChannelEnum, DeliveryStatusEnum, Notification
 from app.models.notification_delivery_status import NotificationDeliveryStatus
 from app.models.push_subscription import PushSubscription
@@ -249,11 +250,21 @@ class PushNotificationService:
         if notification.data and isinstance(notification.data, dict):
             deep_link = notification.data.get("deep_link")
 
+        # Use the event logo as the notification icon if available
+        event_icon_url = "/images/pwa-192x192.png"
+        if notification.event_id:
+            event_logo_result = await db.execute(
+                select(Event.logo_url).where(Event.id == notification.event_id)
+            )
+            event_logo = event_logo_result.scalar_one_or_none()
+            if event_logo:
+                event_icon_url = event_logo
+
         payload = json.dumps(
             {
                 "title": notification.title,
                 "body": notification.body,
-                "icon": "/images/pwa-192x192.png",
+                "icon": event_icon_url,
                 "badge": "/images/pwa-192x192.png",
                 "data": {
                     "deep_link": deep_link,
