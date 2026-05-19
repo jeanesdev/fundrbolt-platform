@@ -786,10 +786,23 @@ class SocialAuthService:
         import jwt  # PyJWT
 
         settings = get_settings()
-        private_key_pem = settings.social_auth_apple_client_secret or ""
+        raw_key = settings.social_auth_apple_client_secret or ""
         team_id = settings.social_auth_apple_team_id or ""
         key_id = settings.social_auth_apple_key_id or ""
         client_id = settings.social_auth_apple_client_id or ""
+
+        # Auto-wrap bare base64 content (from .p8 file) in PEM headers if missing.
+        # Apple's .p8 file is PKCS#8 EC private key format.
+        if raw_key and not raw_key.strip().startswith("-----"):
+            # Strip any accidental whitespace/newlines in the key body, then wrap
+            key_body = raw_key.strip().replace("\n", "").replace("\r", "").replace(" ", "")
+            private_key_pem = (
+                "-----BEGIN PRIVATE KEY-----\n"
+                + "\n".join(key_body[i : i + 64] for i in range(0, len(key_body), 64))
+                + "\n-----END PRIVATE KEY-----"
+            )
+        else:
+            private_key_pem = raw_key
 
         now = datetime.now(UTC)
         payload = {
