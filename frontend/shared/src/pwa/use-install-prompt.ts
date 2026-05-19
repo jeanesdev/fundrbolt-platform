@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
-  INSTALL_PROMPT_COOLDOWN_MS,
-  getInstallDismissedKey,
+    INSTALL_PROMPT_COOLDOWN_MS,
+    getInstallDismissedKey,
 } from './constants'
 
 /**
