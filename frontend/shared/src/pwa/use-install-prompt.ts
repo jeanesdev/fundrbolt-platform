@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
-  INSTALL_PROMPT_COOLDOWN_MS,
-  getInstallDismissedKey,
+    INSTALL_PROMPT_COOLDOWN_MS,
+    getInstallDismissedKey,
 } from './constants'
 
 /**
@@ -42,6 +42,21 @@ export function useInstallPrompt(appId: string): UseInstallPromptReturn {
   const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null)
   const [promptAvailable, setPromptAvailable] = useState(false)
 
+  // Track dismissed state via React state so canShow updates immediately on
+  // dismiss(), even on iOS where promptAvailable is always false and
+  // setPromptAvailable(false) would be a no-op.
+  const [dismissed, setDismissed] = useState<boolean>(() => {
+    try {
+      const key = getInstallDismissedKey(appId)
+      const dismissedAt = localStorage.getItem(key)
+      if (!dismissedAt) return false
+      const elapsed = Date.now() - parseInt(dismissedAt, 10)
+      return elapsed < INSTALL_PROMPT_COOLDOWN_MS
+    } catch {
+      return false
+    }
+  })
+
   // Detect iOS Safari
   const isIOS =
     typeof navigator !== 'undefined' &&
@@ -54,19 +69,6 @@ export function useInstallPrompt(appId: string): UseInstallPromptReturn {
     (window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as unknown as { standalone?: boolean }).standalone ===
       true)
-
-  // Check cooldown
-  const isDismissedRecently = useCallback((): boolean => {
-    try {
-      const key = getInstallDismissedKey(appId)
-      const dismissedAt = localStorage.getItem(key)
-      if (!dismissedAt) return false
-      const elapsed = Date.now() - parseInt(dismissedAt, 10)
-      return elapsed < INSTALL_PROMPT_COOLDOWN_MS
-    } catch {
-      return false
-    }
-  }, [appId])
 
   useEffect(() => {
     const handler = (e: BeforeInstallPromptEvent) => {
@@ -84,7 +86,7 @@ export function useInstallPrompt(appId: string): UseInstallPromptReturn {
 
   const canShow =
     !isInstalled &&
-    !isDismissedRecently() &&
+    !dismissed &&
     (promptAvailable || isIOS)
 
   const promptInstall = useCallback(async () => {
@@ -105,10 +107,11 @@ export function useInstallPrompt(appId: string): UseInstallPromptReturn {
       const key = getInstallDismissedKey(appId)
       localStorage.setItem(key, Date.now().toString())
     } catch {
-      // localStorage may be unavailable
+      // localStorage may be unavailable (e.g. private browsing)
     }
     deferredPromptRef.current = null
     setPromptAvailable(false)
+    setDismissed(true)
   }, [appId])
 
   return {

@@ -43,7 +43,7 @@ export function InstallPromptBanner({
 
   return (
     <div
-      className="fixed bottom-4 right-4 left-4 z-50 animate-in slide-in-from-bottom duration-300 sm:left-auto sm:w-80"
+      className="fixed bottom-[calc(3rem+max(env(safe-area-inset-bottom,0px),0px)+1rem)] right-4 left-4 z-[60] animate-in slide-in-from-bottom duration-300 sm:bottom-4 sm:left-auto sm:w-80"
       role="alert"
     >
       <div className="rounded-xl border border-slate-700 bg-slate-900 p-4 shadow-lg">
@@ -109,8 +109,9 @@ export function InstallPromptBanner({
           </div>
 
           <button
+            type="button"
             onClick={handleDismiss}
-            className="flex-shrink-0 rounded-full p-1 text-slate-400 transition-colors hover:text-slate-200"
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:text-slate-200"
             aria-label="Dismiss install prompt"
           >
             <svg
