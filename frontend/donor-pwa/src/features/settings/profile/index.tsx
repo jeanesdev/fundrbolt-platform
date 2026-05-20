@@ -1,21 +1,4 @@
-import { useEffect } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { profileUpdateSchema } from '@/schemas/profile'
-import {
-  Facebook,
-  Globe,
-  Instagram,
-  Linkedin,
-  Twitter,
-  Youtube,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import apiClient from '@/lib/axios'
+import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -28,7 +11,24 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
-import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
+import apiClient from '@/lib/axios'
+import { profileUpdateSchema } from '@/schemas/profile'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  Facebook,
+  Globe,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Youtube,
+} from 'lucide-react'
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
 import { ContentSection } from '../components/content-section'
 
 // Social media platform config: prefix shown in UI, URL builder, and username extractor
@@ -274,11 +274,11 @@ export function SettingsProfile() {
   // Derive initials: prefer spoofed user label, fall back to auth user
   const userInitials = spoofedUser
     ? spoofedUser.label
-        .split(' ')
-        .map((n) => n[0] ?? '')
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
+      .split(' ')
+      .map((n) => n[0] ?? '')
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
     : user
       ? `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase()
       : 'U'
@@ -351,10 +351,16 @@ export function SettingsProfile() {
                     <Input
                       placeholder='(555) 555-5555'
                       {...field}
-                      value={field.value ? formatPhoneNumber(field.value) : ''}
+                      value={
+                        field.value
+                          ? formatPhoneNumber(field.value.replace(/^\+1/, ''))
+                          : ''
+                      }
                       onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, '')
-                        field.onChange(raw ? `+1${raw}` : '')
+                        const digits = e.target.value
+                          .replace(/\D/g, '')
+                          .slice(-10)
+                        field.onChange(digits ? `+1${digits}` : '')
                       }}
                       inputMode='tel'
                     />
