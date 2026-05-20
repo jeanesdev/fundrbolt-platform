@@ -44,9 +44,15 @@ export function BottomTabNav({
     : TABS
   return (
     <nav
-      className='fixed right-0 bottom-0 left-0 z-50 border-t'
+      className='bg-background fixed right-0 bottom-0 left-0 z-50 border-t'
       style={{
-        backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+        // NOTE: do NOT use rgb(var(--event-background, 255, 255, 255)) here.
+        // --event-background is only set on a handful of pages (e.g. donate
+        // now); everywhere else the fallback resolves to pure white, which
+        // produces a white "dead zone" below the nav on iOS standalone PWA
+        // (viewport-fit=cover extends the webview under the home indicator,
+        // and paddingBottom below extends this nav's background into it).
+        // Use the theme background instead so the strip blends in.
         borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
         boxShadow: '0 -1px 4px rgb(0 0 0 / 0.08)',
         paddingBottom: 'var(--bottom-safe-area, 0px)',
