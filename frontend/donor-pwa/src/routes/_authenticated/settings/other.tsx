@@ -255,6 +255,10 @@ function SettingsOther() {
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      <p className='text-muted-foreground/60 pt-4 pb-2 text-center text-xs tabular-nums'>
+        v{__APP_VERSION__}
+      </p>
     </div>
   )
 }
