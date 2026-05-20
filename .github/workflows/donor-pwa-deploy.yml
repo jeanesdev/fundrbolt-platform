@@ -26,6 +26,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # Full history so vite.config.ts can compute the build version
+          # from `git rev-list HEAD --count`. Default fetch-depth is 1 which
+          # would always produce version 1.0.1.
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
