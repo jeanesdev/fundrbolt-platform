@@ -61,16 +61,34 @@ export function PullToRefresh({
     if (typeof window === "undefined") return;
     if (!("ontouchstart" in window)) return;
 
-    const scroller = document.scrollingElement || document.documentElement;
+    // IMPORTANT: in this app the body is the actual scroller (see
+    // donor-pwa styles/index.css — `html { position: fixed }`,
+    // `body { overflow-y: auto }`). document.scrollingElement points
+    // at <html> whose scrollTop is always 0, so reading from it would
+    // make this gesture think we're at the top on every touch and
+    // fire the refresh while users are scrolling. Read both and use
+    // whichever is non-zero.
+    const getScrollTop = () =>
+      Math.max(
+        document.body?.scrollTop ?? 0,
+        document.documentElement?.scrollTop ?? 0,
+        window.scrollY ?? 0,
+      );
+
+    // Require at least this much downward pull before we start
+    // consuming touchmove events. Below this, normal scrolling wins.
+    const ACTIVATION_SLOP = 16;
+    let activated = false;
 
     const onTouchStart = (e: TouchEvent) => {
       if (isRefreshingRef.current) return;
       // Only arm the gesture when we're already at the very top.
-      if ((scroller?.scrollTop ?? 0) > 0) return;
+      if (getScrollTop() > 0) return;
       const touch = e.touches[0];
       if (!touch) return;
       startYRef.current = touch.clientY;
       isTrackingRef.current = true;
+      activated = false;
       distanceRef.current = 0;
     };
 
@@ -91,10 +109,22 @@ export function PullToRefresh({
       }
 
       // If they've scrolled away from the top in the meantime, cancel.
-      if ((scroller?.scrollTop ?? 0) > 0) {
+      if (getScrollTop() > 0) {
         isTrackingRef.current = false;
+        activated = false;
         distanceRef.current = 0;
         setPullDistance(0);
+        return;
+      }
+
+      // Wait until the user has clearly committed to a downward pull
+      // before we hijack the touch. Below the slop, do nothing so the
+      // normal scroll behavior wins.
+      if (!activated) {
+        if (rawDelta < ACTIVATION_SLOP) return;
+        activated = true;
+        // Re-anchor so the indicator starts at 0 from this point.
+        startYRef.current = touch.clientY;
         return;
       }
 
@@ -103,9 +133,8 @@ export function PullToRefresh({
       distanceRef.current = damped;
       setPullDistance(damped);
 
-      // Only prevent the default scroll once we're actually pulling —
-      // otherwise we'd block normal taps/text-selection.
-      if (damped > 4 && e.cancelable) {
+      // Only prevent the default scroll once we're actually pulling.
+      if (e.cancelable) {
         e.preventDefault();
       }
     };
@@ -115,6 +144,7 @@ export function PullToRefresh({
       isTrackingRef.current = false;
       const distance = distanceRef.current;
       startYRef.current = null;
+      activated = false;
 
       if (distance >= threshold && !isRefreshingRef.current) {
         isRefreshingRef.current = true;
