@@ -89,8 +89,8 @@ export function PullToRefresh({
         start instanceof Element
           ? start
           : start instanceof Node
-          ? (start.parentElement as Element | null)
-          : null;
+            ? (start.parentElement as Element | null)
+            : null;
       while (node && node !== document.body) {
         if (isScrollable(node)) return node;
         node = node.parentElement;
