@@ -903,7 +903,12 @@ class SocialAuthService:
             if len(parts) == 3:
                 padded = parts[1] + "=" * (-len(parts[1]) % 4)
                 claims: dict[str, Any] = json.loads(base64.urlsafe_b64decode(padded))
-                return {k: v for k, v in claims.items() if k in ALLOWED_PROVIDER_CLAIMS}
+                filtered = {k: v for k, v in claims.items() if k in ALLOWED_PROVIDER_CLAIMS}
+                # Microsoft does not include email_verified in their ID tokens but all
+                # Microsoft account emails are verified by the platform.
+                if provider == ProviderKey.MICROSOFT:
+                    filtered["email_verified"] = True
+                return filtered
 
         # --- Apple: code exchange with JWT client secret ---
         if provider == ProviderKey.APPLE and client_id and client_secret:

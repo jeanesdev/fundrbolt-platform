@@ -78,9 +78,9 @@
   --bottom-safe-area: env(safe-area-inset-bottom, 0px);
 }
 
-/* Bottom padding that clears the fixed bottom nav (h-12 = 3rem) plus iOS home indicator */
+/* Bottom padding that clears the fixed bottom nav (h-16 = 4rem) plus iOS home indicator */
 @utility pb-bottom-nav {
-  padding-bottom: calc(3rem + var(--bottom-safe-area, 0px));
+  padding-bottom: calc(4rem + var(--bottom-safe-area, 0px));
 }
 
 /* Bottom padding that only clears the iOS home indicator (for pages without a bottom nav) */

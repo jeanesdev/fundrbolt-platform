@@ -2,10 +2,10 @@ import { sentryVitePlugin } from '@sentry/vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react-swc'
+import { execSync } from 'child_process'
 import path from 'path'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
-import { execSync } from 'child_process'
 import { version } from './package.json'
 
 // Auto-generate version: major.minor from package.json, patch from git commit count

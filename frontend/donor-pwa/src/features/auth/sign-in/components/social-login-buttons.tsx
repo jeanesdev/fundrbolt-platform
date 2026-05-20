@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState, type ComponentType, type SVGProps } from 'react'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import { donorSocialAuthApi } from '@/lib/axios'
 import {
   AppleIcon,
   FacebookIcon,
@@ -7,9 +9,7 @@ import {
 } from '@fundrbolt/shared'
 import type { SocialAuthProvider } from '@fundrbolt/shared/types'
 import { Loader2 } from 'lucide-react'
-import { donorSocialAuthApi } from '@/lib/axios'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
+import { useCallback, useEffect, useState, type ComponentType, type SVGProps } from 'react'
 
 const DEFAULT_PROVIDERS: {
   provider: SocialAuthProvider

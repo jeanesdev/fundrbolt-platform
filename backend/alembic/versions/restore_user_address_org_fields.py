@@ -25,20 +25,12 @@ def upgrade() -> None:
     """Re-add user address and organization fields that were dropped."""
     # Use IF NOT EXISTS so this is idempotent in case the columns already exist
     # (e.g. if migration 5c1511bffa16 did not actually drop them in a given environment)
-    op.execute(
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS organization_name VARCHAR(255)"
-    )
-    op.execute(
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS address_line1 VARCHAR(255)"
-    )
-    op.execute(
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS address_line2 VARCHAR(255)"
-    )
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS organization_name VARCHAR(255)")
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS address_line1 VARCHAR(255)")
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS address_line2 VARCHAR(255)")
     op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(100)")
     op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS state VARCHAR(100)")
-    op.execute(
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS postal_code VARCHAR(20)"
-    )
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS postal_code VARCHAR(20)")
     op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(100)")
 
 
