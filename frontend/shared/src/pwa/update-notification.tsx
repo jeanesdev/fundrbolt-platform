@@ -25,44 +25,32 @@ export function UpdateNotification({
   const handleRefresh = async () => {
     setIsRefreshing(true);
 
-    // The vite-plugin-pwa updateServiceWorker() helper is unreliable on
-    // iOS standalone — it can silently no-op and the controllerchange
-    // event often never fires. Bypass all of that and force the update
-    // ourselves.
+    // Keep this MINIMAL. Previous versions of this handler tried to be
+    // "bulletproof" by unregistering the SW and deleting every cache
+    // before reloading. On iOS standalone that left the renderer in a
+    // zombie state: the HTML loaded but lazy-loaded JS chunks failed
+    // because the precache they expected was gone and the SW that
+    // would have served them was mid-unregister. The page would render
+    // but buttons wouldn't work and sections would be blank on scroll.
+    //
+    // The correct iOS-safe pattern is: tell the waiting SW to skip
+    // waiting, then do a plain reload. The new SW's activate handler
+    // calls cleanupOutdatedCaches() itself, and the next page load
+    // installs everything cleanly with no race conditions.
     try {
       const reg = await navigator.serviceWorker.getRegistration();
-      // Tell the waiting SW to take over.
       if (reg?.waiting) {
         reg.waiting.postMessage({ type: "SKIP_WAITING" });
       }
-      // Clear ALL caches — the new HTML/JS must come fresh from the network.
-      if ("caches" in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((key) => caches.delete(key)));
-      }
-      // Unregister the active SW so the next page load installs the new one
-      // cleanly without any race conditions.
-      if (reg) {
-        await reg.unregister();
-      }
+      // Let the hook update its internal state too (no-op if it can't).
+      await onRefresh().catch(() => {});
     } catch {
-      // ignore — proceed to reload regardless
+      // ignore — reload anyway
     }
 
-    // Also call the hook's update function so its internal state syncs.
-    try {
-      await onRefresh();
-    } catch {
-      // ignore
-    }
-
-    // Hard navigate (not reload) with a cache-busting query param so iOS
-    // Safari/standalone cannot serve the page from its HTTP cache. Using
-    // window.location.replace prevents the broken page from being kept
-    // in history.
-    const url = new URL(window.location.href);
-    url.searchParams.set("_swu", Date.now().toString());
-    window.location.replace(url.toString());
+    // Plain reload — the new SW will be in control by the time the
+    // new page parses.
+    window.location.reload();
   };
 
   return (
