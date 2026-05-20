@@ -837,10 +837,14 @@ class SocialAuthService:
             "response_type": "code",
             "scope": SocialAuthService._get_scopes(provider),
         }
-        # Apple requires response_mode=query to deliver the code via GET redirect
-        # so the existing frontend /social-callback route can handle it.
+        # Apple requires response_mode=form_post when requesting email/name scopes.
+        # Apple POSTs code+state to the redirect_uri; we use a backend relay endpoint
+        # that receives the POST and redirects the browser to the frontend /social-callback.
         if provider == ProviderKey.APPLE:
-            params["response_mode"] = "query"
+            params["response_mode"] = "form_post"
+            # Override redirect_uri to backend relay — must match what's registered in Apple portal
+            apple_callback_base = settings.social_auth_callback_base_url.rstrip("/")
+            params["redirect_uri"] = f"{apple_callback_base}/auth/social/apple/redirect"
         return f"{auth_base}?{urllib.parse.urlencode(params)}"
 
     @staticmethod
@@ -985,11 +989,14 @@ class SocialAuthService:
             settings = get_settings()
             if settings.social_auth_apple_team_id and settings.social_auth_apple_key_id:
                 apple_jwt_secret = SocialAuthService._generate_apple_client_secret()
+                # Apple requires the same redirect_uri used during authorization — the relay endpoint
+                apple_callback_base = settings.social_auth_callback_base_url.rstrip("/")
+                apple_redirect_uri = f"{apple_callback_base}/auth/social/apple/redirect"
                 apple_payload = {
                     "code": code,
                     "client_id": client_id,
                     "client_secret": apple_jwt_secret,
-                    "redirect_uri": redirect_uri,
+                    "redirect_uri": apple_redirect_uri,
                     "grant_type": "authorization_code",
                 }
                 async with httpx.AsyncClient(timeout=10.0) as http:

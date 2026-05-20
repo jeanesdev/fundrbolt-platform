@@ -5,6 +5,7 @@ import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -1170,6 +1171,41 @@ async def start_social_auth(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "SOCIAL_AUTH_START_FAILED", "message": error_msg},
         ) from e
+
+
+@router.post(
+    "/social/apple/redirect",
+    status_code=status.HTTP_302_FOUND,
+    include_in_schema=False,
+)
+async def apple_form_post_redirect(
+    request: Request,
+) -> RedirectResponse:
+    """Receive Apple's form_post callback and redirect to the frontend SPA.
+
+    Apple POSTs code + state as form data when response_mode=form_post is used.
+    This endpoint extracts those values and sends the browser to the frontend
+    /social-callback route as a GET with query params, where existing JS handles
+    the code exchange.
+    """
+    form = await request.form()
+    code = form.get("code", "")
+    state = form.get("state", "")
+    error = form.get("error", "")
+
+    settings = get_settings()
+    frontend_url = settings.frontend_donor_url
+
+    if error:
+        return RedirectResponse(
+            url=f"{frontend_url}/social-callback?error={error}",
+            status_code=302,
+        )
+
+    return RedirectResponse(
+        url=f"{frontend_url}/social-callback?code={code}&state={state}",
+        status_code=302,
+    )
 
 
 @router.post(
