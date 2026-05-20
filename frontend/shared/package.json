@@ -17,7 +17,8 @@
     "./pwa/use-service-worker": "./src/pwa/use-service-worker.ts",
     "./pwa/use-online-status": "./src/pwa/use-online-status.ts",
     "./pwa/install-prompt-banner": "./src/pwa/install-prompt-banner.tsx",
-    "./pwa/update-notification": "./src/pwa/update-notification.tsx"
+    "./pwa/update-notification": "./src/pwa/update-notification.tsx",
+    "./pwa/pull-to-refresh": "./src/pwa/pull-to-refresh.tsx"
   },
   "scripts": {
     "type-check": "tsc --noEmit",

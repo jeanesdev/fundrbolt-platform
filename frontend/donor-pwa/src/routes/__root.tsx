@@ -8,6 +8,7 @@ import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { InstallPromptBanner } from '@fundrbolt/shared/pwa/install-prompt-banner'
+import { PullToRefresh } from '@fundrbolt/shared/pwa/pull-to-refresh'
 import { UpdateNotification } from '@fundrbolt/shared/pwa/update-notification'
 import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
 import { useServiceWorker } from '@fundrbolt/shared/pwa/use-service-worker'
@@ -42,6 +43,7 @@ function RootComponent() {
     <>
       <OfflineStatusBar isOnline={isOnline} />
       <NavigationProgress />
+      <PullToRefresh />
       <SessionExpirationWarning />
       <CookieConsentWrapper />
       <UpdateNotification
