@@ -4,7 +4,6 @@ import { hasValidRefreshToken } from '@/lib/storage/tokens'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
 import {
   hasSeenProfileSetup,
-  markProfileSetupSeen,
 } from '@/features/auth/complete-profile/utils'
 
 /**
@@ -29,24 +28,12 @@ export const Route = createFileRoute('/_authenticated')({
 
     // Prompt for profile completion on first sign-in after email verification
     if (user && !hasSeenProfileSetup(user.id)) {
-      // If the user already completed setup on another device (email verified +
-      // name present), just mark it seen locally instead of re-prompting.
-      const profileAlreadyComplete =
-        user.communications_email_verified &&
-        user.communications_email &&
-        user.first_name &&
-        user.last_name
-
-      if (profileAlreadyComplete) {
-        markProfileSetupSeen(user.id)
-      } else {
-        throw redirect({
-          to: '/complete-profile',
-          search: {
-            redirect: location.href,
-          },
-        })
-      }
+      throw redirect({
+        to: '/complete-profile',
+        search: {
+          redirect: location.href,
+        },
+      })
     }
   },
   component: AuthenticatedLayout,

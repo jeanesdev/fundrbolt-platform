@@ -50,8 +50,11 @@ export function UpdateNotification({
 
     const reload = () => window.location.reload();
 
-    // Hard fallback: if nothing else happens in 2.5s, reload anyway.
-    const fallback = window.setTimeout(reload, 2500);
+    // Hard fallback: if nothing else happens in 1.5s, reload anyway.
+    // The SW's activate handler is intentionally fast (no client
+    // navigation work) so controllerchange should fire well before
+    // this timer in normal cases.
+    const fallback = window.setTimeout(reload, 1500);
 
     let didReload = false;
     const reloadOnce = () => {

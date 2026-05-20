@@ -456,6 +456,11 @@ export function CompleteProfile() {
     },
   })
 
+  const handleSkipEmailStep = () => {
+    // Advance to profile details step instead of skipping everything
+    setProfileStep('profile')
+  }
+
   const handleSkip = () => {
     if (user) markProfileSetupSeen(user.id)
     navigate({ to: redirectTo as string })
@@ -505,7 +510,7 @@ export function CompleteProfile() {
                 type='button'
                 variant='ghost'
                 className='w-full'
-                onClick={handleSkip}
+                onClick={handleSkipEmailStep}
               >
                 Skip for now
               </Button>

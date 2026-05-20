@@ -14,44 +14,26 @@ declare const self: ServiceWorkerGlobalScope
 
 // Claim clients immediately on activation so push subscriptions
 // are associated with the active SW that will receive push events.
-// Also reload all open clients so they get the new HTML/assets instead
-// of being left with stale references from the previous SW's cached shell.
+//
+// IMPORTANT: keep this handler FAST. The new SW stays in the
+// "activating" state for the entire duration of waitUntil(), and on
+// iOS standalone the page can lock up if activation drags on (slow
+// dynamic imports, multiple windowClient.navigate() round-trips,
+// etc.). The client (update-notification.tsx) listens for
+// `controllerchange` and drives the reload itself, so we do NOT
+// need to navigate clients from here.
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
       await self.clients.claim()
-
-      // Get all open windows before we wipe old cache entries.
-      const openClients = await self.clients.matchAll({
-        type: 'window',
-        includeUncontrolled: true,
-      })
-
-      // Clean up stale precache entries from previous builds now that
-      // we have a reference to every open client.  We do this BEFORE
-      // reloading so the next load always comes from the fresh cache.
-      const { cleanupOutdatedCaches } = await import('workbox-precaching')
-      cleanupOutdatedCaches()
-
-      // Reload every open tab so it picks up the new HTML shell (and
-      // therefore the new content-hashed CSS/JS filenames).
-      //
-      // Prefer client.navigate() because it works even when the page's
-      // JS has not yet set up a message listener — which is the race
-      // condition that causes the "no CSS on homescreen PWA" bug on iOS:
-      // the SW activates before the page bundle finishes loading, the
-      // postMessage is never heard, and the page keeps serving stale
-      // asset hashes that cleanupOutdatedCaches() already removed.
-      for (const client of openClients) {
-        const windowClient = client as WindowClient
-        try {
-          await windowClient.navigate(windowClient.url)
-        } catch {
-          // navigate() can fail if the client is not focused (e.g. a
-          // background tab on some browsers).  Fall back to postMessage
-          // so the page can reload itself via the SW_UPDATED handler.
-          client.postMessage({ type: 'SW_UPDATED' })
-        }
+      // Clean up stale precache entries from previous builds. We do
+      // NOT await any network work here; cleanupOutdatedCaches() is
+      // local cache deletion only.
+      try {
+        const { cleanupOutdatedCaches } = await import('workbox-precaching')
+        cleanupOutdatedCaches()
+      } catch {
+        // Non-fatal — old entries will be evicted on next install.
       }
     })()
   )
