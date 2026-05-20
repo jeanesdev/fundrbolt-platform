@@ -52,7 +52,7 @@ export function BottomTabNav({
         paddingBottom: 'var(--bottom-safe-area, 0px)',
       }}
     >
-      <div className='flex h-16 items-stretch'>
+      <div className='flex h-20 items-stretch'>
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab
           const badgeCount = badges[tab.id] ?? 0

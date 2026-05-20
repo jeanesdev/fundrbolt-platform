@@ -80,7 +80,7 @@
 
 /* Bottom padding that clears the fixed bottom nav (h-16 = 4rem) plus iOS home indicator */
 @utility pb-bottom-nav {
-  padding-bottom: calc(4rem + var(--bottom-safe-area, 0px));
+  padding-bottom: calc(5rem + var(--bottom-safe-area, 0px));
 }
 
 /* Bottom padding that only clears the iOS home indicator (for pages without a bottom nav) */
