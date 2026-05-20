@@ -501,6 +501,14 @@ export function CompleteProfile() {
                 initialPendingEmail={pendingCommsEmailFromSearch}
                 onVerified={() => setProfileStep('profile')}
               />
+              <Button
+                type='button'
+                variant='ghost'
+                className='w-full'
+                onClick={handleSkip}
+              >
+                Skip for now
+              </Button>
             </div>
           </CardContent>
         </Card>

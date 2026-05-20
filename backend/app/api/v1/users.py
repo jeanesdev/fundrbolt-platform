@@ -297,8 +297,16 @@ async def request_communications_email_verification(
     from app.services.email_service import get_email_service  # noqa: PLC0415
     from app.services.redis_service import RedisService  # noqa: PLC0415
 
-    # Prevent re-verifying the same sign-in email
+    # If the submitted email matches the verified sign-in email, skip OTP entirely
+    # and set the communications email directly (common for social-login users).
     if body.email == current_user.email:
+        if current_user.email_verified:
+            current_user.communications_email = current_user.email
+            current_user.communications_email_verified = True
+            await db.commit()
+            return CommunicationsEmailResponse(
+                message="Communications email set successfully"
+            )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={

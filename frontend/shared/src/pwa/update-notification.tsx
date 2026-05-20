@@ -25,32 +25,73 @@ export function UpdateNotification({
   const handleRefresh = async () => {
     setIsRefreshing(true);
 
-    // Keep this MINIMAL. Previous versions of this handler tried to be
-    // "bulletproof" by unregistering the SW and deleting every cache
-    // before reloading. On iOS standalone that left the renderer in a
-    // zombie state: the HTML loaded but lazy-loaded JS chunks failed
-    // because the precache they expected was gone and the SW that
-    // would have served them was mid-unregister. The page would render
-    // but buttons wouldn't work and sections would be blank on scroll.
+    // iOS standalone PWA notes:
+    //  - `updateServiceWorker()` from vite-plugin-pwa is unreliable here.
+    //  - Calling `window.location.reload()` immediately does NOT guarantee
+    //    the new SW takes over before the page reloads — the browser can
+    //    keep serving the previous bundle through the old controller.
     //
-    // The correct iOS-safe pattern is: tell the waiting SW to skip
-    // waiting, then do a plain reload. The new SW's activate handler
-    // calls cleanupOutdatedCaches() itself, and the next page load
-    // installs everything cleanly with no race conditions.
+    // Correct sequence:
+    //   1. postMessage SKIP_WAITING to the registered waiting SW.
+    //   2. Listen for `controllerchange` — fires when the new SW is in
+    //      control of this page. Reload AFTER that.
+    //   3. Always have a hard timeout fallback so the user is never
+    //      stuck on an "Updating…" button if anything goes wrong.
+
+    const reload = () => window.location.reload();
+
+    // Hard fallback: if nothing else happens in 2.5s, reload anyway.
+    const fallback = window.setTimeout(reload, 2500);
+
+    let didReload = false;
+    const reloadOnce = () => {
+      if (didReload) return;
+      didReload = true;
+      window.clearTimeout(fallback);
+      reload();
+    };
+
+    // When the new SW takes control of this page, reload it.
+    navigator.serviceWorker?.addEventListener(
+      "controllerchange",
+      reloadOnce,
+      { once: true },
+    );
+
     try {
       const reg = await navigator.serviceWorker.getRegistration();
-      if (reg?.waiting) {
-        reg.waiting.postMessage({ type: "SKIP_WAITING" });
-      }
-      // Let the hook update its internal state too (no-op if it can't).
-      await onRefresh().catch(() => {});
-    } catch {
-      // ignore — reload anyway
-    }
 
-    // Plain reload — the new SW will be in control by the time the
-    // new page parses.
-    window.location.reload();
+      // Sync any internal plugin state.
+      await onRefresh().catch(() => { });
+
+      if (reg?.waiting) {
+        // The new SW is already installed and waiting — wake it up.
+        reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      } else if (reg) {
+        // No waiting SW found. Force a registration update; once the
+        // new SW installs, fire SKIP_WAITING at it. If still nothing
+        // installs, the fallback timer above will reload us anyway.
+        try {
+          await reg.update();
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: "SKIP_WAITING" });
+          } else if (reg.installing) {
+            reg.installing.addEventListener("statechange", () => {
+              if (reg.waiting) {
+                reg.waiting.postMessage({ type: "SKIP_WAITING" });
+              }
+            });
+          }
+        } catch {
+          // ignore — fallback timer will handle it
+        }
+      } else {
+        // No SW at all — just reload.
+        reloadOnce();
+      }
+    } catch {
+      reloadOnce();
+    }
   };
 
   return (
