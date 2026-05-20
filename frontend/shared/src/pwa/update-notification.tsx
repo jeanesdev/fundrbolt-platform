@@ -22,6 +22,16 @@ export function UpdateNotification({
 
   if (!needRefresh) return null;
 
+  // Only show in installed/standalone PWA. In a regular browser tab
+  // the user can just refresh and the new SW takes over on the next
+  // navigation — the banner is just noise.
+  if (typeof window !== "undefined") {
+    const isStandalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    if (!isStandalone) return null;
+  }
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
 
