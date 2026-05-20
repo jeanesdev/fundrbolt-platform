@@ -1,33 +1,33 @@
-import { useEffect, useState } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
+import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
+import { Button } from '@/components/ui/button'
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card'
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { AuthLayout } from '@/features/auth/auth-layout'
+import { PasswordChangeForm } from '@/features/settings/account/components/password-change-form'
+import apiClient from '@/lib/axios'
+import { useAuthStore } from '@/stores/auth-store'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { CheckCircle2, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import apiClient from '@/lib/axios'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
-import { AuthLayout } from '@/features/auth/auth-layout'
-import { PasswordChangeForm } from '@/features/settings/account/components/password-change-form'
+import { z } from 'zod'
 import { markProfileSetupSeen } from './utils'
 
 const PENDING_COMMS_EMAIL_STORAGE_KEY = 'pending_comms_email_verification'

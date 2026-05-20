@@ -304,9 +304,7 @@ async def request_communications_email_verification(
             current_user.communications_email = current_user.email
             current_user.communications_email_verified = True
             await db.commit()
-            return CommunicationsEmailResponse(
-                message="Communications email set successfully"
-            )
+            return CommunicationsEmailResponse(message="Communications email set successfully")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={

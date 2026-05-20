@@ -61,31 +61,68 @@ export function PullToRefresh({
     if (typeof window === "undefined") return;
     if (!("ontouchstart" in window)) return;
 
-    // IMPORTANT: in this app the body is the actual scroller (see
-    // donor-pwa styles/index.css — `html { position: fixed }`,
-    // `body { overflow-y: auto }`). document.scrollingElement points
-    // at <html> whose scrollTop is always 0, so reading from it would
-    // make this gesture think we're at the top on every touch and
-    // fire the refresh while users are scrolling. Read both and use
-    // whichever is non-zero.
-    const getScrollTop = () =>
-      Math.max(
+    // Only enable PTR in installed/standalone PWA mode. In a regular
+    // browser tab the user already has the browser's native pull-to-
+    // refresh, and an in-page one just feels like a glitch.
+    const isStandalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      // iOS Safari legacy flag
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    if (!isStandalone) return;
+
+    // Many pages (event home, settings, modals, etc.) use an INNER
+    // scrollable container (overflow-y: auto on a div) rather than the
+    // body. Body.scrollTop is then always 0 even though the user has
+    // scrolled deep into the inner container. To correctly detect "at
+    // the top", walk up from the touch target to the nearest
+    // scrollable ancestor and read its scrollTop instead.
+    const isScrollable = (el: Element) => {
+      const cs = getComputedStyle(el);
+      const oy = cs.overflowY;
+      return (
+        (oy === "auto" || oy === "scroll" || oy === "overlay") &&
+        el.scrollHeight > el.clientHeight
+      );
+    };
+    const findScroller = (start: EventTarget | null): Element | null => {
+      let node: Element | null =
+        start instanceof Element
+          ? start
+          : start instanceof Node
+          ? (start.parentElement as Element | null)
+          : null;
+      while (node && node !== document.body) {
+        if (isScrollable(node)) return node;
+        node = node.parentElement;
+      }
+      return null;
+    };
+    const getScrollTopFor = (scroller: Element | null) => {
+      if (scroller) return scroller.scrollTop;
+      return Math.max(
         document.body?.scrollTop ?? 0,
         document.documentElement?.scrollTop ?? 0,
         window.scrollY ?? 0,
       );
+    };
 
     // Require at least this much downward pull before we start
     // consuming touchmove events. Below this, normal scrolling wins.
     const ACTIVATION_SLOP = 16;
     let activated = false;
+    let activeScroller: Element | null = null;
 
     const onTouchStart = (e: TouchEvent) => {
       if (isRefreshingRef.current) return;
-      // Only arm the gesture when we're already at the very top.
-      if (getScrollTop() > 0) return;
       const touch = e.touches[0];
       if (!touch) return;
+      // Find the actual scroller for this touch and only arm the
+      // gesture when THAT scroller is at the top.
+      activeScroller = findScroller(e.target);
+      if (getScrollTopFor(activeScroller) > 0) {
+        activeScroller = null;
+        return;
+      }
       startYRef.current = touch.clientY;
       isTrackingRef.current = true;
       activated = false;
@@ -109,7 +146,7 @@ export function PullToRefresh({
       }
 
       // If they've scrolled away from the top in the meantime, cancel.
-      if (getScrollTop() > 0) {
+      if (getScrollTopFor(activeScroller) > 0) {
         isTrackingRef.current = false;
         activated = false;
         distanceRef.current = 0;
