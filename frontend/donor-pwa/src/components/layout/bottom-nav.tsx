@@ -48,6 +48,9 @@ export function BottomNav() {
     <>
       <nav
         className='bg-background fixed right-0 bottom-0 left-0 z-50 border-t'
+        style={{
+          paddingBottom: 'var(--bottom-safe-area, 0px)',
+        }}
       >
         <div className='flex h-12 items-stretch'>
           <NavTab

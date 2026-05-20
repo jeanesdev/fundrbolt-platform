@@ -49,6 +49,7 @@ export function BottomTabNav({
         backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
         borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.15)',
         boxShadow: '0 -1px 4px rgb(0 0 0 / 0.08)',
+        paddingBottom: 'var(--bottom-safe-area, 0px)',
       }}
     >
       <div className='flex h-12 items-stretch'>

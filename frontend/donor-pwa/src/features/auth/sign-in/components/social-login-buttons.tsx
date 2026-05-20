@@ -1,4 +1,4 @@
-import { useCallback, useState, type ComponentType, type SVGProps } from 'react'
+import { useCallback, useEffect, useState, type ComponentType, type SVGProps } from 'react'
 import {
   AppleIcon,
   FacebookIcon,
@@ -38,6 +38,23 @@ export function SocialLoginButtons({
 }) {
   const [activeProvider, setActiveProvider] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // Reset the loading spinner when the user navigates back to this page
+  // after a failed external OAuth (e.g. Apple invalid_client). Without this,
+  // the bfcache restores the page with activeProvider still set, leaving
+  // the button stuck in the spinner state until the app is killed.
+  useEffect(() => {
+    const reset = () => setActiveProvider(null)
+    window.addEventListener('pageshow', reset)
+    window.addEventListener('focus', reset)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') reset()
+    })
+    return () => {
+      window.removeEventListener('pageshow', reset)
+      window.removeEventListener('focus', reset)
+    }
+  }, [])
 
   const handleSocialLogin = useCallback(
     async (provider: SocialAuthProvider) => {

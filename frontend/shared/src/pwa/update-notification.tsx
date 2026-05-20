@@ -25,33 +25,44 @@ export function UpdateNotification({
   const handleRefresh = async () => {
     setIsRefreshing(true);
 
-    // Tell the waiting SW to skip waiting so it becomes active.
-    // We do this directly rather than relying solely on onRefresh()
-    // because vite-plugin-pwa's updateServiceWorker() silently does
-    // nothing if registration.waiting is null at call time (a known
-    // race condition on iOS Safari / standalone mode).
+    // The vite-plugin-pwa updateServiceWorker() helper is unreliable on
+    // iOS standalone — it can silently no-op and the controllerchange
+    // event often never fires. Bypass all of that and force the update
+    // ourselves.
     try {
       const reg = await navigator.serviceWorker.getRegistration();
+      // Tell the waiting SW to take over.
       if (reg?.waiting) {
         reg.waiting.postMessage({ type: "SKIP_WAITING" });
       }
+      // Clear ALL caches — the new HTML/JS must come fresh from the network.
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((key) => caches.delete(key)));
+      }
+      // Unregister the active SW so the next page load installs the new one
+      // cleanly without any race conditions.
+      if (reg) {
+        await reg.unregister();
+      }
     } catch {
-      // serviceWorker API unavailable — fall through to reload
+      // ignore — proceed to reload regardless
     }
 
-    // Also call the hook's update function (for the controllerchange path)
+    // Also call the hook's update function so its internal state syncs.
     try {
       await onRefresh();
     } catch {
       // ignore
     }
 
-    // Hard reload after 300ms — enough for skipWaiting to execute.
-    // This is the guaranteed path: we don't wait for controllerchange
-    // (which can be unreliable on iOS standalone) to trigger reload.
-    setTimeout(() => {
-      window.location.reload();
-    }, 300);
+    // Hard navigate (not reload) with a cache-busting query param so iOS
+    // Safari/standalone cannot serve the page from its HTTP cache. Using
+    // window.location.replace prevents the broken page from being kept
+    // in history.
+    const url = new URL(window.location.href);
+    url.searchParams.set("_swu", Date.now().toString());
+    window.location.replace(url.toString());
   };
 
   return (
