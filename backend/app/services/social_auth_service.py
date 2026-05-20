@@ -5,6 +5,7 @@ OAuth2 authorization, account linking, provisioning, email
 verification gating, and admin step-up verification.
 """
 
+import asyncio
 import hashlib
 import secrets
 import uuid
@@ -199,6 +200,8 @@ class SocialAuthService:
         provider_subject = provider_claims.get("sub", "")
         provider_email = provider_claims.get("email")
         email_verified = provider_claims.get("email_verified", False)
+        # Extract internal access token before minimizing claims (not a real claim)
+        ms_access_token: str = provider_claims.pop("_ms_access_token", "")
 
         # Minimize claims to whitelist
         _ = {k: v for k, v in provider_claims.items() if k in ALLOWED_PROVIDER_CLAIMS}
@@ -222,6 +225,10 @@ class SocialAuthService:
             app_ctx = AppContext(attempt.app_context)
             if app_ctx == AppContext.ADMIN_PWA and user.role.name != "donor":
                 return await cls._require_admin_step_up(db, attempt, user)
+
+            # Backfill profile picture from Microsoft if not yet set
+            if ms_access_token and not user.profile_picture_url:
+                await cls._fetch_and_upload_ms_profile_picture(db, ms_access_token, user)
 
             return await cls._complete_auth(db, attempt, user)
 
@@ -254,6 +261,9 @@ class SocialAuthService:
                 email_verified,
                 attempt.id,
             )
+            # Fetch Microsoft profile picture for new accounts
+            if ms_access_token:
+                await cls._fetch_and_upload_ms_profile_picture(db, ms_access_token, user)
             return await cls._complete_auth(db, attempt, user, is_new_account=True)
         else:
             # Admin PWA – no pre-provisioned account; prompt the user to register
@@ -694,6 +704,63 @@ class SocialAuthService:
         )
 
     @staticmethod
+    async def _fetch_and_upload_ms_profile_picture(
+        db: AsyncSession,
+        access_token: str,
+        user: User,
+    ) -> None:
+        """Fetch the Microsoft Graph profile photo and store it as the user's avatar.
+
+        Failures are silently logged so they never block the login flow.
+        """
+        import httpx
+
+        from app.services.file_upload_service import FileUploadService
+
+        settings = get_settings()
+        try:
+            async with httpx.AsyncClient(timeout=8.0) as http:
+                photo_resp = await http.get(
+                    "https://graph.microsoft.com/v1.0/me/photo/$value",
+                    headers={"Authorization": f"Bearer {access_token}"},
+                )
+            if photo_resp.status_code != 200:
+                logger.info(
+                    "Microsoft Graph photo not available",
+                    extra={"user_id": str(user.id), "status": photo_resp.status_code},
+                )
+                return
+
+            content_type = photo_resp.headers.get("content-type", "image/jpeg")
+            photo_bytes = photo_resp.content
+            file_name = "profile.jpg"
+
+            service = FileUploadService(settings)
+            picture_url: str = await asyncio.to_thread(
+                service.upload_file,
+                user.id,
+                file_name,
+                content_type,
+                photo_bytes,
+            )
+
+            from sqlalchemy import update as sa_update
+
+            await db.execute(
+                sa_update(User).where(User.id == user.id).values(profile_picture_url=picture_url)
+            )
+            user.profile_picture_url = picture_url
+            logger.info(
+                "Microsoft profile picture imported",
+                extra={"user_id": str(user.id)},
+            )
+        except Exception as exc:
+            logger.warning(
+                "Failed to fetch Microsoft profile picture (non-fatal)",
+                extra={"user_id": str(user.id), "error": str(exc)},
+            )
+
+    @staticmethod
     async def _auto_provision_donor(
         db: AsyncSession,
         email: str,
@@ -908,6 +975,9 @@ class SocialAuthService:
                 # Microsoft account emails are verified by the platform.
                 if provider == ProviderKey.MICROSOFT:
                     filtered["email_verified"] = True
+                    # Pass the access token through (internal, underscore-prefixed) so
+                    # the caller can fetch the Microsoft Graph profile picture.
+                    filtered["_ms_access_token"] = token_data.get("access_token", "")
                 return filtered
 
         # --- Apple: code exchange with JWT client secret ---
