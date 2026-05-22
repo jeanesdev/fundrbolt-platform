@@ -12,10 +12,18 @@ if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
     echo "    Please enter a commit message (single line), then press Enter:"
     read -r COMMIT_MESSAGE
   fi
-  # Slugify the commit message into a branch name
+  # Slugify the commit message into a branch name; fall back to timestamp if result is empty
   SLUG=$(echo "$COMMIT_MESSAGE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]//g' | tr ' ' '-' | sed 's/-\+/-/g' | sed 's/^-//' | cut -c1-50 | sed 's/-$//')
+  if [[ -z "$SLUG" ]]; then
+    SLUG="publish-$(date +%Y%m%d-%H%M%S)"
+  fi
   BRANCH="feat/${SLUG}"
   echo "🌿 On main — creating feature branch: $BRANCH"
+  # If the branch already exists locally, append a short timestamp to avoid conflict
+  if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
+    BRANCH="${BRANCH}-$(date +%H%M%S)"
+    echo "  Branch already exists locally — using $BRANCH instead"
+  fi
   git checkout -b "$BRANCH"
 fi
 
