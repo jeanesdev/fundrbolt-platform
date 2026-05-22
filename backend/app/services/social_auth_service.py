@@ -636,6 +636,7 @@ class SocialAuthService:
             reason=PendingReason.NEEDS_LINK_CONFIRMATION,
             attempt_id=attempt.id,
             message="Please confirm your identity by entering your existing account password.",
+            prefill_email=candidate.email,
         )
 
     @classmethod
@@ -906,6 +907,9 @@ class SocialAuthService:
             # Override redirect_uri to backend relay — must match what's registered in Apple portal
             apple_callback_base = settings.social_auth_callback_base_url.rstrip("/")
             params["redirect_uri"] = f"{apple_callback_base}/auth/social/apple/redirect"
+        if provider == ProviderKey.GOOGLE:
+            # Always show the account picker so users can choose which Google account to use
+            params["prompt"] = "select_account"
         return f"{auth_base}?{urllib.parse.urlencode(params)}"
 
     @staticmethod
