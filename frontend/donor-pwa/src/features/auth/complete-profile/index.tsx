@@ -21,7 +21,7 @@ import { PasswordChangeForm } from '@/features/settings/account/components/passw
 import apiClient from '@/lib/axios'
 import { useAuthStore } from '@/stores/auth-store'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { CheckCircle2, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -332,6 +332,7 @@ export function CompleteProfile() {
   const user = useAuthStore((state) => state.user)
   const setUser = useAuthStore((state) => state.setUser)
   const isLoading = useAuthStore((state) => state.isLoading)
+  const queryClient = useQueryClient()
   const restoreUserFromRefreshToken = useAuthStore(
     (state) => state.restoreUserFromRefreshToken
   )
@@ -447,6 +448,7 @@ export function CompleteProfile() {
     },
     onSuccess: (data) => {
       setUser(data.user ?? data)
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] })
       if (user) markProfileSetupSeen(user.id)
       toast.success('Profile saved!')
       navigate({ to: redirectTo as string })

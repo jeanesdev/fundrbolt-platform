@@ -202,6 +202,7 @@ class SocialAuthService:
         email_verified = provider_claims.get("email_verified", False)
         # Extract internal access token before minimizing claims (not a real claim)
         ms_access_token: str = provider_claims.pop("_ms_access_token", "")
+        fb_picture_url: str = provider_claims.pop("_fb_picture_url", "")
 
         # Minimize claims to whitelist
         _ = {k: v for k, v in provider_claims.items() if k in ALLOWED_PROVIDER_CLAIMS}
@@ -229,6 +230,9 @@ class SocialAuthService:
             # Backfill profile picture from Microsoft if not yet set
             if ms_access_token and not user.profile_picture_url:
                 await cls._fetch_and_upload_ms_profile_picture(db, ms_access_token, user)
+            # Backfill profile picture from Facebook if not yet set
+            if fb_picture_url and not user.profile_picture_url:
+                await cls._fetch_and_upload_fb_profile_picture(db, fb_picture_url, user)
 
             return await cls._complete_auth(db, attempt, user)
 
@@ -264,6 +268,9 @@ class SocialAuthService:
             # Fetch Microsoft profile picture for new accounts
             if ms_access_token:
                 await cls._fetch_and_upload_ms_profile_picture(db, ms_access_token, user)
+            # Fetch Facebook profile picture for new accounts
+            if fb_picture_url:
+                await cls._fetch_and_upload_fb_profile_picture(db, fb_picture_url, user)
             return await cls._complete_auth(db, attempt, user, is_new_account=True)
         else:
             # Admin PWA – no pre-provisioned account; prompt the user to register
@@ -704,6 +711,60 @@ class SocialAuthService:
         )
 
     @staticmethod
+    async def _fetch_and_upload_fb_profile_picture(
+        db: AsyncSession,
+        picture_url: str,
+        user: User,
+    ) -> None:
+        """Download the Facebook profile picture and store it as the user's avatar.
+
+        Failures are silently logged so they never block the login flow.
+        """
+        import httpx
+
+        from app.services.file_upload_service import FileUploadService
+
+        settings = get_settings()
+        try:
+            async with httpx.AsyncClient(timeout=8.0) as http:
+                photo_resp = await http.get(picture_url)
+            if photo_resp.status_code != 200:
+                logger.info(
+                    "Facebook profile picture not available",
+                    extra={"user_id": str(user.id), "status": photo_resp.status_code},
+                )
+                return
+
+            content_type = photo_resp.headers.get("content-type", "image/jpeg")
+            photo_bytes = photo_resp.content
+            file_name = "profile.jpg"
+
+            service = FileUploadService(settings)
+            uploaded_url: str = await asyncio.to_thread(
+                service.upload_file,
+                user.id,
+                file_name,
+                content_type,
+                photo_bytes,
+            )
+
+            from sqlalchemy import update as sa_update
+
+            await db.execute(
+                sa_update(User).where(User.id == user.id).values(profile_picture_url=uploaded_url)
+            )
+            user.profile_picture_url = uploaded_url
+            logger.info(
+                "Facebook profile picture imported",
+                extra={"user_id": str(user.id)},
+            )
+        except Exception as exc:
+            logger.warning(
+                "Failed to fetch Facebook profile picture (non-fatal)",
+                extra={"user_id": str(user.id), "error": str(exc)},
+            )
+
+    @staticmethod
     async def _fetch_and_upload_ms_profile_picture(
         db: AsyncSession,
         access_token: str,
@@ -1050,7 +1111,7 @@ class SocialAuthService:
                 fb_user_resp = await http.get(
                     "https://graph.facebook.com/me",
                     params={
-                        "fields": "id,email,name",
+                        "fields": "id,email,name,picture.type(large)",
                         "access_token": fb_access_token,
                     },
                 )
@@ -1065,12 +1126,19 @@ class SocialAuthService:
                     raise ValueError("Failed to fetch user info from Facebook")
                 fb_user = fb_user_resp.json()
 
+            fb_picture: str = (
+                fb_user.get("picture", {}).get("data", {}).get("url", "")
+                if not fb_user.get("picture", {}).get("data", {}).get("is_silhouette", True)
+                else ""
+            )
             return {
                 "sub": fb_user.get("id", ""),
                 "email": fb_user.get("email", ""),
                 # Facebook only provides verified emails; treat as verified
                 "email_verified": True,
                 "name": fb_user.get("name", ""),
+                # Internal field – popped before claim minimization
+                "_fb_picture_url": fb_picture,
             }
 
         # Fallback — should only be reached if credentials are missing

@@ -1,10 +1,3 @@
-import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useSearch } from '@tanstack/react-router'
-import type { SocialAuthProvider } from '@fundrbolt/shared/types'
-import { Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { donorSocialAuthApi } from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -13,11 +6,21 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { AuthLayout } from '@/features/auth/auth-layout'
+import { donorSocialAuthApi } from '@/lib/axios'
+import { useAuthStore } from '@/stores/auth-store'
+import type { SocialAuthProvider } from '@fundrbolt/shared/types'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import { Loader2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 type PendingInfo = {
   reason: string
   message: string
+  attemptId?: string
 }
 
 export function SocialCallback() {
@@ -32,6 +35,9 @@ export function SocialCallback() {
   const [pending, setPending] = useState<PendingInfo | null>(null)
   const [processing, setProcessing] = useState(!urlError)
   const processedRef = useRef(false)
+  const [linkPassword, setLinkPassword] = useState('')
+  const [linkError, setLinkError] = useState<string | null>(null)
+  const [linking, setLinking] = useState(false)
 
   useEffect(() => {
     if (processedRef.current || !code || !state) return
@@ -75,6 +81,7 @@ export function SocialCallback() {
           setPending({
             reason: result.reason,
             message: result.message || 'Additional verification required.',
+            attemptId: result.attempt_id,
           })
           setProcessing(false)
         } else {
@@ -109,6 +116,44 @@ export function SocialCallback() {
   }
 
   if (pending) {
+    const handleLinkConfirm = async (e: React.FormEvent) => {
+      e.preventDefault()
+      if (!pending.attemptId) return
+      setLinking(true)
+      setLinkError(null)
+      try {
+        const result = await donorSocialAuthApi.confirmLink(
+          pending.attemptId,
+          linkPassword
+        )
+        if (result.status === 'authenticated') {
+          handleSocialAuthSuccess({
+            access_token: result.access_token,
+            refresh_token: result.refresh_token,
+            user_id: result.user_id,
+            app_context: 'donor',
+          })
+          toast.success('Social account linked successfully.')
+          navigate({ to: '/' })
+        } else {
+          setLinkError('Verification failed. Please try again.')
+        }
+      } catch (err: unknown) {
+        const message =
+          (
+            err as {
+              response?: { data?: { detail?: { message?: string } | string } }
+            }
+          )?.response?.data?.detail
+        setLinkError(
+          (typeof message === 'object' ? message?.message : message) ||
+          'Incorrect password. Please try again.'
+        )
+      } finally {
+        setLinking(false)
+      }
+    }
+
     return (
       <AuthLayout>
         <Card className='gap-4'>
@@ -120,25 +165,63 @@ export function SocialCallback() {
           </CardHeader>
           <CardContent className='space-y-3'>
             {pending.reason === 'link_confirmation_required' && (
-              <p className='text-muted-foreground text-sm'>
-                An account with this email already exists. Please sign in with
-                your email and password to link your social account.
-              </p>
+              <form onSubmit={handleLinkConfirm} className='space-y-4'>
+                <p className='text-muted-foreground text-sm'>
+                  An account with this email already exists. Enter your password
+                  to link your social account and sign in.
+                </p>
+                <div className='space-y-2'>
+                  <Label htmlFor='link-password'>Password</Label>
+                  <Input
+                    id='link-password'
+                    type='password'
+                    value={linkPassword}
+                    onChange={(e) => setLinkPassword(e.target.value)}
+                    placeholder='Enter your password'
+                    required
+                    autoFocus
+                  />
+                </div>
+                {linkError && (
+                  <p className='text-destructive text-sm'>{linkError}</p>
+                )}
+                <Button type='submit' className='w-full' disabled={linking}>
+                  {linking && (
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  )}
+                  Link Account & Sign In
+                </Button>
+                <Button
+                  type='button'
+                  variant='ghost'
+                  className='w-full'
+                  onClick={() =>
+                    navigate({ to: '/sign-in', search: { redirect: undefined } })
+                  }
+                >
+                  Back to Sign In
+                </Button>
+              </form>
             )}
             {pending.reason === 'email_verification_required' && (
-              <p className='text-muted-foreground text-sm'>
-                Please verify your email address to complete sign-in. Check your
-                inbox for a verification link.
-              </p>
+              <>
+                <p className='text-muted-foreground text-sm'>
+                  Please verify your email address to complete sign-in. Check
+                  your inbox for a verification link.
+                </p>
+                <Button
+                  className='w-full'
+                  onClick={() =>
+                    navigate({
+                      to: '/sign-in',
+                      search: { redirect: undefined },
+                    })
+                  }
+                >
+                  Back to Sign In
+                </Button>
+              </>
             )}
-            <Button
-              className='w-full'
-              onClick={() =>
-                navigate({ to: '/sign-in', search: { redirect: undefined } })
-              }
-            >
-              Back to Sign In
-            </Button>
           </CardContent>
         </Card>
       </AuthLayout>

@@ -2,12 +2,12 @@ import { isRetryableError, retryWithBackoff } from '@/lib/retry'
 import { useAuthStore } from '@/stores/auth-store'
 import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import type {
-    SocialAuthCallbackRequest,
-    SocialAuthCallbackResponse,
-    SocialAuthProvider,
-    SocialAuthProvidersResponse,
-    SocialAuthStartRequest,
-    SocialAuthStartResponse,
+  SocialAuthCallbackRequest,
+  SocialAuthCallbackResponse,
+  SocialAuthProvider,
+  SocialAuthProvidersResponse,
+  SocialAuthStartRequest,
+  SocialAuthStartResponse,
 } from '@fundrbolt/shared/types'
 import { sanitizeRequestPayload } from '@fundrbolt/shared/utils'
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
@@ -289,7 +289,7 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 429) {
       const retryAfter = error.response.headers['retry-after']
       if (retryAfter) {
-        ;(error as AxiosError & { retryAfter?: number }).retryAfter = parseInt(
+        ; (error as AxiosError & { retryAfter?: number }).retryAfter = parseInt(
           retryAfter,
           10
         )
@@ -333,6 +333,16 @@ export const adminSocialAuthApi = {
     const response = await apiClient.post<SocialAuthCallbackResponse>(
       `/auth/social/${provider}/callback`,
       payload
+    )
+    return response.data
+  },
+  confirmLink: async (
+    attemptId: string,
+    password: string
+  ): Promise<SocialAuthCallbackResponse> => {
+    const response = await apiClient.post<SocialAuthCallbackResponse>(
+      '/auth/social/link-confirmation',
+      { attempt_id: attemptId, email_login_confirmation_token: password }
     )
     return response.data
   },
