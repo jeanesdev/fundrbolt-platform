@@ -20,6 +20,7 @@ type PendingInfo = {
   reason: string
   message: string
   attemptId?: string
+  prefillEmail?: string
 }
 
 export function SocialCallback() {
@@ -105,6 +106,7 @@ export function SocialCallback() {
             reason: result.reason,
             message: result.message || 'Additional verification required.',
             attemptId: result.attempt_id,
+            prefillEmail: result.prefill_email,
           })
           setProcessing(false)
         } else {
@@ -214,6 +216,9 @@ export function SocialCallback() {
                   An account with this email already exists. Enter your password
                   to link your social account and sign in.
                 </p>
+                {pending.prefillEmail && (
+                  <p className='text-sm font-medium'>{pending.prefillEmail}</p>
+                )}
                 <div className='space-y-2'>
                   <Label htmlFor='link-password'>Password</Label>
                   <Input

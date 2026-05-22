@@ -4,6 +4,21 @@ set -euo pipefail
 BRANCH="${1:-$(git rev-parse --abbrev-ref HEAD)}"
 COMMIT_MESSAGE="${COMMIT_MESSAGE:-}"
 
+# If on a protected branch (main/master), create a feature branch instead.
+# Changes must go through a PR — never commit directly to main.
+if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
+  if [[ -z "$COMMIT_MESSAGE" ]]; then
+    echo "✏️  No COMMIT_MESSAGE env var set."
+    echo "    Please enter a commit message (single line), then press Enter:"
+    read -r COMMIT_MESSAGE
+  fi
+  # Slugify the commit message into a branch name
+  SLUG=$(echo "$COMMIT_MESSAGE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]//g' | tr ' ' '-' | sed 's/-\+/-/g' | sed 's/^-//' | cut -c1-50 | sed 's/-$//')
+  BRANCH="feat/${SLUG}"
+  echo "🌿 On main — creating feature branch: $BRANCH"
+  git checkout -b "$BRANCH"
+fi
+
 echo "🚀 Starting publish flow on branch '$BRANCH'..."
 
 echo ""
