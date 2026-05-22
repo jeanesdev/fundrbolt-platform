@@ -14,6 +14,7 @@ from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -510,7 +511,7 @@ class SocialAuthService:
 
     @staticmethod
     async def _get_user_by_id(db: AsyncSession, user_id: uuid.UUID) -> User | None:
-        stmt = select(User).where(User.id == user_id)
+        stmt = select(User).options(joinedload(User.role)).where(User.id == user_id)
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
 
