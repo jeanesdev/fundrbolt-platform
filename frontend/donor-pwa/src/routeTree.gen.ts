@@ -35,6 +35,7 @@ import { Route as authPasswordResetConfirmRouteImport } from './routes/(auth)/pa
 import { Route as authPasswordResetRouteImport } from './routes/(auth)/password-reset'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
+import { Route as authDataDeletionRouteImport } from './routes/(auth)/data-deletion'
 import { Route as authCompleteProfileRouteImport } from './routes/(auth)/complete-profile'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as EventsSlugIndexRouteImport } from './routes/events.$slug.index'
@@ -194,6 +195,11 @@ const authOtpRoute = authOtpRouteImport.update({
 const authForgotPasswordRoute = authForgotPasswordRouteImport.update({
   id: '/(auth)/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const authDataDeletionRoute = authDataDeletionRouteImport.update({
+  id: '/(auth)/data-deletion',
+  path: '/data-deletion',
   getParentRoute: () => rootRouteImport,
 } as any)
 const authCompleteProfileRoute = authCompleteProfileRouteImport.update({
@@ -367,6 +373,7 @@ export interface FileRoutesByFullPath {
   '/preview': typeof PreviewRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/complete-profile': typeof authCompleteProfileRoute
+  '/data-deletion': typeof authDataDeletionRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/password-reset': typeof authPasswordResetRoute
@@ -422,6 +429,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/preview': typeof PreviewRouteWithChildren
   '/complete-profile': typeof authCompleteProfileRoute
+  '/data-deletion': typeof authDataDeletionRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/password-reset': typeof authPasswordResetRoute
@@ -477,6 +485,7 @@ export interface FileRoutesById {
   '/preview': typeof PreviewRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/(auth)/complete-profile': typeof authCompleteProfileRoute
+  '/(auth)/data-deletion': typeof authDataDeletionRoute
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/otp': typeof authOtpRoute
   '/(auth)/password-reset': typeof authPasswordResetRoute
@@ -535,6 +544,7 @@ export interface FileRouteTypes {
     | '/preview'
     | '/settings'
     | '/complete-profile'
+    | '/data-deletion'
     | '/forgot-password'
     | '/otp'
     | '/password-reset'
@@ -590,6 +600,7 @@ export interface FileRouteTypes {
     | '/'
     | '/preview'
     | '/complete-profile'
+    | '/data-deletion'
     | '/forgot-password'
     | '/otp'
     | '/password-reset'
@@ -644,6 +655,7 @@ export interface FileRouteTypes {
     | '/preview'
     | '/_authenticated/settings'
     | '/(auth)/complete-profile'
+    | '/(auth)/data-deletion'
     | '/(auth)/forgot-password'
     | '/(auth)/otp'
     | '/(auth)/password-reset'
@@ -701,6 +713,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   PreviewRoute: typeof PreviewRouteWithChildren
   authCompleteProfileRoute: typeof authCompleteProfileRoute
+  authDataDeletionRoute: typeof authDataDeletionRoute
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
   authPasswordResetRoute: typeof authPasswordResetRoute
@@ -905,6 +918,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof authForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(auth)/data-deletion': {
+      id: '/(auth)/data-deletion'
+      path: '/data-deletion'
+      fullPath: '/data-deletion'
+      preLoaderRoute: typeof authDataDeletionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(auth)/complete-profile': {
@@ -1258,6 +1278,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   PreviewRoute: PreviewRouteWithChildren,
   authCompleteProfileRoute: authCompleteProfileRoute,
+  authDataDeletionRoute: authDataDeletionRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
   authPasswordResetRoute: authPasswordResetRoute,
