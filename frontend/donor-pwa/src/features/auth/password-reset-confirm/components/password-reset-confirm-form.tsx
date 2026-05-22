@@ -1,12 +1,3 @@
-import { useState } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate } from '@tanstack/react-router'
-import { ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-import apiClient from '@/lib/axios'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -18,6 +9,15 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import apiClient from '@/lib/axios'
+import { cn } from '@/lib/utils'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate } from '@tanstack/react-router'
+import { ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
 
 const formSchema = z
   .object({
@@ -99,26 +99,28 @@ export function PasswordResetConfirmForm({
         className={cn('grid gap-4', className)}
         {...props}
       >
-        <FormField
-          control={form.control}
-          name='token'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Reset Token</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder='Enter token from email'
-                  autoComplete='off'
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Copy the token from the reset email you received.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {!token && (
+          <FormField
+            control={form.control}
+            name='token'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Reset Token</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder='Enter token from email'
+                    autoComplete='off'
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Copy the token from the reset email you received.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}
