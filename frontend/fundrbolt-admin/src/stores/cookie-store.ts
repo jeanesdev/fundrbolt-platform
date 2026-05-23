@@ -7,6 +7,7 @@ import type {
   CookieConsentPreferences,
   CookieConsentStatusResponse,
 } from '@/types/cookie'
+import { create } from 'zustand'
 import {
   clearSessionId,
   getCookiePreferences,
@@ -14,7 +15,6 @@ import {
   hasSetCookiePreferences,
   saveCookiePreferences,
 } from '@/utils/cookie-manager'
-import { create } from 'zustand'
 
 interface CookieConsentState {
   preferences: CookieConsentPreferences

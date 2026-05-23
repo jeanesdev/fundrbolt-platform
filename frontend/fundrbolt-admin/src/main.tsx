@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/react'
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { AxiosError } from 'axios'
@@ -9,6 +8,7 @@ import {
 } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { useGlobalInputSanitizer } from '@fundrbolt/shared/hooks'
+import * as Sentry from '@sentry/react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { handleServerError } from '@/lib/handle-server-error'

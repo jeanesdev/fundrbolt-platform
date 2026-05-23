@@ -1,3 +1,9 @@
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import type { SocialAuthProvider } from '@fundrbolt/shared/types'
+import { Loader2 } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
+import { adminSocialAuthApi } from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -9,12 +15,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AuthLayout } from '@/features/auth/auth-layout'
-import { adminSocialAuthApi } from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
-import type { SocialAuthProvider } from '@fundrbolt/shared/types'
-import { useNavigate, useSearch } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
 
 type PendingInfo = {
   reason: string
@@ -179,15 +179,14 @@ export function SocialCallback() {
           setLinkError('Verification failed. Please try again.')
         }
       } catch (err: unknown) {
-        const message =
-          (
-            err as {
-              response?: { data?: { detail?: { message?: string } | string } }
-            }
-          )?.response?.data?.detail
+        const message = (
+          err as {
+            response?: { data?: { detail?: { message?: string } | string } }
+          }
+        )?.response?.data?.detail
         setLinkError(
           (typeof message === 'object' ? message?.message : message) ||
-          'Incorrect password. Please try again.'
+            'Incorrect password. Please try again.'
         )
       } finally {
         setLinking(false)
@@ -231,9 +230,7 @@ export function SocialCallback() {
                   <p className='text-destructive text-sm'>{linkError}</p>
                 )}
                 <Button type='submit' className='w-full' disabled={linking}>
-                  {linking && (
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                  )}
+                  {linking && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                   {pending.reason === 'admin_step_up_required'
                     ? 'Confirm & Sign In'
                     : 'Link Account & Sign In'}
@@ -255,15 +252,18 @@ export function SocialCallback() {
             )}
             {pending.reason !== 'link_confirmation_required' &&
               pending.reason !== 'admin_step_up_required' && (
-              <Button
-                className='w-full'
-                onClick={() =>
-                  navigate({ to: '/sign-in', search: { redirect: undefined } })
-                }
-              >
-                Back to Sign In
-              </Button>
-            )}
+                <Button
+                  className='w-full'
+                  onClick={() =>
+                    navigate({
+                      to: '/sign-in',
+                      search: { redirect: undefined },
+                    })
+                  }
+                >
+                  Back to Sign In
+                </Button>
+              )}
           </CardContent>
         </Card>
       </AuthLayout>
