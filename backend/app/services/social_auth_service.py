@@ -908,8 +908,10 @@ class SocialAuthService:
             # Override redirect_uri to backend relay — must match what's registered in Apple portal
             apple_callback_base = settings.social_auth_callback_base_url.rstrip("/")
             params["redirect_uri"] = f"{apple_callback_base}/auth/social/apple/redirect"
-        if provider == ProviderKey.GOOGLE:
-            # Always show the account picker so users can choose which Google account to use
+        if provider in (ProviderKey.GOOGLE, ProviderKey.MICROSOFT):
+            # Always show the account picker so users can choose which account to use.
+            # Without this, both Google and Microsoft use a silently-cached session
+            # instead of prompting — which can log the wrong account in.
             params["prompt"] = "select_account"
         return f"{auth_base}?{urllib.parse.urlencode(params)}"
 
