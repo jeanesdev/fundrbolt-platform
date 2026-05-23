@@ -32,7 +32,9 @@ export function LegalFooter() {
             Privacy Policy
           </Link>
         </nav>
-        <p className='text-muted-foreground/50 text-xs tabular-nums'>v{__APP_VERSION__}</p>
+        <p className='text-muted-foreground/50 text-xs tabular-nums'>
+          v{__APP_VERSION__}
+        </p>
       </div>
     </footer>
   )

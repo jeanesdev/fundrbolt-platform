@@ -19,6 +19,9 @@
     @apply text-foreground has-[div[data-variant='inset']]:bg-sidebar min-h-svh w-full;
     background-color: #11294c !important;
     font-family: var(--font-sans);
+    overflow-y: auto;
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Override Radix scroll locking for sticky headers */
