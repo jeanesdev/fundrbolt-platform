@@ -204,17 +204,13 @@ export function SocialCallback() {
             <CardDescription>{pending.message}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-3'>
-            {pending.reason === 'admin_step_up_required' && (
-              <p className='text-muted-foreground text-sm'>
-                Admin accounts require additional identity verification. Please
-                confirm your password to complete sign-in.
-              </p>
-            )}
-            {pending.reason === 'link_confirmation_required' && (
+            {(pending.reason === 'link_confirmation_required' ||
+              pending.reason === 'admin_step_up_required') && (
               <form onSubmit={handleLinkConfirm} className='space-y-4'>
                 <p className='text-muted-foreground text-sm'>
-                  An account with this email already exists. Enter your password
-                  to link your social account and sign in.
+                  {pending.reason === 'admin_step_up_required'
+                    ? 'Admin accounts require additional identity verification. Please confirm your password to complete sign-in.'
+                    : 'An account with this email already exists. Enter your password to link your social account and sign in.'}
                 </p>
                 {pending.prefillEmail && (
                   <p className='text-sm font-medium'>{pending.prefillEmail}</p>
@@ -238,7 +234,9 @@ export function SocialCallback() {
                   {linking && (
                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                   )}
-                  Link Account & Sign In
+                  {pending.reason === 'admin_step_up_required'
+                    ? 'Confirm & Sign In'
+                    : 'Link Account & Sign In'}
                 </Button>
                 <Button
                   type='button'
@@ -255,7 +253,8 @@ export function SocialCallback() {
                 </Button>
               </form>
             )}
-            {pending.reason !== 'link_confirmation_required' && (
+            {pending.reason !== 'link_confirmation_required' &&
+              pending.reason !== 'admin_step_up_required' && (
               <Button
                 className='w-full'
                 onClick={() =>
