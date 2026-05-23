@@ -909,6 +909,13 @@ class SocialAuthService:
             # Override redirect_uri to backend relay — must match what's registered in Apple portal
             apple_callback_base = settings.social_auth_callback_base_url.rstrip("/")
             params["redirect_uri"] = f"{apple_callback_base}/auth/social/apple/redirect"
+        if provider == ProviderKey.FACEBOOK:
+            # Use backend relay URL — must match what's registered in Facebook Developer Console.
+            # Since the Facebook app may only have one valid redirect URI configured, using
+            # the backend relay lets us route to either frontend (admin or donor) based on
+            # the app_context stored in the auth attempt.
+            fb_callback_base = settings.social_auth_callback_base_url.rstrip("/")
+            params["redirect_uri"] = f"{fb_callback_base}/auth/social/facebook/callback"
         if provider in (ProviderKey.GOOGLE, ProviderKey.MICROSOFT):
             # Always show the account picker so users can choose which account to use.
             # Without this, both Google and Microsoft use a silently-cached session
@@ -1095,13 +1102,20 @@ class SocialAuthService:
 
         # --- Facebook: exchange code for access token, then fetch user info ---
         if provider == ProviderKey.FACEBOOK and client_id and client_secret:
+            # The redirect_uri in the token exchange must exactly match the one used in the
+            # authorization URL — which is the backend relay, not the frontend callback URL.
+            fb_settings = get_settings()
+            fb_redirect_uri = (
+                f"{fb_settings.social_auth_callback_base_url.rstrip('/')}"
+                "/auth/social/facebook/callback"
+            )
             async with httpx.AsyncClient(timeout=10.0) as http:
                 fb_token_resp = await http.get(
                     "https://graph.facebook.com/v18.0/oauth/access_token",
                     params={
                         "client_id": client_id,
                         "client_secret": client_secret,
-                        "redirect_uri": redirect_uri,
+                        "redirect_uri": fb_redirect_uri,
                         "code": code,
                     },
                 )
