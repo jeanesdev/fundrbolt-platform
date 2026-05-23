@@ -42,7 +42,7 @@ async def test_social_auth_admin_step_up_invalid(async_client: AsyncClient) -> N
         "/api/v1/auth/social/admin-step-up",
         json={
             "attempt_id": "00000000-0000-0000-0000-000000000000",
-            "step_up_token": "invalid_token",
+            "password": "invalid_password",
         },
     )
     assert response.status_code in (401, 400)

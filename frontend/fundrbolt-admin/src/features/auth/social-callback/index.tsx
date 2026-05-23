@@ -163,10 +163,16 @@ export function SocialCallback() {
       setLinking(true)
       setLinkError(null)
       try {
-        const result = await adminSocialAuthApi.confirmLink(
-          pending.attemptId,
-          linkPassword
-        )
+        const result =
+          pending.reason === 'admin_step_up_required'
+            ? await adminSocialAuthApi.confirmStepUp(
+                pending.attemptId,
+                linkPassword
+              )
+            : await adminSocialAuthApi.confirmLink(
+                pending.attemptId,
+                linkPassword
+              )
         if (result.status === 'authenticated') {
           handleSocialAuthSuccess({
             access_token: result.access_token,

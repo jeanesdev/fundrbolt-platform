@@ -122,7 +122,7 @@ class AdminStepUpRequest(BaseModel):
     """Request to complete admin step-up verification."""
 
     attempt_id: uuid.UUID
-    step_up_token: str
+    password: str
 
 
 class SocialAuthErrorResponse(BaseModel):

@@ -25,7 +25,7 @@ async def test_admin_step_up_invalid_attempt_returns_400(
         "/api/v1/auth/social/admin-step-up",
         json={
             "attempt_id": "00000000-0000-0000-0000-000000000000",
-            "step_up_token": "admin_password",
+            "password": "admin_password",
         },
     )
     assert response.status_code in (400, 401)
@@ -35,7 +35,7 @@ async def test_admin_step_up_invalid_attempt_returns_400(
 async def test_admin_step_up_missing_password_returns_422(
     async_client: AsyncClient,
 ) -> None:
-    """Verify admin step-up without step_up_token returns 422."""
+    """Verify admin step-up without password returns 422."""
     response = await async_client.post(
         "/api/v1/auth/social/admin-step-up",
         json={"attempt_id": "00000000-0000-0000-0000-000000000000"},
@@ -52,7 +52,7 @@ async def test_admin_step_up_response_shape(
         "/api/v1/auth/social/admin-step-up",
         json={
             "attempt_id": "00000000-0000-0000-0000-000000000000",
-            "step_up_token": "admin_password",
+            "password": "admin_password",
         },
     )
     data = response.json()

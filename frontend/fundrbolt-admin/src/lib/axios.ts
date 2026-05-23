@@ -346,6 +346,16 @@ export const adminSocialAuthApi = {
     )
     return response.data
   },
+  confirmStepUp: async (
+    attemptId: string,
+    password: string
+  ): Promise<SocialAuthCallbackResponse> => {
+    const response = await apiClient.post<SocialAuthCallbackResponse>(
+      '/auth/social/admin-step-up',
+      { attempt_id: attemptId, password }
+    )
+    return response.data
+  },
 }
 
 export default apiClient
