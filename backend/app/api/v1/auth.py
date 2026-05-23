@@ -1343,7 +1343,7 @@ async def complete_admin_step_up(
         result = await SocialAuthService.complete_admin_step_up(
             db=db,
             attempt_id=step_up_data.attempt_id,
-            step_up_token=step_up_data.step_up_token,
+            password=step_up_data.password,
         )
         await db.commit()
         return result

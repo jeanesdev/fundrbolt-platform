@@ -426,28 +426,29 @@ class SocialAuthService:
         cls,
         db: AsyncSession,
         attempt_id: uuid.UUID,
-        step_up_token: str,
+        password: str,
     ) -> SocialAuthSuccessResponse:
-        """Complete admin step-up verification."""
+        """Complete admin step-up verification by confirming the user's password."""
         stmt = select(AdminStepUpChallenge).where(
             AdminStepUpChallenge.attempt_id == attempt_id,
-            AdminStepUpChallenge.step_up_token == step_up_token,
             AdminStepUpChallenge.status == "pending",
         )
         result = await db.execute(stmt)
         challenge = result.scalar_one_or_none()
         if not challenge:
-            raise ValueError("Invalid step-up token")
+            raise ValueError("Invalid step-up challenge")
         if challenge.expires_at < datetime.now(UTC):
             challenge.status = "expired"
             raise ValueError("Step-up challenge has expired")
 
-        challenge.status = "satisfied"
-        challenge.completed_at = datetime.now(UTC)
-
         user = await cls._get_user_by_id(db, challenge.user_id)
         if not user:
             raise ValueError("User not found")
+        if not user.verify_password(password):
+            raise ValueError("Invalid password")
+
+        challenge.status = "satisfied"
+        challenge.completed_at = datetime.now(UTC)
 
         attempt = await cls._get_attempt_by_id(db, attempt_id)
         if not attempt:
