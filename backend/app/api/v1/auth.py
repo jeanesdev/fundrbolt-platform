@@ -1180,21 +1180,83 @@ async def start_social_auth(
 )
 async def apple_form_post_redirect(
     request: Request,
+    db: AsyncSession = Depends(get_db),
 ) -> RedirectResponse:
     """Receive Apple's form_post callback and redirect to the frontend SPA.
 
     Apple POSTs code + state as form data when response_mode=form_post is used.
-    This endpoint extracts those values and sends the browser to the frontend
-    /social-callback route as a GET with query params, where existing JS handles
-    the code exchange.
+    This endpoint extracts those values and sends the browser to the correct
+    frontend /social-callback route (admin or donor) based on the app_context
+    stored in the auth attempt identified by the state token.
     """
+    from app.models.social_auth_attempt import SocialAuthAttempt
+
     form = await request.form()
     code = form.get("code", "")
     state = form.get("state", "")
     error = form.get("error", "")
 
     settings = get_settings()
+
+    # Determine the correct frontend based on app_context stored in the attempt.
+    # Fall back to donor URL if the attempt can't be found (e.g. already expired).
     frontend_url = settings.frontend_donor_url
+    if state:
+        stmt = select(SocialAuthAttempt).where(
+            SocialAuthAttempt.state_token == state,
+        )
+        result = await db.execute(stmt)
+        attempt = result.scalar_one_or_none()
+        if attempt and attempt.app_context == "admin_pwa":
+            frontend_url = settings.frontend_admin_url
+
+    if error:
+        return RedirectResponse(
+            url=f"{frontend_url}/social-callback?error={error}",
+            status_code=302,
+        )
+
+    return RedirectResponse(
+        url=f"{frontend_url}/social-callback?code={code}&state={state}",
+        status_code=302,
+    )
+
+
+@router.get(
+    "/social/facebook/callback",
+    status_code=status.HTTP_302_FOUND,
+    include_in_schema=False,
+)
+async def facebook_redirect_callback(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> RedirectResponse:
+    """Receive Facebook's redirect callback and route to the correct frontend SPA.
+
+    Facebook may only have one registered redirect URI in the Developer Console.
+    This backend relay acts as that registered URI so Facebook always lands here,
+    and then routes the browser to the correct frontend (admin or donor) based on
+    the app_context stored in the auth attempt identified by the state token.
+    """
+    from app.models.social_auth_attempt import SocialAuthAttempt
+
+    code = request.query_params.get("code", "")
+    state = request.query_params.get("state", "")
+    error = request.query_params.get("error", "")
+
+    settings = get_settings()
+
+    # Determine the correct frontend based on app_context stored in the attempt.
+    # Fall back to donor URL if the attempt can't be found (e.g. already expired).
+    frontend_url = settings.frontend_donor_url
+    if state:
+        stmt = select(SocialAuthAttempt).where(
+            SocialAuthAttempt.state_token == state,
+        )
+        result = await db.execute(stmt)
+        attempt = result.scalar_one_or_none()
+        if attempt and attempt.app_context == "admin_pwa":
+            frontend_url = settings.frontend_admin_url
 
     if error:
         return RedirectResponse(

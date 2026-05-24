@@ -1,7 +1,7 @@
+import apiClient from '@/lib/axios'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import apiClient from '@/lib/axios'
 
 interface AuthUser {
   id: string
@@ -252,11 +252,16 @@ export const useAuthStore = create<AuthState>()(
         })
         // Fetch full user profile via an API call
         apiClient
-          .get('/auth/me')
+          .get('/users/me')
           .then((response) => {
             set({ user: response.data })
           })
-          .catch(() => {
+          .catch((err) => {
+            // eslint-disable-next-line no-console
+            console.error(
+              '[auth] Failed to load user profile after social auth:',
+              err
+            )
             // User data will be populated on next page load
           })
       },

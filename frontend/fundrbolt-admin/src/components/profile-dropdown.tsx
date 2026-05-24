@@ -1,11 +1,5 @@
-import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
-import { Building2, Calendar, Clock, LogOut, Settings } from 'lucide-react'
-import { useAuthStore } from '@/stores/auth-store'
-import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import useDialogState from '@/hooks/use-dialog-state'
-import { useEventContext } from '@/hooks/use-event-context'
-import { useNpoContext } from '@/hooks/use-npo-context'
+import { DebugSpoofSheet } from '@/components/debug-spoof-sheet'
+import { SignOutDialog } from '@/components/sign-out-dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,14 +16,25 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { InitialAvatar } from '@/components/ui/initial-avatar'
-import { DebugSpoofSheet } from '@/components/debug-spoof-sheet'
-import { SignOutDialog } from '@/components/sign-out-dialog'
+import useDialogState from '@/hooks/use-dialog-state'
+import { useEventContext } from '@/hooks/use-event-context'
+import { useNpoContext } from '@/hooks/use-npo-context'
+import { useAuthStore } from '@/stores/auth-store'
+import { useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import { Link } from '@tanstack/react-router'
+import {
+  Building2,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  LogOut,
+  Settings,
+} from 'lucide-react'
+import { useState } from 'react'
 
 export function ProfileDropdown() {
   const [open, setOpen] = useDialogState()
@@ -57,6 +62,8 @@ export function ProfileDropdown() {
   } = useNpoContext()
   const timeBaseSpoofMs = useDebugSpoofStore((state) => state.timeBaseSpoofMs)
   const [spoofSheetOpen, setSpoofSheetOpen] = useState(false)
+  const [npoListOpen, setNpoListOpen] = useState(false)
+  const [eventListOpen, setEventListOpen] = useState(false)
 
   const isSuperAdmin = user?.role === 'super_admin'
 
@@ -69,8 +76,8 @@ export function ProfileDropdown() {
   const filteredEvents =
     shouldShowSearch && eventSearchQuery
       ? availableEvents.filter((event) =>
-          event.name.toLowerCase().includes(eventSearchQuery.toLowerCase())
-        )
+        event.name.toLowerCase().includes(eventSearchQuery.toLowerCase())
+      )
       : availableEvents
 
   return (
@@ -105,20 +112,28 @@ export function ProfileDropdown() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Context</DropdownMenuLabel>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <Building2 className='mr-2 size-4' />
-              <div className='flex min-w-0 flex-1 flex-col text-left'>
-                <span>NPO</span>
-                <span className='text-muted-foreground truncate text-xs font-normal'>
-                  {selectedNpoName}
-                </span>
-              </div>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className='w-72 p-1'>
-              <DropdownMenuLabel className='text-muted-foreground text-xs'>
-                Organizations
-              </DropdownMenuLabel>
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault()
+              setNpoListOpen((v) => !v)
+            }}
+            className='gap-2'
+          >
+            <Building2 className='mr-2 size-4 shrink-0' />
+            <div className='flex min-w-0 flex-1 flex-col text-left'>
+              <span>NPO</span>
+              <span className='text-muted-foreground truncate text-xs font-normal'>
+                {selectedNpoName}
+              </span>
+            </div>
+            {npoListOpen ? (
+              <ChevronUp className='size-4 shrink-0' />
+            ) : (
+              <ChevronDown className='size-4 shrink-0' />
+            )}
+          </DropdownMenuItem>
+          {npoListOpen && (
+            <div className='border-muted ml-4 border-l-2 pl-2'>
               {availableNpos.length === 0 ? (
                 <DropdownMenuItem disabled>
                   No organizations available
@@ -130,6 +145,7 @@ export function ProfileDropdown() {
                     disabled={!canChangeNpo && selectedNpoId !== npo.id}
                     onClick={() => {
                       selectNpo(npo.id, npo.name)
+                      setNpoListOpen(false)
                       setMenuOpen(false)
                     }}
                     className='gap-2 p-2'
@@ -161,19 +177,30 @@ export function ProfileDropdown() {
                   </DropdownMenuItem>
                 ))
               )}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <Calendar className='mr-2 size-4' />
-              <div className='flex min-w-0 flex-1 flex-col text-left'>
-                <span>Event</span>
-                <span className='text-muted-foreground truncate text-xs font-normal'>
-                  {selectedEventName || 'Select Event'}
-                </span>
-              </div>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className='w-80 p-0'>
+            </div>
+          )}
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault()
+              setEventListOpen((v) => !v)
+            }}
+            className='gap-2'
+          >
+            <Calendar className='mr-2 size-4 shrink-0' />
+            <div className='flex min-w-0 flex-1 flex-col text-left'>
+              <span>Event</span>
+              <span className='text-muted-foreground truncate text-xs font-normal'>
+                {selectedEventName || 'Select Event'}
+              </span>
+            </div>
+            {eventListOpen ? (
+              <ChevronUp className='size-4 shrink-0' />
+            ) : (
+              <ChevronDown className='size-4 shrink-0' />
+            )}
+          </DropdownMenuItem>
+          {eventListOpen && (
+            <div className='border-muted ml-4 border-l-2 pl-2'>
               {isEventsLoading ? (
                 <div className='px-3 py-2 text-sm'>Loading events...</div>
               ) : availableEvents.length === 0 ? (
@@ -279,8 +306,8 @@ export function ProfileDropdown() {
                   ))}
                 </>
               )}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
+            </div>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
             <Link to='/settings'>

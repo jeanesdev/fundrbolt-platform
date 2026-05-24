@@ -306,10 +306,18 @@ function EventChip() {
   const href = useLocation({ select: (l) => l.href })
   const { availableEvents, selectedEventId } = useEventContext()
   const { availableNpos } = useNpoContext()
-  const selectedEvent = availableEvents.find((e) => e.id === selectedEventId)
 
-  // Only show when inside an event route
-  if (!href.includes('/events/') || !selectedEvent) return null
+  // Extract event ID/slug from the URL path (e.g. /events/abc-123/auctioneer/)
+  const urlEventId = href.match(/\/events\/([^/]+)/)?.[1] ?? null
+
+  // Prefer the event the user is currently viewing (from URL), fall back to selected
+  const effectiveEventId = urlEventId || selectedEventId
+  const selectedEvent = availableEvents.find(
+    (e) => e.id === effectiveEventId || e.slug === effectiveEventId
+  )
+
+  // Only show when inside an event route with a known event
+  if (!urlEventId || !selectedEvent) return null
 
   const logoUrl = selectedEvent.logo_url ?? null
   const selectedNpo = availableNpos.find(
