@@ -1,14 +1,14 @@
-import { useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Outlet } from '@tanstack/react-router'
-import type { NPOContextOption } from '@/stores/npo-context-store'
-import apiClient from '@/lib/axios'
-import { SearchProvider } from '@/context/search-provider'
-import { useAuth } from '@/hooks/use-auth'
-import { useNpoContext } from '@/hooks/use-npo-context'
 import { TopNavBar } from '@/components/layout/top-nav-bar'
 import { LegalFooter } from '@/components/legal/legal-footer'
 import { SkipToMain } from '@/components/skip-to-main'
+import { SearchProvider } from '@/context/search-provider'
+import { useAuth } from '@/hooks/use-auth'
+import { useNpoContext } from '@/hooks/use-npo-context'
+import apiClient from '@/lib/axios'
+import type { NPOContextOption } from '@/stores/npo-context-store'
+import { useQuery } from '@tanstack/react-query'
+import { Outlet } from '@tanstack/react-router'
+import { useEffect } from 'react'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode

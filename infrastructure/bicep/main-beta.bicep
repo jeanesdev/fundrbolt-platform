@@ -233,11 +233,11 @@ module apiApp './modules/container-app.bicep' = {
     targetPort: 8000
     stickySessionsEnabled: true // Required for Socket.IO
     envVars: concat(commonEnvVars, [
-      { name: 'FRONTEND_ADMIN_URL', value: 'https://app.${customDomain}' }
-      { name: 'FRONTEND_DONOR_URL', value: 'https://give.${customDomain}' }
+      { name: 'FRONTEND_ADMIN_URL', value: 'https://admin.${customDomain}' }
+      { name: 'FRONTEND_DONOR_URL', value: 'https://app.${customDomain}' }
       {
         name: 'CORS_ORIGINS'
-        value: 'https://app.${customDomain},https://give.${customDomain},https://${customDomain},https://www.${customDomain}'
+        value: 'https://admin.${customDomain},https://app.${customDomain},https://give.${customDomain},https://${customDomain},https://www.${customDomain}'
       }
     ])
     secretEnvVars: commonSecretEnvVars
