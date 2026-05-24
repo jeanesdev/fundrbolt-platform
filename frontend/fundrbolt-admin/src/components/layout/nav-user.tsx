@@ -1,7 +1,4 @@
-import { Link } from '@tanstack/react-router'
-import { ChevronsUpDown, LogOut } from 'lucide-react'
-import { useAuthStore } from '@/stores/auth-store'
-import useDialogState from '@/hooks/use-dialog-state'
+import { SignOutDialog } from '@/components/sign-out-dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -17,7 +14,10 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { SignOutDialog } from '@/components/sign-out-dialog'
+import useDialogState from '@/hooks/use-dialog-state'
+import { useAuthStore } from '@/stores/auth-store'
+import { Link } from '@tanstack/react-router'
+import { ChevronsUpDown, LogOut } from 'lucide-react'
 
 type NavUserProps = {
   user: {
@@ -36,6 +36,7 @@ export function NavUser({ user }: NavUserProps) {
   const authUser = useAuthStore((state) => state.user)
 
   const profilePictureUrl = getProfilePictureUrl()
+  const displayEmail = authUser?.communications_email?.trim() || user.email
   const initials = authUser
     ? `${authUser.first_name?.[0] || ''}${authUser.last_name?.[0] || ''}`.toUpperCase()
     : 'SN'
@@ -61,7 +62,7 @@ export function NavUser({ user }: NavUserProps) {
                 </Avatar>
                 <div className='grid flex-1 text-start text-sm leading-tight'>
                   <span className='truncate font-semibold'>{user.name}</span>
-                  <span className='truncate text-xs'>{user.email}</span>
+                  <span className='truncate text-xs'>{displayEmail}</span>
                 </div>
                 <ChevronsUpDown className='ms-auto size-4' />
               </SidebarMenuButton>
@@ -85,7 +86,7 @@ export function NavUser({ user }: NavUserProps) {
                   </Avatar>
                   <div className='grid flex-1 text-start text-sm leading-tight'>
                     <span className='truncate font-semibold'>{user.name}</span>
-                    <span className='truncate text-xs'>{user.email}</span>
+                    <span className='truncate text-xs'>{displayEmail}</span>
                   </div>
                 </div>
               </DropdownMenuLabel>
