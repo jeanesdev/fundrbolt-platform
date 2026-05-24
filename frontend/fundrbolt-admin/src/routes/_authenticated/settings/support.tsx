@@ -1,11 +1,3 @@
-import { useState } from 'react'
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { createFileRoute } from '@tanstack/react-router'
-import { LifeBuoy, Mail, Send } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -32,6 +24,14 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { ContentSection } from '@/features/settings/components/content-section'
+import { useAuthStore } from '@/stores/auth-store'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { createFileRoute } from '@tanstack/react-router'
+import { LifeBuoy, Mail, Send } from 'lucide-react'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
 
 const SUPPORT_EMAIL = 'support@fundrbolt.com'
 
@@ -219,6 +219,10 @@ function SettingsSupport() {
           </CardContent>
         </Card>
       </ContentSection>
+
+      <p className='text-muted-foreground/50 text-center text-xs tabular-nums'>
+        v{__APP_VERSION__}
+      </p>
     </div>
   )
 }

@@ -11,6 +11,8 @@ interface AuthUser {
   last_name: string
   email_verified: boolean
   role: string
+  communications_email?: string | null
+  communications_email_verified?: boolean
   npo_memberships: {
     npo_id: string
     npo_name: string
