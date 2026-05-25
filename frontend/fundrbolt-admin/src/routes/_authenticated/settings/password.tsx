@@ -1,5 +1,3 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { AlertCircle, KeyRound } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Card,
@@ -10,6 +8,8 @@ import {
 } from '@/components/ui/card'
 import { PasswordChangeForm } from '@/features/settings/account/components/password-change-form'
 import { useAuthStore } from '@/stores/auth-store'
+import { createFileRoute } from '@tanstack/react-router'
+import { AlertCircle, KeyRound } from 'lucide-react'
 
 function SettingsPassword() {
   const user = useAuthStore((state) => state.user)

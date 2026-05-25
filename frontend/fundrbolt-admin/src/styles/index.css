@@ -19,6 +19,7 @@
     @apply text-foreground has-[div[data-variant='inset']]:bg-sidebar min-h-svh w-full;
     background-color: #11294c !important;
     font-family: var(--font-sans);
+    overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: none;
     -webkit-overflow-scrolling: touch;
@@ -37,6 +38,7 @@
 
   /* Prevent focus zoom on mobile devices */
   @media screen and (max-width: 767px) {
+
     input,
     select,
     textarea {
@@ -46,6 +48,7 @@
 
   /* T024-T027: Touch-friendly targets on tablet/phone viewports (< 1367px desktop threshold) */
   @media screen and (max-width: 1365px) {
+
     /* Dropdown menu items, select options, combobox options */
     [role='menuitem'],
     [role='option'],
@@ -78,6 +81,7 @@
 }
 
 @utility no-scrollbar {
+
   /* Hide scrollbar for Chrome, Safari and Opera */
   &::-webkit-scrollbar {
     display: none;
