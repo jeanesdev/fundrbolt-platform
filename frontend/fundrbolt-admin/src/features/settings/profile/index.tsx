@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator'
 import { ProfileForm } from '@/components/profile/ProfileForm'
 import { ProfilePictureUpload } from '@/components/profile/profile-picture-upload'
 import { SocialMediaLinksForm } from '@/components/profile/social-media-links-form'
+import { CommunicationsEmailSection } from '@/features/auth/complete-profile'
 import { ContentSection } from '../components/content-section'
 
 export function SettingsProfile() {
@@ -98,6 +99,18 @@ export function SettingsProfile() {
               currentPictureUrl={userData?.profile_picture_url}
               userInitials={userInitials}
             />
+          </div>
+        </div>
+
+        <Separator />
+
+        <div>
+          <h3 className='text-lg font-medium'>Email</h3>
+          <p className='text-muted-foreground text-sm'>
+            The email address used for event notifications and communications
+          </p>
+          <div className='mt-4'>
+            <CommunicationsEmailSection />
           </div>
         </div>
 
