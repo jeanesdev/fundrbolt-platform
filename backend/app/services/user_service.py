@@ -4,6 +4,7 @@ This service provides methods for administrators to manage users,
 including listing, creating, updating roles, and deactivating users.
 """
 
+import secrets
 import uuid
 from datetime import datetime
 from math import ceil
@@ -262,7 +263,10 @@ class UserService:
         if not role_id:
             raise ValueError(f"Invalid role: {user_data.role}")
 
-        # Create user with provided password
+        # Use provided password or generate a secure temporary one
+        password = user_data.password or f"Tmp{secrets.token_urlsafe(10)}1"
+
+        # Create user
         user = User(
             email=user_data.email.lower(),
             first_name=user_data.first_name,
@@ -275,8 +279,9 @@ class UserService:
             state=user_data.state,
             postal_code=user_data.postal_code,
             country=user_data.country,
-            password_hash=hash_password(user_data.password),
+            password_hash=hash_password(password),
             role_id=role_id,
+            must_change_password=True,  # Admin-created users must change on first login
             email_verified=False,  # Will need email verification
             is_active=False,  # Activated after email verification
         )

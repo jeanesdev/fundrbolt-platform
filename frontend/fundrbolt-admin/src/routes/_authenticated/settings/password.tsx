@@ -1,5 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { KeyRound } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Card,
   CardContent,
@@ -8,8 +7,14 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { PasswordChangeForm } from '@/features/settings/account/components/password-change-form'
+import { useAuthStore } from '@/stores/auth-store'
+import { createFileRoute } from '@tanstack/react-router'
+import { AlertCircle, KeyRound } from 'lucide-react'
 
 function SettingsPassword() {
+  const user = useAuthStore((state) => state.user)
+  const mustChange = user?.must_change_password === true
+
   return (
     <div className='w-full max-w-2xl space-y-6'>
       <div>
@@ -18,6 +23,17 @@ function SettingsPassword() {
           Update your password to keep your account secure
         </p>
       </div>
+
+      {mustChange && (
+        <Alert variant='destructive'>
+          <AlertCircle className='h-4 w-4' />
+          <AlertTitle>Password change required</AlertTitle>
+          <AlertDescription>
+            Your account was set up with a temporary password. Please choose a
+            new password before continuing.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>
@@ -31,7 +47,13 @@ function SettingsPassword() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <PasswordChangeForm />
+          <PasswordChangeForm
+            onSuccess={() => {
+              if (mustChange) {
+                useAuthStore.getState().updateUser({ must_change_password: false })
+              }
+            }}
+          />
         </CardContent>
       </Card>
     </div>

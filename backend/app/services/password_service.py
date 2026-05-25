@@ -172,8 +172,9 @@ class PasswordService:
             if not user.verify_password(current_password):
                 raise ValueError("Current password is incorrect")
 
-        # Update password
+        # Update password and clear forced-change flag
         user.set_password(new_password)
+        user.must_change_password = False
         await db.commit()
         await db.refresh(user)
 

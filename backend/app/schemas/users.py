@@ -17,7 +17,7 @@ class UserCreateRequest(BaseModel):
     """Request schema for creating a new user (admin only)."""
 
     email: EmailStr
-    password: str = Field(min_length=8, max_length=100)
+    password: str | None = Field(None, min_length=8, max_length=100)
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
     phone: str | None = Field(None, max_length=20)
@@ -39,8 +39,10 @@ class UserCreateRequest(BaseModel):
 
     @field_validator("password")
     @classmethod
-    def validate_password(cls, v: str) -> str:
-        """Validate password strength."""
+    def validate_password(cls, v: str | None) -> str | None:
+        """Validate password strength when provided."""
+        if v is None:
+            return v
         if not any(c.isalpha() for c in v):
             raise ValueError("Password must contain at least one letter")
         if not any(c.isdigit() for c in v):

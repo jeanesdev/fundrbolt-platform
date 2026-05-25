@@ -74,6 +74,7 @@ class UserPublic(BaseModel):
     country: str | None = None
     profile_picture_url: str | None = None
     email_verified: bool
+    must_change_password: bool = False
     is_active: bool
     role: str  # Role name (e.g., "donor", "npo_admin")
     npo_id: uuid.UUID | None = None
