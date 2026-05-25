@@ -35,6 +35,7 @@ interface PasswordChangeFormProps extends React.HTMLAttributes<HTMLFormElement> 
   defaultOpen?: boolean
   title?: string
   description?: string
+  onSuccess?: () => void
 }
 
 export function PasswordChangeForm({
@@ -42,6 +43,7 @@ export function PasswordChangeForm({
   defaultOpen = false,
   title,
   description,
+  onSuccess,
   className,
   ...props
 }: PasswordChangeFormProps) {
@@ -113,6 +115,7 @@ export function PasswordChangeForm({
 
       form.reset()
       setIsOpen(false)
+      onSuccess?.()
     } catch (error) {
       const err = error as {
         response?: {

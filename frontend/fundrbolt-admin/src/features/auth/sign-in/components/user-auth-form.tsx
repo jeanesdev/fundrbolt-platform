@@ -94,6 +94,12 @@ export function UserAuthForm({
             : 'Signed in. Verify your email to continue.'
         }
 
+        // Force password change for admin-created accounts
+        if (response.user.must_change_password) {
+          navigate({ to: '/settings/password', replace: true })
+          return 'Welcome! Please set a new password to continue.'
+        }
+
         // Redirect to the stored location or default to dashboard
         const targetPath = redirectTo || resolvedOnboardingRedirect || '/'
         navigate({ to: targetPath, replace: true })

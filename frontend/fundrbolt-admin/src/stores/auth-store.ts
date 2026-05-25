@@ -7,6 +7,7 @@ interface AuthUser {
   id: string
   email: string
   has_local_password?: boolean
+  must_change_password?: boolean
   first_name: string
   last_name: string
   email_verified: boolean

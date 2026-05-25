@@ -223,6 +223,7 @@ class AuthService:
             country=user.country,
             profile_picture_url=user.profile_picture_url,
             email_verified=user.email_verified,
+            must_change_password=user.must_change_password,
             is_active=user.is_active,
             role=user.role.name,  # Get role name from relationship
             npo_id=primary_npo_id,

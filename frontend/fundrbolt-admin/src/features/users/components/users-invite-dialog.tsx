@@ -50,7 +50,13 @@ const formSchema = z.object({
       { message: '11-digit phone must start with 1' }
     ),
   role: z.string().min(1, 'Role is required'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || val.length === 0 || val.length >= 8,
+      { message: 'Password must be at least 8 characters' }
+    ),
 })
 
 type UserInviteForm = z.infer<typeof formSchema>
@@ -106,7 +112,7 @@ export function UsersInviteDialog({
       last_name: values.last_name,
       phone: values.phone || undefined,
       role: values.role,
-      password: values.password,
+      password: values.password || undefined,
     })
 
     // Close dialog and reset form on success
@@ -235,14 +241,20 @@ export function UsersInviteDialog({
               name='password'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Temporary Password</FormLabel>
+                  <FormLabel>
+                    Temporary Password{' '}
+                    <span className='text-muted-foreground font-normal'>(optional)</span>
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type='password'
-                      placeholder='Min. 8 characters'
+                      placeholder='Leave blank to auto-generate'
                       {...field}
                     />
                   </FormControl>
+                  <p className='text-muted-foreground text-xs'>
+                    The user will be required to change their password on first login.
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
