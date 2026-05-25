@@ -223,10 +223,11 @@ class SocialAuthService:
                 ).inc()
                 raise ValueError("Account is inactive or not found")
 
-            # Admin step-up required?
+            # Admin step-up required on first use; skip if already verified once
             app_ctx = AppContext(attempt.app_context)
             if app_ctx == AppContext.ADMIN_PWA and user.role.name != "donor":
-                return await cls._require_admin_step_up(db, attempt, user)
+                if existing_link.step_up_verified_at is None:
+                    return await cls._require_admin_step_up(db, attempt, user)
 
             # Backfill profile picture from Microsoft if not yet set
             if ms_access_token and not user.profile_picture_url:
@@ -453,6 +454,18 @@ class SocialAuthService:
         attempt = await cls._get_attempt_by_id(db, attempt_id)
         if not attempt:
             raise ValueError("Attempt not found")
+
+        # Mark this social identity link as step-up verified so future logins
+        # with the same provider don't require a password again.
+        link_stmt = select(SocialIdentityLink).where(
+            SocialIdentityLink.user_id == user.id,
+            SocialIdentityLink.provider_key == attempt.provider_key,
+            SocialIdentityLink.is_active == True,  # noqa: E712
+        )
+        link_result = await db.execute(link_stmt)
+        identity_link = link_result.scalar_one_or_none()
+        if identity_link and identity_link.step_up_verified_at is None:
+            identity_link.step_up_verified_at = datetime.now(UTC)
 
         return await cls._complete_auth(db, attempt, user)
 

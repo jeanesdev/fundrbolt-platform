@@ -35,14 +35,14 @@ const formSchema = z
   })
   .refine(
     (data) => {
-      // npo_admin and event_coordinator require npo_id
-      if (['npo_admin', 'event_coordinator'].includes(data.role)) {
+      // npo_admin, event_coordinator, staff, and auctioneer require npo_id
+      if (['npo_admin', 'event_coordinator', 'staff', 'auctioneer'].includes(data.role)) {
         return data.npo_id && data.npo_id.trim().length > 0
       }
       return true
     },
     {
-      message: 'NPO ID is required for NPO Admin and Event Coordinator roles',
+      message: 'NPO ID is required for this role',
       path: ['npo_id'],
     }
   )
@@ -81,7 +81,7 @@ export function RoleAssignmentDialog({
   }, [user, form])
 
   const selectedRole = useWatch({ control: form.control, name: 'role' })
-  const requiresNpoId = ['npo_admin', 'event_coordinator'].includes(
+  const requiresNpoId = ['npo_admin', 'event_coordinator', 'staff', 'auctioneer'].includes(
     selectedRole || ''
   )
 
@@ -166,7 +166,7 @@ export function RoleAssignmentDialog({
                       />
                     </FormControl>
                     <FormDescription>
-                      Required for NPO Admin and Event Coordinator roles
+                      Required for NPO Admin, Event Coordinator, Staff, and Auctioneer roles
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

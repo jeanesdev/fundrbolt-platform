@@ -101,7 +101,7 @@ export function ProfileDropdown() {
                 {user ? `${user.first_name} ${user.last_name}` : 'User'}
               </p>
               <p className='text-muted-foreground text-xs leading-none'>
-                {user?.email || 'Not logged in'}
+                {user?.communications_email?.trim() || user?.email || 'Not logged in'}
               </p>
               {timeBaseSpoofMs !== null && (
                 <p className='text-xs leading-none text-amber-600'>

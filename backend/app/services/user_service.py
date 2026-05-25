@@ -27,6 +27,7 @@ MEMBER_ROLE_BY_USER_ROLE = {
     "npo_admin": MemberRole.ADMIN,
     "event_coordinator": MemberRole.STAFF,
     "staff": MemberRole.STAFF,
+    "auctioneer": MemberRole.AUCTIONEER,
 }
 
 

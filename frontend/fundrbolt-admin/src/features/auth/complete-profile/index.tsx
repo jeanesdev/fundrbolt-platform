@@ -142,7 +142,7 @@ type CommsEmailState =
   | { step: 'otp'; email: string }
   | { step: 'verified'; email: string }
 
-function CommunicationsEmailSection({
+export function CommunicationsEmailSection({
   onVerified,
 }: {
   onVerified?: () => void

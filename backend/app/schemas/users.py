@@ -28,7 +28,7 @@ class UserCreateRequest(BaseModel):
     state: str | None = Field(None, max_length=100)
     postal_code: str | None = Field(None, max_length=20)
     country: str | None = Field(None, max_length=100)
-    role: Literal["super_admin", "npo_admin", "event_coordinator", "staff", "donor"]
+    role: Literal["super_admin", "npo_admin", "event_coordinator", "auctioneer", "staff", "donor"]
     npo_id: uuid.UUID | None = None
 
     @field_validator("email")
@@ -53,8 +53,8 @@ class UserCreateRequest(BaseModel):
         role = self.role
         npo_id = self.npo_id
 
-        # NPO Admin, Event Coordinator, and Staff MUST have a target NPO
-        if role in ["npo_admin", "event_coordinator", "staff"] and npo_id is None:
+        # NPO Admin, Event Coordinator, Staff, and Auctioneer MUST have a target NPO
+        if role in ["npo_admin", "event_coordinator", "staff", "auctioneer"] and npo_id is None:
             raise ValueError(f"npo_id is required for {role} role")
         # Donor MUST NOT have a target NPO
         if role == "donor" and npo_id is not None:
@@ -66,7 +66,7 @@ class UserCreateRequest(BaseModel):
 class RoleUpdateRequest(BaseModel):
     """Request schema for updating a user's role."""
 
-    role: Literal["super_admin", "npo_admin", "event_coordinator", "staff", "donor"]
+    role: Literal["super_admin", "npo_admin", "event_coordinator", "auctioneer", "staff", "donor"]
     npo_id: uuid.UUID | None = None
 
     @model_validator(mode="after")
@@ -75,8 +75,8 @@ class RoleUpdateRequest(BaseModel):
         role = self.role
         npo_id = self.npo_id
 
-        # NPO Admin, Event Coordinator, and Staff MUST have a target NPO
-        if role in ["npo_admin", "event_coordinator", "staff"] and npo_id is None:
+        # NPO Admin, Event Coordinator, Staff, and Auctioneer MUST have a target NPO
+        if role in ["npo_admin", "event_coordinator", "staff", "auctioneer"] and npo_id is None:
             raise ValueError(f"npo_id is required for {role} role")
         # Donor MUST NOT have a target NPO
         if role == "donor" and npo_id is not None:
