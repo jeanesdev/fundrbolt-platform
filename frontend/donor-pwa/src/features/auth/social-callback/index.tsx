@@ -1,3 +1,10 @@
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import type { SocialAuthProvider } from '@fundrbolt/shared/types'
+import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+import { donorSocialAuthApi } from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -9,13 +16,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AuthLayout } from '@/features/auth/auth-layout'
-import { donorSocialAuthApi } from '@/lib/axios'
-import { useAuthStore } from '@/stores/auth-store'
-import type { SocialAuthProvider } from '@fundrbolt/shared/types'
-import { useNavigate, useSearch } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
 
 type PendingInfo = {
   reason: string
@@ -141,15 +141,14 @@ export function SocialCallback() {
           setLinkError('Verification failed. Please try again.')
         }
       } catch (err: unknown) {
-        const message =
-          (
-            err as {
-              response?: { data?: { detail?: { message?: string } | string } }
-            }
-          )?.response?.data?.detail
+        const message = (
+          err as {
+            response?: { data?: { detail?: { message?: string } | string } }
+          }
+        )?.response?.data?.detail
         setLinkError(
           (typeof message === 'object' ? message?.message : message) ||
-          'Incorrect password. Please try again.'
+            'Incorrect password. Please try again.'
         )
       } finally {
         setLinking(false)
@@ -176,7 +175,15 @@ export function SocialCallback() {
                   <p className='text-sm font-medium'>{pending.prefillEmail}</p>
                 )}
                 <div className='space-y-2'>
-                  <Label htmlFor='link-password'>Password</Label>
+                  <div className='flex items-center justify-between'>
+                    <Label htmlFor='link-password'>Password</Label>
+                    <Link
+                      to='/forgot-password'
+                      className='text-muted-foreground hover:text-primary text-sm underline underline-offset-4'
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                   <Input
                     id='link-password'
                     type='password'
@@ -191,9 +198,7 @@ export function SocialCallback() {
                   <p className='text-destructive text-sm'>{linkError}</p>
                 )}
                 <Button type='submit' className='w-full' disabled={linking}>
-                  {linking && (
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                  )}
+                  {linking && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
                   Link Account & Sign In
                 </Button>
                 <Button
@@ -201,7 +206,10 @@ export function SocialCallback() {
                   variant='ghost'
                   className='w-full'
                   onClick={() =>
-                    navigate({ to: '/sign-in', search: { redirect: undefined } })
+                    navigate({
+                      to: '/sign-in',
+                      search: { redirect: undefined },
+                    })
                   }
                 >
                   Back to Sign In

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useSearch } from '@tanstack/react-router'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import type { SocialAuthProvider } from '@fundrbolt/shared/types'
 import { Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
@@ -221,7 +221,15 @@ export function SocialCallback() {
                   <p className='text-sm font-medium'>{pending.prefillEmail}</p>
                 )}
                 <div className='space-y-2'>
-                  <Label htmlFor='link-password'>Password</Label>
+                  <div className='flex items-center justify-between'>
+                    <Label htmlFor='link-password'>Password</Label>
+                    <Link
+                      to='/forgot-password'
+                      className='text-muted-foreground hover:text-primary text-sm underline underline-offset-4'
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                   <Input
                     id='link-password'
                     type='password'
