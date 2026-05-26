@@ -223,11 +223,21 @@ class SocialAuthService:
                 ).inc()
                 raise ValueError("Account is inactive or not found")
 
-            # Admin step-up required on first use; skip if already verified once
+            # Admin step-up required on first use; skip if already verified once.
+            # Also skip if user has no usable local password (social-only or
+            # admin-created with an auto-generated password they've never set).
             app_ctx = AppContext(attempt.app_context)
             if app_ctx == AppContext.ADMIN_PWA and user.role.name != "donor":
-                if existing_link.step_up_verified_at is None:
+                if (
+                    existing_link.step_up_verified_at is None
+                    and user.has_local_password
+                    and not user.must_change_password
+                ):
                     return await cls._require_admin_step_up(db, attempt, user)
+                # If no usable password exists, mark as step-up verified so future
+                # logins don't prompt again after a password is set.
+                if existing_link.step_up_verified_at is None:
+                    existing_link.step_up_verified_at = datetime.now(UTC)
 
             # Backfill profile picture from Microsoft if not yet set
             if ms_access_token and not user.profile_picture_url:
@@ -341,9 +351,14 @@ class SocialAuthService:
         if not attempt:
             raise ValueError("Attempt not found")
 
-        # Admin step-up check
+        # Admin step-up check — only when user has a usable local password.
         app_ctx = AppContext(attempt.app_context)
-        if app_ctx == AppContext.ADMIN_PWA and user.role.name != "donor":
+        if (
+            app_ctx == AppContext.ADMIN_PWA
+            and user.role.name != "donor"
+            and user.has_local_password
+            and not user.must_change_password
+        ):
             return await cls._require_admin_step_up(db, attempt, user)
 
         return await cls._complete_auth(db, attempt, user)
@@ -392,7 +407,12 @@ class SocialAuthService:
                 True,
                 attempt_id,
             )
-            if app_ctx == AppContext.ADMIN_PWA and user.role.name != "donor":
+            if (
+                app_ctx == AppContext.ADMIN_PWA
+                and user.role.name != "donor"
+                and user.has_local_password
+                and not user.must_change_password
+            ):
                 return await cls._require_admin_step_up(db, attempt, user)
             return await cls._complete_auth(db, attempt, user)
         elif app_ctx == AppContext.DONOR_PWA:
