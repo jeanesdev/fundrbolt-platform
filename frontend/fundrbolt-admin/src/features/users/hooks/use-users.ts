@@ -1,3 +1,4 @@
+import { getErrorMessage } from '@/lib/error-utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import * as usersApi from '../api/users-api'
@@ -43,31 +44,7 @@ export function useCreateUser() {
       toast.success('User created successfully')
     },
     onError: (error: unknown) => {
-      const err = error as {
-        response?: { data?: { detail?: string }; status?: number }
-      }
-      // Extract error message from Axios error response
-      let message = 'Failed to create user'
-
-      // Check if it's an Axios error with response
-      if (err?.response?.data?.detail) {
-        // FastAPI returns error in 'detail' field
-        message = err.response.data.detail
-      } else if (err?.response?.status === 409) {
-        // 409 Conflict - likely duplicate email
-        message = 'Email already exists'
-      } else if (err?.response?.status === 400) {
-        // 400 Bad Request - validation error
-        message = err.response.data?.detail || 'Invalid user data'
-      } else if (err?.response?.status === 403) {
-        // 403 Forbidden - permission error
-        message = 'You do not have permission to create users'
-      } else if ((err as { message?: string })?.message) {
-        // Network or other error
-        message = (err as { message: string }).message
-      }
-
-      toast.error(message)
+      toast.error(getErrorMessage(error, 'Failed to create user'))
     },
   })
 }
@@ -129,10 +106,10 @@ export function useUpdateUserRole() {
       const message =
         error instanceof Error && 'response' in error
           ? (
-              error as {
-                response?: { data?: { error?: { message?: string } } }
-              }
-            ).response?.data?.error?.message
+            error as {
+              response?: { data?: { error?: { message?: string } } }
+            }
+          ).response?.data?.error?.message
           : 'Failed to update user role'
       toast.error(message || 'Failed to update user role')
     },
@@ -163,10 +140,10 @@ export function useActivateUser() {
       const message =
         error instanceof Error && 'response' in error
           ? (
-              error as {
-                response?: { data?: { error?: { message?: string } } }
-              }
-            ).response?.data?.error?.message
+            error as {
+              response?: { data?: { error?: { message?: string } } }
+            }
+          ).response?.data?.error?.message
           : 'Failed to update user status'
       toast.error(message || 'Failed to update user status')
     },
@@ -190,7 +167,7 @@ export function useVerifyUserEmail() {
       const message =
         error instanceof Error && 'response' in error
           ? (error as { response?: { data?: { detail?: string } } }).response
-              ?.data?.detail
+            ?.data?.detail
           : 'Failed to verify email'
       toast.error(message || 'Failed to verify email')
     },

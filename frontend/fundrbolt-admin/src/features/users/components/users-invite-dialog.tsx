@@ -53,10 +53,9 @@ const formSchema = z.object({
   password: z
     .string()
     .optional()
-    .refine(
-      (val) => !val || val.length === 0 || val.length >= 8,
-      { message: 'Password must be at least 8 characters' }
-    ),
+    .refine((val) => !val || val.length === 0 || val.length >= 8, {
+      message: 'Password must be at least 8 characters',
+    }),
 })
 
 type UserInviteForm = z.infer<typeof formSchema>
@@ -105,19 +104,22 @@ export function UsersInviteDialog({
   })
 
   const onSubmit = async (values: UserInviteForm) => {
-    // Call mutation to create user
-    await createUserMutation.mutateAsync({
-      email: values.email,
-      first_name: values.first_name,
-      last_name: values.last_name,
-      phone: values.phone || undefined,
-      role: values.role,
-      password: values.password || undefined,
-    })
+    try {
+      await createUserMutation.mutateAsync({
+        email: values.email,
+        first_name: values.first_name,
+        last_name: values.last_name,
+        phone: values.phone || undefined,
+        role: values.role,
+        password: values.password || undefined,
+      })
 
-    // Close dialog and reset form on success
-    form.reset()
-    onOpenChange(false)
+      // Close dialog and reset form on success
+      form.reset()
+      onOpenChange(false)
+    } catch {
+      // Error is already handled in the mutation's onError callback
+    }
   }
 
   return (
@@ -243,7 +245,9 @@ export function UsersInviteDialog({
                 <FormItem>
                   <FormLabel>
                     Temporary Password{' '}
-                    <span className='text-muted-foreground font-normal'>(optional)</span>
+                    <span className='text-muted-foreground font-normal'>
+                      (optional)
+                    </span>
                   </FormLabel>
                   <FormControl>
                     <Input
@@ -253,7 +257,8 @@ export function UsersInviteDialog({
                     />
                   </FormControl>
                   <p className='text-muted-foreground text-xs'>
-                    The user will be required to change their password on first login.
+                    The user will be required to change their password on first
+                    login.
                   </p>
                   <FormMessage />
                 </FormItem>
