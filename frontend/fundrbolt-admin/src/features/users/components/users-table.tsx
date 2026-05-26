@@ -137,7 +137,7 @@ export function UsersTable({
       {viewMode === 'card' ? (
         <DataTableCardView table={table} primaryFieldCount={4} />
       ) : (
-        <div className='overflow-hidden rounded-md border'>
+        <div className='overflow-x-auto rounded-md border'>
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
