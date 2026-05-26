@@ -1,5 +1,6 @@
 """User management endpoints for administrators."""
 
+import logging
 import uuid
 from urllib.parse import urlencode
 
@@ -28,6 +29,7 @@ from app.services.audit_service import AuditService
 from app.services.user_service import UserService
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 def _build_communications_email_verification_url(email: str) -> str:
@@ -451,6 +453,8 @@ async def create_user(
     - staff and donor roles MUST NOT have npo_id
     - Created user gets temporary password (should be changed on first login)
     - User starts with email_verified=false, is_active=false
+    - Verification email is sent automatically (with link + OTP)
+    - If email sending fails, user creation continues (admin can resend)
 
     Args:
         user_data: User creation data
@@ -489,6 +493,32 @@ async def create_user(
             admin_email=current_user.email,
             ip_address=ip_address,
         )
+
+        # Generate and send verification email
+        from app.core.security import generate_verification_otp, generate_verification_token
+        from app.services.email_service import get_email_service
+        from app.services.redis_service import RedisService
+
+        verification_token = generate_verification_token()
+        otp = generate_verification_otp()
+
+        # Store both token and OTP in Redis
+        await RedisService.store_email_verification_token(verification_token, user.id)
+        await RedisService.store_email_verification_otp(otp, user.id)
+
+        # Send verification email
+        email_service = get_email_service()
+        try:
+            await email_service.send_verification_email(
+                to_email=user.email,
+                verification_token=verification_token,
+                user_name=user.first_name,
+                otp=otp,
+            )
+            logger.info(f"Verification email sent to {user.email} (user_id={user.id})")
+        except Exception as e:
+            # Log error but don't fail user creation - admin can resend verification email later
+            logger.error(f"Failed to send verification email to {user.email}: {str(e)}")
 
         return await build_user_response(user, db)
     except ValueError as e:
