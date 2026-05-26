@@ -1,9 +1,3 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useSearch } from '@tanstack/react-router'
-import type { SocialAuthProvider } from '@fundrbolt/shared/types'
-import { Loader2 } from 'lucide-react'
-import { useAuthStore } from '@/stores/auth-store'
-import { adminSocialAuthApi } from '@/lib/axios'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -15,6 +9,12 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AuthLayout } from '@/features/auth/auth-layout'
+import { adminSocialAuthApi } from '@/lib/axios'
+import { useAuthStore } from '@/stores/auth-store'
+import type { SocialAuthProvider } from '@fundrbolt/shared/types'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { Loader2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 type PendingInfo = {
   reason: string
@@ -166,13 +166,13 @@ export function SocialCallback() {
         const result =
           pending.reason === 'admin_step_up_required'
             ? await adminSocialAuthApi.confirmStepUp(
-                pending.attemptId,
-                linkPassword
-              )
+              pending.attemptId,
+              linkPassword
+            )
             : await adminSocialAuthApi.confirmLink(
-                pending.attemptId,
-                linkPassword
-              )
+              pending.attemptId,
+              linkPassword
+            )
         if (result.status === 'authenticated') {
           handleSocialAuthSuccess({
             access_token: result.access_token,
@@ -192,7 +192,7 @@ export function SocialCallback() {
         )?.response?.data?.detail
         setLinkError(
           (typeof message === 'object' ? message?.message : message) ||
-            'Incorrect password. Please try again.'
+          'Incorrect password. Please try again.'
         )
       } finally {
         setLinking(false)
@@ -211,59 +211,59 @@ export function SocialCallback() {
           <CardContent className='space-y-3'>
             {(pending.reason === 'link_confirmation_required' ||
               pending.reason === 'admin_step_up_required') && (
-              <form onSubmit={handleLinkConfirm} className='space-y-4'>
-                <p className='text-muted-foreground text-sm'>
-                  {pending.reason === 'admin_step_up_required'
-                    ? 'Admin accounts require additional identity verification. Please confirm your password to complete sign-in.'
-                    : 'An account with this email already exists. Enter your password to link your social account and sign in.'}
-                </p>
-                {pending.prefillEmail && (
-                  <p className='text-sm font-medium'>{pending.prefillEmail}</p>
-                )}
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
-                    <Label htmlFor='link-password'>Password</Label>
-                    <Link
-                      to='/forgot-password'
-                      className='text-muted-foreground hover:text-primary text-sm underline underline-offset-4'
-                    >
-                      Forgot password?
-                    </Link>
+                <form onSubmit={handleLinkConfirm} className='space-y-4'>
+                  <p className='text-muted-foreground text-sm'>
+                    {pending.reason === 'admin_step_up_required'
+                      ? 'Admin accounts require additional identity verification. Please confirm your password to complete sign-in.'
+                      : 'An account with this email already exists. Enter your password to link your social account and sign in.'}
+                  </p>
+                  {pending.prefillEmail && (
+                    <p className='text-sm font-medium'>{pending.prefillEmail}</p>
+                  )}
+                  <div className='space-y-2'>
+                    <div className='flex items-center justify-between'>
+                      <Label htmlFor='link-password'>Password</Label>
+                      <Link
+                        to='/forgot-password'
+                        className='text-muted-foreground hover:text-primary text-sm underline underline-offset-4'
+                      >
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <Input
+                      id='link-password'
+                      type='password'
+                      value={linkPassword}
+                      onChange={(e) => setLinkPassword(e.target.value)}
+                      placeholder='Enter your password'
+                      required
+                      autoFocus
+                    />
                   </div>
-                  <Input
-                    id='link-password'
-                    type='password'
-                    value={linkPassword}
-                    onChange={(e) => setLinkPassword(e.target.value)}
-                    placeholder='Enter your password'
-                    required
-                    autoFocus
-                  />
-                </div>
-                {linkError && (
-                  <p className='text-destructive text-sm'>{linkError}</p>
-                )}
-                <Button type='submit' className='w-full' disabled={linking}>
-                  {linking && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-                  {pending.reason === 'admin_step_up_required'
-                    ? 'Confirm & Sign In'
-                    : 'Link Account & Sign In'}
-                </Button>
-                <Button
-                  type='button'
-                  variant='ghost'
-                  className='w-full'
-                  onClick={() =>
-                    navigate({
-                      to: '/sign-in',
-                      search: { redirect: undefined },
-                    })
-                  }
-                >
-                  Back to Sign In
-                </Button>
-              </form>
-            )}
+                  {linkError && (
+                    <p className='text-destructive text-sm'>{linkError}</p>
+                  )}
+                  <Button type='submit' className='w-full' disabled={linking}>
+                    {linking && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+                    {pending.reason === 'admin_step_up_required'
+                      ? 'Confirm & Sign In'
+                      : 'Link Account & Sign In'}
+                  </Button>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    className='w-full'
+                    onClick={() =>
+                      navigate({
+                        to: '/sign-in',
+                        search: { redirect: undefined },
+                      })
+                    }
+                  >
+                    Back to Sign In
+                  </Button>
+                </form>
+              )}
             {pending.reason !== 'link_confirmation_required' &&
               pending.reason !== 'admin_step_up_required' && (
                 <Button
