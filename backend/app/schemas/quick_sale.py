@@ -24,7 +24,7 @@ class QuickSaleRequest(BaseModel):
     buyer_phone: str | None = Field(None, max_length=20, description="Buyer's phone number")
     guests: list[QuickSaleGuestInfo] = Field(
         default_factory=list,
-        description="Additional guests (buyer is automatically the first guest)",
+        description="All attendees (buyer is separate and may or may not be attending)",
     )
     payment_method: str = Field(
         default="cash", description="Payment method: cash, check, card, other"

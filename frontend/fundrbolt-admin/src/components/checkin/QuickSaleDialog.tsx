@@ -116,16 +116,13 @@ export function QuickSaleDialog({
 
   // Auto-adjust guest fields when quantity changes
   useEffect(() => {
-    const additionalGuests = quantity - 1
-    if (additionalGuests < 0) return
-
     setGuests((prev) => {
-      if (prev.length === additionalGuests) return prev
-      if (prev.length < additionalGuests) {
+      if (prev.length === quantity) return prev
+      if (prev.length < quantity) {
         // Add more guests
         return [
           ...prev,
-          ...Array(additionalGuests - prev.length).fill({
+          ...Array(quantity - prev.length).fill({
             name: '',
             email: null,
             phone: null,
@@ -133,10 +130,24 @@ export function QuickSaleDialog({
         ]
       } else {
         // Remove extra guests
-        return prev.slice(0, additionalGuests)
+        return prev.slice(0, quantity)
       }
     })
   }, [quantity])
+
+  const copyBuyerToFirstAttendee = () => {
+    if (guests.length > 0) {
+      setGuests((prev) => [
+        {
+          name: buyerName,
+          email: buyerEmail || null,
+          phone: buyerPhone || null,
+        },
+        ...prev.slice(1),
+      ])
+      toast.success('Buyer info copied to first attendee')
+    }
+  }
 
   const updateGuest = (
     index: number,
@@ -181,17 +192,13 @@ export function QuickSaleDialog({
       return
     }
 
-    // Validate additional guest names (if quantity > 1)
-    if (quantity > 1) {
-      const emptyGuestIndex = guests.findIndex(
-        (guest) => !guest.name || !guest.name.trim()
-      )
-      if (emptyGuestIndex !== -1) {
-        toast.error(
-          `Please enter name for Additional Guest ${emptyGuestIndex + 1}`
-        )
-        return
-      }
+    // Validate all attendee names
+    const emptyGuestIndex = guests.findIndex(
+      (guest) => !guest.name || !guest.name.trim()
+    )
+    if (emptyGuestIndex !== -1) {
+      toast.error(`Please enter name for Attendee ${emptyGuestIndex + 1}`)
+      return
     }
 
     // Trim guest values
@@ -296,7 +303,12 @@ export function QuickSaleDialog({
 
           {/* Buyer Information */}
           <div className='space-y-3'>
-            <h4 className='text-sm font-semibold'>Primary Attendee (Buyer)</h4>
+            <div className='flex items-center justify-between'>
+              <h4 className='text-sm font-semibold'>Buyer Information</h4>
+              <p className='text-xs text-muted-foreground'>
+                (Billing contact - may or may not be attending)
+              </p>
+            </div>
             <div className='space-y-2'>
               <Label htmlFor='buyer-name'>Full Name *</Label>
               <div className='relative'>
@@ -339,25 +351,31 @@ export function QuickSaleDialog({
             </div>
           </div>
 
-          {/* Additional Guest Information */}
-          {quantity > 1 && (
-            <>
-              <Separator />
-              <div className='space-y-3'>
-                <h4 className='text-sm font-semibold'>
-                  Additional Attendees ({quantity - 1})
-                </h4>
-                <div className='space-y-3'>
-                  {guests.map((guest, index) => (
-                    <div
-                      key={index}
-                      className='rounded-lg border p-3 space-y-2'
-                    >
-                      <div className='flex items-center justify-between'>
-                        <span className='text-sm font-medium'>
-                          Additional Guest {index + 1}
-                        </span>
-                      </div>
+          {/* Attendees */}
+          <Separator />
+          <div className='space-y-3'>
+            <div className='flex items-center justify-between'>
+              <h4 className='text-sm font-semibold'>Attendees ({quantity})</h4>
+              {quantity > 0 && buyerName && (
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  onClick={copyBuyerToFirstAttendee}
+                >
+                  <User className='mr-1 h-3 w-3' />
+                  Copy Buyer to Attendee 1
+                </Button>
+              )}
+            </div>
+            <div className='space-y-3'>
+              {guests.map((guest, index) => (
+                <div key={index} className='rounded-lg border p-3 space-y-2'>
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm font-medium'>
+                      Attendee {index + 1}
+                    </span>
+                  </div>
                       <Input
                         placeholder='Full Name *'
                         value={guest.name}
@@ -388,8 +406,6 @@ export function QuickSaleDialog({
                   ))}
                 </div>
               </div>
-            </>
-          )}
 
           <Separator />
 
@@ -470,7 +486,7 @@ export function QuickSaleDialog({
               !selectedPackageId ||
               !buyerName.trim() ||
               !buyerEmail.trim() ||
-              guests.filter((g) => g.name.trim()).length === 0
+              guests.some((g) => !g.name || !g.name.trim())
             }
           >
             {quickSaleMutation.isPending ? (

@@ -68,14 +68,11 @@ class QuickSaleService:
         # Verify ticket package exists and belongs to this event
         package = await self._get_package_or_404(request.ticket_package_id, event_id)
 
-        # Validate quantity matches guest count (buyer + additional guests)
-        expected_guest_count = request.quantity
-        actual_guest_count = 1 + len(request.guests)  # buyer + additional guests
-
-        if actual_guest_count != expected_guest_count:
+        # Validate quantity matches number of attendees in guests array
+        if len(request.guests) != request.quantity:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Quantity ({request.quantity}) must match total guests ({actual_guest_count})",
+                detail=f"Quantity ({request.quantity}) must match number of attendees ({len(request.guests)})",
             )
 
         # Check if buyer already exists as a user
@@ -112,18 +109,9 @@ class QuickSaleService:
             check_in_immediately=request.check_in_immediately,
         )
 
-        # Create primary guest (buyer)
-        primary_guest = await self._create_primary_guest(
-            registration_id=registration.id,
-            buyer_user=buyer_user,
-            buyer_name=request.buyer_name,
-            buyer_email=buyer_email_lower,
-            buyer_phone=request.buyer_phone,
-            check_in_immediately=request.check_in_immediately,
-        )
-
-        # Create additional guests
-        additional_guests = await self._create_additional_guests(
+        # Create all attendee guests from the guests array
+        # (buyer is separate - they may or may not be attending)
+        guest_records = await self._create_guests(
             registration_id=registration.id,
             guests=request.guests,
             check_in_immediately=request.check_in_immediately,
@@ -146,7 +134,6 @@ class QuickSaleService:
         await self.db.refresh(registration)
 
         # Build response
-        all_guests = [primary_guest] + additional_guests
         guest_results = [
             QuickSaleGuestResult(
                 id=guest.id,
@@ -158,7 +145,7 @@ class QuickSaleService:
                 checked_in=guest.checked_in,
                 bidder_number=None,  # Can be assigned later via seating management
             )
-            for guest in all_guests
+            for guest in guest_records
         ]
 
         message = (
@@ -319,51 +306,37 @@ class QuickSaleService:
 
         return registration
 
-    async def _create_primary_guest(
-        self,
-        registration_id: uuid.UUID,
-        buyer_user: User,
-        buyer_name: str,
-        buyer_email: str,
-        buyer_phone: str | None,
-        check_in_immediately: bool,
-    ) -> RegistrationGuest:
-        """Create primary guest record (the buyer)."""
-        guest = RegistrationGuest(
-            registration_id=registration_id,
-            user_id=buyer_user.id,
-            name=buyer_name,
-            email=buyer_email,
-            phone=buyer_phone,
-            status=RegistrationStatus.CONFIRMED.value,
-            is_primary=True,
-            checked_in=check_in_immediately,
-            check_in_time=datetime.now(UTC) if check_in_immediately else None,
-        )
-
-        self.db.add(guest)
-        await self.db.flush()
-
-        return guest
-
-    async def _create_additional_guests(
+    async def _create_guests(
         self,
         registration_id: uuid.UUID,
         guests: list[QuickSaleGuestInfo],
         check_in_immediately: bool,
     ) -> list[RegistrationGuest]:
-        """Create additional guest records."""
+        """Create guest records for all attendees."""
         guest_records = []
 
-        for guest_info in guests:
+        for idx, guest_info in enumerate(guests):
+            # First guest is marked as primary
+            is_primary = idx == 0
+            
+            # Try to find or create user by email if provided
+            user_id = None
+            if guest_info.email:
+                result = await self.db.execute(
+                    select(User).where(User.email == guest_info.email.lower())
+                )
+                existing_user = result.scalar_one_or_none()
+                if existing_user:
+                    user_id = existing_user.id
+            
             guest = RegistrationGuest(
                 registration_id=registration_id,
-                user_id=None,  # Additional guests don't get user accounts automatically
+                user_id=user_id,
                 name=guest_info.name,
                 email=guest_info.email,
                 phone=guest_info.phone,
                 status=RegistrationStatus.CONFIRMED.value,
-                is_primary=False,
+                is_primary=is_primary,
                 checked_in=check_in_immediately,
                 check_in_time=datetime.now(UTC) if check_in_immediately else None,
             )
