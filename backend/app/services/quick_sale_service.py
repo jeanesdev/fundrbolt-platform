@@ -386,9 +386,7 @@ class QuickSaleService:
         next_start = bidder_number
         for _ in guests:
             try:
-                num = BidderNumberService._find_next_available_number_from(
-                    used_numbers, next_start
-                )
+                num = BidderNumberService._find_next_available_number_from(used_numbers, next_start)
             except ValueError:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
