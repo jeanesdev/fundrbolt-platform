@@ -458,6 +458,8 @@ class EventDetailResponse(BaseModel):
     table_count: int | None = None
     max_guests_per_table: int | None = None
     seating_layout_image_url: str | None = None
+    live_auction_start_datetime: datetime | None = None
+    auction_close_datetime: datetime | None = None
     version: int
     created_at: datetime
     updated_at: datetime

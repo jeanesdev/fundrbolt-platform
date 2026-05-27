@@ -57,6 +57,7 @@ from app.api.v1 import (
     public_testimonials,
     public_tickets,
     push_subscriptions,
+    quick_sale,
     registrations,
     sales_tracking,
     search,
@@ -92,6 +93,7 @@ api_router.include_router(admin_donations.router, tags=["donations"])
 api_router.include_router(admin_donor_labels.router, tags=["admin-donor-labels"])
 api_router.include_router(registrations.router, tags=["registrations"])
 api_router.include_router(checkin.router, tags=["checkin"])
+api_router.include_router(quick_sale.router, tags=["quick-sale"])
 api_router.include_router(auction_items.router, tags=["auction-items"])
 api_router.include_router(auction_items.donor_router, tags=["auction-items"])
 api_router.include_router(auction_item_media.router, tags=["auction-items", "media"])

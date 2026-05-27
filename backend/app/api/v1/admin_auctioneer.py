@@ -62,6 +62,14 @@ def _sign_blob_url(url: str | None, media_service: AuctionItemMediaService) -> s
         return url
 
     settings = get_settings()
+
+    # Check if URL is from the current configured storage account
+    current_storage_account = settings.azure_storage_account_name
+    if current_storage_account and current_storage_account not in url:
+        # URL is from a different storage account (e.g., production images in dev environment)
+        # Return as-is - these URLs are likely already public or from a different environment
+        return url
+
     container_path = f"{settings.azure_storage_container_name}/"
     if container_path not in url:
         return url

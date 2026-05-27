@@ -29,10 +29,16 @@ router = APIRouter()
 
 
 def _serialize_ticket_package(package: TicketPackage) -> TicketPackageRead:
-    ticket_package = TicketPackageRead.from_orm_with_availability(package)
-    return ticket_package.model_copy(
-        update={"image_url": get_signed_asset_url(ticket_package.image_url)}
-    )
+    try:
+        ticket_package = TicketPackageRead.from_orm_with_availability(package)
+        return ticket_package.model_copy(
+            update={"image_url": get_signed_asset_url(ticket_package.image_url)}
+        )
+    except Exception as e:
+        logger.error(f"Error serializing ticket package {package.id}: {e}", exc_info=True)
+        # Return package without signed URL if there's an error
+        ticket_package = TicketPackageRead.from_orm_with_availability(package)
+        return ticket_package
 
 
 async def _require_event_access(

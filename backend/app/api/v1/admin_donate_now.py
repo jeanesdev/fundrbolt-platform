@@ -226,9 +226,12 @@ async def get_donation_stats(
     one_time_count = total_count - monthly_count
     one_time_amount_cents = total_amount_cents - monthly_amount_cents
 
-    # Recent donations (last 20, with donor)
+    # Recent donations (last 20, with donor and support wall entry)
     recent_stmt = (
-        base.options(selectinload(NpoDonation.donor))
+        base.options(
+            selectinload(NpoDonation.donor),
+            selectinload(NpoDonation.support_wall_entry),
+        )
         .order_by(NpoDonation.created_at.desc())
         .limit(20)
     )
@@ -242,7 +245,17 @@ async def get_donation_stats(
             is_monthly=d.is_monthly,
             status=d.status.value,
             donor_name=(
-                f"{d.donor.first_name} {d.donor.last_name}".strip() if d.donor else "Anonymous"
+                "Anonymous"
+                if (d.support_wall_entry and d.support_wall_entry.is_anonymous)
+                else (
+                    d.support_wall_entry.display_name
+                    if d.support_wall_entry and d.support_wall_entry.display_name
+                    else (
+                        f"{d.donor.first_name} {d.donor.last_name}".strip()
+                        if d.donor
+                        else "Anonymous"
+                    )
+                )
             ),
             event_id=getattr(d, "event_id", None),
             created_at=d.created_at,

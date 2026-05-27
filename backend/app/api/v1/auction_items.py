@@ -265,9 +265,7 @@ async def list_auction_items(
         primary_media = media_result.scalar_one_or_none()
 
         if primary_media and primary_media.file_path:
-            # Prefer thumbnail (small, 200x200) for card list view performance;
-            # fall back to full-resolution image if no thumbnail exists (e.g. imported items).
-            image_blob_url = primary_media.thumbnail_path or primary_media.file_path
+            image_blob_url = primary_media.file_path
             if image_blob_url.startswith("https://"):
                 try:
                     container_path = f"{settings.azure_storage_container_name}/"

@@ -12,14 +12,15 @@
   }
 
   html {
-    @apply overflow-x-hidden;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 
   body {
     @apply text-foreground has-[div[data-variant='inset']]:bg-sidebar min-h-svh w-full;
     background-color: #11294c !important;
     font-family: var(--font-sans);
-    overflow-x: hidden;
+    max-width: 100vw;
     overflow-y: auto;
     overscroll-behavior-y: none;
     -webkit-overflow-scrolling: touch;

@@ -5,7 +5,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 from app.models.ticket_management import DiscountType, OptionType, PaymentStatus
 
@@ -35,6 +35,11 @@ class TicketPackageBase(BaseModel):
         if isinstance(exponent, int) and exponent < -2:
             raise ValueError("Price must have at most 2 decimal places")
         return v
+
+    @field_serializer("price")
+    def serialize_price(self, price: Decimal) -> float:
+        """Serialize Decimal price to float for JSON compatibility."""
+        return float(price)
 
 
 class TicketPackageCreate(TicketPackageBase):

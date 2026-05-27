@@ -1,30 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { checkinService } from '@/services/checkin-service'
-import {
-  Check,
-  ChevronDown,
-  CreditCard,
-  Crown,
-  Filter,
-  Loader2,
-  RotateCcw,
-  Search,
-  Settings2,
-  X,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
-import {
-  adminCreatePaymentProfile,
-  adminCreatePaymentSession,
-} from '@/lib/api/admin-payments'
-import {
-  assignBidderNumber,
-  assignRegistrationBidderNumber,
-} from '@/lib/api/admin-seating'
-import { getErrorMessage } from '@/lib/error-utils'
-import { useViewPreference } from '@/hooks/use-view-preference'
+import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
+import { QRCodeDialog } from '@/components/checkin/QRCodeDialog'
+import { QuickSaleDialog } from '@/components/checkin/QuickSaleDialog'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -59,9 +36,36 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { getUser, updateUser } from '@/features/users/api/users-api'
+import { useViewPreference } from '@/hooks/use-view-preference'
+import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
+import {
+  adminCreatePaymentProfile,
+  adminCreatePaymentSession,
+} from '@/lib/api/admin-payments'
+import {
+  assignBidderNumber,
+  assignRegistrationBidderNumber,
+} from '@/lib/api/admin-seating'
+import { getErrorMessage } from '@/lib/error-utils'
+import { checkinService } from '@/services/checkin-service'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  Check,
+  ChevronDown,
+  CreditCard,
+  Crown,
+  Filter,
+  Loader2,
+  Plus,
+  QrCode,
+  RotateCcw,
+  Search,
+  Settings2,
+  X,
+} from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 function StatusBadge({ checkedIn }: { checkedIn: boolean }) {
@@ -168,6 +172,8 @@ export function EventCheckInSection() {
   const [addCardAttendee, setAddCardAttendee] = useState<Attendee | null>(null)
   const [addCardHpfUrl, setAddCardHpfUrl] = useState<string | null>(null)
   const [addCardLoading, setAddCardLoading] = useState(false)
+  const [quickSaleOpen, setQuickSaleOpen] = useState(false)
+  const [qrCodeDialogOpen, setQrCodeDialogOpen] = useState(false)
 
   const activeFilterCount = useMemo(() => {
     let count = 0
@@ -604,6 +610,24 @@ export function EventCheckInSection() {
               </CardDescription>
             </div>
             <div className='flex items-center gap-2'>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setQrCodeDialogOpen(true)}
+                className='gap-1.5'
+              >
+                <QrCode className='h-4 w-4' />
+                QR Codes
+              </Button>
+              <Button
+                variant='default'
+                size='sm'
+                onClick={() => setQuickSaleOpen(true)}
+                className='gap-1.5'
+              >
+                <Plus className='h-4 w-4' />
+                Quick Sale
+              </Button>
               <DataTableViewToggle value={viewMode} onChange={setViewMode} />
               <div className='rounded-md border px-3 py-2 text-sm'>
                 <p className='font-medium'>Check-in Progress</p>
@@ -952,11 +976,10 @@ export function EventCheckInSection() {
                           <dt className='text-muted-foreground'>Payment</dt>
                           <dd>
                             <span
-                              className={`flex items-center gap-1 text-xs ${
-                                attendee.has_payment_profile
+                              className={`flex items-center gap-1 text-xs ${attendee.has_payment_profile
                                   ? 'text-green-600'
                                   : 'text-muted-foreground'
-                              }`}
+                                }`}
                             >
                               <CreditCard className='h-3 w-3' />
                               {attendee.has_payment_profile
@@ -1275,11 +1298,10 @@ export function EventCheckInSection() {
                               }
                             >
                               <CreditCard
-                                className={`h-4 w-4 ${
-                                  attendee.has_payment_profile
+                                className={`h-4 w-4 ${attendee.has_payment_profile
                                     ? 'text-green-600'
                                     : 'text-muted-foreground'
-                                }`}
+                                  }`}
                               />
                             </span>
                           </TableCell>
@@ -1615,6 +1637,21 @@ export function EventCheckInSection() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Quick Sale Dialog */}
+      <QuickSaleDialog
+        open={quickSaleOpen}
+        onOpenChange={setQuickSaleOpen}
+        eventId={currentEvent.id}
+      />
+
+      {/* QR Code Dialog */}
+      <QRCodeDialog
+        open={qrCodeDialogOpen}
+        onOpenChange={setQrCodeDialogOpen}
+        eventSlug={currentEvent.slug}
+        eventName={currentEvent.name}
+      />
     </div>
   )
 }

@@ -168,6 +168,10 @@ class RunOfShowService:
         event_result = await db.execute(select(Event).where(Event.id == event_id))
         event = event_result.scalar_one_or_none()
         event_start_time = event.event_datetime if event else None
+        silent_auction_start = (
+            getattr(event, "live_auction_start_datetime", None) if event else None
+        )
+        silent_auction_close = getattr(event, "auction_close_datetime", None) if event else None
 
         item_responses = [RunOfShowService.item_to_response(i) for i in items]
         next_item_response = (
@@ -180,6 +184,8 @@ class RunOfShowService:
             completed_count=completed_count,
             next_item=next_item_response,
             event_start_time=event_start_time,
+            silent_auction_start_datetime=silent_auction_start,
+            silent_auction_close_datetime=silent_auction_close,
         )
 
     @staticmethod

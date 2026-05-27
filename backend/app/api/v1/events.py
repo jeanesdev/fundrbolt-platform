@@ -7,7 +7,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.event_media_urls import add_sas_urls_to_event_media
+from app.api.v1.event_media_urls import (
+    add_sas_urls_to_event_media,
+    resolve_event_logo_url,
+)
 from app.core.database import get_db
 from app.middleware.auth import get_current_active_user
 from app.models.user import User
@@ -315,6 +318,7 @@ async def list_events(
         page=page,
         per_page=per_page,
         search_query=search_query,
+        include_media=True,
     )
 
     # Manually construct response items to include NPO name
@@ -335,7 +339,7 @@ async def list_events(
                 venue_city=event.venue_city,
                 venue_state=event.venue_state,
                 venue_zip=event.venue_zip,
-                logo_url=event.logo_url,
+                logo_url=resolve_event_logo_url(event),
                 last_year_total=(
                     float(event.last_year_total) if event.last_year_total is not None else None
                 ),
