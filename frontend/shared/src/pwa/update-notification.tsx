@@ -48,18 +48,29 @@ export function UpdateNotification({
     //   3. Always have a hard timeout fallback so the user is never
     //      stuck on an "Updating…" button if anything goes wrong.
 
-    const reload = () => window.location.reload();
+    const reload = () => {
+      // Force a hard reload (bypass cache) to ensure we get the new bundle.
+      // This is especially important on iOS where SW activation can be flaky.
+      try {
+        window.location.reload();
+      } catch {
+        // Fallback for older browsers
+        window.location.href = window.location.href;
+      }
+    };
 
-    // Hard fallback: if nothing else happens in 1.5s, reload anyway.
-    // The SW's activate handler is intentionally fast (no client
-    // navigation work) so controllerchange should fire well before
-    // this timer in normal cases.
-    const fallback = window.setTimeout(reload, 1500);
+    // Hard fallback timeout. iOS standalone apps need more time for SW
+    // activation (clients.claim() + cache cleanup). 3 seconds gives iOS
+    // enough time while still feeling responsive to the user.
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const timeoutMs = isIOS ? 3000 : 1500;
+    const fallback = window.setTimeout(reload, timeoutMs);
 
     let didReload = false;
     const reloadOnce = () => {
       if (didReload) return;
       didReload = true;
+      console.log('[UpdateNotification] Triggering reload');
       window.clearTimeout(fallback);
       reload();
     };
@@ -67,7 +78,10 @@ export function UpdateNotification({
     // When the new SW takes control of this page, reload it.
     navigator.serviceWorker?.addEventListener(
       "controllerchange",
-      reloadOnce,
+      () => {
+        console.log('[UpdateNotification] controllerchange event fired, new SW is now active');
+        reloadOnce();
+      },
       { once: true },
     );
 
@@ -79,30 +93,37 @@ export function UpdateNotification({
 
       if (reg?.waiting) {
         // The new SW is already installed and waiting — wake it up.
+        console.log('[UpdateNotification] Sending SKIP_WAITING to waiting SW');
         reg.waiting.postMessage({ type: "SKIP_WAITING" });
       } else if (reg) {
         // No waiting SW found. Force a registration update; once the
         // new SW installs, fire SKIP_WAITING at it. If still nothing
         // installs, the fallback timer above will reload us anyway.
+        console.log('[UpdateNotification] No waiting SW, forcing update check');
         try {
           await reg.update();
           if (reg.waiting) {
+            console.log('[UpdateNotification] Waiting SW found after update, sending SKIP_WAITING');
             reg.waiting.postMessage({ type: "SKIP_WAITING" });
           } else if (reg.installing) {
             reg.installing.addEventListener("statechange", () => {
               if (reg.waiting) {
+                console.log('[UpdateNotification] Installing SW became waiting, sending SKIP_WAITING');
                 reg.waiting.postMessage({ type: "SKIP_WAITING" });
               }
             });
           }
-        } catch {
+        } catch (err) {
+          console.error('[UpdateNotification] Update check failed:', err);
           // ignore — fallback timer will handle it
         }
       } else {
         // No SW at all — just reload.
+        console.log('[UpdateNotification] No SW registration found, reloading');
         reloadOnce();
       }
-    } catch {
+    } catch (err) {
+      console.error('[UpdateNotification] Error during update:', err);
       reloadOnce();
     }
   };

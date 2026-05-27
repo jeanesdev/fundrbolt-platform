@@ -140,17 +140,20 @@ export function QuickSaleDialog({
 
   // Auto-copy buyer info to first attendee unless manually edited
   useEffect(() => {
-    if (guests.length > 0 && !firstAttendeeManuallyEdited) {
-      setGuests((prev) => [
-        {
-          name: buyerName,
-          email: buyerEmail || null,
-          phone: buyerPhone || null,
-        },
-        ...prev.slice(1),
-      ])
+    if (quantity > 0 && !firstAttendeeManuallyEdited) {
+      setGuests((prev) => {
+        if (prev.length === 0) return prev
+        return [
+          {
+            name: buyerName,
+            email: buyerEmail || null,
+            phone: buyerPhone || null,
+          },
+          ...prev.slice(1),
+        ]
+      })
     }
-  }, [buyerName, buyerEmail, buyerPhone, firstAttendeeManuallyEdited])
+  }, [buyerName, buyerEmail, buyerPhone, quantity, firstAttendeeManuallyEdited])
 
   const copyBuyerToFirstAttendee = () => {
     if (guests.length > 0) {
@@ -325,12 +328,7 @@ export function QuickSaleDialog({
 
           {/* Buyer Information */}
           <div className='space-y-3'>
-            <div className='flex items-center justify-between'>
-              <h4 className='text-sm font-semibold'>Buyer Information</h4>
-              <p className='text-xs text-muted-foreground'>
-                (Billing contact - may or may not be attending)
-              </p>
-            </div>
+            <h4 className='text-sm font-semibold'>Buyer Information</h4>
             <div className='space-y-2'>
               <Label htmlFor='buyer-name'>Full Name *</Label>
               <div className='relative'>

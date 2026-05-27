@@ -184,10 +184,10 @@ export function CommunicationsEmailSection({
         setUser(
           user
             ? {
-                ...user,
-                communications_email: email,
-                communications_email_verified: true,
-              }
+              ...user,
+              communications_email: email,
+              communications_email_verified: true,
+            }
             : null
         )
         toast.success('Communications email verified!')

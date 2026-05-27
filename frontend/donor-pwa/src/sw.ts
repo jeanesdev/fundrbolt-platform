@@ -23,17 +23,22 @@ declare const self: ServiceWorkerGlobalScope
 // `controllerchange` and drives the reload itself, so we do NOT
 // need to navigate clients from here.
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activate event fired')
   event.waitUntil(
     (async () => {
+      console.log('[SW] Starting client claim')
       await self.clients.claim()
+      console.log('[SW] Client claim complete')
       // Clean up stale precache entries from previous builds. We do
       // NOT await any network work here; cleanupOutdatedCaches() is
       // local cache deletion only.
       try {
         const { cleanupOutdatedCaches } = await import('workbox-precaching')
         cleanupOutdatedCaches()
-      } catch {
+        console.log('[SW] Cache cleanup complete')
+      } catch (err) {
         // Non-fatal — old entries will be evicted on next install.
+        console.error('[SW] Cache cleanup failed:', err)
       }
     })()
   )
@@ -43,6 +48,7 @@ self.addEventListener('activate', (event) => {
 // Required for injectManifest strategy with registerType: 'prompt'.
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[SW] Received SKIP_WAITING message, calling skipWaiting()')
     self.skipWaiting()
   }
 })
