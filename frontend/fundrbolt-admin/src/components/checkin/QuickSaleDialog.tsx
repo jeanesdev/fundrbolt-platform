@@ -97,9 +97,11 @@ export function QuickSaleDialog({
   // Quick sale mutation
   const quickSaleMutation = useMutation({
     mutationFn: async (payload: QuickSaleRequest) => {
+      console.log('Quick sale payload:', payload)
       return createQuickSale(eventId, payload)
     },
     onSuccess: (response) => {
+      console.log('Quick sale success:', response)
       toast.success(
         `Ticket sale complete! Confirmation code: ${response.confirmation_code}`
       )
@@ -107,9 +109,27 @@ export function QuickSaleDialog({
       onOpenChange(false)
     },
     onError: (error) => {
+      console.error('Quick sale error:', error)
       toast.error(getErrorMessage(error, 'Failed to complete ticket sale'))
     },
   })
+
+  // Auto-populate Attendee 1 with buyer info
+  useEffect(() => {
+    if (buyerName || buyerEmail || buyerPhone) {
+      setGuests((prev) => {
+        const updated = [...prev]
+        if (updated[0]) {
+          updated[0] = {
+            name: buyerName,
+            email: buyerEmail || null,
+            phone: buyerPhone || null,
+          }
+        }
+        return updated
+      })
+    }
+  }, [buyerName, buyerEmail, buyerPhone])
 
   const addGuest = () => {
     setGuests((prev) => [...prev, { name: '', email: null, phone: null }])
@@ -127,7 +147,7 @@ export function QuickSaleDialog({
     setGuests((prev) =>
       prev.map((guest, i) =>
         i === index
-          ? { ...guest, [field]: value.trim() || null }
+          ? { ...guest, [field]: value === '' ? null : value }
           : guest
       )
     )
@@ -158,8 +178,14 @@ export function QuickSaleDialog({
       return
     }
 
-    // Filter out empty guests
-    const validGuests = guests.filter((guest) => guest.name.trim())
+    // Filter out empty guests and trim values
+    const validGuests = guests
+      .filter((guest) => guest.name && guest.name.trim())
+      .map((guest) => ({
+        name: guest.name.trim(),
+        email: guest.email?.trim() || null,
+        phone: guest.phone?.trim() || null,
+      }))
 
     if (validGuests.length === 0) {
       toast.error('Please enter at least one guest name')
@@ -178,6 +204,7 @@ export function QuickSaleDialog({
       notes: notes.trim() || null,
     }
 
+    console.log('Submitting quick sale:', payload)
     quickSaleMutation.mutate(payload)
   }
 
