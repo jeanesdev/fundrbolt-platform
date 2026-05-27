@@ -8,7 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from app.models.event_registration import EventRegistration
+from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.notification import NotificationPriorityEnum, NotificationTypeEnum
 from app.models.registration_guest import RegistrationGuest
 from app.models.user import User
@@ -120,7 +120,7 @@ class CheckInService:
             .where(
                 ER.event_id == event_id,
                 RegistrationGuest.table_number.isnot(None),
-                ER.status != RegistrationStatus.CANCELLED,
+                RegistrationGuest.status == RegistrationStatus.CONFIRMED.value,
             )
             .group_by(RegistrationGuest.table_number)
         )
