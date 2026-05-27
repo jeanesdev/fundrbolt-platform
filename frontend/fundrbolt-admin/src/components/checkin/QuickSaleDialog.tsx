@@ -61,6 +61,8 @@ export function QuickSaleDialog({
   const [notes, setNotes] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [guests, setGuests] = useState<QuickSaleGuestInfo[]>([])
+  const [firstAttendeeManuallyEdited, setFirstAttendeeManuallyEdited] =
+    useState(false)
 
   // Fetch available ticket packages (prefetch in background for instant loading)
   const { data: packagesData, isLoading: packagesLoading } = useQuery({
@@ -91,6 +93,7 @@ export function QuickSaleDialog({
       setNotes('')
       setQuantity(1)
       setGuests([])
+      setFirstAttendeeManuallyEdited(false)
     }
   }, [open])
 
@@ -135,6 +138,20 @@ export function QuickSaleDialog({
     })
   }, [quantity])
 
+  // Auto-copy buyer info to first attendee unless manually edited
+  useEffect(() => {
+    if (guests.length > 0 && !firstAttendeeManuallyEdited) {
+      setGuests((prev) => [
+        {
+          name: buyerName,
+          email: buyerEmail || null,
+          phone: buyerPhone || null,
+        },
+        ...prev.slice(1),
+      ])
+    }
+  }, [buyerName, buyerEmail, buyerPhone, firstAttendeeManuallyEdited])
+
   const copyBuyerToFirstAttendee = () => {
     if (guests.length > 0) {
       setGuests((prev) => [
@@ -154,6 +171,11 @@ export function QuickSaleDialog({
     field: keyof QuickSaleGuestInfo,
     value: string
   ) => {
+    // Mark first attendee as manually edited if user changes it
+    if (index === 0) {
+      setFirstAttendeeManuallyEdited(true)
+    }
+    
     setGuests((prev) =>
       prev.map((guest, i) =>
         i === index
