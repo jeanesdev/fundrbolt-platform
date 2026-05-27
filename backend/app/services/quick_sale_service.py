@@ -11,9 +11,11 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import hash_password
 from app.models.event import Event
 from app.models.event_registration import EventRegistration, RegistrationStatus
 from app.models.registration_guest import RegistrationGuest
+from app.models.role import Role
 from app.models.ticket_management import (
     AssignedTicket,
     PaymentStatus,
@@ -210,20 +212,30 @@ class QuickSaleService:
             logger.info(f"Quick sale using existing user: {email}")
             return user
 
+        # Get donor role ID
+        donor_role_stmt = select(Role.id).where(Role.name == "donor")
+        role_result = await self.db.execute(donor_role_stmt)
+        donor_role_id = role_result.scalar_one()
+
         # Create new user
         # Split name into first/last
         name_parts = name.strip().split(maxsplit=1)
         first_name = name_parts[0] if len(name_parts) > 0 else "Guest"
         last_name = name_parts[1] if len(name_parts) > 1 else ""
 
+        # Generate a secure placeholder password hash
+        # User won't be able to login until they reset their password
+        placeholder_hash = hash_password(f"quick-sale-placeholder-{uuid.uuid4()}")
+
         user = User(
             email=email,
             first_name=first_name,
             last_name=last_name,
             phone=phone,
-            password_hash=None,  # No password - user can set one later if they want
+            password_hash=placeholder_hash,
             email_verified=False,
             is_active=True,
+            role_id=donor_role_id,
         )
 
         self.db.add(user)
@@ -248,17 +260,15 @@ class QuickSaleService:
         purchase = TicketPurchase(
             event_id=event_id,
             user_id=buyer_user.id,
-            package_id=package.id,
+            ticket_package_id=package.id,
             quantity=quantity,
-            unit_price=package.price,
             total_price=total_price,
-            discount_amount=Decimal("0"),
             payment_status=PaymentStatus.COMPLETED,  # Quick sales are pre-paid
-            payment_method=payment_method,
             purchased_at=datetime.now(UTC),
-            created_by_admin=True,
-            created_by_admin_id=admin_user.id,
-            admin_notes=notes,
+            purchaser_name=buyer_user.full_name,
+            purchaser_email=buyer_user.email,
+            purchaser_phone=buyer_user.phone,
+            notes=f"Quick sale by {admin_user.email} via check-in. Payment method: {payment_method}. {notes or ''}".strip(),
         )
 
         self.db.add(purchase)
@@ -269,13 +279,17 @@ class QuickSaleService:
     async def _create_assigned_tickets(
         self, purchase_id: uuid.UUID, quantity: int
     ) -> list[AssignedTicket]:
-        """Create assigned ticket records."""
+        """Create assigned ticket records with QR codes."""
         tickets = []
         for i in range(quantity):
+            # Generate unique QR code
+            qr_code = f"{purchase_id}-{i+1}-{uuid.uuid4().hex[:8]}"
+            
             ticket = AssignedTicket(
-                purchase_id=purchase_id,
+                ticket_purchase_id=purchase_id,
                 ticket_number=i + 1,
-                status="unassigned",
+                qr_code=qr_code,
+                assignment_status="unassigned",
             )
             self.db.add(ticket)
             tickets.append(ticket)
