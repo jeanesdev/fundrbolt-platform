@@ -28,6 +28,13 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import {
   Table,
@@ -38,6 +45,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { getUser, updateUser } from '@/features/users/api/users-api'
+import { fetchEventTables } from '@/services/seating-service'
 import { useViewPreference } from '@/hooks/use-view-preference'
 import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
 import {
@@ -216,6 +224,14 @@ export function EventCheckInSection() {
       }
       return result
     },
+  })
+
+  // Fetch event tables for the table assignment dropdown in the Manage dialog
+  const { data: eventTablesData, isLoading: eventTablesLoading } = useQuery({
+    queryKey: ['event-tables', currentEvent.id],
+    queryFn: () => fetchEventTables(currentEvent.id),
+    enabled: Boolean(editingAttendee) && Boolean(currentEvent.id),
+    staleTime: 30_000,
   })
 
   const updateCheckinMutation = useMutation({
@@ -629,19 +645,32 @@ export function EventCheckInSection() {
         return
       }
 
-      const assignment = await Promise.race([
-        checkinService.getNextAssignment(currentEvent.id),
-        timeoutAfter(15000),
-      ])
+      // Table auto-assign: find a table with enough seats for the party
+      const tables = eventTablesData?.tables ?? []
+      if (tables.length === 0) {
+        toast.error('Table list not loaded yet — please try again in a moment')
+        return
+      }
 
-      if (assignment.next_table_number == null) {
-        toast.error('No table is currently available for auto-assign')
+      // Party size: registrant + their guests; guests themselves count as 1
+      const partySize =
+        editingAttendee?.attendee_type === 'registrant'
+          ? 1 + (editingAttendee.number_of_guests ?? 0)
+          : 1
+
+      // Prefer a table that can fit the whole party; fall back to any non-full table
+      const bestTable =
+        tables.find((t) => !t.is_full && t.effective_capacity - t.current_occupancy >= partySize) ??
+        tables.find((t) => !t.is_full)
+
+      if (!bestTable) {
+        toast.error('No table has available seats')
         return
       }
 
       setEditForm((prev) => ({
         ...prev,
-        tableNumber: String(assignment.next_table_number),
+        tableNumber: String(bestTable.table_number),
       }))
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to fetch auto-assignment values'))
@@ -1567,7 +1596,7 @@ export function EventCheckInSection() {
                       variant='outline'
                       size='sm'
                       onClick={() => handleManageAutoAssign('table')}
-                      disabled={manageAutoAssignLoading !== null}
+                      disabled={manageAutoAssignLoading !== null || eventTablesLoading}
                     >
                       {manageAutoAssignLoading === 'table' && (
                         <Loader2 className='mr-2 h-4 w-4 animate-spin' />
@@ -1575,17 +1604,43 @@ export function EventCheckInSection() {
                       Auto Assign
                     </Button>
                   </div>
-                  <Input
-                    id='edit-table'
+                  <Select
                     value={editForm.tableNumber}
-                    onChange={(event) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        tableNumber: event.target.value,
-                      }))
+                    onValueChange={(value) =>
+                      setEditForm((prev) => ({ ...prev, tableNumber: value }))
                     }
-                    placeholder='1+'
-                  />
+                    disabled={eventTablesLoading}
+                  >
+                    <SelectTrigger id='edit-table'>
+                      <SelectValue
+                        placeholder={
+                          eventTablesLoading ? 'Loading tables…' : 'Select a table…'
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(eventTablesData?.tables ?? []).map((table) => {
+                        const available =
+                          table.effective_capacity - table.current_occupancy
+                        return (
+                          <SelectItem
+                            key={table.table_number}
+                            value={String(table.table_number)}
+                          >
+                            <span>
+                              Table {table.table_number}
+                              {table.table_name ? ` – ${table.table_name}` : ''}
+                            </span>
+                            <span
+                              className={`ml-2 text-xs ${table.is_full ? 'text-destructive font-medium' : 'text-muted-foreground'}`}
+                            >
+                              ({available}/{table.effective_capacity} open)
+                            </span>
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
