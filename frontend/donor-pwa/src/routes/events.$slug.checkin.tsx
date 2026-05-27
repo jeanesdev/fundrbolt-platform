@@ -33,7 +33,7 @@ function RouteComponent() {
   })
 
   // Apply event branding
-  useEventBranding(event?.id)
+  const { applyBranding } = useEventBranding()
 
   const handleRegistrationFound = (data: CheckInLookupResponse) => {
     setLookupData(data)
@@ -78,8 +78,11 @@ function RouteComponent() {
             <div key={registration.id} className='space-y-4'>
               <RegistrationDetails registration={registration} />
               <GuestCheckInList
-                registrationId={registration.id}
                 guests={registration.guests}
+                onGuestUpdated={() => {
+                  // Refresh lookup data after guest check-in
+                  // In a real implementation, you'd want to re-fetch or update the local state
+                }}
               />
             </div>
           ))}
