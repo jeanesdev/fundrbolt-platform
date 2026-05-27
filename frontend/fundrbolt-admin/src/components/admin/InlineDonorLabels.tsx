@@ -1,8 +1,3 @@
-import { useEffect, useState } from 'react'
-import { DONOR_LABEL_COLORS } from '@/themes/colors'
-import { Check, Plus, X } from 'lucide-react'
-import { toast } from 'sonner'
-import { useNPOContextStore } from '@/stores/npo-context-store'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,6 +22,11 @@ import {
   useSetUserDonorLabels,
   useUserDonorLabels,
 } from '@/features/users/hooks/use-donor-labels'
+import { useNPOContextStore } from '@/stores/npo-context-store'
+import { DONOR_LABEL_COLORS } from '@/themes/colors'
+import { Check, Plus, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 function getLabelStyle(color: string | null) {
   if (!color) return {}

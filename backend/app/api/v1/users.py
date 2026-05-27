@@ -451,9 +451,9 @@ async def create_user(
     - Email must be unique
     - npo_admin and event_coordinator roles MUST have npo_id
     - staff and donor roles MUST NOT have npo_id
-    - Created user gets temporary password (should be changed on first login)
-    - User starts with email_verified=false, is_active=false
-    - Verification email is sent automatically (with link + OTP)
+    - User starts with email_verified=false, is_active=false, must_change_password=true
+    - Account setup email is sent automatically with link to set password
+    - When user sets password, email is auto-verified and account is activated
     - If email sending fails, user creation continues (admin can resend)
 
     Args:
@@ -503,7 +503,7 @@ async def create_user(
         setup_token = PasswordService.generate_reset_token()
         token_hash = PasswordService.hash_token(setup_token)
 
-        # Store setup token in Redis (24 hour expiry)
+        # Store setup token in Redis (1 hour expiry, matching PASSWORD_RESET_TTL)
         await RedisService.store_password_reset_token(token_hash, user.id)
 
         # Send account setup email

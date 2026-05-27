@@ -28,6 +28,7 @@ from app.schemas.quick_sale import (
     QuickSaleRequest,
     QuickSaleResponse,
 )
+from app.services.bidder_number_service import BidderNumberService
 
 logger = logging.getLogger(__name__)
 
@@ -376,9 +377,26 @@ class QuickSaleService:
         """Create guest records for all attendees."""
         guest_records = []
 
-        # Auto-assign bidder number if not provided
+        # Fetch used bidder numbers once and allocate sequentially via BidderNumberService
+        used_numbers = await BidderNumberService._get_used_bidder_numbers(self.db, event_id)
         if bidder_number is None:
-            bidder_number = await self._get_next_available_bidder_number(event_id)
+            bidder_number = BidderNumberService._find_replacement_number(used_numbers)
+
+        allocated_bidder_numbers: list[int] = []
+        next_start = bidder_number
+        for _ in guests:
+            try:
+                num = BidderNumberService._find_next_available_number_from(
+                    used_numbers, next_start
+                )
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Not enough bidder numbers available for all guests",
+                )
+            used_numbers.add(num)
+            allocated_bidder_numbers.append(num)
+            next_start = num + 1
 
         # Auto-assign table if not provided
         if table_number is None:
@@ -408,7 +426,7 @@ class QuickSaleService:
                 is_primary=is_primary,
                 checked_in=check_in_immediately,
                 check_in_time=datetime.now(UTC) if check_in_immediately else None,
-                bidder_number=bidder_number + idx,  # Sequential bidder numbers for multiple guests
+                bidder_number=allocated_bidder_numbers[idx],
                 table_number=table_number,
                 bidder_number_assigned_at=datetime.now(UTC),
             )
@@ -420,33 +438,6 @@ class QuickSaleService:
             await self.db.flush()
 
         return guest_records
-
-    async def _get_next_available_bidder_number(self, event_id: uuid.UUID) -> int:
-        """Get the next available bidder number for this event (100-999)."""
-        # Find the highest bidder number currently assigned
-        result = await self.db.execute(
-            select(RegistrationGuest.bidder_number)
-            .join(EventRegistration)
-            .where(
-                EventRegistration.event_id == event_id,
-                RegistrationGuest.bidder_number.isnot(None),
-            )
-            .order_by(RegistrationGuest.bidder_number.desc())
-            .limit(1)
-        )
-        highest = result.scalar_one_or_none()
-
-        if highest is None:
-            return 100  # Start at 100
-
-        next_number = highest + 1
-        if next_number > 999:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="No more bidder numbers available (max 999 reached)",
-            )
-
-        return next_number
 
     async def _get_next_available_table(self, event_id: uuid.UUID, party_size: int) -> int | None:
         """Find the next available table that can fit the party size."""

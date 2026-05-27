@@ -58,15 +58,15 @@
   <div class="container">
     <h1>🔧 Service Worker Cleanup</h1>
     <p>This page will help you unregister old service workers that might be causing constant update notifications.</p>
-    
+
     <div id="status"></div>
-    
+
     <button onclick="unregisterServiceWorkers()">Unregister All Service Workers</button>
     <button onclick="clearAllCaches()">Clear All Caches</button>
     <button onclick="window.location.href='/'">Return to App</button>
-    
+
     <hr style="margin: 30px 0;">
-    
+
     <h3>Current Service Workers:</h3>
     <div id="registrations"></div>
   </div>
@@ -74,19 +74,19 @@
   <script>
     async function showRegistrations() {
       const container = document.getElementById('registrations');
-      
+
       if (!navigator.serviceWorker) {
         container.innerHTML = '<p class="error">Service Worker API not supported</p>';
         return;
       }
-      
+
       const registrations = await navigator.serviceWorker.getRegistrations();
-      
+
       if (registrations.length === 0) {
         container.innerHTML = '<p>No service workers registered ✅</p>';
         return;
       }
-      
+
       let html = '<ul>';
       for (const reg of registrations) {
         html += `<li>${reg.scope}</li>`;
@@ -97,24 +97,24 @@
 
     async function unregisterServiceWorkers() {
       const statusDiv = document.getElementById('status');
-      
+
       try {
         const registrations = await navigator.serviceWorker.getRegistrations();
-        
+
         if (registrations.length === 0) {
           statusDiv.innerHTML = '<p class="success">No service workers to unregister</p>';
           return;
         }
-        
+
         let count = 0;
         for (const reg of registrations) {
           await reg.unregister();
           count++;
         }
-        
+
         statusDiv.innerHTML = `<p class="success">Successfully unregistered ${count} service worker(s). Please refresh the page.</p>`;
         await showRegistrations();
-        
+
         // Auto-refresh after 2 seconds
         setTimeout(() => {
           window.location.reload();
@@ -126,21 +126,21 @@
 
     async function clearAllCaches() {
       const statusDiv = document.getElementById('status');
-      
+
       try {
         const cacheNames = await caches.keys();
-        
+
         if (cacheNames.length === 0) {
           statusDiv.innerHTML = '<p class="success">No caches to clear</p>';
           return;
         }
-        
+
         let count = 0;
         for (const cacheName of cacheNames) {
           await caches.delete(cacheName);
           count++;
         }
-        
+
         statusDiv.innerHTML = `<p class="success">Successfully cleared ${count} cache(s)</p>`;
       } catch (error) {
         statusDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;

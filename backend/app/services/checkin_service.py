@@ -120,6 +120,7 @@ class CheckInService:
             .where(
                 ER.event_id == event_id,
                 RegistrationGuest.table_number.isnot(None),
+                ER.status != RegistrationStatus.CANCELLED,
             )
             .group_by(RegistrationGuest.table_number)
         )
@@ -186,6 +187,9 @@ class CheckInService:
         # Assign bidder number if not already set
         if primary_guest.bidder_number is None:
             if bidder_number is not None:
+                await BidderNumberService.validate_bidder_number_uniqueness(
+                    db, registration.event_id, bidder_number, exclude_guest_id=primary_guest.id
+                )
                 primary_guest.bidder_number = bidder_number
                 primary_guest.bidder_number_assigned_at = datetime.now(UTC)
             else:
@@ -266,6 +270,10 @@ class CheckInService:
         # Assign bidder number if not already set
         if guest.bidder_number is None:
             if bidder_number is not None:
+                if guest.registration:
+                    await BidderNumberService.validate_bidder_number_uniqueness(
+                        db, guest.registration.event_id, bidder_number, exclude_guest_id=guest.id
+                    )
                 guest.bidder_number = bidder_number
                 guest.bidder_number_assigned_at = datetime.now(UTC)
             elif guest.registration:

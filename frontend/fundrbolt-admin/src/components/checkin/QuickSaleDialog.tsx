@@ -2,27 +2,27 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import {
-  createQuickSale,
-  type QuickSaleGuestInfo,
-  type QuickSaleRequest,
+    createQuickSale,
+    type QuickSaleGuestInfo,
+    type QuickSaleRequest,
 } from '@/lib/api/quick-sale'
 import apiClient from '@/lib/axios'
 import { getErrorMessage } from '@/lib/error-utils'
@@ -284,7 +284,7 @@ export function QuickSaleDialog({
       payment_method: paymentMethod,
 
       // Payment details
-      card_last_four: paymentMethod === 'card' && cardLastFour.trim() ? cardLastFour.trim() : null,
+      card_last_four: paymentMethod === 'credit_card' && cardLastFour.trim() ? cardLastFour.trim() : null,
       check_number: paymentMethod === 'check' && checkNumber.trim() ? checkNumber.trim() : null,
 
       // Bidder and table assignment (empty = auto-assign)

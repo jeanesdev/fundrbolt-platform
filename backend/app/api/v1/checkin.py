@@ -167,12 +167,15 @@ async def check_in_registration(
     Assigns bidder number and table number if not already assigned.
     Accepts optional body to specify bidder/table; auto-assigns if not provided.
     """
-    registration = await CheckInService.check_in_registration(
-        db,
-        registration_id,
-        bidder_number=request.bidder_number if request else None,
-        table_number=request.table_number if request else None,
-    )
+    try:
+        registration = await CheckInService.check_in_registration(
+            db,
+            registration_id,
+            bidder_number=request.bidder_number if request else None,
+            table_number=request.table_number if request else None,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
 
     if not registration:
         raise HTTPException(
@@ -198,12 +201,15 @@ async def check_in_guest(
     Assigns bidder number and table number if not already assigned.
     Accepts optional body to specify bidder/table; auto-assigns if not provided.
     """
-    guest = await CheckInService.check_in_guest(
-        db,
-        guest_id,
-        bidder_number=request.bidder_number if request else None,
-        table_number=request.table_number if request else None,
-    )
+    try:
+        guest = await CheckInService.check_in_guest(
+            db,
+            guest_id,
+            bidder_number=request.bidder_number if request else None,
+            table_number=request.table_number if request else None,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
 
     if not guest:
         raise HTTPException(
