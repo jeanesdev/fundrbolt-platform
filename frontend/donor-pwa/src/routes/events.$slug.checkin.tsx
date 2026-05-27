@@ -12,7 +12,7 @@ import { getEventBySlug } from '@/lib/api/events'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export const Route = createFileRoute('/events/$slug/checkin')({
   component: RouteComponent,
@@ -34,6 +34,13 @@ function RouteComponent() {
 
   // Apply event branding
   const { applyBranding } = useEventBranding()
+
+  // Apply branding when event loads
+  useEffect(() => {
+    if (event?.branding) {
+      applyBranding(event.branding)
+    }
+  }, [event?.branding, applyBranding])
 
   const handleRegistrationFound = (data: CheckInLookupResponse) => {
     setLookupData(data)
