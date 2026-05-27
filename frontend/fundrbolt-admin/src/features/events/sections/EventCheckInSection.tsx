@@ -297,6 +297,20 @@ export function EventCheckInSection() {
 
   const saveAttendeeMutation = useMutation({
     mutationFn: async (attendee: Attendee) => {
+      const withTimeout = async <T,>(
+        promise: Promise<T>,
+        label: string,
+        timeoutMs = 15000
+      ): Promise<T> => {
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          window.setTimeout(() => {
+            reject(new Error(`${label} timed out`))
+          }, timeoutMs)
+        })
+
+        return Promise.race([promise, timeoutPromise])
+      }
+
       if (attendee.attendee_type === 'registrant') {
         const trimmedName = editForm.name.trim()
         const nameParts = trimmedName.split(/\s+/).filter(Boolean)
@@ -307,22 +321,28 @@ export function EventCheckInSection() {
           throw new Error('Name is required')
         }
 
-        await checkinService.updateRegistrationDetails(
-          currentEvent.id,
-          attendee.registration_id,
-          {
-            first_name: firstName,
-            last_name: lastName,
-            email: editForm.email.trim() || undefined,
-            phone: editForm.phone.trim() || undefined,
-          }
+        await withTimeout(
+          checkinService.updateRegistrationDetails(
+            currentEvent.id,
+            attendee.registration_id,
+            {
+              first_name: firstName,
+              last_name: lastName,
+              email: editForm.email.trim() || undefined,
+              phone: editForm.phone.trim() || undefined,
+            }
+          ),
+          'Updating registration details'
         )
       } else {
-        await checkinService.updateGuestDetails(currentEvent.id, attendee.id, {
-          name: editForm.name.trim() || undefined,
-          email: editForm.email.trim() || undefined,
-          phone: editForm.phone.trim() || undefined,
-        })
+        await withTimeout(
+          checkinService.updateGuestDetails(currentEvent.id, attendee.id, {
+            name: editForm.name.trim() || undefined,
+            email: editForm.email.trim() || undefined,
+            phone: editForm.phone.trim() || undefined,
+          }),
+          'Updating guest details'
+        )
       }
 
       const nextBidderValue = editForm.bidderNumber.trim()
@@ -338,13 +358,19 @@ export function EventCheckInSection() {
 
         if (bidderNumber !== (attendee.bidder_number ?? null)) {
           if (attendee.attendee_type === 'registrant') {
-            await assignRegistrationBidderNumber(
-              currentEvent.id,
-              attendee.registration_id,
-              bidderNumber
+            await withTimeout(
+              assignRegistrationBidderNumber(
+                currentEvent.id,
+                attendee.registration_id,
+                bidderNumber
+              ),
+              'Assigning bidder number'
             )
           } else {
-            await assignBidderNumber(currentEvent.id, attendee.id, bidderNumber)
+            await withTimeout(
+              assignBidderNumber(currentEvent.id, attendee.id, bidderNumber),
+              'Assigning bidder number'
+            )
           }
         }
       }
@@ -358,28 +384,37 @@ export function EventCheckInSection() {
 
         if (tableNumber !== (attendee.table_number ?? null)) {
           if (attendee.attendee_type === 'registrant') {
-            await assignRegistrationToTable(
-              currentEvent.id,
-              attendee.registration_id,
-              tableNumber
+            await withTimeout(
+              assignRegistrationToTable(
+                currentEvent.id,
+                attendee.registration_id,
+                tableNumber
+              ),
+              'Assigning table number'
             )
           } else {
-            await assignGuestToTable(currentEvent.id, attendee.id, tableNumber)
+            await withTimeout(
+              assignGuestToTable(currentEvent.id, attendee.id, tableNumber),
+              'Assigning table number'
+            )
           }
         }
       }
 
       // Save address/company via user update API
       if (attendee.user_id) {
-        await updateUser(attendee.user_id, {
-          organization_name: editForm.organizationName.trim() || undefined,
-          address_line1: editForm.addressLine1.trim() || undefined,
-          address_line2: editForm.addressLine2.trim() || undefined,
-          city: editForm.city.trim() || undefined,
-          state: editForm.state.trim() || undefined,
-          postal_code: editForm.postalCode.trim() || undefined,
-          country: editForm.country.trim() || undefined,
-        })
+        await withTimeout(
+          updateUser(attendee.user_id, {
+            organization_name: editForm.organizationName.trim() || undefined,
+            address_line1: editForm.addressLine1.trim() || undefined,
+            address_line2: editForm.addressLine2.trim() || undefined,
+            city: editForm.city.trim() || undefined,
+            state: editForm.state.trim() || undefined,
+            postal_code: editForm.postalCode.trim() || undefined,
+            country: editForm.country.trim() || undefined,
+          }),
+          'Updating contact information'
+        )
       }
     },
     onSuccess: () => {

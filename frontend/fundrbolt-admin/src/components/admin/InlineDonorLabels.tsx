@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DONOR_LABEL_COLORS } from '@/themes/colors'
 import { Check, Plus, X } from 'lucide-react'
+import { toast } from 'sonner'
 import { useNPOContextStore } from '@/stores/npo-context-store'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -52,6 +53,7 @@ export function InlineDonorLabels({
   const editable = !!userId
   const storeNpoId = useNPOContextStore((state) => state.selectedNpoId)
   const npoId = npoIdProp ?? storeNpoId
+  const canMutateLabels = editable && !!npoId
   const { data: labelsData } = useDonorLabels(editable ? npoId : null)
   const { data: userLabelsData } = useUserDonorLabels(
     editable ? npoId : null,
@@ -62,28 +64,79 @@ export function InlineDonorLabels({
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
   const [newLabelName, setNewLabelName] = useState('')
+  const [optimisticLabels, setOptimisticLabels] = useState<
+    DonorLabelInfo[] | null
+  >(null)
 
   // Use live query data when available, fall back to prop
   const currentLabels =
     (editable && userLabelsData ? userLabelsData : null) ?? labels ?? []
-  const currentLabelIds = currentLabels.map((l) => l.id)
+  const visibleLabels = optimisticLabels ?? currentLabels
+  const currentLabelIds = visibleLabels.map((l) => l.id)
   const allLabels = labelsData?.items ?? []
+
+  useEffect(() => {
+    setOptimisticLabels(null)
+  }, [labels, userLabelsData])
 
   const handleToggleLabel = (labelId: string) => {
     if (!userId) return
+    if (!canMutateLabels) {
+      toast.error('Labels are unavailable until an NPO is selected')
+      return
+    }
+
     const newIds = currentLabelIds.includes(labelId)
       ? currentLabelIds.filter((id) => id !== labelId)
       : [...currentLabelIds, labelId]
-    setLabels.mutate({ userId, labelIds: newIds })
+
+    const labelLookup = new Map(allLabels.map((label) => [label.id, label]))
+    const nextVisibleLabels: DonorLabelInfo[] = newIds
+      .map((id) => labelLookup.get(id))
+      .filter((label): label is NonNullable<typeof label> => Boolean(label))
+      .map((label) => ({
+        id: label.id,
+        name: label.name,
+        color: label.color,
+      }))
+
+    setOptimisticLabels(nextVisibleLabels)
+    setLabels.mutate(
+      { userId, labelIds: newIds },
+      {
+        onError: () => {
+          setOptimisticLabels(null)
+        },
+      }
+    )
   }
 
   const handleRemoveLabel = (labelId: string) => {
     if (!userId) return
+    if (!canMutateLabels) {
+      toast.error('Labels are unavailable until an NPO is selected')
+      return
+    }
+
     const newIds = currentLabelIds.filter((id) => id !== labelId)
-    setLabels.mutate({ userId, labelIds: newIds })
+
+    setOptimisticLabels(visibleLabels.filter((label) => label.id !== labelId))
+    setLabels.mutate(
+      { userId, labelIds: newIds },
+      {
+        onError: () => {
+          setOptimisticLabels(null)
+        },
+      }
+    )
   }
 
   const handleCreateLabel = () => {
+    if (!canMutateLabels) {
+      toast.error('Labels are unavailable until an NPO is selected')
+      return
+    }
+
     const name = newLabelName.trim()
     if (!name) return
     // Pick color based on label name length to avoid Math.random() purity lint
@@ -97,21 +150,37 @@ export function InlineDonorLabels({
           setShowCreate(false)
           // Auto-assign the new label to this user
           if (userId) {
-            setLabels.mutate({
-              userId,
-              labelIds: [...currentLabelIds, created.id],
-            })
+            const nextIds = [...currentLabelIds, created.id]
+            setOptimisticLabels([
+              ...visibleLabels,
+              {
+                id: created.id,
+                name: created.name,
+                color: created.color,
+              },
+            ])
+            setLabels.mutate(
+              {
+                userId,
+                labelIds: nextIds,
+              },
+              {
+                onError: () => {
+                  setOptimisticLabels(null)
+                },
+              }
+            )
           }
         },
       }
     )
   }
 
-  if (!editable && currentLabels.length === 0) return null
+  if (!editable && visibleLabels.length === 0) return null
 
   return (
     <div className='flex flex-wrap items-center gap-1'>
-      {currentLabels.map((label) => (
+      {visibleLabels.map((label) => (
         <Badge
           key={label.id}
           variant='outline'
@@ -149,6 +218,7 @@ export function InlineDonorLabels({
               size='sm'
               className='h-5 w-5 rounded-full p-0'
               title='Add label'
+              disabled={!canMutateLabels}
             >
               <Plus className='h-3 w-3' />
             </Button>
