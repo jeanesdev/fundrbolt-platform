@@ -71,6 +71,8 @@ class RunOfShowResponse(BaseModel):
     completed_count: int
     next_item: RunOfShowItemResponse | None = None
     event_start_time: datetime | None = None
+    silent_auction_start_datetime: datetime | None = None
+    silent_auction_close_datetime: datetime | None = None
 
 
 class RunOfShowReorderRequest(BaseModel):

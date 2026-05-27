@@ -21,6 +21,8 @@ export interface RunOfShowResponse {
   completed_count: number
   next_item: RunOfShowItem | null
   event_start_time: string | null
+  silent_auction_start_datetime: string | null
+  silent_auction_close_datetime: string | null
 }
 
 export interface RunOfShowItemCreate {

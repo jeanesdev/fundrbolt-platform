@@ -27,7 +27,7 @@ if database_url.startswith("postgresql://"):
 # Create async engine
 async_engine = create_async_engine(
     database_url,
-    echo=settings.debug,
+    echo=False,  # Disable SQL query logging to reduce log spam
     future=True,
     pool_pre_ping=True,
     poolclass=NullPool,  # Always use NullPool for better test isolation

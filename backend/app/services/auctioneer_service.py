@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import io
 import logging
 import re
 from collections import defaultdict
@@ -1340,7 +1339,12 @@ class AuctioneerService:
     async def build_slide_deck(
         self, items: list[AuctioneerItemSummary], event_name: str, auction_type_label: str
     ) -> bytes:
+        from io import BytesIO
+
+        from PIL import Image
         from pptx import Presentation
+        from pptx.dml.color import RGBColor
+        from pptx.enum.shapes import MSO_SHAPE
         from pptx.util import Inches, Pt
 
         presentation = Presentation()
@@ -1350,65 +1354,167 @@ class AuctioneerService:
         async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
             for item in items:
                 slide = presentation.slides.add_slide(presentation.slide_layouts[6])
-                title_box = slide.shapes.add_textbox(
-                    Inches(0.4), Inches(0.2), Inches(12.5), Inches(0.6)
-                )
-                title_frame = title_box.text_frame
-                title_frame.text = f"#{item.bid_number or '—'}  {item.title}"
-                title_frame.paragraphs[0].font.size = Pt(24)
-                title_frame.paragraphs[0].font.bold = True
 
+                # Extract the slide text content
                 body_text = self._strip_slide_html(item.slide_presentation_html) or (
-                    item.description or ""
-                )
-                footer = [
-                    f"Type: {auction_type_label}",
-                    f"Current High Bid: ${item.current_bid_amount:,.0f}"
-                    if item.current_bid_amount
-                    else "",
-                ]
-                body_text = "\n\n".join(
-                    part for part in [body_text, " | ".join(filter(None, footer))] if part
+                    item.description or "No description provided."
                 )
 
-                image_bounds = {
-                    "on_image": (Inches(1.0), Inches(1.15), Inches(11.3), Inches(5.5)),
-                    "left_of_image": (Inches(6.9), Inches(1.15), Inches(5.7), Inches(5.5)),
-                    "right_of_image": (Inches(0.4), Inches(1.15), Inches(5.7), Inches(5.5)),
-                    "below_image": (Inches(1.6), Inches(1.0), Inches(10.2), Inches(3.8)),
-                }
-                text_bounds = {
-                    "on_image": (Inches(1.4), Inches(4.9), Inches(10.5), Inches(1.4)),
-                    "left_of_image": (Inches(0.4), Inches(1.15), Inches(5.9), Inches(5.5)),
-                    "right_of_image": (Inches(7.0), Inches(1.15), Inches(5.9), Inches(5.5)),
-                    "below_image": (Inches(0.8), Inches(5.0), Inches(11.7), Inches(1.8)),
-                }
                 layout_key = item.slide_presentation_layout
 
+                # Layout configurations matching frontend SlidePreview component
+                # Each layout: (image_area, text_area)
+                layout_configs = {
+                    # ON_IMAGE: Image fills most of slide, text overlay at bottom
+                    "on_image": {
+                        "image": (Inches(0.5), Inches(0.5), Inches(12.333), Inches(6.5)),
+                        "title": (Inches(0.8), Inches(5.8), Inches(11.733), Inches(0.7)),
+                        "text": (Inches(0.8), Inches(6.5), Inches(11.733), Inches(1.3)),
+                    },
+                    # LEFT_OF_IMAGE: Text on left, image on right (45%/55% split)
+                    "left_of_image": {
+                        "title": (Inches(0.5), Inches(0.5), Inches(5.5), Inches(0.6)),
+                        "text": (Inches(0.5), Inches(1.3), Inches(5.5), Inches(5.7)),
+                        "image": (Inches(6.5), Inches(0.5), Inches(6.333), Inches(6.5)),
+                    },
+                    # RIGHT_OF_IMAGE: Image on left, text on right (55%/45% split)
+                    "right_of_image": {
+                        "image": (Inches(0.5), Inches(0.5), Inches(6.5), Inches(6.5)),
+                        "title": (Inches(7.5), Inches(0.5), Inches(5.333), Inches(0.6)),
+                        "text": (Inches(7.5), Inches(1.3), Inches(5.333), Inches(5.7)),
+                    },
+                    # BELOW_IMAGE: Image on top, text below
+                    "below_image": {
+                        "image": (Inches(0.5), Inches(0.5), Inches(12.333), Inches(4.5)),
+                        "title": (Inches(0.5), Inches(5.3), Inches(12.333), Inches(0.5)),
+                        "text": (Inches(0.5), Inches(6.0), Inches(12.333), Inches(1.0)),
+                    },
+                }
+
+                config = layout_configs[layout_key]
+
+                # Add image if available
                 if item.primary_image_url:
                     try:
+                        logger.info(
+                            "Fetching slide image for item %s (%s) from URL: %s",
+                            item.id,
+                            item.title,
+                            item.primary_image_url[:100],
+                        )
                         response = await client.get(item.primary_image_url)
                         response.raise_for_status()
-                        left, top, width, height = image_bounds[layout_key]
+                        image_bytes = response.content
+
+                        if not image_bytes:
+                            logger.warning(
+                                "Empty image response for auction item %s (%s)",
+                                item.id,
+                                item.title,
+                            )
+                            raise ValueError("Empty image content")
+
+                        # Get image dimensions to calculate aspect-ratio-preserving size
+                        pil_image = Image.open(BytesIO(image_bytes))
+                        img_width, img_height = pil_image.size
+                        aspect_ratio = img_width / img_height
+
+                        # Get max bounds for this layout
+                        max_left, max_top, max_width, max_height = config["image"]
+
+                        # Calculate dimensions that fit within bounds while maintaining aspect ratio
+                        if max_width / max_height > aspect_ratio:
+                            # Height is the limiting factor
+                            actual_height = max_height
+                            actual_width = Inches(actual_height / Inches(1) * aspect_ratio)
+                        else:
+                            # Width is the limiting factor
+                            actual_width = max_width
+                            actual_height = Inches(actual_width / Inches(1) / aspect_ratio)
+
+                        # Center the image within the max bounds
+                        left = max_left + (max_width - actual_width) / 2
+                        top = max_top + (max_height - actual_height) / 2
+
                         slide.shapes.add_picture(
-                            io.BytesIO(response.content),
+                            BytesIO(image_bytes),
                             left,
                             top,
-                            width=width,
-                            height=height,
+                            width=actual_width,
+                            height=actual_height,
                         )
-                    except httpx.HTTPError:
-                        logger.warning("Unable to fetch slide image for auction item %s", item.id)
+                        logger.info(
+                            "Successfully added image to slide for item %s (%s)",
+                            item.id,
+                            item.title,
+                        )
+                    except (httpx.HTTPError, Exception) as exc:
+                        logger.warning(
+                            "Unable to fetch or process slide image for auction item %s (%s): %s",
+                            item.id,
+                            item.title,
+                            str(exc),
+                        )
+                else:
+                    logger.warning(
+                        "No primary_image_url for auction item %s (%s) - slide will have no image",
+                        item.id,
+                        item.title,
+                    )
 
-                text_left, text_top, text_width, text_height = text_bounds[layout_key]
+                # Add semi-transparent background for ON_IMAGE layout
+                if layout_key == "on_image":
+                    # Create a rounded rectangle covering the text area
+                    bg_left = Inches(0.6)
+                    bg_top = Inches(5.6)
+                    bg_width = Inches(12.133)
+                    bg_height = Inches(1.7)
+
+                    bg_shape = slide.shapes.add_shape(
+                        MSO_SHAPE.ROUNDED_RECTANGLE,
+                        bg_left,
+                        bg_top,
+                        bg_width,
+                        bg_height,
+                    )
+
+                    # Set semi-transparent black fill (70% opacity)
+                    bg_shape.fill.solid()
+                    bg_shape.fill.fore_color.rgb = RGBColor(0, 0, 0)  # type: ignore[no-untyped-call]
+                    bg_shape.fill.transparency = 0.3  # 30% transparent = 70% opacity
+
+                    # Remove border
+                    bg_shape.line.fill.background()
+
+                # Add title textbox
+                title_left, title_top, title_width, title_height = config["title"]
+                title_box = slide.shapes.add_textbox(
+                    title_left, title_top, title_width, title_height
+                )
+                title_frame = title_box.text_frame
+                title_frame.word_wrap = True
+                title_para = title_frame.paragraphs[0]
+                title_para.text = f"#{item.bid_number or '—'}  {item.title}"
+                title_para.font.size = Pt(24)
+                title_para.font.bold = True
+
+                # Set white text for ON_IMAGE layout
+                if layout_key == "on_image":
+                    title_para.font.color.rgb = RGBColor(255, 255, 255)  # type: ignore[no-untyped-call]
+
+                # Add text content textbox
+                text_left, text_top, text_width, text_height = config["text"]
                 text_box = slide.shapes.add_textbox(text_left, text_top, text_width, text_height)
                 text_frame = text_box.text_frame
                 text_frame.word_wrap = True
-                text_frame.text = body_text or "No slide notes provided."
+                text_frame.text = body_text
                 for paragraph in text_frame.paragraphs:
-                    paragraph.font.size = Pt(18)
+                    paragraph.font.size = Pt(14)
+                    # Set white text for ON_IMAGE layout
+                    if layout_key == "on_image":
+                        paragraph.font.color.rgb = RGBColor(255, 255, 255)  # type: ignore[no-untyped-call]
 
-        output = io.BytesIO()
+        output = BytesIO()
         presentation.save(output)
         output.seek(0)
         return output.read()

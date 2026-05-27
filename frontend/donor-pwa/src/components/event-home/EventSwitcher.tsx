@@ -11,8 +11,6 @@
  * - Events sorted: upcoming first (date ASC), then past (date DESC)
  * - Conditional dropdown (only shows chevron if multiple events)
  */
-import type { RegisteredEventWithBranding } from '@/types/event-branding'
-import { Calendar, Check, ChevronDown } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -23,6 +21,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import type { RegisteredEventWithBranding } from '@/types/event-branding'
+import { Calendar, Check, ChevronDown } from 'lucide-react'
+import * as React from 'react'
 
 export interface EventSwitcherProps {
   /** Currently selected event */
@@ -66,14 +67,25 @@ function EventThumbnail({
   event: RegisteredEventWithBranding
   size?: 'default' | 'small'
 }) {
+  const [imageError, setImageError] = React.useState(false)
   const sizeClasses = size === 'small' ? 'h-8 w-8' : 'h-10 w-10'
   const textSize = size === 'small' ? 'text-xs' : 'text-sm'
+
+  // Reset error state when event changes
+  React.useEffect(() => {
+    setImageError(false)
+  }, [event.id])
 
   return (
     <Avatar className={sizeClasses}>
       <AvatarImage
-        src={event.thumbnail_url || event.npo_logo_url || undefined}
+        src={
+          imageError
+            ? undefined
+            : event.thumbnail_url || event.npo_logo_url || undefined
+        }
         alt={event.name}
+        onError={() => setImageError(true)}
       />
       <AvatarFallback
         className={textSize}

@@ -2,20 +2,6 @@
  * EventForm Component
  * Comprehensive form for creating and editing events with all fields
  */
-import { useEffect, useRef, useState } from 'react'
-import { z } from 'zod'
-import { format, parse } from 'date-fns'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import type { NPOBranding } from '@/services/event-service'
-import type {
-  EventCreateRequest,
-  EventDetail,
-  EventUpdateRequest,
-} from '@/types/event'
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
-import { CalendarIcon, MapPin } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Calendar as CalendarPicker } from '@/components/ui/calendar'
 import {
@@ -41,6 +27,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
+import type { NPOBranding } from '@/services/event-service'
+import type {
+  EventCreateRequest,
+  EventDetail,
+  EventUpdateRequest,
+} from '@/types/event'
+import { importLibrary, setOptions } from '@googlemaps/js-api-loader'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { format, parse } from 'date-fns'
+import { CalendarIcon, MapPin } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import { ColorPicker } from './ColorPicker.tsx'
 import { RichTextEditor } from './RichTextEditor.tsx'
 
@@ -157,6 +157,15 @@ interface EventFormProps {
   isSubmitting?: boolean
 }
 
+// Convert a UTC date string to a local datetime-local input value (YYYY-MM-DDTHH:mm)
+// datetime-local inputs interpret their value in the browser's local timezone,
+// so we must format using local date methods rather than toISOString() (which gives UTC).
+function toLocalDatetimeInput(utcString: string): string {
+  const d = new Date(utcString)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 export function EventForm({
   event,
   npoId,
@@ -187,7 +196,7 @@ export function EventForm({
       hashtag: event?.hashtag || '',
       description: event?.description || '',
       event_datetime: event?.event_datetime
-        ? new Date(event.event_datetime).toISOString().slice(0, 16)
+        ? toLocalDatetimeInput(event.event_datetime)
         : '',
       timezone:
         event?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -200,10 +209,10 @@ export function EventForm({
       fundraising_goal: event?.fundraising_goal ?? null,
       last_year_total: event?.last_year_total ?? null,
       live_auction_start_datetime: event?.live_auction_start_datetime
-        ? new Date(event.live_auction_start_datetime).toISOString().slice(0, 16)
+        ? toLocalDatetimeInput(event.live_auction_start_datetime)
         : '',
       auction_close_datetime: event?.auction_close_datetime
-        ? new Date(event.auction_close_datetime).toISOString().slice(0, 16)
+        ? toLocalDatetimeInput(event.auction_close_datetime)
         : '',
       primary_contact_name: event?.primary_contact_name || '',
       primary_contact_email: event?.primary_contact_email || '',
@@ -361,6 +370,27 @@ export function EventForm({
       }
       if (name === 'last_year_total') {
         setLastYearTotalInputValue(formatGoalCurrency(values.last_year_total))
+      }
+      if (name === 'event_datetime' && values.event_datetime) {
+        const eventDate = new Date(values.event_datetime)
+        if (!isNaN(eventDate.getTime())) {
+          const currentStart = form.getValues('live_auction_start_datetime')
+          const currentClose = form.getValues('auction_close_datetime')
+          if (!currentStart) {
+            const silentStart = new Date(eventDate.getTime() - 60 * 60 * 1000)
+            form.setValue(
+              'live_auction_start_datetime',
+              toLocalDatetimeInput(silentStart.toISOString())
+            )
+          }
+          if (!currentClose) {
+            const silentClose = new Date(eventDate.getTime() + 2 * 60 * 60 * 1000)
+            form.setValue(
+              'auction_close_datetime',
+              toLocalDatetimeInput(silentClose.toISOString())
+            )
+          }
+        }
       }
     })
 
@@ -1010,8 +1040,8 @@ export function EventForm({
         <div className='space-y-4'>
           <h3 className='text-base font-semibold md:text-lg'>Auction Timing</h3>
           <p className='text-muted-foreground text-xs md:text-sm'>
-            Schedule live auction start and silent auction close times
-            (optional)
+            Schedule silent auction start and close times (optional). Defaults
+            to 1 hour before and 2 hours after the event start time.
           </p>
 
           <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
@@ -1051,7 +1081,7 @@ export function EventForm({
 
                 return (
                   <FormItem className='min-w-0'>
-                    <FormLabel>Live Auction Start</FormLabel>
+                    <FormLabel>Silent Auction Start</FormLabel>
                     <div className='flex flex-col gap-2'>
                       <Popover>
                         <PopoverTrigger asChild>
@@ -1145,7 +1175,7 @@ export function EventForm({
                       </div>
                     </div>
                     <FormDescription>
-                      When the live auction is scheduled to begin
+                      When the silent auction opens for bidding
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

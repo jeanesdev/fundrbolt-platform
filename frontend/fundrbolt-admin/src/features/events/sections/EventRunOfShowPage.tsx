@@ -2,8 +2,17 @@
  * EventRunOfShowPage — Full-page view of the run-of-show for an event.
  * Accessible via /events/:eventId/run-of-show
  */
-import { useCallback, useMemo, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import {
   applyRosTemplate,
   createRosItem,
@@ -34,19 +43,11 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { CalendarClock, ListPlus, Loader2, Plus, Save } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { format } from 'date-fns'
+import { CalendarClock, Clock, ListPlus, Loader2, Plus, Save } from 'lucide-react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { RunOfShowItemForm } from '../components/RunOfShowItemForm'
 import { SortableRunOfShowItem } from '../components/SortableRunOfShowItem'
 
@@ -91,6 +92,31 @@ export function EventRunOfShowPage() {
     [data?.items]
   )
   const itemIds = useMemo(() => items.map((i) => i.id), [items])
+
+  type AuctionMarker = {
+    type: 'silent_auction_start' | 'silent_auction_close'
+    time: Date
+    label: string
+  }
+
+  const auctionMarkers = useMemo((): AuctionMarker[] => {
+    const markers: AuctionMarker[] = []
+    if (data?.silent_auction_start_datetime) {
+      markers.push({
+        type: 'silent_auction_start',
+        time: new Date(data.silent_auction_start_datetime),
+        label: 'Silent Auction Opens',
+      })
+    }
+    if (data?.silent_auction_close_datetime) {
+      markers.push({
+        type: 'silent_auction_close',
+        time: new Date(data.silent_auction_close_datetime),
+        label: 'Silent Auction Closes',
+      })
+    }
+    return markers
+  }, [data?.silent_auction_start_datetime, data?.silent_auction_close_datetime])
 
   // ── Mutations ──────────────────────────────────────────────────
 
@@ -228,13 +254,6 @@ export function EventRunOfShowPage() {
   // ── Warning banners ────────────────────────────────────────────
 
   const hasNoStartTime = !data?.event_start_time && items.length > 0
-  const hasItemsBeforeStart =
-    data?.event_start_time &&
-    items.some(
-      (item) =>
-        new Date(item.scheduled_time) <
-        new Date(data.event_start_time as string)
-    )
 
   if (isLoading) {
     return (
@@ -294,12 +313,6 @@ export function EventRunOfShowPage() {
           accurate.
         </div>
       )}
-      {hasItemsBeforeStart && (
-        <div className='rounded-md border border-orange-300 bg-orange-50 px-4 py-2 text-sm text-orange-800 dark:border-orange-700 dark:bg-orange-950 dark:text-orange-200'>
-          ⚠ Some items are scheduled before the event start time. Consider
-          re-applying a template.
-        </div>
-      )}
 
       {/* Add form */}
       {showAddForm && (
@@ -313,10 +326,34 @@ export function EventRunOfShowPage() {
       )}
 
       {/* Empty state */}
-      {!showAddForm && items.length === 0 && (
+      {!showAddForm && items.length === 0 && auctionMarkers.length === 0 && (
         <div className='flex flex-col items-center gap-2 py-10 text-center'>
           <CalendarClock className='text-muted-foreground h-8 w-8' />
           <p className='text-muted-foreground text-sm'>
+            No run-of-show items yet — add one or apply a template.
+          </p>
+        </div>
+      )}
+
+      {/* Auction markers when no items */}
+      {!showAddForm && items.length === 0 && auctionMarkers.length > 0 && (
+        <div className='grid gap-2'>
+          {auctionMarkers
+            .slice()
+            .sort((a, b) => a.time.getTime() - b.time.getTime())
+            .map((marker) => (
+              <div
+                key={`marker-${marker.type}`}
+                className='flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200'
+              >
+                <Clock className='h-4 w-4 shrink-0' />
+                <span className='font-medium'>{marker.label}</span>
+                <span className='text-blue-600 dark:text-blue-400'>
+                  {format(marker.time, 'h:mm a')}
+                </span>
+              </div>
+            ))}
+          <p className='text-muted-foreground py-4 text-center text-sm'>
             No run-of-show items yet — add one or apply a template.
           </p>
         </div>
@@ -334,21 +371,71 @@ export function EventRunOfShowPage() {
             strategy={verticalListSortingStrategy}
           >
             <div className='grid gap-2'>
-              {items.map((item) => (
-                <SortableRunOfShowItem
-                  key={item.id}
-                  eventId={eventId}
-                  item={item}
-                  eventDate={
-                    data?.event_start_time
-                      ? String(data.event_start_time)
-                      : undefined
+              {(() => {
+                const rows: React.ReactNode[] = []
+                let markerIdx = 0
+                const sortedMarkers = [...auctionMarkers].sort(
+                  (a, b) => a.time.getTime() - b.time.getTime()
+                )
+
+                for (const item of items) {
+                  const itemTime = new Date(item.scheduled_time).getTime()
+                  while (
+                    markerIdx < sortedMarkers.length &&
+                    sortedMarkers[markerIdx].time.getTime() <= itemTime
+                  ) {
+                    const marker = sortedMarkers[markerIdx]
+                    rows.push(
+                      <div
+                        key={`marker-${marker.type}`}
+                        className='flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200'
+                      >
+                        <Clock className='h-4 w-4 shrink-0' />
+                        <span className='font-medium'>{marker.label}</span>
+                        <span className='text-blue-600 dark:text-blue-400'>
+                          {format(marker.time, 'h:mm a')}
+                        </span>
+                      </div>
+                    )
+                    markerIdx++
                   }
-                  onUpdate={handleUpdate}
-                  onDelete={handleDelete}
-                  onToggleComplete={handleToggleComplete}
-                />
-              ))}
+                  rows.push(
+                    <SortableRunOfShowItem
+                      key={item.id}
+                      eventId={eventId}
+                      item={item}
+                      eventDate={
+                        data?.event_start_time
+                          ? String(data.event_start_time)
+                          : undefined
+                      }
+                      onUpdate={handleUpdate}
+                      onDelete={handleDelete}
+                      onToggleComplete={handleToggleComplete}
+                    />
+                  )
+                }
+
+                // Any remaining markers after all items
+                while (markerIdx < sortedMarkers.length) {
+                  const marker = sortedMarkers[markerIdx]
+                  rows.push(
+                    <div
+                      key={`marker-${marker.type}`}
+                      className='flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200'
+                    >
+                      <Clock className='h-4 w-4 shrink-0' />
+                      <span className='font-medium'>{marker.label}</span>
+                      <span className='text-blue-600 dark:text-blue-400'>
+                        {format(marker.time, 'h:mm a')}
+                      </span>
+                    </div>
+                  )
+                  markerIdx++
+                }
+
+                return rows
+              })()}
             </div>
           </SortableContext>
         </DndContext>
@@ -430,11 +517,10 @@ export function EventRunOfShowPage() {
                     key={t.id}
                     type='button'
                     onClick={() => setSelectedTemplateId(t.id)}
-                    className={`w-full rounded-md border px-3 py-2 text-left text-sm transition-colors ${
-                      selectedTemplateId === t.id
-                        ? 'bg-accent border-primary'
-                        : 'hover:bg-accent/50'
-                    }`}
+                    className={`w-full rounded-md border px-3 py-2 text-left text-sm transition-colors ${selectedTemplateId === t.id
+                      ? 'bg-accent border-primary'
+                      : 'hover:bg-accent/50'
+                      }`}
                   >
                     <span className='font-medium'>{t.name}</span>
                     <span className='text-muted-foreground ml-2 text-xs'>

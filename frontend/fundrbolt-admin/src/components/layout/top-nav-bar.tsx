@@ -10,25 +10,25 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Button } from '@/components/ui/button'
 import { InitialAvatar } from '@/components/ui/initial-avatar'
 import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
+    NavigationMenu,
+    NavigationMenuContent,
+    NavigationMenuItem,
+    NavigationMenuLink,
+    NavigationMenuList,
+    NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu'
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
 } from '@/components/ui/sheet'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useSearch } from '@/context/search-provider'
 import { useEventContext } from '@/hooks/use-event-context'
@@ -38,17 +38,17 @@ import { cn } from '@/lib/utils'
 import LogoWhiteGoldPng from '@fundrbolt/shared/assets/logos/fundrbolt-logo-white-gold.png'
 import { Link, useLocation, useNavigate } from '@tanstack/react-router'
 import {
-  BarChart3,
-  Calendar,
-  CreditCard,
-  Gavel,
-  Heart,
-  Menu,
-  SearchIcon,
-  Settings,
-  Users,
+    BarChart3,
+    Calendar,
+    CreditCard,
+    Gavel,
+    Heart,
+    Menu,
+    SearchIcon,
+    Settings,
+    Users,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { iconMap } from './icon-map'
 
 /** Map nav group titles to lucide icons for the trigger buttons */
@@ -316,14 +316,24 @@ function EventChip() {
     (e) => e.id === effectiveEventId || e.slug === effectiveEventId
   )
 
+  const logoUrl = selectedEvent?.logo_url ?? null
+  const selectedNpo = availableNpos.find(
+    (npo) => npo.id === selectedEvent?.npo_id
+  )
+  const npoIconUrl = selectedNpo?.icon_url ?? null
+
+  const [logoError, setLogoError] = useState(false)
+  const [npoIconError, setNpoIconError] = useState(false)
+
+  // Reset error states when the event or NPO changes
+  useEffect(() => {
+    setLogoError(false)
+    setNpoIconError(false)
+  }, [effectiveEventId])
+
   // Only show when inside an event route with a known event
   if (!urlEventId || !selectedEvent) return null
 
-  const logoUrl = selectedEvent.logo_url ?? null
-  const selectedNpo = availableNpos.find(
-    (npo) => npo.id === selectedEvent.npo_id
-  )
-  const npoIconUrl = selectedNpo?.icon_url ?? null
   const tooltipText = [
     selectedEvent.name,
     selectedEvent.npo_name,
@@ -340,17 +350,19 @@ function EventChip() {
         <Tooltip>
           <TooltipTrigger asChild>
             <div className='flex h-7 w-7 shrink-0 cursor-default items-center justify-center overflow-hidden rounded-md border border-white/20'>
-              {logoUrl ? (
+              {logoUrl && !logoError ? (
                 <img
                   src={logoUrl}
                   alt={selectedEvent.name}
                   className='h-full w-full object-cover'
+                  onError={() => setLogoError(true)}
                 />
-              ) : npoIconUrl ? (
+              ) : npoIconUrl && !npoIconError ? (
                 <img
                   src={npoIconUrl}
                   alt={selectedNpo?.name ?? selectedEvent.name}
                   className='h-full w-full object-cover'
+                  onError={() => setNpoIconError(true)}
                 />
               ) : (
                 <InitialAvatar
