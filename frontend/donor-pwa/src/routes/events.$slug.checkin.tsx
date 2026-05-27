@@ -37,10 +37,10 @@ function RouteComponent() {
 
   // Apply branding when event loads
   useEffect(() => {
-    if (event?.branding) {
-      applyBranding(event.branding)
+    if (event) {
+      applyBranding(event)
     }
-  }, [event?.branding, applyBranding])
+  }, [event, applyBranding])
 
   const handleRegistrationFound = (data: CheckInLookupResponse) => {
     setLookupData(data)
