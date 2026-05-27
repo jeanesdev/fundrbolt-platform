@@ -27,7 +27,7 @@ import {
 import apiClient from '@/lib/axios'
 import { getErrorMessage } from '@/lib/error-utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Loader2, Mail, Phone, Plus, Ticket, Trash2, User } from 'lucide-react'
+import { Loader2, Mail, Phone, Ticket, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -59,9 +59,8 @@ export function QuickSaleDialog({
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [checkInImmediately, setCheckInImmediately] = useState(true)
   const [notes, setNotes] = useState('')
-  const [guests, setGuests] = useState<QuickSaleGuestInfo[]>([
-    { name: '', email: null, phone: null },
-  ])
+  const [quantity, setQuantity] = useState(1)
+  const [guests, setGuests] = useState<QuickSaleGuestInfo[]>([])
 
   // Fetch available ticket packages (prefetch in background for instant loading)
   const { data: packagesData, isLoading: packagesLoading } = useQuery({
@@ -90,7 +89,8 @@ export function QuickSaleDialog({
       setPaymentMethod('cash')
       setCheckInImmediately(true)
       setNotes('')
-      setGuests([{ name: '', email: null, phone: null }])
+      setQuantity(1)
+      setGuests([])
     }
   }, [open])
 
@@ -114,30 +114,29 @@ export function QuickSaleDialog({
     },
   })
 
-  // Auto-populate Attendee 1 with buyer info
+  // Auto-adjust guest fields when quantity changes
   useEffect(() => {
-    if (buyerName || buyerEmail || buyerPhone) {
-      setGuests((prev) => {
-        const updated = [...prev]
-        if (updated[0]) {
-          updated[0] = {
-            name: buyerName,
-            email: buyerEmail || null,
-            phone: buyerPhone || null,
-          }
-        }
-        return updated
-      })
-    }
-  }, [buyerName, buyerEmail, buyerPhone])
+    const additionalGuests = quantity - 1
+    if (additionalGuests < 0) return
 
-  const addGuest = () => {
-    setGuests((prev) => [...prev, { name: '', email: null, phone: null }])
-  }
-
-  const removeGuest = (index: number) => {
-    setGuests((prev) => prev.filter((_, i) => i !== index))
-  }
+    setGuests((prev) => {
+      if (prev.length === additionalGuests) return prev
+      if (prev.length < additionalGuests) {
+        // Add more guests
+        return [
+          ...prev,
+          ...Array(additionalGuests - prev.length).fill({
+            name: '',
+            email: null,
+            phone: null,
+          }),
+        ]
+      } else {
+        // Remove extra guests
+        return prev.slice(0, additionalGuests)
+      }
+    })
+  }, [quantity])
 
   const updateGuest = (
     index: number,
@@ -177,28 +176,38 @@ export function QuickSaleDialog({
       toast.error('Please enter buyer email')
       return
     }
-
-    // Filter out empty guests and trim values
-    const validGuests = guests
-      .filter((guest) => guest.name && guest.name.trim())
-      .map((guest) => ({
-        name: guest.name.trim(),
-        email: guest.email?.trim() || null,
-        phone: guest.phone?.trim() || null,
-      }))
-
-    if (validGuests.length === 0) {
-      toast.error('Please enter at least one guest name')
+    if (quantity < 1) {
+      toast.error('Quantity must be at least 1')
       return
     }
 
+    // Validate additional guest names (if quantity > 1)
+    if (quantity > 1) {
+      const emptyGuestIndex = guests.findIndex(
+        (guest) => !guest.name || !guest.name.trim()
+      )
+      if (emptyGuestIndex !== -1) {
+        toast.error(
+          `Please enter name for Additional Guest ${emptyGuestIndex + 1}`
+        )
+        return
+      }
+    }
+
+    // Trim guest values
+    const trimmedGuests = guests.map((guest) => ({
+      name: guest.name.trim(),
+      email: guest.email?.trim() || null,
+      phone: guest.phone?.trim() || null,
+    }))
+
     const payload: QuickSaleRequest = {
       ticket_package_id: selectedPackageId,
-      quantity: validGuests.length,
+      quantity: quantity,
       buyer_name: buyerName.trim(),
       buyer_email: buyerEmail.trim(),
       buyer_phone: buyerPhone.trim() || null,
-      guests: validGuests,
+      guests: trimmedGuests,
       payment_method: paymentMethod,
       check_in_immediately: checkInImmediately,
       notes: notes.trim() || null,
@@ -263,11 +272,31 @@ export function QuickSaleDialog({
             )}
           </div>
 
+          {/* Quantity Selector */}
+          <div className='space-y-2'>
+            <Label htmlFor='quantity'>Number of Tickets *</Label>
+            <Select
+              value={quantity.toString()}
+              onValueChange={(value) => setQuantity(parseInt(value, 10))}
+            >
+              <SelectTrigger id='quantity'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                  <SelectItem key={num} value={num.toString()}>
+                    {num} {num === 1 ? 'Ticket' : 'Tickets'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <Separator />
 
           {/* Buyer Information */}
           <div className='space-y-3'>
-            <h4 className='text-sm font-semibold'>Buyer Information</h4>
+            <h4 className='text-sm font-semibold'>Primary Attendee (Buyer)</h4>
             <div className='space-y-2'>
               <Label htmlFor='buyer-name'>Full Name *</Label>
               <div className='relative'>
@@ -310,71 +339,57 @@ export function QuickSaleDialog({
             </div>
           </div>
 
-          <Separator />
-
-          {/* Guest Information */}
-          <div className='space-y-3'>
-            <div className='flex items-center justify-between'>
-              <h4 className='text-sm font-semibold'>Attendees</h4>
-              <Button
-                type='button'
-                variant='outline'
-                size='sm'
-                onClick={addGuest}
-                className='gap-1'
-              >
-                <Plus className='h-3.5 w-3.5' />
-                Add Attendee
-              </Button>
-            </div>
-            <div className='space-y-3'>
-              {guests.map((guest, index) => (
-                <div
-                  key={index}
-                  className='rounded-lg border p-3 space-y-2'
-                >
-                  <div className='flex items-center justify-between'>
-                    <span className='text-sm font-medium'>
-                      Attendee {index + 1}
-                    </span>
-                    {guests.length > 1 && (
-                      <Button
-                        type='button'
-                        variant='ghost'
-                        size='sm'
-                        onClick={() => removeGuest(index)}
-                        className='h-7 w-7 p-0 text-destructive hover:text-destructive'
-                      >
-                        <Trash2 className='h-3.5 w-3.5' />
-                      </Button>
-                    )}
-                  </div>
-                  <Input
-                    placeholder='Full Name *'
-                    value={guest.name}
-                    onChange={(e) =>
-                      updateGuest(index, 'name', e.target.value)
-                    }
-                  />
-                  <Input
-                    placeholder='Email (optional)'
-                    type='email'
-                    value={guest.email ?? ''}
-                    onChange={(e) =>
-                      updateGuest(index, 'email', e.target.value)
-                    }
-                  />
-                  <Input
-                    placeholder='Phone (optional)'
-                    value={guest.phone ?? ''}
-                    onChange={(e) =>
-                      updateGuest(index, 'phone', formatPhoneInput(e.target.value))
-                    }
-                  />
+          {/* Additional Guest Information */}
+          {quantity > 1 && (
+            <>
+              <Separator />
+              <div className='space-y-3'>
+                <h4 className='text-sm font-semibold'>
+                  Additional Attendees ({quantity - 1})
+                </h4>
+                <div className='space-y-3'>
+                  {guests.map((guest, index) => (
+                    <div
+                      key={index}
+                      className='rounded-lg border p-3 space-y-2'
+                    >
+                      <div className='flex items-center justify-between'>
+                        <span className='text-sm font-medium'>
+                          Additional Guest {index + 1}
+                        </span>
+                      </div>
+                      <Input
+                        placeholder='Full Name *'
+                        value={guest.name}
+                        onChange={(e) =>
+                          updateGuest(index, 'name', e.target.value)
+                        }
+                      />
+                      <Input
+                        placeholder='Email (optional)'
+                        type='email'
+                        value={guest.email ?? ''}
+                        onChange={(e) =>
+                          updateGuest(index, 'email', e.target.value)
+                        }
+                      />
+                      <Input
+                        placeholder='Phone (optional)'
+                        value={guest.phone ?? ''}
+                        onChange={(e) =>
+                          updateGuest(
+                            index,
+                            'phone',
+                            formatPhoneInput(e.target.value)
+                          )
+                        }
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+            </>
+          )}
 
           <Separator />
 
@@ -423,20 +438,17 @@ export function QuickSaleDialog({
           </div>
 
           {/* Summary */}
-          {selectedPackage && guests.filter((g) => g.name.trim()).length > 0 && (
+          {selectedPackage && quantity > 0 && (
             <div className='rounded-lg bg-muted p-3'>
               <div className='flex items-center justify-between text-sm'>
                 <span className='font-medium'>Total:</span>
                 <span className='font-bold'>
-                  ${(
-                    selectedPackage.price *
-                    guests.filter((g) => g.name.trim()).length
-                  ).toFixed(2)}
+                  ${(selectedPackage.price * quantity).toFixed(2)}
                 </span>
               </div>
               <p className='text-xs text-muted-foreground mt-1'>
-                {guests.filter((g) => g.name.trim()).length} ×{' '}
-                {selectedPackage.name} @ ${selectedPackage.price.toFixed(2)}
+                {quantity} × {selectedPackage.name} @ $
+                {selectedPackage.price.toFixed(2)}
               </p>
             </div>
           )}
