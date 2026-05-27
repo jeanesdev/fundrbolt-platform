@@ -65,17 +65,26 @@ export function QuickSaleDialog({
     useState(false)
 
   // Fetch available ticket packages (prefetch in background for instant loading)
-  const { data: packagesData, isLoading: packagesLoading } = useQuery({
+  const {
+    data: packagesData,
+    isLoading: packagesLoading,
+    error: packagesError,
+    isError: packagesIsError,
+  } = useQuery({
     queryKey: ['ticket-packages', eventId],
     queryFn: async () => {
+      console.log('[QuickSale] Fetching packages for event:', eventId)
       const response = await apiClient.get<TicketPackage[]>(
-        `/admin/events/${eventId}/packages`
+        `/admin/events/${eventId}/packages`,
+        { timeout: 30000 } // 30 second timeout for slow backend
       )
+      console.log('[QuickSale] Packages fetched:', response.data)
       return response.data
     },
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    retry: 2, // Retry twice on failure
   })
 
   const packages = packagesData?.filter((pkg) => pkg.is_enabled) ?? []
@@ -270,6 +279,10 @@ export function QuickSaleDialog({
               <div className='flex items-center gap-2 text-sm text-muted-foreground'>
                 <Loader2 className='h-4 w-4 animate-spin' />
                 Loading packages...
+              </div>
+            ) : packagesIsError ? (
+              <div className='rounded-md bg-destructive/10 p-3 text-sm text-destructive'>
+                Failed to load ticket packages. {packagesError instanceof Error ? packagesError.message : 'Please try again.'}
               </div>
             ) : packages.length === 0 ? (
               <p className='text-sm text-muted-foreground'>
