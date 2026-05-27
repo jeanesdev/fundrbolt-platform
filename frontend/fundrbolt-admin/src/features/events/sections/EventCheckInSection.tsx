@@ -1,4 +1,5 @@
 import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
+import { CheckInAssignmentDialog } from '@/components/checkin/CheckInAssignmentDialog'
 import { QRCodeDialog } from '@/components/checkin/QRCodeDialog'
 import { QuickSaleDialog } from '@/components/checkin/QuickSaleDialog'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
@@ -174,6 +175,11 @@ export function EventCheckInSection() {
   const [addCardLoading, setAddCardLoading] = useState(false)
   const [quickSaleOpen, setQuickSaleOpen] = useState(false)
   const [qrCodeDialogOpen, setQrCodeDialogOpen] = useState(false)
+  const [pendingAttendeeId, setPendingAttendeeId] = useState<string | null>(
+    null
+  )
+  const [assignmentDialogAttendee, setAssignmentDialogAttendee] =
+    useState<Attendee | null>(null)
 
   const activeFilterCount = useMemo(() => {
     let count = 0
@@ -209,22 +215,34 @@ export function EventCheckInSection() {
       targetId,
       attendeeType,
       undo,
+      bidderNumber,
+      tableNumber,
     }: {
       targetId: string
       attendeeType: Attendee['attendee_type']
       undo: boolean
+      bidderNumber?: number
+      tableNumber?: number | null
     }) => {
+      const assignment =
+        !undo && (bidderNumber !== undefined || tableNumber !== undefined)
+          ? {
+              bidder_number: bidderNumber,
+              table_number: tableNumber ?? undefined,
+            }
+          : undefined
+
       if (attendeeType === 'guest') {
         if (undo) {
           return checkinService.undoCheckInGuest(targetId)
         }
-        return checkinService.checkInGuest(targetId)
+        return checkinService.checkInGuest(targetId, assignment)
       }
 
       if (undo) {
         return checkinService.undoCheckInRegistration(targetId)
       }
-      return checkinService.checkInRegistration(targetId)
+      return checkinService.checkInRegistration(targetId, assignment)
     },
     onSuccess: (_response, variables) => {
       const noun = variables.attendeeType === 'guest' ? 'Guest' : 'Registration'
@@ -456,16 +474,58 @@ export function EventCheckInSection() {
   }, [attendees, filters, searchQuery])
 
   const handleToggleCheckIn = (attendee: Attendee, checkedIn: boolean) => {
+    if (!checkedIn) {
+      // Checking IN — show assignment dialog first
+      setAssignmentDialogAttendee(attendee)
+      return
+    }
+
+    // Undoing check-in — proceed immediately
     const targetId =
       attendee.attendee_type === 'guest'
         ? attendee.id
         : attendee.registration_id
 
-    updateCheckinMutation.mutate({
-      targetId,
-      attendeeType: attendee.attendee_type,
-      undo: checkedIn,
-    })
+    setPendingAttendeeId(attendee.id)
+    updateCheckinMutation.mutate(
+      {
+        targetId,
+        attendeeType: attendee.attendee_type,
+        undo: true,
+      },
+      {
+        onSettled: () => setPendingAttendeeId(null),
+      }
+    )
+  }
+
+  const handleAssignmentConfirm = (
+    bidderNumber: number,
+    tableNumber: number | null
+  ) => {
+    const attendee = assignmentDialogAttendee
+    if (!attendee) return
+
+    setAssignmentDialogAttendee(null)
+
+    const targetId =
+      attendee.attendee_type === 'guest'
+        ? attendee.id
+        : attendee.registration_id
+
+    setPendingAttendeeId(attendee.id)
+    updateCheckinMutation.mutate(
+      {
+        targetId,
+        attendeeType: attendee.attendee_type,
+        undo: false,
+        bidderNumber,
+        tableNumber,
+      },
+      {
+        onSettled: () => setPendingAttendeeId(null),
+      }
+    )
   }
 
   const openManageDialog = async (attendee: Attendee) => {
@@ -905,14 +965,14 @@ export function EventCheckInSection() {
                               onClick={() =>
                                 handleToggleCheckIn(attendee, checkedIn)
                               }
-                              disabled={updateCheckinMutation.isPending}
+                              disabled={pendingAttendeeId === attendee.id}
                               aria-label={
                                 checkedIn
                                   ? 'Undo check-in'
                                   : 'Check in attendee'
                               }
                             >
-                              {updateCheckinMutation.isPending ? (
+                              {pendingAttendeeId === attendee.id ? (
                                 <Loader2 className='h-4 w-4 animate-spin' />
                               ) : checkedIn ? (
                                 <RotateCcw className='h-4 w-4' />
@@ -1201,7 +1261,7 @@ export function EventCheckInSection() {
                                 onClick={() =>
                                   handleToggleCheckIn(attendee, checkedIn)
                                 }
-                                disabled={updateCheckinMutation.isPending}
+                                disabled={pendingAttendeeId === attendee.id}
                                 aria-label={
                                   checkedIn
                                     ? 'Undo check-in'
@@ -1213,7 +1273,7 @@ export function EventCheckInSection() {
                                     : 'Check in attendee'
                                 }
                               >
-                                {updateCheckinMutation.isPending ? (
+                                {pendingAttendeeId === attendee.id ? (
                                   <Loader2 className='h-4 w-4 animate-spin' />
                                 ) : checkedIn ? (
                                   <RotateCcw className='h-4 w-4' />
@@ -1651,6 +1711,15 @@ export function EventCheckInSection() {
         onOpenChange={setQrCodeDialogOpen}
         eventSlug={currentEvent.slug}
         eventName={currentEvent.name}
+      />
+
+      {/* Check-In Assignment Dialog */}
+      <CheckInAssignmentDialog
+        open={assignmentDialogAttendee !== null}
+        eventId={currentEvent.id}
+        attendeeName={assignmentDialogAttendee?.name ?? 'Attendee'}
+        onConfirm={handleAssignmentConfirm}
+        onCancel={() => setAssignmentDialogAttendee(null)}
       />
     </div>
   )

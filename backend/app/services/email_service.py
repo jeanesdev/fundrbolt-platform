@@ -328,6 +328,69 @@ The FundrBolt Team
             to_email, subject, body, "password_reset", html_body
         )
 
+    async def send_account_setup_email(
+        self, to_email: str, setup_token: str, user_name: str | None = None
+    ) -> bool:
+        """
+        Send account setup email for admin-invited users.
+
+        This email welcomes the user, explains they were invited by an administrator,
+        and provides a link to set their password and activate their account.
+
+        Args:
+            to_email: Recipient email address
+            setup_token: Account setup token (reuses password reset token infrastructure)
+            user_name: Optional user's first name for personalization
+
+        Returns:
+            True if email sent successfully, False otherwise
+
+        Raises:
+            EmailSendError: If email fails to send after all retries
+        """
+        # Use password-reset-confirm route for account setup
+        # This will allow user to set password and auto-verify email
+        setup_url = f"{settings.frontend_admin_url}/password-reset-confirm?token={setup_token}"
+
+        # Email content
+        subject = "Welcome to FundrBolt - Complete Your Account Setup"
+        greeting = f"Hi {user_name}," if user_name else "Hi,"
+        body = f"""
+{greeting}
+
+Welcome to FundrBolt! An administrator has created an account for you.
+
+To get started, please click the link below to set your password and activate your account:
+{setup_url}
+
+This link will expire in 24 hours.
+
+Once you've set your password, you'll be able to sign in and access all features.
+
+Best regards,
+The FundrBolt Team
+        """.strip()
+
+        # HTML version with logo
+        html_body = _create_email_html_template(
+            heading="Welcome to FundrBolt!",
+            body_paragraphs=[
+                f"Welcome to FundrBolt{', ' + user_name if user_name else ''}! An administrator has created an account for you.",
+                "To get started, you'll need to set your password and activate your account.",
+                "Click the button below to complete your account setup. This link will expire in 24 hours.",
+                "Once you've set your password, you'll be able to sign in and access all features.",
+            ],
+            cta_text="Complete Account Setup",
+            cta_url=setup_url,
+            footer_text="If you believe you received this email in error, please contact your administrator or ignore this email.",
+            logo_url=self._get_logo_url("dark"),  # White/gold logo on navy background
+        )
+
+        # Send with retry logic
+        return await self._send_email_with_retry(
+            to_email, subject, body, "account_setup", html_body
+        )
+
     async def send_verification_email(
         self,
         to_email: str,

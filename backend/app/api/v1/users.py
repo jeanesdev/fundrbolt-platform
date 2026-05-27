@@ -494,31 +494,30 @@ async def create_user(
             ip_address=ip_address,
         )
 
-        # Generate and send verification email
-        from app.core.security import generate_verification_otp, generate_verification_token
+        # Generate and send account setup email
+        # Use password reset token infrastructure for account setup
         from app.services.email_service import get_email_service
+        from app.services.password_service import PasswordService
         from app.services.redis_service import RedisService
 
-        verification_token = generate_verification_token()
-        otp = generate_verification_otp()
+        setup_token = PasswordService.generate_reset_token()
+        token_hash = PasswordService.hash_token(setup_token)
 
-        # Store both token and OTP in Redis
-        await RedisService.store_email_verification_token(verification_token, user.id)
-        await RedisService.store_email_verification_otp(otp, user.id)
+        # Store setup token in Redis (24 hour expiry)
+        await RedisService.store_password_reset_token(token_hash, user.id)
 
-        # Send verification email
+        # Send account setup email
         email_service = get_email_service()
         try:
-            await email_service.send_verification_email(
+            await email_service.send_account_setup_email(
                 to_email=user.email,
-                verification_token=verification_token,
+                setup_token=setup_token,
                 user_name=user.first_name,
-                otp=otp,
             )
-            logger.info(f"Verification email sent to {user.email} (user_id={user.id})")
+            logger.info(f"Account setup email sent to {user.email} (user_id={user.id})")
         except Exception as e:
-            # Log error but don't fail user creation - admin can resend verification email later
-            logger.error(f"Failed to send verification email to {user.email}: {str(e)}")
+            # Log error but don't fail user creation - admin can resend setup email later
+            logger.error(f"Failed to send account setup email to {user.email}: {str(e)}")
 
         return await build_user_response(user, db)
     except ValueError as e:
