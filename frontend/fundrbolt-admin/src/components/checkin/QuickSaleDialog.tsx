@@ -2,27 +2,27 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import {
-  createQuickSale,
-  type QuickSaleGuestInfo,
-  type QuickSaleRequest,
+    createQuickSale,
+    type QuickSaleGuestInfo,
+    type QuickSaleRequest,
 } from '@/lib/api/quick-sale'
 import apiClient from '@/lib/axios'
 import { getErrorMessage } from '@/lib/error-utils'
@@ -56,7 +56,25 @@ export function QuickSaleDialog({
   const [buyerName, setBuyerName] = useState('')
   const [buyerEmail, setBuyerEmail] = useState('')
   const [buyerPhone, setBuyerPhone] = useState('')
+
+  // Address fields
+  const [addressLine1, setAddressLine1] = useState('')
+  const [addressLine2, setAddressLine2] = useState('')
+  const [city, setCity] = useState('')
+  const [state, setState] = useState('')
+  const [postalCode, setPostalCode] = useState('')
+  const [country, setCountry] = useState('USA')
+
   const [paymentMethod, setPaymentMethod] = useState('cash')
+
+  // Payment details
+  const [cardLastFour, setCardLastFour] = useState('')
+  const [checkNumber, setCheckNumber] = useState('')
+
+  // Bidder and table assignment
+  const [bidderNumber, setBidderNumber] = useState<string>('') // Empty means auto-assign
+  const [tableNumber, setTableNumber] = useState<string>('') // Empty means auto-assign
+
   const [checkInImmediately, setCheckInImmediately] = useState(true)
   const [notes, setNotes] = useState('')
   const [quantity, setQuantity] = useState(1)
@@ -73,12 +91,10 @@ export function QuickSaleDialog({
   } = useQuery({
     queryKey: ['ticket-packages', eventId],
     queryFn: async () => {
-      console.log('[QuickSale] Fetching packages for event:', eventId)
       const response = await apiClient.get<TicketPackage[]>(
         `/admin/events/${eventId}/packages`,
         { timeout: 30000 } // 30 second timeout for slow backend
       )
-      console.log('[QuickSale] Packages fetched:', response.data)
       return response.data
     },
     refetchOnWindowFocus: false,
@@ -97,7 +113,17 @@ export function QuickSaleDialog({
       setBuyerName('')
       setBuyerEmail('')
       setBuyerPhone('')
+      setAddressLine1('')
+      setAddressLine2('')
+      setCity('')
+      setState('')
+      setPostalCode('')
+      setCountry('USA')
       setPaymentMethod('cash')
+      setCardLastFour('')
+      setCheckNumber('')
+      setBidderNumber('')
+      setTableNumber('')
       setCheckInImmediately(true)
       setNotes('')
       setQuantity(1)
@@ -109,11 +135,9 @@ export function QuickSaleDialog({
   // Quick sale mutation
   const quickSaleMutation = useMutation({
     mutationFn: async (payload: QuickSaleRequest) => {
-      console.log('Quick sale payload:', payload)
       return createQuickSale(eventId, payload)
     },
     onSuccess: (response) => {
-      console.log('Quick sale success:', response)
       toast.success(
         `Ticket sale complete! Confirmation code: ${response.confirmation_code}`
       )
@@ -121,12 +145,11 @@ export function QuickSaleDialog({
       onOpenChange(false)
     },
     onError: (error) => {
-      console.error('Quick sale error:', error)
       toast.error(getErrorMessage(error, 'Failed to complete ticket sale'))
     },
   })
 
-  // Auto-adjust guest fields when quantity changes
+  // Auto-adjust guest fields when quantity or open state changes
   useEffect(() => {
     setGuests((prev) => {
       if (prev.length === quantity) return prev
@@ -145,7 +168,7 @@ export function QuickSaleDialog({
         return prev.slice(0, quantity)
       }
     })
-  }, [quantity])
+  }, [quantity, open])
 
   // Auto-copy buyer info to first attendee unless manually edited
   useEffect(() => {
@@ -187,7 +210,7 @@ export function QuickSaleDialog({
     if (index === 0) {
       setFirstAttendeeManuallyEdited(true)
     }
-    
+
     setGuests((prev) =>
       prev.map((guest, i) =>
         i === index
@@ -248,13 +271,30 @@ export function QuickSaleDialog({
       buyer_name: buyerName.trim(),
       buyer_email: buyerEmail.trim(),
       buyer_phone: buyerPhone.trim() || null,
+
+      // Address fields
+      address_line1: addressLine1.trim() || null,
+      address_line2: addressLine2.trim() || null,
+      city: city.trim() || null,
+      state: state.trim() || null,
+      postal_code: postalCode.trim() || null,
+      country: country.trim() || null,
+
       guests: trimmedGuests,
       payment_method: paymentMethod,
+
+      // Payment details
+      card_last_four: paymentMethod === 'credit_card' && cardLastFour.trim() ? cardLastFour.trim() : null,
+      check_number: paymentMethod === 'check' && checkNumber.trim() ? checkNumber.trim() : null,
+
+      // Bidder and table assignment (empty = auto-assign)
+      bidder_number: bidderNumber.trim() ? parseInt(bidderNumber.trim()) : null,
+      table_number: tableNumber.trim() ? parseInt(tableNumber.trim()) : null,
+
       check_in_immediately: checkInImmediately,
       notes: notes.trim() || null,
     }
 
-    console.log('Submitting quick sale:', payload)
     quickSaleMutation.mutate(payload)
   }
 
@@ -384,6 +424,68 @@ export function QuickSaleDialog({
             </div>
           </div>
 
+          {/* Address (Optional) */}
+          <Separator />
+          <div className='space-y-3'>
+            <h4 className='text-sm font-semibold'>Address (Optional)</h4>
+            <div className='grid grid-cols-2 gap-3'>
+              <div className='col-span-2 space-y-2'>
+                <Label htmlFor='address-line1'>Address Line 1</Label>
+                <Input
+                  id='address-line1'
+                  placeholder='123 Main St'
+                  value={addressLine1}
+                  onChange={(e) => setAddressLine1(e.target.value)}
+                />
+              </div>
+              <div className='col-span-2 space-y-2'>
+                <Label htmlFor='address-line2'>Address Line 2</Label>
+                <Input
+                  id='address-line2'
+                  placeholder='Apt 4B'
+                  value={addressLine2}
+                  onChange={(e) => setAddressLine2(e.target.value)}
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label htmlFor='city'>City</Label>
+                <Input
+                  id='city'
+                  placeholder='San Francisco'
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label htmlFor='state'>State/Province</Label>
+                <Input
+                  id='state'
+                  placeholder='CA'
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label htmlFor='postal-code'>Postal Code</Label>
+                <Input
+                  id='postal-code'
+                  placeholder='94102'
+                  value={postalCode}
+                  onChange={(e) => setPostalCode(e.target.value)}
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label htmlFor='country'>Country</Label>
+                <Input
+                  id='country'
+                  placeholder='USA'
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Attendees */}
           <Separator />
           <div className='space-y-3'>
@@ -409,36 +511,36 @@ export function QuickSaleDialog({
                       Attendee {index + 1}
                     </span>
                   </div>
-                      <Input
-                        placeholder='Full Name *'
-                        value={guest.name}
-                        onChange={(e) =>
-                          updateGuest(index, 'name', e.target.value)
-                        }
-                      />
-                      <Input
-                        placeholder='Email (optional)'
-                        type='email'
-                        value={guest.email ?? ''}
-                        onChange={(e) =>
-                          updateGuest(index, 'email', e.target.value)
-                        }
-                      />
-                      <Input
-                        placeholder='Phone (optional)'
-                        value={guest.phone ?? ''}
-                        onChange={(e) =>
-                          updateGuest(
-                            index,
-                            'phone',
-                            formatPhoneInput(e.target.value)
-                          )
-                        }
-                      />
-                    </div>
-                  ))}
+                  <Input
+                    placeholder='Full Name *'
+                    value={guest.name}
+                    onChange={(e) =>
+                      updateGuest(index, 'name', e.target.value)
+                    }
+                  />
+                  <Input
+                    placeholder='Email (optional)'
+                    type='email'
+                    value={guest.email ?? ''}
+                    onChange={(e) =>
+                      updateGuest(index, 'email', e.target.value)
+                    }
+                  />
+                  <Input
+                    placeholder='Phone (optional)'
+                    value={guest.phone ?? ''}
+                    onChange={(e) =>
+                      updateGuest(
+                        index,
+                        'phone',
+                        formatPhoneInput(e.target.value)
+                      )
+                    }
+                  />
                 </div>
-              </div>
+              ))}
+            </div>
+          </div>
 
           <Separator />
 
@@ -457,6 +559,60 @@ export function QuickSaleDialog({
                   <SelectItem value='other'>Other</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Payment Details (conditional) */}
+            {paymentMethod === 'credit_card' && (
+              <div className='space-y-2'>
+                <Label htmlFor='card-last-four'>Card Last 4 Digits</Label>
+                <Input
+                  id='card-last-four'
+                  placeholder='1234'
+                  maxLength={4}
+                  value={cardLastFour}
+                  onChange={(e) => setCardLastFour(e.target.value.replace(/\D/g, ''))}
+                />
+              </div>
+            )}
+
+            {paymentMethod === 'check' && (
+              <div className='space-y-2'>
+                <Label htmlFor='check-number'>Check Number</Label>
+                <Input
+                  id='check-number'
+                  placeholder='Check #'
+                  maxLength={50}
+                  value={checkNumber}
+                  onChange={(e) => setCheckNumber(e.target.value)}
+                />
+              </div>
+            )}
+
+            {/* Bidder Number (auto-assign if empty) */}
+            <div className='space-y-2'>
+              <Label htmlFor='bidder-number'>Bidder Number (100-999, or leave empty to auto-assign)</Label>
+              <Input
+                id='bidder-number'
+                placeholder='Auto-assign'
+                type='number'
+                min={100}
+                max={999}
+                value={bidderNumber}
+                onChange={(e) => setBidderNumber(e.target.value)}
+              />
+            </div>
+
+            {/* Table Number (auto-assign if empty) */}
+            <div className='space-y-2'>
+              <Label htmlFor='table-number'>Table Number (or leave empty to auto-assign)</Label>
+              <Input
+                id='table-number'
+                placeholder='Auto-assign'
+                type='number'
+                min={1}
+                value={tableNumber}
+                onChange={(e) => setTableNumber(e.target.value)}
+              />
             </div>
 
             <div className='flex items-center gap-2'>

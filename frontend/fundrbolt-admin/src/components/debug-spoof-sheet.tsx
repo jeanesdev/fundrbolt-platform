@@ -135,7 +135,7 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
   // Initialise time input when sheet opens
   useEffect(() => {
     if (open && timeBaseSpoofMs !== null) {
-       
+
       setSpoofTimeInput(
         toDateTimeLocalInputValue(new Date(getEffectiveNowMs()))
       )

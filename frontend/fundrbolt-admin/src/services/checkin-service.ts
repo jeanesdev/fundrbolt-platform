@@ -63,6 +63,16 @@ export interface GuestDetailsUpdateRequest {
   phone?: string
 }
 
+export interface CheckInAssignment {
+  bidder_number?: number
+  table_number?: number
+}
+
+export interface NextAssignmentResponse {
+  next_bidder_number: number
+  next_table_number: number | null
+}
+
 class CheckInService {
   async lookup(request: CheckInLookupRequest): Promise<CheckInLookupResponse> {
     const response = await apiClient.post<CheckInLookupResponse>(
@@ -72,16 +82,32 @@ class CheckInService {
     return response.data
   }
 
-  async checkInRegistration(registrationId: string): Promise<CheckInResponse> {
-    const response = await apiClient.post<CheckInResponse>(
-      `/checkin/registrations/${registrationId}`
+  async getNextAssignment(eventId: string): Promise<NextAssignmentResponse> {
+    const response = await apiClient.get<NextAssignmentResponse>(
+      `/checkin/events/${eventId}/next-assignment`,
+      { timeout: 10000 }
     )
     return response.data
   }
 
-  async checkInGuest(guestId: string): Promise<CheckInResponse> {
+  async checkInRegistration(
+    registrationId: string,
+    assignment?: CheckInAssignment
+  ): Promise<CheckInResponse> {
     const response = await apiClient.post<CheckInResponse>(
-      `/checkin/guests/${guestId}`
+      `/checkin/registrations/${registrationId}`,
+      assignment ?? {}
+    )
+    return response.data
+  }
+
+  async checkInGuest(
+    guestId: string,
+    assignment?: CheckInAssignment
+  ): Promise<CheckInResponse> {
+    const response = await apiClient.post<CheckInResponse>(
+      `/checkin/guests/${guestId}`,
+      assignment ?? {}
     )
     return response.data
   }

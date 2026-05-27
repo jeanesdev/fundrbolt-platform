@@ -1,4 +1,5 @@
 import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
+import { CheckInAssignmentDialog } from '@/components/checkin/CheckInAssignmentDialog'
 import { QRCodeDialog } from '@/components/checkin/QRCodeDialog'
 import { QuickSaleDialog } from '@/components/checkin/QuickSaleDialog'
 import { DataTableViewToggle } from '@/components/data-table/view-toggle'
@@ -27,6 +28,13 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import {
   Table,
@@ -45,10 +53,14 @@ import {
 } from '@/lib/api/admin-payments'
 import {
   assignBidderNumber,
+  assignGuestToTable,
   assignRegistrationBidderNumber,
+  assignRegistrationToTable,
+  getNextAvailableBidderNumber,
 } from '@/lib/api/admin-seating'
 import { getErrorMessage } from '@/lib/error-utils'
 import { checkinService } from '@/services/checkin-service'
+import { fetchEventTables } from '@/services/seating-service'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Check,
@@ -135,7 +147,18 @@ type EditFormState = {
   email: string
   phone: string
   bidderNumber: string
+  tableNumber: string
   replacementEmail: string
+  organizationName: string
+  addressLine1: string
+  addressLine2: string
+  city: string
+  state: string
+  postalCode: string
+  country: string
+}
+
+type ContactSnapshot = {
   organizationName: string
   addressLine1: string
   addressLine2: string
@@ -150,6 +173,7 @@ const defaultEditForm: EditFormState = {
   email: '',
   phone: '',
   bidderNumber: '',
+  tableNumber: '',
   replacementEmail: '',
   organizationName: '',
   addressLine1: '',
@@ -174,6 +198,16 @@ export function EventCheckInSection() {
   const [addCardLoading, setAddCardLoading] = useState(false)
   const [quickSaleOpen, setQuickSaleOpen] = useState(false)
   const [qrCodeDialogOpen, setQrCodeDialogOpen] = useState(false)
+  const [pendingAttendeeId, setPendingAttendeeId] = useState<string | null>(
+    null
+  )
+  const [assignmentDialogAttendee, setAssignmentDialogAttendee] =
+    useState<Attendee | null>(null)
+  const [initialContactSnapshot, setInitialContactSnapshot] =
+    useState<ContactSnapshot | null>(null)
+  const [manageAutoAssignLoading, setManageAutoAssignLoading] = useState<
+    'bidder' | 'table' | null
+  >(null)
 
   const activeFilterCount = useMemo(() => {
     let count = 0
@@ -204,27 +238,60 @@ export function EventCheckInSection() {
     },
   })
 
+  // Fetch table metadata for names/custom capacities, but do not block dropdown rendering.
+  const { data: eventTablesData } = useQuery({
+    queryKey: ['event-tables', currentEvent.id],
+    queryFn: async () => {
+      const timeoutAfter = (ms: number) =>
+        new Promise<never>((_, reject) => {
+          window.setTimeout(() => {
+            reject(new Error('Loading tables timed out'))
+          }, ms)
+        })
+
+      return Promise.race([
+        fetchEventTables(currentEvent.id),
+        timeoutAfter(5000),
+      ])
+    },
+    enabled: Boolean(editingAttendee) && Boolean(currentEvent.id),
+    retry: false,
+    staleTime: 30_000,
+  })
+
   const updateCheckinMutation = useMutation({
     mutationFn: async ({
       targetId,
       attendeeType,
       undo,
+      bidderNumber,
+      tableNumber,
     }: {
       targetId: string
       attendeeType: Attendee['attendee_type']
       undo: boolean
+      bidderNumber?: number
+      tableNumber?: number | null
     }) => {
+      const assignment =
+        !undo && (bidderNumber !== undefined || tableNumber !== undefined)
+          ? {
+            bidder_number: bidderNumber,
+            table_number: tableNumber ?? undefined,
+          }
+          : undefined
+
       if (attendeeType === 'guest') {
         if (undo) {
           return checkinService.undoCheckInGuest(targetId)
         }
-        return checkinService.checkInGuest(targetId)
+        return checkinService.checkInGuest(targetId, assignment)
       }
 
       if (undo) {
         return checkinService.undoCheckInRegistration(targetId)
       }
-      return checkinService.checkInRegistration(targetId)
+      return checkinService.checkInRegistration(targetId, assignment)
     },
     onSuccess: (_response, variables) => {
       const noun = variables.attendeeType === 'guest' ? 'Guest' : 'Registration'
@@ -242,6 +309,20 @@ export function EventCheckInSection() {
 
   const saveAttendeeMutation = useMutation({
     mutationFn: async (attendee: Attendee) => {
+      const withTimeout = async <T,>(
+        promise: Promise<T>,
+        label: string,
+        timeoutMs = 15000
+      ): Promise<T> => {
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          window.setTimeout(() => {
+            reject(new Error(`${label} timed out`))
+          }, timeoutMs)
+        })
+
+        return Promise.race([promise, timeoutPromise])
+      }
+
       if (attendee.attendee_type === 'registrant') {
         const trimmedName = editForm.name.trim()
         const nameParts = trimmedName.split(/\s+/).filter(Boolean)
@@ -252,22 +333,28 @@ export function EventCheckInSection() {
           throw new Error('Name is required')
         }
 
-        await checkinService.updateRegistrationDetails(
-          currentEvent.id,
-          attendee.registration_id,
-          {
-            first_name: firstName,
-            last_name: lastName,
-            email: editForm.email.trim() || undefined,
-            phone: editForm.phone.trim() || undefined,
-          }
+        await withTimeout(
+          checkinService.updateRegistrationDetails(
+            currentEvent.id,
+            attendee.registration_id,
+            {
+              first_name: firstName,
+              last_name: lastName,
+              email: editForm.email.trim() || undefined,
+              phone: editForm.phone.trim() || undefined,
+            }
+          ),
+          'Updating registration details'
         )
       } else {
-        await checkinService.updateGuestDetails(currentEvent.id, attendee.id, {
-          name: editForm.name.trim() || undefined,
-          email: editForm.email.trim() || undefined,
-          phone: editForm.phone.trim() || undefined,
-        })
+        await withTimeout(
+          checkinService.updateGuestDetails(currentEvent.id, attendee.id, {
+            name: editForm.name.trim() || undefined,
+            email: editForm.email.trim() || undefined,
+            phone: editForm.phone.trim() || undefined,
+          }),
+          'Updating guest details'
+        )
       }
 
       const nextBidderValue = editForm.bidderNumber.trim()
@@ -283,28 +370,89 @@ export function EventCheckInSection() {
 
         if (bidderNumber !== (attendee.bidder_number ?? null)) {
           if (attendee.attendee_type === 'registrant') {
-            await assignRegistrationBidderNumber(
-              currentEvent.id,
-              attendee.registration_id,
-              bidderNumber
+            await withTimeout(
+              assignRegistrationBidderNumber(
+                currentEvent.id,
+                attendee.registration_id,
+                bidderNumber
+              ),
+              'Assigning bidder number'
             )
           } else {
-            await assignBidderNumber(currentEvent.id, attendee.id, bidderNumber)
+            await withTimeout(
+              assignBidderNumber(currentEvent.id, attendee.id, bidderNumber),
+              'Assigning bidder number'
+            )
           }
         }
       }
 
-      // Save address/company via user update API
-      if (attendee.user_id) {
-        await updateUser(attendee.user_id, {
-          organization_name: editForm.organizationName.trim() || undefined,
-          address_line1: editForm.addressLine1.trim() || undefined,
-          address_line2: editForm.addressLine2.trim() || undefined,
-          city: editForm.city.trim() || undefined,
-          state: editForm.state.trim() || undefined,
-          postal_code: editForm.postalCode.trim() || undefined,
-          country: editForm.country.trim() || undefined,
-        })
+      const nextTableValue = editForm.tableNumber.trim()
+      if (nextTableValue) {
+        const tableNumber = Number.parseInt(nextTableValue, 10)
+        if (Number.isNaN(tableNumber) || tableNumber < 1) {
+          throw new Error('Table number must be 1 or greater')
+        }
+
+        if (tableNumber !== (attendee.table_number ?? null)) {
+          if (attendee.attendee_type === 'registrant') {
+            await withTimeout(
+              assignRegistrationToTable(
+                currentEvent.id,
+                attendee.registration_id,
+                tableNumber
+              ),
+              'Assigning table number'
+            )
+          } else {
+            await withTimeout(
+              assignGuestToTable(currentEvent.id, attendee.id, tableNumber),
+              'Assigning table number'
+            )
+          }
+        }
+      }
+
+      // Save address/company only when contact fields actually changed.
+      const currentContactSnapshot: ContactSnapshot = {
+        organizationName: editForm.organizationName.trim(),
+        addressLine1: editForm.addressLine1.trim(),
+        addressLine2: editForm.addressLine2.trim(),
+        city: editForm.city.trim(),
+        state: editForm.state.trim(),
+        postalCode: editForm.postalCode.trim(),
+        country: editForm.country.trim(),
+      }
+
+      const hasContactChanges =
+        attendee.user_id != null &&
+        initialContactSnapshot != null &&
+        (initialContactSnapshot.organizationName !==
+          currentContactSnapshot.organizationName ||
+          initialContactSnapshot.addressLine1 !==
+          currentContactSnapshot.addressLine1 ||
+          initialContactSnapshot.addressLine2 !==
+          currentContactSnapshot.addressLine2 ||
+          initialContactSnapshot.city !== currentContactSnapshot.city ||
+          initialContactSnapshot.state !== currentContactSnapshot.state ||
+          initialContactSnapshot.postalCode !==
+          currentContactSnapshot.postalCode ||
+          initialContactSnapshot.country !== currentContactSnapshot.country)
+
+      if (attendee.user_id && hasContactChanges) {
+        await withTimeout(
+          updateUser(attendee.user_id, {
+            organization_name:
+              currentContactSnapshot.organizationName || undefined,
+            address_line1: currentContactSnapshot.addressLine1 || undefined,
+            address_line2: currentContactSnapshot.addressLine2 || undefined,
+            city: currentContactSnapshot.city || undefined,
+            state: currentContactSnapshot.state || undefined,
+            postal_code: currentContactSnapshot.postalCode || undefined,
+            country: currentContactSnapshot.country || undefined,
+          }),
+          'Updating contact information'
+        )
       }
     },
     onSuccess: () => {
@@ -313,6 +461,7 @@ export function EventCheckInSection() {
         queryKey: ['event-attendees', currentEvent.id],
       })
       queryClient.invalidateQueries({ queryKey: ['users'] })
+      closeManageDialog()
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, 'Failed to save attendee'))
@@ -350,6 +499,63 @@ export function EventCheckInSection() {
         attendee.status !== 'cancelled' && attendee.status !== 'canceled'
     )
   }, [data])
+
+  const manageTableOptions = useMemo(() => {
+    const fallbackTableCount = currentEvent.table_count ?? 0
+    const fallbackCapacity = currentEvent.max_guests_per_table ?? 8
+
+    const occupancyByTable = new Map<number, number>()
+    for (const attendee of attendees) {
+      if (attendee.table_number == null || attendee.table_number < 1) {
+        continue
+      }
+      occupancyByTable.set(
+        attendee.table_number,
+        (occupancyByTable.get(attendee.table_number) ?? 0) + 1
+      )
+    }
+
+    const tableNumbers = new Set<number>()
+    for (
+      let tableNumber = 1;
+      tableNumber <= fallbackTableCount;
+      tableNumber++
+    ) {
+      tableNumbers.add(tableNumber)
+    }
+    for (const tableNumber of occupancyByTable.keys()) {
+      tableNumbers.add(tableNumber)
+    }
+    for (const table of eventTablesData?.tables ?? []) {
+      tableNumbers.add(table.table_number)
+    }
+
+    return Array.from(tableNumbers)
+      .sort((a, b) => a - b)
+      .map((tableNumber) => {
+        const tableMeta = eventTablesData?.tables?.find(
+          (table) => table.table_number === tableNumber
+        )
+        const currentOccupancy = occupancyByTable.get(tableNumber) ?? 0
+        const effectiveCapacity =
+          tableMeta?.effective_capacity ?? fallbackCapacity
+        const availableSeats = Math.max(0, effectiveCapacity - currentOccupancy)
+
+        return {
+          tableNumber,
+          tableName: tableMeta?.table_name ?? null,
+          currentOccupancy,
+          effectiveCapacity,
+          availableSeats,
+          isFull: availableSeats === 0,
+        }
+      })
+  }, [
+    attendees,
+    currentEvent.max_guests_per_table,
+    currentEvent.table_count,
+    eventTablesData?.tables,
+  ])
 
   const checkInSummary = useMemo(() => {
     const checkedInAttendees = attendees.filter((attendee) =>
@@ -456,16 +662,58 @@ export function EventCheckInSection() {
   }, [attendees, filters, searchQuery])
 
   const handleToggleCheckIn = (attendee: Attendee, checkedIn: boolean) => {
+    if (!checkedIn) {
+      // Checking IN — show assignment dialog first
+      setAssignmentDialogAttendee(attendee)
+      return
+    }
+
+    // Undoing check-in — proceed immediately
     const targetId =
       attendee.attendee_type === 'guest'
         ? attendee.id
         : attendee.registration_id
 
-    updateCheckinMutation.mutate({
-      targetId,
-      attendeeType: attendee.attendee_type,
-      undo: checkedIn,
-    })
+    setPendingAttendeeId(attendee.id)
+    updateCheckinMutation.mutate(
+      {
+        targetId,
+        attendeeType: attendee.attendee_type,
+        undo: true,
+      },
+      {
+        onSettled: () => setPendingAttendeeId(null),
+      }
+    )
+  }
+
+  const handleAssignmentConfirm = (
+    bidderNumber: number,
+    tableNumber: number | null
+  ) => {
+    const attendee = assignmentDialogAttendee
+    if (!attendee) return
+
+    setAssignmentDialogAttendee(null)
+
+    const targetId =
+      attendee.attendee_type === 'guest'
+        ? attendee.id
+        : attendee.registration_id
+
+    setPendingAttendeeId(attendee.id)
+    updateCheckinMutation.mutate(
+      {
+        targetId,
+        attendeeType: attendee.attendee_type,
+        undo: false,
+        bidderNumber,
+        tableNumber,
+      },
+      {
+        onSettled: () => setPendingAttendeeId(null),
+      }
+    )
   }
 
   const openManageDialog = async (attendee: Attendee) => {
@@ -476,6 +724,8 @@ export function EventCheckInSection() {
       phone: formatPhoneInput(attendee.phone ?? ''),
       bidderNumber:
         attendee.bidder_number == null ? '' : String(attendee.bidder_number),
+      tableNumber:
+        attendee.table_number == null ? '' : String(attendee.table_number),
       replacementEmail: '',
       organizationName: '',
       addressLine1: '',
@@ -489,8 +739,7 @@ export function EventCheckInSection() {
     if (attendee.user_id) {
       try {
         const user = await getUser(attendee.user_id)
-        setEditForm((prev) => ({
-          ...prev,
+        const snapshot: ContactSnapshot = {
           organizationName: user.organization_name ?? '',
           addressLine1: user.address_line1 ?? '',
           addressLine2: user.address_line2 ?? '',
@@ -498,16 +747,127 @@ export function EventCheckInSection() {
           state: user.state ?? '',
           postalCode: user.postal_code ?? '',
           country: user.country ?? '',
+        }
+        setInitialContactSnapshot(snapshot)
+        setEditForm((prev) => ({
+          ...prev,
+          ...snapshot,
         }))
       } catch {
         // User details not available, fields stay empty
+        setInitialContactSnapshot({
+          organizationName: '',
+          addressLine1: '',
+          addressLine2: '',
+          city: '',
+          state: '',
+          postalCode: '',
+          country: '',
+        })
       }
+    } else {
+      setInitialContactSnapshot(null)
     }
   }
 
   const closeManageDialog = () => {
     setEditingAttendee(null)
     setEditForm(defaultEditForm)
+    setInitialContactSnapshot(null)
+    setManageAutoAssignLoading(null)
+  }
+
+  const handleManageAutoAssign = async (field: 'bidder' | 'table') => {
+    if (!currentEvent.id) {
+      toast.error('Event context is not available yet')
+      return
+    }
+
+    setManageAutoAssignLoading(field)
+
+    const timeoutAfter = (ms: number) =>
+      new Promise<never>((_, reject) => {
+        window.setTimeout(() => {
+          reject(new Error('Auto-assign request timed out'))
+        }, ms)
+      })
+
+    try {
+      if (field === 'bidder') {
+        const usedBidderNumbers = new Set<number>()
+        for (const attendee of attendees) {
+          if (
+            typeof attendee.bidder_number === 'number' &&
+            attendee.bidder_number >= 100 &&
+            attendee.bidder_number <= 999
+          ) {
+            usedBidderNumbers.add(attendee.bidder_number)
+          }
+        }
+
+        let localNextBidder = 100
+        while (
+          usedBidderNumbers.has(localNextBidder) &&
+          localNextBidder <= 999
+        ) {
+          localNextBidder += 1
+        }
+
+        if (localNextBidder <= 999) {
+          setEditForm((prev) => ({
+            ...prev,
+            bidderNumber: String(localNextBidder),
+          }))
+          return
+        }
+
+        // Fallback to API when local attendee data cannot determine an available bidder number.
+        const nextBidder = await Promise.race([
+          getNextAvailableBidderNumber(currentEvent.id),
+          timeoutAfter(10000),
+        ])
+        setEditForm((prev) => ({
+          ...prev,
+          bidderNumber: String(nextBidder.next_bidder_number),
+        }))
+        return
+      }
+
+      // Table auto-assign: find a table with enough seats for the party
+      if (manageTableOptions.length === 0) {
+        toast.error('Table list not loaded yet — please try again in a moment')
+        return
+      }
+
+      // Party size: registrant + their guests; guests themselves count as 1
+      const partySize =
+        editingAttendee?.attendee_type === 'registrant'
+          ? 1 + (editingAttendee.number_of_guests ?? 0)
+          : 1
+
+      // Prefer a table that can fit the whole party; fall back to any non-full table
+      const bestTable =
+        manageTableOptions.find(
+          (tableOption) =>
+            !tableOption.isFull && tableOption.availableSeats >= partySize
+        ) ?? manageTableOptions.find((tableOption) => !tableOption.isFull)
+
+      if (!bestTable) {
+        toast.error('No table has available seats')
+        return
+      }
+
+      setEditForm((prev) => ({
+        ...prev,
+        tableNumber: String(bestTable.tableNumber),
+      }))
+    } catch (err) {
+      toast.error(
+        getErrorMessage(err, 'Failed to fetch auto-assignment values')
+      )
+    } finally {
+      setManageAutoAssignLoading(null)
+    }
   }
 
   const closeAddCardDialog = () => {
@@ -905,14 +1265,14 @@ export function EventCheckInSection() {
                               onClick={() =>
                                 handleToggleCheckIn(attendee, checkedIn)
                               }
-                              disabled={updateCheckinMutation.isPending}
+                              disabled={pendingAttendeeId === attendee.id}
                               aria-label={
                                 checkedIn
                                   ? 'Undo check-in'
                                   : 'Check in attendee'
                               }
                             >
-                              {updateCheckinMutation.isPending ? (
+                              {pendingAttendeeId === attendee.id ? (
                                 <Loader2 className='h-4 w-4 animate-spin' />
                               ) : checkedIn ? (
                                 <RotateCcw className='h-4 w-4' />
@@ -1201,7 +1561,7 @@ export function EventCheckInSection() {
                                 onClick={() =>
                                   handleToggleCheckIn(attendee, checkedIn)
                                 }
-                                disabled={updateCheckinMutation.isPending}
+                                disabled={pendingAttendeeId === attendee.id}
                                 aria-label={
                                   checkedIn
                                     ? 'Undo check-in'
@@ -1213,7 +1573,7 @@ export function EventCheckInSection() {
                                     : 'Check in attendee'
                                 }
                               >
-                                {updateCheckinMutation.isPending ? (
+                                {pendingAttendeeId === attendee.id ? (
                                   <Loader2 className='h-4 w-4 animate-spin' />
                                 ) : checkedIn ? (
                                   <RotateCcw className='h-4 w-4' />
@@ -1392,7 +1752,21 @@ export function EventCheckInSection() {
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label htmlFor='edit-bidder'>Bidder Number</Label>
+                  <div className='flex items-center justify-between gap-2'>
+                    <Label htmlFor='edit-bidder'>Bidder Number</Label>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      onClick={() => handleManageAutoAssign('bidder')}
+                      disabled={manageAutoAssignLoading !== null}
+                    >
+                      {manageAutoAssignLoading === 'bidder' && (
+                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                      )}
+                      Auto Assign
+                    </Button>
+                  </div>
                   <Input
                     id='edit-bidder'
                     value={editForm.bidderNumber}
@@ -1404,6 +1778,58 @@ export function EventCheckInSection() {
                     }
                     placeholder='100-999'
                   />
+                </div>
+                <div className='space-y-2'>
+                  <div className='flex items-center justify-between gap-2'>
+                    <Label htmlFor='edit-table'>Table Number</Label>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      onClick={() => handleManageAutoAssign('table')}
+                      disabled={
+                        manageAutoAssignLoading !== null ||
+                        manageTableOptions.length === 0
+                      }
+                    >
+                      {manageAutoAssignLoading === 'table' && (
+                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                      )}
+                      Auto Assign
+                    </Button>
+                  </div>
+                  <Select
+                    value={editForm.tableNumber}
+                    onValueChange={(value) =>
+                      setEditForm((prev) => ({ ...prev, tableNumber: value }))
+                    }
+                    disabled={manageTableOptions.length === 0}
+                  >
+                    <SelectTrigger id='edit-table'>
+                      <SelectValue placeholder='Select a table…' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {manageTableOptions.map((table) => {
+                        return (
+                          <SelectItem
+                            key={table.tableNumber}
+                            value={String(table.tableNumber)}
+                          >
+                            <span>
+                              Table {table.tableNumber}
+                              {table.tableName ? ` - ${table.tableName}` : ''}
+                            </span>
+                            <span
+                              className={`ml-2 text-xs ${table.isFull ? 'text-destructive font-medium' : 'text-muted-foreground'}`}
+                            >
+                              ({table.availableSeats}/{table.effectiveCapacity}{' '}
+                              open)
+                            </span>
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -1651,6 +2077,15 @@ export function EventCheckInSection() {
         onOpenChange={setQrCodeDialogOpen}
         eventSlug={currentEvent.slug}
         eventName={currentEvent.name}
+      />
+
+      {/* Check-In Assignment Dialog */}
+      <CheckInAssignmentDialog
+        open={assignmentDialogAttendee !== null}
+        eventId={currentEvent.id}
+        attendeeName={assignmentDialogAttendee?.name ?? 'Attendee'}
+        onConfirm={handleAssignmentConfirm}
+        onCancel={() => setAssignmentDialogAttendee(null)}
       />
     </div>
   )

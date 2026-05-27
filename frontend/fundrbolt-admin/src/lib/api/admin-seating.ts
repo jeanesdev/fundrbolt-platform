@@ -72,6 +72,12 @@ export interface TableAssignmentResponse {
   bidder_number?: number | null
 }
 
+export interface RegistrationTableAssignmentResponse {
+  registration_id: string
+  table_number: number
+  assigned_at: string
+}
+
 export interface DonorLabelInfo {
   id: string
   name: string
@@ -186,6 +192,26 @@ export const assignGuestToTable = async (
 ): Promise<TableAssignmentResponse> => {
   const response = await apiClient.patch<TableAssignmentResponse>(
     `/admin/events/${eventId}/guests/${guestId}/table`,
+    { table_number: tableNumber }
+  )
+
+  return response.data
+}
+
+/**
+ * Assign a registration's primary guest to a table.
+ *
+ * @param eventId - Event UUID
+ * @param registrationId - Registration UUID
+ * @param tableNumber - Table number to assign to
+ */
+export const assignRegistrationToTable = async (
+  eventId: string,
+  registrationId: string,
+  tableNumber: number
+): Promise<RegistrationTableAssignmentResponse> => {
+  const response = await apiClient.patch<RegistrationTableAssignmentResponse>(
+    `/admin/events/${eventId}/registrations/${registrationId}/table`,
     { table_number: tableNumber }
   )
 

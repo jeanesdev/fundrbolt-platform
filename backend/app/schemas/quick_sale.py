@@ -22,6 +22,15 @@ class QuickSaleRequest(BaseModel):
     buyer_name: str = Field(..., min_length=1, max_length=255, description="Buyer's full name")
     buyer_email: EmailStr = Field(..., description="Buyer's email address")
     buyer_phone: str | None = Field(None, max_length=20, description="Buyer's phone number")
+
+    # Address fields (optional)
+    address_line1: str | None = Field(None, max_length=255, description="Street address line 1")
+    address_line2: str | None = Field(None, max_length=255, description="Street address line 2")
+    city: str | None = Field(None, max_length=100, description="City")
+    state: str | None = Field(None, max_length=100, description="State/Province")
+    postal_code: str | None = Field(None, max_length=20, description="ZIP/Postal code")
+    country: str | None = Field(None, max_length=100, description="Country")
+
     guests: list[QuickSaleGuestInfo] = Field(
         default_factory=list,
         description="All attendees (buyer is separate and may or may not be attending)",
@@ -29,6 +38,22 @@ class QuickSaleRequest(BaseModel):
     payment_method: str = Field(
         default="cash", description="Payment method: cash, check, card, other"
     )
+    # Payment details (optional, based on payment method)
+    card_last_four: str | None = Field(
+        None, max_length=4, description="Last 4 digits of card (if card payment)"
+    )
+    check_number: str | None = Field(
+        None, max_length=50, description="Check number (if check payment)"
+    )
+
+    # Bidder and table assignment (optional - null means auto-assign)
+    bidder_number: int | None = Field(
+        None, ge=100, le=999, description="Bidder number (100-999), or null to auto-assign"
+    )
+    table_number: int | None = Field(
+        None, ge=1, description="Table number, or null to auto-assign to next available"
+    )
+
     check_in_immediately: bool = Field(
         default=True, description="Check in all guests immediately after purchase"
     )
@@ -46,6 +71,7 @@ class QuickSaleGuestResult(BaseModel):
     is_primary: bool
     checked_in: bool
     bidder_number: int | None = None
+    table_number: int | None = None
 
     class Config:
         from_attributes = True

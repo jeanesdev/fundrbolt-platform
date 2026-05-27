@@ -1,0 +1,7 @@
+                  id                  |       name        | is_enabled |               event_id               |           event_name            |         event_slug
+--------------------------------------+-------------------+------------+--------------------------------------+---------------------------------+-----------------------------
+ ad04de2f-ebc3-4c95-9da4-633e4534bf8c | Gold Sponsor      | t          | 10adb96b-75b8-4a43-8a44-c593cb853e3c | Connect and Celebrate Gala 2026 | connect-celebrate-gala-2026
+ f160b1e6-079e-41f1-a2bf-db189b44b9af | Silver Sponsor    | t          | 10adb96b-75b8-4a43-8a44-c593cb853e3c | Connect and Celebrate Gala 2026 | connect-celebrate-gala-2026
+ de1e92ff-0b03-41a7-b0f0-c170fe6a62bf | General Admission | t          | 10adb96b-75b8-4a43-8a44-c593cb853e3c | Connect and Celebrate Gala 2026 | connect-celebrate-gala-2026
+ ea0a9e4a-370e-4743-b683-0fdc413fee58 | VIP Ticket        | t          | 10adb96b-75b8-4a43-8a44-c593cb853e3c | Connect and Celebrate Gala 2026 | connect-celebrate-gala-2026
+(4 rows)

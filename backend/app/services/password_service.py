@@ -93,6 +93,10 @@ class PasswordService:
         Confirm password reset with token.
 
         Validates token, updates password, revokes all sessions.
+        For admin-invited users (must_change_password=True), this also:
+        - Verifies their email
+        - Activates their account
+        - Clears the must_change_password flag
 
         Args:
             token: Password reset token from email
@@ -119,6 +123,18 @@ class PasswordService:
 
         if not user:
             raise ValueError("User not found")
+
+        # For admin-invited users, this is their first time setting a password
+        # Automatically verify email and activate account
+        is_account_setup = user.must_change_password
+        if is_account_setup:
+            user.email_verified = True
+            user.is_active = True
+            user.must_change_password = False
+            logger.info(
+                f"Account setup completed for admin-invited user: {user.id} - "
+                f"email verified and account activated"
+            )
 
         # Update password
         user.set_password(new_password)

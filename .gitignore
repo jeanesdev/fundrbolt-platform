@@ -66,3 +66,12 @@ dev-dist/
 # Azure setup state (contains passwords/secrets - never commit)
 .azure-setup-state
 .azure-deployment-output.json
+
+# Debug/session screenshots (Copilot agent artifacts)
+*.png
+!frontend/**/*.png
+!backend/**/*.png
+!docs/**/*.png
+!infrastructure/**/*.png
+quick-sale-dialog-snapshot.md
+test_quick_sale.py

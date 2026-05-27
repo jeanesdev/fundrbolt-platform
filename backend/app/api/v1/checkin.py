@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.schemas.event_registration import EventRegistrationResponse
 from app.schemas.registration_guest import RegistrationGuestResponse
+from app.services.bidder_number_service import BidderNumberService
 from app.services.checkin_service import CheckInService
 
 router = APIRouter(prefix="/checkin", tags=["Check-in"])
@@ -71,6 +72,29 @@ class CheckInResponse(BaseModel):
     guest: RegistrationGuestResponse | None = None
 
 
+class CheckInWithAssignmentRequest(BaseModel):
+    """Optional request body for check-in with bidder/table assignment."""
+
+    bidder_number: int | None = Field(
+        default=None,
+        ge=100,
+        le=999,
+        description="Bidder number to assign (100-999). Auto-assigned if not provided.",
+    )
+    table_number: int | None = Field(
+        default=None,
+        ge=1,
+        description="Table number to assign. Auto-assigned if not provided.",
+    )
+
+
+class NextAssignmentResponse(BaseModel):
+    """Response schema for next available bidder/table assignment preview."""
+
+    next_bidder_number: int
+    next_table_number: int | None
+
+
 # ================================
 # Endpoints
 # ================================
@@ -115,17 +139,43 @@ async def lookup_registration(
     )
 
 
+@router.get("/events/{event_id}/next-assignment", response_model=NextAssignmentResponse)
+async def get_next_assignment(
+    event_id: uuid.UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> NextAssignmentResponse:
+    """Get the next available bidder number and table number for an event.
+
+    Used to pre-populate the check-in assignment dialog.
+    """
+    next_bidder = await BidderNumberService.get_next_available_bidder_number(db, event_id)
+    next_table = await CheckInService.get_next_available_table(db, event_id)
+    return NextAssignmentResponse(
+        next_bidder_number=next_bidder,
+        next_table_number=next_table,
+    )
+
+
 @router.post("/registrations/{registration_id}", response_model=CheckInResponse)
 async def check_in_registration(
     registration_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
+    request: CheckInWithAssignmentRequest | None = None,
 ) -> CheckInResponse:
     """Mark a registration as checked in.
 
-    Sets check_in_time to current timestamp.
-    If already checked in, returns existing check-in time.
+    Assigns bidder number and table number if not already assigned.
+    Accepts optional body to specify bidder/table; auto-assigns if not provided.
     """
-    registration = await CheckInService.check_in_registration(db, registration_id)
+    try:
+        registration = await CheckInService.check_in_registration(
+            db,
+            registration_id,
+            bidder_number=request.bidder_number if request else None,
+            table_number=request.table_number if request else None,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
 
     if not registration:
         raise HTTPException(
@@ -144,13 +194,22 @@ async def check_in_registration(
 async def check_in_guest(
     guest_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
+    request: CheckInWithAssignmentRequest | None = None,
 ) -> CheckInResponse:
     """Mark a guest as checked in.
 
-    Sets checked_in flag to true.
-    If already checked in, returns existing status.
+    Assigns bidder number and table number if not already assigned.
+    Accepts optional body to specify bidder/table; auto-assigns if not provided.
     """
-    guest = await CheckInService.check_in_guest(db, guest_id)
+    try:
+        guest = await CheckInService.check_in_guest(
+            db,
+            guest_id,
+            bidder_number=request.bidder_number if request else None,
+            table_number=request.table_number if request else None,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
 
     if not guest:
         raise HTTPException(

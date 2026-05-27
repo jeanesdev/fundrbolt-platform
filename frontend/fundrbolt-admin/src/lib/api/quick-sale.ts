@@ -21,8 +21,26 @@ export interface QuickSaleRequest {
   buyer_name: string
   buyer_email: string
   buyer_phone?: string | null
+
+  // Address fields
+  address_line1?: string | null
+  address_line2?: string | null
+  city?: string | null
+  state?: string | null
+  postal_code?: string | null
+  country?: string | null
+
   guests: QuickSaleGuestInfo[]
   payment_method?: string
+
+  // Payment details
+  card_last_four?: string | null
+  check_number?: string | null
+
+  // Bidder and table assignment (null = auto-assign)
+  bidder_number?: number | null
+  table_number?: number | null
+
   check_in_immediately?: boolean
   notes?: string | null
 }
@@ -36,6 +54,7 @@ export interface QuickSaleGuestResult {
   is_primary: boolean
   checked_in: boolean
   bidder_number: number | null
+  table_number: number | null
 }
 
 export interface QuickSaleResponse {

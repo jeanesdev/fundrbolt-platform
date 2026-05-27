@@ -1,0 +1,7 @@
+                  id                  |              name               |               slug               | status
+--------------------------------------+---------------------------------+----------------------------------+--------
+ a2342a83-0141-4512-88b5-6e460bb11dfd | Spring Gala 2025                | spring-gala-2025                 | draft
+ 1145ecbb-9493-4e07-b6fe-d725915d55ea | CHN Christmas Gala 2025         | chn-christmas-gala-2025-2        | draft
+ 679b340d-c417-440d-be25-d54709a8545c | Annual Spring Gala 2016         | annual-spring-gala-2016-20232ad8 | draft
+ 10adb96b-75b8-4a43-8a44-c593cb853e3c | Connect and Celebrate Gala 2026 | connect-celebrate-gala-2026      | active
+(4 rows)
