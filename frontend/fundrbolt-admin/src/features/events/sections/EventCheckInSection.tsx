@@ -49,6 +49,7 @@ import {
   assignGuestToTable,
   assignRegistrationBidderNumber,
   assignRegistrationToTable,
+  getNextAvailableBidderNumber,
 } from '@/lib/api/admin-seating'
 import { getErrorMessage } from '@/lib/error-utils'
 import { checkinService } from '@/services/checkin-service'
@@ -616,18 +617,22 @@ export function EventCheckInSection() {
       })
 
     try {
-      const assignment = await Promise.race([
-        checkinService.getNextAssignment(currentEvent.id),
-        timeoutAfter(10000),
-      ])
-
       if (field === 'bidder') {
+        const nextBidder = await Promise.race([
+          getNextAvailableBidderNumber(currentEvent.id),
+          timeoutAfter(10000),
+        ])
         setEditForm((prev) => ({
           ...prev,
-          bidderNumber: String(assignment.next_bidder_number),
+          bidderNumber: String(nextBidder.next_bidder_number),
         }))
         return
       }
+
+      const assignment = await Promise.race([
+        checkinService.getNextAssignment(currentEvent.id),
+        timeoutAfter(15000),
+      ])
 
       if (assignment.next_table_number == null) {
         toast.error('No table is currently available for auto-assign')
