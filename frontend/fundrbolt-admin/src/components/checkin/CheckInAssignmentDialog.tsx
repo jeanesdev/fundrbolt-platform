@@ -32,18 +32,28 @@ export function CheckInAssignmentDialog({
   const [bidderInput, setBidderInput] = useState('')
   const [tableInput, setTableInput] = useState('')
 
-  const { data, isLoading } = useQuery({
+  const { data, isPending, isFetching, isError, error, refetch } = useQuery({
     queryKey: ['next-assignment', eventId],
     queryFn: () => checkinService.getNextAssignment(eventId),
-    enabled: open,
+    enabled: open && Boolean(eventId),
     staleTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false,
   })
 
-  // Pre-fill when data arrives
+  // Pre-fill when data arrives — only if the user hasn't already typed anything
   useEffect(() => {
     if (data) {
-      setBidderInput(String(data.next_bidder_number))
-      setTableInput(data.next_table_number != null ? String(data.next_table_number) : '')
+      setBidderInput((prev) =>
+        prev === '' ? String(data.next_bidder_number) : prev
+      )
+      setTableInput((prev) =>
+        prev === ''
+          ? data.next_table_number != null
+            ? String(data.next_table_number)
+            : ''
+          : prev
+      )
     }
   }, [data])
 
@@ -63,40 +73,95 @@ export function CheckInAssignmentDialog({
   const tableValid =
     tableNumber === null || (!isNaN(tableNumber) && tableNumber >= 1)
 
-  const canSubmit = bidderValid && tableValid && !isLoading
+  const canSubmit = bidderValid && tableValid
+  const isInitialLoading = open && isPending && !data
 
   const handleConfirm = () => {
     if (!canSubmit) return
     onConfirm(bidderNumber, tableNumber)
   }
 
+  const handleAutoAssignBidder = () => {
+    if (!data) return
+    setBidderInput(String(data.next_bidder_number))
+  }
+
+  const handleAutoAssignTable = () => {
+    if (!data || data.next_table_number == null) {
+      setTableInput('')
+      return
+    }
+    setTableInput(String(data.next_table_number))
+  }
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className='sm:max-w-sm'>
         <DialogHeader>
           <DialogTitle>Check In Attendee</DialogTitle>
           <DialogDescription>
             Assign a bidder number and table to{' '}
-            <span className="font-medium text-foreground">{attendeeName}</span>
+            <span className='text-foreground font-medium'>{attendeeName}</span>
           </DialogDescription>
         </DialogHeader>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-6">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-1.5">
-              <Label htmlFor="bidder-number">
-                Bidder Number{' '}
-                <span className="text-muted-foreground font-normal">
-                  (100–999)
-                </span>
-              </Label>
+        <div className='space-y-3 py-2'>
+          {isInitialLoading && (
+            <div className='text-muted-foreground flex items-center gap-2 text-sm'>
+              <Loader2 className='h-4 w-4 animate-spin' />
+              Fetching suggested bidder and table numbers...
+            </div>
+          )}
+
+          {isError && (
+            <div className='rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-sm'>
+              <p className='text-amber-200'>
+                Could not load auto-assignment suggestions. You can still enter
+                values manually.
+              </p>
+              <p className='text-muted-foreground mt-1 text-xs'>
+                {error instanceof Error ? error.message : 'Request failed'}
+              </p>
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                className='mt-2'
+                onClick={() => refetch()}
+              >
+                Retry
+              </Button>
+            </div>
+          )}
+
+          {isFetching && !isInitialLoading && (
+            <div className='text-muted-foreground text-xs'>
+              Refreshing assignment suggestions...
+            </div>
+          )}
+
+          <div className='grid gap-4'>
+            <div className='grid gap-1.5'>
+              <div className='flex items-center justify-between gap-2'>
+                <Label htmlFor='bidder-number'>
+                  Bidder Number{' '}
+                  <span className='text-muted-foreground font-normal'>
+                    (100-999)
+                  </span>
+                </Label>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  onClick={handleAutoAssignBidder}
+                  disabled={!data || isFetching}
+                >
+                  Auto Assign
+                </Button>
+              </div>
               <Input
-                id="bidder-number"
-                type="number"
+                id='bidder-number'
+                type='number'
                 min={100}
                 max={999}
                 value={bidderInput}
@@ -106,41 +171,52 @@ export function CheckInAssignmentDialog({
                 }
               />
               {bidderInput && !bidderValid && (
-                <p className="text-xs text-destructive">
+                <p className='text-destructive text-xs'>
                   Must be between 100 and 999
                 </p>
               )}
             </div>
 
-            <div className="grid gap-1.5">
-              <Label htmlFor="table-number">
-                Table Number{' '}
-                <span className="text-muted-foreground font-normal">
-                  (optional)
-                </span>
-              </Label>
+            <div className='grid gap-1.5'>
+              <div className='flex items-center justify-between gap-2'>
+                <Label htmlFor='table-number'>
+                  Table Number{' '}
+                  <span className='text-muted-foreground font-normal'>
+                    (optional)
+                  </span>
+                </Label>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  onClick={handleAutoAssignTable}
+                  disabled={!data || isFetching}
+                >
+                  Auto Assign
+                </Button>
+              </div>
               <Input
-                id="table-number"
-                type="number"
+                id='table-number'
+                type='number'
                 min={1}
                 value={tableInput}
                 onChange={(e) => setTableInput(e.target.value)}
-                placeholder="Leave blank to skip"
+                placeholder='Auto assign if blank'
                 className={
                   tableInput && !tableValid ? 'border-destructive' : ''
                 }
               />
               {tableInput && !tableValid && (
-                <p className="text-xs text-destructive">
+                <p className='text-destructive text-xs'>
                   Must be a positive number
                 </p>
               )}
             </div>
           </div>
-        )}
+        </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>
+          <Button variant='outline' onClick={onCancel}>
             Cancel
           </Button>
           <Button onClick={handleConfirm} disabled={!canSubmit}>

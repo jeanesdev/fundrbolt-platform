@@ -84,7 +84,8 @@ class CheckInService {
 
   async getNextAssignment(eventId: string): Promise<NextAssignmentResponse> {
     const response = await apiClient.get<NextAssignmentResponse>(
-      `/checkin/events/${eventId}/next-assignment`
+      `/checkin/events/${eventId}/next-assignment`,
+      { timeout: 10000 }
     )
     return response.data
   }

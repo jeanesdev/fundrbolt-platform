@@ -46,7 +46,9 @@ import {
 } from '@/lib/api/admin-payments'
 import {
   assignBidderNumber,
+  assignGuestToTable,
   assignRegistrationBidderNumber,
+  assignRegistrationToTable,
 } from '@/lib/api/admin-seating'
 import { getErrorMessage } from '@/lib/error-utils'
 import { checkinService } from '@/services/checkin-service'
@@ -136,6 +138,7 @@ type EditFormState = {
   email: string
   phone: string
   bidderNumber: string
+  tableNumber: string
   replacementEmail: string
   organizationName: string
   addressLine1: string
@@ -151,6 +154,7 @@ const defaultEditForm: EditFormState = {
   email: '',
   phone: '',
   bidderNumber: '',
+  tableNumber: '',
   replacementEmail: '',
   organizationName: '',
   addressLine1: '',
@@ -180,6 +184,9 @@ export function EventCheckInSection() {
   )
   const [assignmentDialogAttendee, setAssignmentDialogAttendee] =
     useState<Attendee | null>(null)
+  const [manageAutoAssignLoading, setManageAutoAssignLoading] = useState<
+    'bidder' | 'table' | null
+  >(null)
 
   const activeFilterCount = useMemo(() => {
     let count = 0
@@ -308,6 +315,26 @@ export function EventCheckInSection() {
             )
           } else {
             await assignBidderNumber(currentEvent.id, attendee.id, bidderNumber)
+          }
+        }
+      }
+
+      const nextTableValue = editForm.tableNumber.trim()
+      if (nextTableValue) {
+        const tableNumber = Number.parseInt(nextTableValue, 10)
+        if (Number.isNaN(tableNumber) || tableNumber < 1) {
+          throw new Error('Table number must be 1 or greater')
+        }
+
+        if (tableNumber !== (attendee.table_number ?? null)) {
+          if (attendee.attendee_type === 'registrant') {
+            await assignRegistrationToTable(
+              currentEvent.id,
+              attendee.registration_id,
+              tableNumber
+            )
+          } else {
+            await assignGuestToTable(currentEvent.id, attendee.id, tableNumber)
           }
         }
       }
@@ -536,6 +563,8 @@ export function EventCheckInSection() {
       phone: formatPhoneInput(attendee.phone ?? ''),
       bidderNumber:
         attendee.bidder_number == null ? '' : String(attendee.bidder_number),
+      tableNumber:
+        attendee.table_number == null ? '' : String(attendee.table_number),
       replacementEmail: '',
       organizationName: '',
       addressLine1: '',
@@ -568,6 +597,35 @@ export function EventCheckInSection() {
   const closeManageDialog = () => {
     setEditingAttendee(null)
     setEditForm(defaultEditForm)
+    setManageAutoAssignLoading(null)
+  }
+
+  const handleManageAutoAssign = async (field: 'bidder' | 'table') => {
+    setManageAutoAssignLoading(field)
+    try {
+      const assignment = await checkinService.getNextAssignment(currentEvent.id)
+      if (field === 'bidder') {
+        setEditForm((prev) => ({
+          ...prev,
+          bidderNumber: String(assignment.next_bidder_number),
+        }))
+        return
+      }
+
+      if (assignment.next_table_number == null) {
+        toast.error('No table is currently available for auto-assign')
+        return
+      }
+
+      setEditForm((prev) => ({
+        ...prev,
+        tableNumber: String(assignment.next_table_number),
+      }))
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to fetch auto-assignment values'))
+    } finally {
+      setManageAutoAssignLoading(null)
+    }
   }
 
   const closeAddCardDialog = () => {
@@ -1452,7 +1510,21 @@ export function EventCheckInSection() {
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label htmlFor='edit-bidder'>Bidder Number</Label>
+                  <div className='flex items-center justify-between gap-2'>
+                    <Label htmlFor='edit-bidder'>Bidder Number</Label>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      onClick={() => handleManageAutoAssign('bidder')}
+                      disabled={manageAutoAssignLoading !== null}
+                    >
+                      {manageAutoAssignLoading === 'bidder' && (
+                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                      )}
+                      Auto Assign
+                    </Button>
+                  </div>
                   <Input
                     id='edit-bidder'
                     value={editForm.bidderNumber}
@@ -1463,6 +1535,34 @@ export function EventCheckInSection() {
                       }))
                     }
                     placeholder='100-999'
+                  />
+                </div>
+                <div className='space-y-2'>
+                  <div className='flex items-center justify-between gap-2'>
+                    <Label htmlFor='edit-table'>Table Number</Label>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      onClick={() => handleManageAutoAssign('table')}
+                      disabled={manageAutoAssignLoading !== null}
+                    >
+                      {manageAutoAssignLoading === 'table' && (
+                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                      )}
+                      Auto Assign
+                    </Button>
+                  </div>
+                  <Input
+                    id='edit-table'
+                    value={editForm.tableNumber}
+                    onChange={(event) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        tableNumber: event.target.value,
+                      }))
+                    }
+                    placeholder='1+'
                   />
                 </div>
               </div>
