@@ -1,8 +1,36 @@
-import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
-import { CheckInAssignmentDialog } from '@/components/checkin/CheckInAssignmentDialog'
-import { QRCodeDialog } from '@/components/checkin/QRCodeDialog'
-import { QuickSaleDialog } from '@/components/checkin/QuickSaleDialog'
-import { DataTableViewToggle } from '@/components/data-table/view-toggle'
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { checkinService } from '@/services/checkin-service'
+import { fetchEventTables } from '@/services/seating-service'
+import {
+  Check,
+  ChevronDown,
+  CreditCard,
+  Crown,
+  Filter,
+  Loader2,
+  Plus,
+  QrCode,
+  RotateCcw,
+  Search,
+  Settings2,
+  X,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
+import {
+  adminCreatePaymentProfile,
+  adminCreatePaymentSession,
+} from '@/lib/api/admin-payments'
+import {
+  assignBidderNumber,
+  assignGuestToTable,
+  assignRegistrationBidderNumber,
+  assignRegistrationToTable,
+  getNextAvailableBidderNumber,
+} from '@/lib/api/admin-seating'
+import { getErrorMessage } from '@/lib/error-utils'
+import { useViewPreference } from '@/hooks/use-view-preference'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -44,40 +72,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { InlineDonorLabels } from '@/components/admin/InlineDonorLabels'
+import { CheckInAssignmentDialog } from '@/components/checkin/CheckInAssignmentDialog'
+import { QRCodeDialog } from '@/components/checkin/QRCodeDialog'
+import { QuickSaleDialog } from '@/components/checkin/QuickSaleDialog'
+import { DataTableViewToggle } from '@/components/data-table/view-toggle'
 import { getUser, updateUser } from '@/features/users/api/users-api'
-import { fetchEventTables } from '@/services/seating-service'
-import { useViewPreference } from '@/hooks/use-view-preference'
-import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
-import {
-  adminCreatePaymentProfile,
-  adminCreatePaymentSession,
-} from '@/lib/api/admin-payments'
-import {
-  assignBidderNumber,
-  assignGuestToTable,
-  assignRegistrationBidderNumber,
-  assignRegistrationToTable,
-  getNextAvailableBidderNumber,
-} from '@/lib/api/admin-seating'
-import { getErrorMessage } from '@/lib/error-utils'
-import { checkinService } from '@/services/checkin-service'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  Check,
-  ChevronDown,
-  CreditCard,
-  Crown,
-  Filter,
-  Loader2,
-  Plus,
-  QrCode,
-  RotateCcw,
-  Search,
-  Settings2,
-  X,
-} from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
 import { useEventWorkspace } from '../useEventWorkspace'
 
 function StatusBadge({ checkedIn }: { checkedIn: boolean }) {
@@ -226,11 +226,24 @@ export function EventCheckInSection() {
     },
   })
 
-  // Fetch event tables for the table assignment dropdown in the Manage dialog
-  const { data: eventTablesData, isLoading: eventTablesLoading } = useQuery({
+  // Fetch table metadata for names/custom capacities, but do not block dropdown rendering.
+  const { data: eventTablesData } = useQuery({
     queryKey: ['event-tables', currentEvent.id],
-    queryFn: () => fetchEventTables(currentEvent.id),
+    queryFn: async () => {
+      const timeoutAfter = (ms: number) =>
+        new Promise<never>((_, reject) => {
+          window.setTimeout(() => {
+            reject(new Error('Loading tables timed out'))
+          }, ms)
+        })
+
+      return Promise.race([
+        fetchEventTables(currentEvent.id),
+        timeoutAfter(5000),
+      ])
+    },
     enabled: Boolean(editingAttendee) && Boolean(currentEvent.id),
+    retry: false,
     staleTime: 30_000,
   })
 
@@ -251,9 +264,9 @@ export function EventCheckInSection() {
       const assignment =
         !undo && (bidderNumber !== undefined || tableNumber !== undefined)
           ? {
-            bidder_number: bidderNumber,
-            table_number: tableNumber ?? undefined,
-          }
+              bidder_number: bidderNumber,
+              table_number: tableNumber ?? undefined,
+            }
           : undefined
 
       if (attendeeType === 'guest') {
@@ -412,6 +425,63 @@ export function EventCheckInSection() {
         attendee.status !== 'cancelled' && attendee.status !== 'canceled'
     )
   }, [data])
+
+  const manageTableOptions = useMemo(() => {
+    const fallbackTableCount = currentEvent.table_count ?? 0
+    const fallbackCapacity = currentEvent.max_guests_per_table ?? 8
+
+    const occupancyByTable = new Map<number, number>()
+    for (const attendee of attendees) {
+      if (attendee.table_number == null || attendee.table_number < 1) {
+        continue
+      }
+      occupancyByTable.set(
+        attendee.table_number,
+        (occupancyByTable.get(attendee.table_number) ?? 0) + 1
+      )
+    }
+
+    const tableNumbers = new Set<number>()
+    for (
+      let tableNumber = 1;
+      tableNumber <= fallbackTableCount;
+      tableNumber++
+    ) {
+      tableNumbers.add(tableNumber)
+    }
+    for (const tableNumber of occupancyByTable.keys()) {
+      tableNumbers.add(tableNumber)
+    }
+    for (const table of eventTablesData?.tables ?? []) {
+      tableNumbers.add(table.table_number)
+    }
+
+    return Array.from(tableNumbers)
+      .sort((a, b) => a - b)
+      .map((tableNumber) => {
+        const tableMeta = eventTablesData?.tables?.find(
+          (table) => table.table_number === tableNumber
+        )
+        const currentOccupancy = occupancyByTable.get(tableNumber) ?? 0
+        const effectiveCapacity =
+          tableMeta?.effective_capacity ?? fallbackCapacity
+        const availableSeats = Math.max(0, effectiveCapacity - currentOccupancy)
+
+        return {
+          tableNumber,
+          tableName: tableMeta?.table_name ?? null,
+          currentOccupancy,
+          effectiveCapacity,
+          availableSeats,
+          isFull: availableSeats === 0,
+        }
+      })
+  }, [
+    attendees,
+    currentEvent.max_guests_per_table,
+    currentEvent.table_count,
+    eventTablesData?.tables,
+  ])
 
   const checkInSummary = useMemo(() => {
     const checkedInAttendees = attendees.filter((attendee) =>
@@ -646,8 +716,7 @@ export function EventCheckInSection() {
       }
 
       // Table auto-assign: find a table with enough seats for the party
-      const tables = eventTablesData?.tables ?? []
-      if (tables.length === 0) {
+      if (manageTableOptions.length === 0) {
         toast.error('Table list not loaded yet — please try again in a moment')
         return
       }
@@ -660,8 +729,10 @@ export function EventCheckInSection() {
 
       // Prefer a table that can fit the whole party; fall back to any non-full table
       const bestTable =
-        tables.find((t) => !t.is_full && t.effective_capacity - t.current_occupancy >= partySize) ??
-        tables.find((t) => !t.is_full)
+        manageTableOptions.find(
+          (tableOption) =>
+            !tableOption.isFull && tableOption.availableSeats >= partySize
+        ) ?? manageTableOptions.find((tableOption) => !tableOption.isFull)
 
       if (!bestTable) {
         toast.error('No table has available seats')
@@ -670,10 +741,12 @@ export function EventCheckInSection() {
 
       setEditForm((prev) => ({
         ...prev,
-        tableNumber: String(bestTable.table_number),
+        tableNumber: String(bestTable.tableNumber),
       }))
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Failed to fetch auto-assignment values'))
+      toast.error(
+        getErrorMessage(err, 'Failed to fetch auto-assignment values')
+      )
     } finally {
       setManageAutoAssignLoading(null)
     }
@@ -1145,10 +1218,11 @@ export function EventCheckInSection() {
                           <dt className='text-muted-foreground'>Payment</dt>
                           <dd>
                             <span
-                              className={`flex items-center gap-1 text-xs ${attendee.has_payment_profile
-                                ? 'text-green-600'
-                                : 'text-muted-foreground'
-                                }`}
+                              className={`flex items-center gap-1 text-xs ${
+                                attendee.has_payment_profile
+                                  ? 'text-green-600'
+                                  : 'text-muted-foreground'
+                              }`}
                             >
                               <CreditCard className='h-3 w-3' />
                               {attendee.has_payment_profile
@@ -1467,10 +1541,11 @@ export function EventCheckInSection() {
                               }
                             >
                               <CreditCard
-                                className={`h-4 w-4 ${attendee.has_payment_profile
-                                  ? 'text-green-600'
-                                  : 'text-muted-foreground'
-                                  }`}
+                                className={`h-4 w-4 ${
+                                  attendee.has_payment_profile
+                                    ? 'text-green-600'
+                                    : 'text-muted-foreground'
+                                }`}
                               />
                             </span>
                           </TableCell>
@@ -1596,7 +1671,10 @@ export function EventCheckInSection() {
                       variant='outline'
                       size='sm'
                       onClick={() => handleManageAutoAssign('table')}
-                      disabled={manageAutoAssignLoading !== null || eventTablesLoading}
+                      disabled={
+                        manageAutoAssignLoading !== null ||
+                        manageTableOptions.length === 0
+                      }
                     >
                       {manageAutoAssignLoading === 'table' && (
                         <Loader2 className='mr-2 h-4 w-4 animate-spin' />
@@ -1609,32 +1687,27 @@ export function EventCheckInSection() {
                     onValueChange={(value) =>
                       setEditForm((prev) => ({ ...prev, tableNumber: value }))
                     }
-                    disabled={eventTablesLoading}
+                    disabled={manageTableOptions.length === 0}
                   >
                     <SelectTrigger id='edit-table'>
-                      <SelectValue
-                        placeholder={
-                          eventTablesLoading ? 'Loading tables…' : 'Select a table…'
-                        }
-                      />
+                      <SelectValue placeholder='Select a table…' />
                     </SelectTrigger>
                     <SelectContent>
-                      {(eventTablesData?.tables ?? []).map((table) => {
-                        const available =
-                          table.effective_capacity - table.current_occupancy
+                      {manageTableOptions.map((table) => {
                         return (
                           <SelectItem
-                            key={table.table_number}
-                            value={String(table.table_number)}
+                            key={table.tableNumber}
+                            value={String(table.tableNumber)}
                           >
                             <span>
-                              Table {table.table_number}
-                              {table.table_name ? ` – ${table.table_name}` : ''}
+                              Table {table.tableNumber}
+                              {table.tableName ? ` - ${table.tableName}` : ''}
                             </span>
                             <span
-                              className={`ml-2 text-xs ${table.is_full ? 'text-destructive font-medium' : 'text-muted-foreground'}`}
+                              className={`ml-2 text-xs ${table.isFull ? 'text-destructive font-medium' : 'text-muted-foreground'}`}
                             >
-                              ({available}/{table.effective_capacity} open)
+                              ({table.availableSeats}/{table.effectiveCapacity}{' '}
+                              open)
                             </span>
                           </SelectItem>
                         )
