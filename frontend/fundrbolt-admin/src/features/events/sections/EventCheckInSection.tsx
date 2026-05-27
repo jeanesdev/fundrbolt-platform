@@ -234,9 +234,9 @@ export function EventCheckInSection() {
       const assignment =
         !undo && (bidderNumber !== undefined || tableNumber !== undefined)
           ? {
-              bidder_number: bidderNumber,
-              table_number: tableNumber ?? undefined,
-            }
+            bidder_number: bidderNumber,
+            table_number: tableNumber ?? undefined,
+          }
           : undefined
 
       if (attendeeType === 'guest') {
@@ -601,9 +601,26 @@ export function EventCheckInSection() {
   }
 
   const handleManageAutoAssign = async (field: 'bidder' | 'table') => {
+    if (!currentEvent.id) {
+      toast.error('Event context is not available yet')
+      return
+    }
+
     setManageAutoAssignLoading(field)
+
+    const timeoutAfter = (ms: number) =>
+      new Promise<never>((_, reject) => {
+        window.setTimeout(() => {
+          reject(new Error('Auto-assign request timed out'))
+        }, ms)
+      })
+
     try {
-      const assignment = await checkinService.getNextAssignment(currentEvent.id)
+      const assignment = await Promise.race([
+        checkinService.getNextAssignment(currentEvent.id),
+        timeoutAfter(10000),
+      ])
+
       if (field === 'bidder') {
         setEditForm((prev) => ({
           ...prev,
@@ -1095,8 +1112,8 @@ export function EventCheckInSection() {
                           <dd>
                             <span
                               className={`flex items-center gap-1 text-xs ${attendee.has_payment_profile
-                                  ? 'text-green-600'
-                                  : 'text-muted-foreground'
+                                ? 'text-green-600'
+                                : 'text-muted-foreground'
                                 }`}
                             >
                               <CreditCard className='h-3 w-3' />
@@ -1417,8 +1434,8 @@ export function EventCheckInSection() {
                             >
                               <CreditCard
                                 className={`h-4 w-4 ${attendee.has_payment_profile
-                                    ? 'text-green-600'
-                                    : 'text-muted-foreground'
+                                  ? 'text-green-600'
+                                  : 'text-muted-foreground'
                                   }`}
                               />
                             </span>
