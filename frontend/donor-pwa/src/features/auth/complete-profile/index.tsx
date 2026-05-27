@@ -165,11 +165,31 @@ function CommunicationsEmailSection({
       apiClient.post('/users/me/communications-email/request-verification', {
         email,
       }),
-    onSuccess: (_response, email) => {
-      setPendingCommsEmail(email)
-      setState({ step: 'otp', email })
-      setInputEmail(email)
-      toast.success(`Verification code sent to ${email}`)
+    onSuccess: (response, email) => {
+      // Check if the backend auto-verified (e.g., same as sign-in email)
+      const message = response.data?.message || ''
+      if (message.includes('set successfully')) {
+        // Auto-verified, skip OTP step
+        clearPendingCommsEmail()
+        setState({ step: 'verified', email })
+        setUser(
+          user
+            ? {
+                ...user,
+                communications_email: email,
+                communications_email_verified: true,
+              }
+            : null
+        )
+        toast.success('Communications email verified!')
+        onVerified?.()
+      } else {
+        // OTP sent, proceed to verification step
+        setPendingCommsEmail(email)
+        setState({ step: 'otp', email })
+        setInputEmail(email)
+        toast.success(`Verification code sent to ${email}`)
+      }
     },
     onError: () =>
       toast.error('Failed to send verification code. Please try again.'),

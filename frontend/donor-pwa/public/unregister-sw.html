@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unregister Service Worker</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    .success {
+      color: #16a34a;
+      padding: 10px;
+      background: #f0fdf4;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .error {
+      color: #dc2626;
+      padding: 10px;
+      background: #fef2f2;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    pre {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Service Worker Cleanup</h1>
+    <p>This page will help you unregister old service workers that might be causing constant update notifications.</p>
+    
+    <div id="status"></div>
+    
+    <button onclick="unregisterServiceWorkers()">Unregister All Service Workers</button>
+    <button onclick="clearAllCaches()">Clear All Caches</button>
+    <button onclick="window.location.href='/'">Return to App</button>
+    
+    <hr style="margin: 30px 0;">
+    
+    <h3>Current Service Workers:</h3>
+    <div id="registrations"></div>
+  </div>
+
+  <script>
+    async function showRegistrations() {
+      const container = document.getElementById('registrations');
+      
+      if (!navigator.serviceWorker) {
+        container.innerHTML = '<p class="error">Service Worker API not supported</p>';
+        return;
+      }
+      
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      
+      if (registrations.length === 0) {
+        container.innerHTML = '<p>No service workers registered ✅</p>';
+        return;
+      }
+      
+      let html = '<ul>';
+      for (const reg of registrations) {
+        html += `<li>${reg.scope}</li>`;
+      }
+      html += '</ul>';
+      container.innerHTML = html;
+    }
+
+    async function unregisterServiceWorkers() {
+      const statusDiv = document.getElementById('status');
+      
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        
+        if (registrations.length === 0) {
+          statusDiv.innerHTML = '<p class="success">No service workers to unregister</p>';
+          return;
+        }
+        
+        let count = 0;
+        for (const reg of registrations) {
+          await reg.unregister();
+          count++;
+        }
+        
+        statusDiv.innerHTML = `<p class="success">Successfully unregistered ${count} service worker(s). Please refresh the page.</p>`;
+        await showRegistrations();
+        
+        // Auto-refresh after 2 seconds
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } catch (error) {
+        statusDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+      }
+    }
+
+    async function clearAllCaches() {
+      const statusDiv = document.getElementById('status');
+      
+      try {
+        const cacheNames = await caches.keys();
+        
+        if (cacheNames.length === 0) {
+          statusDiv.innerHTML = '<p class="success">No caches to clear</p>';
+          return;
+        }
+        
+        let count = 0;
+        for (const cacheName of cacheNames) {
+          await caches.delete(cacheName);
+          count++;
+        }
+        
+        statusDiv.innerHTML = `<p class="success">Successfully cleared ${count} cache(s)</p>`;
+      } catch (error) {
+        statusDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+      }
+    }
+
+    // Show registrations on load
+    showRegistrations();
+  </script>
+</body>
+</html>

@@ -135,7 +135,7 @@ export function DebugSpoofSheet({ open, onOpenChange }: DebugSpoofSheetProps) {
   // Initialise time input when sheet opens
   useEffect(() => {
     if (open && timeBaseSpoofMs !== null) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setSpoofTimeInput(
         toDateTimeLocalInputValue(new Date(getEffectiveNowMs()))
       )
