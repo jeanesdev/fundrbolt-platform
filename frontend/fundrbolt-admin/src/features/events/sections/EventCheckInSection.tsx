@@ -704,6 +704,34 @@ export function EventCheckInSection() {
 
     try {
       if (field === 'bidder') {
+        const usedBidderNumbers = new Set<number>()
+        for (const attendee of attendees) {
+          if (
+            typeof attendee.bidder_number === 'number' &&
+            attendee.bidder_number >= 100 &&
+            attendee.bidder_number <= 999
+          ) {
+            usedBidderNumbers.add(attendee.bidder_number)
+          }
+        }
+
+        let localNextBidder = 100
+        while (
+          usedBidderNumbers.has(localNextBidder) &&
+          localNextBidder <= 999
+        ) {
+          localNextBidder += 1
+        }
+
+        if (localNextBidder <= 999) {
+          setEditForm((prev) => ({
+            ...prev,
+            bidderNumber: String(localNextBidder),
+          }))
+          return
+        }
+
+        // Fallback to API when local attendee data cannot determine an available bidder number.
         const nextBidder = await Promise.race([
           getNextAvailableBidderNumber(currentEvent.id),
           timeoutAfter(10000),
