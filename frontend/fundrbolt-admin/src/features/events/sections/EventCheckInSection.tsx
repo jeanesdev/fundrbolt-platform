@@ -158,6 +158,16 @@ type EditFormState = {
   country: string
 }
 
+type ContactSnapshot = {
+  organizationName: string
+  addressLine1: string
+  addressLine2: string
+  city: string
+  state: string
+  postalCode: string
+  country: string
+}
+
 const defaultEditForm: EditFormState = {
   name: '',
   email: '',
@@ -193,6 +203,8 @@ export function EventCheckInSection() {
   )
   const [assignmentDialogAttendee, setAssignmentDialogAttendee] =
     useState<Attendee | null>(null)
+  const [initialContactSnapshot, setInitialContactSnapshot] =
+    useState<ContactSnapshot | null>(null)
   const [manageAutoAssignLoading, setManageAutoAssignLoading] = useState<
     'bidder' | 'table' | null
   >(null)
@@ -401,17 +413,43 @@ export function EventCheckInSection() {
         }
       }
 
-      // Save address/company via user update API
-      if (attendee.user_id) {
+      // Save address/company only when contact fields actually changed.
+      const currentContactSnapshot: ContactSnapshot = {
+        organizationName: editForm.organizationName.trim(),
+        addressLine1: editForm.addressLine1.trim(),
+        addressLine2: editForm.addressLine2.trim(),
+        city: editForm.city.trim(),
+        state: editForm.state.trim(),
+        postalCode: editForm.postalCode.trim(),
+        country: editForm.country.trim(),
+      }
+
+      const hasContactChanges =
+        attendee.user_id != null &&
+        initialContactSnapshot != null &&
+        (initialContactSnapshot.organizationName !==
+          currentContactSnapshot.organizationName ||
+          initialContactSnapshot.addressLine1 !==
+            currentContactSnapshot.addressLine1 ||
+          initialContactSnapshot.addressLine2 !==
+            currentContactSnapshot.addressLine2 ||
+          initialContactSnapshot.city !== currentContactSnapshot.city ||
+          initialContactSnapshot.state !== currentContactSnapshot.state ||
+          initialContactSnapshot.postalCode !==
+            currentContactSnapshot.postalCode ||
+          initialContactSnapshot.country !== currentContactSnapshot.country)
+
+      if (attendee.user_id && hasContactChanges) {
         await withTimeout(
           updateUser(attendee.user_id, {
-            organization_name: editForm.organizationName.trim() || undefined,
-            address_line1: editForm.addressLine1.trim() || undefined,
-            address_line2: editForm.addressLine2.trim() || undefined,
-            city: editForm.city.trim() || undefined,
-            state: editForm.state.trim() || undefined,
-            postal_code: editForm.postalCode.trim() || undefined,
-            country: editForm.country.trim() || undefined,
+            organization_name:
+              currentContactSnapshot.organizationName || undefined,
+            address_line1: currentContactSnapshot.addressLine1 || undefined,
+            address_line2: currentContactSnapshot.addressLine2 || undefined,
+            city: currentContactSnapshot.city || undefined,
+            state: currentContactSnapshot.state || undefined,
+            postal_code: currentContactSnapshot.postalCode || undefined,
+            country: currentContactSnapshot.country || undefined,
           }),
           'Updating contact information'
         )
@@ -423,6 +461,7 @@ export function EventCheckInSection() {
         queryKey: ['event-attendees', currentEvent.id],
       })
       queryClient.invalidateQueries({ queryKey: ['users'] })
+      closeManageDialog()
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, 'Failed to save attendee'))
@@ -700,8 +739,7 @@ export function EventCheckInSection() {
     if (attendee.user_id) {
       try {
         const user = await getUser(attendee.user_id)
-        setEditForm((prev) => ({
-          ...prev,
+        const snapshot: ContactSnapshot = {
           organizationName: user.organization_name ?? '',
           addressLine1: user.address_line1 ?? '',
           addressLine2: user.address_line2 ?? '',
@@ -709,16 +747,33 @@ export function EventCheckInSection() {
           state: user.state ?? '',
           postalCode: user.postal_code ?? '',
           country: user.country ?? '',
+        }
+        setInitialContactSnapshot(snapshot)
+        setEditForm((prev) => ({
+          ...prev,
+          ...snapshot,
         }))
       } catch {
         // User details not available, fields stay empty
+        setInitialContactSnapshot({
+          organizationName: '',
+          addressLine1: '',
+          addressLine2: '',
+          city: '',
+          state: '',
+          postalCode: '',
+          country: '',
+        })
       }
+    } else {
+      setInitialContactSnapshot(null)
     }
   }
 
   const closeManageDialog = () => {
     setEditingAttendee(null)
     setEditForm(defaultEditForm)
+    setInitialContactSnapshot(null)
     setManageAutoAssignLoading(null)
   }
 
