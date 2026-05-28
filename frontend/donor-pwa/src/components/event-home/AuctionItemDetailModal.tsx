@@ -11,29 +11,7 @@
  * - Donated by / item webpage
  * - View tracking
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { usePreviewMode } from '@/contexts/PreviewContext'
-import auctionItemService from '@/services/auctionItemService'
-import type { AuctionItemDetail } from '@/types/auction-item'
-import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
-import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
-import '@ncdai/react-wheel-picker/style.css'
-import {
-  ArrowRight,
-  ChevronLeft,
-  ChevronRight,
-  DollarSign,
-  ExternalLink,
-  Loader2,
-  TrendingUp,
-  Users,
-} from 'lucide-react'
-import { useAuthStore } from '@/stores/auth-store'
-import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
-import { cn } from '@/lib/utils'
-import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
-import { useItemViewTracking } from '@/hooks/useItemViewTracking'
+import { WatchListButton } from '@/components/auction/WatchListButton'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -44,7 +22,29 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
-import { WatchListButton } from '@/components/auction/WatchListButton'
+import { usePreviewMode } from '@/contexts/PreviewContext'
+import { useSwipeDownToClose } from '@/hooks/use-swipe-down-to-close'
+import { useItemViewTracking } from '@/hooks/useItemViewTracking'
+import { cn } from '@/lib/utils'
+import auctionItemService from '@/services/auctionItemService'
+import { useAuthStore } from '@/stores/auth-store'
+import { getEffectiveNow, useDebugSpoofStore } from '@/stores/debug-spoof-store'
+import type { AuctionItemDetail } from '@/types/auction-item'
+import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
+import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker'
+import '@ncdai/react-wheel-picker/style.css'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  DollarSign,
+  ExternalLink,
+  Loader2,
+  TrendingUp,
+  Users,
+} from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 export interface AuctionItemDetailModalProps {
   eventId: string
@@ -132,6 +132,9 @@ export function AuctionItemDetailModal({
   const [placeBidSlideValue, setPlaceBidSlideValue] = useState<number[]>([0])
   const [maxBidSlideValue, setMaxBidSlideValue] = useState<number[]>([0])
   const [buyNowSlideValue, setBuyNowSlideValue] = useState<number[]>([0])
+  const [placeBidSwipeArmed, setPlaceBidSwipeArmed] = useState(false)
+  const [maxBidSwipeArmed, setMaxBidSwipeArmed] = useState(false)
+  const [buyNowSwipeArmed, setBuyNowSwipeArmed] = useState(false)
   const authUserId = useAuthStore((state) => state.user?.id)
   const spoofedUserId = useDebugSpoofStore((state) => state.spoofedUser?.id)
   const isOnline = useOnlineStatus()
@@ -387,6 +390,17 @@ export function AuctionItemDetailModal({
     })
   }, [images, isOpen, item, loadedImageSources, preloadedImageSources])
 
+  useEffect(() => {
+    if (!isOpen) {
+      setPlaceBidSlideValue([0])
+      setMaxBidSlideValue([0])
+      setBuyNowSlideValue([0])
+      setPlaceBidSwipeArmed(false)
+      setMaxBidSwipeArmed(false)
+      setBuyNowSwipeArmed(false)
+    }
+  }, [isOpen])
+
   const openFullscreenImage = (src: string, alt: string) => {
     if (!src) {
       return
@@ -482,7 +496,12 @@ export function AuctionItemDetailModal({
   const handleSlidePlaceBidCommit = (value: number[]) => {
     const percent = value[0] ?? 0
     if (percent >= 95 && !isSubmittingBid && item && onPlaceBid) {
-      onPlaceBid(item.id, effectiveSelectedBidAmount)
+      if (placeBidSwipeArmed) {
+        onPlaceBid(item.id, effectiveSelectedBidAmount)
+        setPlaceBidSwipeArmed(false)
+      } else {
+        setPlaceBidSwipeArmed(true)
+      }
     }
 
     setPlaceBidSlideValue([0])
@@ -498,7 +517,12 @@ export function AuctionItemDetailModal({
   const handleSlideMaxBidCommit = (value: number[]) => {
     const percent = value[0] ?? 0
     if (percent >= 95 && !isSubmittingBid && item && onSetMaxBid) {
-      onSetMaxBid(item.id, effectiveSelectedBidAmount)
+      if (maxBidSwipeArmed) {
+        onSetMaxBid(item.id, effectiveSelectedBidAmount)
+        setMaxBidSwipeArmed(false)
+      } else {
+        setMaxBidSwipeArmed(true)
+      }
     }
 
     setMaxBidSlideValue([0])
@@ -525,7 +549,12 @@ export function AuctionItemDetailModal({
       item?.buy_now_price &&
       onBuyNow
     ) {
-      onBuyNow(item.id)
+      if (buyNowSwipeArmed) {
+        onBuyNow(item.id)
+        setBuyNowSwipeArmed(false)
+      } else {
+        setBuyNowSwipeArmed(true)
+      }
     }
 
     setBuyNowSlideValue([0])
@@ -835,9 +864,9 @@ export function AuctionItemDetailModal({
 
                   {/* Bidding Controls — only show when auction is open */}
                   {!isLiveAuctionItem &&
-                  isBiddingOpen &&
-                  eventStatus === 'active' &&
-                  !isEventInFuture ? (
+                    isBiddingOpen &&
+                    eventStatus === 'active' &&
+                    !isEventInFuture ? (
                     <div className='space-y-3'>
                       <div
                         className='relative h-[140px] overflow-hidden rounded-2xl border px-3 py-2'
@@ -857,6 +886,9 @@ export function AuctionItemDetailModal({
                             onValueChange={(value) => {
                               const nextValue = Number(value)
                               setSelectedBidAmount(nextValue)
+                              setPlaceBidSwipeArmed(false)
+                              setMaxBidSwipeArmed(false)
+                              setBuyNowSwipeArmed(false)
                               const selectedIndex = Math.floor(
                                 (nextValue - minimumNextBid) / bidStep
                               )
@@ -871,7 +903,7 @@ export function AuctionItemDetailModal({
                             optionItemHeight={28}
                             classNames={{
                               optionItem:
-                                'text-sm font-medium text-foreground/35',
+                                'donate-now-wheel-option text-sm font-semibold',
                               highlightWrapper:
                                 'bg-muted/85 border-y border-border/70',
                               highlightItem:
@@ -903,8 +935,9 @@ export function AuctionItemDetailModal({
                           style={{
                             backgroundColor:
                               'rgb(var(--event-background, 255, 255, 255))',
-                            border:
-                              '1px solid rgb(var(--event-primary, 59, 130, 246) / 0.35)',
+                            border: placeBidSwipeArmed
+                              ? '1px solid rgb(34 197 94 / 0.65)'
+                              : '1px solid rgb(var(--event-primary, 59, 130, 246) / 0.35)',
                             touchAction: 'none',
                           }}
                           onPointerLeave={() => setPlaceBidSlideValue([0])}
@@ -917,9 +950,15 @@ export function AuctionItemDetailModal({
                             }}
                           />
                           <div className='pointer-events-none absolute inset-y-0 right-14 left-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)] sm:text-base'>
-                            <span className='sm:hidden'>Slide to Bid ·</span>
+                            <span className='sm:hidden'>
+                              {placeBidSwipeArmed
+                                ? 'Slide Again ·'
+                                : 'Slide to Bid ·'}
+                            </span>
                             <span className='hidden sm:inline'>
-                              Slide to Place Bid ·
+                              {placeBidSwipeArmed
+                                ? 'Slide Again to Confirm Bid ·'
+                                : 'Slide to Place Bid ·'}
                             </span>
                             <span className='ml-1 sm:ml-2'>
                               {formatCurrency(effectiveSelectedBidAmount)}
@@ -951,8 +990,9 @@ export function AuctionItemDetailModal({
                           style={{
                             backgroundColor:
                               'rgb(var(--event-background, 255, 255, 255))',
-                            border:
-                              '1px solid rgb(var(--event-primary, 59, 130, 246) / 0.35)',
+                            border: maxBidSwipeArmed
+                              ? '1px solid rgb(34 197 94 / 0.65)'
+                              : '1px solid rgb(var(--event-primary, 59, 130, 246) / 0.35)',
                             touchAction: 'none',
                           }}
                           onPointerLeave={() => setMaxBidSlideValue([0])}
@@ -963,9 +1003,15 @@ export function AuctionItemDetailModal({
                             style={{ width: getSliderFillWidth(maxBidPercent) }}
                           />
                           <div className='pointer-events-none absolute inset-y-0 right-14 left-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)] sm:text-base'>
-                            <span className='sm:hidden'>Slide to Max ·</span>
+                            <span className='sm:hidden'>
+                              {maxBidSwipeArmed
+                                ? 'Slide Again ·'
+                                : 'Slide to Max ·'}
+                            </span>
                             <span className='hidden sm:inline'>
-                              Slide to Set Max Bid ·
+                              {maxBidSwipeArmed
+                                ? 'Slide Again to Confirm Max Bid ·'
+                                : 'Slide to Set Max Bid ·'}
                             </span>
                             <span className='ml-1 sm:ml-2'>
                               {formatCurrency(effectiveSelectedBidAmount)}
@@ -998,8 +1044,9 @@ export function AuctionItemDetailModal({
                             style={{
                               backgroundColor:
                                 'rgb(var(--event-background, 255, 255, 255))',
-                              border:
-                                '1px solid rgb(var(--event-primary, 59, 130, 246) / 0.35)',
+                              border: buyNowSwipeArmed
+                                ? '1px solid rgb(34 197 94 / 0.65)'
+                                : '1px solid rgb(var(--event-primary, 59, 130, 246) / 0.35)',
                               touchAction: 'none',
                             }}
                             onPointerLeave={() => setBuyNowSlideValue([0])}
@@ -1012,9 +1059,15 @@ export function AuctionItemDetailModal({
                               }}
                             />
                             <div className='pointer-events-none absolute inset-y-0 right-14 left-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)] sm:text-base'>
-                              <span className='sm:hidden'>Slide to Buy ·</span>
+                              <span className='sm:hidden'>
+                                {buyNowSwipeArmed
+                                  ? 'Slide Again ·'
+                                  : 'Slide to Buy ·'}
+                              </span>
                               <span className='hidden sm:inline'>
-                                Slide to Buy Now ·
+                                {buyNowSwipeArmed
+                                  ? 'Slide Again to Confirm Buy Now ·'
+                                  : 'Slide to Buy Now ·'}
                               </span>
                               <span className='ml-1 sm:ml-2'>
                                 {formatCurrency(item.buy_now_price)}

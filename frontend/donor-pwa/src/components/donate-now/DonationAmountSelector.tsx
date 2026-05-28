@@ -267,11 +267,14 @@ export function DonationAmountSelector({
         {displayTiers.map((tier) => {
           const isSelected =
             !isCustomSelected && selectedAmount === tier.amount_cents
+          const hasImpactStatement = Boolean(tier.impact_statement?.trim())
           return (
             <button
               key={tier.id}
               onClick={() => handleTierSelect(tier.amount_cents)}
-              className='rounded-lg border-2 p-3 text-center transition-colors'
+              className={`rounded-lg border-2 p-3 transition-colors ${
+                hasImpactStatement ? 'col-span-3 text-left' : 'text-center'
+              }`}
               style={
                 isSelected
                   ? {
@@ -289,8 +292,8 @@ export function DonationAmountSelector({
               <div className='text-lg font-bold'>
                 ${(tier.amount_cents / 100).toFixed(0)}
               </div>
-              {tier.impact_statement?.trim() ? (
-                <div className='mt-0.5 line-clamp-2 text-xs opacity-80'>
+              {hasImpactStatement ? (
+                <div className='mt-1 text-sm leading-relaxed opacity-90'>
                   {tier.impact_statement}
                 </div>
               ) : null}

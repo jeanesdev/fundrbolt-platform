@@ -24,14 +24,26 @@ database_url = str(settings.database_url)
 if database_url.startswith("postgresql://"):
     database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
+# Use NullPool for tests, but keep pooled connections for app runtime.
+# NullPool in normal runtime creates a new DB connection per request, which can
+# cause frequent asyncpg connect timeouts under transient network conditions.
+engine_kwargs: dict[str, Any] = {
+    "echo": False,  # Disable SQL query logging to reduce log spam
+    "future": True,
+    "pool_pre_ping": True,
+    "pool_recycle": 1800,
+    "pool_timeout": 30,
+    "connect_args": {"timeout": 10},
+}
+
+if settings.environment == "test":
+    engine_kwargs["poolclass"] = NullPool
+else:
+    engine_kwargs["pool_size"] = 10
+    engine_kwargs["max_overflow"] = 20
+
 # Create async engine
-async_engine = create_async_engine(
-    database_url,
-    echo=False,  # Disable SQL query logging to reduce log spam
-    future=True,
-    pool_pre_ping=True,
-    poolclass=NullPool,  # Always use NullPool for better test isolation
-)
+async_engine = create_async_engine(database_url, **engine_kwargs)
 
 # Create session factory
 AsyncSessionLocal = async_sessionmaker(

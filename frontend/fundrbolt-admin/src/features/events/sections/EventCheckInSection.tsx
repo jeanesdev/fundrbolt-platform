@@ -168,6 +168,12 @@ type ContactSnapshot = {
   country: string
 }
 
+type CoreDetailsSnapshot = {
+  name: string
+  email: string
+  phone: string
+}
+
 const defaultEditForm: EditFormState = {
   name: '',
   email: '',
@@ -182,6 +188,18 @@ const defaultEditForm: EditFormState = {
   state: '',
   postalCode: '',
   country: '',
+}
+
+function normalizeForComparison(value: string | null | undefined): string {
+  return (value ?? '').trim()
+}
+
+function normalizePhoneForComparison(value: string | null | undefined): string {
+  const digitsOnly = normalizeForComparison(value).replace(/\D/g, '')
+  if (digitsOnly.length <= 10) {
+    return digitsOnly
+  }
+  return digitsOnly.slice(-10)
 }
 
 export function EventCheckInSection() {
@@ -323,7 +341,27 @@ export function EventCheckInSection() {
         return Promise.race([promise, timeoutPromise])
       }
 
-      if (attendee.attendee_type === 'registrant') {
+      const nextCoreDetails: CoreDetailsSnapshot = {
+        name: normalizeForComparison(editForm.name),
+        email: normalizeForComparison(editForm.email),
+        phone: normalizePhoneForComparison(editForm.phone),
+      }
+      const nextCoreDetailsPayload = {
+        name: editForm.name.trim(),
+        email: editForm.email.trim(),
+        phone: editForm.phone.trim(),
+      }
+      const currentCoreDetails: CoreDetailsSnapshot = {
+        name: normalizeForComparison(attendee.name),
+        email: normalizeForComparison(attendee.email),
+        phone: normalizePhoneForComparison(attendee.phone),
+      }
+      const hasCoreDetailsChanges =
+        nextCoreDetails.name !== currentCoreDetails.name ||
+        nextCoreDetails.email !== currentCoreDetails.email ||
+        nextCoreDetails.phone !== currentCoreDetails.phone
+
+      if (attendee.attendee_type === 'registrant' && hasCoreDetailsChanges) {
         const trimmedName = editForm.name.trim()
         const nameParts = trimmedName.split(/\s+/).filter(Boolean)
         const firstName = nameParts[0] ?? ''
@@ -340,18 +378,18 @@ export function EventCheckInSection() {
             {
               first_name: firstName,
               last_name: lastName,
-              email: editForm.email.trim() || undefined,
-              phone: editForm.phone.trim() || undefined,
+              email: nextCoreDetailsPayload.email || undefined,
+              phone: nextCoreDetailsPayload.phone || undefined,
             }
           ),
           'Updating registration details'
         )
-      } else {
+      } else if (attendee.attendee_type === 'guest' && hasCoreDetailsChanges) {
         await withTimeout(
           checkinService.updateGuestDetails(currentEvent.id, attendee.id, {
-            name: editForm.name.trim() || undefined,
-            email: editForm.email.trim() || undefined,
-            phone: editForm.phone.trim() || undefined,
+            name: nextCoreDetailsPayload.name || undefined,
+            email: nextCoreDetailsPayload.email || undefined,
+            phone: nextCoreDetailsPayload.phone || undefined,
           }),
           'Updating guest details'
         )
@@ -402,12 +440,14 @@ export function EventCheckInSection() {
                 attendee.registration_id,
                 tableNumber
               ),
-              'Assigning table number'
+              'Assigning table number',
+              60000
             )
           } else {
             await withTimeout(
               assignGuestToTable(currentEvent.id, attendee.id, tableNumber),
-              'Assigning table number'
+              'Assigning table number',
+              60000
             )
           }
         }

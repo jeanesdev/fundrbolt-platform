@@ -101,6 +101,8 @@ def setup_logging() -> None:
     # Reduce noise from third-party libraries
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+    logging.getLogger("fontTools").setLevel(logging.WARNING)
+    logging.getLogger("PIL").setLevel(logging.WARNING)
 
 
 def get_logger(name: str) -> logging.Logger:

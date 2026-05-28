@@ -1,13 +1,16 @@
 """Redis service for session storage, token blacklisting, and caching."""
 
 import json
+import logging
 import uuid
 from datetime import datetime
 from typing import Any
 
-from redis.exceptions import ResponseError
+from redis.exceptions import RedisError, ResponseError
 
 from app.core.redis import get_redis
+
+logger = logging.getLogger(__name__)
 
 
 class RedisService:
@@ -147,8 +150,15 @@ class RedisService:
         """
         redis = await get_redis()
         key = f"blacklist:{jti}"
-        result = await redis.exists(key)
-        return result > 0
+        try:
+            result = await redis.exists(key)
+            return result > 0
+        except (RedisError, TimeoutError, OSError):
+            logger.warning(
+                "Redis unavailable during token blacklist check; treating token as blacklisted",
+                exc_info=True,
+            )
+            return True
 
     @staticmethod
     async def store_email_verification_token(token: str, user_id: uuid.UUID) -> None:

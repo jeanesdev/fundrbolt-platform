@@ -2,17 +2,7 @@
  * AuctionItemsIndexPage
  * Page for listing all auction items for an event
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
-import auctioneerService from '@/services/auctioneerService'
-import { reportService, type BidCardRequest } from '@/services/reportService'
-import revenueGeneratorService, {
-  type RGItem,
-} from '@/services/revenueGeneratorService'
-import { AuctionType, type AuctionItem } from '@/types/auction-item'
-import { Download, Loader2, Plus, Printer, Search, X } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import { BidCardSizeDialog } from '@/components/reports/BidCardSizeDialog'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -22,11 +12,21 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { BidCardSizeDialog } from '@/components/reports/BidCardSizeDialog'
 import { AuctionItemList } from '@/features/events/components/AuctionItemList'
 import { RevenueGeneratorItemCard } from '@/features/events/components/RevenueGeneratorItemCard'
 import { useEventWorkspace } from '@/features/events/useEventWorkspace'
 import { RGItemForm } from '@/features/revenue-generators/RGItemForm'
+import auctioneerService from '@/services/auctioneerService'
+import { reportService, type BidCardRequest } from '@/services/reportService'
+import revenueGeneratorService, {
+  type RGItem,
+} from '@/services/revenueGeneratorService'
+import { useAuctionItemStore } from '@/stores/auctionItemStore'
+import { AuctionType, type AuctionItem } from '@/types/auction-item'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import { Download, Loader2, Plus, Printer, Search, X } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 type TypeFilter = 'all' | 'live' | 'silent' | 'revenue_generators'
 
@@ -57,7 +57,7 @@ export function AuctionItemsIndexPage() {
   const [showCreateRG, setShowCreateRG] = useState(false)
   const [showBidCardDialog, setShowBidCardDialog] = useState(false)
 
-  // Bid card background generation state
+  // Auction item display card background generation state
   type BidCardGenState =
     | 'idle'
     | 'generating'
@@ -88,7 +88,7 @@ export function AuctionItemsIndexPage() {
           toast.error(
             err instanceof Error
               ? err.message
-              : 'Failed to generate bid cards. Please try again.'
+              : 'Failed to generate auction item display cards. Please try again.'
           )
         })
     },
@@ -249,7 +249,7 @@ export function AuctionItemsIndexPage() {
                   onClick={handleBidCardDownload}
                 >
                   <Download className='mr-2 h-4 w-4' />
-                  <span className='hidden sm:inline'>Download Bid Cards</span>
+                  <span className='hidden sm:inline'>Download Auction Item Display Cards</span>
                   <span className='sm:hidden'>Download</span>
                 </Button>
               )}
@@ -267,12 +267,12 @@ export function AuctionItemsIndexPage() {
                 <span className='hidden sm:inline'>
                   {bidCardGenState === 'generating'
                     ? 'Generating…'
-                    : 'Print Bid Cards'}
+                    : 'Print Auction Item Display Cards'}
                 </span>
                 <span className='sm:hidden'>
                   {bidCardGenState === 'generating'
                     ? 'Generating…'
-                    : 'Bid Cards'}
+                    : 'Display Cards'}
                 </span>
               </Button>
               {(typeFilter === 'all' || typeFilter === 'live') && (

@@ -1,35 +1,48 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { fetchEventTables } from '@/services/seating-service'
+import {
+  Check,
+  CreditCard,
+  Loader2,
+  Mail,
+  Phone,
+  Ticket,
+  User,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
+import { getNextAvailableBidderNumber } from '@/lib/api/admin-seating'
+import {
+  createQuickSale,
+  type QuickSaleGuestInfo,
+  type QuickSaleRequest,
+} from '@/lib/api/quick-sale'
+import apiClient from '@/lib/axios'
+import { getErrorMessage } from '@/lib/error-utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import {
-    createQuickSale,
-    type QuickSaleGuestInfo,
-    type QuickSaleRequest,
-} from '@/lib/api/quick-sale'
-import apiClient from '@/lib/axios'
-import { getErrorMessage } from '@/lib/error-utils'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Loader2, Mail, Phone, Ticket, User } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+
+const AUTO_ASSIGN_SELECT_VALUE = '__AUTO_ASSIGN__'
 
 interface TicketPackage {
   id: string
@@ -74,6 +87,9 @@ export function QuickSaleDialog({
   // Bidder and table assignment
   const [bidderNumber, setBidderNumber] = useState<string>('') // Empty means auto-assign
   const [tableNumber, setTableNumber] = useState<string>('') // Empty means auto-assign
+  const [autoAssignLoading, setAutoAssignLoading] = useState<
+    'bidder' | 'table' | null
+  >(null)
 
   const [checkInImmediately, setCheckInImmediately] = useState(true)
   const [notes, setNotes] = useState('')
@@ -105,6 +121,86 @@ export function QuickSaleDialog({
 
   const packages = packagesData?.filter((pkg) => pkg.is_enabled) ?? []
   const selectedPackage = packages.find((pkg) => pkg.id === selectedPackageId)
+
+  const { data: attendeesData } = useQuery({
+    queryKey: ['event-attendees', eventId],
+    queryFn: async () => {
+      const result = await getEventAttendees(eventId, false)
+      if (result instanceof Blob) {
+        throw new Error('Unexpected CSV response while loading attendees')
+      }
+      return result
+    },
+    enabled: open,
+    staleTime: 30_000,
+    retry: false,
+  })
+
+  const { data: eventTablesData, isFetching: isEventTablesFetching } = useQuery(
+    {
+      queryKey: ['event-tables', eventId],
+      queryFn: () => fetchEventTables(eventId),
+      enabled: open,
+      staleTime: 30_000,
+      retry: false,
+    }
+  )
+
+  const attendees = useMemo(() => {
+    const rows = (attendeesData?.attendees ?? []) as Attendee[]
+    return rows.filter(
+      (attendee) =>
+        attendee.status !== 'cancelled' && attendee.status !== 'canceled'
+    )
+  }, [attendeesData])
+
+  const tableOptions = useMemo(() => {
+    const occupancyByTable = new Map<number, number>()
+    for (const attendee of attendees) {
+      if (attendee.table_number == null || attendee.table_number < 1) {
+        continue
+      }
+      occupancyByTable.set(
+        attendee.table_number,
+        (occupancyByTable.get(attendee.table_number) ?? 0) + 1
+      )
+    }
+
+    const tableNumbers = new Set<number>()
+    for (const table of eventTablesData?.tables ?? []) {
+      tableNumbers.add(table.table_number)
+    }
+    for (const tableNumber of occupancyByTable.keys()) {
+      tableNumbers.add(tableNumber)
+    }
+
+    return Array.from(tableNumbers)
+      .sort((a, b) => a - b)
+      .map((tableNumber) => {
+        const tableMeta = eventTablesData?.tables?.find(
+          (table) => table.table_number === tableNumber
+        )
+        const currentOccupancy = occupancyByTable.get(tableNumber) ?? 0
+        const effectiveCapacity =
+          tableMeta?.effective_capacity ??
+          eventTablesData?.event_max_guests_per_table ??
+          8
+        const availableSeats = Math.max(0, effectiveCapacity - currentOccupancy)
+
+        return {
+          tableNumber,
+          tableName: tableMeta?.table_name ?? null,
+          currentOccupancy,
+          effectiveCapacity,
+          availableSeats,
+          isFull: availableSeats === 0,
+        }
+      })
+  }, [
+    attendees,
+    eventTablesData?.event_max_guests_per_table,
+    eventTablesData?.tables,
+  ])
 
   // Reset form when dialog closes
   useEffect(() => {
@@ -213,9 +309,7 @@ export function QuickSaleDialog({
 
     setGuests((prev) =>
       prev.map((guest, i) =>
-        i === index
-          ? { ...guest, [field]: value === '' ? null : value }
-          : guest
+        i === index ? { ...guest, [field]: value === '' ? null : value } : guest
       )
     )
   }
@@ -284,8 +378,14 @@ export function QuickSaleDialog({
       payment_method: paymentMethod,
 
       // Payment details
-      card_last_four: paymentMethod === 'credit_card' && cardLastFour.trim() ? cardLastFour.trim() : null,
-      check_number: paymentMethod === 'check' && checkNumber.trim() ? checkNumber.trim() : null,
+      card_last_four:
+        paymentMethod === 'credit_card' && cardLastFour.trim()
+          ? cardLastFour.trim()
+          : null,
+      check_number:
+        paymentMethod === 'check' && checkNumber.trim()
+          ? checkNumber.trim()
+          : null,
 
       // Bidder and table assignment (empty = auto-assign)
       bidder_number: bidderNumber.trim() ? parseInt(bidderNumber.trim()) : null,
@@ -296,6 +396,43 @@ export function QuickSaleDialog({
     }
 
     quickSaleMutation.mutate(payload)
+  }
+
+  const handleAutoAssign = async (field: 'bidder' | 'table') => {
+    setAutoAssignLoading(field)
+
+    try {
+      if (field === 'bidder') {
+        const nextBidder = await getNextAvailableBidderNumber(eventId)
+        setBidderNumber(String(nextBidder.next_bidder_number))
+        return
+      }
+
+      if (tableOptions.length === 0) {
+        toast.error('Table list not loaded yet — please try again in a moment')
+        return
+      }
+
+      const partySize = Math.max(1, quantity)
+      const bestTable =
+        tableOptions.find(
+          (tableOption) =>
+            !tableOption.isFull && tableOption.availableSeats >= partySize
+        ) ?? tableOptions.find((tableOption) => !tableOption.isFull)
+
+      if (!bestTable) {
+        toast.error('No table has available seats')
+        return
+      }
+
+      setTableNumber(String(bestTable.tableNumber))
+    } catch (err) {
+      toast.error(
+        getErrorMessage(err, 'Failed to fetch auto-assignment values')
+      )
+    } finally {
+      setAutoAssignLoading(null)
+    }
   }
 
   return (
@@ -316,16 +453,19 @@ export function QuickSaleDialog({
           <div className='space-y-2'>
             <Label htmlFor='package-select'>Ticket Package *</Label>
             {packagesLoading ? (
-              <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+              <div className='text-muted-foreground flex items-center gap-2 text-sm'>
                 <Loader2 className='h-4 w-4 animate-spin' />
                 Loading packages...
               </div>
             ) : packagesIsError ? (
-              <div className='rounded-md bg-destructive/10 p-3 text-sm text-destructive'>
-                Failed to load ticket packages. {packagesError instanceof Error ? packagesError.message : 'Please try again.'}
+              <div className='bg-destructive/10 text-destructive rounded-md p-3 text-sm'>
+                Failed to load ticket packages.{' '}
+                {packagesError instanceof Error
+                  ? packagesError.message
+                  : 'Please try again.'}
               </div>
             ) : packages.length === 0 ? (
-              <p className='text-sm text-muted-foreground'>
+              <p className='text-muted-foreground text-sm'>
                 No active ticket packages available
               </p>
             ) : (
@@ -385,7 +525,7 @@ export function QuickSaleDialog({
             <div className='space-y-2'>
               <Label htmlFor='buyer-name'>Full Name *</Label>
               <div className='relative'>
-                <User className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                <User className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                 <Input
                   id='buyer-name'
                   placeholder='John Doe'
@@ -398,7 +538,7 @@ export function QuickSaleDialog({
             <div className='space-y-2'>
               <Label htmlFor='buyer-email'>Email *</Label>
               <div className='relative'>
-                <Mail className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                <Mail className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                 <Input
                   id='buyer-email'
                   type='email'
@@ -412,12 +552,14 @@ export function QuickSaleDialog({
             <div className='space-y-2'>
               <Label htmlFor='buyer-phone'>Phone</Label>
               <div className='relative'>
-                <Phone className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                <Phone className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
                 <Input
                   id='buyer-phone'
                   placeholder='(555) 123-4567'
                   value={buyerPhone}
-                  onChange={(e) => setBuyerPhone(formatPhoneInput(e.target.value))}
+                  onChange={(e) =>
+                    setBuyerPhone(formatPhoneInput(e.target.value))
+                  }
                   className='pl-9'
                 />
               </div>
@@ -505,7 +647,7 @@ export function QuickSaleDialog({
             </div>
             <div className='space-y-3'>
               {guests.map((guest, index) => (
-                <div key={index} className='rounded-lg border p-3 space-y-2'>
+                <div key={index} className='space-y-2 rounded-lg border p-3'>
                   <div className='flex items-center justify-between'>
                     <span className='text-sm font-medium'>
                       Attendee {index + 1}
@@ -514,9 +656,7 @@ export function QuickSaleDialog({
                   <Input
                     placeholder='Full Name *'
                     value={guest.name}
-                    onChange={(e) =>
-                      updateGuest(index, 'name', e.target.value)
-                    }
+                    onChange={(e) => updateGuest(index, 'name', e.target.value)}
                   />
                   <Input
                     placeholder='Email (optional)'
@@ -563,15 +703,29 @@ export function QuickSaleDialog({
 
             {/* Payment Details (conditional) */}
             {paymentMethod === 'credit_card' && (
-              <div className='space-y-2'>
-                <Label htmlFor='card-last-four'>Card Last 4 Digits</Label>
-                <Input
-                  id='card-last-four'
-                  placeholder='1234'
-                  maxLength={4}
-                  value={cardLastFour}
-                  onChange={(e) => setCardLastFour(e.target.value.replace(/\D/g, ''))}
-                />
+              <div className='space-y-2 rounded-md border p-3'>
+                <div className='flex items-center justify-between'>
+                  <div className='flex items-center gap-2'>
+                    <CreditCard className='text-muted-foreground h-4 w-4' />
+                    <span className='text-sm font-medium'>Payment Method</span>
+                  </div>
+                  <span className='flex items-center gap-1 text-sm text-green-600'>
+                    <Check className='h-3 w-3' />
+                    Credit Card
+                  </span>
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='card-last-four'>Card Last 4 Digits</Label>
+                  <Input
+                    id='card-last-four'
+                    placeholder='1234'
+                    maxLength={4}
+                    value={cardLastFour}
+                    onChange={(e) =>
+                      setCardLastFour(e.target.value.replace(/\D/g, ''))
+                    }
+                  />
+                </div>
               </div>
             )}
 
@@ -588,12 +742,25 @@ export function QuickSaleDialog({
               </div>
             )}
 
-            {/* Bidder Number (auto-assign if empty) */}
+            {/* Bidder Number */}
             <div className='space-y-2'>
-              <Label htmlFor='bidder-number'>Bidder Number (100-999, or leave empty to auto-assign)</Label>
+              <div className='flex items-center justify-between gap-2'>
+                <Label htmlFor='bidder-number'>Bidder Number (100-999)</Label>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  onClick={() => handleAutoAssign('bidder')}
+                  disabled={autoAssignLoading === 'bidder'}
+                >
+                  {autoAssignLoading === 'bidder' && (
+                    <Loader2 className='mr-2 h-3 w-3 animate-spin' />
+                  )}
+                  Auto Assign
+                </Button>
+              </div>
               <Input
                 id='bidder-number'
-                placeholder='Auto-assign'
                 type='number'
                 min={100}
                 max={999}
@@ -602,17 +769,58 @@ export function QuickSaleDialog({
               />
             </div>
 
-            {/* Table Number (auto-assign if empty) */}
+            {/* Table Number */}
             <div className='space-y-2'>
-              <Label htmlFor='table-number'>Table Number (or leave empty to auto-assign)</Label>
-              <Input
-                id='table-number'
-                placeholder='Auto-assign'
-                type='number'
-                min={1}
-                value={tableNumber}
-                onChange={(e) => setTableNumber(e.target.value)}
-              />
+              <div className='flex items-center justify-between gap-2'>
+                <Label htmlFor='table-number'>Table Number</Label>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  onClick={() => handleAutoAssign('table')}
+                  disabled={
+                    autoAssignLoading === 'table' ||
+                    isEventTablesFetching ||
+                    tableOptions.length === 0
+                  }
+                >
+                  {autoAssignLoading === 'table' && (
+                    <Loader2 className='mr-2 h-3 w-3 animate-spin' />
+                  )}
+                  Auto Assign
+                </Button>
+              </div>
+              <Select
+                value={tableNumber || AUTO_ASSIGN_SELECT_VALUE}
+                onValueChange={(value) =>
+                  setTableNumber(
+                    value === AUTO_ASSIGN_SELECT_VALUE ? '' : value
+                  )
+                }
+              >
+                <SelectTrigger id='table-number'>
+                  <SelectValue placeholder='Select a table' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={AUTO_ASSIGN_SELECT_VALUE}>
+                    Auto Assign
+                  </SelectItem>
+                  {tableOptions.map((table) => {
+                    const currentValue = String(table.tableNumber)
+                    return (
+                      <SelectItem
+                        key={table.tableNumber}
+                        value={currentValue}
+                        disabled={table.isFull && currentValue !== tableNumber}
+                      >
+                        Table {table.tableNumber}
+                        {table.tableName ? ` - ${table.tableName}` : ''} (
+                        {table.availableSeats}/{table.effectiveCapacity} open)
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className='flex items-center gap-2'>
@@ -625,7 +833,7 @@ export function QuickSaleDialog({
               />
               <Label
                 htmlFor='check-in-immediately'
-                className='text-sm font-normal cursor-pointer'
+                className='cursor-pointer text-sm font-normal'
               >
                 Check in attendees immediately
               </Label>
@@ -644,14 +852,14 @@ export function QuickSaleDialog({
 
           {/* Summary */}
           {selectedPackage && quantity > 0 && (
-            <div className='rounded-lg bg-muted p-3'>
+            <div className='bg-muted rounded-lg p-3'>
               <div className='flex items-center justify-between text-sm'>
                 <span className='font-medium'>Total:</span>
                 <span className='font-bold'>
                   ${(selectedPackage.price * quantity).toFixed(2)}
                 </span>
               </div>
-              <p className='text-xs text-muted-foreground mt-1'>
+              <p className='text-muted-foreground mt-1 text-xs'>
                 {quantity} × {selectedPackage.name} @ $
                 {selectedPackage.price.toFixed(2)}
               </p>
