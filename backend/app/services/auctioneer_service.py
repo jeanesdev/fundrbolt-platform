@@ -236,7 +236,7 @@ class AuctioneerService:
         commissions: list[CommissionListItem] = []
         for row in rows:
             comm = row[0]
-            primary_image = row[11]  # primary_image_url from subquery
+            primary_image = row[10]  # primary_image_url from subquery
 
             commissions.append(
                 CommissionListItem(

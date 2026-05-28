@@ -165,6 +165,8 @@ export function AuctioneerDashboardPage({
     'live' | 'silent' | 'paddle' | 'revenue'
   >(defaultTab)
   const [showCommissionTotals, setShowCommissionTotals] = useState(true)
+  const summaryHeaderRef = useRef<HTMLDivElement | null>(null)
+  const [summaryStickyTop, setSummaryStickyTop] = useState(56)
   const [summaryPinned, setSummaryPinned] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem('auctioneer-summary-pinned')
@@ -181,6 +183,43 @@ export function AuctioneerDashboardPage({
       // Ignore localStorage failures
     }
   }, [summaryPinned])
+
+  useEffect(() => {
+    const getScrollParent = (element: HTMLElement | null): HTMLElement | null => {
+      let current = element?.parentElement ?? null
+      while (current) {
+        const styles = window.getComputedStyle(current)
+        const overflowY = styles.overflowY
+        if (
+          overflowY === 'auto' ||
+          overflowY === 'scroll' ||
+          overflowY === 'overlay'
+        ) {
+          return current
+        }
+        current = current.parentElement
+      }
+      return null
+    }
+
+    const updateStickyOffset = () => {
+      const scrollParent = getScrollParent(summaryHeaderRef.current)
+      const usesDocumentScroll =
+        !scrollParent ||
+        scrollParent === document.body ||
+        scrollParent === document.documentElement
+
+      // Keep room for the 56px global top nav when the page itself is the scroller.
+      setSummaryStickyTop(usesDocumentScroll ? 56 : 0)
+    }
+
+    updateStickyOffset()
+    window.addEventListener('resize', updateStickyOffset)
+
+    return () => {
+      window.removeEventListener('resize', updateStickyOffset)
+    }
+  }, [])
 
   useEffect(() => {
     if (settings?.paddle_raise_levels?.length) {
@@ -419,8 +458,10 @@ export function AuctioneerDashboardPage({
       </div>
 
       <div
-        className={`bg-background/95 supports-[backdrop-filter]:bg-background/85 -mx-2 border-b px-2 py-2 backdrop-blur sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6 ${summaryPinned ? 'sticky top-14 z-30' : ''
+        ref={summaryHeaderRef}
+        className={`bg-background/95 supports-[backdrop-filter]:bg-background/85 -mx-2 border-b px-2 py-2 backdrop-blur sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6 ${summaryPinned ? 'sticky z-30' : ''
           }`}
+        style={summaryPinned ? { top: `${summaryStickyTop}px` } : undefined}
       >
         <div className='relative'>
           <div className='grid min-w-0 auto-cols-auto grid-flow-col grid-rows-2 gap-1.5 overflow-x-auto pr-8 pb-0.5'>
@@ -916,8 +957,8 @@ function CompactStatusChip({
   return (
     <div
       className={`bg-muted/70 flex min-h-9 items-center gap-2 rounded-md border px-2.5 py-1 text-xs${onClick
-          ? 'hover:bg-muted hover:border-foreground/20 cursor-pointer transition-colors'
-          : ''
+        ? 'hover:bg-muted hover:border-foreground/20 cursor-pointer transition-colors'
+        : ''
         }`}
       onClick={onClick}
       role={onClick ? 'button' : undefined}

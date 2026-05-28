@@ -29,34 +29,34 @@ const LABEL_SIZE_OPTIONS: {
   label: string
   description: string
 }[] = [
-  { value: '2x3', label: '2" × 3"', description: 'Small badge / shelf label' },
-  {
-    value: '2x4',
-    label: '2" × 4"',
-    description: 'Standard address label (Brady 3456)',
-  },
-  { value: '3x3', label: '3" × 3"', description: 'Square label' },
-  {
-    value: '3x5',
-    label: '3" × 5"',
-    description: 'Index card / large bid card (recommended)',
-  },
-  {
-    value: 'tent-8.5x11',
-    label: 'Tent — short fold (landscape)',
-    description: 'Folds on the short side · 11"×4.25" faces (1 per sheet)',
-  },
-  {
-    value: 'tent-8.5x11-long',
-    label: 'Tent — long fold (portrait)',
-    description: 'Folds on the long side · 8.5"×5.5" faces (1 per sheet)',
-  },
-  {
-    value: 'tent-8.5x11-2up',
-    label: 'Tent 2-up (landscape)',
-    description: 'Two tent cards per sheet — cut along dashed line',
-  },
-]
+    { value: '2x3', label: '2" × 3"', description: 'Small badge / shelf label' },
+    {
+      value: '2x4',
+      label: '2" × 4"',
+      description: 'Standard address label (Brady 3456)',
+    },
+    { value: '3x3', label: '3" × 3"', description: 'Square label' },
+    {
+      value: '3x5',
+      label: '3" × 5"',
+      description: 'Index card / large auction item display card (recommended)',
+    },
+    {
+      value: 'tent-8.5x11',
+      label: 'Tent — short fold (landscape)',
+      description: 'Folds on the short side · 11"×4.25" faces (1 per sheet)',
+    },
+    {
+      value: 'tent-8.5x11-long',
+      label: 'Tent — long fold (portrait)',
+      description: 'Folds on the long side · 8.5"×5.5" faces (1 per sheet)',
+    },
+    {
+      value: 'tent-8.5x11-2up',
+      label: 'Tent 2-up (landscape)',
+      description: 'Two tent cards per sheet — cut along dashed line',
+    },
+  ]
 
 export { LABEL_SIZE_OPTIONS }
 
@@ -90,7 +90,7 @@ class ReportService {
     const sizeLabel = request.label_size.replace('x', '-by-')
     return {
       blob: response.data,
-      filename: `bid-cards-${sizeLabel}-${eventId}.pdf`,
+      filename: `auction-item-display-cards-${sizeLabel}-${eventId}.pdf`,
     }
   }
 
@@ -105,7 +105,7 @@ class ReportService {
   async downloadAuctioneerReport(eventId: string): Promise<void> {
     const response = await apiClient.get<Blob>(
       `/admin/events/${eventId}/auctioneer/report`,
-      { responseType: 'blob' }
+      { responseType: 'blob', timeout: 300_000 } // PDF generation can exceed default 30s timeout
     )
     triggerDownload(response.data, `auctioneer-report-${eventId}.pdf`)
   }
@@ -114,7 +114,7 @@ class ReportService {
   async fetchAuctioneerReportBlob(eventId: string): Promise<Blob> {
     const response = await apiClient.get<Blob>(
       `/admin/events/${eventId}/auctioneer/report`,
-      { responseType: 'blob' }
+      { responseType: 'blob', timeout: 300_000 } // PDF generation can exceed default 30s timeout
     )
     return response.data
   }

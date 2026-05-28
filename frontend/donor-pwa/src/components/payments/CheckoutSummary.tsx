@@ -30,24 +30,11 @@ export interface CheckoutSummaryProps {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const LINE_ITEM_TYPE_LABELS: Record<string, string> = {
-  ticket: 'Ticket',
-  auction_win: 'Auction Item',
-  donation: 'Donation',
-  extra_tip: 'Extra Tip',
-  fee_coverage: 'Processing Fee',
-}
-
 function fmtCurrency(amount: number, currency = 'USD'): string {
   return new Intl.NumberFormat(undefined, {
     style: 'currency',
     currency,
   }).format(amount)
-}
-
-/** Item type badge label */
-function typeBadge(type: string): string {
-  return LINE_ITEM_TYPE_LABELS[type] ?? type
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -88,9 +75,6 @@ export function CheckoutSummary({
         >
           <div className='min-w-0 flex-1'>
             <span className='text-foreground'>{item.label}</span>
-            <span className='text-muted-foreground ml-2 text-xs'>
-              {typeBadge(item.type)}
-            </span>
           </div>
           <span
             className={

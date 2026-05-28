@@ -168,6 +168,12 @@ type ContactSnapshot = {
   country: string
 }
 
+type CoreDetailsSnapshot = {
+  name: string
+  email: string
+  phone: string
+}
+
 const defaultEditForm: EditFormState = {
   name: '',
   email: '',
@@ -182,6 +188,18 @@ const defaultEditForm: EditFormState = {
   state: '',
   postalCode: '',
   country: '',
+}
+
+function normalizeForComparison(value: string | null | undefined): string {
+  return (value ?? '').trim()
+}
+
+function normalizePhoneForComparison(value: string | null | undefined): string {
+  const digitsOnly = normalizeForComparison(value).replace(/\D/g, '')
+  if (digitsOnly.length <= 10) {
+    return digitsOnly
+  }
+  return digitsOnly.slice(-10)
 }
 
 export function EventCheckInSection() {
@@ -276,9 +294,9 @@ export function EventCheckInSection() {
       const assignment =
         !undo && (bidderNumber !== undefined || tableNumber !== undefined)
           ? {
-            bidder_number: bidderNumber,
-            table_number: tableNumber ?? undefined,
-          }
+              bidder_number: bidderNumber,
+              table_number: tableNumber ?? undefined,
+            }
           : undefined
 
       if (attendeeType === 'guest') {
@@ -323,7 +341,22 @@ export function EventCheckInSection() {
         return Promise.race([promise, timeoutPromise])
       }
 
-      if (attendee.attendee_type === 'registrant') {
+      const nextCoreDetails: CoreDetailsSnapshot = {
+        name: normalizeForComparison(editForm.name),
+        email: normalizeForComparison(editForm.email),
+        phone: normalizePhoneForComparison(editForm.phone),
+      }
+      const currentCoreDetails: CoreDetailsSnapshot = {
+        name: normalizeForComparison(attendee.name),
+        email: normalizeForComparison(attendee.email),
+        phone: normalizePhoneForComparison(attendee.phone),
+      }
+      const hasCoreDetailsChanges =
+        nextCoreDetails.name !== currentCoreDetails.name ||
+        nextCoreDetails.email !== currentCoreDetails.email ||
+        nextCoreDetails.phone !== currentCoreDetails.phone
+
+      if (attendee.attendee_type === 'registrant' && hasCoreDetailsChanges) {
         const trimmedName = editForm.name.trim()
         const nameParts = trimmedName.split(/\s+/).filter(Boolean)
         const firstName = nameParts[0] ?? ''
@@ -340,18 +373,18 @@ export function EventCheckInSection() {
             {
               first_name: firstName,
               last_name: lastName,
-              email: editForm.email.trim() || undefined,
-              phone: editForm.phone.trim() || undefined,
+              email: nextCoreDetails.email || undefined,
+              phone: nextCoreDetails.phone || undefined,
             }
           ),
           'Updating registration details'
         )
-      } else {
+      } else if (attendee.attendee_type === 'guest' && hasCoreDetailsChanges) {
         await withTimeout(
           checkinService.updateGuestDetails(currentEvent.id, attendee.id, {
-            name: editForm.name.trim() || undefined,
-            email: editForm.email.trim() || undefined,
-            phone: editForm.phone.trim() || undefined,
+            name: nextCoreDetails.name || undefined,
+            email: nextCoreDetails.email || undefined,
+            phone: nextCoreDetails.phone || undefined,
           }),
           'Updating guest details'
         )
@@ -402,12 +435,14 @@ export function EventCheckInSection() {
                 attendee.registration_id,
                 tableNumber
               ),
-              'Assigning table number'
+              'Assigning table number',
+              60000
             )
           } else {
             await withTimeout(
               assignGuestToTable(currentEvent.id, attendee.id, tableNumber),
-              'Assigning table number'
+              'Assigning table number',
+              60000
             )
           }
         }
@@ -430,13 +465,13 @@ export function EventCheckInSection() {
         (initialContactSnapshot.organizationName !==
           currentContactSnapshot.organizationName ||
           initialContactSnapshot.addressLine1 !==
-          currentContactSnapshot.addressLine1 ||
+            currentContactSnapshot.addressLine1 ||
           initialContactSnapshot.addressLine2 !==
-          currentContactSnapshot.addressLine2 ||
+            currentContactSnapshot.addressLine2 ||
           initialContactSnapshot.city !== currentContactSnapshot.city ||
           initialContactSnapshot.state !== currentContactSnapshot.state ||
           initialContactSnapshot.postalCode !==
-          currentContactSnapshot.postalCode ||
+            currentContactSnapshot.postalCode ||
           initialContactSnapshot.country !== currentContactSnapshot.country)
 
       if (attendee.user_id && hasContactChanges) {
@@ -1336,10 +1371,11 @@ export function EventCheckInSection() {
                           <dt className='text-muted-foreground'>Payment</dt>
                           <dd>
                             <span
-                              className={`flex items-center gap-1 text-xs ${attendee.has_payment_profile
+                              className={`flex items-center gap-1 text-xs ${
+                                attendee.has_payment_profile
                                   ? 'text-green-600'
                                   : 'text-muted-foreground'
-                                }`}
+                              }`}
                             >
                               <CreditCard className='h-3 w-3' />
                               {attendee.has_payment_profile
@@ -1658,10 +1694,11 @@ export function EventCheckInSection() {
                               }
                             >
                               <CreditCard
-                                className={`h-4 w-4 ${attendee.has_payment_profile
+                                className={`h-4 w-4 ${
+                                  attendee.has_payment_profile
                                     ? 'text-green-600'
                                     : 'text-muted-foreground'
-                                  }`}
+                                }`}
                               />
                             </span>
                           </TableCell>
