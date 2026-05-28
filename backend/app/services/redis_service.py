@@ -155,10 +155,10 @@ class RedisService:
             return result > 0
         except (RedisError, TimeoutError, OSError):
             logger.warning(
-                "Redis unavailable during token blacklist check; treating token as valid",
+                "Redis unavailable during token blacklist check; treating token as blacklisted",
                 exc_info=True,
             )
-            return False
+            return True
 
     @staticmethod
     async def store_email_verification_token(token: str, user_id: uuid.UUID) -> None:
