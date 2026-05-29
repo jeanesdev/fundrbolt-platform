@@ -75,6 +75,9 @@ class DonorDashboardService:
         sort_by: str = "total_given",
         sort_order: str = "desc",
         search: str | None = None,
+        filter_col: str | None = None,
+        filter_min: float | None = None,
+        filter_max: float | None = None,
         page: int = 1,
         per_page: int = 25,
         _known_total: int | None = None,
@@ -274,6 +277,23 @@ class DonorDashboardService:
                 | (User.email.ilike(like))
             )
 
+        # Column filters (e.g. hide donors with $0 donations)
+        _filter_col_map: dict[str, Any] = {
+            "total_given": total_val,
+            "events_attended": attended_val,
+            "ticket_total": ticket_val,
+            "donation_total": donation_val,
+            "silent_auction_total": silent_val,
+            "live_auction_total": live_val,
+            "buy_now_total": buynow_val,
+        }
+        if filter_col and filter_col in _filter_col_map:
+            col_expr = _filter_col_map[filter_col]
+            if filter_min is not None:
+                base_query = base_query.where(col_expr >= filter_min)
+            if filter_max is not None:
+                base_query = base_query.where(col_expr <= filter_max)
+
         # Sort column mapping
         sort_map: dict[str, Any] = {
             "total_given": total_val,
@@ -291,7 +311,13 @@ class DonorDashboardService:
         if _known_total is not None:
             total = _known_total
         else:
-            count_query = select(func.count()).select_from(base_query.subquery())
+            # Fast path for common initial load: no name/email search and no numeric filter.
+            # In this case, total equals the number of distinct donor IDs and we can avoid
+            # counting over the heavy joined aggregation query.
+            if not search and not filter_col:
+                count_query = select(func.count()).select_from(distinct_donors)
+            else:
+                count_query = select(func.count()).select_from(base_query.subquery())
             total = (await self.db.execute(count_query)).scalar_one()
 
         # Paginated result

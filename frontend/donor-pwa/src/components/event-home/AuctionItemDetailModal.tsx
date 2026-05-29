@@ -941,7 +941,7 @@ export function AuctionItemDetailModal({
                             }}
                           />
                           <div className='pointer-events-none absolute inset-y-0 right-14 left-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)] sm:text-base'>
-                            <span>Slide to Review Bid ·</span>
+                            <span>Slide to Place Bid ·</span>
                             <span className='ml-1 sm:ml-2'>
                               {formatCurrency(effectiveSelectedBidAmount)}
                             </span>
@@ -984,7 +984,7 @@ export function AuctionItemDetailModal({
                             style={{ width: getSliderFillWidth(maxBidPercent) }}
                           />
                           <div className='pointer-events-none absolute inset-y-0 right-14 left-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)] sm:text-base'>
-                            <span>Slide to Review Max Bid ·</span>
+                            <span>Slide to Set Max Bid ·</span>
                             <span className='ml-1 sm:ml-2'>
                               {formatCurrency(effectiveSelectedBidAmount)}
                             </span>
@@ -1030,7 +1030,7 @@ export function AuctionItemDetailModal({
                               }}
                             />
                             <div className='pointer-events-none absolute inset-y-0 right-14 left-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#000000)] sm:text-base'>
-                              <span>Slide to Review Buy Now ·</span>
+                              <span>Slide to Buy Now ·</span>
                               <span className='ml-1 sm:ml-2'>
                                 {formatCurrency(item.buy_now_price)}
                               </span>

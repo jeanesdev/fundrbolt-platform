@@ -1,4 +1,3 @@
-import { BidConfirmSlide } from '@/components/auction/BidConfirmSlide'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -29,9 +28,11 @@ export function RevenueGeneratorCard({
   const [slideValue, setSlideValue] = useState<number[]>([0])
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [selectedQuantity, setSelectedQuantity] = useState(1)
-  const [reviewingPurchase, setReviewingPurchase] = useState(false)
+  const [confirmSlideValue, setConfirmSlideValue] = useState<number[]>([0])
   const [isDragging, setIsDragging] = useState(false)
+  const [isConfirmDragging, setIsConfirmDragging] = useState(false)
   const slidePercent = slideValue[0] ?? 0
+  const confirmPercent = confirmSlideValue[0] ?? 0
   const remainingPerPersonEntries =
     item.max_entries_per_person != null
       ? Math.max(item.max_entries_per_person - item.my_entry_count, 0)
@@ -42,6 +43,7 @@ export function RevenueGeneratorCard({
     Math.min(remainingPerPersonEntries ?? 10, 25)
   )
   const canChooseMultipleEntries = maxSelectableEntries > 1
+  const wheelVisibleCount = Math.min(5, maxSelectableEntries)
   const wheelOptions = useMemo(
     () =>
       Array.from({ length: maxSelectableEntries }, (_, index) => {
@@ -160,14 +162,14 @@ export function RevenueGeneratorCard({
               style={
                 item.is_open_for_entries
                   ? {
-                    backgroundColor:
-                      'rgba(var(--event-primary, 59, 130, 246), 0.15)',
-                    color: 'rgb(var(--event-primary, 59, 130, 246))',
-                  }
+                      backgroundColor:
+                        'rgba(var(--event-primary, 59, 130, 246), 0.15)',
+                      color: 'rgb(var(--event-primary, 59, 130, 246))',
+                    }
                   : {
-                    backgroundColor: 'rgba(107, 114, 128, 0.1)',
-                    color: 'rgb(107, 114, 128)',
-                  }
+                      backgroundColor: 'rgba(107, 114, 128, 0.1)',
+                      color: 'rgb(107, 114, 128)',
+                    }
               }
             >
               {item.is_open_for_entries ? 'Open' : 'Closed'}
@@ -253,23 +255,40 @@ export function RevenueGeneratorCard({
         onOpenChange={(open) => {
           setShowPurchaseModal(open)
           if (!open) {
-            setReviewingPurchase(false)
+            setConfirmSlideValue([0])
+            setIsConfirmDragging(false)
           }
         }}
       >
-        <DialogContent className='max-w-md'>
+        <DialogContent
+          className='max-w-md border'
+          style={{
+            borderColor: 'rgba(var(--event-primary, 59, 130, 246), 0.35)',
+            backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+            color: 'var(--event-text-on-background, #111827)',
+          }}
+        >
           <DialogHeader>
-            <DialogTitle>Review Purchase</DialogTitle>
-            <DialogDescription>{item.name}</DialogDescription>
+            <DialogTitle
+              style={{ color: 'var(--event-text-on-background, #111827)' }}
+            >
+              Review Purchase
+            </DialogTitle>
+            <DialogDescription
+              style={{ color: 'var(--event-text-on-background, #4B5563)' }}
+            >
+              {item.name}
+            </DialogDescription>
           </DialogHeader>
 
           <div className='space-y-4 py-2'>
             {canChooseMultipleEntries ? (
               <div
-                className='h-[132px] overflow-hidden rounded-xl border px-3 py-2'
+                className='h-[98px] overflow-hidden rounded-xl border px-3 py-2'
                 style={{
                   borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.35)',
-                  backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                  backgroundColor:
+                    'rgb(var(--event-background, 255, 255, 255))',
                 }}
               >
                 <WheelPickerWrapper className='flex h-full items-center justify-center'>
@@ -279,37 +298,29 @@ export function RevenueGeneratorCard({
                       setSelectedQuantity(Number(value))
                     }}
                     options={wheelOptions}
-                    visibleCount={9}
+                    visibleCount={wheelVisibleCount}
                     dragSensitivity={1}
                     scrollSensitivity={1}
                     optionItemHeight={28}
                     classNames={{
-                      optionItem: 'donate-now-wheel-option text-sm font-semibold',
+                      optionItem:
+                        'donate-now-wheel-option text-sm font-semibold',
                       highlightWrapper: 'bg-muted/85 border-y border-border/70',
                       highlightItem: 'text-base font-semibold text-foreground',
                     }}
                   />
                 </WheelPickerWrapper>
               </div>
-            ) : (
-              <div
-                className='rounded-xl border p-4 text-center text-base font-semibold'
-                style={{
-                  borderColor: 'rgb(var(--event-primary, 59, 130, 246) / 0.35)',
-                  color: 'var(--event-text-on-background, #000000)',
-                  backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
-                }}
-              >
-                1 entry
-              </div>
-            )}
+            ) : null}
 
             <div className='space-y-1 text-center'>
               <p
                 className='text-sm'
-                style={{ color: 'var(--event-text-on-background, #6B7280)' }}
+                style={{ color: 'var(--event-text-on-background, #4B5563)' }}
               >
-                {selectedQuantity} {selectedQuantity === 1 ? 'entry' : 'entries'} at ${Number(item.price_per_entry).toFixed(2)} each
+                {selectedQuantity}{' '}
+                {selectedQuantity === 1 ? 'entry' : 'entries'} at $
+                {Number(item.price_per_entry).toFixed(2)} each
               </p>
               <p
                 className='text-xl font-bold'
@@ -320,59 +331,106 @@ export function RevenueGeneratorCard({
               {item.max_entries_per_person == null && (
                 <p
                   className='text-xs'
-                  style={{ color: 'var(--event-text-on-background, #6B7280)' }}
+                  style={{ color: 'var(--event-text-on-background, #4B5563)' }}
                 >
-                  Showing up to 10 entries per purchase.
+                  Max entries per person: no limit (up to 10 per purchase).
                 </p>
               )}
-              {remainingPerPersonEntries != null && remainingPerPersonEntries > maxSelectableEntries && (
-                <p
-                  className='text-xs'
-                  style={{ color: 'var(--event-text-on-background, #6B7280)' }}
-                >
-                  Showing up to {maxSelectableEntries} entries at a time.
-                </p>
-              )}
+              {remainingPerPersonEntries != null &&
+                remainingPerPersonEntries > maxSelectableEntries && (
+                  <p
+                    className='text-xs'
+                    style={{
+                      color: 'var(--event-text-on-background, #4B5563)',
+                    }}
+                  >
+                    Max entries per person: {item.max_entries_per_person}.
+                  </p>
+                )}
             </div>
 
-            <div className='grid grid-cols-2 gap-2'>
+            <div
+              className='relative h-14 overflow-hidden rounded-[28px]'
+              style={{
+                backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
+                border:
+                  '1px solid rgba(var(--event-primary, 59, 130, 246), 0.35)',
+                touchAction: 'none',
+              }}
+              onPointerDown={() => setIsConfirmDragging(true)}
+              onPointerLeave={() => {
+                if (!isConfirmDragging) {
+                  setConfirmSlideValue([0])
+                }
+              }}
+            >
+              <div className='pointer-events-none absolute inset-0 z-0 bg-white' />
+              <div
+                className='pointer-events-none absolute top-0 bottom-0 left-0 z-[1] rounded-l-[28px]'
+                style={{
+                  width: getFillWidth(confirmPercent),
+                  backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
+                }}
+              />
+              <div className='pointer-events-none absolute inset-y-0 right-14 left-14 z-[2] flex items-center justify-center text-xs font-semibold text-[var(--event-text-on-background,#111827)]'>
+                {isPurchasing ? (
+                  <span>Processing…</span>
+                ) : (
+                  <>
+                    <span>Slide to Confirm ·</span>
+                    <span className='ml-1'>${purchaseTotal.toFixed(2)}</span>
+                  </>
+                )}
+              </div>
+              <div
+                className='pointer-events-none absolute top-0 z-[3] flex h-14 w-14 items-center justify-center rounded-full text-white shadow-md'
+                style={{
+                  left: getKnobLeft(confirmPercent),
+                  backgroundColor: 'rgb(var(--event-primary, 59, 130, 246))',
+                }}
+              >
+                <ArrowRight className='h-6 w-6' />
+              </div>
+              <Slider
+                value={confirmSlideValue}
+                onValueChange={(value) => setConfirmSlideValue(value)}
+                onValueCommit={(value) => {
+                  setIsConfirmDragging(false)
+                  const pct = value[0] ?? 0
+                  if (pct >= 95 && !isPurchasing) {
+                    setShowPurchaseModal(false)
+                    onPurchase?.(item.id, selectedQuantity)
+                  }
+                  setConfirmSlideValue([0])
+                }}
+                min={0}
+                max={100}
+                step={1}
+                className='absolute inset-0 z-20 w-full opacity-0'
+                aria-label='Slide to confirm purchase'
+                disabled={isPurchasing || !onPurchase}
+              />
+            </div>
+
+            <div className='grid grid-cols-1 gap-2'>
               <Button
                 type='button'
                 variant='outline'
                 onClick={() => setShowPurchaseModal(false)}
                 disabled={isPurchasing}
+                style={{
+                  color: 'var(--event-text-on-background, #111827)',
+                  borderColor: 'rgba(var(--event-primary, 59, 130, 246), 0.45)',
+                  backgroundColor:
+                    'rgb(var(--event-background, 255, 255, 255))',
+                }}
               >
                 Cancel
-              </Button>
-              <Button
-                type='button'
-                onClick={() => {
-                  setShowPurchaseModal(false)
-                  setReviewingPurchase(true)
-                }}
-                disabled={isPurchasing || !onPurchase}
-              >
-                Review Purchase
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
-
-      <BidConfirmSlide
-        isOpen={reviewingPurchase}
-        onClose={() => setReviewingPurchase(false)}
-        onConfirm={() => {
-          onPurchase?.(item.id, selectedQuantity)
-          setReviewingPurchase(false)
-        }}
-        bidAmount={purchaseTotal}
-        itemTitle={item.name}
-        title='Review Purchase'
-        summaryLabel='Purchase Amount'
-        helperText='Slide again to confirm your purchase'
-        cancelLabel='Back'
-      />
     </div>
   )
 }

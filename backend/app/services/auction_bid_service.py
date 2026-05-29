@@ -102,7 +102,13 @@ class AuctionBidService:
                 )
             await self.db.commit()
         except Exception:
-            await self.db.rollback()
+            try:
+                await self.db.rollback()
+            except Exception:
+                logger.warning(
+                    "Rollback failed while handling bid confirmation notification error",
+                    extra={"bid_id": str(bid.id), "user_id": str(bid.user_id)},
+                )
             logger.warning(
                 "Failed to send bid confirmation notification",
                 extra={"bid_id": str(bid.id), "user_id": str(bid.user_id)},
@@ -116,10 +122,12 @@ class AuctionBidService:
                 EventRegistration.event_id == event_id,
                 RegistrationGuest.user_id == user_id,
                 RegistrationGuest.is_primary.is_(True),
+                RegistrationGuest.bidder_number.is_not(None),
             )
+            .order_by(RegistrationGuest.created_at.desc())
         )
         result = await self.db.execute(stmt)
-        bidder_number = result.scalar_one_or_none()
+        bidder_number = result.scalars().first()
 
         if bidder_number is None:
             fallback_stmt = (
@@ -128,11 +136,13 @@ class AuctionBidService:
                 .where(
                     EventRegistration.event_id == event_id,
                     RegistrationGuest.user_id == user_id,
+                    RegistrationGuest.bidder_number.is_not(None),
                 )
+                .order_by(RegistrationGuest.created_at.desc())
                 .limit(1)
             )
             fallback_result = await self.db.execute(fallback_stmt)
-            bidder_number = fallback_result.scalar_one_or_none()
+            bidder_number = fallback_result.scalars().first()
 
         if bidder_number is None:
             raise ValueError("Bidder number not found for user in this event")

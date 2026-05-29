@@ -43,11 +43,19 @@ def _require_admin(user: User) -> None:
 class RecipientCriteria(BaseModel):
     type: str = Field(
         ...,
-        description="Recipient type: all_attendees, all_bidders, specific_table, individual, item_watchers",
+        description="Recipient type: all_attendees, all_bidders, specific_table, individual, item",
     )
     table_number: int | None = Field(None, description="Table number for specific_table type")
     user_ids: list[str] | None = Field(None, description="User UUIDs for individual type")
-    item_id: str | None = Field(None, description="Auction item UUID for item_watchers type")
+    item_id: str | None = Field(None, description="Auction item UUID for item type")
+    item_audience: str | None = Field(
+        None,
+        description="Item audience for item type: bidders or watchers",
+    )
+    item_audiences: list[str] | None = Field(
+        None,
+        description="Item audiences for item type: any of bidders, watchers",
+    )
 
 
 class SendNotificationRequest(BaseModel):

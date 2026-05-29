@@ -572,17 +572,49 @@ async def _deliver_campaign_async(campaign_id: str) -> int:
                     result = await db.execute(table_stmt)
                     user_ids = [row[0] for row in result.all()]
 
-            elif recipient_type == "item_watchers":
+            elif recipient_type in {"item", "item_watchers", "item_bidders"}:
+                from app.models.auction_bid import AuctionBid
                 from app.models.watch_list_entry import WatchListEntry
 
                 item_id_str = criteria.get("item_id")
+                item_audience = criteria.get("item_audience")
+                item_audiences = criteria.get("item_audiences") or []
                 if item_id_str:
                     item_uuid = uuid.UUID(item_id_str)
-                    watcher_stmt = select(WatchListEntry.user_id).where(
-                        WatchListEntry.item_id == item_uuid
-                    )
-                    result = await db.execute(watcher_stmt)
-                    user_ids = [row[0] for row in result.all()]
+
+                    include_bidders = recipient_type == "item_bidders"
+                    include_watchers = recipient_type == "item_watchers"
+
+                    if recipient_type == "item":
+                        audiences = {
+                            str(audience).lower()
+                            for audience in item_audiences
+                            if str(audience).lower() in {"bidders", "watchers"}
+                        }
+                        if audiences:
+                            include_bidders = "bidders" in audiences
+                            include_watchers = "watchers" in audiences
+                        elif item_audience in {"bidders", "watchers"}:
+                            include_bidders = item_audience == "bidders"
+                            include_watchers = item_audience == "watchers"
+                        else:
+                            include_bidders = True
+                            include_watchers = True
+
+                    if include_bidders:
+                        bidder_stmt = select(AuctionBid.user_id).where(
+                            AuctionBid.event_id == event_id,
+                            AuctionBid.auction_item_id == item_uuid,
+                        )
+                        result = await db.execute(bidder_stmt)
+                        user_ids.extend(row[0] for row in result.all())
+
+                    if include_watchers:
+                        watcher_stmt = select(WatchListEntry.user_id).where(
+                            WatchListEntry.item_id == item_uuid
+                        )
+                        result = await db.execute(watcher_stmt)
+                        user_ids.extend(row[0] for row in result.all())
 
             elif recipient_type == "individual":
                 individual_ids = criteria.get("user_ids", [])
@@ -609,7 +641,7 @@ async def _deliver_campaign_async(campaign_id: str) -> int:
             notification_title = f"Message from {event_name}"
             notification_data: dict[str, Any] = {"deep_link": None}
 
-            if recipient_type == "item_watchers" and criteria.get("item_id"):
+            if recipient_type in {"item", "item_watchers", "item_bidders"} and criteria.get("item_id"):
                 from app.models.auction_item import AuctionItem, AuctionItemMedia
 
                 item_uuid = uuid.UUID(criteria["item_id"])
@@ -622,6 +654,16 @@ async def _deliver_campaign_async(campaign_id: str) -> int:
                     notification_title = f"About: {item_row.title}"
                     notification_data["item_id"] = str(item_row.id)
                     notification_data["item_title"] = item_row.title
+                    if recipient_type == "item_bidders":
+                        notification_data["item_audiences"] = ["bidders"]
+                    elif recipient_type == "item_watchers":
+                        notification_data["item_audiences"] = ["watchers"]
+                    elif criteria.get("item_audiences"):
+                        notification_data["item_audiences"] = criteria.get("item_audiences")
+                    elif criteria.get("item_audience") in {"bidders", "watchers"}:
+                        notification_data["item_audiences"] = [criteria.get("item_audience")]
+                    else:
+                        notification_data["item_audiences"] = ["bidders", "watchers"]
                     if event_slug:
                         notification_data["deep_link"] = f"/events/{event_slug}?item={item_row.id}"
                     # Get first image for thumbnail
