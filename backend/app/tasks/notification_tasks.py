@@ -573,7 +573,6 @@ async def _deliver_campaign_async(campaign_id: str) -> int:
                     user_ids = [row[0] for row in result.all()]
 
             elif recipient_type in {"item", "item_watchers", "item_bidders"}:
-                from app.models.auction_bid import AuctionBid
                 from app.models.watch_list_entry import WatchListEntry
 
                 item_id_str = criteria.get("item_id")
@@ -641,7 +640,9 @@ async def _deliver_campaign_async(campaign_id: str) -> int:
             notification_title = f"Message from {event_name}"
             notification_data: dict[str, Any] = {"deep_link": None}
 
-            if recipient_type in {"item", "item_watchers", "item_bidders"} and criteria.get("item_id"):
+            if recipient_type in {"item", "item_watchers", "item_bidders"} and criteria.get(
+                "item_id"
+            ):
                 from app.models.auction_item import AuctionItem, AuctionItemMedia
 
                 item_uuid = uuid.UUID(criteria["item_id"])

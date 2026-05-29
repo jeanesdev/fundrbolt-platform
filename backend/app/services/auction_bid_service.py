@@ -99,6 +99,7 @@ class AuctionBidService:
                         "animation_type": "pulse",
                     },
                     sio=sio,
+                    dispatch_tasks=False,
                 )
             await self.db.commit()
         except Exception:
@@ -323,6 +324,7 @@ class AuctionBidService:
                         **({"image_url": image_url} if image_url else {}),
                     },
                     sio=sio,
+                    dispatch_tasks=False,
                 )
         except Exception:
             logger.warning(
@@ -332,6 +334,7 @@ class AuctionBidService:
                     "previous_bid_user_id": str(previous_bid.user_id),
                     "item_id": str(item.id),
                 },
+                exc_info=True,
             )
 
     async def place_bid(
@@ -400,9 +403,6 @@ class AuctionBidService:
 
             await self.db.commit()
             await self._publish_bid_update(new_bid)
-
-            # T075: Send bid confirmation for buy-now
-            await self._send_bid_confirmation(new_bid, item)
 
             return new_bid
 
@@ -526,6 +526,7 @@ class AuctionBidService:
                             "deep_link": f"/events/{event_slug}?item={item.id}",
                         },
                         sio=sio,
+                        dispatch_tasks=False,
                     )
             except Exception:
                 logger.warning(

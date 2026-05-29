@@ -1,3 +1,32 @@
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import {
+  auctionDashboardService,
+  type AuctionItemRow,
+} from '@/services/auction-dashboard'
+import auctionItemService from '@/services/auctionItemService'
+import {
+  donorDashboardService,
+  type DonorLeaderboardEntry,
+} from '@/services/donor-dashboard'
+import {
+  eventNotificationService,
+  type RecipientCriteria,
+} from '@/services/eventNotificationService'
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronsUpDown,
+  Filter,
+  Link as LinkIcon,
+  Loader2,
+  Search,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { useNPOContextStore } from '@/stores/npo-context-store'
+import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
+import { getDonorPwaUrl } from '@/lib/donor-portal'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -34,32 +63,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
-import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
-import { getDonorPwaUrl } from '@/lib/donor-portal'
-import { auctionDashboardService, type AuctionItemRow } from '@/services/auction-dashboard'
-import auctionItemService from '@/services/auctionItemService'
-import {
-  donorDashboardService,
-  type DonorLeaderboardEntry,
-} from '@/services/donor-dashboard'
-import {
-  eventNotificationService,
-  type RecipientCriteria,
-} from '@/services/eventNotificationService'
-import { useEventContextStore } from '@/stores/event-context-store'
-import { useNPOContextStore } from '@/stores/npo-context-store'
-import { useQuery } from '@tanstack/react-query'
-import {
-  ArrowDown,
-  ArrowUp,
-  ChevronsUpDown,
-  Filter,
-  Link as LinkIcon,
-  Loader2,
-  Search,
-} from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { toast } from 'sonner'
 
 const MAX_MESSAGE_LENGTH = 500
 
@@ -94,6 +97,7 @@ const DEFAULT_COLUMN_FILTERS: Record<RecipientSortKey, string> = {
 
 const RECIPIENT_LEADERBOARD_PAGE_SIZE = 100
 const RECIPIENT_ITEM_PAGE_SIZE = 100
+const USE_SELECTED_ITEM_LINK_VALUE = '__use_selected_item__'
 
 function formatCurrency(amount: number): string {
   return amount.toLocaleString('en-US', {
@@ -102,13 +106,7 @@ function formatCurrency(amount: number): string {
   })
 }
 
-function SortIcon({
-  active,
-  dir,
-}: {
-  active: boolean
-  dir: 'asc' | 'desc'
-}) {
+function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
   if (!active) return <ChevronsUpDown className='h-3.5 w-3.5 opacity-40' />
   return dir === 'asc' ? (
     <ArrowUp className='h-3.5 w-3.5 text-blue-500' />
@@ -154,7 +152,10 @@ function RecipientColumnHeader({
             <SortIcon active={isSorted} dir={sortDir} />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align={alignRight ? 'end' : 'start'} className='w-56'>
+        <DropdownMenuContent
+          align={alignRight ? 'end' : 'start'}
+          className='w-56'
+        >
           <DropdownMenuLabel className='text-muted-foreground text-xs'>
             Sort
           </DropdownMenuLabel>
@@ -192,7 +193,9 @@ function RecipientColumnHeader({
 
 function formatItemLabel(item: AuctionItemRow): string {
   const suffix = [
-    item.bid_count ? `${item.bid_count} bid${item.bid_count === 1 ? '' : 's'}` : null,
+    item.bid_count
+      ? `${item.bid_count} bid${item.bid_count === 1 ? '' : 's'}`
+      : null,
     item.watcher_count
       ? `${item.watcher_count} watcher${item.watcher_count === 1 ? '' : 's'}`
       : null,
@@ -224,17 +227,19 @@ export function ComposeNotification({
   const [isSending, setIsSending] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [itemId, setItemId] = useState('')
-  const [linkItemId, setLinkItemId] = useState('')
+  const [linkItemId, setLinkItemId] = useState(USE_SELECTED_ITEM_LINK_VALUE)
   const [itemAudiences, setItemAudiences] = useState<Set<ItemAudience>>(
     new Set(['bidders', 'watchers'])
   )
   const [sortKey, setSortKey] = useState<RecipientSortKey>('name')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [columnFilters, setColumnFilters] = useState(DEFAULT_COLUMN_FILTERS)
-  const { availableEvents, selectedEventSlug } = useEventContextStore((state) => ({
-    availableEvents: state.availableEvents,
-    selectedEventSlug: state.selectedEventSlug,
-  }))
+  const { availableEvents, selectedEventSlug } = useEventContextStore(
+    (state) => ({
+      availableEvents: state.availableEvents,
+      selectedEventSlug: state.selectedEventSlug,
+    })
+  )
   const { availableNpos, selectedNpoId } = useNPOContextStore((state) => ({
     availableNpos: state.availableNpos,
     selectedNpoId: state.selectedNpoId,
@@ -359,7 +364,8 @@ export function ComposeNotification({
     return selectedNpo?.slug ?? selectedNpoId
   }, [availableNpos, selectedNpoId])
 
-  const activeLinkItemId = linkItemId || itemId
+  const activeLinkItemId =
+    linkItemId === USE_SELECTED_ITEM_LINK_VALUE ? itemId : linkItemId
   const activeLinkItem = useMemo(
     () => itemOptions?.find((item) => item.id === activeLinkItemId),
     [activeLinkItemId, itemOptions]
@@ -394,7 +400,7 @@ export function ComposeNotification({
       uniqueAttendees.map((attendee) => ({
         ...attendee,
         total_given_at_event: attendee.user_id
-          ? recipientTotalsByUserId.get(attendee.user_id) ?? 0
+          ? (recipientTotalsByUserId.get(attendee.user_id) ?? 0)
           : 0,
       })),
     [recipientTotalsByUserId, uniqueAttendees]
@@ -406,18 +412,26 @@ export function ComposeNotification({
     const filtered = recipientRows.filter((attendee) => {
       const matchesGlobalSearch = q
         ? attendee.name?.toLowerCase().includes(q) ||
-        attendee.email?.toLowerCase().includes(q) ||
-        formatCheckedIn(attendee.checked_in ?? false).toLowerCase().includes(q) ||
-        String(attendee.table_number ?? '').includes(q) ||
-        String(attendee.bidder_number ?? '').includes(q) ||
-        formatCurrency(attendee.total_given_at_event).toLowerCase().includes(q)
+          attendee.email?.toLowerCase().includes(q) ||
+          formatCheckedIn(attendee.checked_in ?? false)
+            .toLowerCase()
+            .includes(q) ||
+          String(attendee.table_number ?? '').includes(q) ||
+          String(attendee.bidder_number ?? '').includes(q) ||
+          formatCurrency(attendee.total_given_at_event)
+            .toLowerCase()
+            .includes(q)
         : true
 
       const matchesColumnFilters =
         (!columnFilters.name ||
-          attendee.name.toLowerCase().includes(columnFilters.name.toLowerCase())) &&
+          attendee.name
+            .toLowerCase()
+            .includes(columnFilters.name.toLowerCase())) &&
         (!columnFilters.email ||
-          attendee.email.toLowerCase().includes(columnFilters.email.toLowerCase())) &&
+          attendee.email
+            .toLowerCase()
+            .includes(columnFilters.email.toLowerCase())) &&
         (!columnFilters.checked_in ||
           formatCheckedIn(attendee.checked_in ?? false)
             .toLowerCase()
@@ -493,10 +507,7 @@ export function ComposeNotification({
     setSortDir(dir)
   }
 
-  const handleColumnFilterChange = (
-    key: RecipientSortKey,
-    value: string
-  ) => {
+  const handleColumnFilterChange = (key: RecipientSortKey, value: string) => {
     setColumnFilters((prev) => ({
       ...prev,
       [key]: value,
@@ -548,14 +559,18 @@ export function ComposeNotification({
     return url.toString()
   }
 
-  const insertLinkLine = (kind: 'event' | 'checkout' | 'donate_now' | 'item') => {
+  const insertLinkLine = (
+    kind: 'event' | 'checkout' | 'donate_now' | 'item'
+  ) => {
     if (!resolvedEventSlug && kind !== 'donate_now') {
       toast.error('Event link is unavailable until event context is loaded.')
       return
     }
 
     if (kind === 'event') {
-      const url = buildDonorUrl(`/events/${encodeURIComponent(resolvedEventSlug)}`)
+      const url = buildDonorUrl(
+        `/events/${encodeURIComponent(resolvedEventSlug)}`
+      )
       appendMessageLine(`View event details: ${url}`)
       return
     }
@@ -570,10 +585,14 @@ export function ComposeNotification({
 
     if (kind === 'donate_now') {
       if (!resolvedNpoSlug) {
-        toast.error('Donate Now link is unavailable until an organization is selected.')
+        toast.error(
+          'Donate Now link is unavailable until an organization is selected.'
+        )
         return
       }
-      const url = buildDonorUrl(`/npo/${encodeURIComponent(resolvedNpoSlug)}/donate-now`)
+      const url = buildDonorUrl(
+        `/npo/${encodeURIComponent(resolvedNpoSlug)}/donate-now`
+      )
       appendMessageLine(`Donate now: ${url}`)
       return
     }
@@ -583,9 +602,12 @@ export function ComposeNotification({
       return
     }
 
-    const url = buildDonorUrl(`/events/${encodeURIComponent(resolvedEventSlug)}`, {
-      item: activeLinkItemId,
-    })
+    const url = buildDonorUrl(
+      `/events/${encodeURIComponent(resolvedEventSlug)}`,
+      {
+        item: activeLinkItemId,
+      }
+    )
     const itemLabel = activeLinkItem?.title ?? 'auction item'
     appendMessageLine(`View ${itemLabel}: ${url}`)
   }
@@ -639,7 +661,7 @@ export function ComposeNotification({
       setRecipientType('all_attendees')
       setChannels(new Set(['in_app']))
       setItemId('')
-      setLinkItemId('')
+      setLinkItemId(USE_SELECTED_ITEM_LINK_VALUE)
       setItemAudiences(new Set(['bidders', 'watchers']))
       setColumnFilters(DEFAULT_COLUMN_FILTERS)
       onSent()
@@ -669,7 +691,9 @@ export function ComposeNotification({
                   <SelectValue placeholder='Item link target (optional)' />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value=''>Use selected item above</SelectItem>
+                  <SelectItem value={USE_SELECTED_ITEM_LINK_VALUE}>
+                    Use selected item above
+                  </SelectItem>
                   {itemOptions?.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
                       <div className='flex items-center gap-2'>
@@ -684,7 +708,9 @@ export function ComposeNotification({
                             No Img
                           </div>
                         )}
-                        <span className='max-w-[260px] truncate'>{item.title}</span>
+                        <span className='max-w-[260px] truncate'>
+                          {item.title}
+                        </span>
                       </div>
                     </SelectItem>
                   ))}
@@ -706,7 +732,9 @@ export function ComposeNotification({
                   <DropdownMenuItem onSelect={() => insertLinkLine('checkout')}>
                     Checkout page
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => insertLinkLine('donate_now')}>
+                  <DropdownMenuItem
+                    onSelect={() => insertLinkLine('donate_now')}
+                  >
                     Donate Now page
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => insertLinkLine('item')}>
@@ -771,7 +799,10 @@ export function ComposeNotification({
               <div className='space-y-2'>
                 <Label htmlFor='recipient-item'>Item</Label>
                 <Select value={itemId} onValueChange={setItemId}>
-                  <SelectTrigger id='recipient-item' className='w-full max-w-2xl'>
+                  <SelectTrigger
+                    id='recipient-item'
+                    className='w-full max-w-2xl'
+                  >
                     <SelectValue placeholder='Choose an item' />
                   </SelectTrigger>
                   <SelectContent>
@@ -794,7 +825,9 @@ export function ComposeNotification({
                                 No Img
                               </div>
                             )}
-                            <span className='truncate'>{formatItemLabel(item)}</span>
+                            <span className='truncate'>
+                              {formatItemLabel(item)}
+                            </span>
                           </div>
                         </SelectItem>
                       ))
@@ -816,7 +849,9 @@ export function ComposeNotification({
                       checked={itemAudiences.has('bidders')}
                       onCheckedChange={() => toggleItemAudience('bidders')}
                     />
-                    <Label htmlFor='recipient-item-bidders'>Everyone who bid on this item</Label>
+                    <Label htmlFor='recipient-item-bidders'>
+                      Everyone who bid on this item
+                    </Label>
                   </div>
                   <div className='flex items-center gap-2'>
                     <Checkbox
@@ -824,7 +859,9 @@ export function ComposeNotification({
                       checked={itemAudiences.has('watchers')}
                       onCheckedChange={() => toggleItemAudience('watchers')}
                     />
-                    <Label htmlFor='recipient-item-watchers'>Everyone who added it to their watch list</Label>
+                    <Label htmlFor='recipient-item-watchers'>
+                      Everyone who added it to their watch list
+                    </Label>
                   </div>
                 </div>
               </div>

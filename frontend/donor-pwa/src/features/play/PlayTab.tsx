@@ -44,6 +44,7 @@ export function PlayTab({ eventId, brandPrimary }: Props) {
   })
 
   const handlePurchase = async (itemId: string, quantity = 1) => {
+    if (purchasingId) return
     if (purchaseInFlightRef.current.has(itemId)) return
     purchaseInFlightRef.current.add(itemId)
     setPurchasingId(itemId)

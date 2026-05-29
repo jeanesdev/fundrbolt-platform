@@ -39,6 +39,7 @@ import {
 } from '@tanstack/react-query'
 import { Eye, Gavel, Loader2, RefreshCw, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { AuctionItemCard } from './AuctionItemCard'
 
 function normalizeIdentifier(value: unknown): string | null {
@@ -469,39 +470,46 @@ export function AuctionGallery({
     }
 
     setRefreshStatus('refreshing')
-    await refetch()
-    setRefreshStatus('done')
+    try {
+      await refetch()
+      setRefreshStatus('done')
 
-    setShowRefreshSweep(true)
-    setIsRefreshSweepActive(false)
+      setShowRefreshSweep(true)
+      setIsRefreshSweepActive(false)
 
-    if (refreshSweepFrameRef.current !== null) {
-      window.cancelAnimationFrame(refreshSweepFrameRef.current)
-    }
+      if (refreshSweepFrameRef.current !== null) {
+        window.cancelAnimationFrame(refreshSweepFrameRef.current)
+      }
 
-    refreshSweepFrameRef.current = window.requestAnimationFrame(() => {
-      setIsRefreshSweepActive(true)
-      refreshSweepFrameRef.current = null
-    })
+      refreshSweepFrameRef.current = window.requestAnimationFrame(() => {
+        setIsRefreshSweepActive(true)
+        refreshSweepFrameRef.current = null
+      })
 
-    if (refreshSweepTimeoutRef.current !== null) {
-      window.clearTimeout(refreshSweepTimeoutRef.current)
-    }
+      if (refreshSweepTimeoutRef.current !== null) {
+        window.clearTimeout(refreshSweepTimeoutRef.current)
+      }
 
-    refreshSweepTimeoutRef.current = window.setTimeout(() => {
+      refreshSweepTimeoutRef.current = window.setTimeout(() => {
+        setShowRefreshSweep(false)
+        setIsRefreshSweepActive(false)
+        refreshSweepTimeoutRef.current = null
+      }, 800)
+
+      if (refreshStatusTimeoutRef.current !== null) {
+        window.clearTimeout(refreshStatusTimeoutRef.current)
+      }
+
+      refreshStatusTimeoutRef.current = window.setTimeout(() => {
+        setRefreshStatus('idle')
+        refreshStatusTimeoutRef.current = null
+      }, 1200)
+    } catch {
       setShowRefreshSweep(false)
       setIsRefreshSweepActive(false)
-      refreshSweepTimeoutRef.current = null
-    }, 800)
-
-    if (refreshStatusTimeoutRef.current !== null) {
-      window.clearTimeout(refreshStatusTimeoutRef.current)
-    }
-
-    refreshStatusTimeoutRef.current = window.setTimeout(() => {
       setRefreshStatus('idle')
-      refreshStatusTimeoutRef.current = null
-    }, 1200)
+      toast.error('Failed to refresh items. Please try again.')
+    }
   }, [refetch, refreshStatus])
 
   // Flatten items from all pages and de-duplicate by item ID

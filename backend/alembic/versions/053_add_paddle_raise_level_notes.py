@@ -1,7 +1,7 @@
 """Add paddle raise level notes to auctioneer settings.
 
 Revision ID: 053_paddle_raise_level_notes
-Revises: 0e231ed1bd15
+Revises: 767c31c5db2f
 Create Date: 2026-05-28
 """
 
@@ -15,7 +15,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from alembic import op
 
 revision: str = "053_paddle_raise_level_notes"
-down_revision: str | Sequence[str] | None = "0e231ed1bd15"
+down_revision: str | Sequence[str] | None = "767c31c5db2f"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

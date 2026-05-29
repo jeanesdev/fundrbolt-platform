@@ -162,7 +162,7 @@ class RevenueGeneratorService:
     ) -> RevenueGeneratorItemAdminResponse:
         if data.name is not None:
             item.name = data.name
-        if data.description is not None:
+        if "description" in data.model_fields_set:
             item.description = data.description
         if "post_purchase_instructions" in data.model_fields_set:
             item.post_purchase_instructions = data.post_purchase_instructions
@@ -544,14 +544,18 @@ class RevenueGeneratorService:
         )
         guest_result = await db.execute(guest_stmt)
         guest = guest_result.scalar_one_or_none()
+        if not guest:
+            raise ValueError("You must complete registration before purchasing entries")
+        if guest.bidder_number is None:
+            raise ValueError("Your bidder profile is incomplete. Please contact event staff")
 
         last_entry: RevenueGeneratorEntry | None = None
         for _ in range(quantity):
             entry = RevenueGeneratorEntry(
                 revenue_generator_item_id=item_id,
                 event_id=event_id,
-                registration_guest_id=guest.id if guest else None,
-                bidder_number=guest.bidder_number if (guest and guest.bidder_number) else 0,
+                registration_guest_id=guest.id,
+                bidder_number=guest.bidder_number,
                 amount_paid=item.price_per_entry,
                 recorded_by_user_id=donor_user_id,
             )
