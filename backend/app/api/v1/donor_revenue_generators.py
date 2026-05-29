@@ -12,6 +12,7 @@ from app.core.database import get_db
 from app.middleware.auth import get_current_active_user
 from app.models.user import User
 from app.schemas.revenue_generator import (
+    EntryPurchaseRequest,
     EntryPurchaseResponse,
     RevenueGeneratorDonorListResponse,
 )
@@ -45,13 +46,15 @@ async def purchase_revenue_generator_entry(
     item_id: uuid.UUID,
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    purchase_request: EntryPurchaseRequest | None = None,
 ) -> EntryPurchaseResponse:
     """Record a revenue generator entry for the authenticated donor."""
     from fastapi import HTTPException
 
     try:
+        quantity = purchase_request.quantity if purchase_request else 1
         result = await RevenueGeneratorService.create_donor_entry(
-            db, event_id, item_id, current_user.id
+            db, event_id, item_id, current_user.id, quantity=quantity
         )
         await db.commit()
         return result

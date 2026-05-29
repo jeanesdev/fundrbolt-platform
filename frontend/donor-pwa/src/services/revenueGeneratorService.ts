@@ -26,13 +26,19 @@ export async function getEventRevenueGenerators(
 
 export async function purchaseEntry(
   eventId: string,
-  itemId: string
-): Promise<{ my_entry_count: number; post_purchase_instructions: string | null }> {
+  itemId: string,
+  quantity = 1
+): Promise<{
+  my_entry_count: number
+  purchased_count: number
+  post_purchase_instructions: string | null
+}> {
   const response = await apiClient.post<{
     my_entry_count: number
+    purchased_count: number
     post_purchase_instructions: string | null
-  }>(
-    `/donor/events/${eventId}/revenue-generators/${itemId}/entries`
-  )
+  }>(`/donor/events/${eventId}/revenue-generators/${itemId}/entries`, {
+    quantity,
+  })
   return response.data
 }

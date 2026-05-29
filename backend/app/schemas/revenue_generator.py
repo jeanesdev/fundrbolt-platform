@@ -95,9 +95,19 @@ class RevenueGeneratorAdminListResponse(BaseModel):
     items: list[RevenueGeneratorItemAdminResponse]
 
 
+class EntryPurchaseRequest(BaseModel):
+    quantity: int = Field(
+        default=1,
+        ge=1,
+        le=100,
+        description="Number of entries to purchase in a single request.",
+    )
+
+
 class EntryPurchaseResponse(BaseModel):
     entry_id: UUID
     item_id: UUID
+    purchased_count: int = 1
     my_entry_count: int
     amount_paid: Decimal
     post_purchase_instructions: str | None = None

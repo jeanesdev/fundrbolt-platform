@@ -475,9 +475,13 @@ class RevenueGeneratorService:
         event_id: uuid.UUID,
         item_id: uuid.UUID,
         donor_user_id: uuid.UUID,
+        quantity: int = 1,
     ) -> EntryPurchaseResponse:
         """Purchase one entry for a donor (self-service via donor PWA)."""
         from app.models.event_registration import EventRegistration
+
+        if quantity < 1:
+            raise ValueError("Quantity must be at least 1")
 
         # Verify item exists and is open
         item_result = await db.execute(
@@ -501,14 +505,27 @@ class RevenueGeneratorService:
             )
             total_result = await db.execute(total_stmt)
             total = total_result.scalar_one() or 0
-            if total >= item.max_entries:
+            remaining_total_entries = item.max_entries - total
+            if remaining_total_entries <= 0:
                 raise ValueError("This item has reached its maximum number of entries")
+            if quantity > remaining_total_entries:
+                raise ValueError(
+                    f"Only {remaining_total_entries} entr{'y' if remaining_total_entries == 1 else 'ies'} remain for this item"
+                )
 
+        my_count_before = 0
         if item.max_entries_per_person is not None:
-            my_count = await RevenueGeneratorService._get_my_entry_count(db, item_id, donor_user_id)
-            if my_count >= item.max_entries_per_person:
+            my_count_before = await RevenueGeneratorService._get_my_entry_count(
+                db, item_id, donor_user_id
+            )
+            remaining_personal_entries = item.max_entries_per_person - my_count_before
+            if remaining_personal_entries <= 0:
                 raise ValueError(
                     "You have reached the maximum number of entries allowed for this item"
+                )
+            if quantity > remaining_personal_entries:
+                raise ValueError(
+                    f"You can purchase up to {remaining_personal_entries} more entr{'y' if remaining_personal_entries == 1 else 'ies'} for this item"
                 )
 
         # Find donor's primary guest for this event
@@ -528,25 +545,33 @@ class RevenueGeneratorService:
         guest_result = await db.execute(guest_stmt)
         guest = guest_result.scalar_one_or_none()
 
-        entry = RevenueGeneratorEntry(
-            revenue_generator_item_id=item_id,
-            event_id=event_id,
-            registration_guest_id=guest.id if guest else None,
-            bidder_number=guest.bidder_number if (guest and guest.bidder_number) else 0,
-            amount_paid=item.price_per_entry,
-            recorded_by_user_id=donor_user_id,
-        )
-        db.add(entry)
+        last_entry: RevenueGeneratorEntry | None = None
+        for _ in range(quantity):
+            entry = RevenueGeneratorEntry(
+                revenue_generator_item_id=item_id,
+                event_id=event_id,
+                registration_guest_id=guest.id if guest else None,
+                bidder_number=guest.bidder_number if (guest and guest.bidder_number) else 0,
+                amount_paid=item.price_per_entry,
+                recorded_by_user_id=donor_user_id,
+            )
+            db.add(entry)
+            last_entry = entry
+
         await db.flush()
 
         # Count total entries for this donor on this item
         my_count = await RevenueGeneratorService._get_my_entry_count(db, item_id, donor_user_id)
 
+        if not last_entry:
+            raise ValueError("Unable to create entry")
+
         return EntryPurchaseResponse(
-            entry_id=entry.id,
+            entry_id=last_entry.id,
             item_id=item_id,
+            purchased_count=quantity,
             my_entry_count=my_count,
-            amount_paid=item.price_per_entry,
+            amount_paid=item.price_per_entry * quantity,
             post_purchase_instructions=item.post_purchase_instructions,
         )
 
