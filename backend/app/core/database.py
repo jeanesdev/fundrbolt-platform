@@ -32,13 +32,13 @@ engine_kwargs: dict[str, Any] = {
     "future": True,
     "pool_pre_ping": True,
     "pool_recycle": 1800,
-    "pool_timeout": 30,
     "connect_args": {"timeout": 10},
 }
 
 if settings.environment == "test":
     engine_kwargs["poolclass"] = NullPool
 else:
+    engine_kwargs["pool_timeout"] = 30
     engine_kwargs["pool_size"] = 10
     engine_kwargs["max_overflow"] = 20
 
