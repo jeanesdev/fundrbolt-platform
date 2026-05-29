@@ -291,27 +291,37 @@ class AuctionBidService:
             else:
                 image_url = raw_image_url
 
-        async with self.db.begin_nested():
-            await NotificationService.create_notification(
-                db=self.db,
-                event_id=previous_bid.event_id,
-                user_id=previous_bid.user_id,
-                notification_type=NotificationTypeEnum.OUTBID,
-                priority=NotificationPriorityEnum.HIGH,
-                title="You've been outbid!",
-                body=(
-                    f"Someone bid {amount_str} on {item.title}. "
-                    f"Your bid of {old_amount_str} is no longer the highest."
-                ),
-                data={
+        try:
+            async with self.db.begin_nested():
+                await NotificationService.create_notification(
+                    db=self.db,
+                    event_id=previous_bid.event_id,
+                    user_id=previous_bid.user_id,
+                    notification_type=NotificationTypeEnum.OUTBID,
+                    priority=NotificationPriorityEnum.HIGH,
+                    title="You've been outbid!",
+                    body=(
+                        f"Someone bid {amount_str} on {item.title}. "
+                        f"Your bid of {old_amount_str} is no longer the highest."
+                    ),
+                    data={
+                        "item_id": str(item.id),
+                        "item_title": item.title,
+                        "deep_link": f"/events/{event_slug}?item={item.id}",
+                        "animation_type": "flash",
+                        "bid_amount": str(new_bid_amount) if new_bid_amount else None,
+                        **({"image_url": image_url} if image_url else {}),
+                    },
+                    sio=sio,
+                )
+        except Exception:
+            logger.warning(
+                "Failed to send outbid notification",
+                extra={
+                    "previous_bid_id": str(previous_bid.id),
+                    "previous_bid_user_id": str(previous_bid.user_id),
                     "item_id": str(item.id),
-                    "item_title": item.title,
-                    "deep_link": f"/events/{event_slug}?item={item.id}",
-                    "animation_type": "flash",
-                    "bid_amount": str(new_bid_amount) if new_bid_amount else None,
-                    **({"image_url": image_url} if image_url else {}),
                 },
-                sio=sio,
             )
 
     async def place_bid(

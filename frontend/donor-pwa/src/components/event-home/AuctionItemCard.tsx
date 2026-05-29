@@ -9,12 +9,12 @@
  * - Cleaner typography hierarchy
  * - More prominent CTA button with scale-bounce on click
  */
-import { useRef, useState } from 'react'
+import { cn } from '@/lib/utils'
+import { getEffectiveNow } from '@/stores/debug-spoof-store'
 import type { AuctionItemGalleryItem } from '@/types/auction-gallery'
 import { useOnlineStatus } from '@fundrbolt/shared/pwa/use-online-status'
 import { Eye, Flame, Gavel, Heart, Image as ImageIcon, Zap } from 'lucide-react'
-import { getEffectiveNow } from '@/stores/debug-spoof-store'
-import { cn } from '@/lib/utils'
+import { useRef, useState } from 'react'
 
 export interface AuctionItemCardProps {
   item: AuctionItemGalleryItem
@@ -119,9 +119,9 @@ function AuctionCardImage({
   const [primarySrc, setPrimarySrc] = useState(initialSrc)
   const [isPrimaryImageLoaded, setIsPrimaryImageLoaded] = useState(
     loadedAuctionCardImageKeys.has(cacheKey) ||
-      !!cachedSrc ||
-      loadedAuctionCardImageUrls.has(initialSrc) ||
-      warmCache.has(initialSrc)
+    !!cachedSrc ||
+    loadedAuctionCardImageUrls.has(initialSrc) ||
+    warmCache.has(initialSrc)
   )
   const nextSrc = thumbnailUrl !== primarySrc ? thumbnailUrl : null
 
@@ -248,12 +248,12 @@ export function AuctionItemCard({
         'group relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-200',
         'hover:-translate-y-0.5 hover:shadow-xl',
         isCurrentUserWinning &&
-          hasCurrentBid &&
-          'animate-winning-glow border-green-500',
+        hasCurrentBid &&
+        'animate-winning-glow border-green-500',
         !isCurrentUserWinning &&
-          hasCurrentBid &&
-          isWatched &&
-          'animate-outbid-pulse border-amber-500',
+        hasCurrentBid &&
+        isWatched &&
+        'animate-outbid-pulse border-amber-500',
         !isCurrentUserWinning && !hasCurrentBid && 'border-transparent',
         onClick && 'cursor-pointer',
         className
@@ -389,46 +389,44 @@ export function AuctionItemCard({
           {item.title}
         </h3>
 
-        {/* Bid info */}
-        <div className='mt-auto'>
-          {displayBid !== null && (
-            <div className='mb-0.5 flex items-baseline justify-between'>
-              <span
-                className='text-lg leading-none font-black'
-                style={{ color: 'var(--event-card-text, #000000)' }}
-              >
-                {formatCurrency(displayBid)}
-              </span>
-              {(item.bid_count ?? 0) > 0 && (
+        {/* Bid info (silent items only) */}
+        {!isLiveAuctionItem && (
+          <div className='mt-auto'>
+            {displayBid !== null && (
+              <div className='mb-0.5 flex items-baseline justify-between'>
                 <span
-                  className='text-[10px]'
-                  style={{ color: 'var(--event-card-text-muted, #9CA3AF)' }}
+                  className='text-lg leading-none font-black'
+                  style={{ color: 'var(--event-card-text, #000000)' }}
                 >
-                  {item.bid_count} bid{item.bid_count !== 1 ? 's' : ''}
+                  {formatCurrency(displayBid)}
                 </span>
-              )}
-            </div>
-          )}
-          <p
-            className='mb-2 text-[10px]'
-            style={{ color: 'var(--event-card-text-muted, #9CA3AF)' }}
-          >
-            {isLiveAuctionItem
-              ? 'Current bid'
-              : hasCurrentBid
-                ? 'Current bid'
-                : 'Starting bid'}
-          </p>
-
-          {currentUserMaxBid !== null && currentUserMaxBid > 0 && (
+                {(item.bid_count ?? 0) > 0 && (
+                  <span
+                    className='text-[10px]'
+                    style={{ color: 'var(--event-card-text-muted, #9CA3AF)' }}
+                  >
+                    {item.bid_count} bid{item.bid_count !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+            )}
             <p
-              className='mb-2 text-[10px] font-medium'
-              style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+              className='mb-2 text-[10px]'
+              style={{ color: 'var(--event-card-text-muted, #9CA3AF)' }}
             >
-              Your max: {formatCurrency(currentUserMaxBid)}
+              {hasCurrentBid ? 'Current bid' : 'Starting bid'}
             </p>
-          )}
-        </div>
+
+            {currentUserMaxBid !== null && currentUserMaxBid > 0 && (
+              <p
+                className='mb-2 text-[10px] font-medium'
+                style={{ color: 'rgb(var(--event-primary, 59, 130, 246))' }}
+              >
+                Your max: {formatCurrency(currentUserMaxBid)}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* CTA */}
         {!compact &&

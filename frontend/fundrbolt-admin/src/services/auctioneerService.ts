@@ -1,5 +1,5 @@
-import { type SlidePresentationLayout } from '@/types/auction-item'
 import apiClient from '@/lib/axios'
+import { type SlidePresentationLayout } from '@/types/auction-item'
 
 export interface CommissionUpsertRequest {
   commission_percent: number
@@ -49,6 +49,7 @@ export interface EventSettingsUpsertRequest {
   paddle_raise_levels: number[]
   paddle_raise_total_goal: number | null
   paddle_raise_level_goals: Record<string, number>
+  paddle_raise_level_notes: Record<string, string>
 }
 
 export interface EventSettingsResponse {
@@ -60,6 +61,7 @@ export interface EventSettingsResponse {
   paddle_raise_levels: number[]
   paddle_raise_total_goal: number | null
   paddle_raise_level_goals: Record<string, number>
+  paddle_raise_level_notes: Record<string, string>
   created_at: string
   updated_at: string
 }

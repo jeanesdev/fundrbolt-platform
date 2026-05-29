@@ -37,8 +37,10 @@ class RevenueGeneratorItem(Base, UUIDMixin, TimestampMixin):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    post_purchase_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     price_per_entry: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     max_entries: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
+    max_entries_per_person: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
     image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     image_blob_name: Mapped[str | None] = mapped_column(String(512), nullable=True)
     is_visible: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -50,6 +52,10 @@ class RevenueGeneratorItem(Base, UUIDMixin, TimestampMixin):
         CheckConstraint(
             "max_entries IS NULL OR max_entries > 0",
             name="ck_revenue_generator_items_max_entries_positive",
+        ),
+        CheckConstraint(
+            "max_entries_per_person IS NULL OR max_entries_per_person > 0",
+            name="ck_revenue_generator_items_max_entries_per_person_positive",
         ),
     )
 

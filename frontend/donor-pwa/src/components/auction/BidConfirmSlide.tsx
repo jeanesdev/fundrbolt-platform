@@ -7,9 +7,6 @@
  * - Visual feedback for slide progress
  * - Event branding support
  */
-import { useEffect, useState } from 'react'
-import { ArrowRight, Check, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -19,6 +16,9 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
+import { cn } from '@/lib/utils'
+import { ArrowRight, Check, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export interface BidConfirmSlideProps {
   isOpen: boolean
@@ -27,6 +27,10 @@ export interface BidConfirmSlideProps {
   bidAmount: number
   isMaxBid?: boolean
   itemTitle: string
+  title?: string
+  summaryLabel?: string
+  helperText?: string
+  cancelLabel?: string
 }
 
 /**
@@ -51,6 +55,10 @@ export function BidConfirmSlide({
   bidAmount,
   isMaxBid = false,
   itemTitle,
+  title,
+  summaryLabel,
+  helperText,
+  cancelLabel,
 }: BidConfirmSlideProps) {
   const [sliderValue, setSliderValue] = useState<number[]>([0])
   const [isConfirmed, setIsConfirmed] = useState(false)
@@ -114,7 +122,7 @@ export function BidConfirmSlide({
             className='text-center text-xl font-bold'
             style={{ color: 'var(--event-text-on-background, #000000)' }}
           >
-            Confirm Your Bid
+            {title ?? 'Confirm Your Bid'}
           </AlertDialogTitle>
           <AlertDialogDescription
             className='line-clamp-2 text-center'
@@ -136,7 +144,7 @@ export function BidConfirmSlide({
               className='mb-2 text-sm font-medium'
               style={{ color: 'var(--event-card-text-muted, #6B7280)' }}
             >
-              {isMaxBid ? 'Maximum Bid Amount' : 'Bid Amount'}
+              {summaryLabel ?? (isMaxBid ? 'Maximum Bid Amount' : 'Bid Amount')}
             </div>
             <div
               className='mb-2 text-4xl font-bold'
@@ -244,9 +252,10 @@ export function BidConfirmSlide({
               className='text-center text-xs font-medium'
               style={{ color: 'var(--event-text-on-background, #000000)' }}
             >
-              {isMaxBid
-                ? 'Slide to confirm your maximum bid'
-                : 'Slide to confirm and place your bid'}
+              {helperText ??
+                (isMaxBid
+                  ? 'Slide to confirm your maximum bid'
+                  : 'Slide to confirm and place your bid')}
             </div>
           </div>
 
@@ -262,7 +271,7 @@ export function BidConfirmSlide({
               backgroundColor: 'rgb(var(--event-background, 255, 255, 255))',
             }}
           >
-            Cancel
+            {cancelLabel ?? 'Cancel'}
           </Button>
         </div>
       </AlertDialogContent>

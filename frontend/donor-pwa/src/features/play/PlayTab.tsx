@@ -1,11 +1,19 @@
-import {
-    getEventRevenueGenerators,
-    purchaseEntry,
-} from '@/services/revenueGeneratorService'
+import { useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  getEventRevenueGenerators,
+  purchaseEntry,
+} from '@/services/revenueGeneratorService'
 import { Loader2 } from 'lucide-react'
-import { useState } from 'react'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { RevenueGeneratorCard } from './RevenueGeneratorCard'
 
 interface Props {
@@ -17,6 +25,11 @@ export function PlayTab({ eventId, brandPrimary }: Props) {
   const primary = brandPrimary ?? '59, 130, 246'
   const queryClient = useQueryClient()
   const [purchasingId, setPurchasingId] = useState<string | null>(null)
+  const purchaseInFlightRef = useRef<Set<string>>(new Set())
+  const [instructionPopup, setInstructionPopup] = useState<{
+    title: string
+    message: string
+  } | null>(null)
 
   const {
     data: items = [],
@@ -30,18 +43,30 @@ export function PlayTab({ eventId, brandPrimary }: Props) {
   })
 
   const handlePurchase = async (itemId: string) => {
-    if (purchasingId) return
+    if (purchaseInFlightRef.current.has(itemId)) return
+    purchaseInFlightRef.current.add(itemId)
     setPurchasingId(itemId)
+
     try {
-      await purchaseEntry(eventId, itemId)
+      const purchaseResult = await purchaseEntry(eventId, itemId)
+      const purchasedItem = items.find((item) => item.id === itemId)
       await queryClient.invalidateQueries({
         queryKey: ['donor', 'revenue-generators', eventId],
       })
       toast.success('Entry purchased!')
+
+      const message = purchaseResult.post_purchase_instructions?.trim()
+      if (message) {
+        setInstructionPopup({
+          title: purchasedItem?.name ?? 'Purchase Instructions',
+          message,
+        })
+      }
     } catch {
       toast.error('Failed to purchase entry. Please try again.')
     } finally {
-      setPurchasingId(null)
+      purchaseInFlightRef.current.delete(itemId)
+      setPurchasingId((current) => (current === itemId ? null : current))
     }
   }
 
@@ -130,6 +155,29 @@ export function PlayTab({ eventId, brandPrimary }: Props) {
           ))}
         </div>
       )}
+
+      <Dialog
+        open={instructionPopup !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setInstructionPopup(null)
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {instructionPopup?.title
+                ? `${instructionPopup.title} Purchased`
+                : 'Purchase Complete'}
+            </DialogTitle>
+          </DialogHeader>
+          <p className='text-sm leading-relaxed'>{instructionPopup?.message}</p>
+          <DialogFooter>
+            <Button onClick={() => setInstructionPopup(null)}>Got it</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

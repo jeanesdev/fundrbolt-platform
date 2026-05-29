@@ -1,10 +1,3 @@
-import { useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import revenueGeneratorService, {
-  type RGItem,
-  type RGItemCreate,
-} from '@/services/revenueGeneratorService'
-import { ImageIcon, Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -16,6 +9,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import revenueGeneratorService, {
+  type RGItem,
+  type RGItemCreate,
+} from '@/services/revenueGeneratorService'
+import { ImageIcon, Loader2, X } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { useForm } from 'react-hook-form'
 
 interface Props {
   eventId: string
@@ -28,8 +28,10 @@ interface Props {
 interface FormValues {
   name: string
   description: string
+  post_purchase_instructions: string
   price_per_entry: string
   max_entries: string
+  max_entries_per_person: string
   display_order: string
 }
 
@@ -47,8 +49,13 @@ export function RGItemForm({ eventId, item, open, onClose, onSaved }: Props) {
     defaultValues: {
       name: item?.name ?? '',
       description: item?.description ?? '',
+      post_purchase_instructions: item?.post_purchase_instructions ?? '',
       price_per_entry: item ? String(item.price_per_entry) : '',
       max_entries: item?.max_entries != null ? String(item.max_entries) : '',
+      max_entries_per_person:
+        item?.max_entries_per_person != null
+          ? String(item.max_entries_per_person)
+          : '',
       display_order: item ? String(item.display_order) : '0',
     },
   })
@@ -103,9 +110,14 @@ export function RGItemForm({ eventId, item, open, onClose, onSaved }: Props) {
       const payload: RGItemCreate = {
         name: values.name.trim(),
         description: values.description.trim() || null,
+        post_purchase_instructions:
+          values.post_purchase_instructions.trim() || null,
         price_per_entry: parseFloat(values.price_per_entry),
         max_entries: values.max_entries.trim()
           ? parseInt(values.max_entries, 10)
+          : null,
+        max_entries_per_person: values.max_entries_per_person.trim()
+          ? parseInt(values.max_entries_per_person, 10)
           : null,
         display_order: parseInt(values.display_order, 10),
       }
@@ -157,6 +169,18 @@ export function RGItemForm({ eventId, item, open, onClose, onSaved }: Props) {
           <div className='space-y-1'>
             <Label htmlFor='rg-desc'>Description</Label>
             <Textarea id='rg-desc' rows={3} {...register('description')} />
+          </div>
+          <div className='space-y-1'>
+            <Label htmlFor='rg-post-purchase-instructions'>
+              Post-Purchase Popup Message
+            </Label>
+            <Textarea
+              id='rg-post-purchase-instructions'
+              rows={3}
+              maxLength={500}
+              placeholder='Example: Make sure to go by the front booth to pick out your mystery wine bottle!'
+              {...register('post_purchase_instructions')}
+            />
           </div>
 
           {/* Image upload */}
@@ -222,6 +246,22 @@ export function RGItemForm({ eventId, item, open, onClose, onSaved }: Props) {
                 step='1'
                 placeholder='Unlimited'
                 {...register('max_entries')}
+              />
+            </div>
+            <div className='space-y-1'>
+              <Label htmlFor='rg-max-entries-person'>
+                Max Per Person{' '}
+                <span className='text-muted-foreground font-normal'>
+                  (blank = unlimited)
+                </span>
+              </Label>
+              <Input
+                id='rg-max-entries-person'
+                type='number'
+                min='1'
+                step='1'
+                placeholder='Unlimited'
+                {...register('max_entries_per_person')}
               />
             </div>
           </div>

@@ -4,7 +4,10 @@ export interface RevenueGeneratorItemSummary {
   id: string
   name: string
   description: string | null
+  post_purchase_instructions: string | null
   price_per_entry: number
+  max_entries: number | null
+  max_entries_per_person: number | null
   my_entry_count: number
   is_open_for_entries: boolean
   current_winner_name: string | null
@@ -24,8 +27,11 @@ export async function getEventRevenueGenerators(
 export async function purchaseEntry(
   eventId: string,
   itemId: string
-): Promise<{ my_entry_count: number }> {
-  const response = await apiClient.post<{ my_entry_count: number }>(
+): Promise<{ my_entry_count: number; post_purchase_instructions: string | null }> {
+  const response = await apiClient.post<{
+    my_entry_count: number
+    post_purchase_instructions: string | null
+  }>(
     `/donor/events/${eventId}/revenue-generators/${itemId}/entries`
   )
   return response.data

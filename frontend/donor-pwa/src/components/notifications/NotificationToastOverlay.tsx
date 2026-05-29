@@ -7,6 +7,7 @@
  * for dynamically-created elements outside of the React tree, so we use
  * inline styles + the keyframe animations defined in the global stylesheet).
  */
+import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
 import type { NotificationData } from '@/services/notification-service'
 import { useEffect } from 'react'
 
@@ -233,6 +234,14 @@ function addToast(notification: NotificationData) {
       notification.notification_type === 'item_won')
   ) {
     navigator.vibrate?.(200)
+  }
+
+  const animationType = notification.data?.animation_type
+  if (
+    notification.notification_type === 'item_won' ||
+    animationType === 'confetti'
+  ) {
+    triggerCelebrationConfetti()
   }
 
   // Auto-dismiss

@@ -224,6 +224,7 @@ async def upsert_event_settings(
         paddle_raise_levels=body.paddle_raise_levels,
         paddle_raise_total_goal=body.paddle_raise_total_goal,
         paddle_raise_level_goals=body.paddle_raise_level_goals,
+        paddle_raise_level_notes=body.paddle_raise_level_notes,
     )
     await db.commit()
     return result
