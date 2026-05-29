@@ -120,6 +120,7 @@ class AuctionItemResponse(AuctionItemBase):
 
     # Engagement and promotion fields
     watcher_count: int = 0
+    buy_now_purchased_count: int = 0
     promotion_badge: str | None = None
     promotion_notice: str | None = None
     slide_presentation_html: str | None = None

@@ -15,22 +15,14 @@
  *      - Double-swipe confirm
  *   6. Contact admin form at the bottom
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
-import { AlertCircle, ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { useCheckoutStore } from '@/stores/checkout-store'
-import {
-  confirmCheckout,
-  downloadCheckoutReceipt,
-  getCheckoutSession,
-  getCheckoutStatus,
-  updateCheckoutSession,
-} from '@/lib/api/checkout'
-import { getEventBySlug } from '@/lib/api/events'
-import { hasValidRefreshToken } from '@/lib/storage/tokens'
+import { BoothInstructionsCard } from '@/components/checkout/BoothInstructionsCard'
+import { CheckoutPaymentMethods } from '@/components/checkout/CheckoutPaymentMethods'
+import { CheckoutReceiptView } from '@/components/checkout/CheckoutReceiptView'
+import { CheckoutTipSection } from '@/components/checkout/CheckoutTipSection'
+import { CheckoutUpdateBanner } from '@/components/checkout/CheckoutUpdateBanner'
+import { ContactAdminForm } from '@/components/checkout/ContactAdminForm'
+import { SwipeToConfirm } from '@/components/checkout/SwipeToConfirm'
+import { CheckoutSummary } from '@/components/payments/CheckoutSummary'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -43,14 +35,23 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { BoothInstructionsCard } from '@/components/checkout/BoothInstructionsCard'
-import { CheckoutPaymentMethods } from '@/components/checkout/CheckoutPaymentMethods'
-import { CheckoutReceiptView } from '@/components/checkout/CheckoutReceiptView'
-import { CheckoutTipSection } from '@/components/checkout/CheckoutTipSection'
-import { CheckoutUpdateBanner } from '@/components/checkout/CheckoutUpdateBanner'
-import { ContactAdminForm } from '@/components/checkout/ContactAdminForm'
-import { SwipeToConfirm } from '@/components/checkout/SwipeToConfirm'
-import { CheckoutSummary } from '@/components/payments/CheckoutSummary'
+import {
+  confirmCheckout,
+  downloadCheckoutReceipt,
+  getCheckoutSession,
+  getCheckoutStatus,
+  updateCheckoutSession,
+} from '@/lib/api/checkout'
+import { getEventBySlug } from '@/lib/api/events'
+import { triggerCelebrationConfetti } from '@/lib/celebration-confetti'
+import { hasValidRefreshToken } from '@/lib/storage/tokens'
+import { useAuthStore } from '@/stores/auth-store'
+import { useCheckoutStore } from '@/stores/checkout-store'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { AlertCircle, ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 // ── Route definition ──────────────────────────────────────────────────────────
 
@@ -116,6 +117,7 @@ function EventCheckoutPage() {
   )
   const [confirmStage, setConfirmStage] = useState<ConfirmStage>('idle')
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const checkoutConfettiFiredRef = useRef(false)
 
   // ── Data queries ───────────────────────────────────────────────────────────
 
@@ -177,7 +179,7 @@ function EventCheckoutPage() {
     },
     // Suppress global error toast — this mutation is a background preference sync
     // and any failure is silent (the UI continues working with local state).
-    onError: () => {},
+    onError: () => { },
   })
 
   const confirmMutation = useMutation({
@@ -207,14 +209,26 @@ function EventCheckoutPage() {
       }
       setSubmitError(
         axiosErr.response?.data?.detail ??
-          axiosErr.message ??
-          'An unexpected error occurred. Please try again.'
+        axiosErr.message ??
+        'An unexpected error occurred. Please try again.'
       )
       setConfirmStage('idle')
     },
   })
 
   // ── Derived values ─────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (session?.status !== 'complete') {
+      checkoutConfettiFiredRef.current = false
+      return
+    }
+
+    if (!checkoutConfettiFiredRef.current) {
+      checkoutConfettiFiredRef.current = true
+      triggerCelebrationConfetti()
+    }
+  }, [session?.status])
 
   const checkoutOpen =
     checkoutStatus?.checkout_open ?? event?.checkout_open ?? false
@@ -758,11 +772,11 @@ function EventCheckoutPage() {
           {(paymentMethod === 'cash' ||
             paymentMethod === 'check' ||
             paymentMethod === 'daf') && (
-            <BoothInstructionsCard
-              cashInstructions={checkoutStatus?.cash_instructions}
-              npoName={event.npo_name ?? undefined}
-            />
-          )}
+              <BoothInstructionsCard
+                cashInstructions={checkoutStatus?.cash_instructions}
+                npoName={event.npo_name ?? undefined}
+              />
+            )}
 
           {/* T053 — Contact admin */}
           <div className='flex justify-center pb-4'>

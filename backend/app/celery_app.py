@@ -10,6 +10,13 @@ celery_app = Celery(
     "fundrbolt",
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
+    include=[
+        "app.tasks.notification_tasks",
+        "app.tasks.run_of_show_tasks",
+        "app.tasks.recurring_donation_tasks",
+        "app.tasks.checkout_tasks",
+        "app.tasks.payment_tasks",
+    ],
 )
 
 celery_app.conf.update(
@@ -20,8 +27,11 @@ celery_app.conf.update(
     enable_utc=True,
     task_track_started=True,
     task_acks_late=True,
-    task_always_eager=settings.celery_task_always_eager,
-    task_eager_propagates=settings.celery_task_always_eager,
+    # Force broker-backed async execution for runtime reliability.
+    # Eager mode in this app path executes tasks inline and can trigger
+    # nested event-loop/asyncpg issues in notification delivery.
+    task_always_eager=False,
+    task_eager_propagates=False,
     worker_prefetch_multiplier=1,
     task_routes={
         "app.tasks.notification_tasks.*": {"queue": "notifications"},

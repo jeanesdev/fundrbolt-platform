@@ -23,11 +23,14 @@ declare const self: ServiceWorkerGlobalScope
 // `controllerchange` and drives the reload itself, so we do NOT
 // need to navigate clients from here.
 self.addEventListener('activate', (event) => {
+  // eslint-disable-next-line no-console
   console.log('[SW] Activate event fired')
   event.waitUntil(
     (async () => {
+      // eslint-disable-next-line no-console
       console.log('[SW] Starting client claim')
       await self.clients.claim()
+      // eslint-disable-next-line no-console
       console.log('[SW] Client claim complete')
       // Clean up stale precache entries from previous builds. We do
       // NOT await any network work here; cleanupOutdatedCaches() is
@@ -35,9 +38,11 @@ self.addEventListener('activate', (event) => {
       try {
         const { cleanupOutdatedCaches } = await import('workbox-precaching')
         cleanupOutdatedCaches()
+        // eslint-disable-next-line no-console
         console.log('[SW] Cache cleanup complete')
       } catch (err) {
         // Non-fatal — old entries will be evicted on next install.
+        // eslint-disable-next-line no-console
         console.error('[SW] Cache cleanup failed:', err)
       }
     })()
@@ -48,6 +53,7 @@ self.addEventListener('activate', (event) => {
 // Required for injectManifest strategy with registerType: 'prompt'.
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
+    // eslint-disable-next-line no-console
     console.log('[SW] Received SKIP_WAITING message, calling skipWaiting()')
     self.skipWaiting()
   }
@@ -64,6 +70,7 @@ self.addEventListener('push', (event: PushEvent) => {
     body?: string
     icon?: string
     badge?: string
+    image?: string
     data?: Record<string, unknown>
   }
 
@@ -74,10 +81,15 @@ self.addEventListener('push', (event: PushEvent) => {
   }
 
   const title = payload.title ?? 'Fundrbolt'
-  const options: NotificationOptions = {
+  const options: NotificationOptions & { image?: string } = {
     body: payload.body ?? '',
     icon: payload.icon ?? '/images/pwa-192x192.png',
     badge: payload.badge ?? '/images/pwa-192x192.png',
+    image:
+      payload.image ??
+      (typeof payload.data?.image_url === 'string'
+        ? payload.data.image_url
+        : undefined),
     data: payload.data ?? {},
     tag: `fundrbolt-${Date.now()}`,
   }
@@ -89,21 +101,23 @@ self.addEventListener('push', (event: PushEvent) => {
         // If the app is open and visible in the foreground, skip the native
         // notification — the in-app Socket.IO toast handles it instead.
         const isAppVisible = clients.some(
-          (client) => (client as WindowClient).visibilityState === 'visible',
+          (client) => (client as WindowClient).visibilityState === 'visible'
         )
         if (isAppVisible) {
           return
         }
 
-        return self.registration
-          .showNotification(title, options)
-          // eslint-disable-next-line no-console
-          .then(() => console.log('[SW] showNotification resolved'))
-          .catch((err: unknown) =>
+        return (
+          self.registration
+            .showNotification(title, options)
             // eslint-disable-next-line no-console
-            console.error('[SW] showNotification failed:', err),
-          )
-      }),
+            .then(() => console.log('[SW] showNotification resolved'))
+            .catch((err: unknown) =>
+              // eslint-disable-next-line no-console
+              console.error('[SW] showNotification failed:', err)
+            )
+        )
+      })
   )
 })
 

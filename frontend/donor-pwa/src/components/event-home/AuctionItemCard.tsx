@@ -222,6 +222,8 @@ export function AuctionItemCard({
   const isBiddingOpen =
     eventStatus !== 'closed' &&
     (item.bidding_open !== false || isEffectivelyLive)
+  const purchasedCount = Math.max(0, item.buy_now_purchased_count ?? 0)
+  const hasBuyNowPurchase = purchasedCount > 0
 
   const isHot = isHotItem ?? false
 
@@ -361,6 +363,13 @@ export function AuctionItemCard({
           </div>
         )}
 
+        {/* Buy-now purchased badge */}
+        {hasBuyNowPurchase && (
+          <div className='absolute top-10 right-2 z-10 rounded-full bg-emerald-600/95 px-2 py-0.5 text-[10px] font-bold text-white shadow'>
+            Purchased
+          </div>
+        )}
+
         {/* Watcher count — bottom right if no hot badge */}
         {!isHot &&
           item.watcher_count !== undefined &&
@@ -388,6 +397,15 @@ export function AuctionItemCard({
         >
           {item.title}
         </h3>
+
+        {hasBuyNowPurchase && (
+          <p
+            className='mb-2 text-[10px] font-semibold'
+            style={{ color: 'rgb(16, 185, 129)' }}
+          >
+            Purchased {purchasedCount}
+          </p>
+        )}
 
         {/* Bid info (silent items only) */}
         {!isLiveAuctionItem && (

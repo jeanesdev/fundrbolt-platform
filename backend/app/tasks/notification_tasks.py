@@ -4,9 +4,11 @@ All tasks run in the 'notifications' queue (configured in celery_app.py).
 """
 
 import asyncio
+import re
 import uuid
 from datetime import UTC, datetime
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 from sqlalchemy import delete, select
 
@@ -31,6 +33,43 @@ from app.services.notification_service import NotificationService
 from app.websocket.notification_ws import sio
 
 logger = get_logger(__name__)
+
+_URL_PATTERN = re.compile(r"https?://[^\s)]+")
+
+
+def _extract_first_url(text: str) -> str | None:
+    match = _URL_PATTERN.search(text)
+    if not match:
+        return None
+    return match.group(0).rstrip(".,;!?")
+
+
+def _normalize_deep_link(raw_url: str) -> str | None:
+    parsed = urlparse(raw_url)
+    if parsed.scheme not in {"http", "https"}:
+        return None
+    if not parsed.path:
+        return None
+
+    # Keep donor-app navigation internal whenever possible.
+    deep_link = parsed.path
+    if parsed.query:
+        deep_link = f"{deep_link}?{parsed.query}"
+    if parsed.fragment:
+        deep_link = f"{deep_link}#{parsed.fragment}"
+    return deep_link
+
+
+def _extract_item_id_from_url(raw_url: str) -> uuid.UUID | None:
+    parsed = urlparse(raw_url)
+    item_values = parse_qs(parsed.query).get("item")
+    if not item_values:
+        return None
+
+    try:
+        return uuid.UUID(item_values[0])
+    except (ValueError, TypeError):
+        return None
 
 
 def _run_async(coro: Any) -> Any:
@@ -639,6 +678,76 @@ async def _deliver_campaign_async(campaign_id: str) -> int:
             # Build notification data/title based on context
             notification_title = f"Message from {event_name}"
             notification_data: dict[str, Any] = {"deep_link": None}
+
+            message_url = _extract_first_url(campaign.message)
+            message_item_uuid: uuid.UUID | None = None
+            if message_url:
+                notification_data["link_url"] = message_url
+                notification_data["link_label"] = "Open link"
+
+                deep_link = _normalize_deep_link(message_url)
+                if deep_link:
+                    notification_data["deep_link"] = deep_link
+
+                message_item_uuid = _extract_item_id_from_url(message_url)
+                if message_item_uuid:
+                    notification_data["item_id"] = str(message_item_uuid)
+                    notification_data["link_label"] = "View item"
+
+                    from app.models.auction_item import AuctionItem, AuctionItemMedia
+
+                    linked_item_result = await db.execute(
+                        select(AuctionItem.title, AuctionItem.id).where(
+                            AuctionItem.id == message_item_uuid
+                        )
+                    )
+                    linked_item_row = linked_item_result.one_or_none()
+                    if linked_item_row:
+                        notification_data["item_title"] = linked_item_row.title
+                        notification_data["link_label"] = "View item details"
+
+                        event_slug = event_row[1] if event_row else None
+                        if event_slug:
+                            notification_data["deep_link"] = (
+                                f"/events/{event_slug}?item={linked_item_row.id}"
+                            )
+
+                        linked_media_result = await db.execute(
+                            select(AuctionItemMedia.file_path)
+                            .where(
+                                AuctionItemMedia.auction_item_id == message_item_uuid,
+                                AuctionItemMedia.media_type == "image",
+                            )
+                            .order_by(AuctionItemMedia.display_order)
+                            .limit(1)
+                        )
+                        linked_media_row = linked_media_result.scalar_one_or_none()
+                        if linked_media_row:
+                            # Generate SAS URL for blob storage images
+                            if linked_media_row.startswith("https://"):
+                                try:
+                                    from app.core.config import get_settings
+                                    from app.services.auction_item_media_service import (
+                                        AuctionItemMediaService,
+                                    )
+
+                                    _settings = get_settings()
+                                    _media_svc = AuctionItemMediaService(_settings, db)
+                                    container_path = f"{_settings.azure_storage_container_name}/"
+                                    if container_path in linked_media_row:
+                                        blob_path = linked_media_row.split(container_path, 1)[1]
+                                        blob_path = blob_path.split("?", 1)[0]
+                                        notification_data["image_url"] = (
+                                            _media_svc._generate_blob_sas_url(
+                                                blob_path, expiry_hours=24
+                                            )
+                                        )
+                                    else:
+                                        notification_data["image_url"] = linked_media_row
+                                except Exception:
+                                    notification_data["image_url"] = linked_media_row
+                            else:
+                                notification_data["image_url"] = linked_media_row
 
             if recipient_type in {"item", "item_watchers", "item_bidders"} and criteria.get(
                 "item_id"

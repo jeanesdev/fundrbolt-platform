@@ -4,16 +4,6 @@
  * Buttons to send checkout links / reminders to all or incomplete donors,
  * with confirmation dialogs.
  */
-import { useMemo, useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { Bell, HandHeart, Loader2, Send } from 'lucide-react'
-import { toast } from 'sonner'
-import { sendCheckoutLink, sendCheckoutReminder } from '@/lib/api/checkout'
-import { getEventAttendees } from '@/lib/api/admin-attendees'
-import { getDonorPwaUrl } from '@/lib/donor-portal'
-import { donorDashboardService } from '@/services/donor-dashboard'
-import { eventNotificationService } from '@/services/eventNotificationService'
-import { useNPOContextStore } from '@/stores/npo-context-store'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +15,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -36,38 +27,62 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { getEventAttendees } from '@/lib/api/admin-attendees'
+import { sendCheckoutLink, sendCheckoutReminder } from '@/lib/api/checkout'
+import { getDonorPwaUrl } from '@/lib/donor-portal'
+import { donorDashboardService } from '@/services/donor-dashboard'
+import { eventNotificationService } from '@/services/eventNotificationService'
+import { useNPOContextStore } from '@/stores/npo-context-store'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { Bell, HandHeart, Loader2, Send } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
+import { useEventWorkspace } from '../useEventWorkspace'
 
 interface SendCheckoutNotificationProps {
   eventId: string
 }
 
+const DONATION_PLEA_CHANNELS = [
+  { value: 'in_app', label: 'In-App', alwaysOn: true },
+  { value: 'push', label: 'Push', alwaysOn: false },
+  { value: 'email', label: 'Email', alwaysOn: false },
+  { value: 'sms', label: 'SMS', alwaysOn: false },
+] as const
+
+const SMS_LIMIT = 160
+
 export function SendCheckoutNotification({
   eventId,
 }: SendCheckoutNotificationProps) {
+  const { currentEvent } = useEventWorkspace()
   const [confirmLinkOpen, setConfirmLinkOpen] = useState(false)
   const [confirmReminderOpen, setConfirmReminderOpen] = useState(false)
   const [donationPleaOpen, setDonationPleaOpen] = useState(false)
   const [pleaMessage, setPleaMessage] = useState('')
   const [pleaLink, setPleaLink] = useState('')
+  const [pleaChannels, setPleaChannels] = useState<Set<string>>(
+    new Set(['in_app'])
+  )
 
-  const { availableNpos, selectedNpoId } = useNPOContextStore((state) => ({
-    availableNpos: state.availableNpos,
-    selectedNpoId: state.selectedNpoId,
-  }))
+  const availableNpos = useNPOContextStore((state) => state.availableNpos)
+  const selectedNpoId = useNPOContextStore((state) => state.selectedNpoId)
 
-  const selectedNpoSlug = useMemo(() => {
-    if (!selectedNpoId) return ''
-    const selectedNpo = availableNpos.find((npo) => npo.id === selectedNpoId)
-    return selectedNpo?.slug ?? ''
-  }, [availableNpos, selectedNpoId])
+  const effectiveNpoId = selectedNpoId || currentEvent.npo_id
+
+  const resolvedNpoSlug = useMemo(() => {
+    if (!effectiveNpoId) return ''
+    const selectedNpo = availableNpos.find((npo) => npo.id === effectiveNpoId)
+    return selectedNpo?.slug ?? effectiveNpoId
+  }, [availableNpos, effectiveNpoId])
 
   const defaultDonateNowLink = useMemo(() => {
-    if (!selectedNpoSlug) return ''
+    if (!resolvedNpoSlug) return ''
     return new URL(
-      `/npo/${selectedNpoSlug}/donate-now`,
+      `/npo/${encodeURIComponent(resolvedNpoSlug)}/donate-now`,
       getDonorPwaUrl()
     ).toString()
-  }, [selectedNpoSlug])
+  }, [resolvedNpoSlug])
 
   const { data: donationPleaRecipients, isFetching: isLoadingRecipients } =
     useQuery({
@@ -84,8 +99,8 @@ export function SendCheckoutNotification({
               .filter(
                 (attendee) =>
                   attendee.user_id &&
-                  (attendee.status === 'confirmed' ||
-                    attendee.status === 'active')
+                  attendee.status !== 'cancelled' &&
+                  attendee.status !== 'canceled'
               )
               .map((attendee) => attendee.user_id as string)
           )
@@ -176,7 +191,7 @@ export function SendCheckoutNotification({
           type: 'individual',
           user_ids: recipientUserIds,
         },
-        channels: ['in_app'],
+        channels: Array.from(pleaChannels),
       })
 
       return recipientUserIds.length
@@ -197,7 +212,20 @@ export function SendCheckoutNotification({
       "Your support makes a difference. If you haven't donated yet, please consider making a gift today."
     )
     setPleaLink(defaultDonateNowLink)
+    setPleaChannels(new Set(['in_app']))
     setDonationPleaOpen(true)
+  }
+
+  const togglePleaChannel = (channel: string) => {
+    setPleaChannels((prev) => {
+      const next = new Set(prev)
+      if (next.has(channel)) {
+        next.delete(channel)
+      } else {
+        next.add(channel)
+      }
+      return next
+    })
   }
 
   return (
@@ -307,7 +335,9 @@ export function SendCheckoutNotification({
                 <>
                   <p>
                     Recipients:{' '}
-                    <strong>{donationPleaRecipients?.nonDonorCount ?? 0}</strong>{' '}
+                    <strong>
+                      {donationPleaRecipients?.nonDonorCount ?? 0}
+                    </strong>{' '}
                     non-donor attendee(s)
                   </p>
                   <p className='text-muted-foreground mt-1 text-xs'>
@@ -337,6 +367,38 @@ export function SendCheckoutNotification({
                 onChange={(e) => setPleaLink(e.target.value)}
                 placeholder='https://.../npo/{slug}/donate-now'
               />
+            </div>
+
+            <div className='space-y-2'>
+              <Label>Delivery Channels</Label>
+              <div className='flex flex-wrap gap-4'>
+                {DONATION_PLEA_CHANNELS.map((channel) => (
+                  <div key={channel.value} className='flex items-center gap-2'>
+                    <Checkbox
+                      id={`donation-plea-channel-${channel.value}`}
+                      checked={pleaChannels.has(channel.value)}
+                      disabled={channel.alwaysOn}
+                      onCheckedChange={() => togglePleaChannel(channel.value)}
+                    />
+                    <Label
+                      htmlFor={`donation-plea-channel-${channel.value}`}
+                      className='cursor-pointer text-sm font-normal'
+                    >
+                      {channel.label}
+                      {channel.alwaysOn && (
+                        <span className='text-muted-foreground ml-1 text-xs'>
+                          (always on)
+                        </span>
+                      )}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              {pleaChannels.has('sms') && pleaMessage.length > SMS_LIMIT && (
+                <p className='text-xs text-amber-600 dark:text-amber-400'>
+                  SMS messages over {SMS_LIMIT} characters will be truncated.
+                </p>
+              )}
             </div>
           </div>
 

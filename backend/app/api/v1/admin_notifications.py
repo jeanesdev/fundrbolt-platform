@@ -88,6 +88,33 @@ class CampaignListResponse(BaseModel):
     per_page: int
 
 
+def _serialize_campaign(campaign: NotificationCampaign) -> CampaignResponse:
+    """Normalize campaign fields to keep list endpoint resilient to legacy nulls."""
+    raw_criteria = campaign.recipient_criteria
+    recipient_criteria = raw_criteria if isinstance(raw_criteria, dict) else {}
+
+    raw_channels = campaign.channels
+    channels = [str(channel) for channel in raw_channels] if isinstance(raw_channels, list) else []
+
+    return CampaignResponse(
+        id=str(campaign.id),
+        message=campaign.message or "",
+        recipient_criteria=recipient_criteria,
+        channels=channels,
+        recipient_count=campaign.recipient_count or 0,
+        delivered_count=campaign.delivered_count or 0,
+        failed_count=campaign.failed_count or 0,
+        status=(
+            campaign.status.value if hasattr(campaign.status, "value") else str(campaign.status)
+        )
+        if campaign.status
+        else "unknown",
+        sent_at=campaign.sent_at.isoformat() if campaign.sent_at else None,
+        created_at=campaign.created_at.isoformat() if campaign.created_at else "",
+        sender_id=str(campaign.sender_id),
+    )
+
+
 # ---------- Endpoints ----------
 
 
@@ -114,15 +141,28 @@ async def send_notification(
     await db.commit()
     await db.refresh(campaign)
 
-    # Dispatch delivery task (runs synchronously in dev via task_always_eager)
+    # Dispatch delivery task.
     try:
         from app.tasks.notification_tasks import deliver_campaign_task
 
-        deliver_campaign_task.delay(str(campaign.id))
+        campaign_id = str(campaign.id)
+
+        # Always enqueue campaign delivery so notifications are processed
+        # asynchronously by the Celery worker.
+        deliver_campaign_task.delay(campaign_id)
     except Exception:
+        try:
+            campaign.status = CampaignStatusEnum.FAILED
+            await db.commit()
+        except Exception:
+            await db.rollback()
         logger.exception(
             "Failed to dispatch/execute campaign delivery task",
             extra={"campaign_id": str(campaign.id)},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to queue notification campaign for delivery",
         )
 
     return {
@@ -159,22 +199,7 @@ async def list_campaigns(
     campaigns = list(result.scalars().all())
 
     return CampaignListResponse(
-        campaigns=[
-            CampaignResponse(
-                id=str(c.id),
-                message=c.message,
-                recipient_criteria=c.recipient_criteria,
-                channels=c.channels,
-                recipient_count=c.recipient_count,
-                delivered_count=c.delivered_count,
-                failed_count=c.failed_count,
-                status=c.status.value if hasattr(c.status, "value") else str(c.status),
-                sent_at=c.sent_at.isoformat() if c.sent_at else None,
-                created_at=c.created_at.isoformat() if c.created_at else "",
-                sender_id=str(c.sender_id),
-            )
-            for c in campaigns
-        ],
+        campaigns=[_serialize_campaign(campaign) for campaign in campaigns],
         total=total,
         page=page,
         per_page=per_page,

@@ -134,6 +134,7 @@ async function fetchAuctionItems(
         starting_bid: number | string
         current_bid_amount?: number | string | null
         bid_count?: number
+        buy_now_purchased_count?: number
         bidding_open?: boolean
         watcher_count?: number
         promotion_badge?: string | null
@@ -151,6 +152,7 @@ async function fetchAuctionItems(
         starting_bid: toNumber(item.starting_bid) ?? 0,
         current_bid: toNumber(item.current_bid_amount),
         bid_count: item.bid_count ?? 0,
+        buy_now_purchased_count: item.buy_now_purchased_count ?? 0,
         bidding_open: item.bidding_open,
         watcher_count: item.watcher_count,
         promotion_badge: item.promotion_badge ?? null,
@@ -220,11 +222,11 @@ const baseFilterOptions: {
   label: string
   icon?: React.ReactNode
 }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'silent', label: 'Silent' },
-  { value: 'live', label: 'Live' },
-  { value: 'my', label: 'My Items' },
-]
+    { value: 'all', label: 'All' },
+    { value: 'silent', label: 'Silent' },
+    { value: 'live', label: 'Live' },
+    { value: 'my', label: 'My Items' },
+  ]
 
 const sortOptions: { value: AuctionSortType; label: string }[] = [
   { value: 'highest_bid', label: 'Highest Bid' },
@@ -255,15 +257,15 @@ export function AuctionGallery({
 }: AuctionGalleryProps) {
   const filterOptions = hasRgItems
     ? [
-        ...baseFilterOptions,
-        {
-          value: 'play' as AuctionFilterType,
-          label: 'Play',
-          icon: (
-            <Sparkles className='mr-1 inline-block h-3.5 w-3.5 align-[-0.1em]' />
-          ),
-        },
-      ]
+      ...baseFilterOptions,
+      {
+        value: 'play' as AuctionFilterType,
+        label: 'Play',
+        icon: (
+          <Sparkles className='mr-1 inline-block h-3.5 w-3.5 align-[-0.1em]' />
+        ),
+      },
+    ]
     : baseFilterOptions
   const authUserId = useAuthStore((state) => state.user?.id)
   const spoofedUserId = useDebugSpoofStore((state) => state.spoofedUser?.id)
@@ -313,14 +315,14 @@ export function AuctionGallery({
         (
           previous:
             | {
-                watch_list?: Array<{
-                  id: string
-                  user_id: string
-                  auction_item_id: string
-                  added_at: string
-                }>
-                total?: number
-              }
+              watch_list?: Array<{
+                id: string
+                user_id: string
+                auction_item_id: string
+                added_at: string
+              }>
+              total?: number
+            }
             | undefined
         ) => {
           const existing = previous?.watch_list ?? []
@@ -354,14 +356,14 @@ export function AuctionGallery({
         (
           previous:
             | {
-                watch_list?: Array<{
-                  id: string
-                  user_id: string
-                  auction_item_id: string
-                  added_at: string
-                }>
-                total?: number
-              }
+              watch_list?: Array<{
+                id: string
+                user_id: string
+                auction_item_id: string
+                added_at: string
+              }>
+              total?: number
+            }
             | undefined
         ) => {
           const existing = previous?.watch_list ?? []
@@ -782,10 +784,10 @@ export function AuctionGallery({
   // My Items: watched + bid on (max bid set)
   const myItemIds = isMyItemsMode
     ? new Set([
-        ...Array.from(watchedItemIds),
-        ...Object.keys(winningItemMap),
-        ...Object.keys(maxBidItemMap),
-      ])
+      ...Array.from(watchedItemIds),
+      ...Object.keys(winningItemMap),
+      ...Object.keys(maxBidItemMap),
+    ])
     : null
   const myItems = myItemIds
     ? items.filter((item) => myItemIds.has(item.id))
@@ -898,13 +900,13 @@ export function AuctionGallery({
               style={
                 filter === option.value
                   ? {
-                      backgroundColor:
-                        'rgb(var(--event-primary, 59, 130, 246))',
-                      color: 'var(--event-text-on-primary, #FFFFFF)',
-                    }
+                    backgroundColor:
+                      'rgb(var(--event-primary, 59, 130, 246))',
+                    color: 'var(--event-text-on-primary, #FFFFFF)',
+                  }
                   : {
-                      color: 'var(--event-text-muted-on-background, #6B7280)',
-                    }
+                    color: 'var(--event-text-muted-on-background, #6B7280)',
+                  }
               }
             >
               {option.icon}

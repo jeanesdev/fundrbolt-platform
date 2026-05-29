@@ -1,32 +1,3 @@
-import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import {
-  auctionDashboardService,
-  type AuctionItemRow,
-} from '@/services/auction-dashboard'
-import auctionItemService from '@/services/auctionItemService'
-import {
-  donorDashboardService,
-  type DonorLeaderboardEntry,
-} from '@/services/donor-dashboard'
-import {
-  eventNotificationService,
-  type RecipientCriteria,
-} from '@/services/eventNotificationService'
-import {
-  ArrowDown,
-  ArrowUp,
-  ChevronsUpDown,
-  Filter,
-  Link as LinkIcon,
-  Loader2,
-  Search,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { useEventContextStore } from '@/stores/event-context-store'
-import { useNPOContextStore } from '@/stores/npo-context-store'
-import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
-import { getDonorPwaUrl } from '@/lib/donor-portal'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -63,6 +34,36 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
+import { useEventWorkspace } from '@/features/events/useEventWorkspace'
+import { type Attendee, getEventAttendees } from '@/lib/api/admin-attendees'
+import { getDonorPwaUrl } from '@/lib/donor-portal'
+import {
+  auctionDashboardService,
+  type AuctionItemRow,
+} from '@/services/auction-dashboard'
+import auctionItemService from '@/services/auctionItemService'
+import {
+  donorDashboardService,
+  type DonorLeaderboardEntry,
+} from '@/services/donor-dashboard'
+import {
+  eventNotificationService,
+  type RecipientCriteria,
+} from '@/services/eventNotificationService'
+import { useEventContextStore } from '@/stores/event-context-store'
+import { useNPOContextStore } from '@/stores/npo-context-store'
+import { useQuery } from '@tanstack/react-query'
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronsUpDown,
+  Filter,
+  Link as LinkIcon,
+  Loader2,
+  Search,
+} from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 const MAX_MESSAGE_LENGTH = 500
 
@@ -234,16 +235,13 @@ export function ComposeNotification({
   const [sortKey, setSortKey] = useState<RecipientSortKey>('name')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [columnFilters, setColumnFilters] = useState(DEFAULT_COLUMN_FILTERS)
-  const { availableEvents, selectedEventSlug } = useEventContextStore(
-    (state) => ({
-      availableEvents: state.availableEvents,
-      selectedEventSlug: state.selectedEventSlug,
-    })
+  const availableEvents = useEventContextStore((state) => state.availableEvents)
+  const selectedEventSlug = useEventContextStore(
+    (state) => state.selectedEventSlug
   )
-  const { availableNpos, selectedNpoId } = useNPOContextStore((state) => ({
-    availableNpos: state.availableNpos,
-    selectedNpoId: state.selectedNpoId,
-  }))
+  const availableNpos = useNPOContextStore((state) => state.availableNpos)
+  const selectedNpoId = useNPOContextStore((state) => state.selectedNpoId)
+  const { currentEvent } = useEventWorkspace()
 
   // Fetch attendees for the individual selection table
   const { data: attendeesData, isLoading: attendeesLoading } = useQuery({
@@ -358,11 +356,13 @@ export function ComposeNotification({
     return matchingEvent?.slug ?? selectedEventSlug ?? eventId
   }, [availableEvents, eventId, selectedEventSlug])
 
+  // Resolve NPO slug: prefer global NPO context, fall back to event's own npo_id
+  const effectiveNpoId = selectedNpoId || currentEvent.npo_id
   const resolvedNpoSlug = useMemo(() => {
-    if (!selectedNpoId) return ''
-    const selectedNpo = availableNpos.find((npo) => npo.id === selectedNpoId)
-    return selectedNpo?.slug ?? selectedNpoId
-  }, [availableNpos, selectedNpoId])
+    if (!effectiveNpoId) return ''
+    const matchedNpo = availableNpos.find((npo) => npo.id === effectiveNpoId)
+    return matchedNpo?.slug ?? effectiveNpoId
+  }, [availableNpos, effectiveNpoId])
 
   const activeLinkItemId =
     linkItemId === USE_SELECTED_ITEM_LINK_VALUE ? itemId : linkItemId
@@ -412,15 +412,15 @@ export function ComposeNotification({
     const filtered = recipientRows.filter((attendee) => {
       const matchesGlobalSearch = q
         ? attendee.name?.toLowerCase().includes(q) ||
-          attendee.email?.toLowerCase().includes(q) ||
-          formatCheckedIn(attendee.checked_in ?? false)
-            .toLowerCase()
-            .includes(q) ||
-          String(attendee.table_number ?? '').includes(q) ||
-          String(attendee.bidder_number ?? '').includes(q) ||
-          formatCurrency(attendee.total_given_at_event)
-            .toLowerCase()
-            .includes(q)
+        attendee.email?.toLowerCase().includes(q) ||
+        formatCheckedIn(attendee.checked_in ?? false)
+          .toLowerCase()
+          .includes(q) ||
+        String(attendee.table_number ?? '').includes(q) ||
+        String(attendee.bidder_number ?? '').includes(q) ||
+        formatCurrency(attendee.total_given_at_event)
+          .toLowerCase()
+          .includes(q)
         : true
 
       const matchesColumnFilters =

@@ -2,16 +2,8 @@
  * NotificationCenter — slide-out panel showing all notifications
  * Uses Radix Sheet (right-anchored)
  */
-import { useCallback, useEffect, useRef } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import { CheckCheck, Loader2 } from 'lucide-react'
-import { useNotificationStore } from '@/stores/notification-store'
-import {
-  useDeleteNotification,
-  useMarkAllRead,
-  useMarkRead,
-  useNotifications,
-} from '@/hooks/use-notifications'
+import { EmptyNotifications } from '@/components/notifications/EmptyNotifications'
+import { NotificationItem } from '@/components/notifications/NotificationItem'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -19,8 +11,16 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { EmptyNotifications } from '@/components/notifications/EmptyNotifications'
-import { NotificationItem } from '@/components/notifications/NotificationItem'
+import {
+  useDeleteNotification,
+  useMarkAllRead,
+  useMarkRead,
+  useNotifications,
+} from '@/hooks/use-notifications'
+import { useNotificationStore } from '@/stores/notification-store'
+import { useQueryClient } from '@tanstack/react-query'
+import { CheckCheck, Loader2 } from 'lucide-react'
+import { useCallback, useEffect, useRef } from 'react'
 
 interface NotificationCenterProps {
   eventId: string
@@ -127,6 +127,10 @@ export function NotificationCenter({ eventId }: NotificationCenterProps) {
                   notification={notification}
                   onRead={handleMarkRead}
                   onDelete={handleDelete}
+                  onNavigate={(deepLink) => {
+                    closePanel()
+                    window.location.href = deepLink
+                  }}
                 />
               ))}
 

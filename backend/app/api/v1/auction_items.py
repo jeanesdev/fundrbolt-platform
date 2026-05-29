@@ -220,6 +220,7 @@ async def list_auction_items(
 
     item_ids = [item.id for item in items]
     bid_aggregates: dict[UUID, tuple[Decimal | None, int]] = {}
+    buy_now_purchased_counts: dict[UUID, int] = {}
     if item_ids:
         bid_aggregate_stmt = (
             select(
@@ -239,6 +240,26 @@ async def list_auction_items(
         for auction_item_id, max_bid, bid_count in bid_aggregate_result.all():
             bid_aggregates[auction_item_id] = (max_bid, int(bid_count or 0))
 
+        if current_user:
+            buy_now_counts_stmt = (
+                select(
+                    AuctionBid.auction_item_id,
+                    func.count(AuctionBid.id),
+                )
+                .where(
+                    AuctionBid.auction_item_id.in_(item_ids),
+                    AuctionBid.user_id == current_user.id,
+                    AuctionBid.bid_type == "buy_now",
+                    AuctionBid.bid_status.notin_(
+                        [BidStatus.CANCELLED.value, BidStatus.WITHDRAWN.value]
+                    ),
+                )
+                .group_by(AuctionBid.auction_item_id)
+            )
+            buy_now_counts_result = await db.execute(buy_now_counts_stmt)
+            for auction_item_id, purchased_count in buy_now_counts_result.all():
+                buy_now_purchased_counts[auction_item_id] = int(purchased_count or 0)
+
     enriched_items = []
     for item in items:
         item_dict = AuctionItemResponse.model_validate(item).model_dump()
@@ -246,6 +267,7 @@ async def list_auction_items(
         current_bid_amount, bid_count = bid_aggregates.get(item.id, (None, 0))
         item_dict["current_bid_amount"] = current_bid_amount
         item_dict["bid_count"] = bid_count
+        item_dict["buy_now_purchased_count"] = buy_now_purchased_counts.get(item.id, 0)
         if current_bid_amount is not None:
             item_dict["min_next_bid_amount"] = current_bid_amount + item.bid_increment
         else:
