@@ -43,7 +43,10 @@ def _require_admin(user: User) -> None:
 class RecipientCriteria(BaseModel):
     type: str = Field(
         ...,
-        description="Recipient type: all_attendees, all_bidders, specific_table, individual, item",
+        description=(
+            "Recipient type: all_attendees, all_bidders, specific_table, individual, "
+            "item, item_watchers, item_bidders"
+        ),
     )
     table_number: int | None = Field(None, description="Table number for specific_table type")
     user_ids: list[str] | None = Field(None, description="User UUIDs for individual type")

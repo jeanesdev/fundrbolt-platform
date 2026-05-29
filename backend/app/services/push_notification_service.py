@@ -320,16 +320,16 @@ class PushNotificationService:
             if event_logo:
                 event_icon_url = _ensure_blob_sas_url(event_logo)
 
-        # Icon priority: item thumbnail -> event icon -> app logo fallback
-        icon_url = image_url or event_icon_url or "/images/pwa-192x192.png"
+        # Visual priority: item thumbnail -> event icon -> app logo fallback
+        visual_url = image_url or event_icon_url or "/images/pwa-192x192.png"
 
         payload = json.dumps(
             {
                 "title": notification.title,
                 "body": _sanitize_push_body(notification.body),
-                "icon": icon_url,
+                "icon": visual_url,
                 "badge": "/images/pwa-192x192.png",
-                "image": image_url,
+                "image": visual_url,
                 "data": {
                     "deep_link": deep_link,
                     "image_url": image_url,

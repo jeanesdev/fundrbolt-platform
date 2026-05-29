@@ -403,6 +403,7 @@ class AuctionBidService:
 
             await self.db.commit()
             await self._publish_bid_update(new_bid)
+            await self._send_bid_confirmation(new_bid, item)
 
             return new_bid
 

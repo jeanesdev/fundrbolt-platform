@@ -269,6 +269,7 @@ export function DonorLeaderboard({
     npo_id: npoId,
     sort_by: sortBy,
     sort_order: sortOrder,
+    search: searchQuery,
     ...filterParams,
     page,
     per_page: perPage,
@@ -784,9 +785,12 @@ export function DonorLeaderboard({
                   <TableRow>
                     <TableHead className='w-[40px] px-3'>
                       <Checkbox
-                        checked={allPageSelected}
-                        data-state={
-                          somePageSelected ? 'indeterminate' : undefined
+                        checked={
+                          allPageSelected
+                            ? true
+                            : somePageSelected
+                              ? 'indeterminate'
+                              : false
                         }
                         onCheckedChange={togglePageAll}
                         aria-label='Select all on page'
