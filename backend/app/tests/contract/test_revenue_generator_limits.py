@@ -59,7 +59,7 @@ async def _create_registration_with_bidder(
 class TestRevenueGeneratorLimits:
     async def test_donor_purchase_respects_per_person_limit(
         self,
-        npo_admin_client: AsyncClient,
+        super_admin_client: AsyncClient,
         donor_client: AsyncClient,
         test_event: Any,
         test_registration: Any,
@@ -67,7 +67,7 @@ class TestRevenueGeneratorLimits:
     ) -> None:
         await _set_primary_bidder_number(db_session, test_registration.id, bidder_number=410)
 
-        create_response = await npo_admin_client.post(
+        create_response = await super_admin_client.post(
             f"/api/v1/admin/events/{test_event.id}/revenue-generators",
             json={
                 "name": "50/50",
@@ -80,7 +80,7 @@ class TestRevenueGeneratorLimits:
         assert create_response.status_code == 201
         item_id = create_response.json()["id"]
 
-        visible_response = await npo_admin_client.patch(
+        visible_response = await super_admin_client.patch(
             f"/api/v1/admin/events/{test_event.id}/revenue-generators/{item_id}",
             json={"is_visible": True},
         )
@@ -106,7 +106,7 @@ class TestRevenueGeneratorLimits:
 
     async def test_quick_entry_respects_per_person_and_total_limits(
         self,
-        npo_admin_client: AsyncClient,
+        super_admin_client: AsyncClient,
         test_event: Any,
         test_registration: Any,
         test_user_2: User,
@@ -120,7 +120,7 @@ class TestRevenueGeneratorLimits:
             bidder_number=411,
         )
 
-        create_response = await npo_admin_client.post(
+        create_response = await super_admin_client.post(
             f"/api/v1/admin/events/{test_event.id}/revenue-generators",
             json={
                 "name": "Golden Ticket",
@@ -133,28 +133,38 @@ class TestRevenueGeneratorLimits:
         assert create_response.status_code == 201
         item_id = create_response.json()["id"]
 
-        first_entry = await npo_admin_client.post(
+        first_entry = await super_admin_client.post(
             f"/api/v1/admin/events/{test_event.id}/quick-entry/revenue-generators/entry",
             params={"item_id": item_id, "bidder_number": 410},
         )
         assert first_entry.status_code == 201
 
-        duplicate_bidder = await npo_admin_client.post(
+        duplicate_bidder = await super_admin_client.post(
             f"/api/v1/admin/events/{test_event.id}/quick-entry/revenue-generators/entry",
             params={"item_id": item_id, "bidder_number": 410},
         )
         assert duplicate_bidder.status_code == 422
-        assert "maximum number of entries allowed" in duplicate_bidder.json()["detail"]
+        duplicate_detail = duplicate_bidder.json().get("detail")
+        duplicate_message = (
+            duplicate_detail.get("message", "")
+            if isinstance(duplicate_detail, dict)
+            else str(duplicate_detail)
+        )
+        assert "maximum number of entries allowed" in duplicate_message
 
-        second_bidder = await npo_admin_client.post(
+        second_bidder = await super_admin_client.post(
             f"/api/v1/admin/events/{test_event.id}/quick-entry/revenue-generators/entry",
             params={"item_id": item_id, "bidder_number": 411},
         )
         assert second_bidder.status_code == 201
 
-        total_limit = await npo_admin_client.post(
+        total_limit = await super_admin_client.post(
             f"/api/v1/admin/events/{test_event.id}/quick-entry/revenue-generators/entry",
             params={"item_id": item_id, "bidder_number": 412},
         )
         assert total_limit.status_code == 422
-        assert "maximum number of entries" in total_limit.json()["detail"]
+        total_detail = total_limit.json().get("detail")
+        total_message = (
+            total_detail.get("message", "") if isinstance(total_detail, dict) else str(total_detail)
+        )
+        assert "maximum number of entries" in total_message

@@ -81,6 +81,8 @@ class AuctionBidService:
 
     async def _send_bid_confirmation(self, bid: AuctionBid, item: AuctionItem) -> None:
         """T075: Send bid confirmation notification to the bidder."""
+        bid_id = str(bid.id)
+        bid_user_id = str(bid.user_id)
         try:
             event_slug = await self._get_event_slug(bid.event_id)
             async with self.db.begin_nested():
@@ -108,11 +110,11 @@ class AuctionBidService:
             except Exception:
                 logger.warning(
                     "Rollback failed while handling bid confirmation notification error",
-                    extra={"bid_id": str(bid.id), "user_id": str(bid.user_id)},
+                    extra={"bid_id": bid_id, "user_id": bid_user_id},
                 )
             logger.warning(
                 "Failed to send bid confirmation notification",
-                extra={"bid_id": str(bid.id), "user_id": str(bid.user_id)},
+                extra={"bid_id": bid_id, "user_id": bid_user_id},
             )
 
     async def _get_bidder_number(self, event_id: UUID, user_id: UUID) -> int:
