@@ -21,6 +21,7 @@ Each ADR follows this structure:
 
 - [ADR-001: Service-Based Permissions Over Database Permission Table](./001-service-based-permissions.md) - Accepted (2025-10-24)
 - [ADR-002: Audit Logging Database Persistence](./002-audit-logging-database-persistence.md) - Accepted (2025-10-25)
+- [ADR-003: Mailpit as Test Email Capture Mechanism](./003-mailpit-test-email-capture.md) - Accepted (2026-05-30)
 
 ## Creating a New ADR
 

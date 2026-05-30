@@ -256,6 +256,40 @@ None currently - all active work has clear direction.
 
 ---
 
-**Last Updated**: 2025-11-11
+## Deferred from Feature 047: Beta-Readiness Integration Test Suite
+
+### Firefox Browser Automation (FR-047a out-of-scope)
+
+- **Status**: Explicitly out of scope per spec FR-047a
+- **Feature**: 047-integration-testing-beta
+- **Reason**: Spec explicitly excludes Firefox: "Firefox coverage is out of scope for automation." Chromium (full suite) + WebKit mobile subset provides adequate coverage for beta. Firefox market share for NPO gala attendees is <5%.
+- **Blocking**: None — intentional design decision
+- **Revisit When**:
+  - Beta feedback shows Firefox-specific rendering bugs
+  - Firefox usage in analytics exceeds 10% of donor sessions
+- **Estimated Effort**: 1–2 days (add Firefox project to `playwright.config.ts`, add to nightly matrix)
+
+### Load Testing (Constitution §Testing Requirements: future enhancement)
+
+- **Status**: Deferred to Phase 2 (post-beta)
+- **Feature**: 047-integration-testing-beta
+- **Reason**: Constitution §Testing Requirements mentions "Simulate 100+ concurrent bidders per event before production (Phase 2)" and "WebSocket Load Tests: Connection drops and reconnections during active bidding." These are post-beta requirements, not required for beta readiness. The API-level concurrency test (T038 FR-024) validates bid race conditions without load volume.
+- **Blocking**: None — requires k6 or Locust setup, likely a dedicated feature
+- **Revisit When**:
+  - Preparing for production launch (post-beta)
+  - Performance issues observed with real beta users
+- **Estimated Effort**: 3–5 days (tool selection, scenario authoring, CI integration, baseline documentation)
+
+### factory_boy Adoption in Existing Test Suite (Technical Debt)
+
+- **Status**: Technical debt — `factory_boy ^3.3.0` in `pyproject.toml` but unused in existing ~224 tests
+- **Feature**: Pre-dates 047; identified during 047 analyze phase
+- **Reason**: Feature 047 adopts factory_boy for seed factories (`tests/seed/factories/`) and new provisioning helpers. The ~224 existing integration/unit tests use direct SQLAlchemy inserts. Migrating them to factory_boy is out of scope for this feature.
+- **Revisit When**:
+  - Test suite grows significantly and fixture management becomes painful
+  - A team working session specifically for test infrastructure improvement
+- **Estimated Effort**: 3–5 days (factory definition for all existing models, migration of existing test fixtures)
+
+**Last Updated**: 2026-05-30
 **Maintained By**: Development Team
 **Review Cadence**: Update after each phase completion
